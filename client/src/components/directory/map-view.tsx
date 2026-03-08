@@ -5,14 +5,18 @@ import { Link } from "wouter";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
 import type { User } from "@shared/schema/users";
 
-import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
+const pinSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40" fill="none">
+  <path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.268 21.732 0 14 0z" fill="#1e3a5f"/>
+  <circle cx="14" cy="14" r="7" fill="white"/>
+  <circle cx="14" cy="14" r="4" fill="#2d8a7e"/>
+</svg>`;
 
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
+const pinIcon = L.divIcon({
+  html: pinSvg,
+  className: "",
+  iconSize: [28, 40],
+  iconAnchor: [14, 40],
+  popupAnchor: [0, -36],
 });
 
 interface TherapistWithUser {
@@ -22,9 +26,11 @@ interface TherapistWithUser {
 
 interface MapViewProps {
   therapists: TherapistWithUser[];
+  height?: string;
+  interactive?: boolean;
 }
 
-export function MapView({ therapists }: MapViewProps) {
+export function MapView({ therapists, height = "500px", interactive = true }: MapViewProps) {
   const markered = useMemo(
     () =>
       therapists.filter(
@@ -44,18 +50,20 @@ export function MapView({ therapists }: MapViewProps) {
     return [avgLat, avgLng];
   }, [markered]);
 
-  const zoom = markered.length === 0 ? 2 : markered.length === 1 ? 12 : 3;
+  const zoom = markered.length === 0 ? 2 : markered.length === 1 ? 13 : 3;
 
   return (
-    <div className="h-[500px] rounded-md overflow-hidden border" data-testid="map-container">
+    <div style={{ height }} className="rounded-md overflow-hidden border" data-testid="map-container">
       <MapContainer
         center={center}
         zoom={zoom}
-        scrollWheelZoom
+        scrollWheelZoom={interactive}
+        dragging={interactive}
+        zoomControl={interactive}
         className="h-full w-full"
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {markered.map((t) => {
@@ -69,6 +77,7 @@ export function MapView({ therapists }: MapViewProps) {
                 Number(t.profile.latitude),
                 Number(t.profile.longitude),
               ]}
+              icon={pinIcon}
             >
               <Popup>
                 <div className="flex flex-col gap-1">
