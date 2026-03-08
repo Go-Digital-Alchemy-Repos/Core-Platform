@@ -51,7 +51,11 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
     return [avgLat, avgLng];
   }, [markered]);
 
-  const zoom = zoomProp ?? (markered.length === 0 ? 2 : markered.length === 1 ? 10 : 3);
+  const zoom = zoomProp ?? (markered.length === 0 ? 2 : markered.length === 1 ? 6 : 3);
+
+  const tileUrl = interactive
+    ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    : "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png";
 
   return (
     <div style={{ height }} className="rounded-md overflow-hidden border" data-testid="map-container">
@@ -65,7 +69,7 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url={tileUrl}
         />
         {markered.map((t) => {
           const fullName =
