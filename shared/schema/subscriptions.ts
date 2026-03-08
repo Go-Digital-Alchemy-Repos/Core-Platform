@@ -1,0 +1,29 @@
+import { sql } from "drizzle-orm";
+import { pgTable, text, varchar, timestamp, integer } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+import { users } from "./users";
+import { membershipTiers } from "./membership-tiers";
+
+export const therapistSubscriptions = pgTable("therapist_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  therapistId: varchar("therapist_id").notNull().references(() => users.id),
+  tierId: varchar("tier_id").references(() => membershipTiers.id),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  status: text("status").notNull().default("inactive"),
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  customPrice: integer("custom_price"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSubscriptionSchema = createInsertSchema(therapistSubscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
+export type TherapistSubscription = typeof therapistSubscriptions.$inferSelect;

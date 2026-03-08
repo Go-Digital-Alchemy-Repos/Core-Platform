@@ -1,7 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { WebhookHandlers } from "./webhooks/stripe.handler";
 
 const app = express();
 const httpServer = createServer(app);
@@ -12,6 +14,17 @@ declare module "http" {
   }
 }
 
+app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  try {
+    const signature = req.headers["stripe-signature"] as string;
+    await WebhookHandlers.processWebhook(req.body, signature);
+    res.json({ received: true });
+  } catch (err) {
+    console.error("Webhook error:", err);
+    res.status(400).json({ error: "Webhook processing failed" });
+  }
+});
+
 app.use(
   express.json({
     verify: (req, _res, buf) => {
@@ -21,6 +34,7 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
