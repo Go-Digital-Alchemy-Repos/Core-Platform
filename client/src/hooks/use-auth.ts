@@ -13,8 +13,8 @@ export function useAuth() {
       const res = await apiRequest("POST", "/api/auth/login", credentials);
       return await res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    onSuccess: (data) => {
+      queryClient.setQueryData(["/api/auth/me"], data);
     },
   });
 
@@ -29,8 +29,8 @@ export function useAuth() {
       const res = await apiRequest("POST", "/api/auth/register", data);
       return await res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    onSuccess: (data) => {
+      queryClient.setQueryData(["/api/auth/me"], data);
     },
   });
 
@@ -39,7 +39,7 @@ export function useAuth() {
       await apiRequest("POST", "/api/auth/logout");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      queryClient.setQueryData(["/api/auth/me"], null);
     },
   });
 
