@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, User, LogOut, LayoutDashboard, Shield, ChevronDown } from "lucide-react";
+import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
@@ -30,7 +31,7 @@ export function Navbar() {
     <nav className="sticky top-0 z-[999] bg-background border-b" data-testid="navbar">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-4 py-3">
         <Link href="/" data-testid="link-brand">
-          <span className="font-heading text-xl font-semibold text-foreground">TCK Wellness</span>
+          <img src={logoImg} alt="TCK Wellness" className="h-10 w-auto dark:brightness-[1.8] dark:contrast-[0.9]" />
         </Link>
 
         <div className="hidden md:flex items-center gap-1 flex-wrap">
@@ -112,7 +113,9 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent side="right" className="w-72">
               <SheetHeader>
-                <SheetTitle className="font-heading text-lg">TCK Wellness</SheetTitle>
+                <SheetTitle>
+                  <img src={logoImg} alt="TCK Wellness" className="h-8 w-auto dark:brightness-[1.8] dark:contrast-[0.9]" />
+                </SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-1 mt-4">
                 {navLinks.map((link) => (

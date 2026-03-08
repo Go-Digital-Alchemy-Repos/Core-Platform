@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import logoImg from "@assets/IMG_0002_1772999718659.png";
 
 export function Footer() {
   return (
@@ -6,7 +7,7 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div>
-            <h3 className="font-heading text-lg font-semibold mb-3">TCK Wellness</h3>
+            <img src={logoImg} alt="TCK Wellness" className="h-8 w-auto mb-3 dark:brightness-[1.8] dark:contrast-[0.9]" />
             <p className="text-sm text-muted-foreground">
               Connecting Third Culture Kids with culturally informed therapists worldwide.
             </p>
