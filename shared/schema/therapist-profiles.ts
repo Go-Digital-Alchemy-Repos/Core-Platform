@@ -27,6 +27,7 @@ export const therapistProfiles = pgTable("therapist_profiles", {
   acceptingClients: boolean("accepting_clients").default(true),
   isApproved: boolean("is_approved").default(false),
   isActive: boolean("is_active").default(true),
+  rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

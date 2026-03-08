@@ -1,7 +1,9 @@
 import { Router } from "express";
+import { z } from "zod";
 import { storage } from "../storage/index";
-import { authenticateToken, requireRole } from "../middleware/auth";
+import { authenticateToken, requireRole, hashPassword } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
+import { sendApprovalEmail, sendRejectionEmail } from "../services/email.service";
 
 const router = Router();
 
@@ -38,43 +40,176 @@ router.get(
   })
 );
 
+const createTherapistSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  title: z.string().optional(),
+  bio: z.string().optional(),
+  specializations: z.array(z.string()).optional(),
+  languages: z.array(z.string()).optional(),
+  credentials: z.string().optional(),
+  licenseNumber: z.string().optional(),
+  practiceMode: z.string().optional(),
+  addressLine1: z.string().optional(),
+  addressLine2: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().optional(),
+  zipCode: z.string().optional(),
+  phone: z.string().optional(),
+  website: z.string().optional(),
+  acceptingClients: z.boolean().optional(),
+  isApproved: z.boolean().optional(),
+});
+
+router.post(
+  "/therapists",
+  asyncHandler(async (req, res) => {
+    const data = createTherapistSchema.parse(req.body);
+
+    const existing = await storage.users.getUserByEmail(data.email);
+    if (existing) {
+      res.status(409).json({ message: "Email already registered" });
+      return;
+    }
+
+    const hashedPassword = await hashPassword(data.password);
+    const user = await storage.users.createUser({
+      email: data.email,
+      password: hashedPassword,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      role: "therapist",
+    });
+
+    const { email, password, firstName, lastName, ...profileData } = data;
+    const profile = await storage.therapists.createProfile({
+      userId: user.id,
+      isApproved: data.isApproved ?? true,
+      ...profileData,
+    });
+
+    const profileWithUser = await storage.therapists.getProfileWithUser(profile.id);
+
+    if (profile.isApproved && profileWithUser?.user?.email) {
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      sendApprovalEmail(
+        profileWithUser.user.email,
+        profileWithUser.user.firstName || "Therapist",
+        baseUrl
+      ).catch(() => {});
+    }
+
+    res.status(201).json(profileWithUser);
+  })
+);
+
 router.put(
   "/therapists/:id/approve",
   asyncHandler(async (req, res) => {
     const profile = await storage.therapists.updateProfile(req.params.id, {
       isApproved: true,
+      rejectionReason: null,
     });
     if (!profile) {
       res.status(404).json({ message: "Profile not found" });
       return;
     }
-    res.json(profile);
+
+    const profileWithUser = await storage.therapists.getProfileWithUser(profile.id);
+    if (profileWithUser?.user?.email) {
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      sendApprovalEmail(
+        profileWithUser.user.email,
+        profileWithUser.user.firstName,
+        `${baseUrl}/auth/login`
+      ).catch(() => {});
+    }
+
+    res.json(profileWithUser ?? profile);
   })
 );
+
+const rejectSchema = z.object({
+  reason: z.string().optional(),
+});
 
 router.put(
   "/therapists/:id/reject",
   asyncHandler(async (req, res) => {
+    const { reason } = rejectSchema.parse(req.body);
     const profile = await storage.therapists.updateProfile(req.params.id, {
+      isApproved: false,
+      rejectionReason: reason || null,
+    });
+    if (!profile) {
+      res.status(404).json({ message: "Profile not found" });
+      return;
+    }
+
+    const profileWithUser = await storage.therapists.getProfileWithUser(profile.id);
+    if (profileWithUser?.user?.email) {
+      sendRejectionEmail(
+        profileWithUser.user.email,
+        profileWithUser.user.firstName,
+        reason || null
+      ).catch(() => {});
+    }
+
+    res.json(profileWithUser ?? profile);
+  })
+);
+
+const updateTherapistSchema = z.object({
+  title: z.string().optional().nullable(),
+  bio: z.string().optional().nullable(),
+  specializations: z.array(z.string()).optional().nullable(),
+  languages: z.array(z.string()).optional().nullable(),
+  credentials: z.string().optional().nullable(),
+  licenseNumber: z.string().optional().nullable(),
+  practiceMode: z.string().optional().nullable(),
+  addressLine1: z.string().optional().nullable(),
+  addressLine2: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
+  zipCode: z.string().optional().nullable(),
+  latitude: z.string().optional().nullable(),
+  longitude: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
+  acceptingClients: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+});
+
+router.put(
+  "/therapists/:id",
+  asyncHandler(async (req, res) => {
+    const data = updateTherapistSchema.parse(req.body);
+    const profile = await storage.therapists.updateProfile(req.params.id, data);
+    if (!profile) {
+      res.status(404).json({ message: "Profile not found" });
+      return;
+    }
+    const profileWithUser = await storage.therapists.getProfileWithUser(profile.id);
+    res.json(profileWithUser ?? profile);
+  })
+);
+
+router.delete(
+  "/therapists/:id",
+  asyncHandler(async (req, res) => {
+    const profile = await storage.therapists.updateProfile(req.params.id, {
+      isActive: false,
       isApproved: false,
     });
     if (!profile) {
       res.status(404).json({ message: "Profile not found" });
       return;
     }
-    res.json(profile);
-  })
-);
-
-router.put(
-  "/therapists/:id",
-  asyncHandler(async (req, res) => {
-    const profile = await storage.therapists.updateProfile(req.params.id, req.body);
-    if (!profile) {
-      res.status(404).json({ message: "Profile not found" });
-      return;
-    }
-    res.json(profile);
+    res.json({ message: "Therapist removed" });
   })
 );
 

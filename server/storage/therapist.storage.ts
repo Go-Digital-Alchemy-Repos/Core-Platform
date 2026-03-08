@@ -136,7 +136,13 @@ export class TherapistStorage {
     const result = await db
       .select({ count: sql<number>`count(*)` })
       .from(therapistProfiles)
-      .where(eq(therapistProfiles.isApproved, false));
+      .where(
+        and(
+          eq(therapistProfiles.isApproved, false),
+          eq(therapistProfiles.isActive, true),
+          sql`${therapistProfiles.rejectionReason} IS NULL`
+        )
+      );
     return Number(result[0].count);
   }
 }

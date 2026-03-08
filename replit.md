@@ -71,8 +71,18 @@ client/src/lib/       — Utilities (queryClient, constants)
 - `GET/PUT /api/therapist/profile`, `GET /api/therapist/subscription`
 - `POST /api/stripe/create-checkout-session|create-portal-session`
 - `GET /api/admin/dashboard-stats|therapists|users|membership-tiers|events|messages`
+- `POST /api/admin/therapists` — Create therapist (user + profile, auto-approved)
+- `PUT /api/admin/therapists/:id` — Update profile fields (Zod-validated whitelist)
+- `PUT /api/admin/therapists/:id/approve` — Approve + send email
+- `PUT /api/admin/therapists/:id/reject` — Reject with reason + send email
+- `DELETE /api/admin/therapists/:id` — Soft-delete (isActive=false)
 - `CRUD /api/admin/docs`
 - `GET /api/events`, `GET /api/membership-tiers`, `POST /api/contact`
+
+## Email Service
+- `server/services/email.service.ts` — Nodemailer-based; reads SMTP_HOST/PORT/USER/PASS/FROM env vars
+- Sends branded approval/rejection emails; gracefully logs to console if SMTP not configured
+- nodemailer is in build allowlist (`script/build.ts`)
 
 ## Seed Data
 - 40 diverse therapist profiles with AI-generated avatar images (in `client/public/avatars/`)

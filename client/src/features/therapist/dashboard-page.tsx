@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UserPen, CreditCard, CheckCircle, AlertCircle, Clock } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { UserPen, CreditCard, CheckCircle, AlertCircle, Clock, XCircle, AlertTriangle } from "lucide-react";
 
 function computeProfileCompletion(profile: TherapistProfile | null): number {
   if (!profile) return 0;
@@ -42,6 +43,51 @@ function getStatusBadge(status: string | undefined) {
   }
 }
 
+function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
+  if (!profile) return null;
+
+  if (profile.isApproved) {
+    return (
+      <Alert data-testid="banner-approval-status" className="border-green-500/50 bg-green-50 dark:bg-green-950/30 text-green-900 dark:text-green-100">
+        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+        <AlertTitle data-testid="text-approval-title">Approved</AlertTitle>
+        <AlertDescription data-testid="text-approval-message">
+          Your profile is approved and live in the directory!
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (profile.rejectionReason) {
+    return (
+      <Alert data-testid="banner-approval-status" variant="destructive">
+        <XCircle className="h-4 w-4" />
+        <AlertTitle data-testid="text-approval-title">Application Not Approved</AlertTitle>
+        <AlertDescription data-testid="text-approval-message" className="space-y-2">
+          <p>Your application was not approved.</p>
+          <p className="font-medium" data-testid="text-rejection-reason">Reason: {profile.rejectionReason}</p>
+          <Link href="/contact">
+            <Button variant="outline" size="sm" data-testid="link-contact-support" className="mt-1">
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Contact Support
+            </Button>
+          </Link>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <Alert data-testid="banner-approval-status" className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-100">
+      <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+      <AlertTitle data-testid="text-approval-title">Under Review</AlertTitle>
+      <AlertDescription data-testid="text-approval-message">
+        Your application is under review. You'll receive an email once it's been reviewed.
+      </AlertDescription>
+    </Alert>
+  );
+}
+
 export default function TherapistDashboardPage() {
   const { user } = useAuth();
 
@@ -56,6 +102,7 @@ export default function TherapistDashboardPage() {
   });
 
   const completion = computeProfileCompletion(profile ?? null);
+  const isApproved = profile?.isApproved === true;
 
   if (profileLoading || subLoading) {
     return (
@@ -80,6 +127,8 @@ export default function TherapistDashboardPage() {
           Manage your profile and subscription from your dashboard.
         </p>
       </div>
+
+      <ApprovalBanner profile={profile ?? null} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card data-testid="card-profile-completion">
@@ -125,6 +174,11 @@ export default function TherapistDashboardPage() {
                 </span>
               )}
             </div>
+            {!isApproved && (
+              <p className="text-sm text-muted-foreground" data-testid="text-approval-note">
+                Complete the approval process before subscribing
+              </p>
+            )}
             <Link href="/therapist/subscription">
               <Button variant="outline" className="w-full" data-testid="button-manage-subscription">
                 <CreditCard className="w-4 h-4 mr-2" />
