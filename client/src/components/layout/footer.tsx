@@ -28,8 +28,8 @@ const companyLinks = [
 function FooterColumn({ title, links }: { title: string; links: typeof platformLinks }) {
   return (
     <div>
-      <h4 className="font-semibold text-sm mb-4 text-foreground">{title}</h4>
-      <ul className="space-y-3 text-sm">
+      <h4 className="font-semibold text-sm mb-3 sm:mb-4 text-foreground">{title}</h4>
+      <ul className="space-y-2.5 sm:space-y-3 text-sm">
         {links.map((link) => (
           <li key={link.testId}>
             <Link
@@ -49,13 +49,13 @@ function FooterColumn({ title, links }: { title: string; links: typeof platformL
 export function Footer() {
   return (
     <footer className="border-t bg-muted/30" data-testid="footer">
-      <div className="max-w-7xl mx-auto px-6 py-12 lg:py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12">
-          <div className="sm:col-span-2 lg:col-span-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-12 lg:py-16">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-10 lg:gap-12">
+          <div className="col-span-2">
             <img
               src={logoImg}
               alt="TCK Wellness"
-              className="h-9 w-auto mb-4 dark:brightness-[1.8] dark:contrast-[0.9]"
+              className="h-8 sm:h-9 w-auto mb-3 sm:mb-4 dark:brightness-[1.8] dark:contrast-[0.9]"
             />
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               Connecting Third Culture Kids with culturally informed therapists worldwide. Find support that understands your unique journey.
@@ -64,17 +64,17 @@ export function Footer() {
 
           <FooterColumn title="Platform" links={platformLinks} />
           <FooterColumn title="For Therapists" links={therapistLinks} />
-          <div>
+          <div className="col-span-2 sm:col-span-1">
             <FooterColumn title="Resources" links={resourceLinks} />
-            <div className="mt-8">
+            <div className="mt-6 sm:mt-8">
               <FooterColumn title="Company" links={companyLinks} />
             </div>
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground" data-testid="text-copyright">
-          <span>&copy; {new Date().getFullYear()} TCK Wellness. All rights reserved.</span>
-          <div className="flex items-center gap-6 flex-wrap">
+        <div className="mt-10 sm:mt-12 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-sm text-muted-foreground" data-testid="text-copyright">
+          <span className="text-center sm:text-left">&copy; {new Date().getFullYear()} TCK Wellness. All rights reserved.</span>
+          <div className="flex items-center gap-4 sm:gap-6">
             <Link href="/contact" className="hover:text-foreground transition-colors" data-testid="link-footer-privacy">
               Privacy Policy
             </Link>

@@ -105,7 +105,7 @@ export default function TherapistProfilePage() {
 
   return (
     <PageLayout>
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Link href="/directory">
           <Button variant="ghost" className="mb-4" data-testid="link-back-directory">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -116,8 +116,8 @@ export default function TherapistProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 flex flex-col gap-6">
             <Card>
-              <CardHeader className="flex flex-row items-start gap-4 space-y-0">
-                <Avatar className="h-20 w-20">
+              <CardHeader className="flex flex-col sm:flex-row items-center sm:items-start gap-4 space-y-0 text-center sm:text-left">
+                <Avatar className="h-20 w-20 sm:h-20 sm:w-20 flex-shrink-0">
                   {therapist.user?.profileImageUrl && (
                     <AvatarImage src={therapist.user.profileImageUrl} alt={fullName} />
                   )}
@@ -127,17 +127,17 @@ export default function TherapistProfilePage() {
                 </Avatar>
                 <div className="flex flex-col gap-1 min-w-0">
                   <h1
-                    className="text-2xl font-heading font-semibold"
+                    className="text-xl sm:text-2xl font-heading font-semibold break-words"
                     data-testid="text-therapist-name"
                   >
                     {fullName}
                   </h1>
                   {therapist.title && (
-                    <p className="text-muted-foreground" data-testid="text-therapist-title">
+                    <p className="text-muted-foreground text-sm sm:text-base" data-testid="text-therapist-title">
                       {therapist.title}
                     </p>
                   )}
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                  <div className="flex flex-wrap items-center gap-2 mt-1 justify-center sm:justify-start">
                     <Badge variant="outline" data-testid="badge-practice-mode">
                       {therapist.practiceMode === "in_person" || therapist.practiceMode === "both" ? (
                         <Building2 className="h-3 w-3 mr-1" />
@@ -154,13 +154,13 @@ export default function TherapistProfilePage() {
                     ) : (
                       <Badge variant="outline" data-testid="badge-not-accepting">
                         <XCircle className="h-3 w-3 mr-1" />
-                        Not Accepting Clients
+                        Not Accepting
                       </Badge>
                     )}
                     {locationParts.length > 0 && (
                       <span className="text-sm text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {locationParts.join(", ")}
+                        <MapPin className="h-3 w-3 flex-shrink-0" />
+                        <span className="break-words">{locationParts.join(", ")}</span>
                       </span>
                     )}
                   </div>
@@ -233,7 +233,7 @@ export default function TherapistProfilePage() {
           <div className="flex flex-col gap-6">
             {showMap && (
               <Card className="overflow-hidden" data-testid="card-map">
-                <div className="aspect-square">
+                <div className="aspect-video lg:aspect-square">
                   <MapView
                     therapists={[
                       {
@@ -275,33 +275,33 @@ export default function TherapistProfilePage() {
                     {addressParts.length > 0 && (
                       <div className="flex items-start gap-3" data-testid="text-address">
                         <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
-                        <span className="text-muted-foreground">{addressParts.join(", ")}</span>
+                        <span className="text-muted-foreground break-words min-w-0">{addressParts.join(", ")}</span>
                       </div>
                     )}
                     {therapist.phone && (
                       <div className="flex items-center gap-3" data-testid="text-phone">
                         <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <a href={`tel:${therapist.phone}`} className="hover:underline">
+                        <a href={`tel:${therapist.phone}`} className="hover:underline break-all min-w-0">
                           {therapist.phone}
                         </a>
                       </div>
                     )}
                     {therapist.user?.email && (
-                      <div className="flex items-center gap-3" data-testid="text-email">
+                      <div className="flex items-center gap-3 min-w-0" data-testid="text-email">
                         <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <a href={`mailto:${therapist.user.email}`} className="hover:underline break-all">
+                        <a href={`mailto:${therapist.user.email}`} className="hover:underline break-all min-w-0">
                           {therapist.user.email}
                         </a>
                       </div>
                     )}
                     {therapist.website && (
-                      <div className="flex items-center gap-3" data-testid="text-website">
+                      <div className="flex items-center gap-3 min-w-0" data-testid="text-website">
                         <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
                         <a
                           href={therapist.website}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="hover:underline break-all"
+                          className="hover:underline break-all min-w-0"
                         >
                           {therapist.website.replace(/^https?:\/\//, "")}
                         </a>

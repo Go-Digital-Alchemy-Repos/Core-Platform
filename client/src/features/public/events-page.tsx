@@ -41,9 +41,9 @@ function EventCard({ event }: { event: Event }) {
       data-testid={`card-event-${event.id}`}
       className={isPast ? "opacity-60" : ""}
     >
-      <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-3">
-        <div className="space-y-1">
-          <CardTitle className="text-lg" data-testid={`text-event-title-${event.id}`}>
+      <CardHeader className="flex flex-col sm:flex-row items-start justify-between gap-2 space-y-0 pb-3">
+        <div className="space-y-1 min-w-0">
+          <CardTitle className="text-base sm:text-lg break-words" data-testid={`text-event-title-${event.id}`}>
             {event.title}
           </CardTitle>
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -215,7 +215,7 @@ function CalendarView({ events }: { events: Event[] }) {
           return (
             <div
               key={i}
-              className={`min-h-[80px] bg-card p-1.5 ${
+              className={`min-h-[60px] sm:min-h-[80px] bg-card p-1 sm:p-1.5 ${
                 !day ? "bg-muted/30" : ""
               }`}
               data-testid={day ? `calendar-day-${day}` : undefined}
@@ -263,16 +263,16 @@ export default function EventsPage() {
 
   return (
     <PageLayout>
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-2">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 sm:py-12">
+        <div className="mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-1.5 sm:space-y-2">
             <h1
-              className="font-heading text-3xl font-bold tracking-tight"
+              className="font-heading text-2xl sm:text-3xl font-bold tracking-tight"
               data-testid="text-events-heading"
             >
               Upcoming Events
             </h1>
-            <p className="text-muted-foreground" data-testid="text-events-subtitle">
+            <p className="text-sm sm:text-base text-muted-foreground" data-testid="text-events-subtitle">
               Workshops, webinars, and community gatherings for the TCK community.
             </p>
           </div>

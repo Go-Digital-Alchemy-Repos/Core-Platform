@@ -104,33 +104,33 @@ export default function HomePage() {
   return (
     <PageLayout>
       <section className="relative" data-testid="section-hero">
-        <div className="max-w-7xl mx-auto px-6 pt-16 pb-20 md:pt-24 md:pb-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-24 md:pb-28">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6" data-testid="text-hero-heading">
+            <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-5 sm:mb-6" data-testid="text-hero-heading">
               Find Your <span className="text-accent">TCK-Informed</span> Therapist
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed" data-testid="text-hero-subtitle">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed" data-testid="text-hero-subtitle">
               A global directory connecting Third Culture Kids with therapists who truly understand the complexity of a cross-cultural life.
             </p>
-            <div className="flex flex-wrap justify-center gap-4 mb-14">
+            <div className="flex flex-col xs:flex-row flex-wrap justify-center gap-3 sm:gap-4 mb-10 sm:mb-14">
               <Link href="/directory">
-                <Button size="lg" className="bg-accent text-accent-foreground border-accent-border" data-testid="button-browse-directory">
+                <Button size="lg" className="w-full xs:w-auto bg-accent text-accent-foreground border-accent-border" data-testid="button-browse-directory">
                   <Search className="h-4 w-4 mr-2" />
                   Browse Directory
                 </Button>
               </Link>
               <Link href="/auth/register">
-                <Button size="lg" variant="outline" data-testid="button-join-therapist">
+                <Button size="lg" variant="outline" className="w-full xs:w-auto" data-testid="button-join-therapist">
                   Join as Therapist
                 </Button>
               </Link>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-8 md:gap-16" data-testid="section-trust-stats">
+            <div className="flex justify-center gap-6 sm:gap-8 md:gap-16" data-testid="section-trust-stats">
               {trustStats.map((stat) => (
                 <div key={stat.label} className="text-center" data-testid={`text-stat-${stat.label.toLowerCase().replace(/\s+/g, "-")}`}>
-                  <p className="text-3xl md:text-4xl font-bold font-heading text-accent">{stat.value}</p>
-                  <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
+                  <p className="text-2xl sm:text-3xl md:text-4xl font-bold font-heading text-accent">{stat.value}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -139,8 +139,8 @@ export default function HomePage() {
       </section>
 
       <section className="border-t border-b bg-muted/30" data-testid="section-categories">
-        <div className="max-w-7xl mx-auto px-6 py-10 md:py-12">
-          <h2 className="font-heading text-xl font-semibold text-center mb-8" data-testid="text-categories-heading">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 md:py-12">
+          <h2 className="font-heading text-lg sm:text-xl font-semibold text-center mb-6 sm:mb-8" data-testid="text-categories-heading">
             Explore by Specialization
           </h2>
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -161,14 +161,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-6 py-20 md:py-24" data-testid="section-how-it-works">
-        <h2 className="font-heading text-3xl md:text-4xl font-semibold text-center mb-4" data-testid="text-how-heading">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-how-it-works">
+        <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-how-heading">
           How It Works
         </h2>
-        <p className="text-muted-foreground text-center max-w-xl mx-auto mb-14">
+        <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mx-auto mb-10 sm:mb-14">
           Getting started is simple. Find the right therapist in three easy steps.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 md:gap-12">
           {howItWorks.map((item) => (
             <div key={item.title} className="text-center" data-testid={`card-how-${item.title.toLowerCase().replace(/\s+/g, "-")}`}>
               <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 text-accent mb-5">
@@ -185,13 +185,13 @@ export default function HomePage() {
       </section>
 
       <section className="bg-muted/30" data-testid="section-featured-therapists">
-        <div className="max-w-7xl mx-auto px-6 py-20 md:py-24">
-          <div className="flex items-center justify-between gap-4 flex-wrap mb-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
+          <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap mb-8 sm:mb-12">
             <div>
-              <h2 className="font-heading text-3xl md:text-4xl font-semibold" data-testid="text-featured-heading">
+              <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold" data-testid="text-featured-heading">
                 Featured Therapists
               </h2>
-              <p className="text-muted-foreground mt-2">TCK-informed professionals from around the world</p>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">TCK-informed professionals from around the world</p>
             </div>
             <Link href="/directory">
               <Button variant="outline" data-testid="button-view-all-therapists">
@@ -205,7 +205,7 @@ export default function HomePage() {
               <LoadingSpinner />
             </div>
           ) : featuredTherapists.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {featuredTherapists.map((therapist: any) => (
                 <Link key={therapist.id} href={`/directory/${therapist.id}`}>
                   <Card className="h-full cursor-pointer hover-elevate" data-testid={`card-featured-therapist-${therapist.id}`}>
@@ -254,13 +254,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-6 py-20 md:py-24" data-testid="section-upcoming-events">
-        <div className="flex items-center justify-between gap-4 flex-wrap mb-12">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-upcoming-events">
+        <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap mb-8 sm:mb-12">
           <div>
-            <h2 className="font-heading text-3xl md:text-4xl font-semibold" data-testid="text-events-heading">
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold" data-testid="text-events-heading">
               Upcoming Events
             </h2>
-            <p className="text-muted-foreground mt-2">Workshops, webinars, and community gatherings</p>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Workshops, webinars, and community gatherings</p>
           </div>
           <Link href="/events">
             <Button variant="outline" data-testid="button-view-all-events">
@@ -274,7 +274,7 @@ export default function HomePage() {
             <LoadingSpinner />
           </div>
         ) : upcomingEvents.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             {upcomingEvents.map((event: any) => (
               <Card key={event.id} data-testid={`card-event-${event.id}`}>
                 <CardContent className="p-6">
@@ -302,14 +302,14 @@ export default function HomePage() {
       </section>
 
       <section className="bg-muted/30" data-testid="section-benefits">
-        <div className="max-w-7xl mx-auto px-6 py-20 md:py-24">
-          <h2 className="font-heading text-3xl md:text-4xl font-semibold text-center mb-4" data-testid="text-benefits-heading">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
+          <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-benefits-heading">
             Why TCK Wellness
           </h2>
-          <p className="text-muted-foreground text-center max-w-xl mx-auto mb-14">
+          <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mx-auto mb-10 sm:mb-14">
             We bridge the gap between Third Culture Kids and culturally competent mental health professionals.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-10 md:gap-12">
             {benefits.map((item) => (
               <div key={item.title} className="text-center" data-testid={`text-benefit-${item.title.toLowerCase().replace(/\s+/g, "-")}`}>
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 text-accent mb-5">
@@ -323,12 +323,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-6 py-20 md:py-24 text-center" data-testid="section-cta">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="section-cta">
         <div className="max-w-2xl mx-auto">
-          <h2 className="font-heading text-3xl md:text-4xl font-semibold mb-4" data-testid="text-cta-heading">
+          <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold mb-3 sm:mb-4" data-testid="text-cta-heading">
             Are You a TCK-Informed Therapist?
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
+          <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto mb-8 sm:mb-10 leading-relaxed">
             Join our growing directory and connect with clients who need your unique expertise. List your practice and reach the global TCK community.
           </p>
           <Link href="/auth/register">

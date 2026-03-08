@@ -38,6 +38,15 @@ function getSessionFormatLabel(mode: string | null) {
   }
 }
 
+function getSessionFormatShortLabel(mode: string | null) {
+  switch (mode) {
+    case "in_person": return "In-Person";
+    case "virtual": return "Virtual";
+    case "both": return "Both";
+    default: return "Virtual";
+  }
+}
+
 function TherapistRow({
   profile,
   user,
@@ -62,7 +71,7 @@ function TherapistRow({
   return (
     <Link href={`/directory/${profile.id}`}>
       <div
-        className={`flex items-center gap-3 px-4 py-3 border-b cursor-pointer transition-colors ${
+        className={`flex items-start gap-3 px-3 sm:px-4 py-3 border-b cursor-pointer transition-colors ${
           isHighlighted
             ? "bg-primary/5 border-l-2 border-l-primary"
             : "hover:bg-muted/50 border-l-2 border-l-transparent"
@@ -73,14 +82,14 @@ function TherapistRow({
         onBlur={() => onHover(null)}
         data-testid={`row-therapist-${profile.id}`}
       >
-        <Avatar className="h-11 w-11 flex-shrink-0">
+        <Avatar className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 mt-0.5">
           {user.profileImageUrl && <AvatarImage src={user.profileImageUrl} alt={fullName} />}
           <AvatarFallback className="text-xs">{initials}</AvatarFallback>
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-sm truncate" data-testid={`text-name-${profile.id}`}>
+          <div className="flex items-center gap-1.5">
+            <h3 className="font-semibold text-sm leading-tight truncate" data-testid={`text-name-${profile.id}`}>
               {fullName}
             </h3>
             {profile.acceptingClients && (
@@ -88,13 +97,13 @@ function TherapistRow({
             )}
           </div>
           {profile.title && (
-            <p className="text-xs text-muted-foreground truncate" data-testid={`text-title-${profile.id}`}>
+            <p className="text-xs text-muted-foreground truncate mt-0.5" data-testid={`text-title-${profile.id}`}>
               {profile.title}
             </p>
           )}
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
             {locationText ? (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground max-w-[160px] sm:max-w-none">
                 <MapPin className="h-3 w-3 flex-shrink-0" />
                 <span className="truncate" data-testid={`text-location-${profile.id}`}>{locationText}</span>
               </span>
@@ -104,27 +113,40 @@ function TherapistRow({
                 <span data-testid={`text-location-${profile.id}`}>Virtual Only</span>
               </span>
             )}
-            <span className="text-muted-foreground/40">·</span>
-            <span className="text-xs text-muted-foreground">
-              {getSessionFormatLabel(profile.practiceMode)}
+            <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              {getSessionFormatShortLabel(profile.practiceMode)}
             </span>
+          </div>
+
+          <div className="flex items-center gap-1 mt-1.5 md:hidden flex-wrap">
+            {displayedSpecs.slice(0, 2).map((spec) => (
+              <Badge key={spec} variant="secondary" className="text-[10px] px-1.5 py-0 leading-4 whitespace-nowrap">
+                {spec}
+              </Badge>
+            ))}
+            {remainingCount > 0 && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 leading-4">
+                +{remainingCount}
+              </Badge>
+            )}
           </div>
         </div>
 
-        <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0 max-w-[200px]">
+        <div className="hidden md:flex items-center gap-1.5 flex-shrink-0 max-w-[180px] mt-1">
           {displayedSpecs.map((spec) => (
-            <Badge key={spec} variant="secondary" className="text-[10px] px-1.5 py-0 whitespace-nowrap">
+            <Badge key={spec} variant="secondary" className="text-[10px] px-1.5 py-0 leading-4 whitespace-nowrap">
               {spec}
             </Badge>
           ))}
           {remainingCount > 0 && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 leading-4">
               +{remainingCount}
             </Badge>
           )}
         </div>
 
-        <ChevronRight className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
+        <ChevronRight className="h-4 w-4 text-muted-foreground/50 flex-shrink-0 mt-1 hidden sm:block" />
       </div>
     </Link>
   );
@@ -134,12 +156,12 @@ function ListSkeletons() {
   return (
     <>
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 px-4 py-3 border-b">
-          <Skeleton className="h-11 w-11 rounded-full flex-shrink-0" />
+        <div key={i} className="flex items-start gap-3 px-3 sm:px-4 py-3 border-b">
+          <Skeleton className="h-10 w-10 sm:h-11 sm:w-11 rounded-full flex-shrink-0" />
           <div className="flex-1 space-y-1.5">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-3 w-48" />
-            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-4 w-28 sm:w-32" />
+            <Skeleton className="h-3 w-36 sm:w-48" />
+            <Skeleton className="h-3 w-20 sm:w-24" />
           </div>
         </div>
       ))}
@@ -254,36 +276,36 @@ export default function DirectoryPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-[100dvh]">
       <Navbar />
 
       <div className="flex-1 flex overflow-hidden">
         <div
           className={`${
             mobileView === "list" ? "flex" : "hidden"
-          } md:flex flex-col w-full md:w-[420px] lg:w-[480px] border-r bg-background flex-shrink-0`}
+          } md:flex flex-col w-full md:w-[380px] lg:w-[440px] xl:w-[480px] border-r bg-background flex-shrink-0`}
         >
-          <div className="p-4 border-b space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-lg font-heading font-semibold" data-testid="text-directory-heading">
+          <div className="px-3 sm:px-4 py-3 border-b space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-lg font-heading font-semibold leading-tight" data-testid="text-directory-heading">
                   Find a Therapist
                 </h1>
                 {!isLoading && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1" data-testid="text-results-count">
-                    <Users className="h-3 w-3" />
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5" data-testid="text-results-count">
+                    <Users className="h-3 w-3 flex-shrink-0" />
                     {filtered.length} therapist{filtered.length !== 1 ? "s" : ""} available
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <Button
                   size="icon"
                   variant={showFilters ? "default" : "ghost"}
                   onClick={() => setShowFilters(!showFilters)}
                   data-testid="button-toggle-filters"
                   aria-label="Toggle filters"
-                  className="relative"
+                  className="relative h-9 w-9"
                 >
                   <SlidersHorizontal className="h-4 w-4" />
                   {activeFilterCount > 0 && (
@@ -292,13 +314,14 @@ export default function DirectoryPage() {
                     </span>
                   )}
                 </Button>
-                <div className="flex md:hidden items-center gap-1 ml-1">
+                <div className="flex md:hidden items-center gap-1 ml-0.5">
                   <Button
                     size="icon"
                     variant={mobileView === "list" ? "default" : "ghost"}
                     onClick={() => setMobileView("list")}
                     data-testid="button-view-list"
                     aria-label="List view"
+                    className="h-9 w-9"
                   >
                     <List className="h-4 w-4" />
                   </Button>
@@ -308,6 +331,7 @@ export default function DirectoryPage() {
                     onClick={() => setMobileView("map")}
                     data-testid="button-view-map"
                     aria-label="Map view"
+                    className="h-9 w-9"
                   >
                     <Map className="h-4 w-4" />
                   </Button>
@@ -319,7 +343,7 @@ export default function DirectoryPage() {
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search by name, specialty, language..."
+                placeholder="Search name, specialty, language..."
                 className="pl-9 h-9 text-sm"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -329,15 +353,15 @@ export default function DirectoryPage() {
             </div>
 
             {showFilters && (
-              <div className="space-y-3 pt-1" data-testid="panel-filters">
-                <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2.5 pt-0.5" data-testid="panel-filters">
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
                   <div>
                     <Label className="text-[11px] text-muted-foreground mb-1 block">Specialization</Label>
                     <Select value={specialization} onValueChange={setSpecialization}>
-                      <SelectTrigger className="h-8 text-xs" data-testid="select-specialization">
+                      <SelectTrigger className="h-9 text-xs w-full" data-testid="select-specialization">
                         <SelectValue placeholder="All Specializations" />
                       </SelectTrigger>
-                      <SelectContent className="z-[1000] max-h-[300px]">
+                      <SelectContent className="z-[1000] max-h-[280px]">
                         <SelectItem value="all">All Specializations</SelectItem>
                         {filterOptions.specializations.map((s) => (
                           <SelectItem key={s} value={s}>{s}</SelectItem>
@@ -348,10 +372,10 @@ export default function DirectoryPage() {
                   <div>
                     <Label className="text-[11px] text-muted-foreground mb-1 block">Language</Label>
                     <Select value={language} onValueChange={setLanguage}>
-                      <SelectTrigger className="h-8 text-xs" data-testid="select-language">
+                      <SelectTrigger className="h-9 text-xs w-full" data-testid="select-language">
                         <SelectValue placeholder="All Languages" />
                       </SelectTrigger>
-                      <SelectContent className="z-[1000] max-h-[300px]">
+                      <SelectContent className="z-[1000] max-h-[280px]">
                         <SelectItem value="all">All Languages</SelectItem>
                         {filterOptions.languages.map((l) => (
                           <SelectItem key={l} value={l}>{l}</SelectItem>
@@ -362,10 +386,10 @@ export default function DirectoryPage() {
                   <div>
                     <Label className="text-[11px] text-muted-foreground mb-1 block">Location</Label>
                     <Select value={country} onValueChange={setCountry}>
-                      <SelectTrigger className="h-8 text-xs" data-testid="select-country">
+                      <SelectTrigger className="h-9 text-xs w-full" data-testid="select-country">
                         <SelectValue placeholder="All Countries" />
                       </SelectTrigger>
-                      <SelectContent className="z-[1000] max-h-[300px]">
+                      <SelectContent className="z-[1000] max-h-[280px]">
                         <SelectItem value="all">All Countries</SelectItem>
                         {filterOptions.countries.map((c) => (
                           <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -376,7 +400,7 @@ export default function DirectoryPage() {
                   <div>
                     <Label className="text-[11px] text-muted-foreground mb-1 block">Session Format</Label>
                     <Select value={sessionFormat} onValueChange={setSessionFormat}>
-                      <SelectTrigger className="h-8 text-xs" data-testid="select-session-format">
+                      <SelectTrigger className="h-9 text-xs w-full" data-testid="select-session-format">
                         <SelectValue placeholder="All Formats" />
                       </SelectTrigger>
                       <SelectContent className="z-[1000]">
@@ -396,7 +420,7 @@ export default function DirectoryPage() {
                       checked={acceptingClients}
                       onCheckedChange={(checked) => setAcceptingClients(checked === true)}
                       data-testid="checkbox-accepting-clients"
-                      className="h-3.5 w-3.5"
+                      className="h-4 w-4"
                     />
                     <Label htmlFor="filter-accepting" className="text-xs cursor-pointer whitespace-nowrap">
                       Accepting clients
@@ -408,7 +432,7 @@ export default function DirectoryPage() {
                       size="sm"
                       onClick={clearAllFilters}
                       data-testid="button-clear-filters"
-                      className="text-xs text-muted-foreground"
+                      className="text-xs text-muted-foreground h-8"
                     >
                       <X className="h-3 w-3 mr-1" />
                       Clear all
@@ -421,9 +445,9 @@ export default function DirectoryPage() {
             {!showFilters && activeFilterCount > 0 && (
               <div className="flex flex-wrap gap-1.5" data-testid="active-filter-badges">
                 {specialization !== "all" && (
-                  <Badge variant="secondary" className="text-xs gap-1">
-                    {specialization}
-                    <button onClick={() => setSpecialization("all")} aria-label={`Remove ${specialization} filter`}>
+                  <Badge variant="secondary" className="text-xs gap-1 max-w-[140px]">
+                    <span className="truncate">{specialization}</span>
+                    <button onClick={() => setSpecialization("all")} aria-label={`Remove ${specialization} filter`} className="flex-shrink-0 ml-0.5">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -431,15 +455,15 @@ export default function DirectoryPage() {
                 {language !== "all" && (
                   <Badge variant="secondary" className="text-xs gap-1">
                     {language}
-                    <button onClick={() => setLanguage("all")} aria-label={`Remove ${language} filter`}>
+                    <button onClick={() => setLanguage("all")} aria-label={`Remove ${language} filter`} className="flex-shrink-0 ml-0.5">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
                 )}
                 {country !== "all" && (
-                  <Badge variant="secondary" className="text-xs gap-1">
-                    {country}
-                    <button onClick={() => setCountry("all")} aria-label={`Remove ${country} filter`}>
+                  <Badge variant="secondary" className="text-xs gap-1 max-w-[140px]">
+                    <span className="truncate">{country}</span>
+                    <button onClick={() => setCountry("all")} aria-label={`Remove ${country} filter`} className="flex-shrink-0 ml-0.5">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -447,7 +471,7 @@ export default function DirectoryPage() {
                 {sessionFormat !== "all" && (
                   <Badge variant="secondary" className="text-xs gap-1">
                     {getSessionFormatLabel(sessionFormat)}
-                    <button onClick={() => setSessionFormat("all")} aria-label="Remove session format filter">
+                    <button onClick={() => setSessionFormat("all")} aria-label="Remove session format filter" className="flex-shrink-0 ml-0.5">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -455,7 +479,7 @@ export default function DirectoryPage() {
                 {acceptingClients && (
                   <Badge variant="secondary" className="text-xs gap-1">
                     Accepting
-                    <button onClick={() => setAcceptingClients(false)} aria-label="Remove accepting clients filter">
+                    <button onClick={() => setAcceptingClients(false)} aria-label="Remove accepting clients filter" className="flex-shrink-0 ml-0.5">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -464,7 +488,7 @@ export default function DirectoryPage() {
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto" data-testid="list-therapists">
+          <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }} data-testid="list-therapists">
             {isLoading ? (
               <ListSkeletons />
             ) : filtered.length === 0 ? (
@@ -513,6 +537,7 @@ export default function DirectoryPage() {
               variant="ghost"
               onClick={() => setMobileView("list")}
               data-testid="button-back-to-list"
+              className="h-9"
             >
               <List className="h-4 w-4 mr-1" />
               List

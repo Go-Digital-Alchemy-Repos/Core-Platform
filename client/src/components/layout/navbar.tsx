@@ -30,9 +30,9 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-[999] bg-background/95 backdrop-blur-sm border-b" data-testid="navbar">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-6 px-6 py-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 py-3 sm:py-4">
         <Link href="/" data-testid="link-brand">
-          <img src={logoImg} alt="TCK Wellness" className="h-10 w-auto dark:brightness-[1.8] dark:contrast-[0.9]" />
+          <img src={logoImg} alt="TCK Wellness" className="h-8 sm:h-10 w-auto dark:brightness-[1.8] dark:contrast-[0.9]" />
         </Link>
 
         <div className="hidden md:flex items-center gap-2 flex-wrap">

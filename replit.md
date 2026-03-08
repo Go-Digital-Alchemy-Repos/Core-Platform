@@ -48,7 +48,16 @@ client/src/lib/       — Utilities (queryClient, constants)
 - Uses `SESSION_SECRET` env var for signing
 - Three roles: admin, therapist, client
 
-### Brand Colors (HSL)
+### Responsive Design
+- Custom breakpoints: xs=480px, sm=640px, md=768px, lg=1024px, xl=1280px
+- Directory page uses `h-[100dvh]` for proper mobile viewport height
+- Global CSS: overflow-x hidden on body, touch-action manipulation, text-size-adjust
+- Filter grid: 1 column on phones, 2 columns on xs+
+- TherapistRow: inline badges on mobile, side column on md+
+- Profile header: centered stack on mobile, flex-row on sm+
+- Hero CTAs: full-width stacked on phones, row on xs+
+
+## Brand Colors (HSL)
 - Navy (primary): 222 38% 19%
 - Sage (secondary): 153 20% 71%
 - Copper: 22 48% 44%
