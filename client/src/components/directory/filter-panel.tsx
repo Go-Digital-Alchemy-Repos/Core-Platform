@@ -53,7 +53,7 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
           <SelectTrigger id="filter-practice-mode" data-testid="select-practice-mode">
             <SelectValue placeholder="All Modes" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[1000]">
             <SelectItem value="all">All Modes</SelectItem>
             <SelectItem value="in_person">In-Person</SelectItem>
             <SelectItem value="virtual">Virtual</SelectItem>
