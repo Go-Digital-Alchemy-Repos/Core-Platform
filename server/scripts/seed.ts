@@ -3,13 +3,60 @@ import { users, therapistProfiles, membershipTiers, events, docs } from "@shared
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
+const therapistData = [
+  { firstName: "Sarah", lastName: "Chen", email: "therapist@test.com", avatar: "/avatars/avatar-01.png", title: "Licensed Clinical Psychologist", bio: "With over 10 years of experience working with Third Culture Kids and expats, I specialize in helping individuals navigate the complexities of cross-cultural identity. My practice integrates CBT, EMDR, and mindfulness-based approaches.", specializations: ["Third Culture Kids (TCK)", "Cross-Cultural Transitions", "Anxiety", "Identity & Belonging", "EMDR"], languages: ["English", "Mandarin"], credentials: "Ph.D. Clinical Psychology, Licensed in California", licenseNumber: "PSY-12345", practiceMode: "both", city: "San Francisco", state: "CA", country: "United States", zipCode: "94102", lat: "37.7749", lng: "-122.4194", address: "123 Wellness Center Drive", phone: "+1 (415) 555-0123", website: "https://drsarahchen.com" },
+  { firstName: "James", lastName: "Okonkwo", email: "james@tckwellness.com", avatar: "/avatars/avatar-02.png", title: "Licensed Marriage and Family Therapist", bio: "Born and raised across three continents, I bring a deep personal understanding of the TCK experience to my practice. I work with individuals, couples, and families dealing with transition, grief, and cultural adjustment.", specializations: ["Third Culture Kids (TCK)", "Expatriate Adjustment", "Grief & Loss", "Family Therapy", "Couples Counseling"], languages: ["English", "French", "Swahili"], credentials: "M.A. Marriage and Family Therapy, LMFT", licenseNumber: "LMFT-67890", practiceMode: "virtual", city: null, state: null, country: null, zipCode: null, lat: null, lng: null, address: null, phone: null, website: null },
+  { firstName: "Maria", lastName: "Gonzalez", email: "maria@tckwellness.com", avatar: "/avatars/avatar-03.png", title: "Licensed Professional Counselor", bio: "Specializing in trauma-informed care for globally mobile individuals. My approach combines narrative therapy with somatic experiencing to help clients process their unique life stories.", specializations: ["Trauma & PTSD", "Cross-Cultural Transitions", "Anxiety", "Depression", "Mindfulness & Meditation"], languages: ["English", "Spanish", "Portuguese"], credentials: "M.S. Clinical Mental Health Counseling, LPC", licenseNumber: "LPC-54321", practiceMode: "in_person", city: "New York", state: "NY", country: "United States", zipCode: "10001", lat: "40.7128", lng: "-74.0060", address: "456 Global Therapy Suite", phone: "+1 (212) 555-0456", website: "https://mariagonzalezcounseling.com" },
+  { firstName: "David", lastName: "Mueller", email: "david.mueller@tckwellness.com", avatar: "/avatars/avatar-04.png", title: "Licensed Clinical Social Worker", bio: "Growing up as a military brat across Europe gave me firsthand understanding of the TCK experience. I specialize in helping adults who grew up in globally mobile families find their sense of belonging.", specializations: ["Military Families", "Identity & Belonging", "Adult TCKs", "Depression", "Life Transitions"], languages: ["English", "German"], credentials: "MSW, LCSW, Certified in Military Family Therapy", licenseNumber: "LCSW-11234", practiceMode: "both", city: "Washington", state: "DC", country: "United States", zipCode: "20001", lat: "38.9072", lng: "-77.0369", address: "789 Capitol Counseling Center", phone: "+1 (202) 555-0789", website: "https://davidmuellertherapy.com" },
+  { firstName: "Fatima", lastName: "Al-Rashid", email: "fatima@tckwellness.com", avatar: "/avatars/avatar-05.png", title: "Clinical Psychologist", bio: "I provide culturally sensitive therapy for individuals navigating life between Eastern and Western cultures. My practice honors the richness of multicultural identities while addressing the unique stressors that come with them.", specializations: ["Cultural Identity", "Women's Issues", "Anxiety", "Intergenerational Trauma", "Cross-Cultural Transitions"], languages: ["English", "Arabic", "French"], credentials: "Psy.D. Clinical Psychology", licenseNumber: "PSY-22345", practiceMode: "virtual", city: null, state: null, country: null, zipCode: null, lat: null, lng: null, address: null, phone: null, website: "https://fatimaalrashid.com" },
+  { firstName: "Emmanuel", lastName: "Abara", email: "emmanuel@tckwellness.com", avatar: "/avatars/avatar-06.png", title: "Licensed Professional Counselor", bio: "Having lived in five African countries before age 18, I understand the beauty and challenges of a nomadic childhood. I help TCKs and global nomads develop resilience and a secure sense of self.", specializations: ["Third Culture Kids (TCK)", "Resilience Building", "Adolescent Therapy", "Cross-Cultural Transitions", "Self-Esteem"], languages: ["English", "Yoruba", "French"], credentials: "M.A. Counseling Psychology, LPC", licenseNumber: "LPC-33456", practiceMode: "both", city: "Atlanta", state: "GA", country: "United States", zipCode: "30301", lat: "33.7490", lng: "-84.3880", address: "321 Peachtree Wellness", phone: "+1 (404) 555-0321", website: null },
+  { firstName: "Yuki", lastName: "Tanaka", email: "yuki@tckwellness.com", avatar: "/avatars/avatar-07.png", title: "Licensed Psychologist", bio: "As a returnee who grew up in the US and returned to Japan, I specialize in re-entry challenges and the complexities of straddling two very different cultural worlds.", specializations: ["Re-entry Adjustment", "Cross-Cultural Identity", "Anxiety", "Depression", "Returnee Issues"], languages: ["English", "Japanese"], credentials: "Ph.D. Clinical Psychology, Bilingual Certified", licenseNumber: "PSY-44567", practiceMode: "virtual", city: null, state: null, country: null, zipCode: null, lat: null, lng: null, address: null, phone: null, website: "https://yukitanakatherapy.com" },
+  { firstName: "Omar", lastName: "Hassan", email: "omar@tckwellness.com", avatar: "/avatars/avatar-08.png", title: "Licensed Clinical Psychologist", bio: "I work with expat families and TCKs navigating the challenges of international relocation. My therapy integrates cognitive-behavioral and attachment-based approaches.", specializations: ["Expatriate Adjustment", "Attachment Theory", "Child Therapy", "Family Therapy", "Relocation Stress"], languages: ["English", "Arabic", "Turkish"], credentials: "Ph.D. Clinical Psychology", licenseNumber: "PSY-55678", practiceMode: "both", city: "Dubai", state: null, country: "UAE", zipCode: null, lat: "25.2048", lng: "55.2708", address: "Dubai Healthcare City, Building 47", phone: "+971 4 555 0147", website: "https://omarhassan-therapy.com" },
+  { firstName: "Claire", lastName: "O'Brien", email: "claire@tckwellness.com", avatar: "/avatars/avatar-09.png", title: "Registered Psychotherapist", bio: "Having grown up as a diplomat's child across Southeast Asia, I bring lived experience to my work with TCKs. I specialize in grief of place, unresolved loss, and building a sense of home within oneself.", specializations: ["Grief of Place", "Unresolved Loss", "Third Culture Kids (TCK)", "Mindfulness & Meditation", "Self-Compassion"], languages: ["English", "French"], credentials: "M.A. Psychotherapy, Registered Psychotherapist", licenseNumber: "RP-66789", practiceMode: "virtual", city: null, state: null, country: null, zipCode: null, lat: null, lng: null, address: null, phone: null, website: "https://claireobrientherapy.com" },
+  { firstName: "Min-Jun", lastName: "Park", email: "minjun@tckwellness.com", avatar: "/avatars/avatar-10.png", title: "Licensed Mental Health Counselor", bio: "I focus on helping young adult TCKs transition into independent living while honoring their multicultural backgrounds. My approach is integrative, drawing from ACT and narrative therapy.", specializations: ["Young Adult TCKs", "Life Transitions", "Acceptance & Commitment Therapy", "Career Counseling", "Identity & Belonging"], languages: ["English", "Korean", "Japanese"], credentials: "M.S. Mental Health Counseling, LMHC", licenseNumber: "LMHC-77890", practiceMode: "both", city: "Seoul", state: null, country: "South Korea", zipCode: "04524", lat: "37.5665", lng: "126.9780", address: "Gangnam Counseling Center, 5F", phone: "+82 2 555 0505", website: null },
+  { firstName: "Adaeze", lastName: "Nwosu", email: "adaeze@tckwellness.com", avatar: "/avatars/avatar-11.png", title: "Licensed Clinical Psychologist", bio: "I provide therapy for TCKs and cross-cultural families navigating the intersection of race, culture, and identity. My work is informed by both Western and African psychological traditions.", specializations: ["Racial Identity", "Cross-Cultural Families", "Third Culture Kids (TCK)", "Women's Issues", "Multicultural Counseling"], languages: ["English", "Igbo", "French"], credentials: "Ph.D. Counseling Psychology", licenseNumber: "PSY-88901", practiceMode: "both", city: "London", state: null, country: "United Kingdom", zipCode: "WC1A 1AH", lat: "51.5074", lng: "-0.1278", address: "42 Bloomsbury Square", phone: "+44 20 7555 0042", website: "https://adaezenwosu.co.uk" },
+  { firstName: "Lucas", lastName: "Moreau", email: "lucas@tckwellness.com", avatar: "/avatars/avatar-12.png", title: "Clinical Psychologist", bio: "As a biracial TCK who grew up between France and Canada, I understand the nuances of navigating multiple cultural identities. I specialize in helping clients integrate their diverse experiences.", specializations: ["Biracial/Bicultural Identity", "Anxiety", "Depression", "Cross-Cultural Transitions", "Men's Issues"], languages: ["English", "French"], credentials: "Psy.D. Clinical Psychology", licenseNumber: "PSY-99012", practiceMode: "virtual", city: null, state: null, country: null, zipCode: null, lat: null, lng: null, address: null, phone: null, website: "https://lucasmoreau-psy.com" },
+  { firstName: "Ana", lastName: "Silva", email: "ana.silva@tckwellness.com", avatar: "/avatars/avatar-13.png", title: "Licensed Marriage and Family Therapist", bio: "I work with international families navigating the challenges of global mobility. My expertise includes supporting children and teens through international school transitions.", specializations: ["International School Transitions", "Family Therapy", "Child Therapy", "Adolescent Therapy", "Expatriate Adjustment"], languages: ["English", "Portuguese", "Spanish"], credentials: "M.A. Marriage and Family Therapy, LMFT", licenseNumber: "LMFT-10123", practiceMode: "both", city: "São Paulo", state: null, country: "Brazil", zipCode: "01310-100", lat: "-23.5505", lng: "-46.6333", address: "Avenida Paulista, 1578", phone: "+55 11 5555-0178", website: null },
+  { firstName: "Raj", lastName: "Sharma", email: "raj@tckwellness.com", avatar: "/avatars/avatar-14.png", title: "Senior Clinical Psychologist", bio: "With 20 years of experience in international mental health, I specialize in the long-term effects of a globally mobile childhood on adult relationships, career choices, and sense of belonging.", specializations: ["Adult TCKs", "Relationship Issues", "Career Identity", "Expatriate Adjustment", "Long-term Adjustment"], languages: ["English", "Hindi", "Urdu"], credentials: "Ph.D. Clinical Psychology, Fellow of the APA", licenseNumber: "PSY-11234", practiceMode: "both", city: "Singapore", state: null, country: "Singapore", zipCode: "238839", lat: "1.3521", lng: "103.8198", address: "1 Orchard Boulevard, Suite 12-05", phone: "+65 6555 0112", website: "https://drsharma-intl.com" },
+  { firstName: "Isabella", lastName: "Reyes", email: "isabella@tckwellness.com", avatar: "/avatars/avatar-15.png", title: "Licensed Professional Counselor", bio: "I create a warm, culturally affirming space for TCKs and global nomads. My practice focuses on helping clients develop a portable sense of identity that transcends geographic boundaries.", specializations: ["Identity Development", "Grief & Loss", "Self-Compassion", "Third Culture Kids (TCK)", "Mindfulness & Meditation"], languages: ["English", "Filipino", "Spanish"], credentials: "M.A. Clinical Psychology, LPC", licenseNumber: "LPC-12345", practiceMode: "virtual", city: null, state: null, country: null, zipCode: null, lat: null, lng: null, address: null, phone: null, website: "https://isabellareyes-counseling.com" },
+  { firstName: "Erik", lastName: "Lindqvist", email: "erik@tckwellness.com", avatar: "/avatars/avatar-16.png", title: "Chartered Psychologist", bio: "I specialize in supporting Nordic expatriate families and their children. My approach combines evidence-based methods with an understanding of the unique Scandinavian perspective on global mobility.", specializations: ["Nordic Expatriates", "Child Psychology", "Family Systems", "School-based Interventions", "Resilience Building"], languages: ["English", "Swedish", "Norwegian", "Danish"], credentials: "Cand.Psychol., Chartered Psychologist", licenseNumber: "CP-23456", practiceMode: "both", city: "Stockholm", state: null, country: "Sweden", zipCode: "111 57", lat: "59.3293", lng: "18.0686", address: "Kungsgatan 44", phone: "+46 8 555 0044", website: null },
+  { firstName: "Makeda", lastName: "Tadesse", email: "makeda@tckwellness.com", avatar: "/avatars/avatar-17.png", title: "Licensed Clinical Social Worker", bio: "As an Ethiopian-American who grew up in four countries, I offer a unique perspective on the African diaspora TCK experience. I help clients honor their roots while embracing their global identities.", specializations: ["African Diaspora", "Cultural Grief", "Third Culture Kids (TCK)", "Women's Empowerment", "Intergenerational Trauma"], languages: ["English", "Amharic", "French"], credentials: "MSW, LCSW", licenseNumber: "LCSW-34567", practiceMode: "both", city: "Chicago", state: "IL", country: "United States", zipCode: "60601", lat: "41.8781", lng: "-87.6298", address: "233 S Wacker Drive, Suite 8400", phone: "+1 (312) 555-0233", website: "https://makedatadesse.com" },
+  { firstName: "Wei", lastName: "Zhang", email: "wei@tckwellness.com", avatar: "/avatars/avatar-18.png", title: "Senior Psychologist", bio: "With extensive experience in cross-cultural psychology, I help Chinese diaspora families and TCKs navigate the complexities of maintaining cultural heritage while adapting to new environments.", specializations: ["Chinese Diaspora", "Cross-Cultural Parenting", "Academic Pressure", "Identity & Belonging", "Family Therapy"], languages: ["English", "Mandarin", "Cantonese"], credentials: "Ph.D. Cross-Cultural Psychology", licenseNumber: "PSY-45678", practiceMode: "both", city: "Hong Kong", state: null, country: "Hong Kong", zipCode: null, lat: "22.3193", lng: "114.1694", address: "Central Plaza, 18 Harbour Road", phone: "+852 2555 0018", website: "https://drweizhang.hk" },
+  { firstName: "Nazanin", lastName: "Tehrani", email: "nazanin@tckwellness.com", avatar: "/avatars/avatar-19.png", title: "Licensed Psychologist", bio: "I specialize in supporting individuals from Middle Eastern and Central Asian backgrounds navigating Western cultures. My therapy embraces the complexity of living between collectivist and individualist worldviews.", specializations: ["Middle Eastern Diaspora", "Cultural Adjustment", "Anxiety", "Depression", "Bicultural Identity"], languages: ["English", "Farsi", "French"], credentials: "Psy.D. Clinical Psychology", licenseNumber: "PSY-56789", practiceMode: "virtual", city: null, state: null, country: null, zipCode: null, lat: null, lng: null, address: null, phone: null, website: "https://nazanintehrani.com" },
+  { firstName: "Jack", lastName: "Williams", email: "jack@tckwellness.com", avatar: "/avatars/avatar-20.png", title: "Registered Psychologist", bio: "I work with TCKs and global nomads in the Asia-Pacific region. My practice integrates Indigenous wisdom traditions with contemporary evidence-based psychotherapy.", specializations: ["Indigenous Perspectives", "Nature-based Therapy", "Third Culture Kids (TCK)", "Trauma & PTSD", "Existential Therapy"], languages: ["English"], credentials: "M.Psych. Clinical, Registered Psychologist", licenseNumber: "RP-67890", practiceMode: "both", city: "Sydney", state: "NSW", country: "Australia", zipCode: "2000", lat: "-33.8688", lng: "151.2093", address: "100 Market Street, Level 25", phone: "+61 2 5555 0100", website: null },
+  { firstName: "Amara", lastName: "Joseph", email: "amara@tckwellness.com", avatar: "/avatars/avatar-21.png", title: "Licensed Mental Health Counselor", bio: "As a Caribbean TCK who grew up across the islands and the US, I bring warmth and cultural awareness to my practice. I specialize in helping clients navigate code-switching and cultural belonging.", specializations: ["Caribbean Identity", "Code-Switching", "Self-Esteem", "Third Culture Kids (TCK)", "Young Adults"], languages: ["English", "Haitian Creole", "French"], credentials: "M.S. Mental Health Counseling, LMHC", licenseNumber: "LMHC-78901", practiceMode: "both", city: "Miami", state: "FL", country: "United States", zipCode: "33131", lat: "25.7617", lng: "-80.1918", address: "801 Brickell Avenue, Suite 900", phone: "+1 (305) 555-0801", website: "https://amarajosephcounseling.com" },
+  { firstName: "Kemal", lastName: "Yilmaz", email: "kemal@tckwellness.com", avatar: "/avatars/avatar-22.png", title: "Clinical Psychologist", bio: "I provide bilingual therapy for Turkish expats and TCKs. My approach is rooted in acceptance and commitment therapy, helping clients build psychological flexibility across cultural contexts.", specializations: ["Turkish Expatriates", "Acceptance & Commitment Therapy", "Anxiety", "Cross-Cultural Transitions", "Men's Issues"], languages: ["English", "Turkish", "German"], credentials: "Ph.D. Clinical Psychology", licenseNumber: "PSY-89012", practiceMode: "both", city: "Berlin", state: null, country: "Germany", zipCode: "10117", lat: "52.5200", lng: "13.4050", address: "Friedrichstraße 123", phone: "+49 30 5555 0123", website: null },
+  { firstName: "Nattaya", lastName: "Phan", email: "nattaya@tckwellness.com", avatar: "/avatars/avatar-23.png", title: "Licensed Counselor", bio: "I provide culturally sensitive therapy for Southeast Asian TCKs and expatriates. My practice emphasizes the connection between cultural identity and emotional wellbeing.", specializations: ["Southeast Asian Identity", "Expatriate Adjustment", "Self-Compassion", "Anxiety", "Mindfulness & Meditation"], languages: ["English", "Thai", "Lao"], credentials: "M.A. Counseling, Licensed Counselor", licenseNumber: "LC-90123", practiceMode: "both", city: "Bangkok", state: null, country: "Thailand", zipCode: "10330", lat: "13.7563", lng: "100.5018", address: "Siam Paragon, Tower B, 15F", phone: "+66 2 555 0015", website: "https://nattayaphan.com" },
+  { firstName: "Friedrich", lastName: "Weber", email: "friedrich@tckwellness.com", avatar: "/avatars/avatar-24.png", title: "Diplom-Psychologe", bio: "I specialize in supporting German-speaking TCKs and expat families across Europe. My integrative approach helps clients find coherence in their multicultural life narratives.", specializations: ["German Expatriates", "Narrative Therapy", "Life Transitions", "Depression", "Couples Counseling"], languages: ["English", "German", "Dutch"], credentials: "Diplom-Psychologe, Psychotherapist", licenseNumber: "DP-01234", practiceMode: "virtual", city: null, state: null, country: null, zipCode: null, lat: null, lng: null, address: null, phone: null, website: "https://friedrichweber-psychologie.de" },
+  { firstName: "Abena", lastName: "Mensah", email: "abena@tckwellness.com", avatar: "/avatars/avatar-25.png", title: "Licensed Clinical Psychologist", bio: "I help West African TCKs and expats process the unique challenges of growing up between traditional and modern cultural contexts. My practice centers cultural strengths and communal healing.", specializations: ["West African Diaspora", "Community Psychology", "Third Culture Kids (TCK)", "Grief & Loss", "Cultural Strengths"], languages: ["English", "Twi", "French"], credentials: "Ph.D. Clinical Psychology", licenseNumber: "PSY-12345-GH", practiceMode: "both", city: "Accra", state: null, country: "Ghana", zipCode: null, lat: "5.6037", lng: "-0.1870", address: "Airport Residential Area, Plot 15", phone: "+233 30 555 0015", website: null },
+  { firstName: "Carlos", lastName: "Vega", email: "carlos@tckwellness.com", avatar: "/avatars/avatar-26.png", title: "Licensed Professional Counselor", bio: "As a Mexican-American who grew up in international schools, I understand the Latino TCK experience. I help clients embrace their hybrid identities and find strength in cultural diversity.", specializations: ["Latino/Hispanic Identity", "Bicultural Adjustment", "Adolescent Therapy", "Third Culture Kids (TCK)", "School Transitions"], languages: ["English", "Spanish"], credentials: "M.A. Counseling, LPC", licenseNumber: "LPC-23456", practiceMode: "both", city: "Houston", state: "TX", country: "United States", zipCode: "77002", lat: "29.7604", lng: "-95.3698", address: "1001 Main Street, Suite 400", phone: "+1 (713) 555-1001", website: "https://carlosvegacounseling.com" },
+  { firstName: "Linh", lastName: "Nguyen", email: "linh@tckwellness.com", avatar: "/avatars/avatar-27.png", title: "Licensed Clinical Social Worker", bio: "I work with Vietnamese diaspora families and TCKs navigating the intersection of traditional values and global identities. My trauma-informed approach honors each client's unique cultural journey.", specializations: ["Vietnamese Diaspora", "Trauma-Informed Care", "Family Therapy", "Immigration Stress", "Cultural Grief"], languages: ["English", "Vietnamese", "French"], credentials: "MSW, LCSW", licenseNumber: "LCSW-34567-CA", practiceMode: "both", city: "Los Angeles", state: "CA", country: "United States", zipCode: "90012", lat: "34.0522", lng: "-118.2437", address: "350 S Grand Avenue, Suite 2100", phone: "+1 (213) 555-0350", website: null },
+  { firstName: "Arjun", lastName: "Patel", email: "arjun@tckwellness.com", avatar: "/avatars/avatar-28.png", title: "Chartered Clinical Psychologist", bio: "I specialize in supporting British-Asian TCKs and expats. My practice integrates mindfulness-based cognitive therapy with culturally adapted interventions for the South Asian diaspora.", specializations: ["South Asian Diaspora", "MBCT", "Anxiety", "Depression", "Cross-Cultural Transitions"], languages: ["English", "Hindi", "Gujarati"], credentials: "DClinPsy, Chartered Clinical Psychologist", licenseNumber: "HCPC-45678", practiceMode: "both", city: "London", state: null, country: "United Kingdom", zipCode: "W1G 9PF", lat: "51.5155", lng: "-0.1439", address: "10 Harley Street", phone: "+44 20 7555 0010", website: "https://arjunpatel-psychology.co.uk" },
+  { firstName: "Grace", lastName: "Wanjiku", email: "grace@tckwellness.com", avatar: "/avatars/avatar-29.png", title: "Counseling Psychologist", bio: "Having grown up across East Africa, I bring deep understanding to the challenges faced by African TCKs. I help clients process transitions, build resilience, and celebrate their multicultural identities.", specializations: ["East African TCKs", "Resilience Building", "Women's Issues", "Third Culture Kids (TCK)", "Life Transitions"], languages: ["English", "Swahili", "Kikuyu"], credentials: "M.A. Counseling Psychology", licenseNumber: "CP-56789-KE", practiceMode: "both", city: "Nairobi", state: null, country: "Kenya", zipCode: "00100", lat: "-1.2921", lng: "36.8219", address: "Westlands, Waiyaki Way", phone: "+254 20 555 0020", website: "https://gracewanjiku.co.ke" },
+  { firstName: "Pierre", lastName: "Dubois", email: "pierre@tckwellness.com", avatar: "/avatars/avatar-30.png", title: "Psychiatrist & Psychotherapist", bio: "With 25 years of experience in international mental health, I provide comprehensive psychiatric and therapeutic care for TCKs and globally mobile professionals dealing with complex mental health needs.", specializations: ["Complex Mental Health", "Medication Management", "Executive Coaching", "Burnout", "Cross-Cultural Psychiatry"], languages: ["English", "French", "Italian"], credentials: "M.D. Psychiatry, Psychotherapy Certification", licenseNumber: "MD-67890", practiceMode: "both", city: "Geneva", state: null, country: "Switzerland", zipCode: "1202", lat: "46.2044", lng: "6.1432", address: "Rue du Mont-Blanc 18", phone: "+41 22 555 0018", website: "https://drdubois-geneve.ch" },
+  { firstName: "Valentina", lastName: "Torres", email: "valentina@tckwellness.com", avatar: "/avatars/avatar-31.png", title: "Licensed Psychologist", bio: "I specialize in helping Latin American TCKs and expat families navigate the tension between collectivist cultural values and individualist host cultures. My bilingual practice bridges both worlds.", specializations: ["Latin American Identity", "Bicultural Families", "Anxiety", "Self-Esteem", "Cross-Cultural Transitions"], languages: ["English", "Spanish", "Portuguese"], credentials: "Psy.D. Clinical Psychology", licenseNumber: "PSY-78901", practiceMode: "both", city: "Bogotá", state: null, country: "Colombia", zipCode: "110221", lat: "4.7110", lng: "-74.0721", address: "Calle 90 #11-13, Oficina 604", phone: "+57 1 555 0090", website: null },
+  { firstName: "Tane", lastName: "Aroha", email: "tane@tckwellness.com", avatar: "/avatars/avatar-32.png", title: "Registered Psychologist", bio: "I integrate Pasifika wellness models with contemporary psychology to support TCKs from the Pacific Islands region. My holistic approach honors the interconnectedness of mind, body, and community.", specializations: ["Pacific Islander Identity", "Holistic Wellness", "Third Culture Kids (TCK)", "Community Healing", "Men's Issues"], languages: ["English", "Māori", "Samoan"], credentials: "M.A. Clinical Psychology, Registered Psychologist", licenseNumber: "RP-89012-NZ", practiceMode: "both", city: "Auckland", state: null, country: "New Zealand", zipCode: "1010", lat: "-36.8485", lng: "174.7633", address: "23 Albert Street, Level 3", phone: "+64 9 555 0023", website: null },
+  { firstName: "Mei-Ling", lastName: "Teo", email: "meiling@tckwellness.com", avatar: "/avatars/avatar-33.png", title: "Senior Clinical Psychologist", bio: "I specialize in Singaporean and Malaysian TCK experiences. Having attended international schools across Asia myself, I understand the unique pressures of academic excellence combined with cultural identity navigation.", specializations: ["Asian TCKs", "Academic Pressure", "Perfectionism", "Anxiety", "Identity & Belonging"], languages: ["English", "Mandarin", "Malay"], credentials: "Ph.D. Clinical Psychology", licenseNumber: "PSY-90123-SG", practiceMode: "both", city: "Singapore", state: null, country: "Singapore", zipCode: "048623", lat: "1.2789", lng: "103.8536", address: "6 Raffles Quay, #15-01", phone: "+65 6555 0006", website: "https://meilingteo.sg" },
+  { firstName: "Sipho", lastName: "Ndlovu", email: "sipho@tckwellness.com", avatar: "/avatars/avatar-34.png", title: "Clinical Psychologist", bio: "I support Southern African TCKs and expats processing the complexities of post-colonial identity, racial dynamics, and cultural belonging across borders.", specializations: ["Southern African Identity", "Post-Colonial Psychology", "Racial Identity", "Third Culture Kids (TCK)", "Group Therapy"], languages: ["English", "Zulu", "Afrikaans"], credentials: "M.A. Clinical Psychology, HPCSA Registered", licenseNumber: "CP-01234-ZA", practiceMode: "both", city: "Johannesburg", state: null, country: "South Africa", zipCode: "2196", lat: "-26.2041", lng: "28.0473", address: "Sandton City Office Tower, 5th Floor", phone: "+27 11 555 0050", website: null },
+  { firstName: "Layla", lastName: "Khoury", email: "layla@tckwellness.com", avatar: "/avatars/avatar-35.png", title: "Licensed Psychotherapist", bio: "I work with Lebanese and Middle Eastern TCKs navigating the aftermath of displacement, cultural loss, and rebuilding identity across borders. My trauma-informed practice provides a safe space for healing.", specializations: ["Displacement & Refugees", "Cultural Loss", "Trauma & PTSD", "Third Culture Kids (TCK)", "EMDR"], languages: ["English", "Arabic", "French"], credentials: "M.A. Clinical Psychology, Licensed Psychotherapist", licenseNumber: "LP-12345-LB", practiceMode: "virtual", city: null, state: null, country: null, zipCode: null, lat: null, lng: null, address: null, phone: null, website: "https://laylakhoury-therapy.com" },
+  { firstName: "Joost", lastName: "van den Berg", email: "joost@tckwellness.com", avatar: "/avatars/avatar-36.png", title: "Psychologist NIP", bio: "I specialize in supporting Dutch expat families and their TCK children. My practice focuses on smooth cultural transitions and maintaining family cohesion during international moves.", specializations: ["Dutch Expatriates", "Family Therapy", "Child Psychology", "Cultural Transitions", "Resilience Building"], languages: ["English", "Dutch", "German", "French"], credentials: "M.Sc. Clinical Psychology, NIP Registered", licenseNumber: "NIP-23456", practiceMode: "both", city: "Amsterdam", state: null, country: "Netherlands", zipCode: "1017 AB", lat: "52.3676", lng: "4.9041", address: "Herengracht 500", phone: "+31 20 555 0500", website: "https://joostvandenberg.nl" },
+  { firstName: "Claudine", lastName: "Uwimana", email: "claudine@tckwellness.com", avatar: "/avatars/avatar-37.png", title: "Licensed Clinical Psychologist", bio: "I bring a unique perspective as a Rwandan TCK who grew up in exile. I specialize in post-conflict identity, intergenerational trauma, and the resilience of displaced communities.", specializations: ["Post-Conflict Identity", "Intergenerational Trauma", "Displacement", "Third Culture Kids (TCK)", "Community Resilience"], languages: ["English", "Kinyarwanda", "French", "Swahili"], credentials: "Ph.D. Clinical Psychology", licenseNumber: "PSY-34567-RW", practiceMode: "virtual", city: null, state: null, country: null, zipCode: null, lat: null, lng: null, address: null, phone: null, website: "https://claudineuwimana.com" },
+  { firstName: "Imran", lastName: "Khan", email: "imran@tckwellness.com", avatar: "/avatars/avatar-38.png", title: "Consultant Psychologist", bio: "I work with Pakistani and South Asian TCKs navigating the complexities of honor-based cultural expectations alongside Western ideals of independence and self-expression.", specializations: ["South Asian TCKs", "Cultural Expectations", "Family Dynamics", "Anxiety", "Identity Conflict"], languages: ["English", "Urdu", "Punjabi", "Arabic"], credentials: "Ph.D. Counseling Psychology, BPS Chartered", licenseNumber: "BPS-45678", practiceMode: "both", city: "Manchester", state: null, country: "United Kingdom", zipCode: "M2 5DB", lat: "53.4808", lng: "-2.2426", address: "1 St Peter's Square", phone: "+44 161 555 0001", website: null },
+  { firstName: "Siti", lastName: "Rahmawati", email: "siti@tckwellness.com", avatar: "/avatars/avatar-39.png", title: "Licensed Clinical Psychologist", bio: "I provide culturally sensitive therapy for Indonesian and Southeast Asian TCKs. My practice honors Islamic values while integrating evidence-based therapeutic approaches.", specializations: ["Indonesian Diaspora", "Faith-Integrated Therapy", "Cultural Identity", "Anxiety", "Women's Issues"], languages: ["English", "Indonesian", "Malay", "Arabic"], credentials: "M.Psi. Clinical Psychology", licenseNumber: "STR-56789", practiceMode: "both", city: "Jakarta", state: null, country: "Indonesia", zipCode: "12190", lat: "-6.2088", lng: "106.8456", address: "Jl. Jend. Sudirman Kav. 52-53", phone: "+62 21 555 0052", website: "https://sitirahmawati.co.id" },
+  { firstName: "Nikos", lastName: "Papadopoulos", email: "nikos@tckwellness.com", avatar: "/avatars/avatar-40.png", title: "Psychotherapist", bio: "I specialize in supporting Greek diaspora and Mediterranean TCKs. My existential-humanistic approach helps clients find meaning and purpose in their cross-cultural life experiences.", specializations: ["Mediterranean Identity", "Existential Therapy", "Life Purpose", "Third Culture Kids (TCK)", "Adult TCKs"], languages: ["English", "Greek", "Italian"], credentials: "M.A. Psychotherapy, EAP Registered", licenseNumber: "EAP-67890", practiceMode: "both", city: "Athens", state: null, country: "Greece", zipCode: "10671", lat: "37.9838", lng: "23.7275", address: "Voukourestiou 25A", phone: "+30 210 555 0025", website: "https://nikospapadopoulos.gr" },
+];
+
 async function seed() {
-  console.log("Seeding database...");
+  console.log("Seeding database with 40 therapists...");
 
   const existingAdmin = await db.select().from(users).where(eq(users.email, "admin@tckwellness.com"));
   if (existingAdmin.length > 0) {
-    console.log("Seed data already exists, skipping...");
-    return;
+    console.log("Clearing existing seed data...");
+    await db.delete(docs);
+    await db.delete(events);
+    await db.delete(membershipTiers);
+    await db.delete(therapistProfiles);
+    await db.delete(users);
   }
 
   const adminPassword = await bcrypt.hash("Admin123!", 12);
@@ -24,30 +71,6 @@ async function seed() {
     role: "admin",
   }).returning();
 
-  const [therapist1] = await db.insert(users).values({
-    email: "therapist@test.com",
-    password: therapistPassword,
-    firstName: "Sarah",
-    lastName: "Chen",
-    role: "therapist",
-  }).returning();
-
-  const [therapist2] = await db.insert(users).values({
-    email: "james@tckwellness.com",
-    password: therapistPassword,
-    firstName: "James",
-    lastName: "Okonkwo",
-    role: "therapist",
-  }).returning();
-
-  const [therapist3] = await db.insert(users).values({
-    email: "maria@tckwellness.com",
-    password: therapistPassword,
-    firstName: "Maria",
-    lastName: "Gonzalez",
-    role: "therapist",
-  }).returning();
-
   await db.insert(users).values({
     email: "client@test.com",
     password: clientPassword,
@@ -56,65 +79,45 @@ async function seed() {
     role: "client",
   });
 
-  await db.insert(therapistProfiles).values({
-    userId: therapist1.id,
-    title: "Licensed Clinical Psychologist",
-    bio: "With over 10 years of experience working with Third Culture Kids and expats, I specialize in helping individuals navigate the complexities of cross-cultural identity. My practice integrates CBT, EMDR, and mindfulness-based approaches.",
-    specializations: ["Third Culture Kids (TCK)", "Cross-Cultural Transitions", "Anxiety", "Identity & Belonging", "EMDR"],
-    languages: ["English", "Mandarin"],
-    credentials: "Ph.D. Clinical Psychology, Licensed in California",
-    licenseNumber: "PSY-12345",
-    practiceMode: "both",
-    addressLine1: "123 Wellness Center Drive",
-    city: "San Francisco",
-    state: "CA",
-    country: "United States",
-    zipCode: "94102",
-    latitude: "37.7749",
-    longitude: "-122.4194",
-    phone: "+1 (415) 555-0123",
-    website: "https://drsarahchen.com",
-    acceptingClients: true,
-    isApproved: true,
-    isActive: true,
-  });
+  console.log("Created admin and client accounts.");
 
-  await db.insert(therapistProfiles).values({
-    userId: therapist2.id,
-    title: "Licensed Marriage and Family Therapist",
-    bio: "Born and raised across three continents, I bring a deep personal understanding of the TCK experience to my practice. I work with individuals, couples, and families dealing with transition, grief, and cultural adjustment.",
-    specializations: ["Third Culture Kids (TCK)", "Expatriate Adjustment", "Grief & Loss", "Family Therapy", "Couples Counseling"],
-    languages: ["English", "French", "Swahili"],
-    credentials: "M.A. Marriage and Family Therapy, LMFT",
-    licenseNumber: "LMFT-67890",
-    practiceMode: "virtual",
-    acceptingClients: true,
-    isApproved: true,
-    isActive: true,
-  });
+  for (let i = 0; i < therapistData.length; i++) {
+    const t = therapistData[i];
+    const pw = i === 0 ? therapistPassword : await bcrypt.hash("Therapist123!", 12);
+    const [user] = await db.insert(users).values({
+      email: t.email,
+      password: pw,
+      firstName: t.firstName,
+      lastName: t.lastName,
+      role: "therapist",
+      profileImageUrl: t.avatar,
+    }).returning();
 
-  await db.insert(therapistProfiles).values({
-    userId: therapist3.id,
-    title: "Licensed Professional Counselor",
-    bio: "Specializing in trauma-informed care for globally mobile individuals. My approach combines narrative therapy with somatic experiencing to help clients process their unique life stories.",
-    specializations: ["Trauma & PTSD", "Cross-Cultural Transitions", "Anxiety", "Depression", "Mindfulness & Meditation"],
-    languages: ["English", "Spanish", "Portuguese"],
-    credentials: "M.S. Clinical Mental Health Counseling, LPC",
-    licenseNumber: "LPC-54321",
-    practiceMode: "in_person",
-    addressLine1: "456 Global Therapy Suite",
-    city: "New York",
-    state: "NY",
-    country: "United States",
-    zipCode: "10001",
-    latitude: "40.7128",
-    longitude: "-74.0060",
-    phone: "+1 (212) 555-0456",
-    website: "https://mariagonzalezcounseling.com",
-    acceptingClients: true,
-    isApproved: true,
-    isActive: true,
-  });
+    await db.insert(therapistProfiles).values({
+      userId: user.id,
+      title: t.title,
+      bio: t.bio,
+      specializations: t.specializations,
+      languages: t.languages,
+      credentials: t.credentials,
+      licenseNumber: t.licenseNumber,
+      practiceMode: t.practiceMode,
+      addressLine1: t.address,
+      city: t.city,
+      state: t.state,
+      country: t.country,
+      zipCode: t.zipCode,
+      latitude: t.lat,
+      longitude: t.lng,
+      phone: t.phone,
+      website: t.website,
+      acceptingClients: true,
+      isApproved: true,
+      isActive: true,
+    });
+
+    console.log(`  [${i + 1}/40] Created therapist: ${t.firstName} ${t.lastName}`);
+  }
 
   await db.insert(membershipTiers).values([
     {
@@ -148,8 +151,9 @@ async function seed() {
 
   const now = new Date();
   const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const twoWeeks = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
   const nextMonth = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const twoMonths = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
 
   await db.insert(events).values([
     {
@@ -159,7 +163,7 @@ async function seed() {
       endDate: new Date(nextWeek.getTime() + 2 * 60 * 60 * 1000),
       location: "Zoom Webinar",
       isVirtual: true,
-      zoomLink: "https://zoom.us/j/example",
+      zoomLink: "https://zoom.us/j/example1",
       memberOnly: false,
     },
     {
@@ -173,91 +177,38 @@ async function seed() {
     },
     {
       title: "Cross-Cultural Parenting Workshop",
-      description: "A recorded workshop on navigating cross-cultural parenting challenges. Available for replay.",
-      date: lastWeek,
-      endDate: new Date(lastWeek.getTime() + 1.5 * 60 * 60 * 1000),
-      location: "Online",
+      description: "A practical workshop for parents raising children across cultures. Learn strategies for maintaining cultural connections while supporting healthy identity development.",
+      date: twoWeeks,
+      endDate: new Date(twoWeeks.getTime() + 1.5 * 60 * 60 * 1000),
+      location: "Online via Zoom",
       isVirtual: true,
+      zoomLink: "https://zoom.us/j/example2",
+      memberOnly: false,
+    },
+    {
+      title: "Re-entry & Reverse Culture Shock Panel",
+      description: "A panel discussion featuring therapists and TCKs who have navigated the challenges of returning to their passport country. Hear real stories and expert guidance.",
+      date: twoMonths,
+      endDate: new Date(twoMonths.getTime() + 2 * 60 * 60 * 1000),
+      location: "Zoom Webinar",
+      isVirtual: true,
+      zoomLink: "https://zoom.us/j/example3",
       memberOnly: false,
     },
   ]);
 
   await db.insert(docs).values([
-    {
-      title: "Getting Started",
-      slug: "getting-started",
-      category: "Getting Started",
-      content: `# Getting Started with TCK Wellness Admin\n\nWelcome to the TCK Wellness administration panel. This guide will help you get oriented with the platform.\n\n## Quick Start\n\n1. **Review Pending Therapists** - Check the Therapists page for new applications\n2. **Set Up Membership Tiers** - Configure pricing on the Membership Tiers page\n3. **Create Events** - Add upcoming events on the Events page\n4. **Monitor Messages** - Check the Messages page for contact form submissions\n\n## Navigation\n\nUse the sidebar to navigate between sections. Each section has its own set of tools and views.`,
-      sortOrder: 1,
-      isPublished: true,
-      createdBy: admin.id,
-    },
-    {
-      title: "User Roles & Permissions",
-      slug: "user-roles",
-      category: "User Management",
-      content: `# User Roles & Permissions\n\n## Admin\n- Full platform access\n- Manage therapists, users, tiers, events\n- View analytics and messages\n- Access documentation library\n\n## Therapist\n- Edit own profile\n- Manage subscription\n- View practice analytics\n\n## Client\n- Browse therapist directory\n- View therapist profiles\n- Submit contact forms\n- View public events`,
-      sortOrder: 1,
-      isPublished: true,
-      createdBy: admin.id,
-    },
-    {
-      title: "Managing Therapists",
-      slug: "managing-therapists",
-      category: "Therapist Management",
-      content: `# Managing Therapists\n\n## Approval Process\n\nWhen a therapist registers, their profile starts as unapproved. Admins must review and approve profiles before they appear in the public directory.\n\n### To Approve a Therapist:\n1. Go to Admin → Therapists\n2. Find the pending therapist\n3. Review their credentials and profile\n4. Click "Approve" to make them visible in the directory\n\n## Custom Pricing\n\nAdmins can set custom subscription pricing per therapist if needed. This overrides the standard tier pricing.`,
-      sortOrder: 1,
-      isPublished: true,
-      createdBy: admin.id,
-    },
-    {
-      title: "Subscriptions & Billing",
-      slug: "subscriptions-billing",
-      category: "Subscriptions & Billing",
-      content: `# Subscriptions & Billing\n\n## Stripe Integration\n\nTCK Wellness uses Stripe for payment processing. All subscription management, billing, and invoicing is handled through Stripe.\n\n## Membership Tiers\n\n- **Basic** ($29/mo) - Essential directory listing\n- **Professional** ($49/mo) - Enhanced visibility and features\n- **Premium** ($79/mo) - Maximum exposure and premium features\n\n## Managing Tiers\n\nAdmins can create, edit, and manage membership tiers from the Membership Tiers page. Changes to pricing require updating the corresponding Stripe price IDs.`,
-      sortOrder: 1,
-      isPublished: true,
-      createdBy: admin.id,
-    },
-    {
-      title: "Directory Features",
-      slug: "directory-features",
-      category: "Directory & Search",
-      content: `# Directory Features\n\n## Search & Filters\n\nThe public directory supports filtering by:\n- Specialization\n- Practice mode (in-person, virtual, both)\n- Language\n- Accepting new clients\n\n## Map View\n\nTherapists with physical locations appear on an interactive map using OpenStreetMap. Virtual-only therapists appear in the list view with a distinct badge.\n\n## Profile Pages\n\nEach therapist has a detailed profile page showing their credentials, specializations, bio, and contact information.`,
-      sortOrder: 1,
-      isPublished: true,
-      createdBy: admin.id,
-    },
-    {
-      title: "Events Management",
-      slug: "events-management",
-      category: "Events",
-      content: `# Events Management\n\n## Creating Events\n\n1. Go to Admin → Events\n2. Click "Create Event"\n3. Fill in the event details\n4. Set the date, time, and location\n5. Mark as virtual if applicable\n6. Toggle "Member Only" to restrict access\n\n## Event Types\n\n- **Public Events** - Visible to everyone\n- **Member-Only Events** - Only accessible to subscribed therapists\n- **Virtual Events** - Online events with Zoom links\n- **In-Person Events** - Physical location events`,
-      sortOrder: 1,
-      isPublished: true,
-      createdBy: admin.id,
-    },
-    {
-      title: "API Reference",
-      slug: "api-reference",
-      category: "API Reference",
-      content: `# API Reference\n\n## Authentication\n- POST /api/auth/register - Register new user\n- POST /api/auth/login - Login\n- POST /api/auth/logout - Logout\n- GET /api/auth/me - Get current user\n\n## Directory\n- GET /api/therapists - List therapists (public)\n- GET /api/therapists/:id - Get therapist profile\n\n## Therapist\n- GET /api/therapist/profile - Get own profile\n- PUT /api/therapist/profile - Update own profile\n- GET /api/therapist/subscription - Get subscription status\n\n## Stripe\n- POST /api/stripe/create-checkout-session - Create checkout\n- POST /api/stripe/create-portal-session - Open billing portal\n\n## Admin\n- GET /api/admin/dashboard-stats - Dashboard statistics\n- GET/PUT /api/admin/therapists - Manage therapists\n- GET/PUT /api/admin/users - Manage users\n- CRUD /api/admin/membership-tiers - Manage tiers\n- CRUD /api/admin/events - Manage events\n- GET /api/admin/messages - View messages\n- CRUD /api/admin/docs - Manage documentation`,
-      sortOrder: 1,
-      isPublished: true,
-      createdBy: admin.id,
-    },
-    {
-      title: "System Architecture",
-      slug: "system-architecture",
-      category: "System Architecture",
-      content: `# System Architecture\n\n## Tech Stack\n\n- **Frontend**: React 18, TypeScript, Tailwind CSS, shadcn/ui\n- **Backend**: Express.js, TypeScript\n- **Database**: PostgreSQL with Drizzle ORM\n- **Authentication**: Custom JWT with HTTP-only cookies\n- **Payments**: Stripe subscriptions\n- **Maps**: OpenStreetMap + Leaflet (Google Maps-ready architecture)\n- **Routing**: Wouter (client), Express (server)\n- **State**: TanStack Query v5\n\n## File Structure\n\nThe project uses a modular enterprise-grade file structure:\n- \`shared/schema/\` - Database schemas (Drizzle)\n- \`shared/types/\` - Shared TypeScript types\n- \`server/routes/\` - Modular API routes\n- \`server/storage/\` - Data access layer\n- \`server/middleware/\` - Auth, validation, error handling\n- \`client/src/features/\` - Feature-based frontend modules\n- \`client/src/components/\` - Shared UI components`,
-      sortOrder: 1,
-      isPublished: true,
-      createdBy: admin.id,
-    },
+    { title: "Getting Started", slug: "getting-started", category: "Getting Started", content: `# Getting Started with TCK Wellness Admin\n\nWelcome to the TCK Wellness administration panel. This guide will help you get oriented with the platform.\n\n## Quick Start\n\n1. **Review Pending Therapists** - Check the Therapists page for new applications\n2. **Set Up Membership Tiers** - Configure pricing on the Membership Tiers page\n3. **Create Events** - Add upcoming events on the Events page\n4. **Monitor Messages** - Check the Messages page for contact form submissions\n\n## Navigation\n\nUse the sidebar to navigate between sections. Each section has its own set of tools and views.`, sortOrder: 1, isPublished: true, createdBy: admin.id },
+    { title: "User Roles & Permissions", slug: "user-roles", category: "User Management", content: `# User Roles & Permissions\n\n## Admin\n- Full platform access\n- Manage therapists, users, tiers, events\n- View analytics and messages\n- Access documentation library\n\n## Therapist\n- Edit own profile\n- Manage subscription\n- View practice analytics\n\n## Client\n- Browse therapist directory\n- View therapist profiles\n- Submit contact forms\n- View public events`, sortOrder: 1, isPublished: true, createdBy: admin.id },
+    { title: "Managing Therapists", slug: "managing-therapists", category: "Therapist Management", content: `# Managing Therapists\n\n## Approval Process\n\nWhen a therapist registers, their profile starts as unapproved. Admins must review and approve profiles before they appear in the public directory.\n\n### To Approve a Therapist:\n1. Go to Admin → Therapists\n2. Find the pending therapist\n3. Review their credentials and profile\n4. Click "Approve" to make them visible in the directory\n\n## Custom Pricing\n\nAdmins can set custom subscription pricing per therapist if needed.`, sortOrder: 1, isPublished: true, createdBy: admin.id },
+    { title: "Subscriptions & Billing", slug: "subscriptions-billing", category: "Subscriptions & Billing", content: `# Subscriptions & Billing\n\n## Stripe Integration\n\nTCK Wellness uses Stripe for payment processing.\n\n## Membership Tiers\n\n- **Basic** ($29/mo) - Essential directory listing\n- **Professional** ($49/mo) - Enhanced visibility and features\n- **Premium** ($79/mo) - Maximum exposure and premium features\n\n## Managing Tiers\n\nAdmins can create, edit, and manage membership tiers from the Membership Tiers page.`, sortOrder: 1, isPublished: true, createdBy: admin.id },
+    { title: "Directory Features", slug: "directory-features", category: "Directory & Search", content: `# Directory Features\n\n## Search & Filters\n\nThe public directory supports filtering by:\n- Specialization\n- Practice mode (in-person, virtual, both)\n- Language\n- Accepting new clients\n\n## Map View\n\nTherapists with physical locations appear on an interactive map using OpenStreetMap.\n\n## Profile Pages\n\nEach therapist has a detailed profile page showing their credentials, specializations, bio, and contact information.`, sortOrder: 1, isPublished: true, createdBy: admin.id },
+    { title: "Events Management", slug: "events-management", category: "Events", content: `# Events Management\n\n## Creating Events\n\n1. Go to Admin → Events\n2. Click "Create Event"\n3. Fill in the event details\n4. Set the date, time, and location\n5. Mark as virtual if applicable\n6. Toggle "Member Only" to restrict access\n\n## Event Types\n\n- **Public Events** - Visible to everyone\n- **Member-Only Events** - Only accessible to subscribed therapists\n- **Virtual Events** - Online events with Zoom links\n- **In-Person Events** - Physical location events`, sortOrder: 1, isPublished: true, createdBy: admin.id },
+    { title: "API Reference", slug: "api-reference", category: "API Reference", content: `# API Reference\n\n## Authentication\n- POST /api/auth/register\n- POST /api/auth/login\n- POST /api/auth/logout\n- GET /api/auth/me\n\n## Directory\n- GET /api/therapists\n- GET /api/therapists/:id\n\n## Therapist\n- GET /api/therapist/profile\n- PUT /api/therapist/profile\n\n## Admin\n- GET /api/admin/dashboard-stats\n- GET/PUT /api/admin/therapists\n- CRUD /api/admin/membership-tiers\n- CRUD /api/admin/events\n- CRUD /api/admin/docs`, sortOrder: 1, isPublished: true, createdBy: admin.id },
+    { title: "System Architecture", slug: "system-architecture", category: "System Architecture", content: `# System Architecture\n\n## Tech Stack\n\n- **Frontend**: React 18, TypeScript, Tailwind CSS, shadcn/ui\n- **Backend**: Express.js, TypeScript\n- **Database**: PostgreSQL with Drizzle ORM\n- **Authentication**: Custom JWT with HTTP-only cookies\n- **Payments**: Stripe subscriptions\n- **Maps**: OpenStreetMap + Leaflet\n- **State**: TanStack Query v5`, sortOrder: 1, isPublished: true, createdBy: admin.id },
   ]);
 
-  console.log("Seed data created successfully!");
+  console.log("Seed data created successfully! 40 therapists, 3 tiers, 4 events, 8 docs.");
 }
 
 seed().catch(console.error);

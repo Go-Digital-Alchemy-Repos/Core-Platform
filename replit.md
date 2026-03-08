@@ -74,10 +74,22 @@ client/src/lib/       — Utilities (queryClient, constants)
 - `CRUD /api/admin/docs`
 - `GET /api/events`, `GET /api/membership-tiers`, `POST /api/contact`
 
+## Seed Data
+- 40 diverse therapist profiles with AI-generated avatar images (in `client/public/avatars/`)
+- 3 membership tiers (Basic $29/mo, Professional $49/mo, Premium $79/mo)
+- 4 upcoming events (mix of virtual/in-person, public/members-only)
+- 8 admin documentation articles
+- Re-running `npx tsx server/scripts/seed.ts` clears and re-seeds all data
+
+## Dynamic Home Page
+- Featured Therapists section shows 6 therapists from the directory API
+- Upcoming Events section shows 3 events from the events API
+- Both sections link to their full pages (/directory and /events)
+
 ## Running
 - `npm run dev` — Development (Express + Vite)
 - `npm run db:push` — Push schema to PostgreSQL
-- `npx tsx server/scripts/seed.ts` — Seed test data
+- `npx tsx server/scripts/seed.ts` — Seed test data (40 therapists)
 
 ## Environment Variables
 - `DATABASE_URL` — PostgreSQL connection string
