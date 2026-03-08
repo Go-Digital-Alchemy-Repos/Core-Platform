@@ -196,29 +196,36 @@ export default function LoginPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Test Accounts</CardTitle>
-              <CardDescription>Quick login with pre-configured accounts</CardDescription>
+          <Card className="border-dashed border-2 border-amber-400/50 bg-amber-50/50 dark:bg-amber-950/20" data-testid="card-test-accounts">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Shield className="h-4 w-4 text-amber-600" />
+                Test Accounts
+              </CardTitle>
+              <CardDescription>Click any button to instantly log in with a test account</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-3">
               {testAccounts.map((account) => (
-                <Button
-                  key={account.label}
-                  variant="outline"
-                  className="w-full justify-start gap-3"
-                  disabled={isPending}
-                  onClick={() => handleQuickLogin(account)}
-                  data-testid={`button-quick-login-${account.role}`}
-                >
-                  {quickLoginPending === account.label ? (
-                    <LoadingSpinner className="h-4 w-4" />
-                  ) : (
-                    <account.icon className="h-4 w-4" />
-                  )}
-                  <span>{account.label}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">{account.email}</span>
-                </Button>
+                <div key={account.label} className="space-y-1">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-3"
+                    disabled={isPending}
+                    onClick={() => handleQuickLogin(account)}
+                    data-testid={`button-quick-login-${account.role}`}
+                  >
+                    {quickLoginPending === account.label ? (
+                      <LoadingSpinner className="h-4 w-4" />
+                    ) : (
+                      <account.icon className="h-4 w-4" />
+                    )}
+                    <span className="font-medium">{account.label}</span>
+                  </Button>
+                  <div className="flex gap-4 px-2 text-xs text-muted-foreground" data-testid={`text-credentials-${account.role}`}>
+                    <span>{account.email}</span>
+                    <span className="font-mono">{account.password}</span>
+                  </div>
+                </div>
               ))}
             </CardContent>
           </Card>
