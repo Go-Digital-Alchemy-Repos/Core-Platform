@@ -28,9 +28,10 @@ interface MapViewProps {
   therapists: TherapistWithUser[];
   height?: string;
   interactive?: boolean;
+  zoom?: number;
 }
 
-export function MapView({ therapists, height = "500px", interactive = true }: MapViewProps) {
+export function MapView({ therapists, height = "500px", interactive = true, zoom: zoomProp }: MapViewProps) {
   const markered = useMemo(
     () =>
       therapists.filter(
@@ -50,7 +51,7 @@ export function MapView({ therapists, height = "500px", interactive = true }: Ma
     return [avgLat, avgLng];
   }, [markered]);
 
-  const zoom = markered.length === 0 ? 2 : markered.length === 1 ? 13 : 3;
+  const zoom = zoomProp ?? (markered.length === 0 ? 2 : markered.length === 1 ? 10 : 3);
 
   return (
     <div style={{ height }} className="rounded-md overflow-hidden border" data-testid="map-container">
