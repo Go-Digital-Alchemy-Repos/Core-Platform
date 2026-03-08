@@ -55,7 +55,7 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
 
   const tileUrl = interactive
     ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-    : "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png";
+    : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
 
   return (
     <div style={{ height }} className="rounded-md overflow-hidden border" data-testid="map-container">
