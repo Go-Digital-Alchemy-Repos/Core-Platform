@@ -1,9 +1,20 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Event } from "@shared/schema/events";
+import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarDays, MapPin, Monitor } from "lucide-react";
+import {
+  CalendarDays,
+  MapPin,
+  Monitor,
+  List,
+  CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 function formatDate(date: string | Date) {
   return new Date(date).toLocaleDateString("en-US", {
@@ -105,24 +116,186 @@ function EventsSkeleton() {
   );
 }
 
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function getDaysInMonth(year: number, month: number) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function getFirstDayOfMonth(year: number, month: number) {
+  return new Date(year, month, 1).getDay();
+}
+
+function CalendarView({ events }: { events: Event[] }) {
+  const today = new Date();
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+
+  const eventsByDate = useMemo(() => {
+    const map: Record<string, Event[]> = {};
+    for (const event of events) {
+      const d = new Date(event.date);
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      if (!map[key]) map[key] = [];
+      map[key].push(event);
+    }
+    return map;
+  }, [events]);
+
+  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+  const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
+  const monthLabel = new Date(currentYear, currentMonth).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
+  function prevMonth() {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear((y) => y - 1);
+    } else {
+      setCurrentMonth((m) => m - 1);
+    }
+  }
+
+  function nextMonth() {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear((y) => y + 1);
+    } else {
+      setCurrentMonth((m) => m + 1);
+    }
+  }
+
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+
+  return (
+    <div data-testid="calendar-view">
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={prevMonth}
+          data-testid="button-prev-month"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <h2 className="font-heading text-lg font-semibold" data-testid="text-calendar-month">
+          {monthLabel}
+        </h2>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={nextMonth}
+          data-testid="button-next-month"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border bg-border">
+        {WEEKDAYS.map((day) => (
+          <div
+            key={day}
+            className="bg-muted px-2 py-2 text-center text-xs font-medium text-muted-foreground"
+          >
+            {day}
+          </div>
+        ))}
+        {cells.map((day, i) => {
+          const key = day ? `${currentYear}-${currentMonth}-${day}` : null;
+          const dayEvents = key ? eventsByDate[key] || [] : [];
+          const isToday = key === todayKey;
+
+          return (
+            <div
+              key={i}
+              className={`min-h-[80px] bg-card p-1.5 ${
+                !day ? "bg-muted/30" : ""
+              }`}
+              data-testid={day ? `calendar-day-${day}` : undefined}
+            >
+              {day && (
+                <>
+                  <span
+                    className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${
+                      isToday
+                        ? "bg-primary text-primary-foreground font-bold"
+                        : "text-foreground"
+                    }`}
+                  >
+                    {day}
+                  </span>
+                  {dayEvents.length > 0 && (
+                    <div className="mt-0.5 space-y-0.5">
+                      {dayEvents.map((event) => (
+                        <div
+                          key={event.id}
+                          className="truncate rounded bg-primary/10 px-1 py-0.5 text-[10px] leading-tight text-primary"
+                          title={`${event.title} — ${formatTime(event.date)}`}
+                          data-testid={`calendar-event-${event.id}`}
+                        >
+                          {event.title}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function EventsPage() {
+  const [view, setView] = useState<"list" | "calendar">("list");
   const { data: events, isLoading, error } = useQuery<Event[]>({
     queryKey: ["/api/events"],
   });
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-3xl px-4 py-12">
-        <div className="mb-8 space-y-2">
-          <h1
-            className="font-heading text-3xl font-bold tracking-tight"
-            data-testid="text-events-heading"
-          >
-            Upcoming Events
-          </h1>
-          <p className="text-muted-foreground" data-testid="text-events-subtitle">
-            Workshops, webinars, and community gatherings for the TCK community.
-          </p>
+    <PageLayout>
+      <div className="mx-auto max-w-4xl px-4 py-12">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <h1
+              className="font-heading text-3xl font-bold tracking-tight"
+              data-testid="text-events-heading"
+            >
+              Upcoming Events
+            </h1>
+            <p className="text-muted-foreground" data-testid="text-events-subtitle">
+              Workshops, webinars, and community gatherings for the TCK community.
+            </p>
+          </div>
+          <div className="flex gap-1 rounded-lg border p-1" data-testid="toggle-view">
+            <Button
+              variant={view === "list" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setView("list")}
+              data-testid="button-list-view"
+            >
+              <List className="mr-1.5 h-4 w-4" />
+              List
+            </Button>
+            <Button
+              variant={view === "calendar" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setView("calendar")}
+              data-testid="button-calendar-view"
+            >
+              <CalendarIcon className="mr-1.5 h-4 w-4" />
+              Calendar
+            </Button>
+          </div>
         </div>
 
         {isLoading && <EventsSkeleton />}
@@ -146,14 +319,18 @@ export default function EventsPage() {
           </Card>
         )}
 
-        {events && events.length > 0 && (
+        {events && events.length > 0 && view === "list" && (
           <div className="space-y-4" data-testid="list-events">
             {events.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}
           </div>
         )}
+
+        {events && events.length > 0 && view === "calendar" && (
+          <CalendarView events={events} />
+        )}
       </div>
-    </div>
+    </PageLayout>
   );
 }
