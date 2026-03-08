@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, ChevronDown, UserCog } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Shield, ChevronDown, UserCog, Search } from "lucide-react";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -17,7 +17,6 @@ import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 
 const navLinks = [
   { label: "Home", href: "/" },
-  { label: "Directory", href: "/directory" },
   { label: "Events", href: "/events" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
@@ -30,20 +29,20 @@ export function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-[999] bg-background border-b" data-testid="navbar">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-4 py-3">
+    <nav className="sticky top-0 z-[999] bg-background/95 backdrop-blur-sm border-b" data-testid="navbar">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-6 px-6 py-4">
         <Link href="/" data-testid="link-brand">
           <img src={logoImg} alt="TCK Wellness" className="h-10 w-auto dark:brightness-[1.8] dark:contrast-[0.9]" />
         </Link>
 
-        <div className="hidden md:flex items-center gap-1 flex-wrap">
+        <div className="hidden md:flex items-center gap-2 flex-wrap">
           {navLinks.map((link) => (
             <Link key={link.href} href={link.href}>
               <Button
                 variant="ghost"
-                size="sm"
                 className={location === link.href ? "toggle-elevate toggle-elevated" : ""}
                 data-testid={`link-nav-${link.label.toLowerCase()}`}
+                aria-current={location === link.href ? "page" : undefined}
               >
                 {link.label}
               </Button>
@@ -51,7 +50,16 @@ export function Navbar() {
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-2 flex-wrap">
+        <div className="hidden md:flex items-center gap-3 flex-wrap">
+          <Link href="/directory">
+            <Button
+              className="bg-accent text-accent-foreground border-accent-border"
+              data-testid="link-nav-find-therapist"
+            >
+              <Search className="h-4 w-4 mr-1.5" />
+              Find a Therapist
+            </Button>
+          </Link>
           <ThemeToggle />
           {isLoading ? null : user ? (
             <DropdownMenu>
@@ -99,12 +107,12 @@ export function Navbar() {
           ) : (
             <>
               <Link href="/auth/login">
-                <Button variant="ghost" size="sm" data-testid="link-login">
+                <Button variant="ghost" data-testid="link-login">
                   Login
                 </Button>
               </Link>
               <Link href="/auth/register">
-                <Button size="sm" data-testid="link-register">
+                <Button variant="outline" data-testid="link-register">
                   Register
                 </Button>
               </Link>
@@ -126,20 +134,31 @@ export function Navbar() {
                   <img src={logoImg} alt="TCK Wellness" className="h-8 w-auto dark:brightness-[1.8] dark:contrast-[0.9]" />
                 </SheetTitle>
               </SheetHeader>
-              <div className="flex flex-col gap-1 mt-4">
+              <div className="flex flex-col gap-1 mt-6">
                 {navLinks.map((link) => (
                   <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}>
                     <Button
                       variant="ghost"
                       className={`w-full justify-start ${location === link.href ? "toggle-elevate toggle-elevated" : ""}`}
                       data-testid={`link-mobile-${link.label.toLowerCase()}`}
+                      aria-current={location === link.href ? "page" : undefined}
                     >
                       {link.label}
                     </Button>
                   </Link>
                 ))}
 
-                <div className="my-2 border-t" />
+                <Link href="/directory" onClick={() => setMobileOpen(false)}>
+                  <Button
+                    className="w-full mt-2 bg-accent text-accent-foreground border-accent-border"
+                    data-testid="link-mobile-find-therapist"
+                  >
+                    <Search className="h-4 w-4 mr-1.5" />
+                    Find a Therapist
+                  </Button>
+                </Link>
+
+                <div className="my-3 border-t" />
 
                 {isLoading ? null : user ? (
                   <>
@@ -195,7 +214,7 @@ export function Navbar() {
                       </Button>
                     </Link>
                     <Link href="/auth/register" onClick={() => setMobileOpen(false)}>
-                      <Button className="w-full justify-start" data-testid="link-mobile-register">
+                      <Button variant="outline" className="w-full justify-start" data-testid="link-mobile-register">
                         Register
                       </Button>
                     </Link>
