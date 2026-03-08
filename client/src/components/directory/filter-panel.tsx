@@ -43,18 +43,18 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
       </div>
 
       <div className="min-w-[160px]">
-        <Label htmlFor="filter-practice-mode" className="mb-1.5 block text-sm">
-          Practice Mode
+        <Label htmlFor="filter-session-format" className="mb-1.5 block text-sm">
+          Session Format
         </Label>
         <Select
           value={filters.practiceMode}
           onValueChange={(value) => onChange({ ...filters, practiceMode: value })}
         >
-          <SelectTrigger id="filter-practice-mode" data-testid="select-practice-mode">
-            <SelectValue placeholder="All Modes" />
+          <SelectTrigger id="filter-session-format" data-testid="select-session-format">
+            <SelectValue placeholder="All Formats" />
           </SelectTrigger>
           <SelectContent className="z-[1000]">
-            <SelectItem value="all">All Modes</SelectItem>
+            <SelectItem value="all">All Formats</SelectItem>
             <SelectItem value="in_person">In-Person</SelectItem>
             <SelectItem value="virtual">Virtual</SelectItem>
             <SelectItem value="both">Both</SelectItem>

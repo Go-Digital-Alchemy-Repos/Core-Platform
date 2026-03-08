@@ -12,7 +12,7 @@ interface TherapistCardProps {
   user: Pick<User, "firstName" | "lastName" | "profileImageUrl">;
 }
 
-function getPracticeModeLabel(mode: string | null) {
+function getSessionFormatLabel(mode: string | null) {
   switch (mode) {
     case "in_person":
       return "In-Person";
@@ -114,7 +114,7 @@ export function TherapistCard({ profile, user }: TherapistCardProps) {
 
           <Badge variant="outline" className="text-xs">
             <PracticeModeIcon className="h-3 w-3 mr-1" />
-            {getPracticeModeLabel(profile.practiceMode)}
+            {getSessionFormatLabel(profile.practiceMode)}
           </Badge>
         </div>
       </CardContent>

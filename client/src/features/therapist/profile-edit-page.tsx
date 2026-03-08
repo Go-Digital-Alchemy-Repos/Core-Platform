@@ -271,11 +271,11 @@ export default function ProfileEditPage() {
                 name="practiceMode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Practice Mode</FormLabel>
+                    <FormLabel>Session Format</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-practice-mode">
-                          <SelectValue placeholder="Select practice mode" />
+                          <SelectValue placeholder="Select session format" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

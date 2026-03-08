@@ -1,7 +1,7 @@
-import { useState, useMemo, useCallback } from "react";
-import { Link } from "wouter";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { Link, useSearch } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Search, MapPin, Monitor, Map, List, Users, ChevronRight } from "lucide-react";
+import { Search, MapPin, Monitor, Map, List, Users, ChevronRight, X, SlidersHorizontal } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { MapView } from "@/components/directory/map-view";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,7 @@ type TherapistWithUser = TherapistProfile & {
   };
 };
 
-function getPracticeModeLabel(mode: string | null) {
+function getSessionFormatLabel(mode: string | null) {
   switch (mode) {
     case "in_person": return "In-Person";
     case "virtual": return "Virtual";
@@ -106,7 +106,7 @@ function TherapistRow({
             )}
             <span className="text-muted-foreground/40">·</span>
             <span className="text-xs text-muted-foreground">
-              {getPracticeModeLabel(profile.practiceMode)}
+              {getSessionFormatLabel(profile.practiceMode)}
             </span>
           </div>
         </div>
@@ -148,9 +148,17 @@ function ListSkeletons() {
 }
 
 export default function DirectoryPage() {
+  const queryString = useSearch();
+  const params = new URLSearchParams(queryString);
+  const initialSpecialization = params.get("specialization") || "all";
+
   const [search, setSearch] = useState("");
-  const [practiceMode, setPracticeMode] = useState("all");
+  const [sessionFormat, setSessionFormat] = useState("all");
+  const [specialization, setSpecialization] = useState(initialSpecialization);
+  const [language, setLanguage] = useState("all");
+  const [country, setCountry] = useState("all");
   const [acceptingClients, setAcceptingClients] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
@@ -158,18 +166,49 @@ export default function DirectoryPage() {
     queryKey: ["/api/therapists"],
   });
 
+  useEffect(() => {
+    const sp = new URLSearchParams(queryString);
+    const specParam = sp.get("specialization");
+    setSpecialization(specParam || "all");
+  }, [queryString]);
+
+  const filterOptions = useMemo(() => {
+    if (!therapists) return { specializations: [], languages: [], countries: [] };
+
+    const specSet = new Set<string>();
+    const langSet = new Set<string>();
+    const countrySet = new Set<string>();
+
+    for (const t of therapists) {
+      (t.specializations || []).forEach((s) => specSet.add(s));
+      (t.languages || []).forEach((l) => langSet.add(l));
+      if (t.country) countrySet.add(t.country);
+    }
+
+    return {
+      specializations: Array.from(specSet).sort(),
+      languages: Array.from(langSet).sort(),
+      countries: Array.from(countrySet).sort(),
+    };
+  }, [therapists]);
+
   const filtered = useMemo(() => {
     if (!therapists) return [];
     return therapists
       .filter((t) => {
-        if (practiceMode !== "all" && t.practiceMode !== practiceMode) return false;
+        if (sessionFormat !== "all" && t.practiceMode !== sessionFormat) return false;
         if (acceptingClients && !t.acceptingClients) return false;
+        if (specialization !== "all" && !(t.specializations || []).includes(specialization)) return false;
+        if (language !== "all" && !(t.languages || []).includes(language)) return false;
+        if (country !== "all" && t.country !== country) return false;
         if (search.trim()) {
           const q = search.toLowerCase();
           const name = [t.user?.firstName, t.user?.lastName].filter(Boolean).join(" ").toLowerCase();
           const specs = (t.specializations || []).join(" ").toLowerCase();
           const title = (t.title || "").toLowerCase();
-          if (!name.includes(q) && !specs.includes(q) && !title.includes(q)) return false;
+          const langs = (t.languages || []).join(" ").toLowerCase();
+          const loc = [t.city, t.country].filter(Boolean).join(" ").toLowerCase();
+          if (!name.includes(q) && !specs.includes(q) && !title.includes(q) && !langs.includes(q) && !loc.includes(q)) return false;
         }
         return true;
       })
@@ -178,7 +217,7 @@ export default function DirectoryPage() {
         const nameB = [b.user?.firstName, b.user?.lastName].filter(Boolean).join(" ");
         return nameA.localeCompare(nameB);
       });
-  }, [therapists, search, practiceMode, acceptingClients]);
+  }, [therapists, search, sessionFormat, acceptingClients, specialization, language, country]);
 
   const mapTherapists = useMemo(
     () =>
@@ -196,6 +235,23 @@ export default function DirectoryPage() {
   const handleHover = useCallback((id: string | null) => {
     setHoveredId(id);
   }, []);
+
+  const activeFilterCount = [
+    sessionFormat !== "all",
+    specialization !== "all",
+    language !== "all",
+    country !== "all",
+    acceptingClients,
+  ].filter(Boolean).length;
+
+  const clearAllFilters = () => {
+    setSessionFormat("all");
+    setSpecialization("all");
+    setLanguage("all");
+    setCountry("all");
+    setAcceptingClients(false);
+    setSearch("");
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -220,25 +276,42 @@ export default function DirectoryPage() {
                   </p>
                 )}
               </div>
-              <div className="flex md:hidden items-center gap-1">
+              <div className="flex items-center gap-1">
                 <Button
                   size="icon"
-                  variant={mobileView === "list" ? "default" : "ghost"}
-                  onClick={() => setMobileView("list")}
-                  data-testid="button-view-list"
-                  aria-label="List view"
+                  variant={showFilters ? "default" : "ghost"}
+                  onClick={() => setShowFilters(!showFilters)}
+                  data-testid="button-toggle-filters"
+                  aria-label="Toggle filters"
+                  className="relative"
                 >
-                  <List className="h-4 w-4" />
+                  <SlidersHorizontal className="h-4 w-4" />
+                  {activeFilterCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-accent text-accent-foreground text-[10px] font-bold">
+                      {activeFilterCount}
+                    </span>
+                  )}
                 </Button>
-                <Button
-                  size="icon"
-                  variant={mobileView === "map" ? "default" : "ghost"}
-                  onClick={() => setMobileView("map")}
-                  data-testid="button-view-map"
-                  aria-label="Map view"
-                >
-                  <Map className="h-4 w-4" />
-                </Button>
+                <div className="flex md:hidden items-center gap-1 ml-1">
+                  <Button
+                    size="icon"
+                    variant={mobileView === "list" ? "default" : "ghost"}
+                    onClick={() => setMobileView("list")}
+                    data-testid="button-view-list"
+                    aria-label="List view"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant={mobileView === "map" ? "default" : "ghost"}
+                    onClick={() => setMobileView("map")}
+                    data-testid="button-view-map"
+                    aria-label="Map view"
+                  >
+                    <Map className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -246,7 +319,7 @@ export default function DirectoryPage() {
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search by name, specialty..."
+                placeholder="Search by name, specialty, language..."
                 className="pl-9 h-9 text-sm"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -255,31 +328,140 @@ export default function DirectoryPage() {
               />
             </div>
 
-            <div className="flex items-center gap-3">
-              <Select value={practiceMode} onValueChange={setPracticeMode}>
-                <SelectTrigger className="h-8 text-xs w-[130px]" data-testid="select-practice-mode">
-                  <SelectValue placeholder="All Modes" />
-                </SelectTrigger>
-                <SelectContent className="z-[1000]">
-                  <SelectItem value="all">All Modes</SelectItem>
-                  <SelectItem value="in_person">In-Person</SelectItem>
-                  <SelectItem value="virtual">Virtual</SelectItem>
-                  <SelectItem value="both">Both</SelectItem>
-                </SelectContent>
-              </Select>
-              <div className="flex items-center gap-1.5">
-                <Checkbox
-                  id="filter-accepting"
-                  checked={acceptingClients}
-                  onCheckedChange={(checked) => setAcceptingClients(checked === true)}
-                  data-testid="checkbox-accepting-clients"
-                  className="h-3.5 w-3.5"
-                />
-                <Label htmlFor="filter-accepting" className="text-xs cursor-pointer whitespace-nowrap">
-                  Accepting clients
-                </Label>
+            {showFilters && (
+              <div className="space-y-3 pt-1" data-testid="panel-filters">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[11px] text-muted-foreground mb-1 block">Specialization</Label>
+                    <Select value={specialization} onValueChange={setSpecialization}>
+                      <SelectTrigger className="h-8 text-xs" data-testid="select-specialization">
+                        <SelectValue placeholder="All Specializations" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[1000] max-h-[300px]">
+                        <SelectItem value="all">All Specializations</SelectItem>
+                        {filterOptions.specializations.map((s) => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[11px] text-muted-foreground mb-1 block">Language</Label>
+                    <Select value={language} onValueChange={setLanguage}>
+                      <SelectTrigger className="h-8 text-xs" data-testid="select-language">
+                        <SelectValue placeholder="All Languages" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[1000] max-h-[300px]">
+                        <SelectItem value="all">All Languages</SelectItem>
+                        {filterOptions.languages.map((l) => (
+                          <SelectItem key={l} value={l}>{l}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[11px] text-muted-foreground mb-1 block">Location</Label>
+                    <Select value={country} onValueChange={setCountry}>
+                      <SelectTrigger className="h-8 text-xs" data-testid="select-country">
+                        <SelectValue placeholder="All Countries" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[1000] max-h-[300px]">
+                        <SelectItem value="all">All Countries</SelectItem>
+                        {filterOptions.countries.map((c) => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[11px] text-muted-foreground mb-1 block">Session Format</Label>
+                    <Select value={sessionFormat} onValueChange={setSessionFormat}>
+                      <SelectTrigger className="h-8 text-xs" data-testid="select-session-format">
+                        <SelectValue placeholder="All Formats" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[1000]">
+                        <SelectItem value="all">All Formats</SelectItem>
+                        <SelectItem value="in_person">In-Person</SelectItem>
+                        <SelectItem value="virtual">Virtual</SelectItem>
+                        <SelectItem value="both">Both</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Checkbox
+                      id="filter-accepting"
+                      checked={acceptingClients}
+                      onCheckedChange={(checked) => setAcceptingClients(checked === true)}
+                      data-testid="checkbox-accepting-clients"
+                      className="h-3.5 w-3.5"
+                    />
+                    <Label htmlFor="filter-accepting" className="text-xs cursor-pointer whitespace-nowrap">
+                      Accepting clients
+                    </Label>
+                  </div>
+                  {activeFilterCount > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearAllFilters}
+                      data-testid="button-clear-filters"
+                      className="text-xs text-muted-foreground"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Clear all
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
+
+            {!showFilters && activeFilterCount > 0 && (
+              <div className="flex flex-wrap gap-1.5" data-testid="active-filter-badges">
+                {specialization !== "all" && (
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    {specialization}
+                    <button onClick={() => setSpecialization("all")} aria-label={`Remove ${specialization} filter`}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {language !== "all" && (
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    {language}
+                    <button onClick={() => setLanguage("all")} aria-label={`Remove ${language} filter`}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {country !== "all" && (
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    {country}
+                    <button onClick={() => setCountry("all")} aria-label={`Remove ${country} filter`}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {sessionFormat !== "all" && (
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    {getSessionFormatLabel(sessionFormat)}
+                    <button onClick={() => setSessionFormat("all")} aria-label="Remove session format filter">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {acceptingClients && (
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    Accepting
+                    <button onClick={() => setAcceptingClients(false)} aria-label="Remove accepting clients filter">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto" data-testid="list-therapists">
@@ -290,6 +472,17 @@ export default function DirectoryPage() {
                 <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
                 <p className="text-sm font-medium text-muted-foreground">No therapists found</p>
                 <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your search or filters</p>
+                {activeFilterCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearAllFilters}
+                    className="mt-4"
+                    data-testid="button-clear-filters-empty"
+                  >
+                    Clear all filters
+                  </Button>
+                )}
               </div>
             ) : (
               filtered.map((t) => (
@@ -320,7 +513,6 @@ export default function DirectoryPage() {
               variant="ghost"
               onClick={() => setMobileView("list")}
               data-testid="button-back-to-list"
-              className="h-8"
             >
               <List className="h-4 w-4 mr-1" />
               List

@@ -31,7 +31,7 @@ type TherapistWithUser = TherapistProfile & {
   };
 };
 
-function getPracticeModeLabel(mode: string | null) {
+function getSessionFormatLabel(mode: string | null) {
   switch (mode) {
     case "in_person":
       return "In-Person";
@@ -144,7 +144,7 @@ export default function TherapistProfilePage() {
                       ) : (
                         <Monitor className="h-3 w-3 mr-1" />
                       )}
-                      {getPracticeModeLabel(therapist.practiceMode)}
+                      {getSessionFormatLabel(therapist.practiceMode)}
                     </Badge>
                     {therapist.acceptingClients ? (
                       <Badge variant="secondary" data-testid="badge-accepting">

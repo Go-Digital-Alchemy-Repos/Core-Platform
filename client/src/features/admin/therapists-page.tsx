@@ -290,7 +290,7 @@ function TherapistsContent() {
             <TableHead>Email</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Practice Mode</TableHead>
+            <TableHead>Session Format</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -603,11 +603,11 @@ function AddTherapistDialog({
               </div>
               <FormField control={form.control} name="practiceMode" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Practice Mode</FormLabel>
+                  <FormLabel>Session Format</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-add-practiceMode">
-                        <SelectValue placeholder="Select practice mode" />
+                        <SelectValue placeholder="Select session format" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -838,11 +838,11 @@ function EditTherapistDialog({
               </div>
               <FormField control={form.control} name="practiceMode" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Practice Mode</FormLabel>
+                  <FormLabel>Session Format</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-edit-practiceMode">
-                        <SelectValue placeholder="Select practice mode" />
+                        <SelectValue placeholder="Select session format" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
