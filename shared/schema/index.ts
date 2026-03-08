@@ -6,3 +6,5 @@ export { events, insertEventSchema, type InsertEvent, type Event } from "./event
 export { contactMessages, insertContactMessageSchema, type InsertContactMessage, type ContactMessage } from "./contact-messages";
 export { docs, insertDocSchema, type InsertDoc, type Doc } from "./docs";
 export { passwordResetTokens, type PasswordResetToken } from "./password-reset-tokens";
+export { systemSettings, insertSystemSettingSchema, type InsertSystemSetting, type SystemSetting } from "./system-settings";
+export { emailTemplates, insertEmailTemplateSchema, type InsertEmailTemplate, type EmailTemplate } from "./email-templates";

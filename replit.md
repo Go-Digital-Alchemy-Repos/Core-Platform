@@ -38,6 +38,9 @@ client/src/lib/       — Utilities (queryClient, constants)
 - `events` — Platform events (virtual/in-person)
 - `contact_messages` — Contact form submissions
 - `docs` — Admin documentation library (markdown)
+- `password_reset_tokens` — Password reset tokens with 24hr expiry
+- `system_settings` — Key-value config (AES-256 encrypted secrets)
+- `email_templates` — System email templates with {{variable}} placeholders
 
 ### Authentication
 - Custom JWT (not Replit Auth, not Better Auth)
@@ -64,6 +67,7 @@ client/src/lib/       — Utilities (queryClient, constants)
 - `/auth/login`, `/auth/register` — Authentication
 - `/therapist` — Therapist dashboard (protected)
 - `/admin` — Admin dashboard (protected)
+- `/admin/settings` — System settings (integrations + email templates)
 
 ## API Endpoints
 - `POST /api/auth/register|login|logout`, `GET /api/auth/me`
@@ -83,12 +87,33 @@ client/src/lib/       — Utilities (queryClient, constants)
 - `POST /api/auth/forgot-password` — Public: request password reset email
 - `POST /api/auth/reset-password` — Public: complete password reset with token
 - `CRUD /api/admin/docs`
+- `GET/PUT/DELETE /api/admin/settings` — System settings CRUD
+- `POST /api/admin/settings/test-connection` — Test integration connectivity
+- `GET /api/admin/email-templates` — List all email templates
+- `PUT /api/admin/email-templates/:slug` — Update template
+- `POST /api/admin/email-templates/:slug/preview` — Preview rendered template
+- `POST /api/admin/email-templates/:slug/test` — Send test email
+- `POST /api/uploads/avatar` — Upload avatar image to R2
 - `GET /api/events`, `GET /api/membership-tiers`, `POST /api/contact`
 
 ## Email Service
-- `server/services/email.service.ts` — Nodemailer-based; reads SMTP_HOST/PORT/USER/PASS/FROM env vars
-- Sends branded emails: approval, rejection, password reset, welcome (with temp password)
-- Gracefully logs to console if SMTP not configured; nodemailer is in build allowlist (`script/build.ts`)
+- `server/services/email.service.ts` — Supports Mailgun (primary) and SMTP/nodemailer (fallback)
+- Reads Mailgun credentials from `system_settings` DB table; falls back to SMTP env vars
+- All email templates stored in `email_templates` DB table with `{{variable}}` placeholders
+- 7 templates: therapist-approval, therapist-rejection, password-reset, welcome-new-user, new-therapist-registration, new-client-registration, contact-form-submission
+- Gracefully logs to console if no email provider configured
+
+## System Settings
+- `system_settings` table: key-value config store with AES-256-CBC encryption for secrets
+- Categories: stripe, mailgun, cloudflare_r2
+- `server/storage/settings.storage.ts` — CRUD with encryption/decryption using SESSION_SECRET
+- `server/routes/settings.routes.ts` — Admin API: GET/PUT/DELETE settings, test connections, email template CRUD
+
+## File Storage (Cloudflare R2)
+- `server/services/r2.service.ts` — S3-compatible client for Cloudflare R2
+- Reads credentials from `system_settings` DB table
+- `server/routes/upload.routes.ts` — Avatar upload via multer → R2
+- Gracefully degrades when R2 not configured
 
 ## Password Reset Flow
 - `password_reset_tokens` table stores tokens with 24hr expiry

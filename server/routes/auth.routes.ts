@@ -52,6 +52,29 @@ router.post(
       await storage.therapists.createProfile({ userId: user.id });
     }
 
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const admins = await storage.users.getUsersByRole("admin");
+    const adminEmails = admins.map((a) => a.email);
+    if (adminEmails.length > 0) {
+      if (role === "therapist") {
+        const { sendNewTherapistRegistrationEmail } = await import("../services/email.service");
+        sendNewTherapistRegistrationEmail(
+          adminEmails,
+          `${firstName} ${lastName}`,
+          email,
+          `${baseUrl}/admin/therapists`
+        ).catch(() => {});
+      } else {
+        const { sendNewClientRegistrationEmail } = await import("../services/email.service");
+        sendNewClientRegistrationEmail(
+          adminEmails,
+          `${firstName} ${lastName}`,
+          email,
+          `${baseUrl}/admin/users`
+        ).catch(() => {});
+      }
+    }
+
     const token = generateToken(user);
     setTokenCookie(res, token);
 

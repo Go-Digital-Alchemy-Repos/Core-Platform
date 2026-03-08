@@ -30,6 +30,7 @@ import AdminMembershipTiersPage from "@/features/admin/membership-tiers-page";
 import AdminEventsPage from "@/features/admin/events-page";
 import AdminMessagesPage from "@/features/admin/messages-page";
 import DocsPage from "@/features/admin/docs-page";
+import AdminSettingsPage from "@/features/admin/settings-page";
 
 function Router() {
   return (
@@ -93,6 +94,11 @@ function Router() {
       <Route path="/admin/docs">
         <ProtectedRoute roles={["admin"]}>
           <DocsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin/settings">
+        <ProtectedRoute roles={["admin"]}>
+          <AdminSettingsPage />
         </ProtectedRoute>
       </Route>
 

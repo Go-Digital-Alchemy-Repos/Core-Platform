@@ -6,17 +6,77 @@ const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const SMTP_FROM = process.env.SMTP_FROM || "TCK Wellness <noreply@tckwellness.com>";
 
-const isConfigured = !!(SMTP_HOST && SMTP_USER && SMTP_PASS);
+const isSmtpConfigured = !!(SMTP_HOST && SMTP_USER && SMTP_PASS);
 
 let transporter: nodemailer.Transporter | null = null;
-
-if (isConfigured) {
+if (isSmtpConfigured) {
   transporter = nodemailer.createTransport({
     host: SMTP_HOST,
     port: SMTP_PORT,
     secure: SMTP_PORT === 465,
     auth: { user: SMTP_USER, pass: SMTP_PASS },
   });
+}
+
+async function getMailgunConfig(): Promise<{
+  apiKey: string;
+  domain: string;
+  fromAddress: string;
+} | null> {
+  try {
+    const { storage } = await import("../storage/index");
+    const settings = await storage.settings.getDecryptedCategory("mailgun");
+    const apiKey = settings["mailgun_api_key"];
+    const domain = settings["mailgun_domain"];
+    const fromAddress = settings["mailgun_from_address"] || SMTP_FROM;
+    if (apiKey && domain) {
+      return { apiKey, domain, fromAddress };
+    }
+  } catch {}
+  return null;
+}
+
+async function sendViaMailgun(
+  to: string,
+  subject: string,
+  html: string
+): Promise<boolean> {
+  const config = await getMailgunConfig();
+  if (!config) return false;
+
+  try {
+    const FormData = (await import("form-data")).default;
+    const Mailgun = (await import("mailgun.js")).default;
+    const mailgun = new Mailgun(FormData);
+    const mg = mailgun.client({ username: "api", key: config.apiKey });
+    await mg.messages.create(config.domain, {
+      from: config.fromAddress,
+      to: [to],
+      subject,
+      html,
+    });
+    console.log(`[Email/Mailgun] Sent to ${to}: ${subject}`);
+    return true;
+  } catch (err) {
+    console.error(`[Email/Mailgun] Failed to send to ${to}:`, err);
+    return false;
+  }
+}
+
+async function sendViaSmtp(
+  to: string,
+  subject: string,
+  html: string
+): Promise<boolean> {
+  if (!transporter) return false;
+  try {
+    await transporter.sendMail({ from: SMTP_FROM, to, subject, html });
+    console.log(`[Email/SMTP] Sent to ${to}: ${subject}`);
+    return true;
+  } catch (err) {
+    console.error(`[Email/SMTP] Failed to send to ${to}:`, err);
+    return false;
+  }
 }
 
 function baseTemplate(title: string, body: string): string {
@@ -31,7 +91,7 @@ function baseTemplate(title: string, body: string): string {
           <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;">TCK Wellness</h1>
         </td></tr>
         <tr><td style="padding:32px;">
-          <h2 style="margin:0 0 16px;color:#1e3a5f;font-size:20px;">${title}</h2>
+          ${title ? `<h2 style="margin:0 0 16px;color:#1e3a5f;font-size:20px;">${title}</h2>` : ""}
           ${body}
         </td></tr>
         <tr><td style="background:#f9fafb;padding:20px 32px;border-top:1px solid #e5e7eb;">
@@ -44,99 +104,205 @@ function baseTemplate(title: string, body: string): string {
 </html>`;
 }
 
-async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
-  if (!transporter) {
-    console.log(`[Email] SMTP not configured. Would send to ${to}: ${subject}`);
-    return false;
+function renderTemplate(template: string, vars: Record<string, string | null>): string {
+  let result = template;
+  for (const [key, val] of Object.entries(vars)) {
+    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), val || "");
+    if (val) {
+      result = result.replace(new RegExp(`\\{\\{#${key}\\}\\}`, "g"), "");
+      result = result.replace(new RegExp(`\\{\\{/${key}\\}\\}`, "g"), "");
+    } else {
+      result = result.replace(
+        new RegExp(`\\{\\{#${key}\\}\\}[\\s\\S]*?\\{\\{/${key}\\}\\}`, "g"),
+        ""
+      );
+    }
+  }
+  return result;
+}
+
+async function getTemplateHtml(
+  slug: string,
+  vars: Record<string, string | null>,
+  fallbackTitle: string,
+  fallbackBody: string
+): Promise<{ subject: string; html: string; isActive: boolean }> {
+  try {
+    const { storage } = await import("../storage/index");
+    const template = await storage.emailTemplates.getTemplate(slug);
+    if (template) {
+      const renderedBody = renderTemplate(template.htmlBody, vars);
+      const renderedSubject = renderTemplate(template.subject, vars);
+      return {
+        subject: renderedSubject,
+        html: baseTemplate("", renderedBody),
+        isActive: template.isActive,
+      };
+    }
+  } catch {}
+  return {
+    subject: fallbackTitle,
+    html: baseTemplate(fallbackTitle, fallbackBody),
+    isActive: true,
+  };
+}
+
+export async function sendEmail(
+  to: string,
+  subject: string,
+  html: string
+): Promise<boolean> {
+  const mailgunSent = await sendViaMailgun(to, subject, html);
+  if (mailgunSent) return true;
+
+  const smtpSent = await sendViaSmtp(to, subject, html);
+  if (smtpSent) return true;
+
+  console.log(`[Email] No email provider configured. Would send to ${to}: ${subject}`);
+  return false;
+}
+
+export async function sendApprovalEmail(
+  email: string,
+  firstName: string | null,
+  loginUrl: string
+): Promise<boolean> {
+  const vars = { firstName: firstName || "there", loginUrl };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "therapist-approval",
+    vars,
+    "Application Approved",
+    `<p>Hi ${vars.firstName}, your application has been approved!</p>`
+  );
+  if (!isActive) return false;
+  return sendEmail(email, subject, html);
+}
+
+export async function sendRejectionEmail(
+  email: string,
+  firstName: string | null,
+  reason: string | null
+): Promise<boolean> {
+  const vars = { firstName: firstName || "there", reason };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "therapist-rejection",
+    vars,
+    "Application Update",
+    `<p>Hi ${vars.firstName}, your application was not approved at this time.</p>`
+  );
+  if (!isActive) return false;
+  return sendEmail(email, subject, html);
+}
+
+export async function sendPasswordResetEmail(
+  email: string,
+  firstName: string | null,
+  resetUrl: string
+): Promise<boolean> {
+  const vars = { firstName: firstName || "there", resetUrl };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "password-reset",
+    vars,
+    "Reset Your Password",
+    `<p>Hi ${vars.firstName}, click here to reset your password: ${resetUrl}</p>`
+  );
+  if (!isActive) return false;
+  return sendEmail(email, subject, html);
+}
+
+export async function sendWelcomeEmail(
+  email: string,
+  firstName: string | null,
+  loginUrl: string,
+  tempPassword: string | null
+): Promise<boolean> {
+  const vars = { firstName: firstName || "there", loginUrl, tempPassword };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "welcome-new-user",
+    vars,
+    "Welcome to TCK Wellness!",
+    `<p>Hi ${vars.firstName}, an account has been created for you.</p>`
+  );
+  if (!isActive) return false;
+  return sendEmail(email, subject, html);
+}
+
+export async function sendNewTherapistRegistrationEmail(
+  adminEmails: string[],
+  therapistName: string,
+  therapistEmail: string,
+  dashboardUrl: string
+): Promise<void> {
+  const vars = { therapistName, therapistEmail, dashboardUrl };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "new-therapist-registration",
+    vars,
+    `New Therapist Registration: ${therapistName}`,
+    `<p>A new therapist (${therapistName}, ${therapistEmail}) has registered.</p>`
+  );
+  if (!isActive) return;
+  for (const email of adminEmails) {
+    sendEmail(email, subject, html).catch(() => {});
+  }
+}
+
+export async function sendNewClientRegistrationEmail(
+  adminEmails: string[],
+  clientName: string,
+  clientEmail: string,
+  dashboardUrl: string
+): Promise<void> {
+  const vars = { clientName, clientEmail, dashboardUrl };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "new-client-registration",
+    vars,
+    `New Client Registration: ${clientName}`,
+    `<p>A new client (${clientName}, ${clientEmail}) has registered.</p>`
+  );
+  if (!isActive) return;
+  for (const email of adminEmails) {
+    sendEmail(email, subject, html).catch(() => {});
+  }
+}
+
+export async function sendContactFormEmail(
+  adminEmails: string[],
+  senderName: string,
+  senderEmail: string,
+  messageBody: string,
+  dashboardUrl: string
+): Promise<void> {
+  const vars = { senderName, senderEmail, messageBody, dashboardUrl };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "contact-form-submission",
+    vars,
+    `New Contact Form: ${senderName}`,
+    `<p>New message from ${senderName} (${senderEmail}): ${messageBody}</p>`
+  );
+  if (!isActive) return;
+  for (const email of adminEmails) {
+    sendEmail(email, subject, html).catch(() => {});
+  }
+}
+
+export async function testMailgunConnection(): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  const config = await getMailgunConfig();
+  if (!config) {
+    return { success: false, message: "Mailgun not configured" };
   }
   try {
-    await transporter.sendMail({ from: SMTP_FROM, to, subject, html });
-    console.log(`[Email] Sent to ${to}: ${subject}`);
-    return true;
-  } catch (err) {
-    console.error(`[Email] Failed to send to ${to}:`, err);
-    return false;
+    const FormData = (await import("form-data")).default;
+    const Mailgun = (await import("mailgun.js")).default;
+    const mailgun = new Mailgun(FormData);
+    const mg = mailgun.client({ username: "api", key: config.apiKey });
+    await mg.domains.get(config.domain);
+    return { success: true, message: "Mailgun connection successful" };
+  } catch (err: any) {
+    return { success: false, message: err.message || "Connection failed" };
   }
 }
 
-export async function sendApprovalEmail(email: string, firstName: string | null, loginUrl: string): Promise<boolean> {
-  const name = firstName || "there";
-  const subject = "Your TCK Wellness Application Has Been Approved!";
-  const html = baseTemplate("Application Approved", `
-    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi ${name},</p>
-    <p style="color:#374151;font-size:15px;line-height:1.6;">Great news! Your application to join the TCK Wellness therapist directory has been <strong style="color:#059669;">approved</strong>.</p>
-    <p style="color:#374151;font-size:15px;line-height:1.6;">You can now log in to complete your profile and set up your subscription to appear in the public directory.</p>
-    <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
-      <tr><td style="background:#2d8a7e;border-radius:6px;padding:12px 28px;">
-        <a href="${loginUrl}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;">Log In to Your Account</a>
-      </td></tr>
-    </table>
-    <p style="color:#374151;font-size:15px;line-height:1.6;">Once logged in, you can:</p>
-    <ul style="color:#374151;font-size:15px;line-height:1.8;padding-left:20px;">
-      <li>Complete your professional profile</li>
-      <li>Choose a membership plan</li>
-      <li>Set up your billing information</li>
-    </ul>
-    <p style="color:#6b7280;font-size:14px;margin-top:24px;">If you have any questions, please don't hesitate to reach out through our contact page.</p>
-  `);
-  return sendEmail(email, subject, html);
-}
-
-export async function sendPasswordResetEmail(email: string, firstName: string | null, resetUrl: string): Promise<boolean> {
-  const name = firstName || "there";
-  const subject = "Reset Your TCK Wellness Password";
-  const html = baseTemplate("Password Reset", `
-    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi ${name},</p>
-    <p style="color:#374151;font-size:15px;line-height:1.6;">We received a request to reset your password. Click the button below to set a new password:</p>
-    <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
-      <tr><td style="background:#2d8a7e;border-radius:6px;padding:12px 28px;">
-        <a href="${resetUrl}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;">Reset Password</a>
-      </td></tr>
-    </table>
-    <p style="color:#374151;font-size:15px;line-height:1.6;">This link will expire in 24 hours. If you didn't request a password reset, you can safely ignore this email.</p>
-    <p style="color:#6b7280;font-size:14px;margin-top:24px;">If the button doesn't work, copy and paste this URL into your browser:</p>
-    <p style="color:#6b7280;font-size:13px;word-break:break-all;">${resetUrl}</p>
-  `);
-  return sendEmail(email, subject, html);
-}
-
-export async function sendWelcomeEmail(email: string, firstName: string | null, loginUrl: string, tempPassword: string | null): Promise<boolean> {
-  const name = firstName || "there";
-  const subject = "Welcome to TCK Wellness!";
-  const passwordBlock = tempPassword
-    ? `<div style="background:#f0fdf4;border-left:4px solid #22c55e;padding:12px 16px;margin:16px 0;border-radius:0 4px 4px 0;">
-        <p style="margin:0;color:#166534;font-size:14px;"><strong>Temporary Password:</strong> ${tempPassword}</p>
-        <p style="margin:4px 0 0;color:#166534;font-size:13px;">Please change this after logging in.</p>
-      </div>`
-    : "";
-  const html = baseTemplate("Welcome to TCK Wellness", `
-    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi ${name},</p>
-    <p style="color:#374151;font-size:15px;line-height:1.6;">An account has been created for you on TCK Wellness.</p>
-    ${passwordBlock}
-    <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
-      <tr><td style="background:#2d8a7e;border-radius:6px;padding:12px 28px;">
-        <a href="${loginUrl}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;">Log In to Your Account</a>
-      </td></tr>
-    </table>
-    <p style="color:#6b7280;font-size:14px;margin-top:24px;">If you have any questions, please reach out through our contact page.</p>
-  `);
-  return sendEmail(email, subject, html);
-}
-
-export async function sendRejectionEmail(email: string, firstName: string | null, reason: string | null): Promise<boolean> {
-  const name = firstName || "there";
-  const subject = "Update on Your TCK Wellness Application";
-  const reasonBlock = reason
-    ? `<div style="background:#fef2f2;border-left:4px solid #ef4444;padding:12px 16px;margin:16px 0;border-radius:0 4px 4px 0;">
-        <p style="margin:0;color:#991b1b;font-size:14px;"><strong>Reason:</strong> ${reason}</p>
-      </div>`
-    : "";
-  const html = baseTemplate("Application Update", `
-    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi ${name},</p>
-    <p style="color:#374151;font-size:15px;line-height:1.6;">Thank you for your interest in joining the TCK Wellness therapist directory. After reviewing your application, we are unable to approve it at this time.</p>
-    ${reasonBlock}
-    <p style="color:#374151;font-size:15px;line-height:1.6;">If you believe this was made in error or would like to discuss your application further, please reach out to us through our contact page.</p>
-    <p style="color:#6b7280;font-size:14px;margin-top:24px;">We appreciate your interest in TCK Wellness and wish you the best.</p>
-  `);
-  return sendEmail(email, subject, html);
-}
+export { baseTemplate, renderTemplate };

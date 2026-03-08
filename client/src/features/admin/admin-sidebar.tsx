@@ -7,6 +7,7 @@ import {
   CalendarDays,
   Mail,
   FileText,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,7 @@ const navItems = [
   { title: "Events", href: "/admin/events", icon: CalendarDays },
   { title: "Messages", href: "/admin/messages", icon: Mail },
   { title: "Documentation", href: "/admin/docs", icon: FileText },
+  { title: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 interface AdminSidebarProps {
