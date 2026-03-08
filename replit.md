@@ -70,7 +70,7 @@ client/src/lib/       — Utilities (queryClient, constants)
 - `/admin/settings` — System settings (integrations + email templates)
 
 ## API Endpoints
-- `POST /api/auth/register|login|logout`, `GET /api/auth/me`
+- `POST /api/auth/register|login|logout`, `GET /api/auth/me`, `PUT /api/auth/profile`, `PUT /api/auth/change-password`
 - `GET /api/therapists`, `GET /api/therapists/:id`
 - `GET/PUT /api/therapist/profile`, `GET /api/therapist/subscription`
 - `POST /api/stripe/create-checkout-session|create-portal-session`

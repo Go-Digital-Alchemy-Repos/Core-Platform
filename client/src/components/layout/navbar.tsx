@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, ChevronDown } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Shield, ChevronDown, UserCog } from "lucide-react";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/shared/theme-provider";
 import { useAuth } from "@/hooks/use-auth";
+import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -26,6 +27,7 @@ export function Navbar() {
   const [location] = useLocation();
   const { user, isLoading, logout, isAdmin, isTherapist } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   return (
     <nav className="sticky top-0 z-[999] bg-background border-b" data-testid="navbar">
@@ -78,6 +80,13 @@ export function Navbar() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setProfileOpen(true)}
+                  data-testid="button-my-profile"
+                >
+                  <UserCog className="mr-2 h-4 w-4" />
+                  My Profile
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => logout.mutate()}
                   data-testid="button-logout"
@@ -157,6 +166,18 @@ export function Navbar() {
                       variant="ghost"
                       className="w-full justify-start"
                       onClick={() => {
+                        setProfileOpen(true);
+                        setMobileOpen(false);
+                      }}
+                      data-testid="button-mobile-profile"
+                    >
+                      <UserCog className="mr-2 h-4 w-4" />
+                      My Profile
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => {
                         logout.mutate();
                         setMobileOpen(false);
                       }}
@@ -185,6 +206,8 @@ export function Navbar() {
           </Sheet>
         </div>
       </div>
+
+      <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
     </nav>
   );
 }

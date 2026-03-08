@@ -168,4 +168,67 @@ router.post(
   })
 );
 
+const updateProfileSchema = z.object({
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+});
+
+router.put(
+  "/profile",
+  authenticateToken,
+  validateBody(updateProfileSchema),
+  asyncHandler(async (req, res) => {
+    const { firstName, lastName, email } = req.body;
+    const userId = req.user!.id;
+
+    if (email && email !== req.user!.email) {
+      const existing = await storage.users.getUserByEmail(email);
+      if (existing && existing.id !== userId) {
+        res.status(409).json({ message: "Email already in use" });
+        return;
+      }
+    }
+
+    const updated = await storage.users.updateUser(userId, {
+      ...(firstName !== undefined && { firstName }),
+      ...(lastName !== undefined && { lastName }),
+      ...(email !== undefined && { email }),
+    });
+
+    if (!updated) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    const { password: _, ...safeUser } = updated;
+    res.json(safeUser);
+  })
+);
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(6),
+});
+
+router.put(
+  "/change-password",
+  authenticateToken,
+  validateBody(changePasswordSchema),
+  asyncHandler(async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+
+    const valid = await comparePassword(currentPassword, req.user!.password);
+    if (!valid) {
+      res.status(400).json({ message: "Current password is incorrect" });
+      return;
+    }
+
+    const hashed = await hashPassword(newPassword);
+    await storage.users.updateUser(req.user!.id, { password: hashed });
+
+    res.json({ message: "Password changed successfully" });
+  })
+);
+
 export default router;
