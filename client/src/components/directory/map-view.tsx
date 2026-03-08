@@ -21,7 +21,7 @@ const pinIcon = L.divIcon({
 
 interface TherapistWithUser {
   profile: TherapistProfile;
-  user: Pick<User, "firstName" | "lastName">;
+  user: Pick<User, "firstName" | "lastName"> & { profileImageUrl?: string | null };
 }
 
 interface MapViewProps {
@@ -85,22 +85,38 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
               icon={pinIcon}
             >
               <Popup>
-                <div className="flex flex-col gap-1">
-                  <span className="font-semibold" data-testid={`popup-name-${t.profile.id}`}>
-                    {fullName}
-                  </span>
-                  {t.profile.title && (
-                    <span className="text-xs text-muted-foreground">
-                      {t.profile.title}
-                    </span>
+                <div className="flex gap-2.5 max-w-[240px]" data-testid={`popup-${t.profile.id}`}>
+                  {t.user.profileImageUrl && (
+                    <img
+                      src={t.user.profileImageUrl}
+                      alt={fullName}
+                      className="w-10 h-10 rounded-full object-cover shrink-0"
+                      data-testid={`popup-avatar-${t.profile.id}`}
+                    />
                   )}
-                  <Link
-                    href={`/directory/${t.profile.id}`}
-                    className="text-xs text-accent underline"
-                    data-testid={`popup-link-${t.profile.id}`}
-                  >
-                    View Profile
-                  </Link>
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="font-semibold text-sm leading-tight" data-testid={`popup-name-${t.profile.id}`}>
+                      {fullName}
+                    </span>
+                    {t.profile.title && (
+                      <span className="text-xs text-gray-500 leading-tight">
+                        {t.profile.title}
+                      </span>
+                    )}
+                    {t.profile.bio && (
+                      <span className="text-xs text-gray-600 leading-snug mt-0.5 line-clamp-2">
+                        {t.profile.bio.split('.')[0]}.
+                      </span>
+                    )}
+                    <Link
+                      href={`/directory/${t.profile.id}`}
+                      className="text-xs font-medium mt-1"
+                      style={{ color: "#2d8a7e" }}
+                      data-testid={`popup-link-${t.profile.id}`}
+                    >
+                      View Profile →
+                    </Link>
+                  </div>
                 </div>
               </Popup>
             </Marker>

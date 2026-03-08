@@ -86,6 +86,7 @@ export default function DirectoryPage() {
         user: {
           firstName: t.user?.firstName ?? null,
           lastName: t.user?.lastName ?? null,
+          profileImageUrl: t.user?.profileImageUrl ?? null,
         },
       })),
     [filtered]
