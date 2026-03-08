@@ -82,6 +82,47 @@ export async function sendApprovalEmail(email: string, firstName: string | null,
   return sendEmail(email, subject, html);
 }
 
+export async function sendPasswordResetEmail(email: string, firstName: string | null, resetUrl: string): Promise<boolean> {
+  const name = firstName || "there";
+  const subject = "Reset Your TCK Wellness Password";
+  const html = baseTemplate("Password Reset", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi ${name},</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">We received a request to reset your password. Click the button below to set a new password:</p>
+    <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
+      <tr><td style="background:#2d8a7e;border-radius:6px;padding:12px 28px;">
+        <a href="${resetUrl}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;">Reset Password</a>
+      </td></tr>
+    </table>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">This link will expire in 24 hours. If you didn't request a password reset, you can safely ignore this email.</p>
+    <p style="color:#6b7280;font-size:14px;margin-top:24px;">If the button doesn't work, copy and paste this URL into your browser:</p>
+    <p style="color:#6b7280;font-size:13px;word-break:break-all;">${resetUrl}</p>
+  `);
+  return sendEmail(email, subject, html);
+}
+
+export async function sendWelcomeEmail(email: string, firstName: string | null, loginUrl: string, tempPassword: string | null): Promise<boolean> {
+  const name = firstName || "there";
+  const subject = "Welcome to TCK Wellness!";
+  const passwordBlock = tempPassword
+    ? `<div style="background:#f0fdf4;border-left:4px solid #22c55e;padding:12px 16px;margin:16px 0;border-radius:0 4px 4px 0;">
+        <p style="margin:0;color:#166534;font-size:14px;"><strong>Temporary Password:</strong> ${tempPassword}</p>
+        <p style="margin:4px 0 0;color:#166534;font-size:13px;">Please change this after logging in.</p>
+      </div>`
+    : "";
+  const html = baseTemplate("Welcome to TCK Wellness", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi ${name},</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">An account has been created for you on TCK Wellness.</p>
+    ${passwordBlock}
+    <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
+      <tr><td style="background:#2d8a7e;border-radius:6px;padding:12px 28px;">
+        <a href="${loginUrl}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;">Log In to Your Account</a>
+      </td></tr>
+    </table>
+    <p style="color:#6b7280;font-size:14px;margin-top:24px;">If you have any questions, please reach out through our contact page.</p>
+  `);
+  return sendEmail(email, subject, html);
+}
+
 export async function sendRejectionEmail(email: string, firstName: string | null, reason: string | null): Promise<boolean> {
   const name = firstName || "there";
   const subject = "Update on Your TCK Wellness Application";

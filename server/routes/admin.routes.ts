@@ -3,7 +3,7 @@ import { z } from "zod";
 import { storage } from "../storage/index";
 import { authenticateToken, requireRole, hashPassword } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
-import { sendApprovalEmail, sendRejectionEmail } from "../services/email.service";
+import { sendApprovalEmail, sendRejectionEmail, sendPasswordResetEmail, sendWelcomeEmail } from "../services/email.service";
 
 const router = Router();
 
@@ -222,16 +222,116 @@ router.get(
   })
 );
 
+const updateUserSchema = z.object({
+  firstName: z.string().optional().nullable(),
+  lastName: z.string().optional().nullable(),
+  email: z.string().email().optional(),
+  role: z.enum(["admin", "therapist", "client"]).optional(),
+});
+
 router.put(
   "/users/:id",
   asyncHandler(async (req, res) => {
-    const user = await storage.users.updateUser(req.params.id, req.body);
+    const data = updateUserSchema.parse(req.body);
+    if (data.email) {
+      const existing = await storage.users.getUserByEmail(data.email);
+      if (existing && existing.id !== req.params.id) {
+        res.status(409).json({ message: "Email already in use" });
+        return;
+      }
+    }
+    const user = await storage.users.updateUser(req.params.id, data);
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;
     }
     const { password, ...safeUser } = user;
     res.json(safeUser);
+  })
+);
+
+const createUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  role: z.enum(["admin", "therapist", "client"]),
+  sendWelcomeEmail: z.boolean().optional(),
+});
+
+router.post(
+  "/users",
+  asyncHandler(async (req, res) => {
+    const data = createUserSchema.parse(req.body);
+
+    const existing = await storage.users.getUserByEmail(data.email);
+    if (existing) {
+      res.status(409).json({ message: "Email already registered" });
+      return;
+    }
+
+    const hashedPassword = await hashPassword(data.password);
+    const user = await storage.users.createUser({
+      email: data.email,
+      password: hashedPassword,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      role: data.role,
+    });
+
+    if (data.role === "therapist") {
+      await storage.therapists.createProfile({ userId: user.id, isApproved: true });
+    }
+
+    if (data.sendWelcomeEmail) {
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      sendWelcomeEmail(user.email, user.firstName, `${baseUrl}/auth/login`, data.password).catch(() => {});
+    }
+
+    const { password, ...safeUser } = user;
+    res.status(201).json(safeUser);
+  })
+);
+
+router.delete(
+  "/users/:id",
+  asyncHandler(async (req, res) => {
+    if (req.params.id === req.user!.id) {
+      res.status(400).json({ message: "Cannot delete your own account" });
+      return;
+    }
+    const user = await storage.users.getUser(req.params.id);
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    await storage.users.deleteUser(req.params.id);
+    res.json({ message: "User deleted" });
+  })
+);
+
+router.post(
+  "/users/:id/reset-password",
+  asyncHandler(async (req, res) => {
+    const user = await storage.users.getUser(req.params.id);
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    const { newPassword } = z.object({ newPassword: z.string().min(6).optional() }).parse(req.body);
+
+    if (newPassword) {
+      const hashed = await hashPassword(newPassword);
+      await storage.users.updateUser(user.id, { password: hashed });
+      res.json({ message: "Password reset successfully" });
+    } else {
+      const resetToken = await storage.passwordResets.createToken(user.id);
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken.token}`;
+      sendPasswordResetEmail(user.email, user.firstName, resetUrl).catch(() => {});
+      res.json({ message: "Password reset link sent" });
+    }
   })
 );
 

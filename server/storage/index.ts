@@ -5,6 +5,7 @@ import { SubscriptionStorage } from "./subscription.storage";
 import { EventStorage } from "./event.storage";
 import { ContactStorage } from "./contact.storage";
 import { DocsStorage } from "./docs.storage";
+import { PasswordResetStorage } from "./password-reset.storage";
 
 export const storage = {
   users: new UserStorage(),
@@ -14,6 +15,7 @@ export const storage = {
   events: new EventStorage(),
   contacts: new ContactStorage(),
   docs: new DocsStorage(),
+  passwordResets: new PasswordResetStorage(),
 };
 
 export type { TherapistSearchParams, TherapistWithUser } from "./therapist.storage";

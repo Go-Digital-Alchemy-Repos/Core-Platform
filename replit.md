@@ -76,13 +76,24 @@ client/src/lib/       — Utilities (queryClient, constants)
 - `PUT /api/admin/therapists/:id/approve` — Approve + send email
 - `PUT /api/admin/therapists/:id/reject` — Reject with reason + send email
 - `DELETE /api/admin/therapists/:id` — Soft-delete (isActive=false)
+- `POST /api/admin/users` — Create user (any role, optional welcome email)
+- `PUT /api/admin/users/:id` — Update user (Zod-validated: name, email, role)
+- `DELETE /api/admin/users/:id` — Hard-delete user (cannot delete self)
+- `POST /api/admin/users/:id/reset-password` — Reset password directly (with newPassword) or send reset link (without)
+- `POST /api/auth/forgot-password` — Public: request password reset email
+- `POST /api/auth/reset-password` — Public: complete password reset with token
 - `CRUD /api/admin/docs`
 - `GET /api/events`, `GET /api/membership-tiers`, `POST /api/contact`
 
 ## Email Service
 - `server/services/email.service.ts` — Nodemailer-based; reads SMTP_HOST/PORT/USER/PASS/FROM env vars
-- Sends branded approval/rejection emails; gracefully logs to console if SMTP not configured
-- nodemailer is in build allowlist (`script/build.ts`)
+- Sends branded emails: approval, rejection, password reset, welcome (with temp password)
+- Gracefully logs to console if SMTP not configured; nodemailer is in build allowlist (`script/build.ts`)
+
+## Password Reset Flow
+- `password_reset_tokens` table stores tokens with 24hr expiry
+- Admin can reset passwords directly or send reset link emails
+- Public reset flow: `/auth/reset-password?token=...` page validates and completes reset
 
 ## Seed Data
 - 40 diverse therapist profiles with AI-generated avatar images (in `client/public/avatars/`)

@@ -34,4 +34,8 @@ export class UserStorage {
   async getUsersByRole(role: string): Promise<User[]> {
     return db.select().from(users).where(eq(users.role, role));
   }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
 }

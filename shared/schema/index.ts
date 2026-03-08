@@ -5,3 +5,4 @@ export { therapistSubscriptions, insertSubscriptionSchema, type InsertSubscripti
 export { events, insertEventSchema, type InsertEvent, type Event } from "./events";
 export { contactMessages, insertContactMessageSchema, type InsertContactMessage, type ContactMessage } from "./contact-messages";
 export { docs, insertDocSchema, type InsertDoc, type Doc } from "./docs";
+export { passwordResetTokens, type PasswordResetToken } from "./password-reset-tokens";

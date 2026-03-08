@@ -14,6 +14,7 @@ import EventsPage from "@/features/public/events-page";
 
 import LoginPage from "@/features/auth/login-page";
 import RegisterPage from "@/features/auth/register-page";
+import ResetPasswordPage from "@/features/auth/reset-password-page";
 
 import DirectoryPage from "@/features/directory/directory-page";
 import TherapistProfilePage from "@/features/directory/therapist-profile-page";
@@ -41,6 +42,7 @@ function Router() {
       <Route path="/directory/:id" component={TherapistProfilePage} />
       <Route path="/auth/login" component={LoginPage} />
       <Route path="/auth/register" component={RegisterPage} />
+      <Route path="/auth/reset-password" component={ResetPasswordPage} />
 
       <Route path="/therapist">
         <ProtectedRoute roles={["therapist"]}>

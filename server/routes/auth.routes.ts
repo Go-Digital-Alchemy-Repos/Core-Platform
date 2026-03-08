@@ -100,4 +100,49 @@ router.get(
   })
 );
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+router.post(
+  "/forgot-password",
+  validateBody(forgotPasswordSchema),
+  asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    const user = await storage.users.getUserByEmail(email);
+    if (user) {
+      const resetToken = await storage.passwordResets.createToken(user.id);
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken.token}`;
+      const { sendPasswordResetEmail } = await import("../services/email.service");
+      sendPasswordResetEmail(user.email, user.firstName, resetUrl).catch(() => {});
+    }
+    res.json({ message: "If an account with that email exists, a password reset link has been sent." });
+  })
+);
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(6),
+});
+
+router.post(
+  "/reset-password",
+  validateBody(resetPasswordSchema),
+  asyncHandler(async (req, res) => {
+    const { token, password } = req.body;
+    const resetToken = await storage.passwordResets.getValidToken(token);
+    if (!resetToken) {
+      res.status(400).json({ message: "Invalid or expired reset link" });
+      return;
+    }
+
+    const hashed = await hashPassword(password);
+    await storage.users.updateUser(resetToken.userId, { password: hashed });
+    await storage.passwordResets.markUsed(resetToken.id);
+
+    res.json({ message: "Password reset successfully. You can now log in." });
+  })
+);
+
 export default router;
