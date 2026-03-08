@@ -61,7 +61,7 @@ client/src/lib/       — Utilities (queryClient, constants)
 
 ## Key Routes
 - `/` — Landing page
-- `/directory` — Therapist directory (list + map)
+- `/directory` — Therapist directory (split-pane: scrollable list + sticky map)
 - `/directory/:id` — Therapist profile
 - `/events` — Public events
 - `/auth/login`, `/auth/register` — Authentication
