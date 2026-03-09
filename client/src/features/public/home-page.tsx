@@ -146,11 +146,11 @@ export default function HomePage() {
           <h2 className="font-heading sm:text-xl font-semibold text-center mb-6 sm:mb-8 text-[30px]" data-testid="text-categories-heading">
             Explore by Specialization
           </h2>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="grid grid-cols-5 gap-3">
             {categories.map((cat) => (
               <Link key={cat.slug} href={`/directory?specialization=${encodeURIComponent(cat.slug)}`}>
                 <div
-                  className="flex flex-col items-center gap-2.5 min-w-[100px] px-4 py-4 rounded-md hover-elevate cursor-pointer"
+                  className="flex flex-col items-center gap-2.5 px-4 py-4 rounded-md hover-elevate cursor-pointer"
                   data-testid={`link-category-${cat.label.toLowerCase().replace(/\s+/g, "-")}`}
                 >
                   <div className="flex items-center justify-center w-12 h-12 rounded-full bg-accent/10 text-accent">
