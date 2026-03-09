@@ -291,7 +291,7 @@ export default function DirectoryPage() {
                   Find a Therapist
                 </h1>
                 {!isLoading && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5" data-testid="text-results-count">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-[10px] mb-[10px]" data-testid="text-results-count">
                     <Users className="h-3 w-3 flex-shrink-0" />
                     {filtered.length} therapist{filtered.length !== 1 ? "s" : ""} available
                   </p>
