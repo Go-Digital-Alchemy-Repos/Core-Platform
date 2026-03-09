@@ -1,4 +1,6 @@
 import { Router } from "express";
+import path from "path";
+import fs from "fs";
 import multer from "multer";
 import { authenticateToken } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
@@ -19,6 +21,14 @@ const upload = multer({
   },
 });
 
+const LOCAL_UPLOAD_DIR = path.resolve(process.cwd(), "uploads", "avatars");
+
+function ensureUploadDir() {
+  if (!fs.existsSync(LOCAL_UPLOAD_DIR)) {
+    fs.mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true });
+  }
+}
+
 router.use(authenticateToken);
 
 router.post(
@@ -30,21 +40,23 @@ router.post(
       return;
     }
 
-    const configured = await r2Service.isConfigured();
-    if (!configured) {
-      res.status(503).json({
-        message: "File storage not configured. Please configure Cloudflare R2 in admin settings.",
-      });
-      return;
+    const ext = req.file.mimetype.split("/")[1] === "jpeg" ? "jpg" : req.file.mimetype.split("/")[1];
+    const filename = `${req.user!.id}-${Date.now()}.${ext}`;
+
+    const r2Configured = await r2Service.isConfigured();
+
+    let publicUrl: string | null = null;
+
+    if (r2Configured) {
+      const key = `avatars/${filename}`;
+      publicUrl = await r2Service.uploadFile(key, req.file.buffer, req.file.mimetype);
     }
 
-    const ext = req.file.mimetype.split("/")[1] === "jpeg" ? "jpg" : req.file.mimetype.split("/")[1];
-    const key = `avatars/${req.user!.id}-${Date.now()}.${ext}`;
-
-    const publicUrl = await r2Service.uploadFile(key, req.file.buffer, req.file.mimetype);
     if (!publicUrl) {
-      res.status(500).json({ message: "Failed to upload file" });
-      return;
+      ensureUploadDir();
+      const localPath = path.join(LOCAL_UPLOAD_DIR, filename);
+      fs.writeFileSync(localPath, req.file.buffer);
+      publicUrl = `/uploads/avatars/${filename}`;
     }
 
     await storage.users.updateUser(req.user!.id, { profileImageUrl: publicUrl });

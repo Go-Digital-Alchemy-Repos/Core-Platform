@@ -278,7 +278,6 @@ export default function DirectoryPage() {
   return (
     <div className="flex flex-col h-[100dvh]">
       <Navbar />
-
       <div className="flex-1 flex overflow-hidden">
         <div
           className={`${
@@ -288,7 +287,7 @@ export default function DirectoryPage() {
           <div className="px-3 sm:px-4 py-3 border-b space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <h1 className="text-base sm:text-lg font-heading font-semibold leading-tight" data-testid="text-directory-heading">
+                <h1 className="sm:text-lg font-heading font-semibold text-[30px]" data-testid="text-directory-heading">
                   Find a Therapist
                 </h1>
                 {!isLoading && (
