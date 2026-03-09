@@ -545,7 +545,7 @@ export default function DirectoryPage() {
             </span>
           </div>
           <div className="flex-1">
-            <MapView therapists={mapTherapists} height="100%" highlightedId={hoveredId} />
+            <MapView therapists={mapTherapists} height="100%" highlightedId={hoveredId} zoom={2} center={[20, 0]} />
           </div>
         </div>
       </div>

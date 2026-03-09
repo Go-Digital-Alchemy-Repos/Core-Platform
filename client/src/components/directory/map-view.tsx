@@ -44,10 +44,11 @@ interface MapViewProps {
   height?: string;
   interactive?: boolean;
   zoom?: number;
+  center?: [number, number];
   highlightedId?: string | null;
 }
 
-export function MapView({ therapists, height = "500px", interactive = true, zoom: zoomProp, highlightedId }: MapViewProps) {
+export function MapView({ therapists, height = "500px", interactive = true, zoom: zoomProp, center: centerProp, highlightedId }: MapViewProps) {
   const markered = useMemo(
     () =>
       therapists.filter(
@@ -57,6 +58,7 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
   );
 
   const center = useMemo<[number, number]>(() => {
+    if (centerProp) return centerProp;
     if (markered.length === 0) return [20, 0];
     const avgLat =
       markered.reduce((sum, t) => sum + Number(t.profile.latitude), 0) /
@@ -65,7 +67,7 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
       markered.reduce((sum, t) => sum + Number(t.profile.longitude), 0) /
       markered.length;
     return [avgLat, avgLng];
-  }, [markered]);
+  }, [markered, centerProp]);
 
   const zoom = zoomProp ?? (markered.length === 0 ? 2 : markered.length === 1 ? 6 : 3);
 
@@ -74,7 +76,7 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
     : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
 
   return (
-    <div style={{ height }} className="rounded-md overflow-hidden border" data-testid="map-container">
+    <div style={{ height }} className="rounded-md overflow-hidden border isolate" data-testid="map-container">
       <MapContainer
         center={center}
         zoom={zoom}
