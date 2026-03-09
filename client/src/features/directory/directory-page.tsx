@@ -302,6 +302,16 @@ export default function DirectoryPage() {
                     </span>
                   )}
                 </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => setPanelCollapsed(!panelCollapsed)}
+                  className="hidden md:flex h-9 w-9"
+                  data-testid="button-toggle-panel"
+                  aria-label={panelCollapsed ? "Show counselor list" : "Hide counselor list"}
+                >
+                  {panelCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+                </Button>
                 <div className="flex md:hidden items-center gap-1 ml-0.5">
                   <Button
                     size="icon"
@@ -519,16 +529,6 @@ export default function DirectoryPage() {
             mobileView === "map" ? "flex" : "hidden"
           } md:flex flex-1 flex-col relative`}
         >
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={() => setPanelCollapsed(!panelCollapsed)}
-            className="hidden md:flex absolute top-3 left-3 z-[500] h-9 w-9 bg-background shadow-md hover:bg-muted"
-            data-testid="button-toggle-panel"
-            aria-label={panelCollapsed ? "Show therapist list" : "Hide therapist list"}
-          >
-            {panelCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </Button>
           <div className="flex md:hidden items-center gap-2 p-2 border-b bg-background">
             <Button
               size="sm"
