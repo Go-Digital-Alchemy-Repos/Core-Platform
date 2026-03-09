@@ -40,8 +40,9 @@ router.post(
       return;
     }
 
+    const targetUserId = (req.user!.role === "admin" && req.body.userId) ? req.body.userId : req.user!.id;
     const ext = req.file.mimetype.split("/")[1] === "jpeg" ? "jpg" : req.file.mimetype.split("/")[1];
-    const filename = `${req.user!.id}-${Date.now()}.${ext}`;
+    const filename = `${targetUserId}-${Date.now()}.${ext}`;
 
     const r2Configured = await r2Service.isConfigured();
 
@@ -59,7 +60,7 @@ router.post(
       publicUrl = `/uploads/avatars/${filename}`;
     }
 
-    await storage.users.updateUser(req.user!.id, { profileImageUrl: publicUrl });
+    await storage.users.updateUser(targetUserId, { profileImageUrl: publicUrl });
 
     res.json({ url: publicUrl });
   })

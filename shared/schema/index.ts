@@ -9,3 +9,4 @@ export { passwordResetTokens, type PasswordResetToken } from "./password-reset-t
 export { systemSettings, insertSystemSettingSchema, type InsertSystemSetting, type SystemSetting } from "./system-settings";
 export { emailTemplates, insertEmailTemplateSchema, type InsertEmailTemplate, type EmailTemplate } from "./email-templates";
 export { conversations, directMessages, insertDirectMessageSchema, type InsertDirectMessage, type DirectMessage, type Conversation } from "./direct-messages";
+export { activityLogs, type ActivityLog } from "./activity-logs";

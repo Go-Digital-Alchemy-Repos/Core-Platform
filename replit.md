@@ -47,6 +47,8 @@ client/src/lib/       — Utilities (queryClient, constants)
 - `password_reset_tokens` — Password reset tokens with 24hr expiry
 - `system_settings` — Key-value config (AES-256 encrypted secrets)
 - `email_templates` — System email templates with {{variable}} placeholders
+- `activity_logs` — User activity tracking (login, profile_update, etc.)
+- `conversations` / `direct_messages` — Internal messaging system
 
 ### Authentication
 - Custom JWT (not Replit Auth, not Better Auth)
@@ -59,7 +61,8 @@ client/src/lib/       — Utilities (queryClient, constants)
 - Sheet component supports size variants: sm, default (md), md (lg), lg (2xl), xl (4xl), full (90vw)
 - SheetBody component handles scrollable content between header and footer
 - AlertDialog still used for confirmation prompts (approve, delete)
-- Large forms (therapist add/edit) use `size="lg"`, content editors (docs, email templates) use `size="xl"`
+- Large forms (therapist add/edit) use `size="full"` (90vw), content editors (docs, email templates) use `size="xl"`
+- EditTherapistSheet has 3 tabs: Overview (profile + user fields + avatar), Membership (subscription), Activity (stats + log)
 
 ## Responsive Design
 - Custom breakpoints: xs=480px, sm=640px, md=768px, lg=1024px, xl=1280px
@@ -99,7 +102,9 @@ client/src/lib/       — Utilities (queryClient, constants)
 - `POST /api/stripe/create-checkout-session|create-portal-session`
 - `GET /api/admin/dashboard-stats|therapists|users|membership-tiers|events|messages`
 - `POST /api/admin/therapists` — Create therapist (user + profile, auto-approved)
-- `PUT /api/admin/therapists/:id` — Update profile fields (Zod-validated whitelist)
+- `PUT /api/admin/therapists/:id` — Update profile fields (Zod-validated: includes isFeatured, isApproved)
+- `GET /api/admin/therapists/:id/activity` — Activity logs + stats for a counselor
+- `GET /api/admin/therapists/:id/subscription` — Subscription + tier data for a counselor
 - `PUT /api/admin/therapists/:id/approve` — Approve + send email
 - `PUT /api/admin/therapists/:id/reject` — Reject with reason + send email
 - `DELETE /api/admin/therapists/:id` — Soft-delete (isActive=false)

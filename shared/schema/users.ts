@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   lastName: text("last_name"),
   role: text("role").notNull().default("client"),
   profileImageUrl: text("profile_image_url"),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

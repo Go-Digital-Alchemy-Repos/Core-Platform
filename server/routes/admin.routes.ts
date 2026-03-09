@@ -181,6 +181,8 @@ const updateTherapistSchema = z.object({
   phone: z.string().optional().nullable(),
   website: z.string().optional().nullable(),
   acceptingClients: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
+  isApproved: z.boolean().optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -193,6 +195,7 @@ router.put(
       res.status(404).json({ message: "Profile not found" });
       return;
     }
+    await storage.activity.log(profile.userId, "profile_update", "Profile updated by admin");
     const profileWithUser = await storage.therapists.getProfileWithUser(profile.id);
     res.json(profileWithUser ?? profile);
   })
@@ -416,6 +419,49 @@ router.put(
       return;
     }
     res.json(msg);
+  })
+);
+
+router.get(
+  "/therapists/:id/activity",
+  asyncHandler(async (req, res) => {
+    const profile = await storage.therapists.getProfile(req.params.id);
+    if (!profile) {
+      res.status(404).json({ message: "Profile not found" });
+      return;
+    }
+    const user = await storage.users.getUser(profile.userId);
+    const logs = await storage.activity.getByUser(profile.userId, 100);
+    const profileEditCount = await storage.activity.countByAction(profile.userId, "profile_update");
+    const loginCount = await storage.activity.countByAction(profile.userId, "login");
+
+    res.json({
+      stats: {
+        lastLoginAt: user?.lastLoginAt ?? null,
+        accountCreated: user?.createdAt ?? null,
+        profileEditCount,
+        loginCount,
+      },
+      logs,
+    });
+  })
+);
+
+router.get(
+  "/therapists/:id/subscription",
+  asyncHandler(async (req, res) => {
+    const profile = await storage.therapists.getProfile(req.params.id);
+    if (!profile) {
+      res.status(404).json({ message: "Profile not found" });
+      return;
+    }
+    const subscription = await storage.subscriptions.getSubscriptionByTherapist(profile.userId);
+    if (!subscription) {
+      res.json({ subscription: null, tier: null });
+      return;
+    }
+    const tier = subscription.tierId ? await storage.tiers.getTier(subscription.tierId) : null;
+    res.json({ subscription, tier });
   })
 );
 
