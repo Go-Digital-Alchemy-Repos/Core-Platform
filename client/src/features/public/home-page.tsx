@@ -86,17 +86,16 @@ const trustStats = [
 ];
 
 export default function HomePage() {
-  const { data: therapists, isLoading: therapistsLoading } = useQuery<any[]>({
-    queryKey: ["/api/therapists"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-  });
-
   const { data: events, isLoading: eventsLoading } = useQuery<any[]>({
     queryKey: ["/api/events"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
-  const featuredTherapists = therapists?.slice(0, 6) ?? [];
+  const { data: featuredTherapistsData, isLoading: featuredLoading } = useQuery<any[]>({
+    queryKey: ["/api/therapists/featured"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+  });
+  const featuredTherapists = featuredTherapistsData ?? [];
   const upcomingEvents = events?.slice(0, 3) ?? [];
 
   return (
@@ -201,7 +200,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {therapistsLoading ? (
+          {featuredLoading ? (
             <div className="flex justify-center py-16">
               <LoadingSpinner />
             </div>

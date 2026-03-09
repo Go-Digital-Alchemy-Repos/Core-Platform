@@ -123,6 +123,7 @@ const editProfileSchema = z.object({
   phone: z.string().optional(),
   website: z.string().optional(),
   acceptingClients: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
   isApproved: z.boolean().optional(),
 });
 type EditProfileValues = z.infer<typeof editProfileSchema>;
@@ -783,6 +784,7 @@ function EditTherapistSheet({
       phone: therapist.phone ?? "",
       website: therapist.website ?? "",
       acceptingClients: therapist.acceptingClients ?? true,
+      isFeatured: therapist.isFeatured ?? false,
       isApproved: therapist.isApproved ?? false,
     },
   });
@@ -981,6 +983,14 @@ function EditTherapistSheet({
                       <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-edit-acceptingClients" />
                     </FormControl>
                     <FormLabel className="!mt-0">Accepting Clients</FormLabel>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="isFeatured" render={({ field }) => (
+                  <FormItem className="flex items-center gap-2">
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-edit-isFeatured" />
+                    </FormControl>
+                    <FormLabel className="!mt-0">Featured Counselor</FormLabel>
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="isApproved" render={({ field }) => (

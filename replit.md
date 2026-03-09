@@ -38,7 +38,7 @@ client/src/lib/       — Utilities (queryClient, constants)
 
 ### Database Tables
 - `users` — User accounts (admin/therapist/client roles)
-- `therapist_profiles` — Therapist profile data with location, specializations
+- `therapist_profiles` — Therapist profile data with location, specializations, `isFeatured` flag
 - `membership_tiers` — Subscription pricing tiers (Basic/Professional/Premium)
 - `therapist_subscriptions` — Active subscriptions linked to Stripe
 - `events` — Platform events (virtual/in-person)

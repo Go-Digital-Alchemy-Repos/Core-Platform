@@ -32,6 +32,14 @@ router.get(
 );
 
 router.get(
+  "/featured",
+  asyncHandler(async (_req, res) => {
+    const featured = await storage.therapists.listFeatured();
+    res.json(featured);
+  })
+);
+
+router.get(
   "/:id",
   asyncHandler(async (req, res) => {
     const profile = await storage.therapists.getProfileWithUser(req.params.id);

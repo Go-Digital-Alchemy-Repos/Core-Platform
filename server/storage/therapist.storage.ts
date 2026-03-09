@@ -132,6 +132,31 @@ export class TherapistStorage {
     return Number(result[0].count);
   }
 
+  async listFeatured(): Promise<TherapistWithUser[]> {
+    const results = await db
+      .select({
+        profile: therapistProfiles,
+        user: {
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          profileImageUrl: users.profileImageUrl,
+        },
+      })
+      .from(therapistProfiles)
+      .innerJoin(users, eq(therapistProfiles.userId, users.id))
+      .where(
+        and(
+          eq(therapistProfiles.isFeatured, true),
+          eq(therapistProfiles.isApproved, true),
+          eq(therapistProfiles.isActive, true)
+        )
+      )
+      .limit(6);
+
+    return results.map((r) => ({ ...r.profile, user: r.user }));
+  }
+
   async countPending(): Promise<number> {
     const result = await db
       .select({ count: sql<number>`count(*)` })
