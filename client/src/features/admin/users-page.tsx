@@ -21,13 +21,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetBody,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -262,9 +263,9 @@ function UsersContent() {
         </Table>
       </div>
 
-      <CreateUserDialog open={createOpen} onOpenChange={setCreateOpen} />
-      <EditUserDialog user={editUser} onClose={() => setEditUser(null)} />
-      <ResetPasswordDialog user={resetUser} onClose={() => setResetUser(null)} />
+      <CreateUserSheet open={createOpen} onOpenChange={setCreateOpen} />
+      <EditUserSheet user={editUser} onClose={() => setEditUser(null)} />
+      <ResetPasswordSheet user={resetUser} onClose={() => setResetUser(null)} />
       <SendResetLinkConfirm
         user={sendResetLinkUser}
         onClose={() => setSendResetLinkUser(null)}
@@ -274,7 +275,7 @@ function UsersContent() {
   );
 }
 
-function CreateUserDialog({
+function CreateUserSheet({
   open,
   onOpenChange,
 }: {
@@ -324,136 +325,140 @@ function CreateUserDialog({
   }
 
   return (
-    <Dialog
+    <Sheet
       open={open}
       onOpenChange={(v) => {
         if (!v) resetForm();
         onOpenChange(v);
       }}
     >
-      <DialogContent className="sm:max-w-md" aria-describedby="create-user-description">
-        <DialogHeader>
-          <DialogTitle className="font-heading">Create New User</DialogTitle>
-          <DialogDescription id="create-user-description">
+      <SheetContent side="right" size="default">
+        <SheetHeader>
+          <SheetTitle className="font-heading">Create New User</SheetTitle>
+          <SheetDescription>
             Create a new account for a customer, therapist, or admin.
-          </DialogDescription>
-        </DialogHeader>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            createMutation.mutate();
-          }}
-          className="space-y-4"
-        >
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="create-first">First Name</Label>
-              <Input
-                id="create-first"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-                data-testid="input-create-first-name"
-              />
+          </SheetDescription>
+        </SheetHeader>
+        <SheetBody>
+          <form
+            id="create-user-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              createMutation.mutate();
+            }}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create-first">First Name</Label>
+                <Input
+                  id="create-first"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  data-testid="input-create-first-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="create-last">Last Name</Label>
+                <Input
+                  id="create-last"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  data-testid="input-create-last-name"
+                />
+              </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="create-last">Last Name</Label>
+              <Label htmlFor="create-email">Email</Label>
               <Input
-                id="create-last"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
+                id="create-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                data-testid="input-create-last-name"
+                data-testid="input-create-email"
               />
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="create-email">Email</Label>
-            <Input
-              id="create-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              data-testid="input-create-email"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="create-password">Password</Label>
-            <div className="relative">
-              <Input
-                id="create-password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                data-testid="input-create-password"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                onClick={() => setShowPassword(!showPassword)}
-                data-testid="button-toggle-password-visibility"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
+            <div className="space-y-2">
+              <Label htmlFor="create-password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="create-password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  data-testid="input-create-password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  onClick={() => setShowPassword(!showPassword)}
+                  data-testid="button-toggle-password-visibility"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="create-role">Role</Label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger data-testid="select-create-role">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="client">Client</SelectItem>
-                <SelectItem value="therapist">Therapist</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="send-welcome"
-              checked={sendWelcome}
-              onCheckedChange={(v) => setSendWelcome(v === true)}
-              data-testid="checkbox-send-welcome"
-            />
-            <Label htmlFor="send-welcome" className="text-sm font-normal cursor-pointer">
-              Send welcome email with login credentials
-            </Label>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              data-testid="button-cancel-create"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={createMutation.isPending}
-              data-testid="button-submit-create"
-            >
-              {createMutation.isPending ? "Creating..." : "Create User"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <div className="space-y-2">
+              <Label htmlFor="create-role">Role</Label>
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger data-testid="select-create-role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="client">Client</SelectItem>
+                  <SelectItem value="therapist">Therapist</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="send-welcome"
+                checked={sendWelcome}
+                onCheckedChange={(v) => setSendWelcome(v === true)}
+                data-testid="checkbox-send-welcome"
+              />
+              <Label htmlFor="send-welcome" className="text-sm font-normal cursor-pointer">
+                Send welcome email with login credentials
+              </Label>
+            </div>
+          </form>
+        </SheetBody>
+        <SheetFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            data-testid="button-cancel-create"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="create-user-form"
+            disabled={createMutation.isPending}
+            data-testid="button-submit-create"
+          >
+            {createMutation.isPending ? "Creating..." : "Create User"}
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
 
-function EditUserDialog({
+function EditUserSheet({
   user,
   onClose,
 }: {
@@ -497,97 +502,101 @@ function EditUserDialog({
   });
 
   return (
-    <Dialog
+    <Sheet
       open={isOpen}
       onOpenChange={(v) => {
         if (!v) onClose();
         else handleOpen();
       }}
     >
-      <DialogContent className="sm:max-w-md" aria-describedby="edit-user-description" onOpenAutoFocus={handleOpen}>
-        <DialogHeader>
-          <DialogTitle className="font-heading">Edit User</DialogTitle>
-          <DialogDescription id="edit-user-description">
+      <SheetContent side="right" size="default" onOpenAutoFocus={handleOpen}>
+        <SheetHeader>
+          <SheetTitle className="font-heading">Edit User</SheetTitle>
+          <SheetDescription>
             Update user account details.
-          </DialogDescription>
-        </DialogHeader>
-        {user && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              updateMutation.mutate();
-            }}
-            className="space-y-4"
+          </SheetDescription>
+        </SheetHeader>
+        <SheetBody>
+          {user && (
+            <form
+              id="edit-user-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                updateMutation.mutate();
+              }}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-first">First Name</Label>
+                  <Input
+                    id="edit-first"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    data-testid="input-edit-first-name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-last">Last Name</Label>
+                  <Input
+                    id="edit-last"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    data-testid="input-edit-last-name"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  data-testid="input-edit-email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">Role</Label>
+                <Select value={role} onValueChange={setRole}>
+                  <SelectTrigger data-testid="select-edit-role">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="client">Client</SelectItem>
+                    <SelectItem value="therapist">Therapist</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </form>
+          )}
+        </SheetBody>
+        <SheetFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            data-testid="button-cancel-edit"
           >
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-first">First Name</Label>
-                <Input
-                  id="edit-first"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  data-testid="input-edit-first-name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-last">Last Name</Label>
-                <Input
-                  id="edit-last"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  data-testid="input-edit-last-name"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-email">Email</Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                data-testid="input-edit-email"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-role">Role</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger data-testid="select-edit-role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="client">Client</SelectItem>
-                  <SelectItem value="therapist">Therapist</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                data-testid="button-cancel-edit"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={updateMutation.isPending}
-                data-testid="button-submit-edit"
-              >
-                {updateMutation.isPending ? "Saving..." : "Save Changes"}
-              </Button>
-            </DialogFooter>
-          </form>
-        )}
-      </DialogContent>
-    </Dialog>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="edit-user-form"
+            disabled={updateMutation.isPending}
+            data-testid="button-submit-edit"
+          >
+            {updateMutation.isPending ? "Saving..." : "Save Changes"}
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
 
-function ResetPasswordDialog({
+function ResetPasswordSheet({
   user,
   onClose,
 }: {
@@ -616,7 +625,7 @@ function ResetPasswordDialog({
   });
 
   return (
-    <Dialog
+    <Sheet
       open={!!user}
       onOpenChange={(v) => {
         if (!v) {
@@ -626,66 +635,79 @@ function ResetPasswordDialog({
         }
       }}
     >
-      <DialogContent className="sm:max-w-md" aria-describedby="reset-password-description">
-        <DialogHeader>
-          <DialogTitle className="font-heading flex items-center gap-2">
+      <SheetContent side="right" size="default">
+        <SheetHeader>
+          <SheetTitle className="font-heading flex items-center gap-2">
             <KeyRound className="h-5 w-5" />
             Reset Password
-          </DialogTitle>
-          <DialogDescription id="reset-password-description">
+          </SheetTitle>
+          <SheetDescription>
             Set a new password for {user?.firstName} {user?.lastName} ({user?.email}).
-          </DialogDescription>
-        </DialogHeader>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            resetMutation.mutate();
-          }}
-          className="space-y-4"
-        >
-          <div className="space-y-2">
-            <Label htmlFor="new-password">New Password</Label>
-            <div className="relative">
-              <Input
-                id="new-password"
-                type={showPassword ? "text" : "password"}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                minLength={6}
-                placeholder="At least 6 characters"
-                data-testid="input-admin-new-password"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
+          </SheetDescription>
+        </SheetHeader>
+        <SheetBody>
+          <form
+            id="reset-password-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              resetMutation.mutate();
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  placeholder="At least 6 characters"
+                  data-testid="input-admin-new-password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={resetMutation.isPending}
-              data-testid="button-submit-reset-password"
-            >
-              {resetMutation.isPending ? "Resetting..." : "Reset Password"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </form>
+        </SheetBody>
+        <SheetFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setNewPassword("");
+              setShowPassword(false);
+              onClose();
+            }}
+            data-testid="button-cancel-reset"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="reset-password-form"
+            disabled={resetMutation.isPending || !newPassword.trim()}
+            data-testid="button-submit-reset"
+          >
+            {resetMutation.isPending ? "Resetting..." : "Reset Password"}
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -698,9 +720,9 @@ function SendResetLinkConfirm({
 }) {
   const { toast } = useToast();
 
-  const sendLinkMutation = useMutation({
+  const sendMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", `/api/admin/users/${user!.id}/reset-password`, {});
+      await apiRequest("POST", `/api/admin/users/${user!.id}/send-reset-link`);
     },
     onSuccess: () => {
       toast({ title: "Password reset link sent" });
@@ -715,13 +737,9 @@ function SendResetLinkConfirm({
     <AlertDialog open={!!user} onOpenChange={(v) => !v && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            Send Password Reset Link
-          </AlertDialogTitle>
+          <AlertDialogTitle>Send Password Reset Link</AlertDialogTitle>
           <AlertDialogDescription>
-            A password reset email will be sent to{" "}
-            <strong>{user?.email}</strong>. The link will expire in 24 hours.
+            Send a password reset email to {user?.email}?
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -729,11 +747,11 @@ function SendResetLinkConfirm({
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={() => sendLinkMutation.mutate()}
-            disabled={sendLinkMutation.isPending}
+            onClick={() => sendMutation.mutate()}
+            disabled={sendMutation.isPending}
             data-testid="button-confirm-send-link"
           >
-            {sendLinkMutation.isPending ? "Sending..." : "Send Reset Link"}
+            {sendMutation.isPending ? "Sending..." : "Send Link"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -771,11 +789,8 @@ function DeleteUserConfirm({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete User</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to permanently delete{" "}
-            <strong>
-              {user?.firstName} {user?.lastName}
-            </strong>{" "}
-            ({user?.email})? This action cannot be undone.
+            Are you sure you want to delete {user?.firstName} {user?.lastName} ({user?.email})? This
+            action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -785,10 +800,10 @@ function DeleteUserConfirm({
           <AlertDialogAction
             onClick={() => deleteMutation.mutate()}
             disabled={deleteMutation.isPending}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="bg-destructive text-destructive-foreground"
             data-testid="button-confirm-delete"
           >
-            {deleteMutation.isPending ? "Deleting..." : "Delete User"}
+            {deleteMutation.isPending ? "Deleting..." : "Delete"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

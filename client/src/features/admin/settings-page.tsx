@@ -18,11 +18,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetBody,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import {
   CreditCard,
   Mail,
@@ -425,71 +428,73 @@ function TemplateEditor({
   });
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
+      <SheetContent side="right" size="xl">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
             Edit: {template.name}
-          </DialogTitle>
-        </DialogHeader>
-        <p className="text-sm text-muted-foreground">{template.description}</p>
+          </SheetTitle>
+          <SheetDescription className="sr-only">Edit email template</SheetDescription>
+        </SheetHeader>
+        <SheetBody>
+          <p className="text-sm text-muted-foreground">{template.description}</p>
 
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          <span className="text-xs text-muted-foreground mr-1">Variables:</span>
-          {template.variables.map((v) => (
-            <Badge key={v} variant="secondary" className="text-xs font-mono">
-              {`{{${v}}}`}
-            </Badge>
-          ))}
-        </div>
-
-        <div className="space-y-4 mt-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="template-subject">Subject</Label>
-            <Input
-              id="template-subject"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              data-testid="input-template-subject"
-            />
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            <span className="text-xs text-muted-foreground mr-1">Variables:</span>
+            {template.variables.map((v) => (
+              <Badge key={v} variant="secondary" className="text-xs font-mono">
+                {`{{${v}}}`}
+              </Badge>
+            ))}
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="template-body">HTML Body</Label>
-            <Textarea
-              id="template-body"
-              value={htmlBody}
-              onChange={(e) => setHtmlBody(e.target.value)}
-              rows={16}
-              className="font-mono text-xs"
-              data-testid="input-template-body"
-            />
-          </div>
-        </div>
 
-        {previewHtml && (
-          <div className="mt-4 border rounded-md overflow-hidden">
-            <div className="bg-muted px-3 py-2 text-xs font-medium flex items-center justify-between">
-              <span>Preview</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setPreviewHtml(null)}
-                data-testid="button-close-preview"
-              >
-                Close
-              </Button>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="template-subject">Subject</Label>
+              <Input
+                id="template-subject"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                data-testid="input-template-subject"
+              />
             </div>
-            <iframe
-              srcDoc={previewHtml}
-              className="w-full h-[400px] bg-white"
-              title="Email preview"
-              data-testid="iframe-email-preview"
-            />
+            <div className="space-y-1.5">
+              <Label htmlFor="template-body">HTML Body</Label>
+              <Textarea
+                id="template-body"
+                value={htmlBody}
+                onChange={(e) => setHtmlBody(e.target.value)}
+                rows={16}
+                className="font-mono text-xs"
+                data-testid="input-template-body"
+              />
+            </div>
           </div>
-        )}
 
-        <div className="flex gap-2 mt-4">
+          {previewHtml && (
+            <div className="mt-4 border rounded-md overflow-hidden">
+              <div className="bg-muted px-3 py-2 text-xs font-medium flex items-center justify-between">
+                <span>Preview</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPreviewHtml(null)}
+                  data-testid="button-close-preview"
+                >
+                  Close
+                </Button>
+              </div>
+              <iframe
+                srcDoc={previewHtml}
+                className="w-full h-[400px] bg-white"
+                title="Email preview"
+                data-testid="iframe-email-preview"
+              />
+            </div>
+          )}
+        </SheetBody>
+        <SheetFooter>
           <Button
             onClick={() => updateMutation.mutate()}
             disabled={updateMutation.isPending}
@@ -528,9 +533,9 @@ function TemplateEditor({
             )}
             Send Test
           </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
 

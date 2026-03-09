@@ -15,11 +15,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetBody,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import {
   Form,
   FormControl,
@@ -251,50 +254,27 @@ function EventsContent() {
         )}
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle data-testid="text-event-dialog-title">
+      <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
+        <SheetContent side="right" size="md">
+          <SheetHeader>
+            <SheetTitle data-testid="text-event-dialog-title">
               {editingEvent ? "Edit Event" : "Create Event"}
-            </DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-event-title" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} data-testid="input-event-description" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-2 gap-4">
+            </SheetTitle>
+            <SheetDescription className="sr-only">
+              {editingEvent ? "Edit event details" : "Create a new event"}
+            </SheetDescription>
+          </SheetHeader>
+          <SheetBody>
+            <Form {...form}>
+              <form id="event-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="date"
+                  name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Start Date</FormLabel>
+                      <FormLabel>Title</FormLabel>
                       <FormControl>
-                        <Input type="datetime-local" {...field} data-testid="input-event-date" />
+                        <Input {...field} data-testid="input-event-title" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -302,94 +282,125 @@ function EventsContent() {
                 />
                 <FormField
                   control={form.control}
-                  name="endDate"
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>End Date</FormLabel>
+                      <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Input type="datetime-local" {...field} data-testid="input-event-end-date" />
+                        <Textarea {...field} data-testid="input-event-description" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Location</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-event-location" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="zoomLink"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Zoom Link</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-event-zoom-link" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="flex items-center gap-6 flex-wrap">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Start Date</FormLabel>
+                        <FormControl>
+                          <Input type="datetime-local" {...field} data-testid="input-event-date" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="endDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>End Date</FormLabel>
+                        <FormControl>
+                          <Input type="datetime-local" {...field} data-testid="input-event-end-date" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <FormField
                   control={form.control}
-                  name="isVirtual"
+                  name="location"
                   render={({ field }) => (
-                    <FormItem className="flex items-center gap-2">
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
                       <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          data-testid="switch-event-virtual"
-                        />
+                        <Input {...field} data-testid="input-event-location" />
                       </FormControl>
-                      <FormLabel className="!mt-0">Virtual</FormLabel>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
                 <FormField
                   control={form.control}
-                  name="memberOnly"
+                  name="zoomLink"
                   render={({ field }) => (
-                    <FormItem className="flex items-center gap-2">
+                    <FormItem>
+                      <FormLabel>Zoom Link</FormLabel>
                       <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          data-testid="switch-event-member-only"
-                        />
+                        <Input {...field} data-testid="input-event-zoom-link" />
                       </FormControl>
-                      <FormLabel className="!mt-0">Members Only</FormLabel>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={createMutation.isPending || updateMutation.isPending}
-                data-testid="button-submit-event"
-              >
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Saving..."
-                  : editingEvent
-                    ? "Update Event"
-                    : "Create Event"}
-              </Button>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+                <div className="flex items-center gap-6 flex-wrap">
+                  <FormField
+                    control={form.control}
+                    name="isVirtual"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center gap-2">
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-event-virtual"
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0">Virtual</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="memberOnly"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center gap-2">
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-event-member-only"
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0">Members Only</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </form>
+            </Form>
+          </SheetBody>
+          <SheetFooter>
+            <Button
+              type="submit"
+              form="event-form"
+              className="w-full"
+              disabled={createMutation.isPending || updateMutation.isPending}
+              data-testid="button-submit-event"
+            >
+              {createMutation.isPending || updateMutation.isPending
+                ? "Saving..."
+                : editingEvent
+                  ? "Update Event"
+                  : "Create Event"}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

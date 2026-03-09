@@ -9,7 +9,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetBody,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
@@ -34,7 +42,7 @@ export default function DocsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingDoc, setEditingDoc] = useState<Partial<Doc> | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const { data: allDocs = [], isLoading } = useQuery<Doc[]>({
     queryKey: ["/api/admin/docs"],
@@ -47,7 +55,7 @@ export default function DocsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/docs"] });
-      setDialogOpen(false);
+      setSheetOpen(false);
       setEditingDoc(null);
       toast({ title: "Document created" });
     },
@@ -60,7 +68,7 @@ export default function DocsPage() {
     },
     onSuccess: (updated: Doc) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/docs"] });
-      setDialogOpen(false);
+      setSheetOpen(false);
       setEditingDoc(null);
       if (selectedDoc?.id === updated.id) {
         setSelectedDoc(updated);
@@ -108,13 +116,13 @@ export default function DocsPage() {
   const openCreate = () => {
     setEditingDoc({ title: "", slug: "", category: DOC_CATEGORIES[0], content: "", isPublished: true, sortOrder: 0 });
     setShowPreview(false);
-    setDialogOpen(true);
+    setSheetOpen(true);
   };
 
   const openEdit = (doc: Doc) => {
     setEditingDoc({ ...doc });
     setShowPreview(false);
-    setDialogOpen(true);
+    setSheetOpen(true);
   };
 
   if (isLoading) {
@@ -237,105 +245,110 @@ export default function DocsPage() {
         </div>
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingDoc?.id ? "Edit Document" : "New Document"}</DialogTitle>
-          </DialogHeader>
-          {editingDoc && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Title</Label>
-                  <Input
-                    value={editingDoc.title || ""}
-                    onChange={(e) => setEditingDoc({ ...editingDoc, title: e.target.value })}
-                    data-testid="input-doc-title"
-                  />
-                </div>
-                <div>
-                  <Label>Slug</Label>
-                  <Input
-                    value={editingDoc.slug || ""}
-                    onChange={(e) => setEditingDoc({ ...editingDoc, slug: e.target.value })}
-                    data-testid="input-doc-slug"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Category</Label>
-                  <Select
-                    value={editingDoc.category || ""}
-                    onValueChange={(v) => setEditingDoc({ ...editingDoc, category: v })}
-                  >
-                    <SelectTrigger data-testid="select-doc-category">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DOC_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-end gap-4">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={editingDoc.isPublished ?? true}
-                      onCheckedChange={(v) => setEditingDoc({ ...editingDoc, isPublished: v })}
-                      data-testid="switch-doc-published"
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent side="right" size="xl">
+          <SheetHeader>
+            <SheetTitle>{editingDoc?.id ? "Edit Document" : "New Document"}</SheetTitle>
+            <SheetDescription className="sr-only">
+              {editingDoc?.id ? "Edit document content" : "Create a new document"}
+            </SheetDescription>
+          </SheetHeader>
+          <SheetBody>
+            {editingDoc && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Title</Label>
+                    <Input
+                      value={editingDoc.title || ""}
+                      onChange={(e) => setEditingDoc({ ...editingDoc, title: e.target.value })}
+                      data-testid="input-doc-title"
                     />
-                    <Label>{editingDoc.isPublished ? "Published" : "Draft"}</Label>
                   </div>
                   <div>
-                    <Label>Sort Order</Label>
+                    <Label>Slug</Label>
                     <Input
-                      type="number"
-                      value={editingDoc.sortOrder || 0}
-                      onChange={(e) => setEditingDoc({ ...editingDoc, sortOrder: parseInt(e.target.value) || 0 })}
-                      className="w-20"
-                      data-testid="input-doc-sort"
+                      value={editingDoc.slug || ""}
+                      onChange={(e) => setEditingDoc({ ...editingDoc, slug: e.target.value })}
+                      data-testid="input-doc-slug"
                     />
                   </div>
                 </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label>Content (Markdown)</Label>
-                  <Button variant="ghost" size="sm" onClick={() => setShowPreview(!showPreview)}>
-                    {showPreview ? <><EyeOff className="w-4 h-4 mr-1" /> Edit</> : <><Eye className="w-4 h-4 mr-1" /> Preview</>}
-                  </Button>
-                </div>
-                {showPreview ? (
-                  <div className="prose prose-sm max-w-none dark:prose-invert border rounded-md p-4 min-h-[300px] whitespace-pre-wrap">
-                    {editingDoc.content}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Category</Label>
+                    <Select
+                      value={editingDoc.category || ""}
+                      onValueChange={(v) => setEditingDoc({ ...editingDoc, category: v })}
+                    >
+                      <SelectTrigger data-testid="select-doc-category">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DOC_CATEGORIES.map((cat) => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                ) : (
-                  <Textarea
-                    value={editingDoc.content || ""}
-                    onChange={(e) => setEditingDoc({ ...editingDoc, content: e.target.value })}
-                    rows={15}
-                    className="font-mono text-sm"
-                    data-testid="textarea-doc-content"
-                  />
-                )}
+                  <div className="flex items-end gap-4">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={editingDoc.isPublished ?? true}
+                        onCheckedChange={(v) => setEditingDoc({ ...editingDoc, isPublished: v })}
+                        data-testid="switch-doc-published"
+                      />
+                      <Label>{editingDoc.isPublished ? "Published" : "Draft"}</Label>
+                    </div>
+                    <div>
+                      <Label>Sort Order</Label>
+                      <Input
+                        type="number"
+                        value={editingDoc.sortOrder || 0}
+                        onChange={(e) => setEditingDoc({ ...editingDoc, sortOrder: parseInt(e.target.value) || 0 })}
+                        className="w-20"
+                        data-testid="input-doc-sort"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Content (Markdown)</Label>
+                    <Button variant="ghost" size="sm" onClick={() => setShowPreview(!showPreview)}>
+                      {showPreview ? <><EyeOff className="w-4 h-4 mr-1" /> Edit</> : <><Eye className="w-4 h-4 mr-1" /> Preview</>}
+                    </Button>
+                  </div>
+                  {showPreview ? (
+                    <div className="prose prose-sm max-w-none dark:prose-invert border rounded-md p-4 min-h-[300px] whitespace-pre-wrap">
+                      {editingDoc.content}
+                    </div>
+                  ) : (
+                    <Textarea
+                      value={editingDoc.content || ""}
+                      onChange={(e) => setEditingDoc({ ...editingDoc, content: e.target.value })}
+                      rows={15}
+                      className="font-mono text-sm"
+                      data-testid="textarea-doc-content"
+                    />
+                  )}
+                </div>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                <Button
-                  onClick={handleSave}
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                  data-testid="button-save-doc"
-                >
-                  {(createMutation.isPending || updateMutation.isPending) && <LoadingSpinner />}
-                  Save
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            )}
+          </SheetBody>
+          <SheetFooter>
+            <Button variant="outline" onClick={() => setSheetOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleSave}
+              disabled={createMutation.isPending || updateMutation.isPending}
+              data-testid="button-save-doc"
+            >
+              {(createMutation.isPending || updateMutation.isPending) && <LoadingSpinner />}
+              Save
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </AdminSidebar>
   );
 }

@@ -17,7 +17,15 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetBody,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -31,7 +39,6 @@ import {
 } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Search, Loader2, Trash2, CheckCircle, XCircle, Pencil } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TherapistWithUser {
   id: string;
@@ -134,8 +141,8 @@ function TherapistsContent() {
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [addSheetOpen, setAddSheetOpen] = useState(false);
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [selectedTherapist, setSelectedTherapist] = useState<TherapistWithUser | null>(null);
   const [approveTarget, setApproveTarget] = useState<TherapistWithUser | null>(null);
   const [rejectTarget, setRejectTarget] = useState<TherapistWithUser | null>(null);
@@ -158,7 +165,7 @@ function TherapistsContent() {
     },
     onSuccess: () => {
       invalidateAll();
-      setAddDialogOpen(false);
+      setAddSheetOpen(false);
       toast({ title: "Therapist created successfully" });
     },
     onError: (error: Error) => {
@@ -173,7 +180,7 @@ function TherapistsContent() {
     },
     onSuccess: () => {
       invalidateAll();
-      setEditDialogOpen(false);
+      setEditSheetOpen(false);
       setSelectedTherapist(null);
       toast({ title: "Therapist updated successfully" });
     },
@@ -254,7 +261,7 @@ function TherapistsContent() {
         <h1 className="text-2xl font-heading font-semibold" data-testid="text-admin-therapists-title">
           Therapists
         </h1>
-        <Button onClick={() => setAddDialogOpen(true)} data-testid="button-add-therapist">
+        <Button onClick={() => setAddSheetOpen(true)} data-testid="button-add-therapist">
           <Plus className="w-4 h-4 mr-2" />
           Add Therapist
         </Button>
@@ -304,7 +311,7 @@ function TherapistsContent() {
                 className="cursor-pointer"
                 onClick={() => {
                   setSelectedTherapist(t);
-                  setEditDialogOpen(true);
+                  setEditSheetOpen(true);
                 }}
               >
                 <TableCell>
@@ -361,7 +368,7 @@ function TherapistsContent() {
                       variant="ghost"
                       onClick={() => {
                         setSelectedTherapist(t);
-                        setEditDialogOpen(true);
+                        setEditSheetOpen(true);
                       }}
                       data-testid={`button-edit-${t.id}`}
                     >
@@ -390,18 +397,18 @@ function TherapistsContent() {
         </TableBody>
       </Table>
 
-      <AddTherapistDialog
-        open={addDialogOpen}
-        onOpenChange={setAddDialogOpen}
+      <AddTherapistSheet
+        open={addSheetOpen}
+        onOpenChange={setAddSheetOpen}
         onSubmit={(data) => createMutation.mutate(data)}
         isPending={createMutation.isPending}
       />
 
       {selectedTherapist && (
-        <EditTherapistDialog
-          open={editDialogOpen}
+        <EditTherapistSheet
+          open={editSheetOpen}
           onOpenChange={(open) => {
-            setEditDialogOpen(open);
+            setEditSheetOpen(open);
             if (!open) setSelectedTherapist(null);
           }}
           therapist={selectedTherapist}
@@ -432,26 +439,28 @@ function TherapistsContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={!!rejectTarget} onOpenChange={(open) => { if (!open) { setRejectTarget(null); setRejectReason(""); } }}>
-        <DialogContent data-testid="dialog-reject">
-          <DialogHeader>
-            <DialogTitle>Reject Therapist</DialogTitle>
-            <DialogDescription>
+      <Sheet open={!!rejectTarget} onOpenChange={(open) => { if (!open) { setRejectTarget(null); setRejectReason(""); } }}>
+        <SheetContent side="right" size="default" data-testid="dialog-reject">
+          <SheetHeader>
+            <SheetTitle>Reject Therapist</SheetTitle>
+            <SheetDescription>
               Provide a reason for rejecting {rejectTarget?.user?.firstName} {rejectTarget?.user?.lastName}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="reject-reason">Rejection Reason</Label>
-            <Textarea
-              id="reject-reason"
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Enter the reason for rejection..."
-              className="min-h-[100px]"
-              data-testid="textarea-reject-reason"
-            />
-          </div>
-          <DialogFooter>
+            </SheetDescription>
+          </SheetHeader>
+          <SheetBody>
+            <div className="space-y-2">
+              <Label htmlFor="reject-reason">Rejection Reason</Label>
+              <Textarea
+                id="reject-reason"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Enter the reason for rejection..."
+                className="min-h-[100px]"
+                data-testid="textarea-reject-reason"
+              />
+            </div>
+          </SheetBody>
+          <SheetFooter>
             <Button variant="outline" onClick={() => { setRejectTarget(null); setRejectReason(""); }} data-testid="button-reject-cancel">
               Cancel
             </Button>
@@ -464,9 +473,9 @@ function TherapistsContent() {
               {rejectMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Reject
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent data-testid="dialog-delete-confirm">
@@ -494,7 +503,7 @@ function TherapistsContent() {
   );
 }
 
-function AddTherapistDialog({
+function AddTherapistSheet({
   open,
   onOpenChange,
   onSubmit,
@@ -530,13 +539,13 @@ function AddTherapistDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) form.reset(); }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col" data-testid="dialog-add-therapist">
-        <DialogHeader>
-          <DialogTitle>Add New Therapist</DialogTitle>
-          <DialogDescription>Create a new therapist account and profile.</DialogDescription>
-        </DialogHeader>
-        <ScrollArea className="flex-1 pr-4">
+    <Sheet open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) form.reset(); }}>
+      <SheetContent side="right" size="lg" data-testid="dialog-add-therapist">
+        <SheetHeader>
+          <SheetTitle>Add New Therapist</SheetTitle>
+          <SheetDescription>Create a new therapist account and profile.</SheetDescription>
+        </SheetHeader>
+        <SheetBody>
           <Form {...form}>
             <form id="add-therapist-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-4">
               <div className="grid grid-cols-2 gap-4">
@@ -729,20 +738,20 @@ function AddTherapistDialog({
               </div>
             </form>
           </Form>
-        </ScrollArea>
-        <DialogFooter>
+        </SheetBody>
+        <SheetFooter>
           <Button variant="outline" onClick={() => { onOpenChange(false); form.reset(); }} data-testid="button-add-cancel">Cancel</Button>
           <Button type="submit" form="add-therapist-form" disabled={isPending} data-testid="button-add-submit">
             {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Create Therapist
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
 
-function EditTherapistDialog({
+function EditTherapistSheet({
   open,
   onOpenChange,
   therapist,
@@ -781,9 +790,9 @@ function EditTherapistDialog({
   const status = getStatusInfo(therapist);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col" data-testid="dialog-edit-therapist">
-        <DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="lg" data-testid="dialog-edit-therapist">
+        <SheetHeader>
           <div className="flex items-center gap-3 flex-wrap">
             <Avatar className="h-12 w-12">
               {therapist.user?.profileImageUrl && (
@@ -792,18 +801,18 @@ function EditTherapistDialog({
               <AvatarFallback>{getInitials(therapist)}</AvatarFallback>
             </Avatar>
             <div>
-              <DialogTitle>
+              <SheetTitle>
                 {therapist.user?.firstName} {therapist.user?.lastName}
-              </DialogTitle>
+              </SheetTitle>
               <p className="text-sm text-muted-foreground">{therapist.user?.email}</p>
             </div>
             <Badge className={`${status.color} no-default-hover-elevate no-default-active-elevate ml-auto`} data-testid="badge-edit-status">
               {status.label}
             </Badge>
           </div>
-          <DialogDescription className="sr-only">Edit therapist profile details</DialogDescription>
-        </DialogHeader>
-        <ScrollArea className="flex-1 pr-4">
+          <SheetDescription className="sr-only">Edit therapist profile details</SheetDescription>
+        </SheetHeader>
+        <SheetBody>
           <Form {...form}>
             <form id="edit-therapist-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-4">
               <FormField control={form.control} name="title" render={({ field }) => (
@@ -992,15 +1001,15 @@ function EditTherapistDialog({
               )}
             </form>
           </Form>
-        </ScrollArea>
-        <DialogFooter>
+        </SheetBody>
+        <SheetFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-edit-cancel">Cancel</Button>
           <Button type="submit" form="edit-therapist-form" disabled={isPending} data-testid="button-edit-save">
             {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Save Changes
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

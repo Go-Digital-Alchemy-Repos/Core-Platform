@@ -7,11 +7,13 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetBody,
+} from "@/components/ui/sheet";
 import {
   Form,
   FormControl,
@@ -133,185 +135,76 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
   if (!user) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2" data-testid="text-profile-title">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" size="md">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2" data-testid="text-profile-title">
             <User className="h-5 w-5" />
             My Profile
-          </DialogTitle>
-        </DialogHeader>
+          </SheetTitle>
+          <SheetDescription className="sr-only">Edit your profile and password</SheetDescription>
+        </SheetHeader>
 
-        <div className="flex flex-col items-center gap-3 py-2">
-          <AvatarUpload
-            currentImageUrl={user.profileImageUrl}
-            fallbackInitials={`${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`}
-            size="lg"
-          />
-          <div className="text-center">
-            <p className="font-medium text-sm" data-testid="text-profile-name">
-              {user.firstName} {user.lastName}
-            </p>
-            <Badge variant="outline" className="text-xs capitalize" data-testid="badge-profile-role">
-              {user.role}
-            </Badge>
-          </div>
-        </div>
-
-        <Separator />
-
-        <Form {...profileForm}>
-          <form
-            onSubmit={profileForm.handleSubmit((data) => profileMutation.mutate(data))}
-            className="space-y-3"
-          >
-            <div className="flex gap-3">
-              <FormField
-                control={profileForm.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>First Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-profile-firstname" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={profileForm.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-profile-lastname" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={profileForm.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" {...field} data-testid="input-profile-email" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <SheetBody>
+          <div className="flex flex-col items-center gap-3 py-2">
+            <AvatarUpload
+              currentImageUrl={user.profileImageUrl}
+              fallbackInitials={`${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`}
+              size="lg"
             />
-            <Button
-              type="submit"
-              size="sm"
-              disabled={profileMutation.isPending}
-              data-testid="button-save-profile"
-            >
-              {profileMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Save Profile
-            </Button>
-          </form>
-        </Form>
+            <div className="text-center">
+              <p className="font-medium text-sm" data-testid="text-profile-name">
+                {user.firstName} {user.lastName}
+              </p>
+              <Badge variant="outline" className="text-xs capitalize" data-testid="badge-profile-role">
+                {user.role}
+              </Badge>
+            </div>
+          </div>
 
-        <Separator />
+          <Separator />
 
-        <div>
-          <h4 className="text-sm font-medium flex items-center gap-2 mb-3">
-            <Lock className="h-4 w-4" />
-            Change Password
-          </h4>
-          <Form {...passwordForm}>
+          <Form {...profileForm}>
             <form
-              onSubmit={passwordForm.handleSubmit((data) => passwordMutation.mutate(data))}
+              onSubmit={profileForm.handleSubmit((data) => profileMutation.mutate(data))}
               className="space-y-3"
             >
+              <div className="flex gap-3">
+                <FormField
+                  control={profileForm.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-profile-firstname" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={profileForm.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-profile-lastname" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
-                control={passwordForm.control}
-                name="currentPassword"
+                control={profileForm.control}
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Current Password</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showCurrentPassword ? "text" : "password"}
-                          {...field}
-                          data-testid="input-current-password"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-0 top-0 h-full px-3"
-                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                          data-testid="button-toggle-current-password"
-                        >
-                          {showCurrentPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={passwordForm.control}
-                name="newPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showNewPassword ? "text" : "password"}
-                          {...field}
-                          data-testid="input-new-password"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-0 top-0 h-full px-3"
-                          onClick={() => setShowNewPassword(!showNewPassword)}
-                          data-testid="button-toggle-new-password"
-                        >
-                          {showNewPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={passwordForm.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm New Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type={showNewPassword ? "text" : "password"}
-                        {...field}
-                        data-testid="input-confirm-password"
-                      />
+                      <Input type="email" {...field} data-testid="input-profile-email" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -320,21 +213,133 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
               <Button
                 type="submit"
                 size="sm"
-                variant="outline"
-                disabled={passwordMutation.isPending}
-                data-testid="button-change-password"
+                disabled={profileMutation.isPending}
+                data-testid="button-save-profile"
               >
-                {passwordMutation.isPending ? (
+                {profileMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
-                  <Lock className="h-4 w-4 mr-2" />
+                  <Save className="h-4 w-4 mr-2" />
                 )}
-                Change Password
+                Save Profile
               </Button>
             </form>
           </Form>
-        </div>
-      </DialogContent>
-    </Dialog>
+
+          <Separator />
+
+          <div>
+            <h4 className="text-sm font-medium flex items-center gap-2 mb-3">
+              <Lock className="h-4 w-4" />
+              Change Password
+            </h4>
+            <Form {...passwordForm}>
+              <form
+                onSubmit={passwordForm.handleSubmit((data) => passwordMutation.mutate(data))}
+                className="space-y-3"
+              >
+                <FormField
+                  control={passwordForm.control}
+                  name="currentPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Current Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showCurrentPassword ? "text" : "password"}
+                            {...field}
+                            data-testid="input-current-password"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-full px-3"
+                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                            data-testid="button-toggle-current-password"
+                          >
+                            {showCurrentPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={passwordForm.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showNewPassword ? "text" : "password"}
+                            {...field}
+                            data-testid="input-new-password"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-full px-3"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            data-testid="button-toggle-new-password"
+                          >
+                            {showNewPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={passwordForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm New Password</FormLabel>
+                      <FormControl>
+                        <Input
+                          type={showNewPassword ? "text" : "password"}
+                          {...field}
+                          data-testid="input-confirm-password"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="outline"
+                  disabled={passwordMutation.isPending}
+                  data-testid="button-change-password"
+                >
+                  {passwordMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Lock className="h-4 w-4 mr-2" />
+                  )}
+                  Change Password
+                </Button>
+              </form>
+            </Form>
+          </div>
+        </SheetBody>
+      </SheetContent>
+    </Sheet>
   );
 }

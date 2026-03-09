@@ -9,11 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetBody,
+} from "@/components/ui/sheet";
 import { Mail, MailOpen } from "lucide-react";
 import type { ContactMessage } from "@shared/schema";
 
@@ -107,45 +109,48 @@ function MessagesContent() {
         )}
       </div>
 
-      <Dialog open={!!selectedMessage} onOpenChange={(open) => !open && setSelectedMessage(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle data-testid="text-message-dialog-subject">
+      <Sheet open={!!selectedMessage} onOpenChange={(open) => !open && setSelectedMessage(null)}>
+        <SheetContent side="right" size="default">
+          <SheetHeader>
+            <SheetTitle data-testid="text-message-dialog-subject">
               {selectedMessage?.subject}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="text-sm">
-              <span className="text-muted-foreground">From: </span>
-              <span data-testid="text-message-dialog-from">
-                {selectedMessage?.name} ({selectedMessage?.email})
-              </span>
+            </SheetTitle>
+            <SheetDescription className="sr-only">View message details</SheetDescription>
+          </SheetHeader>
+          <SheetBody>
+            <div className="space-y-3">
+              <div className="text-sm">
+                <span className="text-muted-foreground">From: </span>
+                <span data-testid="text-message-dialog-from">
+                  {selectedMessage?.name} ({selectedMessage?.email})
+                </span>
+              </div>
+              <div className="text-sm">
+                <span className="text-muted-foreground">Date: </span>
+                <span data-testid="text-message-dialog-date">
+                  {selectedMessage?.createdAt
+                    ? new Date(selectedMessage.createdAt).toLocaleString()
+                    : "—"}
+                </span>
+              </div>
+              <div className="border-t pt-3">
+                <p className="text-sm whitespace-pre-wrap" data-testid="text-message-dialog-body">
+                  {selectedMessage?.message}
+                </p>
+              </div>
+              {selectedMessage && !selectedMessage.isRead && (
+                <Button
+                  onClick={() => markReadMutation.mutate(selectedMessage.id)}
+                  disabled={markReadMutation.isPending}
+                  data-testid="button-mark-read"
+                >
+                  Mark as Read
+                </Button>
+              )}
             </div>
-            <div className="text-sm">
-              <span className="text-muted-foreground">Date: </span>
-              <span data-testid="text-message-dialog-date">
-                {selectedMessage?.createdAt
-                  ? new Date(selectedMessage.createdAt).toLocaleString()
-                  : "—"}
-              </span>
-            </div>
-            <div className="border-t pt-3">
-              <p className="text-sm whitespace-pre-wrap" data-testid="text-message-dialog-body">
-                {selectedMessage?.message}
-              </p>
-            </div>
-            {selectedMessage && !selectedMessage.isRead && (
-              <Button
-                onClick={() => markReadMutation.mutate(selectedMessage.id)}
-                disabled={markReadMutation.isPending}
-                data-testid="button-mark-read"
-              >
-                Mark as Read
-              </Button>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+          </SheetBody>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

@@ -15,11 +15,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetBody,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import {
   Form,
   FormControl,
@@ -213,50 +216,27 @@ function TiersContent() {
         ))}
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle data-testid="text-tier-dialog-title">
+      <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
+        <SheetContent side="right" size="default">
+          <SheetHeader>
+            <SheetTitle data-testid="text-tier-dialog-title">
               {editingTier ? "Edit Tier" : "Create Tier"}
-            </DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} data-testid="input-tier-name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} data-testid="input-tier-description" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-2 gap-4">
+            </SheetTitle>
+            <SheetDescription className="sr-only">
+              {editingTier ? "Edit membership tier details" : "Create a new membership tier"}
+            </SheetDescription>
+          </SheetHeader>
+          <SheetBody>
+            <Form {...form}>
+              <form id="tier-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="monthlyPrice"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Monthly Price (cents)</FormLabel>
+                      <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} data-testid="input-tier-monthly-price" />
+                        <Input {...field} data-testid="input-tier-name" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -264,78 +244,109 @@ function TiersContent() {
                 />
                 <FormField
                   control={form.control}
-                  name="annualPrice"
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Annual Price (cents)</FormLabel>
+                      <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} data-testid="input-tier-annual-price" />
+                        <Textarea {...field} data-testid="input-tier-description" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-              <FormField
-                control={form.control}
-                name="features"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Features (one per line)</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} data-testid="input-tier-features" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="monthlyPrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Monthly Price (cents)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} data-testid="input-tier-monthly-price" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="annualPrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Annual Price (cents)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} data-testid="input-tier-annual-price" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <FormField
                   control={form.control}
-                  name="sortOrder"
+                  name="features"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Sort Order</FormLabel>
+                      <FormLabel>Features (one per line)</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} data-testid="input-tier-sort-order" />
+                        <Textarea {...field} data-testid="input-tier-features" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center gap-2 pt-6">
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          data-testid="switch-tier-active"
-                        />
-                      </FormControl>
-                      <FormLabel className="!mt-0">Active</FormLabel>
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={createMutation.isPending || updateMutation.isPending}
-                data-testid="button-submit-tier"
-              >
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Saving..."
-                  : editingTier
-                    ? "Update Tier"
-                    : "Create Tier"}
-              </Button>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="sortOrder"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sort Order</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} data-testid="input-tier-sort-order" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center gap-2 pt-6">
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-tier-active"
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0">Active</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </form>
+            </Form>
+          </SheetBody>
+          <SheetFooter>
+            <Button
+              type="submit"
+              form="tier-form"
+              className="w-full"
+              disabled={createMutation.isPending || updateMutation.isPending}
+              data-testid="button-submit-tier"
+            >
+              {createMutation.isPending || updateMutation.isPending
+                ? "Saving..."
+                : editingTier
+                  ? "Update Tier"
+                  : "Create Tier"}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

@@ -50,7 +50,14 @@ client/src/lib/       — Utilities (queryClient, constants)
 - Uses `SESSION_SECRET` env var for signing
 - Three roles: admin, therapist, client
 
-### Responsive Design
+### UI Patterns
+- All form/detail popups use **Sheet** (slide-out drawer from right), not Dialog modals
+- Sheet component supports size variants: sm, default (md), md (lg), lg (2xl), xl (4xl), full (90vw)
+- SheetBody component handles scrollable content between header and footer
+- AlertDialog still used for confirmation prompts (approve, delete)
+- Large forms (therapist add/edit) use `size="lg"`, content editors (docs, email templates) use `size="xl"`
+
+## Responsive Design
 - Custom breakpoints: xs=480px, sm=640px, md=768px, lg=1024px, xl=1280px
 - Directory page uses `h-[100dvh]` for proper mobile viewport height
 - Global CSS: overflow-x hidden on body, touch-action manipulation, text-size-adjust
