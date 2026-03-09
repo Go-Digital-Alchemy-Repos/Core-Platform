@@ -3,6 +3,7 @@ import sanitizeHtml from "sanitize-html";
 import { storage } from "../storage/index";
 import { asyncHandler } from "../middleware/error-handler";
 import { authenticateToken } from "../middleware/auth";
+import { sendNewMessageEmail } from "../services/email.service";
 import { z } from "zod";
 
 const SAFE_HTML_OPTIONS: sanitizeHtml.IOptions = {
@@ -98,6 +99,39 @@ router.post(
       attachmentType: body.attachmentType,
     });
     res.json(msg);
+
+    setImmediate(async () => {
+      try {
+        const recipientId = conv.clientId === userId ? conv.counselorId : conv.clientId;
+        const [sender, recipient] = await Promise.all([
+          storage.users.getUser(userId),
+          storage.users.getUser(recipientId),
+        ]);
+        if (!recipient || !sender) return;
+        const prefs = await storage.notifications.getPreferences(recipientId);
+        const senderName = `${sender.firstName} ${sender.lastName}`.trim();
+        if (prefs.inAppNewMessage) {
+          await storage.notifications.create({
+            userId: recipientId,
+            type: "new_message",
+            title: `New message from ${senderName}`,
+            body: "You have a new message in your Message Center.",
+            linkUrl: "/messages",
+          });
+        }
+        if (prefs.emailNewMessage && recipient.email) {
+          const origin = req.get("origin") || `${req.protocol}://${req.get("host")}`;
+          await sendNewMessageEmail(
+            recipient.email,
+            recipient.firstName,
+            senderName,
+            `${origin}/messages`
+          );
+        }
+      } catch (err) {
+        console.error("[Notifications] Failed to send message notification:", err);
+      }
+    });
   })
 );
 

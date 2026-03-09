@@ -10,3 +10,4 @@ export { systemSettings, insertSystemSettingSchema, type InsertSystemSetting, ty
 export { emailTemplates, insertEmailTemplateSchema, type InsertEmailTemplate, type EmailTemplate } from "./email-templates";
 export { conversations, directMessages, insertDirectMessageSchema, type InsertDirectMessage, type DirectMessage, type Conversation } from "./direct-messages";
 export { activityLogs, type ActivityLog } from "./activity-logs";
+export { notifications, notificationPreferences, insertNotificationSchema, type InsertNotification, type Notification, type NotificationPreferences } from "./notifications";

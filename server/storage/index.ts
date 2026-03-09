@@ -10,6 +10,7 @@ import { SettingsStorage } from "./settings.storage";
 import { EmailTemplateStorage } from "./email-template.storage";
 import { MessageStorage } from "./message.storage";
 import { ActivityStorage } from "./activity.storage";
+import { NotificationStorage } from "./notification.storage";
 
 export const storage = {
   users: new UserStorage(),
@@ -24,6 +25,7 @@ export const storage = {
   emailTemplates: new EmailTemplateStorage(),
   messages: new MessageStorage(),
   activity: new ActivityStorage(),
+  notifications: new NotificationStorage(),
 };
 
 export type { TherapistSearchParams, TherapistWithUser } from "./therapist.storage";

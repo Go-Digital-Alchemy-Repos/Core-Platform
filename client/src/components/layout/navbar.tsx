@@ -15,6 +15,7 @@ import {
 import { ThemeToggle } from "@/components/shared/theme-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
+import { NotificationBell } from "@/components/shared/notification-bell";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -69,6 +70,7 @@ export function Navbar() {
             </Button>
           </Link>
           <ThemeToggle />
+          {user && <NotificationBell />}
           {isLoading ? null : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -142,6 +144,7 @@ export function Navbar() {
 
         <div className="flex md:hidden items-center gap-2">
           <ThemeToggle />
+          {user && <NotificationBell />}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button size="icon" variant="ghost" data-testid="button-mobile-menu">

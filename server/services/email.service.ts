@@ -305,4 +305,26 @@ export async function testMailgunConnection(): Promise<{
   }
 }
 
+export async function sendNewMessageEmail(
+  to: string,
+  recipientName: string | null,
+  senderName: string,
+  loginUrl: string
+): Promise<boolean> {
+  const firstName = recipientName || "there";
+  const html = baseTemplate(
+    "New Message in Your Message Center",
+    `<p>Hi ${firstName},</p>
+    <p>You have received a new message from <strong>${senderName}</strong> in your TCK Wellness Message Center.</p>
+    <p>For your privacy, message content is not included in this email notification. Please log in to read the full message.</p>
+    <p style="margin:24px 0;">
+      <a href="${loginUrl}" style="display:inline-block;background:#1e3a5f;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">
+        Go to Message Center
+      </a>
+    </p>
+    <p style="color:#6b7280;font-size:13px;">If you did not expect this message, you can safely ignore this email.</p>`
+  );
+  return sendEmail(to, `New message from ${senderName} — TCK Wellness`, html);
+}
+
 export { baseTemplate, renderTemplate };
