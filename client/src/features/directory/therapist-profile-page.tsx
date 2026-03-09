@@ -68,7 +68,7 @@ export default function TherapistProfilePage() {
       <PageLayout>
         <div className="container mx-auto px-4 py-16 text-center flex flex-col items-center gap-4">
           <p className="text-lg text-muted-foreground" data-testid="text-not-found">
-            Therapist not found.
+            Counselor not found.
           </p>
           <Link href="/directory">
             <Button variant="outline" data-testid="link-back-directory">

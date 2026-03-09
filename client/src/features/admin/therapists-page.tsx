@@ -166,7 +166,7 @@ function TherapistsContent() {
     onSuccess: () => {
       invalidateAll();
       setAddSheetOpen(false);
-      toast({ title: "Therapist created successfully" });
+      toast({ title: "Counselor created successfully" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -182,7 +182,7 @@ function TherapistsContent() {
       invalidateAll();
       setEditSheetOpen(false);
       setSelectedTherapist(null);
-      toast({ title: "Therapist updated successfully" });
+      toast({ title: "Counselor updated successfully" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -196,7 +196,7 @@ function TherapistsContent() {
     onSuccess: () => {
       invalidateAll();
       setApproveTarget(null);
-      toast({ title: "Therapist approved" });
+      toast({ title: "Counselor approved" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -211,7 +211,7 @@ function TherapistsContent() {
       invalidateAll();
       setRejectTarget(null);
       setRejectReason("");
-      toast({ title: "Therapist rejected" });
+      toast({ title: "Counselor rejected" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -225,7 +225,7 @@ function TherapistsContent() {
     onSuccess: () => {
       invalidateAll();
       setDeleteTarget(null);
-      toast({ title: "Therapist removed" });
+      toast({ title: "Counselor removed" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -259,11 +259,11 @@ function TherapistsContent() {
     <div className="p-6">
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <h1 className="text-2xl font-heading font-semibold" data-testid="text-admin-therapists-title">
-          Therapists
+          Counselors
         </h1>
         <Button onClick={() => setAddSheetOpen(true)} data-testid="button-add-therapist">
           <Plus className="w-4 h-4 mr-2" />
-          Add Therapist
+          Add Counselor
         </Button>
       </div>
 
@@ -420,7 +420,7 @@ function TherapistsContent() {
       <AlertDialog open={!!approveTarget} onOpenChange={(open) => !open && setApproveTarget(null)}>
         <AlertDialogContent data-testid="dialog-approve-confirm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Approve Therapist</AlertDialogTitle>
+            <AlertDialogTitle>Approve Counselor</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to approve {approveTarget?.user?.firstName} {approveTarget?.user?.lastName}? They will be listed in the public directory.
             </AlertDialogDescription>
@@ -442,7 +442,7 @@ function TherapistsContent() {
       <Sheet open={!!rejectTarget} onOpenChange={(open) => { if (!open) { setRejectTarget(null); setRejectReason(""); } }}>
         <SheetContent side="right" size="default" data-testid="dialog-reject">
           <SheetHeader>
-            <SheetTitle>Reject Therapist</SheetTitle>
+            <SheetTitle>Reject Counselor</SheetTitle>
             <SheetDescription>
               Provide a reason for rejecting {rejectTarget?.user?.firstName} {rejectTarget?.user?.lastName}.
             </SheetDescription>
@@ -480,7 +480,7 @@ function TherapistsContent() {
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent data-testid="dialog-delete-confirm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Therapist</AlertDialogTitle>
+            <AlertDialogTitle>Delete Counselor</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to remove {deleteTarget?.user?.firstName} {deleteTarget?.user?.lastName}? This action will deactivate their profile.
             </AlertDialogDescription>
@@ -542,8 +542,8 @@ function AddTherapistSheet({
     <Sheet open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) form.reset(); }}>
       <SheetContent side="right" size="lg" data-testid="dialog-add-therapist">
         <SheetHeader>
-          <SheetTitle>Add New Therapist</SheetTitle>
-          <SheetDescription>Create a new therapist account and profile.</SheetDescription>
+          <SheetTitle>Add New Counselor</SheetTitle>
+          <SheetDescription>Create a new counselor account and profile.</SheetDescription>
         </SheetHeader>
         <SheetBody>
           <Form {...form}>
@@ -590,7 +590,7 @@ function AddTherapistSheet({
               <FormField control={form.control} name="bio" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Bio</FormLabel>
-                  <FormControl><Textarea placeholder="About the therapist..." className="min-h-[80px]" {...field} data-testid="input-add-bio" /></FormControl>
+                  <FormControl><Textarea placeholder="About the counselor..." className="min-h-[80px]" {...field} data-testid="input-add-bio" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -810,7 +810,7 @@ function EditTherapistSheet({
               {status.label}
             </Badge>
           </div>
-          <SheetDescription className="sr-only">Edit therapist profile details</SheetDescription>
+          <SheetDescription className="sr-only">Edit counselor profile details</SheetDescription>
         </SheetHeader>
         <SheetBody>
           <Form {...form}>

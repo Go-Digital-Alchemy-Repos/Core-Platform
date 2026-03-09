@@ -33,7 +33,7 @@ const howItWorks = [
     step: 1,
     icon: Search,
     title: "Browse Counselors",
-    description: "Explore our curated directory of TCK-informed therapists from around the world.",
+    description: "Explore our curated directory of TCK-informed counselors from around the world.",
   },
   {
     step: 2,
@@ -45,7 +45,7 @@ const howItWorks = [
     step: 3,
     icon: MessageCircle,
     title: "Connect & Begin",
-    description: "Reach out directly to a therapist who truly understands your unique background.",
+    description: "Reach out directly to a counselor who truly understands your unique background.",
   },
 ];
 
@@ -67,7 +67,7 @@ const benefits = [
   {
     icon: Globe,
     title: "Culturally Informed Care",
-    description: "Every therapist in our directory understands the unique challenges of growing up across cultures.",
+    description: "Every counselor in our directory understands the unique challenges of growing up across cultures.",
   },
   {
     icon: Heart,
@@ -82,7 +82,7 @@ const benefits = [
 ];
 
 const trustStats = [
-  { value: "40+", label: "Therapists" },
+  { value: "40+", label: "Counselors" },
   { value: "15+", label: "Countries" },
   { value: "1000+", label: "Connections Made" },
 ];
@@ -112,10 +112,10 @@ export default function HomePage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-14 pb-18 sm:pt-20 sm:pb-24 md:pt-28 md:pb-32">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-5 sm:mb-6" data-testid="text-hero-heading">
-              Find Your <span className="text-accent">TCK-Informed</span> Therapist
+              Find Your <span className="text-accent">TCK-Informed</span> Counselor
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed" data-testid="text-hero-subtitle">
-              A global directory connecting Third Culture Kids with therapists who truly understand the complexity of a cross-cultural life.
+              A global directory connecting Third Culture Kids with counselors who truly understand the complexity of a cross-cultural life.
             </p>
             <div className="flex flex-col xs:flex-row flex-wrap justify-center gap-3 sm:gap-4 mb-10 sm:mb-14">
               <Link href="/directory">
@@ -126,7 +126,7 @@ export default function HomePage() {
               </Link>
               <Link href="/auth/register">
                 <Button size="lg" variant="outline" className="w-full xs:w-auto border-foreground/20 hover:bg-foreground/5" data-testid="button-join-therapist">
-                  Join as Therapist
+                  Join as Counselor
                 </Button>
               </Link>
             </div>
@@ -169,7 +169,7 @@ export default function HomePage() {
           How It Works
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mx-auto mb-10 sm:mb-14">
-          Getting started is simple. Find the right therapist in three easy steps.
+          Getting started is simple. Find the right counselor in three easy steps.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 md:gap-12">
           {howItWorks.map((item) => (
@@ -191,7 +191,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap mb-8 sm:mb-12">
             <div>
               <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold" data-testid="text-featured-heading">
-                Featured Therapists
+                Featured Counselors
               </h2>
               <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">TCK-informed professionals from around the world</p>
             </div>
@@ -251,7 +251,7 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <p className="text-center text-muted-foreground py-12">No therapists available yet.</p>
+            <p className="text-center text-muted-foreground py-12">No counselors available yet.</p>
           )}
         </div>
       </section>
@@ -325,7 +325,7 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="section-cta">
         <div className="max-w-2xl mx-auto">
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold mb-3 sm:mb-4" data-testid="text-cta-heading">
-            Are You a TCK-Informed Therapist?
+            Are You a TCK-Informed Counselor?
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto mb-8 sm:mb-10 leading-relaxed">
             Join our growing directory and connect with clients who need your unique expertise. List your practice and reach the global TCK community.

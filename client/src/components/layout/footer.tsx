@@ -2,14 +2,14 @@ import { Link } from "wouter";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
 
 const platformLinks = [
-  { href: "/directory", label: "Find a Therapist", testId: "link-footer-directory" },
+  { href: "/directory", label: "Find a Counselor", testId: "link-footer-directory" },
   { href: "/events", label: "Events & Workshops", testId: "link-footer-events" },
   { href: "/about", label: "How It Works", testId: "link-footer-how-it-works" },
 ];
 
 const therapistLinks = [
   { href: "/auth/register", label: "Join the Directory", testId: "link-footer-join" },
-  { href: "/auth/login", label: "Therapist Login", testId: "link-footer-login" },
+  { href: "/auth/login", label: "Counselor Login", testId: "link-footer-login" },
   { href: "/therapist/subscription", label: "Membership Plans", testId: "link-footer-membership" },
 ];
 
@@ -58,12 +58,12 @@ export function Footer() {
               className="h-8 sm:h-9 w-auto mb-3 sm:mb-4 dark:brightness-[1.8] dark:contrast-[0.9]"
             />
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              Connecting Third Culture Kids with culturally informed therapists worldwide. Find support that understands your unique journey.
+              Connecting Third Culture Kids with culturally informed counselors worldwide. Find support that understands your unique journey.
             </p>
           </div>
 
           <FooterColumn title="Platform" links={platformLinks} />
-          <FooterColumn title="For Therapists" links={therapistLinks} />
+          <FooterColumn title="For Counselors" links={therapistLinks} />
           <div className="col-span-2 sm:col-span-1">
             <FooterColumn title="Resources" links={resourceLinks} />
             <div className="mt-6 sm:mt-8">

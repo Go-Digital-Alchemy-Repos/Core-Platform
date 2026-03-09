@@ -147,7 +147,7 @@ function UsersContent() {
               Admins ({counts.admin})
             </TabsTrigger>
             <TabsTrigger value="therapist" data-testid="tab-therapist">
-              Therapists ({counts.therapist})
+              Counselors ({counts.therapist})
             </TabsTrigger>
             <TabsTrigger value="client" data-testid="tab-client">
               Clients ({counts.client})
@@ -336,7 +336,7 @@ function CreateUserSheet({
         <SheetHeader>
           <SheetTitle className="font-heading">Create New User</SheetTitle>
           <SheetDescription>
-            Create a new account for a customer, therapist, or admin.
+            Create a new account for a customer, counselor, or admin.
           </SheetDescription>
         </SheetHeader>
         <SheetBody>
@@ -417,7 +417,7 @@ function CreateUserSheet({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="client">Client</SelectItem>
-                  <SelectItem value="therapist">Therapist</SelectItem>
+                  <SelectItem value="therapist">Counselor</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>

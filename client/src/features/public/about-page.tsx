@@ -29,7 +29,7 @@ export default function AboutPage() {
             TCK Wellness exists to bridge the gap between Third Culture Kids and mental health professionals who understand their unique experiences. We believe that everyone deserves access to culturally informed care, especially those whose identities span multiple cultures and countries.
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            Our platform makes it easy for TCKs, Adult TCKs, and Cross-Cultural Kids to find therapists who specialize in the challenges of growing up between worlds — from identity formation and belonging to grief of place and cultural transition.
+            Our platform makes it easy for TCKs, Adult TCKs, and Cross-Cultural Kids to find counselors who specialize in the challenges of growing up between worlds — from identity formation and belonging to grief of place and cultural transition.
           </p>
         </section>
 
@@ -61,7 +61,7 @@ export default function AboutPage() {
                 </div>
                 <h3 className="font-semibold mb-2">Cultural Understanding</h3>
                 <p className="text-sm text-muted-foreground">
-                  We prioritize therapists with lived or trained experience in cross-cultural dynamics.
+                  We prioritize counselors with lived or trained experience in cross-cultural dynamics.
                 </p>
               </CardContent>
             </Card>

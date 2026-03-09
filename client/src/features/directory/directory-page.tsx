@@ -277,12 +277,12 @@ export default function DirectoryPage() {
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <h1 className="sm:text-lg font-heading font-semibold text-[30px]" data-testid="text-directory-heading">
-                  Find a Therapist
+                  Find a Counselor
                 </h1>
                 {!isLoading && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1 mt-[10px] mb-[10px]" data-testid="text-results-count">
                     <Users className="h-3 w-3 flex-shrink-0" />
-                    {filtered.length} therapist{filtered.length !== 1 ? "s" : ""} available
+                    {filtered.length} counselor{filtered.length !== 1 ? "s" : ""} available
                   </p>
                 )}
               </div>
@@ -482,7 +482,7 @@ export default function DirectoryPage() {
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-4 text-center" data-testid="text-no-results">
                 <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm font-medium text-muted-foreground">No therapists found</p>
+                <p className="text-sm font-medium text-muted-foreground">No counselors found</p>
                 <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your search or filters</p>
                 {activeFilterCount > 0 && (
                   <Button

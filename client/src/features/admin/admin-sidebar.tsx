@@ -21,7 +21,7 @@ import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 
 const navItems = [
   { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { title: "Therapists", href: "/admin/therapists", icon: UserCheck },
+  { title: "Counselors", href: "/admin/therapists", icon: UserCheck },
   { title: "Users", href: "/admin/users", icon: Users },
   { title: "Membership Tiers", href: "/admin/membership-tiers", icon: CreditCard },
   { title: "Events", href: "/admin/events", icon: CalendarDays },

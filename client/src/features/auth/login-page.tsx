@@ -30,7 +30,7 @@ const testAccounts = [
     role: "admin",
   },
   {
-    label: "Therapist",
+    label: "Counselor",
     email: "therapist@test.com",
     password: "Therapist123!",
     icon: Stethoscope,

@@ -1,7 +1,11 @@
-# TCK Wellness — Therapist Directory & Subscription Platform
+# TCK Wellness — Counselor Directory & Subscription Platform
 
 ## Overview
-A BetterHelp-style therapist directory and subscription platform where TCK-informed therapists subscribe to appear in a searchable public directory. Features custom JWT authentication, OpenStreetMap/Leaflet maps, Stripe subscriptions, and a full admin dashboard.
+A BetterHelp-style counselor directory and subscription platform where TCK-informed counselors subscribe to appear in a searchable public directory. Features custom JWT authentication, OpenStreetMap/Leaflet maps, Stripe subscriptions, and a full admin dashboard.
+
+## UI Terminology
+- All visible text uses "Counselor"/"Counselors" throughout the UI (navbar, footer, home, directory, admin, auth pages)
+- Code identifiers, API routes (`/api/therapist/*`, `/api/therapists`), DB columns, and role values (`"therapist"`) remain unchanged
 
 ## Tech Stack
 - **Frontend**: React 18, TypeScript, Tailwind CSS, shadcn/ui, Wouter, TanStack Query v5

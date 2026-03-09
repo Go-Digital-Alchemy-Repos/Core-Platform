@@ -57,7 +57,7 @@ export function Navbar() {
               data-testid="link-nav-find-therapist"
             >
               <Search className="h-4 w-4 mr-1.5" />
-              Find a Therapist
+              Find a Counselor
             </Button>
           </Link>
           <ThemeToggle />
@@ -75,7 +75,7 @@ export function Navbar() {
                   <DropdownMenuItem asChild>
                     <Link href="/therapist" data-testid="link-therapist-dashboard">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
-                      Therapist Dashboard
+                      Counselor Dashboard
                     </Link>
                   </DropdownMenuItem>
                 )}
@@ -154,7 +154,7 @@ export function Navbar() {
                     data-testid="link-mobile-find-therapist"
                   >
                     <Search className="h-4 w-4 mr-1.5" />
-                    Find a Therapist
+                    Find a Counselor
                   </Button>
                 </Link>
 
@@ -169,7 +169,7 @@ export function Navbar() {
                       <Link href="/therapist" onClick={() => setMobileOpen(false)}>
                         <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-therapist">
                           <LayoutDashboard className="mr-2 h-4 w-4" />
-                          Therapist Dashboard
+                          Counselor Dashboard
                         </Button>
                       </Link>
                     )}

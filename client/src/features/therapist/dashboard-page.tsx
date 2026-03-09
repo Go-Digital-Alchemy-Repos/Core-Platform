@@ -121,7 +121,7 @@ export default function TherapistDashboardPage() {
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div>
         <h1 className="text-2xl font-heading font-semibold" data-testid="text-dashboard-title">
-          Welcome, {user?.firstName || "Therapist"}
+          Welcome, {user?.firstName || "Counselor"}
         </h1>
         <p className="text-muted-foreground mt-1" data-testid="text-dashboard-subtitle">
           Manage your profile and subscription from your dashboard.
