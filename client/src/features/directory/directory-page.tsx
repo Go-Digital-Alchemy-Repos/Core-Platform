@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SPECIALIZATIONS } from "@shared/types";
+import { useSpecializations } from "@/hooks/use-specializations";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
 
 type TherapistWithUser = TherapistProfile & {
@@ -182,23 +182,23 @@ export default function DirectoryPage() {
     setSpecialization(specParam || "all");
   }, [queryString]);
 
-  const filterOptions = useMemo(() => {
-    if (!therapists) return { specializations: [...SPECIALIZATIONS], languages: [], countries: [] };
+  const { specializations: specList } = useSpecializations();
 
+  const filterOptions = useMemo(() => {
     const langSet = new Set<string>();
     const countrySet = new Set<string>();
 
-    for (const t of therapists) {
+    for (const t of therapists ?? []) {
       (t.languages || []).forEach((l) => langSet.add(l));
       if (t.country) countrySet.add(t.country);
     }
 
     return {
-      specializations: [...SPECIALIZATIONS],
+      specializations: specList.map((s) => s.name),
       languages: Array.from(langSet).sort(),
       countries: Array.from(countrySet).sort(),
     };
-  }, [therapists]);
+  }, [therapists, specList]);
 
   const filtered = useMemo(() => {
     if (!therapists) return [];

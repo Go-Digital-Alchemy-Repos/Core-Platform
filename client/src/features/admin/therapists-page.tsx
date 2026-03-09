@@ -8,7 +8,8 @@ import { AdminSidebar } from "./admin-sidebar";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { SPECIALIZATIONS, LANGUAGES, ALL_LANGUAGES, PracticeMode } from "@shared/types";
+import { LANGUAGES, ALL_LANGUAGES, PracticeMode } from "@shared/types";
+import { useSpecializations } from "@/hooks/use-specializations";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -517,6 +518,7 @@ function AddTherapistSheet({
   onSubmit: (data: CreateTherapistValues) => void;
   isPending: boolean;
 }) {
+  const { specializations: specList } = useSpecializations();
   const form = useForm<CreateTherapistValues>({
     resolver: zodResolver(createTherapistSchema),
     defaultValues: {
@@ -676,7 +678,7 @@ function AddTherapistSheet({
                 <FormField control={form.control} name="specializations" render={({ field }) => (
                   <FormItem>
                     <div className="grid grid-cols-2 gap-2 mt-2">
-                      {SPECIALIZATIONS.map((spec) => (
+                      {specList.map(({ name: spec }) => (
                         <div key={spec} className="flex items-center space-x-2">
                           <Checkbox
                             id={`add-spec-${spec}`}
@@ -892,6 +894,7 @@ function OverviewTab({
   isAvatarUploading: boolean;
 }) {
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const { specializations: specList } = useSpecializations();
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
@@ -1113,7 +1116,7 @@ function OverviewTab({
             <FormField control={form.control} name="specializations" render={({ field }) => (
               <FormItem>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                  {SPECIALIZATIONS.map((spec) => (
+                  {specList.map(({ name: spec }) => (
                     <div key={spec} className="flex items-center space-x-2">
                       <Checkbox
                         id={`edit-spec-${spec}`}

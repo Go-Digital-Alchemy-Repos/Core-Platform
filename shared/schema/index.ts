@@ -11,3 +11,4 @@ export { emailTemplates, insertEmailTemplateSchema, type InsertEmailTemplate, ty
 export { conversations, directMessages, insertDirectMessageSchema, type InsertDirectMessage, type DirectMessage, type Conversation } from "./direct-messages";
 export { activityLogs, type ActivityLog } from "./activity-logs";
 export { notifications, notificationPreferences, insertNotificationSchema, type InsertNotification, type Notification, type NotificationPreferences } from "./notifications";
+export { specializations, insertSpecializationSchema, type InsertSpecialization, type Specialization } from "./specializations";

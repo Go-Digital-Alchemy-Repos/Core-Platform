@@ -5,7 +5,8 @@ import { z } from "zod";
 import { apiRequest, getQueryFn, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { TherapistProfile } from "@shared/schema";
-import { SPECIALIZATIONS, LANGUAGES, PracticeMode } from "@shared/types";
+import { LANGUAGES, PracticeMode } from "@shared/types";
+import { useSpecializations } from "@/hooks/use-specializations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 export default function ProfileEditPage() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { specializations: specList } = useSpecializations();
 
   const { data: profile, isLoading } = useQuery<TherapistProfile | null>({
     queryKey: ["/api/therapist/profile"],
@@ -210,7 +212,7 @@ export default function ProfileEditPage() {
                 render={({ field }) => (
                   <FormItem>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {SPECIALIZATIONS.map((spec) => (
+                      {specList.map(({ name: spec }) => (
                         <div key={spec} className="flex items-center space-x-2">
                           <Checkbox
                             id={`spec-${spec}`}

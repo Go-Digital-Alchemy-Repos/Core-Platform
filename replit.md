@@ -51,6 +51,7 @@ client/src/lib/       — Utilities (queryClient, constants)
 - `conversations` / `direct_messages` — Internal messaging system with rich text (contentHtml) and attachments (attachmentUrl/Name/Type)
 - `notifications` — In-app notification records (type, title, body, isRead, linkUrl)
 - `notification_preferences` — Per-user settings (emailNewMessage, inAppNewMessage)
+- `specializations` — Dynamic specialization list managed via Admin > Settings > Specializations tab; replaces hardcoded constant
 
 ### Authentication
 - Custom JWT (not Replit Auth, not Better Auth)

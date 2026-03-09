@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { UserPlus } from "lucide-react";
 import { Link } from "wouter";
-import { SPECIALIZATIONS } from "@shared/types";
+import { useSpecializations } from "@/hooks/use-specializations";
 
 const registerSchema = z
   .object({
@@ -40,6 +40,7 @@ export default function RegisterPage() {
   const [, setLocation] = useLocation();
   const { register } = useAuth();
   const { toast } = useToast();
+  const { specializations: specList } = useSpecializations();
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -198,7 +199,7 @@ export default function RegisterPage() {
                           <FormLabel>Specializations</FormLabel>
                           <p className="text-xs text-muted-foreground mb-2">Select all that apply. You can update these later from your profile.</p>
                           <div className="grid grid-cols-2 gap-x-4 gap-y-2 max-h-48 overflow-y-auto border rounded-md p-3" data-testid="checkbox-group-specializations">
-                            {SPECIALIZATIONS.map((spec) => {
+                            {specList.map(({ name: spec }) => {
                               const current = form.getValues("specializations") || [];
                               const isChecked = current.includes(spec);
                               return (

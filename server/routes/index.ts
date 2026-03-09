@@ -11,6 +11,7 @@ import docsRoutes from "./docs.routes";
 import uploadRoutes from "./upload.routes";
 import messagesRoutes from "./messages.routes";
 import notificationsRoutes from "./notifications.routes";
+import specializationsRoutes from "./specializations.routes";
 import { storage } from "../storage/index";
 
 export function registerApiRoutes(app: Express) {
@@ -26,6 +27,7 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/messages", messagesRoutes);
   app.use("/api/notifications", notificationsRoutes);
+  app.use("/api/specializations", specializationsRoutes);
 
   app.get("/api/membership-tiers", async (_req, res) => {
     const tiers = await storage.tiers.getActiveTiers();
