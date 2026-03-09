@@ -43,7 +43,7 @@ function getSessionFormatShortLabel(mode: string | null) {
   switch (mode) {
     case "in_person": return "In-Person";
     case "virtual": return "Virtual";
-    case "both": return "Both";
+    case "both": return "Virtual & In-Person";
     default: return "Virtual";
   }
 }
