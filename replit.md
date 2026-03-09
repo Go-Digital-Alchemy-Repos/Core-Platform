@@ -48,7 +48,7 @@ client/src/lib/       — Utilities (queryClient, constants)
 - `system_settings` — Key-value config (AES-256 encrypted secrets)
 - `email_templates` — System email templates with {{variable}} placeholders
 - `activity_logs` — User activity tracking (login, profile_update, etc.)
-- `conversations` / `direct_messages` — Internal messaging system
+- `conversations` / `direct_messages` — Internal messaging system with rich text (contentHtml) and attachments (attachmentUrl/Name/Type)
 
 ### Authentication
 - Custom JWT (not Replit Auth, not Better Auth)

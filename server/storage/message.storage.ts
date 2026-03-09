@@ -131,10 +131,23 @@ export class MessageStorage {
     return results;
   }
 
-  async sendMessage(conversationId: string, senderId: string, content: string): Promise<DirectMessage> {
+  async sendMessage(
+    conversationId: string,
+    senderId: string,
+    content: string,
+    extras?: { contentHtml?: string; attachmentUrl?: string; attachmentName?: string; attachmentType?: string }
+  ): Promise<DirectMessage> {
     const [msg] = await db
       .insert(directMessages)
-      .values({ conversationId, senderId, content })
+      .values({
+        conversationId,
+        senderId,
+        content,
+        contentHtml: extras?.contentHtml ?? null,
+        attachmentUrl: extras?.attachmentUrl ?? null,
+        attachmentName: extras?.attachmentName ?? null,
+        attachmentType: extras?.attachmentType ?? null,
+      })
       .returning();
 
     await db
@@ -152,7 +165,7 @@ export class MessageStorage {
       .where(
         and(
           eq(directMessages.conversationId, conversationId),
-          sql`${directMessages.sender_id} != ${userId}`
+          sql`${directMessages.senderId} != ${userId}`
         )
       );
   }

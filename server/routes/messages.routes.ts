@@ -1,8 +1,17 @@
 import { Router } from "express";
+import sanitizeHtml from "sanitize-html";
 import { storage } from "../storage/index";
 import { asyncHandler } from "../middleware/error-handler";
 import { authenticateToken } from "../middleware/auth";
 import { z } from "zod";
+
+const SAFE_HTML_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: ["p", "br", "strong", "em", "s", "ul", "ol", "li", "a"],
+  allowedAttributes: {
+    a: ["href", "target", "rel"],
+  },
+  allowedSchemes: ["http", "https", "mailto"],
+};
 
 const router = Router();
 
@@ -64,7 +73,13 @@ router.get(
 router.post(
   "/conversations/:id/send",
   asyncHandler(async (req, res) => {
-    const { content } = z.object({ content: z.string().min(1) }).parse(req.body);
+    const body = z.object({
+      content: z.string().min(1),
+      contentHtml: z.string().optional(),
+      attachmentUrl: z.string().optional(),
+      attachmentName: z.string().optional(),
+      attachmentType: z.string().optional(),
+    }).parse(req.body);
     const conv = await storage.messages.getConversationById(req.params.id);
     if (!conv) {
       res.status(404).json({ message: "Conversation not found" });
@@ -75,7 +90,13 @@ router.post(
       res.status(403).json({ message: "Forbidden" });
       return;
     }
-    const msg = await storage.messages.sendMessage(req.params.id, userId, content);
+    const cleanHtml = body.contentHtml ? sanitizeHtml(body.contentHtml, SAFE_HTML_OPTIONS) : undefined;
+    const msg = await storage.messages.sendMessage(req.params.id, userId, body.content, {
+      contentHtml: cleanHtml,
+      attachmentUrl: body.attachmentUrl,
+      attachmentName: body.attachmentName,
+      attachmentType: body.attachmentType,
+    });
     res.json(msg);
   })
 );

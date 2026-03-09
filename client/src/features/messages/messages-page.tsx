@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { MessageSquare, Send, ArrowLeft, User } from "lucide-react";
+import { MessageSquare, Send, ArrowLeft, User, FileText, Image as ImageIcon, Download } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { RichTextEditor, type RichTextEditorHandle } from "@/components/shared/rich-text-editor";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { ConversationWithParticipants, MessageWithSender } from "@/../../server/storage/message.storage";
@@ -41,11 +41,11 @@ export default function MessagesPage() {
 
   const { user } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(initialConvId);
-  const [draft, setDraft] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "thread">(
     initialConvId ? "thread" : "list"
   );
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<RichTextEditorHandle | null>(null);
 
   const { data: conversations, isLoading: convsLoading } = useQuery<ConversationWithParticipants[]>({
     queryKey: ["/api/messages/conversations"],
@@ -62,14 +62,21 @@ export default function MessagesPage() {
   });
 
   const sendMutation = useMutation({
-    mutationFn: async ({ id, content }: { id: string; content: string }) => {
-      const res = await apiRequest("POST", `/api/messages/conversations/${id}/send`, { content });
+    mutationFn: async (payload: {
+      id: string;
+      content: string;
+      contentHtml?: string;
+      attachmentUrl?: string;
+      attachmentName?: string;
+      attachmentType?: string;
+    }) => {
+      const { id, ...body } = payload;
+      const res = await apiRequest("POST", `/api/messages/conversations/${id}/send`, body);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/messages/conversations", selectedId] });
       queryClient.invalidateQueries({ queryKey: ["/api/messages/conversations"] });
-      setDraft("");
     },
   });
 
@@ -97,16 +104,20 @@ export default function MessagesPage() {
     setMobileView("thread");
   };
 
-  const handleSend = () => {
-    if (!selectedId || !draft.trim()) return;
-    sendMutation.mutate({ id: selectedId, content: draft.trim() });
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+  const handleSend = (data: {
+    content: string;
+    contentHtml: string;
+    attachment?: { url: string; name: string; type: string; size: number };
+  }) => {
+    if (!selectedId) return;
+    sendMutation.mutate({
+      id: selectedId,
+      content: data.content,
+      contentHtml: data.contentHtml,
+      attachmentUrl: data.attachment?.url,
+      attachmentName: data.attachment?.name,
+      attachmentType: data.attachment?.type,
+    });
   };
 
   const messages = threadData?.messages ?? [];
@@ -175,8 +186,8 @@ export default function MessagesPage() {
                             <p className="text-xs text-muted-foreground truncate">
                               {conv.lastMessage
                                 ? conv.lastMessage.senderId === user!.id
-                                  ? `You: ${conv.lastMessage.content}`
-                                  : conv.lastMessage.content
+                                  ? `You: ${conv.lastMessage.content.replace(/<[^>]*>/g, "")}`
+                                  : conv.lastMessage.content.replace(/<[^>]*>/g, "")
                                 : "No messages yet"}
                             </p>
                             {conv.unreadCount > 0 && (
@@ -252,6 +263,11 @@ export default function MessagesPage() {
                     ) : (
                       messages.map((msg) => {
                         const isMe = msg.senderId === user!.id;
+                        const hasAttachment = !!(msg as any).attachmentUrl;
+                        const attachmentUrl = (msg as any).attachmentUrl as string | null;
+                        const attachmentName = (msg as any).attachmentName as string | null;
+                        const attachmentType = (msg as any).attachmentType as string | null;
+                        const isImageAttachment = attachmentType?.startsWith("image/");
                         return (
                           <div
                             key={msg.id}
@@ -274,8 +290,41 @@ export default function MessagesPage() {
                                     : "bg-muted rounded-bl-sm"
                                 }`}
                               >
-                                {msg.content}
+                                {(msg as any).contentHtml ? (
+                                  <div
+                                    className="tiptap-output [&_a]:underline [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                                    dangerouslySetInnerHTML={{ __html: (msg as any).contentHtml }}
+                                  />
+                                ) : (
+                                  msg.content
+                                )}
                               </div>
+                              {hasAttachment && attachmentUrl && (
+                                <div className={`mt-1 ${isMe ? "self-end" : "self-start"}`}>
+                                  {isImageAttachment ? (
+                                    <a href={attachmentUrl} target="_blank" rel="noopener noreferrer">
+                                      <img
+                                        src={attachmentUrl}
+                                        alt={attachmentName ?? "attachment"}
+                                        className="max-w-[240px] max-h-[180px] rounded-lg border object-cover"
+                                        data-testid={`img-attachment-${msg.id}`}
+                                      />
+                                    </a>
+                                  ) : (
+                                    <a
+                                      href={attachmentUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-background hover:bg-muted/50 transition-colors text-sm"
+                                      data-testid={`link-attachment-${msg.id}`}
+                                    >
+                                      <FileText className="w-4 h-4 text-muted-foreground" />
+                                      <span className="truncate max-w-[180px]">{attachmentName ?? "File"}</span>
+                                      <Download className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                                    </a>
+                                  )}
+                                </div>
+                              )}
                               <span className="text-[10px] text-muted-foreground px-1">
                                 {formatTime(msg.createdAt)}
                               </span>
@@ -290,17 +339,15 @@ export default function MessagesPage() {
                   {/* Send input */}
                   <div className="border-t px-4 py-3 bg-background">
                     <div className="flex gap-2 items-end">
-                      <Textarea
-                        value={draft}
-                        onChange={(e) => setDraft(e.target.value)}
-                        onKeyDown={handleKeyDown}
+                      <RichTextEditor
+                        onSend={handleSend}
+                        disabled={sendMutation.isPending}
                         placeholder="Type a message… (Enter to send)"
-                        className="min-h-[40px] max-h-32 resize-none flex-1"
-                        data-testid="input-message-draft"
+                        sendRef={editorRef}
                       />
                       <Button
-                        onClick={handleSend}
-                        disabled={!draft.trim() || sendMutation.isPending}
+                        onClick={() => editorRef.current?.triggerSend()}
+                        disabled={sendMutation.isPending}
                         className="bg-accent text-accent-foreground border-accent-border flex-shrink-0"
                         size="icon"
                         data-testid="button-send-message"
