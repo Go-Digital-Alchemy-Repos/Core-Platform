@@ -103,8 +103,13 @@ export default function HomePage() {
 
   return (
     <PageLayout>
-      <section className="relative" data-testid="section-hero">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-24 md:pb-28">
+      <section className="relative overflow-hidden" data-testid="section-hero">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/images/hero-therapy-session.png')" }}
+        />
+        <div className="absolute inset-0 bg-background/85 dark:bg-background/90" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-14 pb-18 sm:pt-20 sm:pb-24 md:pt-28 md:pb-32">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-5 sm:mb-6" data-testid="text-hero-heading">
               Find Your <span className="text-accent">TCK-Informed</span> Therapist
@@ -120,7 +125,7 @@ export default function HomePage() {
                 </Button>
               </Link>
               <Link href="/auth/register">
-                <Button size="lg" variant="outline" className="w-full xs:w-auto" data-testid="button-join-therapist">
+                <Button size="lg" variant="outline" className="w-full xs:w-auto border-foreground/20 hover:bg-foreground/5" data-testid="button-join-therapist">
                   Join as Therapist
                 </Button>
               </Link>
