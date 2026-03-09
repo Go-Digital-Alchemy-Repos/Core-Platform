@@ -24,6 +24,8 @@ server/routes/        — Modular Express route handlers
 server/config/        — Stripe configuration
 server/webhooks/      — Stripe webhook handler
 server/scripts/       — Database seed scripts
+server/services/      — R2 (Cloudflare), email services
+uploads/avatars/      — Local avatar storage fallback (when R2 not configured)
 client/src/components/ — Shared UI (layout, directory, shared)
 client/src/features/  — Feature pages (auth, public, directory, therapist, admin)
 client/src/hooks/     — Custom hooks (useAuth, useToast)
@@ -80,6 +82,7 @@ client/src/lib/       — Utilities (queryClient, constants)
 
 ## API Endpoints
 - `POST /api/auth/register|login|logout`, `GET /api/auth/me`, `PUT /api/auth/profile`, `PUT /api/auth/change-password`
+- `POST /api/uploads/avatar` — Avatar upload (R2 → local fallback); updates user.profileImageUrl
 - `GET /api/therapists`, `GET /api/therapists/:id`
 - `GET/PUT /api/therapist/profile`, `GET /api/therapist/subscription`
 - `POST /api/stripe/create-checkout-session|create-portal-session`

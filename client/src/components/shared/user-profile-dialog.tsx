@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { User, Lock, Save, Loader2, Eye, EyeOff } from "lucide-react";
+import { AvatarUpload } from "@/components/shared/avatar-upload";
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -141,14 +142,13 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex items-center gap-3 py-2">
-          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-sm font-semibold text-primary">
-              {user.firstName?.[0]}
-              {user.lastName?.[0]}
-            </span>
-          </div>
-          <div>
+        <div className="flex flex-col items-center gap-3 py-2">
+          <AvatarUpload
+            currentImageUrl={user.profileImageUrl}
+            fallbackInitials={`${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`}
+            size="lg"
+          />
+          <div className="text-center">
             <p className="font-medium text-sm" data-testid="text-profile-name">
               {user.firstName} {user.lastName}
             </p>

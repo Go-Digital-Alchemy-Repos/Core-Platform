@@ -17,6 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, Save } from "lucide-react";
+import { AvatarUpload } from "@/components/shared/avatar-upload";
+import { useAuth } from "@/hooks/use-auth";
 
 const profileFormSchema = z.object({
   title: z.string().optional(),
@@ -41,6 +43,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function ProfileEditPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: profile, isLoading } = useQuery<TherapistProfile | null>({
     queryKey: ["/api/therapist/profile"],
@@ -121,6 +124,19 @@ export default function ProfileEditPage() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Profile Photo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AvatarUpload
+                currentImageUrl={user?.profileImageUrl}
+                fallbackInitials={`${user?.firstName?.[0] || ""}${user?.lastName?.[0] || ""}`}
+                size="lg"
+              />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Basic Information</CardTitle>

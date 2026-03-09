@@ -35,7 +35,7 @@ export function AvatarUpload({
       const formData = new FormData();
       formData.append("avatar", file);
 
-      const res = await fetch("/api/upload/avatar", {
+      const res = await fetch("/api/uploads/avatar", {
         method: "POST",
         body: formData,
         credentials: "include",
