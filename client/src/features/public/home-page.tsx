@@ -22,7 +22,6 @@ import {
   UserCheck,
   Puzzle,
   Sparkles,
-  Shield,
   BookOpen,
   Leaf,
 } from "lucide-react";
@@ -58,7 +57,6 @@ const categories = [
   { icon: Heart, label: "Grief & Loss", slug: "Grief & Loss" },
   { icon: Users, label: "Family Therapy", slug: "Family Therapy" },
   { icon: Sparkles, label: "Trauma & PTSD", slug: "Trauma & PTSD" },
-  { icon: Shield, label: "LGBTQ+ Affirming", slug: "LGBTQ+ Affirming" },
   { icon: BookOpen, label: "CBT", slug: "CBT" },
   { icon: Leaf, label: "Mindfulness", slug: "Mindfulness & Meditation" },
 ];

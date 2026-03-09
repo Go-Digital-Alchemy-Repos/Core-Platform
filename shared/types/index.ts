@@ -46,7 +46,6 @@ export const SPECIALIZATIONS = [
   "Family Therapy",
   "Couples Counseling",
   "Child & Adolescent",
-  "LGBTQ+ Affirming",
   "Substance Abuse",
   "Eating Disorders",
   "Career Counseling",
