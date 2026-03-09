@@ -19,6 +19,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, Save } from "lucide-react";
 import { AvatarUpload } from "@/components/shared/avatar-upload";
+import { PhoneInput } from "@/components/shared/phone-input";
+import { phoneSchema } from "@/lib/phone-utils";
 import { useAuth } from "@/hooks/use-auth";
 
 const profileFormSchema = z.object({
@@ -35,7 +37,7 @@ const profileFormSchema = z.object({
   state: z.string().optional(),
   country: z.string().optional(),
   zipCode: z.string().optional(),
-  phone: z.string().optional(),
+  phone: phoneSchema,
   website: z.string().optional(),
   acceptingClients: z.boolean().optional(),
 });
@@ -421,7 +423,7 @@ export default function ProfileEditPage() {
                     <FormItem>
                       <FormLabel>Phone</FormLabel>
                       <FormControl>
-                        <Input placeholder="(555) 123-4567" {...field} data-testid="input-phone" />
+                        <PhoneInput {...field} data-testid="input-phone" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

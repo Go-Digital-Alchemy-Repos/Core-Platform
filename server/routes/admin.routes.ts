@@ -58,7 +58,11 @@ const createTherapistSchema = z.object({
   state: z.string().optional(),
   country: z.string().optional(),
   zipCode: z.string().optional(),
-  phone: z.string().optional(),
+  phone: z.string().optional().nullable().refine((v) => {
+    if (!v) return true;
+    const digits = v.replace(/\D/g, "");
+    return v.startsWith("+") && digits.length >= 7 && digits.length <= 15;
+  }, "Enter a valid phone number with country code, e.g. +1 (555) 123-4567"),
   website: z.string().optional(),
   acceptingClients: z.boolean().optional(),
   isApproved: z.boolean().optional(),
@@ -178,7 +182,11 @@ const updateTherapistSchema = z.object({
   zipCode: z.string().optional().nullable(),
   latitude: z.string().optional().nullable(),
   longitude: z.string().optional().nullable(),
-  phone: z.string().optional().nullable(),
+  phone: z.string().optional().nullable().refine((v) => {
+    if (!v) return true;
+    const digits = v.replace(/\D/g, "");
+    return v.startsWith("+") && digits.length >= 7 && digits.length <= 15;
+  }, "Enter a valid phone number with country code, e.g. +1 (555) 123-4567"),
   website: z.string().optional().nullable(),
   acceptingClients: z.boolean().optional(),
   isFeatured: z.boolean().optional(),

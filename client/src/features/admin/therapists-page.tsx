@@ -1,5 +1,7 @@
 import { useState, useRef, useMemo, useCallback } from "react";
 import { ImageCropperSheet } from "@/components/shared/image-cropper-sheet";
+import { PhoneInput } from "@/components/shared/phone-input";
+import { phoneSchema } from "@/lib/phone-utils";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -103,7 +105,7 @@ const createTherapistSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   country: z.string().optional(),
-  phone: z.string().optional(),
+  phone: phoneSchema,
   website: z.string().optional(),
   acceptingClients: z.boolean().optional(),
   isApproved: z.boolean().optional(),
@@ -124,7 +126,7 @@ const editProfileSchema = z.object({
   state: z.string().optional(),
   country: z.string().optional(),
   zipCode: z.string().optional(),
-  phone: z.string().optional(),
+  phone: phoneSchema,
   website: z.string().optional(),
   acceptingClients: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
@@ -661,7 +663,7 @@ function AddTherapistSheet({
                 <FormField control={form.control} name="phone" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
-                    <FormControl><Input placeholder="(555) 123-4567" {...field} data-testid="input-add-phone" /></FormControl>
+                    <FormControl><PhoneInput {...field} data-testid="input-add-phone" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -1116,7 +1118,7 @@ function OverviewTab({
             <FormField control={form.control} name="phone" render={({ field }) => (
               <FormItem>
                 <FormLabel>Phone</FormLabel>
-                <FormControl><Input {...field} data-testid="input-edit-phone" /></FormControl>
+                <FormControl><PhoneInput {...field} data-testid="input-edit-phone" /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
