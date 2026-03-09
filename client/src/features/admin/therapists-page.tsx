@@ -1,4 +1,5 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
+import { ImageCropperSheet } from "@/components/shared/image-cropper-sheet";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -895,8 +896,25 @@ function OverviewTab({
 }) {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { specializations: specList } = useSpecializations();
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropFileName, setCropFileName] = useState("avatar.jpg");
+
+  const handleAvatarFile = useCallback((file: File) => {
+    if (!file.type.match(/^image\/(png|jpeg|webp|gif)$/)) return;
+    setCropFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(reader.result as string);
+    reader.readAsDataURL(file);
+  }, []);
 
   return (
+    <>
+    <ImageCropperSheet
+      imageSrc={cropSrc}
+      fileName={cropFileName}
+      onConfirm={(file) => { setCropSrc(null); onAvatarUpload(file); }}
+      onCancel={() => setCropSrc(null)}
+    />
     <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
       <div className="space-y-6">
         <div className="flex flex-col items-center gap-3 p-4 rounded-lg border bg-muted/30">
@@ -923,11 +941,11 @@ function OverviewTab({
             <input
               ref={avatarInputRef}
               type="file"
-              accept="image/*"
+              accept="image/png,image/jpeg,image/webp,image/gif"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) onAvatarUpload(file);
+                if (file) handleAvatarFile(file);
                 e.target.value = "";
               }}
             />
@@ -1171,6 +1189,7 @@ function OverviewTab({
         </form>
       </Form>
     </div>
+    </>
   );
 }
 
