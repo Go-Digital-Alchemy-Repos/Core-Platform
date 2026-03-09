@@ -32,7 +32,7 @@ const howItWorks = [
   {
     step: 1,
     icon: Search,
-    title: "Browse Therapists",
+    title: "Browse Counselors",
     description: "Explore our curated directory of TCK-informed therapists from around the world.",
   },
   {
@@ -142,10 +142,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       <section className="border-t border-b bg-muted/30" data-testid="section-categories">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 md:py-12">
-          <h2 className="font-heading text-lg sm:text-xl font-semibold text-center mb-6 sm:mb-8" data-testid="text-categories-heading">
+          <h2 className="font-heading sm:text-xl font-semibold text-center mb-6 sm:mb-8 text-[30px]" data-testid="text-categories-heading">
             Explore by Specialization
           </h2>
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -165,7 +164,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-how-it-works">
         <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-how-heading">
           How It Works
@@ -188,7 +186,6 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-
       <section className="bg-muted/30" data-testid="section-featured-therapists">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap mb-8 sm:mb-12">
@@ -258,7 +255,6 @@ export default function HomePage() {
           )}
         </div>
       </section>
-
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-upcoming-events">
         <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap mb-8 sm:mb-12">
           <div>
@@ -305,7 +301,6 @@ export default function HomePage() {
           <p className="text-center text-muted-foreground py-12">No upcoming events.</p>
         )}
       </section>
-
       <section className="bg-muted/30" data-testid="section-benefits">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-benefits-heading">
@@ -327,7 +322,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="section-cta">
         <div className="max-w-2xl mx-auto">
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold mb-3 sm:mb-4" data-testid="text-cta-heading">
