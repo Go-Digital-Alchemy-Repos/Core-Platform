@@ -140,7 +140,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      <section className="border-t border-b bg-muted/30" data-testid="section-categories">
+      <section className="relative border-t border-b bg-muted/30 overflow-hidden" data-testid="section-categories">
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 md:py-12">
           <h2 className="font-heading sm:text-xl font-semibold text-center mb-6 sm:mb-8 text-[30px]" data-testid="text-categories-heading">
             Explore by Specialization
