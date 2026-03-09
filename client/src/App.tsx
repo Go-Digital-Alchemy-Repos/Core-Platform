@@ -22,6 +22,7 @@ import TherapistProfilePage from "@/features/directory/therapist-profile-page";
 import TherapistDashboardPage from "@/features/therapist/dashboard-page";
 import ProfileEditPage from "@/features/therapist/profile-edit-page";
 import SubscriptionPage from "@/features/therapist/subscription-page";
+import MessagesPage from "@/features/messages/messages-page";
 
 import AdminDashboardPage from "@/features/admin/dashboard-page";
 import AdminTherapistsPage from "@/features/admin/therapists-page";
@@ -58,6 +59,12 @@ function Router() {
       <Route path="/therapist/subscription">
         <ProtectedRoute roles={["therapist"]}>
           <SubscriptionPage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/messages">
+        <ProtectedRoute roles={["client", "therapist", "admin"]}>
+          <MessagesPage />
         </ProtectedRoute>
       </Route>
 

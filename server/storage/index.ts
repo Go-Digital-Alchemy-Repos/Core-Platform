@@ -8,6 +8,7 @@ import { DocsStorage } from "./docs.storage";
 import { PasswordResetStorage } from "./password-reset.storage";
 import { SettingsStorage } from "./settings.storage";
 import { EmailTemplateStorage } from "./email-template.storage";
+import { MessageStorage } from "./message.storage";
 
 export const storage = {
   users: new UserStorage(),
@@ -20,6 +21,7 @@ export const storage = {
   passwordResets: new PasswordResetStorage(),
   settings: new SettingsStorage(),
   emailTemplates: new EmailTemplateStorage(),
+  messages: new MessageStorage(),
 };
 
 export type { TherapistSearchParams, TherapistWithUser } from "./therapist.storage";

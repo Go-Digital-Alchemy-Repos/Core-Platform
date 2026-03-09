@@ -1,16 +1,17 @@
-import { useRoute, Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useRoute, Link, useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   ArrowLeft,
   MapPin,
   Phone,
   Globe,
-  Mail,
   Monitor,
   Building2,
   CheckCircle2,
   XCircle,
   Video,
+  MessageSquare,
 } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
@@ -20,6 +21,15 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { MapView } from "@/components/directory/map-view";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/use-auth";
+import { apiRequest } from "@/lib/queryClient";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
 
 type TherapistWithUser = TherapistProfile & {
@@ -47,11 +57,34 @@ function getSessionFormatLabel(mode: string | null) {
 export default function TherapistProfilePage() {
   const [, params] = useRoute("/directory/:id");
   const id = params?.id;
+  const [, navigate] = useLocation();
+  const { user } = useAuth();
+  const [loginPromptOpen, setLoginPromptOpen] = useState(false);
 
   const { data: therapist, isLoading, error } = useQuery<TherapistWithUser>({
     queryKey: ["/api/therapists", id],
     enabled: !!id,
   });
+
+  const startConversationMutation = useMutation({
+    mutationFn: async (counselorUserId: string) => {
+      const res = await apiRequest("POST", "/api/messages/conversations", { counselorId: counselorUserId });
+      return res.json();
+    },
+    onSuccess: (conv) => {
+      navigate(`/messages?conversation=${conv.id}`);
+    },
+  });
+
+  const handleContact = () => {
+    if (!user) {
+      setLoginPromptOpen(true);
+      return;
+    }
+    if (!therapist?.userId) return;
+    if (user.id === therapist.userId) return;
+    startConversationMutation.mutate(therapist.userId);
+  };
 
   if (isLoading) {
     return (
@@ -101,7 +134,8 @@ export default function TherapistProfilePage() {
   const showMap =
     hasLocation && (therapist.practiceMode === "in_person" || therapist.practiceMode === "both");
 
-  const hasContact = therapist.phone || therapist.user?.email || therapist.website || addressParts.length > 0;
+  const hasContact = therapist.phone || therapist.website || addressParts.length > 0;
+  const isSelf = user?.id === therapist.userId;
 
   return (
     <PageLayout>
@@ -231,6 +265,32 @@ export default function TherapistProfilePage() {
           </div>
 
           <div className="flex flex-col gap-6">
+            {!isSelf && (
+              <Card data-testid="card-contact-button">
+                <CardContent className="pt-6">
+                  <Button
+                    className="w-full bg-accent text-accent-foreground border-accent-border"
+                    size="lg"
+                    onClick={handleContact}
+                    disabled={startConversationMutation.isPending}
+                    data-testid="button-contact-counselor"
+                  >
+                    {startConversationMutation.isPending ? (
+                      <LoadingSpinner className="h-4 w-4 mr-2" />
+                    ) : (
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                    )}
+                    Contact This Counselor
+                  </Button>
+                  {!user && (
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Account required to send messages
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {showMap && (
               <Card className="overflow-hidden" data-testid="card-map">
                 <div className="aspect-video lg:aspect-square">
@@ -259,7 +319,7 @@ export default function TherapistProfilePage() {
                   </div>
                   <p className="text-sm font-medium">Virtual Practice</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    This therapist offers sessions online and is available worldwide.
+                    This counselor offers sessions online and is available worldwide.
                   </p>
                 </CardContent>
               </Card>
@@ -286,14 +346,6 @@ export default function TherapistProfilePage() {
                         </a>
                       </div>
                     )}
-                    {therapist.user?.email && (
-                      <div className="flex items-center gap-3 min-w-0" data-testid="text-email">
-                        <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <a href={`mailto:${therapist.user.email}`} className="hover:underline break-all min-w-0">
-                          {therapist.user.email}
-                        </a>
-                      </div>
-                    )}
                     {therapist.website && (
                       <div className="flex items-center gap-3 min-w-0" data-testid="text-website">
                         <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -314,6 +366,28 @@ export default function TherapistProfilePage() {
           </div>
         </div>
       </div>
+      <Dialog open={loginPromptOpen} onOpenChange={setLoginPromptOpen}>
+        <DialogContent data-testid="dialog-login-prompt">
+          <DialogHeader>
+            <DialogTitle>Sign in to send messages</DialogTitle>
+            <DialogDescription>
+              You need an account to contact counselors. Login or create a free account to get started.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2 pt-2">
+            <Link href="/auth/login">
+              <Button className="w-full bg-accent text-accent-foreground border-accent-border" data-testid="button-prompt-login">
+                Login
+              </Button>
+            </Link>
+            <Link href="/auth/register">
+              <Button variant="outline" className="w-full" data-testid="button-prompt-register">
+                Create an Account
+              </Button>
+            </Link>
+          </div>
+        </DialogContent>
+      </Dialog>
     </PageLayout>
   );
 }

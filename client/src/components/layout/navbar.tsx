@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, ChevronDown, UserCog, Search } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Shield, ChevronDown, UserCog, Search, MessageSquare } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -27,6 +28,13 @@ export function Navbar() {
   const { user, isLoading, logout, isAdmin, isTherapist } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  const { data: unreadData } = useQuery<{ count: number }>({
+    queryKey: ["/api/messages/unread"],
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
+  const unreadCount = unreadData?.count ?? 0;
 
   return (
     <nav className="sticky top-0 z-[999] bg-background/95 backdrop-blur-sm border-b" data-testid="navbar">
@@ -87,6 +95,18 @@ export function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/messages" data-testid="link-messages">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Messages
+                    {unreadCount > 0 && (
+                      <span className="ml-auto bg-accent text-accent-foreground text-xs font-semibold rounded-full h-5 min-w-5 flex items-center justify-center px-1.5">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setProfileOpen(true)}
@@ -181,6 +201,17 @@ export function Navbar() {
                         </Button>
                       </Link>
                     )}
+                    <Link href="/messages" onClick={() => setMobileOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-messages">
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Messages
+                        {unreadCount > 0 && (
+                          <span className="ml-auto bg-accent text-accent-foreground text-xs font-semibold rounded-full h-5 min-w-5 flex items-center justify-center px-1.5">
+                            {unreadCount}
+                          </span>
+                        )}
+                      </Button>
+                    </Link>
                     <Button
                       variant="ghost"
                       className="w-full justify-start"
