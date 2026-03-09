@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { Link, useSearch } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Search, MapPin, Monitor, Map, List, Users, ChevronRight, X, SlidersHorizontal } from "lucide-react";
+import { Search, MapPin, Monitor, Map, List, Users, ChevronRight, X, SlidersHorizontal, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { MapView } from "@/components/directory/map-view";
 import { Input } from "@/components/ui/input";
@@ -183,6 +183,7 @@ export default function DirectoryPage() {
   const [acceptingClients, setAcceptingClients] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const { data: therapists, isLoading } = useQuery<TherapistWithUser[]>({
@@ -281,7 +282,9 @@ export default function DirectoryPage() {
         <div
           className={`${
             mobileView === "list" ? "flex" : "hidden"
-          } md:flex flex-col w-full md:w-[380px] lg:w-[440px] xl:w-[480px] border-r bg-background flex-shrink-0`}
+          } ${
+            panelCollapsed ? "md:hidden" : "md:flex"
+          } flex-col w-full md:w-[380px] lg:w-[440px] xl:w-[480px] border-r bg-background flex-shrink-0 transition-all duration-200`}
         >
           <div className="px-3 sm:px-4 py-3 border-b space-y-2.5">
             <div className="flex items-center justify-between gap-2">
@@ -529,6 +532,16 @@ export default function DirectoryPage() {
             mobileView === "map" ? "flex" : "hidden"
           } md:flex flex-1 flex-col relative`}
         >
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={() => setPanelCollapsed(!panelCollapsed)}
+            className="hidden md:flex absolute top-3 left-3 z-[500] h-9 w-9 bg-background shadow-md hover:bg-muted"
+            data-testid="button-toggle-panel"
+            aria-label={panelCollapsed ? "Show therapist list" : "Hide therapist list"}
+          >
+            {panelCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </Button>
           <div className="flex md:hidden items-center gap-2 p-2 border-b bg-background">
             <Button
               size="sm"
