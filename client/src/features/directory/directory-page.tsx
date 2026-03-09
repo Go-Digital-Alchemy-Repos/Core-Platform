@@ -120,8 +120,8 @@ function TherapistRow({
             </span>
           </div>
 
-          <div className="flex items-center gap-1 mt-1.5 md:hidden flex-wrap">
-            {displayedSpecs.slice(0, 2).map((spec) => (
+          <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+            {displayedSpecs.map((spec) => (
               <Badge key={spec} variant="secondary" className="text-[10px] px-1.5 py-0 leading-4 whitespace-nowrap">
                 {spec}
               </Badge>
@@ -132,19 +132,6 @@ function TherapistRow({
               </Badge>
             )}
           </div>
-        </div>
-
-        <div className="hidden md:flex items-center gap-1.5 flex-shrink-0 max-w-[180px] mt-1">
-          {displayedSpecs.map((spec) => (
-            <Badge key={spec} variant="secondary" className="text-[10px] px-1.5 py-0 leading-4 whitespace-nowrap">
-              {spec}
-            </Badge>
-          ))}
-          {remainingCount > 0 && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 leading-4">
-              +{remainingCount}
-            </Badge>
-          )}
         </div>
 
         <ChevronRight className="h-4 w-4 text-muted-foreground/50 flex-shrink-0 mt-1 hidden sm:block" />
@@ -284,7 +271,7 @@ export default function DirectoryPage() {
             mobileView === "list" ? "flex" : "hidden"
           } ${
             panelCollapsed ? "md:hidden" : "md:flex"
-          } flex-col w-full md:w-[380px] lg:w-[440px] xl:w-[480px] border-r bg-background flex-shrink-0 transition-all duration-200`}
+          } flex-col w-full md:w-[340px] lg:w-[380px] xl:w-[420px] border-r bg-background flex-shrink-0 transition-all duration-200`}
         >
           <div className="px-3 sm:px-4 py-3 border-b space-y-2.5">
             <div className="flex items-center justify-between gap-2">
