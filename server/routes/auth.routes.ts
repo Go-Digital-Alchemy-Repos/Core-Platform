@@ -20,6 +20,7 @@ const registerSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   role: z.enum(["therapist", "client"]),
+  specializations: z.array(z.string()).optional(),
 });
 
 const loginSchema = z.object({
@@ -31,7 +32,7 @@ router.post(
   "/register",
   validateBody(registerSchema),
   asyncHandler(async (req, res) => {
-    const { email, password, firstName, lastName, role } = req.body;
+    const { email, password, firstName, lastName, role, specializations } = req.body;
 
     const existing = await storage.users.getUserByEmail(email);
     if (existing) {
@@ -49,7 +50,10 @@ router.post(
     });
 
     if (role === "therapist") {
-      await storage.therapists.createProfile({ userId: user.id });
+      await storage.therapists.createProfile({
+        userId: user.id,
+        ...(specializations && specializations.length > 0 ? { specializations } : {}),
+      });
     }
 
     const baseUrl = `${req.protocol}://${req.get("host")}`;

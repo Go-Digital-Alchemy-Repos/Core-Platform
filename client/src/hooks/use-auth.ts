@@ -25,6 +25,7 @@ export function useAuth() {
       email: string;
       password: string;
       role: string;
+      specializations?: string[];
     }) => {
       const res = await apiRequest("POST", "/api/auth/register", data);
       return await res.json();

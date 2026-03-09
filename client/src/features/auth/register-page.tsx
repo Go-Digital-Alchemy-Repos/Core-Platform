@@ -9,10 +9,13 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { UserPlus } from "lucide-react";
 import { Link } from "wouter";
+import { SPECIALIZATIONS } from "@shared/types";
 
 const registerSchema = z
   .object({
@@ -24,6 +27,7 @@ const registerSchema = z
     role: z.enum(["therapist", "client"], {
       required_error: "Please select a role",
     }),
+    specializations: z.array(z.string()).optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -46,8 +50,11 @@ export default function RegisterPage() {
       password: "",
       confirmPassword: "",
       role: "client",
+      specializations: [],
     },
   });
+
+  const selectedRole = form.watch("role");
 
   function redirectByRole(role: string) {
     if (role === "admin") {
@@ -60,7 +67,11 @@ export default function RegisterPage() {
   }
 
   async function onSubmit(values: RegisterForm) {
-    const { confirmPassword, ...data } = values;
+    const { confirmPassword, specializations, ...rest } = values;
+    const data = {
+      ...rest,
+      ...(rest.role === "therapist" && specializations && specializations.length > 0 ? { specializations } : {}),
+    };
     register.mutate(data, {
       onSuccess: (result: any) => {
         toast({ title: "Account created!", description: "Welcome to TCK Wellness." });
@@ -81,7 +92,7 @@ export default function RegisterPage() {
   return (
     <PageLayout>
       <div className="flex items-center justify-center py-12 px-4">
-        <div className="w-full max-w-md space-y-6">
+        <div className={`w-full space-y-6 ${selectedRole === "therapist" ? "max-w-lg" : "max-w-md"}`}>
           <div className="text-center">
             <h1 className="font-heading text-3xl font-bold" data-testid="text-register-title">
               Create an Account
@@ -177,6 +188,46 @@ export default function RegisterPage() {
                       </FormItem>
                     )}
                   />
+
+                  {selectedRole === "therapist" && (
+                    <FormField
+                      control={form.control}
+                      name="specializations"
+                      render={() => (
+                        <FormItem>
+                          <FormLabel>Specializations</FormLabel>
+                          <p className="text-xs text-muted-foreground mb-2">Select all that apply. You can update these later from your profile.</p>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 max-h-48 overflow-y-auto border rounded-md p-3" data-testid="checkbox-group-specializations">
+                            {SPECIALIZATIONS.map((spec) => {
+                              const current = form.getValues("specializations") || [];
+                              const isChecked = current.includes(spec);
+                              return (
+                                <div key={spec} className="flex items-center gap-2">
+                                  <Checkbox
+                                    id={`reg-spec-${spec}`}
+                                    checked={isChecked}
+                                    onCheckedChange={(checked) => {
+                                      const prev = form.getValues("specializations") || [];
+                                      if (checked) {
+                                        form.setValue("specializations", [...prev, spec], { shouldDirty: true });
+                                      } else {
+                                        form.setValue("specializations", prev.filter((s) => s !== spec), { shouldDirty: true });
+                                      }
+                                    }}
+                                    data-testid={`checkbox-spec-${spec.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+                                  />
+                                  <Label htmlFor={`reg-spec-${spec}`} className="text-xs font-normal cursor-pointer leading-tight">
+                                    {spec}
+                                  </Label>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
                   <FormField
                     control={form.control}
