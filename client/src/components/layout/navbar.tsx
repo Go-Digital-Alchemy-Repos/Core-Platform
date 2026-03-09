@@ -70,7 +70,7 @@ export function Navbar() {
                   <ChevronDown className="ml-1 h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="z-[1000]">
                 {isTherapist && (
                   <DropdownMenuItem asChild>
                     <Link href="/therapist" data-testid="link-therapist-dashboard">
