@@ -94,7 +94,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 sm:mt-10 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-sm text-muted-foreground" data-testid="text-copyright">
-          <span className="text-center sm:text-left">&copy; {new Date().getFullYear()} TCK Wellness. All rights reserved.</span>
+          <span className="text-center sm:text-left">&copy; {new Date().getFullYear()} Interaction International. All rights reserved.</span>
           <div className="flex items-center gap-4 sm:gap-6">
             <Link href="/contact" className="hover:text-foreground transition-colors" data-testid="link-footer-privacy">
               Privacy Policy
