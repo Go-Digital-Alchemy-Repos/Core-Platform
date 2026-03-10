@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
+import { logger } from "../utils/logger";
 
 export class AppError extends Error {
   public statusCode: number;
@@ -17,10 +18,10 @@ export function asyncHandler(
   };
 }
 
-export function errorHandler(err: any, _req: Request, res: Response, _next: NextFunction) {
+export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
   const status = err.statusCode || err.status || 500;
   const message = err.message || "Internal Server Error";
-  console.error("Error:", err);
+  logger.app.error(`${req.method} ${req.path} ${status}`, err, { reqId: req.requestId });
   if (!res.headersSent) {
     res.status(status).json({ message });
   }

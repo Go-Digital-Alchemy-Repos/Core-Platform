@@ -11,6 +11,7 @@ import {
   apiLimiter,
   originCheck,
 } from "./middleware/security";
+import { logger, requestIdMiddleware } from "./utils/logger";
 
 enforceRequiredSecrets();
 
@@ -18,6 +19,7 @@ const app = express();
 const httpServer = createServer(app);
 
 app.use(securityHeaders());
+app.use(requestIdMiddleware);
 
 declare module "http" {
   interface IncomingMessage {
@@ -31,7 +33,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
     await WebhookHandlers.processWebhook(req.body, signature);
     res.json({ received: true });
   } catch (err) {
-    console.error("Webhook error:", err);
+    logger.stripe.error("Webhook endpoint error", err, { reqId: req.requestId });
     res.status(400).json({ error: "Webhook processing failed" });
   }
 });
@@ -48,6 +50,35 @@ app.use(
 app.use(express.urlencoded({ extended: false, limit: "1mb" }));
 app.use(cookieParser());
 
+app.get("/api/health", (_req, res) => {
+  res.json({
+    status: "ok",
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get("/api/health/ready", async (_req, res) => {
+  try {
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    await db.execute(sql`SELECT 1`);
+    res.json({
+      status: "ready",
+      database: "connected",
+      uptime: Math.floor(process.uptime()),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    logger.db.error("Readiness check failed", err);
+    res.status(503).json({
+      status: "not_ready",
+      database: "disconnected",
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
 app.use("/api", apiLimiter);
 app.use(originCheck);
 
@@ -55,6 +86,7 @@ app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
 const SENSITIVE_PATHS = ["/api/auth/login", "/api/auth/register", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/change-password"];
 const REDACTED_KEYS = ["password", "currentPassword", "newPassword", "token", "resetToken", "secret", "authorization"];
+const MAX_LOG_BODY_LENGTH = 500;
 
 function redactSensitive(obj: any): any {
   if (!obj || typeof obj !== "object") return obj;
@@ -73,15 +105,11 @@ function redactSensitive(obj: any): any {
   return redacted;
 }
 
-export function log(message: string, source = "express") {
-  const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-
-  console.log(`${formattedTime} [${source}] ${message}`);
+function truncateBody(body: string): string {
+  if (body.length > MAX_LOG_BODY_LENGTH) {
+    return body.substring(0, MAX_LOG_BODY_LENGTH) + `...[truncated ${body.length} chars]`;
+  }
+  return body;
 }
 
 app.use((req, res, next) => {
@@ -98,19 +126,22 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (reqPath.startsWith("/api")) {
-      let logLine = `${req.method} ${reqPath} ${res.statusCode} in ${duration}ms`;
+      let bodyStr = "";
 
       if (capturedJsonResponse) {
         if (SENSITIVE_PATHS.some((sp) => reqPath.startsWith(sp))) {
-          logLine += ` :: ${JSON.stringify(redactSensitive(capturedJsonResponse))}`;
+          bodyStr = truncateBody(JSON.stringify(redactSensitive(capturedJsonResponse)));
         } else if (reqPath.startsWith("/api/messages")) {
-          logLine += ` :: [message content redacted]`;
+          bodyStr = "[message content redacted]";
         } else {
-          logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+          bodyStr = truncateBody(JSON.stringify(capturedJsonResponse));
         }
       }
 
-      log(logLine);
+      logger.http.info(`${req.method} ${reqPath} ${res.statusCode} ${duration}ms`, {
+        reqId: req.requestId,
+        ...(bodyStr ? { body: bodyStr } : {}),
+      });
     }
   });
 
@@ -120,11 +151,11 @@ app.use((req, res, next) => {
 (async () => {
   await registerRoutes(httpServer, app);
 
-  app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
+  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    console.error("Internal Server Error:", err);
+    logger.app.error(`${req.method} ${req.path} ${status}`, err, { reqId: req.requestId });
 
     if (res.headersSent) {
       return next(err);
@@ -133,9 +164,6 @@ app.use((req, res, next) => {
     return res.status(status).json({ message });
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
@@ -143,10 +171,6 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(
     {
@@ -155,7 +179,7 @@ app.use((req, res, next) => {
       reusePort: true,
     },
     () => {
-      log(`serving on port ${port}`);
+      logger.app.info(`Serving on port ${port}`);
     },
   );
 })();

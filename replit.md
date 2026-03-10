@@ -357,6 +357,51 @@ All admin routes still mount at `/api/admin/*`. The hub router applies auth once
 - Consider extracting therapist creation workflow (user + profile + email) into an `admin.service.ts` if more orchestration logic is added
 - Consider splitting `settings.routes.ts` into `settings.routes.ts` + `email-templates.routes.ts` if either grows
 
+## Observability & Operational Readiness (Phase 6)
+
+### Structured Logger
+- `server/utils/logger.ts` — Lightweight structured logger with named sources
+- Format: `ISO_TIMESTAMP [LEVEL] [source] message {context}`
+- Sources: `http`, `email`, `r2`, `stripe`, `auth`, `app`, `db`
+- Levels: `info`, `warn`, `error`
+- Error entries include truncated stack traces (first 3 frames)
+
+### Request/Correlation IDs
+- Every request gets an 8-char UUID prefix via `requestIdMiddleware`
+- Request ID attached as `req.requestId` and included in all HTTP log entries
+- Error handler includes `reqId` in log output for trace correlation
+
+### Health Endpoints
+- `GET /api/health` — Liveness check: returns `{ status, uptime, timestamp }`
+- `GET /api/health/ready` — Readiness check: verifies DB connectivity, returns 503 if DB is down
+- Both registered before rate limiter middleware — never throttled by API rate limits
+
+### Logging Improvements
+- **HTTP request logs**: Now structured with reqId, truncated response bodies (max 500 chars)
+- **Email service**: All send attempts/failures use structured logger; silent `catch {}` blocks in `getMailgunConfig()` and `getTemplateHtml()` now log warnings with context; admin notification `.catch(() => {})` calls now log warnings
+- **R2 service**: Silent `catch {}` in `getR2Config()` now logs warning with error message
+- **Stripe webhooks**: Logs every event type received with event ID; warns on missing `STRIPE_WEBHOOK_SECRET`; logs unhandled event types instead of silently ignoring; success logging for subscription state changes
+- **Error handler**: Uses structured logger with request ID instead of raw `console.error`
+
+### Sensitive Data Protection
+- Existing redaction preserved: passwords, tokens, secrets, authorization headers → `[REDACTED]`
+- Message content paths → `[message content redacted]`
+- Long text fields (bio, content, body, description) truncated to 100 chars
+- Full response bodies truncated to 500 chars in logs
+
+### Files Changed
+- `server/utils/logger.ts` — NEW: structured logger with named sources + request ID middleware
+- `server/index.ts` — Request ID middleware, health endpoints, structured logger, body truncation
+- `server/services/email.service.ts` — Structured logger, fixed silent catches
+- `server/services/r2.service.ts` — Structured logger, fixed silent catch in config loading
+- `server/webhooks/stripe.handler.ts` — Structured logger, event logging, unhandled event type logging
+- `server/middleware/error-handler.ts` — Structured logger with request ID
+
+### Follow-up Recommendations
+- Consider adding log aggregation/export for production (e.g., structured JSON to stdout for log collectors)
+- Consider adding request duration percentile tracking for performance monitoring
+- Add alerting on repeated email send failures or DB readiness check failures
+
 ## TypeScript Integrity Pass (March 2026)
 
 ### What was fixed

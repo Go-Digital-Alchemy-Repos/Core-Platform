@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { logger } from "../utils/logger";
 
 const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || "587", 10);
@@ -32,7 +33,9 @@ async function getMailgunConfig(): Promise<{
     if (apiKey && domain) {
       return { apiKey, domain, fromAddress };
     }
-  } catch {}
+  } catch (err) {
+    logger.email.warn("Failed to load Mailgun configuration", { error: err instanceof Error ? err.message : String(err) });
+  }
   return null;
 }
 
@@ -55,10 +58,10 @@ async function sendViaMailgun(
       subject,
       html,
     });
-    console.log(`[Email/Mailgun] Sent to ${to}: ${subject}`);
+    logger.email.info("Sent via Mailgun", { to, subject });
     return true;
   } catch (err) {
-    console.error(`[Email/Mailgun] Failed to send to ${to}:`, err);
+    logger.email.error("Mailgun send failed", err, { to, subject });
     return false;
   }
 }
@@ -71,10 +74,10 @@ async function sendViaSmtp(
   if (!transporter) return false;
   try {
     await transporter.sendMail({ from: SMTP_FROM, to, subject, html });
-    console.log(`[Email/SMTP] Sent to ${to}: ${subject}`);
+    logger.email.info("Sent via SMTP", { to, subject });
     return true;
   } catch (err) {
-    console.error(`[Email/SMTP] Failed to send to ${to}:`, err);
+    logger.email.error("SMTP send failed", err, { to, subject });
     return false;
   }
 }
@@ -139,7 +142,9 @@ async function getTemplateHtml(
         isActive: template.isActive,
       };
     }
-  } catch {}
+  } catch (err) {
+    logger.email.warn("Failed to load email template, using fallback", { slug, error: err instanceof Error ? err.message : String(err) });
+  }
   return {
     subject: fallbackTitle,
     html: baseTemplate(fallbackTitle, fallbackBody),
@@ -158,7 +163,7 @@ export async function sendEmail(
   const smtpSent = await sendViaSmtp(to, subject, html);
   if (smtpSent) return true;
 
-  console.log(`[Email] No email provider configured. Would send to ${to}: ${subject}`);
+  logger.email.warn("No email provider configured", { to, subject });
   return false;
 }
 
@@ -242,7 +247,9 @@ export async function sendNewTherapistRegistrationEmail(
   );
   if (!isActive) return;
   for (const email of adminEmails) {
-    sendEmail(email, subject, html).catch(() => {});
+    sendEmail(email, subject, html).catch((err) => {
+      logger.email.warn("Failed to notify admin of therapist registration", { adminEmail: email, error: err instanceof Error ? err.message : String(err) });
+    });
   }
 }
 
@@ -261,7 +268,9 @@ export async function sendNewClientRegistrationEmail(
   );
   if (!isActive) return;
   for (const email of adminEmails) {
-    sendEmail(email, subject, html).catch(() => {});
+    sendEmail(email, subject, html).catch((err) => {
+      logger.email.warn("Failed to notify admin of client registration", { adminEmail: email, error: err instanceof Error ? err.message : String(err) });
+    });
   }
 }
 
@@ -281,7 +290,9 @@ export async function sendContactFormEmail(
   );
   if (!isActive) return;
   for (const email of adminEmails) {
-    sendEmail(email, subject, html).catch(() => {});
+    sendEmail(email, subject, html).catch((err) => {
+      logger.email.warn("Failed to notify admin of contact form", { adminEmail: email, error: err instanceof Error ? err.message : String(err) });
+    });
   }
 }
 

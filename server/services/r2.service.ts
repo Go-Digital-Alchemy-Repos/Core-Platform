@@ -4,6 +4,7 @@ import {
   DeleteObjectCommand,
   HeadBucketCommand,
 } from "@aws-sdk/client-s3";
+import { logger } from "../utils/logger";
 
 let cachedClient: S3Client | null = null;
 
@@ -26,7 +27,9 @@ async function getR2Config(): Promise<{
     if (accountId && accessKeyId && secretAccessKey && bucketName) {
       return { accountId, accessKeyId, secretAccessKey, bucketName, publicUrl };
     }
-  } catch {}
+  } catch (err) {
+    logger.r2.warn("Failed to load R2 configuration", { error: err instanceof Error ? err.message : String(err) });
+  }
   return null;
 }
 
@@ -64,7 +67,7 @@ export async function uploadFile(
 ): Promise<string | null> {
   const r2 = await getClient();
   if (!r2) {
-    console.warn("[R2] Not configured. Cannot upload file.");
+    logger.r2.warn("Not configured — cannot upload file", { key });
     return null;
   }
 
@@ -82,10 +85,10 @@ export async function uploadFile(
       ? `${r2.publicUrl.replace(/\/$/, "")}/${key}`
       : `https://${r2.bucketName}.r2.dev/${key}`;
 
-    console.log(`[R2] Uploaded: ${key}`);
+    logger.r2.info("File uploaded", { key });
     return publicUrl;
   } catch (err) {
-    console.error(`[R2] Upload failed for ${key}:`, err);
+    logger.r2.error("Upload failed", err, { key });
     return null;
   }
 }
@@ -101,10 +104,10 @@ export async function deleteFile(key: string): Promise<boolean> {
         Key: key,
       })
     );
-    console.log(`[R2] Deleted: ${key}`);
+    logger.r2.info("File deleted", { key });
     return true;
   } catch (err) {
-    console.error(`[R2] Delete failed for ${key}:`, err);
+    logger.r2.error("Delete failed", err, { key });
     return false;
   }
 }
