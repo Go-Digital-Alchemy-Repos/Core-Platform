@@ -250,13 +250,11 @@ export default function HomePage() {
         </div>
       </section>
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-upcoming-events">
-        <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap mb-8 sm:mb-12">
-          <div>
-            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold" data-testid="text-events-heading">
-              Upcoming Events
-            </h2>
-            <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. </p>
-          </div>
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold mb-3 sm:mb-4" data-testid="text-events-heading">
+            Upcoming Events
+          </h2>
+          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto mb-6">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
           <Link href="/events">
             <Button variant="outline" data-testid="button-view-all-events">
               View All <ArrowRight className="ml-2 h-4 w-4" />
