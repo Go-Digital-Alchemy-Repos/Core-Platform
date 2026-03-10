@@ -99,75 +99,77 @@ function TestimonialsCarousel() {
   }, [emblaApi]);
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-testimonials">
-      <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-testimonials-heading">
-        What People Are Saying
-      </h2>
-      <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mx-auto mb-10 sm:mb-14">
-        Hear from TCKs, expat families, and counselors who have found their match.
-      </p>
-      <div className="relative">
-        <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex gap-6">
-            {testimonials.map((t, idx) => (
-              <div
-                key={idx}
-                className="flex-[0_0_100%] min-w-0 sm:flex-[0_0_50%] lg:flex-[0_0_33.333%]"
-              >
-                <Card className="h-full" data-testid={`card-testimonial-${idx}`}>
-                  <CardContent className="p-6 flex flex-col h-full">
-                    <Quote className="h-6 w-6 text-accent/40 mb-3 flex-shrink-0" />
-                    <p className="text-sm leading-relaxed flex-1 mb-5 italic text-foreground/90">
-                      "{t.quote}"
-                    </p>
-                    <div className="flex items-center gap-3 pt-3 border-t">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-accent/10 text-accent text-sm font-semibold">
-                          {t.name.split(" ").map((n) => n[0]).join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{t.name}</p>
-                        <p className="text-xs text-muted-foreground">{t.role} · {t.location}</p>
+    <section className="bg-muted/30" data-testid="section-testimonials">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
+        <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-testimonials-heading">
+          What People Are Saying
+        </h2>
+        <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mx-auto mb-10 sm:mb-14">
+          Hear from TCKs, expat families, and counselors who have found their match.
+        </p>
+        <div className="relative">
+          <div className="overflow-hidden" ref={emblaRef}>
+            <div className="flex gap-6">
+              {testimonials.map((t, idx) => (
+                <div
+                  key={idx}
+                  className="flex-[0_0_100%] min-w-0 sm:flex-[0_0_50%] lg:flex-[0_0_33.333%]"
+                >
+                  <Card className="h-full" data-testid={`card-testimonial-${idx}`}>
+                    <CardContent className="p-6 flex flex-col h-full">
+                      <Quote className="h-6 w-6 text-accent/40 mb-3 flex-shrink-0" />
+                      <p className="text-sm leading-relaxed flex-1 mb-5 italic text-foreground/90">
+                        "{t.quote}"
+                      </p>
+                      <div className="flex items-center gap-3 pt-3 border-t">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-accent/10 text-accent text-sm font-semibold">
+                            {t.name.split(" ").map((n) => n[0]).join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">{t.name}</p>
+                          <p className="text-xs text-muted-foreground">{t.role} · {t.location}</p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            ))}
+                    </CardContent>
+                  </Card>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center justify-center gap-4 mt-8">
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full h-9 w-9"
-            onClick={scrollPrev}
-            data-testid="button-testimonial-prev"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex gap-1.5" data-testid="testimonial-dots">
-            {testimonials.map((_, idx) => (
-              <button
-                key={idx}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  idx === selectedIndex ? "bg-accent" : "bg-muted-foreground/30"
-                }`}
-                onClick={() => emblaApi?.scrollTo(idx)}
-                data-testid={`button-testimonial-dot-${idx}`}
-              />
-            ))}
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full h-9 w-9"
+              onClick={scrollPrev}
+              data-testid="button-testimonial-prev"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex gap-1.5" data-testid="testimonial-dots">
+              {testimonials.map((_, idx) => (
+                <button
+                  key={idx}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    idx === selectedIndex ? "bg-accent" : "bg-muted-foreground/30"
+                  }`}
+                  onClick={() => emblaApi?.scrollTo(idx)}
+                  data-testid={`button-testimonial-dot-${idx}`}
+                />
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full h-9 w-9"
+              onClick={scrollNext}
+              data-testid="button-testimonial-next"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full h-9 w-9"
-            onClick={scrollNext}
-            data-testid="button-testimonial-next"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
       </div>
     </section>
@@ -371,7 +373,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      <section className="bg-muted/30" data-testid="section-counseling-needed">
+      <section className="bg-[#ffffff4d]" data-testid="section-counseling-needed">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-counseling-needed-heading">Is Counseling What's Needed?</h2>
           <p className="text-sm sm:text-base text-muted-foreground text-center max-w-3xl mx-auto leading-relaxed">
