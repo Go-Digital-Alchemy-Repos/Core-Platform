@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, MessageSquare } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, MessageSquare, Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,16 @@ export function Navbar() {
   const { user, isLoading, logout, isAdmin, isTherapist } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchOpen]);
 
   const { data: unreadData } = useQuery<{ count: number }>({
     queryKey: ["/api/messages/unread"],
@@ -63,6 +73,51 @@ export function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-3 flex-wrap">
+          <div className="relative flex items-center">
+            {searchOpen && (
+              <form
+                className="flex items-center mr-1"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (searchQuery.trim()) {
+                    navigate(`/directory?search=${encodeURIComponent(searchQuery.trim())}`);
+                    setSearchOpen(false);
+                    setSearchQuery("");
+                  }
+                }}
+              >
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search..."
+                  className="h-9 w-48 rounded-md border bg-background px-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 transition-all"
+                  data-testid="input-search"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 ml-0.5"
+                  onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
+                  data-testid="button-search-close"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </form>
+            )}
+            {!searchOpen && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setSearchOpen(true)}
+                data-testid="button-search-open"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
           <ThemeToggle />
           {user && <NotificationBell />}
           {isLoading ? null : user ? (
