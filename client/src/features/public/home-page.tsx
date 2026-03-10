@@ -504,24 +504,26 @@ export default function HomePage() {
         ) : upcomingEvents.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             {upcomingEvents.map((event: any) => (
-              <Card key={event.id} data-testid={`card-event-${event.id}`}>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-2 mb-3 flex-wrap">
-                    <Calendar className="h-4 w-4 text-accent" />
-                    <span className="text-sm font-medium">
-                      {new Date(event.date).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-                    {event.isVirtual && <Badge variant="secondary" className="text-xs">Virtual</Badge>}
-                    {event.memberOnly && <Badge variant="outline" className="text-xs">Members Only</Badge>}
-                  </div>
-                  <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">{event.description}</p>
-                </CardContent>
-              </Card>
+              <Link key={event.id} href={`/events/${event.id}`}>
+                <Card className="cursor-pointer hover-elevate h-full" data-testid={`card-event-${event.id}`}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
+                      <Calendar className="h-4 w-4 text-accent" />
+                      <span className="text-sm font-medium">
+                        {new Date(event.date).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                      {event.isVirtual && <Badge variant="secondary" className="text-xs">Virtual</Badge>}
+                      {event.memberOnly && <Badge variant="outline" className="text-xs">Members Only</Badge>}
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
+                    <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">{event.description}</p>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         ) : (

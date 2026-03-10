@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import type { Event } from "@shared/schema/events";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,63 +38,65 @@ function EventCard({ event }: { event: Event }) {
   const isPast = eventDate < new Date();
 
   return (
-    <Card
-      data-testid={`card-event-${event.id}`}
-      className={isPast ? "opacity-60" : ""}
-    >
-      <CardHeader className="flex flex-col sm:flex-row items-start justify-between gap-2 space-y-0 pb-3">
-        <div className="space-y-1 min-w-0">
-          <CardTitle className="text-base sm:text-lg break-words" data-testid={`text-event-title-${event.id}`}>
-            {event.title}
-          </CardTitle>
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-            <span data-testid={`text-event-date-${event.id}`}>
-              {formatDate(event.date)}
-              {event.endDate && ` — ${formatDate(event.endDate)}`}
-              {" at "}
-              {formatTime(event.date)}
-            </span>
+    <Link href={`/events/${event.id}`}>
+      <Card
+        data-testid={`card-event-${event.id}`}
+        className={`cursor-pointer hover-elevate ${isPast ? "opacity-60" : ""}`}
+      >
+        <CardHeader className="flex flex-col sm:flex-row items-start justify-between gap-2 space-y-0 pb-3">
+          <div className="space-y-1 min-w-0">
+            <CardTitle className="text-base sm:text-lg break-words" data-testid={`text-event-title-${event.id}`}>
+              {event.title}
+            </CardTitle>
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+              <span data-testid={`text-event-date-${event.id}`}>
+                {formatDate(event.date)}
+                {event.endDate && ` — ${formatDate(event.endDate)}`}
+                {" at "}
+                {formatTime(event.date)}
+              </span>
+            </div>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {event.isVirtual && (
-            <Badge variant="secondary" data-testid={`badge-virtual-${event.id}`}>
-              <Monitor className="mr-1 h-3 w-3" />
-              Virtual
-            </Badge>
-          )}
-          {event.memberOnly && (
-            <Badge variant="outline" data-testid={`badge-member-only-${event.id}`}>
-              Members Only
-            </Badge>
-          )}
-          {isPast && (
-            <Badge variant="outline" data-testid={`badge-past-${event.id}`}>
-              Past
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {event.description && (
-          <p
-            className="text-sm text-muted-foreground"
-            data-testid={`text-event-description-${event.id}`}
-          >
-            {event.description}
-          </p>
-        )}
-        {event.location && (
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
-            <span data-testid={`text-event-location-${event.id}`}>
-              {event.location}
-            </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {event.isVirtual && (
+              <Badge variant="secondary" data-testid={`badge-virtual-${event.id}`}>
+                <Monitor className="mr-1 h-3 w-3" />
+                Virtual
+              </Badge>
+            )}
+            {event.memberOnly && (
+              <Badge variant="outline" data-testid={`badge-member-only-${event.id}`}>
+                Members Only
+              </Badge>
+            )}
+            {isPast && (
+              <Badge variant="outline" data-testid={`badge-past-${event.id}`}>
+                Past
+              </Badge>
+            )}
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {event.description && (
+            <p
+              className="text-sm text-muted-foreground line-clamp-2"
+              data-testid={`text-event-description-${event.id}`}
+            >
+              {event.description}
+            </p>
+          )}
+          {event.location && (
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              <span data-testid={`text-event-location-${event.id}`}>
+                {event.location}
+              </span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </Link>
   );
 }
 
@@ -234,14 +237,15 @@ function CalendarView({ events }: { events: Event[] }) {
                   {dayEvents.length > 0 && (
                     <div className="mt-0.5 space-y-0.5">
                       {dayEvents.map((event) => (
-                        <div
-                          key={event.id}
-                          className="truncate rounded bg-primary/10 px-1 py-0.5 text-[10px] leading-tight text-primary"
-                          title={`${event.title} — ${formatTime(event.date)}`}
-                          data-testid={`calendar-event-${event.id}`}
-                        >
-                          {event.title}
-                        </div>
+                        <Link key={event.id} href={`/events/${event.id}`}>
+                          <div
+                            className="truncate rounded bg-primary/10 px-1 py-0.5 text-[10px] leading-tight text-primary cursor-pointer hover:bg-primary/20 transition-colors"
+                            title={`${event.title} — ${formatTime(event.date)}`}
+                            data-testid={`calendar-event-${event.id}`}
+                          >
+                            {event.title}
+                          </div>
+                        </Link>
                       ))}
                     </div>
                   )}

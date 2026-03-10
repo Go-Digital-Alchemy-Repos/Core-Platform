@@ -13,6 +13,7 @@ import HomePage from "@/features/public/home-page";
 import AboutPage from "@/features/public/about-page";
 import ContactPage from "@/features/public/contact-page";
 import EventsPage from "@/features/public/events-page";
+const EventDetailPage = lazy(() => import("@/features/public/event-detail-page"));
 import JoinNetworkPage from "@/features/public/join-network-page";
 
 import LoginPage from "@/features/auth/login-page";
@@ -56,6 +57,7 @@ function Router() {
         <Route path="/about" component={AboutPage} />
         <Route path="/contact" component={ContactPage} />
         <Route path="/events" component={EventsPage} />
+        <Route path="/events/:id" component={EventDetailPage} />
         <Route path="/join" component={JoinNetworkPage} />
         <Route path="/insights" component={InsightsPage} />
         <Route path="/insights/:slug" component={InsightsPostPage} />
