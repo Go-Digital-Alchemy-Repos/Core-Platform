@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import logoIcon from "@assets/TCK-Wellness_Icon_1773155859136.png";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -43,9 +44,12 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
     <div className="flex min-h-screen">
       <aside className="w-64 border-r bg-muted/30 flex-shrink-0 flex flex-col">
         <div className="p-4">
-          <h2 className="font-heading text-lg font-semibold" data-testid="text-admin-title">
-            Admin Panel
-          </h2>
+          <div className="flex items-center gap-3" data-testid="text-admin-title">
+            <img src={logoIcon} alt="TCK Wellness" className="h-9 w-9 object-contain" data-testid="img-admin-logo" />
+            <h2 className="font-heading text-lg font-semibold">
+              Admin Panel
+            </h2>
+          </div>
         </div>
         <nav className="flex flex-col gap-1 px-2 flex-1" data-testid="nav-admin-sidebar">
           {navItems.map((item) => {
