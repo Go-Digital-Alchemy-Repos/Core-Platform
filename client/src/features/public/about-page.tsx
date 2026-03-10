@@ -277,7 +277,7 @@ export default function AboutPage() {
       <section className="relative bg-muted/30 overflow-hidden" data-testid="section-statistics">
         <div className="pointer-events-none absolute top-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.12) 0%, transparent 70%)" }} />
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center">
-          <p className="text-sm sm:text-base text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed">
+          <p className="sm:text-base text-muted-foreground mb-10 max-w-3xl mx-auto text-[18px]">
             According to <a href="https://www.tcktraining.com/research" target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-2 hover:text-accent/80">TCK Training's 2024 research</a>, survey of 1600+ adult TCKs:
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-10 mb-10">

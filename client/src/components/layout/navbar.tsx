@@ -19,9 +19,11 @@ import { NotificationBell } from "@/components/shared/notification-bell";
 
 const navLinks = [
   { label: "Home", href: "/" },
+  { label: "About", href: "/about" },
+  { label: "Find a Counselor", href: "/directory" },
+  { label: "Join the Network", href: "/auth/register" },
   { label: "Events", href: "/events" },
   { label: "Insights & Articles", href: "/insights" },
-  { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -61,15 +63,6 @@ export function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-3 flex-wrap">
-          <Link href="/directory">
-            <Button
-              className="bg-accent text-accent-foreground border-accent-border"
-              data-testid="link-nav-find-therapist"
-            >
-              <Search className="h-4 w-4 mr-1.5" />
-              Find a Counselor
-            </Button>
-          </Link>
           <ThemeToggle />
           {user && <NotificationBell />}
           {isLoading ? null : user ? (
@@ -169,16 +162,6 @@ export function Navbar() {
                     </Button>
                   </Link>
                 ))}
-
-                <Link href="/directory" onClick={() => setMobileOpen(false)}>
-                  <Button
-                    className="w-full mt-2 bg-accent text-accent-foreground border-accent-border"
-                    data-testid="link-mobile-find-therapist"
-                  >
-                    <Search className="h-4 w-4 mr-1.5" />
-                    Find a Counselor
-                  </Button>
-                </Link>
 
                 <div className="my-3 border-t" />
 
