@@ -5,13 +5,11 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, ArrowRight, BookOpen } from "lucide-react";
-import { getQueryFn } from "@/lib/queryClient";
 import type { BlogPost } from "@shared/schema";
 
 export default function InsightsPage() {
   const { data: posts, isLoading } = useQuery<BlogPost[]>({
     queryKey: ["/api/blog"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
   return (

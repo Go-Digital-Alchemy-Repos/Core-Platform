@@ -5,7 +5,6 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, ArrowLeft, User } from "lucide-react";
-import { getQueryFn } from "@/lib/queryClient";
 import type { BlogPost } from "@shared/schema";
 
 export default function InsightsPostPage() {
@@ -13,7 +12,6 @@ export default function InsightsPostPage() {
 
   const { data: post, isLoading, error } = useQuery<BlogPost>({
     queryKey: ["/api/blog", params.slug],
-    queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
   if (isLoading) {
@@ -95,10 +93,11 @@ export default function InsightsPostPage() {
         </div>
 
         <div
-          className="prose prose-slate dark:prose-invert max-w-none leading-relaxed"
+          className="prose prose-slate dark:prose-invert max-w-none leading-relaxed whitespace-pre-wrap"
           data-testid="text-post-content"
-          dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, "<br />") }}
-        />
+        >
+          {post.content}
+        </div>
       </article>
     </PageLayout>
   );
