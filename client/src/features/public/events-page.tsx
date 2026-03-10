@@ -272,9 +272,7 @@ export default function EventsPage() {
             >
               Upcoming Events
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground" data-testid="text-events-subtitle">
-              Workshops, webinars, and community gatherings for the TCK community.
-            </p>
+            <p className="text-sm sm:text-base text-muted-foreground font-normal" data-testid="text-events-subtitle">We offer quarterly TCK-informed trainings for professional providers! All of our members get free registration to the events below. Log into your profile to get access to the free registration links. If you’re not a member you can still register through the links below.</p>
           </div>
           <div className="flex gap-1 rounded-lg border p-1" data-testid="toggle-view">
             <Button

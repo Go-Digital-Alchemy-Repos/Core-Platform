@@ -16,6 +16,7 @@ import { ThemeToggle } from "@/components/shared/theme-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { NotificationBell } from "@/components/shared/notification-bell";
+import { RegisterDialog } from "@/components/shared/register-dialog";
 
 const navLinks = [
   { label: "Home", href: "/" },
