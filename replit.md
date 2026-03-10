@@ -184,7 +184,6 @@ Response: `{ languages: string[], countries: string[] }`
 - Map receives all items from current page (pageSize=200 ensures all fit in one page for typical datasets)
 
 ### Follow-up recommendations
-- Add PostgreSQL indexes on `specializations` (GIN), `languages` (GIN), `country`, `practice_mode` for large datasets
 - Consider reducing default pageSize and using cursor-based pagination when dataset exceeds ~500 therapists
 - Add `Cache-Control` headers for the `/filters` endpoint (data changes infrequently)
 
@@ -230,6 +229,81 @@ Response: `{ languages: string[], countries: string[] }`
 - `server/index.ts` — Security middleware integration, log redaction
 - `server/middleware/auth.ts` — JWT secret no longer falls back to dev default in production
 - `server/routes/auth.routes.ts` — Rate limiters applied to login, register, forgot-password, reset-password
+
+## DB Indexing & Relational Integrity (Phase 4)
+
+### Indexes Added (21 total: 19 B-tree + 2 GIN)
+
+**therapist_profiles (7 indexes):**
+- `idx_tp_user_id` — B-tree on `user_id` (JOIN to users)
+- `idx_tp_visibility` — Composite B-tree on `(is_approved, is_active)` (directory listing filter)
+- `idx_tp_country` — B-tree on `country` (country filter)
+- `idx_tp_practice_mode` — B-tree on `practice_mode` (session format filter)
+- `idx_tp_featured` — B-tree on `is_featured` (featured listings)
+- `idx_tp_specializations_gin` — GIN on `specializations` (array containment search)
+- `idx_tp_languages_gin` — GIN on `languages` (array containment search)
+
+**notifications (2 indexes):**
+- `idx_notif_user_date` — Composite B-tree on `(user_id, created_at)` (user inbox listing sorted by date)
+- `idx_notif_user_unread` — Composite B-tree on `(user_id, is_read)` (unread notification filtering)
+
+**conversations (4 indexes):**
+- `idx_conv_client_id` — B-tree on `client_id` (find user conversations)
+- `idx_conv_counselor_id` — B-tree on `counselor_id` (find user conversations)
+- `idx_conv_updated_at` — B-tree on `updated_at` (conversation ordering)
+- `idx_conv_participants` — Composite B-tree on `(client_id, counselor_id)` (getOrCreateConversation lookup)
+
+**direct_messages (2 indexes):**
+- `idx_dm_conv_date` — Composite B-tree on `(conversation_id, created_at)` (message listing)
+- `idx_dm_conv_read_sender` — Composite B-tree on `(conversation_id, is_read, sender_id)` (unread count)
+
+**activity_logs (1 index):**
+- `idx_activity_user_date` — Composite B-tree on `(user_id, created_at)` (admin activity view)
+
+**therapist_subscriptions (3 indexes):**
+- `idx_sub_therapist_id` — B-tree on `therapist_id` (subscription lookup)
+- `idx_sub_stripe_sub_id` — B-tree on `stripe_subscription_id` (Stripe webhook lookups)
+- `idx_sub_status` — B-tree on `status` (active subscription queries)
+
+**events (1 index):**
+- `idx_events_date` — B-tree on `date` (upcoming events ordering)
+
+**users (1 index):**
+- `idx_users_role` — B-tree on `role` (role-based listing)
+
+### FK Constraints Added
+- `notifications.user_id` → `users.id` (was missing, 0 orphaned records found)
+- `notification_preferences.user_id` → `users.id` (was missing, 0 orphaned records found)
+
+### GIN Index Note
+The two GIN indexes on `specializations` and `languages` arrays were created via direct SQL (`CREATE INDEX ... USING GIN`) since Drizzle's `index()` helper doesn't natively support GIN. They are not reflected in the Drizzle schema files but exist in the database. If `db:push` is run again, they will persist (Drizzle doesn't drop unmanaged indexes).
+
+### Migration Notes
+- All changes applied via `npm run db:push` (nondestructive)
+- No tables dropped, no data deleted, no columns altered
+- Orphaned record check performed before adding FKs: 0 orphans in notifications, notification_preferences, activity_logs, subscriptions
+- GIN indexes added via `executeSql` after schema push
+- All existing primary keys and unique constraints preserved
+
+### Files Changed
+- `shared/schema/users.ts` — Added `idx_users_role` index
+- `shared/schema/therapist-profiles.ts` — Added 5 B-tree indexes
+- `shared/schema/notifications.ts` — Added FK references to `users.id`, composite index
+- `shared/schema/direct-messages.ts` — Added indexes on conversations and direct_messages
+- `shared/schema/activity-logs.ts` — Added composite index
+- `shared/schema/subscriptions.ts` — Added 3 indexes
+- `shared/schema/events.ts` — Added date index
+- `server/storage/therapist.storage.ts` — Updated array filter queries to use `@>` operator for GIN index compatibility
+
+### Query Pattern Updates
+- Array filter queries in `server/storage/therapist.storage.ts` updated from `value = ANY(array_col)` to `array_col @> ARRAY[value]::text[]` to properly leverage GIN indexes
+
+### Performance Rationale
+- **Directory queries** are the highest-frequency read path; the composite `(is_approved, is_active)` index + individual filter indexes + GIN array indexes (with `@>` operator) cover all predicates in `listProfilesPaginated()`
+- **Notification queries**: `(user_id, created_at)` index covers the main inbox listing (all notifications sorted by date); separate `(user_id, is_read)` covers unread count/filtering
+- **Direct message queries** always scope to a conversation; composite `(conversation_id, created_at)` covers listing, and `(conversation_id, is_read, sender_id)` covers unread count without hitting the main table
+- **Conversation lookups**: `(client_id, counselor_id)` composite covers `getOrCreateConversation()` exact-match queries
+- **Stripe webhook lookups** by `stripe_subscription_id` were doing full table scans; now indexed
 
 ## TypeScript Integrity Pass (March 2026)
 

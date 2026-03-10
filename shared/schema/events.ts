@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -15,7 +15,9 @@ export const events = pgTable("events", {
   memberOnly: boolean("member_only").default(false),
   imageUrl: text("image_url"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_events_date").on(table.date),
+]);
 
 export const insertEventSchema = createInsertSchema(events).omit({
   id: true,

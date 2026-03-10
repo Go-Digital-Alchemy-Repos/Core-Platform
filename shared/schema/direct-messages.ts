@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users } from "./users";
@@ -10,7 +10,12 @@ export const conversations = pgTable("conversations", {
   counselorId: varchar("counselor_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_conv_client_id").on(table.clientId),
+  index("idx_conv_counselor_id").on(table.counselorId),
+  index("idx_conv_updated_at").on(table.updatedAt),
+  index("idx_conv_participants").on(table.clientId, table.counselorId),
+]);
 
 export const directMessages = pgTable("direct_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -23,7 +28,10 @@ export const directMessages = pgTable("direct_messages", {
   attachmentType: text("attachment_type"),
   isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_dm_conv_date").on(table.conversationId, table.createdAt),
+  index("idx_dm_conv_read_sender").on(table.conversationId, table.isRead, table.senderId),
+]);
 
 export const insertDirectMessageSchema = createInsertSchema(directMessages).omit({
   id: true,

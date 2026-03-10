@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users } from "./users";
@@ -17,7 +17,11 @@ export const therapistSubscriptions = pgTable("therapist_subscriptions", {
   customPrice: integer("custom_price"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_sub_therapist_id").on(table.therapistId),
+  index("idx_sub_stripe_sub_id").on(table.stripeSubscriptionId),
+  index("idx_sub_status").on(table.status),
+]);
 
 export const insertSubscriptionSchema = createInsertSchema(therapistSubscriptions).omit({
   id: true,

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, index } from "drizzle-orm/pg-core";
 import { users } from "./users";
 
 export const activityLogs = pgTable("activity_logs", {
@@ -8,6 +8,8 @@ export const activityLogs = pgTable("activity_logs", {
   action: text("action").notNull(),
   details: text("details"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_activity_user_date").on(table.userId, table.createdAt),
+]);
 
 export type ActivityLog = typeof activityLogs.$inferSelect;

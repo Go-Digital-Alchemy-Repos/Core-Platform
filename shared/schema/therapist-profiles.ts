@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, numeric, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users } from "./users";
@@ -31,7 +31,13 @@ export const therapistProfiles = pgTable("therapist_profiles", {
   rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_tp_user_id").on(table.userId),
+  index("idx_tp_visibility").on(table.isApproved, table.isActive),
+  index("idx_tp_country").on(table.country),
+  index("idx_tp_practice_mode").on(table.practiceMode),
+  index("idx_tp_featured").on(table.isFeatured),
+]);
 
 export const insertTherapistProfileSchema = createInsertSchema(therapistProfiles).omit({
   id: true,

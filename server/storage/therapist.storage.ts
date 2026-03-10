@@ -51,13 +51,13 @@ function buildFilterConditions(params: TherapistSearchParams): SQL[] {
 
   if (params.specialization) {
     conditions.push(
-      sql`${params.specialization} = ANY(${therapistProfiles.specializations})`
+      sql`${therapistProfiles.specializations} @> ARRAY[${params.specialization}]::text[]`
     );
   }
 
   if (params.language) {
     conditions.push(
-      sql`${params.language} = ANY(${therapistProfiles.languages})`
+      sql`${therapistProfiles.languages} @> ARRAY[${params.language}]::text[]`
     );
   }
 
