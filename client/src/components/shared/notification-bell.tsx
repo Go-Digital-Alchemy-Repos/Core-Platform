@@ -24,8 +24,18 @@ type NotificationPrefs = {
   inAppNewMessage: boolean;
 };
 
-export function NotificationBell() {
-  const [open, setOpen] = useState(false);
+export function NotificationBell({
+  open: controlledOpen,
+  onOpenChange,
+  showTrigger = true,
+}: {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
+}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
   const [settingsOpen, setSettingsOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -72,21 +82,18 @@ export function NotificationBell() {
   useEffect(() => {
     if (!open) return;
     function handleClickOutside(e: MouseEvent) {
-      if (
-        panelRef.current &&
-        !panelRef.current.contains(e.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(e.target as Node)
-      ) {
+      const clickedInPanel = panelRef.current && panelRef.current.contains(e.target as Node);
+      const clickedInButton = buttonRef.current && buttonRef.current.contains(e.target as Node);
+      if (!clickedInPanel && !clickedInButton) {
         setOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
+  }, [open, setOpen]);
 
   function handleBellClick() {
-    setOpen((v) => !v);
+    setOpen(!open);
   }
 
   function handleNotifClick(notif: Notification) {
@@ -99,28 +106,30 @@ export function NotificationBell() {
 
   return (
     <div className="relative">
-      <button
-        ref={buttonRef}
-        onClick={handleBellClick}
-        className="relative p-2 rounded-full hover:bg-muted/60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        data-testid="button-notifications"
-        aria-label="Notifications"
-      >
-        <Bell className="h-5 w-5 text-foreground" />
-        {unreadCount > 0 && (
-          <span
-            className="absolute -top-0.5 -right-0.5 bg-accent text-accent-foreground text-[10px] font-bold rounded-full h-4 min-w-4 flex items-center justify-center px-1 leading-none"
-            data-testid="badge-notification-count"
-          >
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
-        )}
-      </button>
+      {showTrigger && (
+        <button
+          ref={buttonRef}
+          onClick={handleBellClick}
+          className="relative p-2 rounded-full hover:bg-muted/60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          data-testid="button-notifications"
+          aria-label="Notifications"
+        >
+          <Bell className="h-5 w-5 text-foreground" />
+          {unreadCount > 0 && (
+            <span
+              className="absolute -top-0.5 -right-0.5 bg-accent text-accent-foreground text-[10px] font-bold rounded-full h-4 min-w-4 flex items-center justify-center px-1 leading-none"
+              data-testid="badge-notification-count"
+            >
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </button>
+      )}
 
       {open && (
         <div
           ref={panelRef}
-          className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-background border rounded-xl shadow-xl z-[1200] overflow-hidden"
+          className={`${showTrigger ? "absolute right-0 top-full mt-2" : "fixed right-4 top-16"} w-80 sm:w-96 bg-background border rounded-xl shadow-xl z-[1200] overflow-hidden`}
           data-testid="panel-notifications"
         >
           <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">

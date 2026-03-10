@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, MessageSquare, Search, X, ChevronDown } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, MessageSquare, Search, X, ChevronDown, Bell, Moon, Sun } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ThemeToggle } from "@/components/shared/theme-provider";
+import { ThemeToggle, useTheme } from "@/components/shared/theme-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { NotificationBell } from "@/components/shared/notification-bell";
@@ -34,9 +34,11 @@ const resourceLinks = [
 export function Navbar() {
   const [location] = useLocation();
   const { user, isLoading, logout, isAdmin, isTherapist } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -54,6 +56,13 @@ export function Navbar() {
     refetchInterval: 30000,
   });
   const unreadCount = unreadData?.count ?? 0;
+
+  const { data: unreadNotifData } = useQuery<{ count: number }>({
+    queryKey: ["/api/notifications/unread-count"],
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
+  const unreadNotifCount = unreadNotifData?.count ?? 0;
 
   return (
     <nav className="sticky top-0 z-[999] bg-background/95 backdrop-blur-sm border-b" data-testid="navbar">
@@ -144,63 +153,89 @@ export function Navbar() {
               </Button>
             )}
           </div>
-          <ThemeToggle />
-          {user && <NotificationBell />}
           {isLoading ? null : user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" data-testid="button-user-menu">
-                  <User className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="z-[1000]">
-                {isTherapist && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/therapist" data-testid="link-therapist-dashboard">
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
-                      Counselor Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {isAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin" data-testid="link-admin-dashboard">
-                      <Shield className="mr-2 h-4 w-4" />
-                      Admin Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/messages" data-testid="link-messages">
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Messages
-                    {unreadCount > 0 && (
-                      <span className="ml-auto bg-accent text-accent-foreground text-xs font-semibold rounded-full h-5 min-w-5 flex items-center justify-center px-1.5">
-                        {unreadCount}
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="relative" data-testid="button-user-menu">
+                    <User className="h-4 w-4" />
+                    {(unreadCount + unreadNotifCount) > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-[10px] font-bold rounded-full h-4 min-w-4 flex items-center justify-center px-1 leading-none">
+                        {(unreadCount + unreadNotifCount) > 99 ? "99+" : unreadCount + unreadNotifCount}
                       </span>
                     )}
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setProfileOpen(true)}
-                  data-testid="button-my-profile"
-                >
-                  <UserCog className="mr-2 h-4 w-4" />
-                  My Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => logout.mutate()}
-                  data-testid="button-logout"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="z-[1000]">
+                  {isTherapist && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/therapist" data-testid="link-therapist-dashboard">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Counselor Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" data-testid="link-admin-dashboard">
+                        <Shield className="mr-2 h-4 w-4" />
+                        Admin Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setNotifOpen(true)}
+                    data-testid="button-notifications-menu"
+                  >
+                    <Bell className="mr-2 h-4 w-4" />
+                    Notifications
+                    {unreadNotifCount > 0 && (
+                      <span className="ml-auto bg-accent text-accent-foreground text-xs font-semibold rounded-full h-5 min-w-5 flex items-center justify-center px-1.5">
+                        {unreadNotifCount}
+                      </span>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/messages" data-testid="link-messages">
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Messages
+                      {unreadCount > 0 && (
+                        <span className="ml-auto bg-accent text-accent-foreground text-xs font-semibold rounded-full h-5 min-w-5 flex items-center justify-center px-1.5">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setProfileOpen(true)}
+                    data-testid="button-my-profile"
+                  >
+                    <UserCog className="mr-2 h-4 w-4" />
+                    My Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={toggleTheme}
+                    data-testid="button-theme-toggle-menu"
+                  >
+                    {theme === "light" ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
+                    {theme === "light" ? "Dark Mode" : "Light Mode"}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => logout.mutate()}
+                    data-testid="button-logout"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           ) : (
             <>
+              <ThemeToggle />
               <Link href="/auth/login">
                 <Button variant="ghost" data-testid="link-login">
                   Login
@@ -218,8 +253,6 @@ export function Navbar() {
         </div>
 
         <div className="flex md:hidden items-center gap-2">
-          <ThemeToggle />
-          {user && <NotificationBell />}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button size="icon" variant="ghost" data-testid="button-mobile-menu">
@@ -283,6 +316,23 @@ export function Navbar() {
                         </Button>
                       </Link>
                     )}
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setNotifOpen(true);
+                        setMobileOpen(false);
+                      }}
+                      data-testid="button-mobile-notifications"
+                    >
+                      <Bell className="mr-2 h-4 w-4" />
+                      Notifications
+                      {unreadNotifCount > 0 && (
+                        <span className="ml-auto bg-accent text-accent-foreground text-xs font-semibold rounded-full h-5 min-w-5 flex items-center justify-center px-1.5">
+                          {unreadNotifCount}
+                        </span>
+                      )}
+                    </Button>
                     <Link href="/messages" onClick={() => setMobileOpen(false)}>
                       <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-messages">
                         <MessageSquare className="mr-2 h-4 w-4" />
@@ -310,6 +360,18 @@ export function Navbar() {
                       variant="ghost"
                       className="w-full justify-start"
                       onClick={() => {
+                        toggleTheme();
+                      }}
+                      data-testid="button-mobile-theme-toggle"
+                    >
+                      {theme === "light" ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
+                      {theme === "light" ? "Dark Mode" : "Light Mode"}
+                    </Button>
+                    <div className="my-1 border-t" />
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => {
                         logout.mutate();
                         setMobileOpen(false);
                       }}
@@ -321,6 +383,18 @@ export function Navbar() {
                   </>
                 ) : (
                   <>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        toggleTheme();
+                      }}
+                      data-testid="button-mobile-theme-toggle-loggedout"
+                    >
+                      {theme === "light" ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
+                      {theme === "light" ? "Dark Mode" : "Light Mode"}
+                    </Button>
+                    <div className="my-1 border-t" />
                     <Link href="/auth/login" onClick={() => setMobileOpen(false)}>
                       <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-login">
                         Login
@@ -345,6 +419,7 @@ export function Navbar() {
         </div>
       </div>
 
+      {user && <NotificationBell open={notifOpen} onOpenChange={setNotifOpen} showTrigger={false} />}
       <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
       <RegisterDialog open={registerOpen} onOpenChange={setRegisterOpen} />
     </nav>
