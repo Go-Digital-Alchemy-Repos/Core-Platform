@@ -44,6 +44,7 @@ import {
   Plus,
   Trash2,
   Tag,
+  Link2,
 } from "lucide-react";
 
 type SettingsData = Record<
@@ -76,6 +77,7 @@ interface IntegrationConfig {
   description: string;
   icon: typeof CreditCard;
   fields: IntegrationField[];
+  replitConnected?: boolean;
 }
 
 const INTEGRATIONS: IntegrationConfig[] = [
@@ -84,6 +86,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
     title: "Stripe",
     description: "Payment processing for therapist subscriptions",
     icon: CreditCard,
+    replitConnected: true,
     fields: [
       {
         key: "stripe_secret_key",
@@ -251,20 +254,35 @@ function IntegrationCard({
               <CardDescription>{config.description}</CardDescription>
             </div>
           </div>
-          <Badge variant={hasAnyValue ? "default" : "outline"} data-testid={`badge-status-${config.category}`}>
-            {hasAnyValue ? (
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3" /> Configured
-              </span>
-            ) : (
-              <span className="flex items-center gap-1">
-                <XCircle className="h-3 w-3" /> Not configured
-              </span>
+          <div className="flex items-center gap-2">
+            {config.replitConnected && (
+              <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" data-testid={`badge-replit-${config.category}`}>
+                <span className="flex items-center gap-1">
+                  <Link2 className="h-3 w-3" /> Auto-connected
+                </span>
+              </Badge>
             )}
-          </Badge>
+            <Badge variant={hasAnyValue ? "default" : "outline"} data-testid={`badge-status-${config.category}`}>
+              {hasAnyValue ? (
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Configured
+                </span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <XCircle className="h-3 w-3" /> Not configured
+                </span>
+              )}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {config.replitConnected && (
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400 flex items-start gap-2" data-testid={`notice-replit-${config.category}`}>
+            <Link2 className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <span>This service is auto-connected via Replit integration. The fields below are optional overrides for custom or production keys.</span>
+          </div>
+        )}
         {config.fields.map((field) => {
           const existing = categorySettings[field.key];
           const hasExisting = existing && existing.value && existing.value !== "";
