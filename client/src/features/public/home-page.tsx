@@ -382,7 +382,7 @@ export default function HomePage() {
         </div>
       </section>
       <TestimonialsCarousel />
-      <section className="bg-muted/30" data-testid="section-featured-therapists">
+      <section className="bg-[#ffffff4d]" data-testid="section-featured-therapists">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap mb-8 sm:mb-12">
             <div>
