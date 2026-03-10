@@ -312,8 +312,9 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
-      <section className="relative bg-muted/30" data-testid="section-vetted">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
+      <section className="relative bg-muted/30 overflow-hidden" data-testid="section-vetted">
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16">
             <div>
               <h3 className="font-heading text-xl sm:text-2xl font-semibold mb-6 text-center md:text-left" data-testid="text-vetted-means-heading">
