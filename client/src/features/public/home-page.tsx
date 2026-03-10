@@ -194,6 +194,131 @@ function TestimonialsCarousel() {
   );
 }
 
+function FeaturedArticlesCarousel({ articles }: { articles: any[] }) {
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: true, align: "start", slidesToScroll: 1 },
+    [Autoplay({ delay: 4500, stopOnInteraction: true })]
+  );
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
+    emblaApi.on("select", onSelect);
+    onSelect();
+    return () => { emblaApi.off("select", onSelect); };
+  }, [emblaApi]);
+
+  return (
+    <section className="relative bg-muted/30 overflow-hidden" data-testid="section-featured-articles">
+      <div className="pointer-events-none absolute top-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.12) 0%, transparent 70%)" }} />
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
+        <div className="flex items-center justify-between mb-10 sm:mb-14">
+          <div>
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold mb-2" data-testid="text-featured-articles-heading">
+              Featured Articles
+            </h2>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Latest insights on TCK mental health and cross-cultural wellness.
+            </p>
+          </div>
+          <Link href="/insights">
+            <Button variant="outline" data-testid="button-view-all-articles">
+              View All <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+        <div className="relative">
+          <div className="overflow-hidden" ref={emblaRef}>
+            <div className="flex gap-6">
+              {articles.map((post: any, idx: number) => (
+                <div
+                  key={post.id}
+                  className="flex-[0_0_100%] min-w-0 sm:flex-[0_0_50%] lg:flex-[0_0_33.333%]"
+                >
+                  <Link href={`/insights/${post.slug}`}>
+                    <Card className="h-full cursor-pointer hover-elevate" data-testid={`card-featured-article-${idx}`}>
+                      {post.coverImageUrl && (
+                        <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
+                          <img
+                            src={post.coverImageUrl}
+                            alt={post.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <CardContent className="p-5">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          {post.category && (
+                            <Badge variant="secondary" className="text-xs">{post.category}</Badge>
+                          )}
+                          {post.publishedAt && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(post.publishedAt).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="font-semibold text-base mb-2 line-clamp-2">{post.title}</h3>
+                        {post.excerpt && (
+                          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-3">
+                            {post.excerpt}
+                          </p>
+                        )}
+                        <span className="text-xs text-accent font-medium flex items-center gap-1">
+                          Read More <ArrowRight className="h-3 w-3" />
+                        </span>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full h-9 w-9"
+              onClick={scrollPrev}
+              data-testid="button-article-prev"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex gap-1.5" data-testid="article-dots">
+              {articles.map((_, idx) => (
+                <button
+                  key={idx}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    idx === selectedIndex ? "bg-accent" : "bg-muted-foreground/30"
+                  }`}
+                  onClick={() => emblaApi?.scrollTo(idx)}
+                  data-testid={`button-article-dot-${idx}`}
+                />
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full h-9 w-9"
+              onClick={scrollNext}
+              data-testid="button-article-next"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function HomePage() {
   const { data: events, isLoading: eventsLoading } = useQuery<any[]>({
     queryKey: ["/api/events"],
@@ -204,8 +329,13 @@ export default function HomePage() {
     queryKey: ["/api/therapists/featured"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
+  const { data: blogPosts } = useQuery<any[]>({
+    queryKey: ["/api/blog"],
+  });
+
   const featuredTherapists = featuredTherapistsData ?? [];
   const upcomingEvents = events?.slice(0, 3) ?? [];
+  const recentArticles = blogPosts?.slice(0, 6) ?? [];
 
   return (
     <PageLayout>
@@ -399,6 +529,9 @@ export default function HomePage() {
           <p className="text-center text-muted-foreground py-12">No upcoming events.</p>
         )}
       </section>
+      {recentArticles.length > 0 && (
+        <FeaturedArticlesCarousel articles={recentArticles} />
+      )}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="section-cta">
         <div className="max-w-2xl mx-auto">
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold mb-3 sm:mb-4" data-testid="text-cta-heading">

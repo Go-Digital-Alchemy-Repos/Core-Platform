@@ -209,6 +209,9 @@ async function seed() {
   ]);
 
   console.log("Seed data created successfully! 40 therapists, 3 tiers, 4 events, 8 docs.");
+
+  const { seedBlogPosts } = await import("./seed-blog");
+  await seedBlogPosts();
 }
 
 seed().catch(console.error);
