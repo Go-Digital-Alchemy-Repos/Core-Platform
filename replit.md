@@ -450,3 +450,39 @@ All admin routes still mount at `/api/admin/*`. The hub router applies auth once
 - Consider `manualChunks` in Vite rollup config to split the messages-page rich-text-editor (~385KB) into a shared vendor chunk
 - Consider lazy loading the map-view component inside directory-page (already chunked at 157KB but loaded as part of directory bundle)
 - Add route prefetching for likely navigation targets (e.g., prefetch admin chunks after admin login detected)
+
+## Growth Readiness Foundations (Phase 8)
+
+### New Tables
+- **`profile_views`** — Tracks therapist profile view events (profileId, viewerId nullable for anonymous, source, createdAt). Indexes: profile_id, profile_date composite, viewer_id.
+- **`saved_counselors`** — Favorites/bookmarks join table (userId, profileId, createdAt). Unique constraint on (userId, profileId). Indexes: user_id, profile_id.
+
+### New Columns
+- **`therapist_profiles.featuredUntil`** (timestamp, nullable) — Time-limited promoted listings. Enables expiring featured status without manual admin intervention.
+- **`conversations.lastMessageAt`** (timestamp, nullable) — Denormalized timestamp for efficient conversation sorting without joining to messages table. Index: idx_conv_last_message.
+
+### New Storage Classes
+- **`ProfileViewStorage`** (`server/storage/profile-view.storage.ts`) — `record()`, `countByProfile()`, `getRecentByProfile()`, `getViewCountsByProfile()` (total/7d/30d aggregates using SQL FILTER).
+- **`SavedCounselorStorage`** (`server/storage/saved-counselor.storage.ts`) — `save()` (with ON CONFLICT DO NOTHING), `unsave()`, `listByUser()`, `isSaved()`.
+- Both registered in `server/storage/index.ts` as `storage.profileViews` and `storage.savedCounselors`.
+
+### Schema Index Updated
+- `shared/schema/index.ts` exports `profileViews`, `savedCounselors`, `ProfileView`, `SavedCounselor` types.
+
+### Files Changed
+- `shared/schema/profile-views.ts` — NEW: profile views table
+- `shared/schema/saved-counselors.ts` — NEW: saved counselors table
+- `shared/schema/therapist-profiles.ts` — Added `featuredUntil` column
+- `shared/schema/direct-messages.ts` — Added `lastMessageAt` column + index
+- `shared/schema/index.ts` — New exports
+- `server/storage/profile-view.storage.ts` — NEW: profile view storage
+- `server/storage/saved-counselor.storage.ts` — NEW: saved counselor storage
+- `server/storage/index.ts` — Registered new storage classes
+
+### Recommended Next Product Builds
+1. **Therapist Analytics Dashboard** — Wire `storage.profileViews.record()` into the directory profile view route, build a therapist-facing analytics view using `getViewCountsByProfile()`.
+2. **Save/Favorite Counselors** — Add REST endpoints for save/unsave/list, add heart icon to therapist cards and profile page.
+3. **Time-Limited Promotions** — Admin UI to set `featuredUntil` on profiles, update directory query to check `featuredUntil > now()` alongside `isFeatured`.
+4. **Conversation Sorting** — Update message send logic to set `lastMessageAt`, sort conversation list by it instead of `updatedAt`.
+5. **Geo-Aware Ranking** — Latitude/longitude already exist on profiles; add a Haversine distance query to directory search, allow "sort by distance" when user provides location.
+6. **Onboarding Funnel** — Track profile completeness via existing fields (bio, specializations, credentials, photo) and surface a progress indicator on the therapist dashboard.

@@ -150,9 +150,10 @@ export class MessageStorage {
       })
       .returning();
 
+    const now = new Date();
     await db
       .update(conversations)
-      .set({ updatedAt: new Date() })
+      .set({ updatedAt: now, lastMessageAt: now })
       .where(eq(conversations.id, conversationId));
 
     return msg;

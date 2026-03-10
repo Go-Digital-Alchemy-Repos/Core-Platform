@@ -8,6 +8,7 @@ export const conversations = pgTable("conversations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   clientId: varchar("client_id").notNull().references(() => users.id),
   counselorId: varchar("counselor_id").notNull().references(() => users.id),
+  lastMessageAt: timestamp("last_message_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -15,6 +16,7 @@ export const conversations = pgTable("conversations", {
   index("idx_conv_counselor_id").on(table.counselorId),
   index("idx_conv_updated_at").on(table.updatedAt),
   index("idx_conv_participants").on(table.clientId, table.counselorId),
+  index("idx_conv_last_message").on(table.lastMessageAt),
 ]);
 
 export const directMessages = pgTable("direct_messages", {

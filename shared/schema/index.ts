@@ -12,3 +12,5 @@ export { conversations, directMessages, insertDirectMessageSchema, type InsertDi
 export { activityLogs, type ActivityLog } from "./activity-logs";
 export { notifications, notificationPreferences, insertNotificationSchema, type InsertNotification, type Notification, type NotificationPreferences } from "./notifications";
 export { specializations, insertSpecializationSchema, type InsertSpecialization, type Specialization } from "./specializations";
+export { profileViews, insertProfileViewSchema, type InsertProfileView, type ProfileView } from "./profile-views";
+export { savedCounselors, insertSavedCounselorSchema, type InsertSavedCounselor, type SavedCounselor } from "./saved-counselors";
