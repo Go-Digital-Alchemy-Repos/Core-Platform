@@ -1,0 +1,105 @@
+We are beginning Phase 4 of the TCK Wellness Event Management sprint: adding paid event registration using the existing Stripe integration patterns in the TCK Wellness platform.
+
+CONTEXT
+The platform already supports counselor subscriptions through Stripe. We now need to extend the event system to support paid event registration for events that require a registration fee. Users should be able to register and pay safely, admins should be able to see payment-related registration status, and the implementation should remain consistent with the platform’s current Stripe architecture.
+
+IMPORTANT RULES
+- Nondestructive only
+- Preserve existing subscription billing behavior
+- Reuse current Stripe patterns where practical
+- Do not redesign the whole billing architecture
+- Do not break free event registration flows created in the previous phase
+- Keep admin and user UX consistent with the existing design system
+
+PRIMARY GOAL
+Implement paid event registration using Stripe, including:
+- paid/free event logic
+- event registration checkout flow
+- payment status tracking
+- admin visibility into payment-backed registrations
+- registration confirmation/payment confirmation workflow compatibility
+- future-ready refund/cancellation support groundwork
+
+IMPLEMENTATION REQUIREMENTS
+1. Inspect:
+   - current Stripe setup
+   - billing/customer portal patterns
+   - environment/config handling for Stripe
+   - event registration model from previous phase
+   - current email template/workflow system
+   - event detail page/action patterns
+
+2. Extend the event registration model/contracts to support paid event fields such as:
+   - paymentStatus
+   - stripeCheckoutSessionId and/or payment intent reference as appropriate
+   - amount/currency snapshot where useful
+   - refunded/canceled groundwork if practical
+Keep it aligned with existing schema conventions.
+
+3. Implement paid event registration logic:
+   - event must be marked paid
+   - registration enabled and open
+   - user initiates registration/payment flow
+   - Stripe checkout session or equivalent flow is created using the current app’s Stripe patterns
+   - successful payment results in a completed/confirmed registration record
+   - failed/canceled checkout is handled safely and clearly
+
+4. Ensure free and paid event registration paths coexist cleanly without duplication or regressions.
+
+5. Update admin registrant management so admins can see:
+   - who registered
+   - payment status
+   - registration status
+   - fee paid or expected
+   - timestamps
+Do not overbuild financial reporting in this phase.
+
+6. Add/update appropriate user email workflows:
+   - payment-backed registration confirmation
+   - payment receipt/confirmation if applicable within the current email system
+   - cancellation/failure messaging if practical and already aligned with current patterns
+
+7. Add safe status handling for edge cases:
+   - user starts checkout but does not complete
+   - duplicate paid registration attempts
+   - registration closes during checkout
+   - event reaches capacity
+   - Stripe callback/webhook reconciliation if required by the current architecture
+
+8. Reuse existing Stripe webhook and billing patterns where possible rather than inventing a separate style.
+
+9. Keep this phase focused on registration/payment. Do not build a full refund portal yet, but do structure the data model so admin-managed refunds can be supported later.
+
+NONDESTRUCTIVE RULES
+- No subscription billing regressions
+- No auth redesign
+- No unrelated billing refactor
+- No broad event UI redesign
+- No destructive migration changes
+
+VALIDATION CHECKLIST
+1. Typecheck/check passes
+2. Build passes
+3. Free registrations still work
+4. Paid event registration checkout flow works
+5. Successful payment creates/updates event registration correctly
+6. Failed/canceled checkout is handled safely
+7. Admin can view payment-backed registrations
+8. Existing Stripe subscription functionality remains intact
+
+REQUIRED OUTPUT
+Provide:
+1. Summary of paid event registration implementation
+2. Files changed
+3. Stripe/event registration contract details
+4. Any webhook or callback notes
+5. Follow-up recommendations for refund/cancellation handling
+6. Docs update
+
+DOCS UPDATE REQUIREMENT
+Update docs to include:
+- paid event registration flow
+- Stripe integration notes
+- payment-related registration statuses
+- admin payment visibility behavior
+- future refund/cancellation considerations

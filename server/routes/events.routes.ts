@@ -16,7 +16,7 @@ router.get(
 router.get(
   "/all",
   asyncHandler(async (_req, res) => {
-    const eventsList = await storage.events.getAllEvents();
+    const eventsList = await storage.events.getPublishedEvents();
     res.json(eventsList);
   })
 );
@@ -27,6 +27,9 @@ router.get(
     const id = paramString(req.params.id);
     const event = await storage.events.getEvent(id);
     if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+    if (event.status === "draft") {
       return res.status(404).json({ message: "Event not found" });
     }
     res.json(event);

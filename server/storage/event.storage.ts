@@ -1,4 +1,4 @@
-import { eq, gte, lt, asc, desc } from "drizzle-orm";
+import { eq, gte, lt, asc, desc, and } from "drizzle-orm";
 import { db } from "../db";
 import { events, type Event, type InsertEvent } from "@shared/schema";
 
@@ -12,11 +12,29 @@ export class EventStorage {
     return db.select().from(events).orderBy(asc(events.date));
   }
 
+  async getPublishedEvents(): Promise<Event[]> {
+    return db
+      .select()
+      .from(events)
+      .where(
+        and(
+          eq(events.status, "published"),
+          eq(events.visibility, "public")
+        )
+      )
+      .orderBy(asc(events.date));
+  }
+
   async getUpcomingEvents(): Promise<Event[]> {
     return db
       .select()
       .from(events)
-      .where(gte(events.date, new Date()))
+      .where(
+        and(
+          gte(events.date, new Date()),
+          eq(events.status, "published")
+        )
+      )
       .orderBy(asc(events.date));
   }
 

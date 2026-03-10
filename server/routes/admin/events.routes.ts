@@ -6,6 +6,64 @@ import { notFound } from "../../utils/route-helpers";
 
 const router = Router();
 
+const VALID_STATUSES = ["draft", "published", "canceled", "completed"] as const;
+const VALID_VISIBILITIES = ["public", "members_only", "counselors_only", "admins_only"] as const;
+const VALID_REGISTRATION_TYPES = ["free", "paid"] as const;
+
+function isValidDate(d: Date): boolean {
+  return d instanceof Date && !isNaN(d.getTime());
+}
+
+function validateEventData(data: any): string | null {
+  if (data.status && !VALID_STATUSES.includes(data.status)) {
+    return `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`;
+  }
+
+  if (data.visibility && !VALID_VISIBILITIES.includes(data.visibility)) {
+    return `Invalid visibility. Must be one of: ${VALID_VISIBILITIES.join(", ")}`;
+  }
+
+  if (data.registrationType && !VALID_REGISTRATION_TYPES.includes(data.registrationType)) {
+    return `Invalid registration type. Must be one of: ${VALID_REGISTRATION_TYPES.join(", ")}`;
+  }
+
+  if (data.registrationType === "paid" && (!data.registrationFee || data.registrationFee <= 0)) {
+    return "Registration fee must be greater than 0 for paid events";
+  }
+
+  if (data.registrationOpensAt && data.registrationClosesAt) {
+    const opens = new Date(data.registrationOpensAt);
+    const closes = new Date(data.registrationClosesAt);
+    if (!isValidDate(opens) || !isValidDate(closes)) {
+      return "Invalid registration date format";
+    }
+    if (closes < opens) {
+      return "Registration close date must not precede registration open date";
+    }
+  }
+
+  if (data.date && data.endDate) {
+    const start = new Date(data.date);
+    const end = new Date(data.endDate);
+    if (!isValidDate(start) || !isValidDate(end)) {
+      return "Invalid date format";
+    }
+    if (end < start) {
+      return "End date must not precede start date";
+    }
+  }
+
+  if (data.virtualJoinUrl) {
+    try {
+      new URL(data.virtualJoinUrl);
+    } catch {
+      return "Virtual join URL must be a valid URL";
+    }
+  }
+
+  return null;
+}
+
 router.get(
   "/",
   asyncHandler(async (_req, res) => {
@@ -17,6 +75,10 @@ router.get(
 router.post(
   "/",
   asyncHandler(async (req, res) => {
+    const error = validateEventData(req.body);
+    if (error) {
+      return res.status(400).json({ message: error });
+    }
     const event = await storage.events.createEvent(req.body);
     res.status(201).json(event);
   })
@@ -25,6 +87,10 @@ router.post(
 router.put(
   "/:id",
   asyncHandler(async (req, res) => {
+    const error = validateEventData(req.body);
+    if (error) {
+      return res.status(400).json({ message: error });
+    }
     const event = await storage.events.updateEvent(paramString(req.params.id), req.body);
     if (!event) {
       notFound(res, "Event");

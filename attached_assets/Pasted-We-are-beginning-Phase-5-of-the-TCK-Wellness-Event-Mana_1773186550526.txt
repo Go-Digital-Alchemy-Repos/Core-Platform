@@ -1,0 +1,87 @@
+We are beginning Phase 5 of the TCK Wellness Event Management sprint: implementing Recording Archives for past events that have recorded video links.
+
+CONTEXT
+Past virtual events may have a recording/video link. When a past event has a video link, it should be available in a browsable Recording Archives experience where counselor and TCK users can browse and watch recordings on demand in a modal window. Access should respect the platform’s role and visibility rules.
+
+IMPORTANT RULES
+- Nondestructive only
+- Preserve current event/event-detail behavior
+- Do not redesign unrelated sections of the app
+- Keep the archive experience aligned with the current design system
+- Use modal playback where practical and safe
+- Respect event visibility/access rules
+- Prefer simple, maintainable implementation over flashy UI
+
+PRIMARY GOAL
+Build a Recording Archives feature for past events with recordings, including:
+- browseable archive list
+- filtering/search if practical and lightweight
+- modal playback/on-demand viewing
+- role-appropriate access for counselor and TCK users
+- sensible connection between archived recordings and source event records
+
+IMPLEMENTATION REQUIREMENTS
+1. Inspect:
+   - event model with recording fields
+   - current role/access model
+   - public/user navigation patterns
+   - existing modal/media/link handling patterns
+   - event detail page behavior
+
+2. Implement a Recording Archives listing page/section in a common-sense location for eligible users.
+
+3. The archive should list only events that:
+   - are completed/past events
+   - have a valid recording link
+   - are visible to the current user based on event visibility/access rules
+
+4. Display useful metadata such as:
+   - event title
+   - date
+   - host/speaker if available
+   - short summary/description if available
+   - thumbnail/placeholder if already supported, otherwise keep it simple
+
+5. Implement on-demand viewing in a modal window where practical. If embedded playback is not universally safe for all link types, provide the safest possible modal/link experience without breaking UX.
+
+6. Ensure archive viewing access aligns with intended roles:
+   - counselor users
+   - TCK users / eligible authenticated users
+   - admins
+Do not expose restricted recordings publicly unless the event visibility rules explicitly allow it.
+
+7. Optionally add lightweight search/filtering if it can be done cleanly and safely, such as by keyword, host, or date. Do not overbuild in this phase.
+
+8. Add archive-related badges/links on past event detail pages where appropriate.
+
+NONDESTRUCTIVE RULES
+- No broad media subsystem redesign
+- No unrelated event redesign
+- No removal of existing event detail functionality
+- No exposing restricted recordings to unauthorized users
+
+VALIDATION CHECKLIST
+1. Typecheck/check passes
+2. Build passes
+3. Archive lists only valid past recorded events
+4. Access control is respected
+5. Modal playback/on-demand viewing works safely
+6. Event detail pages remain stable
+7. Existing non-recorded events behave normally
+
+REQUIRED OUTPUT
+Provide:
+1. Summary of Recording Archives implementation
+2. Files changed
+3. Access/visibility behavior summary
+4. Modal playback handling notes
+5. Follow-up recommendations
+6. Docs update
+
+DOCS UPDATE REQUIREMENT
+Update docs to include:
+- archive eligibility rules
+- visibility/access behavior
+- archive browsing behavior
+- playback/modal behavior
+- event-to-archive relationship notes

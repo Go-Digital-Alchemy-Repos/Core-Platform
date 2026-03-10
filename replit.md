@@ -51,7 +51,7 @@ client/src/lib/           — Utilities (queryClient, constants)
 - `therapist_profiles` — Therapist profile data with location, specializations, `isFeatured` flag
 - `membership_tiers` — Subscription pricing tiers (Basic/Professional/Premium)
 - `therapist_subscriptions` — Active subscriptions linked to Stripe
-- `events` — Platform events (virtual/in-person)
+- `events` — Platform events with expanded fields: status (draft/published/canceled/completed), visibility (public/members_only/counselors_only/admins_only), registration (enabled/type/fee/currency/capacity/waitlist/opens/closes), speaker metadata (name/bio/image), virtual info (joinUrl/dialIn/recording), location geo (name/address/lat/lng), timezone
 - `contact_messages` — Contact form submissions
 - `docs` — Admin documentation library (markdown)
 - `password_reset_tokens` — Password reset tokens with 24hr expiry
