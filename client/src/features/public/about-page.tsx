@@ -5,7 +5,7 @@ import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Accordion,
   AccordionContent,
@@ -37,36 +37,42 @@ const testimonials = [
     name: "Sarah M.",
     role: "Adult TCK",
     location: "Singapore",
+    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces",
   },
   {
     quote: "TCK Wellness connected me with a counselor who speaks my language — literally and figuratively. It's been life-changing.",
     name: "James K.",
     role: "Expat Parent",
     location: "Dubai",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces",
   },
   {
     quote: "As a counselor, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
     name: "Dr. Amara O.",
     role: "Licensed Counselor",
     location: "Nairobi",
+    avatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&h=100&fit=crop&crop=faces",
   },
   {
     quote: "I struggled for years to find someone who understood repatriation grief. TCK Wellness made it possible in minutes.",
     name: "Lena T.",
     role: "TCK & College Student",
     location: "Germany",
+    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=faces",
   },
   {
     quote: "The specialization filters helped me find a counselor experienced with military kid transitions. Highly recommend.",
     name: "Marcus W.",
     role: "Military TCK",
     location: "Virginia, USA",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces",
   },
   {
     quote: "Finally, a platform that recognizes our unique needs. I feel seen and supported for the first time in therapy.",
     name: "Priya D.",
     role: "Cross-Cultural Professional",
     location: "London",
+    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=faces",
   },
 ];
 
@@ -146,6 +152,7 @@ function TestimonialsCarousel() {
                   </p>
                   <div className="flex items-center gap-3 pt-3 border-t">
                     <Avatar className="h-10 w-10">
+                      <AvatarImage src={t.avatar} alt={t.name} data-testid={`img-testimonial-avatar-${idx}`} />
                       <AvatarFallback className="bg-accent/10 text-accent text-sm font-semibold">
                         {t.name.split(" ").map((n) => n[0]).join("")}
                       </AvatarFallback>
