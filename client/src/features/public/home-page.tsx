@@ -1,3 +1,4 @@
+import { useState, useCallback, useEffect } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -7,9 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PageLayout } from "@/components/layout/page-layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
-  Search,
-  SlidersHorizontal,
-  MessageCircle,
   Globe,
   Heart,
   Users,
@@ -24,27 +22,50 @@ import {
   Sparkles,
   BookOpen,
   Leaf,
+  Quote,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { getQueryFn } from "@/lib/queryClient";
+import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
 
-const howItWorks = [
+const testimonials = [
   {
-    step: 1,
-    icon: Search,
-    title: "Browse Counselors",
-    description: "Explore our curated directory of TCK-informed counselors from around the world.",
+    quote: "For the first time, I didn't have to explain what it means to grow up between cultures. My counselor just understood.",
+    name: "Sarah M.",
+    role: "Adult TCK",
+    location: "Singapore",
   },
   {
-    step: 2,
-    icon: SlidersHorizontal,
-    title: "Filter & Compare",
-    description: "Narrow results by specialization, language, location, and session format.",
+    quote: "TCK Wellness connected me with a counselor who speaks my language — literally and figuratively. It's been life-changing.",
+    name: "James K.",
+    role: "Expat Parent",
+    location: "Dubai",
   },
   {
-    step: 3,
-    icon: MessageCircle,
-    title: "Connect & Begin",
-    description: "Reach out directly to a counselor who truly understands your unique background.",
+    quote: "As a counselor, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
+    name: "Dr. Amara O.",
+    role: "Licensed Counselor",
+    location: "Nairobi",
+  },
+  {
+    quote: "I struggled for years to find someone who understood repatriation grief. TCK Wellness made it possible in minutes.",
+    name: "Lena T.",
+    role: "TCK & College Student",
+    location: "Germany",
+  },
+  {
+    quote: "The specialization filters helped me find a counselor experienced with military kid transitions. Highly recommend.",
+    name: "Marcus W.",
+    role: "Military TCK",
+    location: "Virginia, USA",
+  },
+  {
+    quote: "Finally, a platform that recognizes our unique needs. I feel seen and supported for the first time in therapy.",
+    name: "Priya D.",
+    role: "Cross-Cultural Professional",
+    location: "London",
   },
 ];
 
@@ -79,6 +100,99 @@ const benefits = [
   },
 ];
 
+function TestimonialsCarousel() {
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: true, align: "start", slidesToScroll: 1 },
+    [Autoplay({ delay: 5000, stopOnInteraction: true })]
+  );
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
+    emblaApi.on("select", onSelect);
+    onSelect();
+    return () => { emblaApi.off("select", onSelect); };
+  }, [emblaApi]);
+
+  return (
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-testimonials">
+      <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-testimonials-heading">
+        What People Are Saying
+      </h2>
+      <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mx-auto mb-10 sm:mb-14">
+        Hear from TCKs, expat families, and counselors who have found their match.
+      </p>
+      <div className="relative">
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex gap-6">
+            {testimonials.map((t, idx) => (
+              <div
+                key={idx}
+                className="flex-[0_0_100%] min-w-0 sm:flex-[0_0_50%] lg:flex-[0_0_33.333%]"
+              >
+                <Card className="h-full" data-testid={`card-testimonial-${idx}`}>
+                  <CardContent className="p-6 flex flex-col h-full">
+                    <Quote className="h-6 w-6 text-accent/40 mb-3 flex-shrink-0" />
+                    <p className="text-sm leading-relaxed flex-1 mb-5 italic text-foreground/90">
+                      "{t.quote}"
+                    </p>
+                    <div className="flex items-center gap-3 pt-3 border-t">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="bg-accent/10 text-accent text-sm font-semibold">
+                          {t.name.split(" ").map((n) => n[0]).join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">{t.name}</p>
+                        <p className="text-xs text-muted-foreground">{t.role} · {t.location}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center justify-center gap-4 mt-8">
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full h-9 w-9"
+            onClick={scrollPrev}
+            data-testid="button-testimonial-prev"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex gap-1.5" data-testid="testimonial-dots">
+            {testimonials.map((_, idx) => (
+              <button
+                key={idx}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  idx === selectedIndex ? "bg-accent" : "bg-muted-foreground/30"
+                }`}
+                onClick={() => emblaApi?.scrollTo(idx)}
+                data-testid={`button-testimonial-dot-${idx}`}
+              />
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full h-9 w-9"
+            onClick={scrollNext}
+            data-testid="button-testimonial-next"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function HomePage() {
   const { data: events, isLoading: eventsLoading } = useQuery<any[]>({
@@ -154,28 +268,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-how-it-works">
-        <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-how-heading">
-          How It Works
-        </h2>
-        <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mx-auto mb-10 sm:mb-14">
-          Getting started is simple. Find the right counselor in three easy steps.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 md:gap-12">
-          {howItWorks.map((item) => (
-            <div key={item.title} className="text-center" data-testid={`card-how-${item.title.toLowerCase().replace(/\s+/g, "-")}`}>
-              <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/10 text-accent mb-5">
-                <item.icon className="w-7 h-7" />
-                <span className="absolute -top-1 -right-1 flex items-center justify-center w-6 h-6 rounded-full bg-accent text-accent-foreground text-xs font-bold">
-                  {item.step}
-                </span>
-              </div>
-              <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">{item.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <TestimonialsCarousel />
       <section className="bg-muted/30" data-testid="section-featured-therapists">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap mb-8 sm:mb-12">
