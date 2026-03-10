@@ -4,6 +4,7 @@ import { storage } from "../storage/index";
 import { authenticateToken, requireRole, hashPassword } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
 import { sendApprovalEmail, sendRejectionEmail, sendPasswordResetEmail, sendWelcomeEmail } from "../services/email.service";
+import { paramString } from "../utils/params";
 
 const router = Router();
 
@@ -113,7 +114,7 @@ router.post(
 router.put(
   "/therapists/:id/approve",
   asyncHandler(async (req, res) => {
-    const profile = await storage.therapists.updateProfile(req.params.id, {
+    const profile = await storage.therapists.updateProfile(paramString(req.params.id), {
       isApproved: true,
       rejectionReason: null,
     });
@@ -144,7 +145,7 @@ router.put(
   "/therapists/:id/reject",
   asyncHandler(async (req, res) => {
     const { reason } = rejectSchema.parse(req.body);
-    const profile = await storage.therapists.updateProfile(req.params.id, {
+    const profile = await storage.therapists.updateProfile(paramString(req.params.id), {
       isApproved: false,
       rejectionReason: reason || null,
     });
@@ -198,7 +199,7 @@ router.put(
   "/therapists/:id",
   asyncHandler(async (req, res) => {
     const data = updateTherapistSchema.parse(req.body);
-    const profile = await storage.therapists.updateProfile(req.params.id, data);
+    const profile = await storage.therapists.updateProfile(paramString(req.params.id), data);
     if (!profile) {
       res.status(404).json({ message: "Profile not found" });
       return;
@@ -212,7 +213,7 @@ router.put(
 router.delete(
   "/therapists/:id",
   asyncHandler(async (req, res) => {
-    const profile = await storage.therapists.updateProfile(req.params.id, {
+    const profile = await storage.therapists.updateProfile(paramString(req.params.id), {
       isActive: false,
       isApproved: false,
     });
@@ -246,12 +247,12 @@ router.put(
     const data = updateUserSchema.parse(req.body);
     if (data.email) {
       const existing = await storage.users.getUserByEmail(data.email);
-      if (existing && existing.id !== req.params.id) {
+      if (existing && existing.id !== paramString(req.params.id)) {
         res.status(409).json({ message: "Email already in use" });
         return;
       }
     }
-    const user = await storage.users.updateUser(req.params.id, data);
+    const user = await storage.users.updateUser(paramString(req.params.id), data);
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;
@@ -307,16 +308,17 @@ router.post(
 router.delete(
   "/users/:id",
   asyncHandler(async (req, res) => {
-    if (req.params.id === req.user!.id) {
+    const userId = paramString(req.params.id);
+    if (userId === req.user!.id) {
       res.status(400).json({ message: "Cannot delete your own account" });
       return;
     }
-    const user = await storage.users.getUser(req.params.id);
+    const user = await storage.users.getUser(userId);
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;
     }
-    await storage.users.deleteUser(req.params.id);
+    await storage.users.deleteUser(userId);
     res.json({ message: "User deleted" });
   })
 );
@@ -324,7 +326,7 @@ router.delete(
 router.post(
   "/users/:id/reset-password",
   asyncHandler(async (req, res) => {
-    const user = await storage.users.getUser(req.params.id);
+    const user = await storage.users.getUser(paramString(req.params.id));
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;
@@ -365,7 +367,7 @@ router.post(
 router.put(
   "/membership-tiers/:id",
   asyncHandler(async (req, res) => {
-    const tier = await storage.tiers.updateTier(req.params.id, req.body);
+    const tier = await storage.tiers.updateTier(paramString(req.params.id), req.body);
     if (!tier) {
       res.status(404).json({ message: "Tier not found" });
       return;
@@ -393,7 +395,7 @@ router.post(
 router.put(
   "/events/:id",
   asyncHandler(async (req, res) => {
-    const event = await storage.events.updateEvent(req.params.id, req.body);
+    const event = await storage.events.updateEvent(paramString(req.params.id), req.body);
     if (!event) {
       res.status(404).json({ message: "Event not found" });
       return;
@@ -405,7 +407,7 @@ router.put(
 router.delete(
   "/events/:id",
   asyncHandler(async (req, res) => {
-    await storage.events.deleteEvent(req.params.id);
+    await storage.events.deleteEvent(paramString(req.params.id));
     res.json({ message: "Event deleted" });
   })
 );
@@ -421,7 +423,7 @@ router.get(
 router.put(
   "/messages/:id/read",
   asyncHandler(async (req, res) => {
-    const msg = await storage.contacts.markAsRead(req.params.id);
+    const msg = await storage.contacts.markAsRead(paramString(req.params.id));
     if (!msg) {
       res.status(404).json({ message: "Message not found" });
       return;
@@ -433,7 +435,7 @@ router.put(
 router.get(
   "/therapists/:id/activity",
   asyncHandler(async (req, res) => {
-    const profile = await storage.therapists.getProfile(req.params.id);
+    const profile = await storage.therapists.getProfile(paramString(req.params.id));
     if (!profile) {
       res.status(404).json({ message: "Profile not found" });
       return;
@@ -458,7 +460,7 @@ router.get(
 router.get(
   "/therapists/:id/subscription",
   asyncHandler(async (req, res) => {
-    const profile = await storage.therapists.getProfile(req.params.id);
+    const profile = await storage.therapists.getProfile(paramString(req.params.id));
     if (!profile) {
       res.status(404).json({ message: "Profile not found" });
       return;

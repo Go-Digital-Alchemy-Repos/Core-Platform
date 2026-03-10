@@ -2,6 +2,7 @@ import { Router } from "express";
 import { storage } from "../storage/index";
 import { authenticateToken, requireRole } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
+import { paramString } from "../utils/params";
 
 const router = Router();
 
@@ -19,7 +20,7 @@ router.get(
 router.get(
   "/:slug",
   asyncHandler(async (req, res) => {
-    const doc = await storage.docs.getDocBySlug(req.params.slug);
+    const doc = await storage.docs.getDocBySlug(paramString(req.params.slug));
     if (!doc) {
       res.status(404).json({ message: "Document not found" });
       return;
@@ -42,7 +43,7 @@ router.post(
 router.put(
   "/:id",
   asyncHandler(async (req, res) => {
-    const doc = await storage.docs.updateDoc(req.params.id, req.body);
+    const doc = await storage.docs.updateDoc(paramString(req.params.id), req.body);
     if (!doc) {
       res.status(404).json({ message: "Document not found" });
       return;
@@ -54,7 +55,7 @@ router.put(
 router.delete(
   "/:id",
   asyncHandler(async (req, res) => {
-    await storage.docs.deleteDoc(req.params.id);
+    await storage.docs.deleteDoc(paramString(req.params.id));
     res.json({ message: "Document deleted" });
   })
 );

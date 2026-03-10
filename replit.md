@@ -172,3 +172,21 @@ client/src/lib/       — Utilities (queryClient, constants)
 - `DATABASE_URL` — PostgreSQL connection string
 - `SESSION_SECRET` — JWT signing secret
 - Stripe credentials via Replit integration
+
+## TypeScript Integrity Pass (March 2026)
+
+### What was fixed
+- **Express v5 route param typing**: Express v5 types `req.params` values as `string | string[]` instead of `string`. Created `server/utils/params.ts` with a `paramString()` utility that safely extracts the first string value. Applied across all route files that pass params to storage/service calls.
+- **Missing type package**: Installed `@types/sanitize-html` (devDependency) to resolve the declaration file error in `server/routes/messages.routes.ts`.
+
+### Files changed
+- `server/utils/params.ts` — NEW: route param extraction utility
+- `server/routes/admin.routes.ts` — 14 param fixes
+- `server/routes/directory.routes.ts` — 1 param fix
+- `server/routes/docs.routes.ts` — 3 param fixes
+- `server/routes/messages.routes.ts` — 6 param fixes
+- `server/routes/settings.routes.ts` — 4 param fixes
+
+### Conventions
+- All new route handlers should use `paramString(req.params.xxx)` when passing Express route params to functions that expect `string`
+- The `check` script (`tsc`) must pass with zero errors before merging changes

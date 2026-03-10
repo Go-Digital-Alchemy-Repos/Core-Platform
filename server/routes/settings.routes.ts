@@ -3,6 +3,7 @@ import { z } from "zod";
 import { storage } from "../storage/index";
 import { authenticateToken, requireRole } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
+import { paramString } from "../utils/params";
 import {
   sendEmail,
   testMailgunConnection,
@@ -66,7 +67,7 @@ router.put(
 router.delete(
   "/settings/:key",
   asyncHandler(async (req, res) => {
-    await storage.settings.deleteSetting(req.params.key);
+    await storage.settings.deleteSetting(paramString(req.params.key));
     res.json({ message: "Setting deleted" });
   })
 );
@@ -127,7 +128,7 @@ router.put(
   asyncHandler(async (req, res) => {
     const data = updateTemplateSchema.parse(req.body);
     const template = await storage.emailTemplates.updateTemplate(
-      req.params.slug,
+      paramString(req.params.slug),
       data
     );
     if (!template) {
@@ -147,7 +148,7 @@ router.post(
   "/email-templates/:slug/preview",
   asyncHandler(async (req, res) => {
     const { htmlBody: overrideBody, subject: overrideSubject } = previewTemplateSchema.parse(req.body);
-    const template = await storage.emailTemplates.getTemplate(req.params.slug);
+    const template = await storage.emailTemplates.getTemplate(paramString(req.params.slug));
     if (!template) {
       res.status(404).json({ message: "Template not found" });
       return;
@@ -182,7 +183,7 @@ router.post(
 router.post(
   "/email-templates/:slug/test",
   asyncHandler(async (req, res) => {
-    const template = await storage.emailTemplates.getTemplate(req.params.slug);
+    const template = await storage.emailTemplates.getTemplate(paramString(req.params.slug));
     if (!template) {
       res.status(404).json({ message: "Template not found" });
       return;

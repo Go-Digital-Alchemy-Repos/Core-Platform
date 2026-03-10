@@ -5,6 +5,7 @@ import { asyncHandler } from "../middleware/error-handler";
 import { authenticateToken } from "../middleware/auth";
 import { sendNewMessageEmail } from "../services/email.service";
 import { z } from "zod";
+import { paramString } from "../utils/params";
 
 const SAFE_HTML_OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: ["p", "br", "strong", "em", "s", "ul", "ol", "li", "a"],
@@ -56,7 +57,8 @@ router.get(
 router.get(
   "/conversations/:id",
   asyncHandler(async (req, res) => {
-    const conv = await storage.messages.getConversationById(req.params.id);
+    const convId = paramString(req.params.id);
+    const conv = await storage.messages.getConversationById(convId);
     if (!conv) {
       res.status(404).json({ message: "Conversation not found" });
       return;
@@ -66,7 +68,7 @@ router.get(
       res.status(403).json({ message: "Forbidden" });
       return;
     }
-    const messages = await storage.messages.getMessages(req.params.id);
+    const messages = await storage.messages.getMessages(convId);
     res.json({ conversation: conv, messages });
   })
 );
@@ -81,7 +83,8 @@ router.post(
       attachmentName: z.string().optional(),
       attachmentType: z.string().optional(),
     }).parse(req.body);
-    const conv = await storage.messages.getConversationById(req.params.id);
+    const convId = paramString(req.params.id);
+    const conv = await storage.messages.getConversationById(convId);
     if (!conv) {
       res.status(404).json({ message: "Conversation not found" });
       return;
@@ -92,7 +95,7 @@ router.post(
       return;
     }
     const cleanHtml = body.contentHtml ? sanitizeHtml(body.contentHtml, SAFE_HTML_OPTIONS) : undefined;
-    const msg = await storage.messages.sendMessage(req.params.id, userId, body.content, {
+    const msg = await storage.messages.sendMessage(convId, userId, body.content, {
       contentHtml: cleanHtml,
       attachmentUrl: body.attachmentUrl,
       attachmentName: body.attachmentName,
@@ -138,7 +141,8 @@ router.post(
 router.put(
   "/conversations/:id/read",
   asyncHandler(async (req, res) => {
-    const conv = await storage.messages.getConversationById(req.params.id);
+    const convId = paramString(req.params.id);
+    const conv = await storage.messages.getConversationById(convId);
     if (!conv) {
       res.status(404).json({ message: "Conversation not found" });
       return;
@@ -148,7 +152,7 @@ router.put(
       res.status(403).json({ message: "Forbidden" });
       return;
     }
-    await storage.messages.markMessagesRead(req.params.id, userId);
+    await storage.messages.markMessagesRead(convId, userId);
     res.json({ ok: true });
   })
 );

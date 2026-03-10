@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { storage } from "../storage/index";
 import { asyncHandler } from "../middleware/error-handler";
+import { paramString } from "../utils/params";
 
 const router = Router();
 
@@ -42,7 +43,7 @@ router.get(
 router.get(
   "/:id",
   asyncHandler(async (req, res) => {
-    const profile = await storage.therapists.getProfileWithUser(req.params.id);
+    const profile = await storage.therapists.getProfileWithUser(paramString(req.params.id));
     if (!profile) {
       res.status(404).json({ message: "Therapist not found" });
       return;
