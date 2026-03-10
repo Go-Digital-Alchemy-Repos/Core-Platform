@@ -211,8 +211,8 @@ export function RichTextEditor({ onSend, disabled, placeholder, sendRef }: RichT
 
   return (
     <div className="flex-1 min-w-0">
-      <div className="border rounded-lg bg-background overflow-hidden focus-within:ring-1 focus-within:ring-ring">
-        <div className="flex items-center gap-0.5 px-1.5 py-1 border-b bg-muted/30">
+      <div className="border rounded-lg bg-background focus-within:ring-1 focus-within:ring-ring">
+        <div className="flex items-center gap-0.5 px-1.5 py-1 border-b bg-muted/30 rounded-t-lg">
           <Button
             type="button"
             variant="ghost"
@@ -296,7 +296,8 @@ export function RichTextEditor({ onSend, disabled, placeholder, sendRef }: RichT
             {showEmoji && (
               <div
                 ref={emojiRef}
-                className="absolute bottom-full left-0 mb-1 bg-popover border rounded-lg shadow-lg p-2 grid grid-cols-8 gap-1 z-50 w-[250px]"
+                className="absolute bottom-full left-0 mb-1 bg-popover border rounded-lg shadow-lg p-2 grid grid-cols-8 gap-1 w-[250px] max-h-[200px] overflow-y-auto"
+                style={{ zIndex: 1100 }}
                 data-testid="emoji-picker"
               >
                 {EMOJI_LIST.map((emoji) => (
