@@ -13,22 +13,35 @@ router.get(
       specialization,
       practiceMode,
       language,
+      country,
       acceptingClients,
-      limit,
-      offset,
+      page,
+      pageSize,
     } = req.query;
 
-    const profiles = await storage.therapists.listProfiles({
+    const parsedPage = Math.max(1, parseInt(page as string) || 1);
+    const parsedPageSize = Math.min(200, Math.max(1, parseInt(pageSize as string) || 200));
+
+    const result = await storage.therapists.listProfilesPaginated({
       search: search as string,
       specialization: specialization as string,
       practiceMode: practiceMode as string,
       language: language as string,
+      country: country as string,
       acceptingClients: acceptingClients === "true" ? true : undefined,
-      limit: limit ? parseInt(limit as string) : undefined,
-      offset: offset ? parseInt(offset as string) : undefined,
+      page: parsedPage,
+      pageSize: parsedPageSize,
     });
 
-    res.json(profiles);
+    res.json(result);
+  })
+);
+
+router.get(
+  "/filters",
+  asyncHandler(async (_req, res) => {
+    const options = await storage.therapists.getFilterOptions();
+    res.json(options);
   })
 );
 

@@ -1,7 +1,7 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
-import { Link, useSearch } from "wouter";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { Link, useSearch, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Search, MapPin, Monitor, Map, List, Users, ChevronRight, X, SlidersHorizontal } from "lucide-react";
+import { Search, MapPin, Monitor, Map, List, Users, ChevronRight, X, SlidersHorizontal, ChevronLeft } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { MapView } from "@/components/directory/map-view";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,18 @@ type TherapistWithUser = TherapistProfile & {
     profileImageUrl: string | null;
   };
 };
+
+interface PaginatedResponse {
+  items: TherapistWithUser[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+interface FilterOptions {
+  languages: string[];
+  countries: string[];
+}
 
 function getSessionFormatLabel(mode: string | null) {
   switch (mode) {
@@ -157,79 +169,107 @@ function ListSkeletons() {
   );
 }
 
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
 export default function DirectoryPage() {
   const queryString = useSearch();
-  const params = new URLSearchParams(queryString);
-  const initialSpecialization = params.get("specialization") || "all";
+  const [, navigate] = useLocation();
+  const initParams = useMemo(() => new URLSearchParams(queryString), []);
 
-  const [search, setSearch] = useState("");
-  const [sessionFormat, setSessionFormat] = useState("all");
-  const [specialization, setSpecialization] = useState(initialSpecialization);
-  const [language, setLanguage] = useState("all");
-  const [country, setCountry] = useState("all");
-  const [acceptingClients, setAcceptingClients] = useState(false);
+  const [search, setSearch] = useState(initParams.get("search") || "");
+  const [sessionFormat, setSessionFormat] = useState(initParams.get("practiceMode") || "all");
+  const [specialization, setSpecialization] = useState(initParams.get("specialization") || "all");
+  const [language, setLanguage] = useState(initParams.get("language") || "all");
+  const [country, setCountry] = useState(initParams.get("country") || "all");
+  const [acceptingClients, setAcceptingClients] = useState(initParams.get("acceptingClients") === "true");
   const [showFilters, setShowFilters] = useState(false);
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [page, setPage] = useState(parseInt(initParams.get("page") || "1") || 1);
 
-  const { data: therapists, isLoading } = useQuery<TherapistWithUser[]>({
-    queryKey: ["/api/therapists"],
-  });
+  const debouncedSearch = useDebounce(search, 300);
+  const isInternalUpdate = useRef(false);
 
   useEffect(() => {
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
+      return;
+    }
     const sp = new URLSearchParams(queryString);
-    const specParam = sp.get("specialization");
-    setSpecialization(specParam || "all");
+    setSpecialization(sp.get("specialization") || "all");
+    setLanguage(sp.get("language") || "all");
+    setSessionFormat(sp.get("practiceMode") || "all");
+    setCountry(sp.get("country") || "all");
+    setAcceptingClients(sp.get("acceptingClients") === "true");
+    const searchParam = sp.get("search") || "";
+    if (searchParam !== search) setSearch(searchParam);
+    const pageParam = parseInt(sp.get("page") || "1") || 1;
+    setPage(pageParam);
   }, [queryString]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, sessionFormat, specialization, language, country, acceptingClients]);
+
+  useEffect(() => {
+    const p = new URLSearchParams();
+    if (debouncedSearch) p.set("search", debouncedSearch);
+    if (specialization !== "all") p.set("specialization", specialization);
+    if (sessionFormat !== "all") p.set("practiceMode", sessionFormat);
+    if (language !== "all") p.set("language", language);
+    if (country !== "all") p.set("country", country);
+    if (acceptingClients) p.set("acceptingClients", "true");
+    if (page > 1) p.set("page", String(page));
+    const qs = p.toString();
+    const newPath = qs ? `/directory?${qs}` : "/directory";
+    isInternalUpdate.current = true;
+    navigate(newPath, { replace: true });
+  }, [debouncedSearch, specialization, sessionFormat, language, country, acceptingClients, page]);
 
   const { specializations: specList } = useSpecializations();
 
-  const filterOptions = useMemo(() => {
-    const langSet = new Set<string>();
-    const countrySet = new Set<string>();
+  const queryParams = useMemo(() => {
+    const p = new URLSearchParams();
+    if (debouncedSearch) p.set("search", debouncedSearch);
+    if (specialization !== "all") p.set("specialization", specialization);
+    if (sessionFormat !== "all") p.set("practiceMode", sessionFormat);
+    if (language !== "all") p.set("language", language);
+    if (country !== "all") p.set("country", country);
+    if (acceptingClients) p.set("acceptingClients", "true");
+    p.set("page", String(page));
+    p.set("pageSize", "200");
+    return p.toString();
+  }, [debouncedSearch, specialization, sessionFormat, language, country, acceptingClients, page]);
 
-    for (const t of therapists ?? []) {
-      (t.languages || []).forEach((l) => langSet.add(l));
-      if (t.country) countrySet.add(t.country);
-    }
+  const { data, isLoading } = useQuery<PaginatedResponse>({
+    queryKey: ["/api/therapists", queryParams],
+    queryFn: async () => {
+      const res = await fetch(`/api/therapists?${queryParams}`);
+      if (!res.ok) throw new Error("Failed to fetch therapists");
+      return res.json();
+    },
+  });
 
-    return {
-      specializations: specList.map((s) => s.name),
-      languages: Array.from(langSet).sort(),
-      countries: Array.from(countrySet).sort(),
-    };
-  }, [therapists, specList]);
+  const { data: filterOptions } = useQuery<FilterOptions>({
+    queryKey: ["/api/therapists/filters"],
+  });
 
-  const filtered = useMemo(() => {
-    if (!therapists) return [];
-    return therapists
-      .filter((t) => {
-        if (sessionFormat !== "all" && t.practiceMode !== sessionFormat) return false;
-        if (acceptingClients && !t.acceptingClients) return false;
-        if (specialization !== "all" && !(t.specializations || []).includes(specialization)) return false;
-        if (language !== "all" && !(t.languages || []).includes(language)) return false;
-        if (country !== "all" && t.country !== country) return false;
-        if (search.trim()) {
-          const q = search.toLowerCase();
-          const name = [t.user?.firstName, t.user?.lastName].filter(Boolean).join(" ").toLowerCase();
-          const specs = (t.specializations || []).join(" ").toLowerCase();
-          const title = (t.title || "").toLowerCase();
-          const langs = (t.languages || []).join(" ").toLowerCase();
-          const loc = [t.city, t.country].filter(Boolean).join(" ").toLowerCase();
-          if (!name.includes(q) && !specs.includes(q) && !title.includes(q) && !langs.includes(q) && !loc.includes(q)) return false;
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        const nameA = [a.user?.firstName, a.user?.lastName].filter(Boolean).join(" ");
-        const nameB = [b.user?.firstName, b.user?.lastName].filter(Boolean).join(" ");
-        return nameA.localeCompare(nameB);
-      });
-  }, [therapists, search, sessionFormat, acceptingClients, specialization, language, country]);
+  const therapists = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const currentPage = data?.page ?? 1;
+  const pageSize = data?.pageSize ?? 200;
+  const totalPages = Math.ceil(total / pageSize);
 
   const mapTherapists = useMemo(
     () =>
-      filtered.map((t) => ({
+      therapists.map((t) => ({
         profile: t,
         user: {
           firstName: t.user?.firstName ?? null,
@@ -237,7 +277,7 @@ export default function DirectoryPage() {
           profileImageUrl: t.user?.profileImageUrl ?? null,
         },
       })),
-    [filtered]
+    [therapists]
   );
 
   const handleHover = useCallback((id: string | null) => {
@@ -279,7 +319,7 @@ export default function DirectoryPage() {
                 {!isLoading && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1 mt-[10px] mb-[10px]" data-testid="text-results-count">
                     <Users className="h-3 w-3 flex-shrink-0" />
-                    {filtered.length} counselor{filtered.length !== 1 ? "s" : ""} available
+                    {total} counselor{total !== 1 ? "s" : ""} available
                   </p>
                 )}
               </div>
@@ -348,8 +388,8 @@ export default function DirectoryPage() {
                       </SelectTrigger>
                       <SelectContent className="z-[1000] max-h-[280px]">
                         <SelectItem value="all">All Specializations</SelectItem>
-                        {filterOptions.specializations.map((s) => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        {specList.map((s) => (
+                          <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -362,7 +402,7 @@ export default function DirectoryPage() {
                       </SelectTrigger>
                       <SelectContent className="z-[1000] max-h-[280px]">
                         <SelectItem value="all">All Languages</SelectItem>
-                        {filterOptions.languages.map((l) => (
+                        {(filterOptions?.languages ?? []).map((l) => (
                           <SelectItem key={l} value={l}>{l}</SelectItem>
                         ))}
                       </SelectContent>
@@ -376,7 +416,7 @@ export default function DirectoryPage() {
                       </SelectTrigger>
                       <SelectContent className="z-[1000] max-h-[280px]">
                         <SelectItem value="all">All Countries</SelectItem>
-                        {filterOptions.countries.map((c) => (
+                        {(filterOptions?.countries ?? []).map((c) => (
                           <SelectItem key={c} value={c}>{c}</SelectItem>
                         ))}
                       </SelectContent>
@@ -476,7 +516,7 @@ export default function DirectoryPage() {
           <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }} data-testid="list-therapists">
             {isLoading ? (
               <ListSkeletons />
-            ) : filtered.length === 0 ? (
+            ) : therapists.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-4 text-center" data-testid="text-no-results">
                 <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
                 <p className="text-sm font-medium text-muted-foreground">No counselors found</p>
@@ -494,7 +534,7 @@ export default function DirectoryPage() {
                 )}
               </div>
             ) : (
-              filtered.map((t) => (
+              therapists.map((t) => (
                 <TherapistRow
                   key={t.id}
                   profile={t}
@@ -507,6 +547,34 @@ export default function DirectoryPage() {
                   onHover={handleHover}
                 />
               ))
+            )}
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 py-4 border-t" data-testid="pagination-controls">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  data-testid="button-prev-page"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </Button>
+                <span className="text-xs text-muted-foreground" data-testid="text-page-info">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  data-testid="button-next-page"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -528,7 +596,7 @@ export default function DirectoryPage() {
               List
             </Button>
             <span className="text-xs text-muted-foreground">
-              {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+              {total} result{total !== 1 ? "s" : ""}
             </span>
           </div>
           <div className="flex-1">

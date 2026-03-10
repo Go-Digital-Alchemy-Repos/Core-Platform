@@ -100,7 +100,10 @@ client/src/lib/       — Utilities (queryClient, constants)
 ## API Endpoints
 - `POST /api/auth/register|login|logout`, `GET /api/auth/me`, `PUT /api/auth/profile`, `PUT /api/auth/change-password`
 - `POST /api/uploads/avatar` — Avatar upload (R2 → local fallback); updates user.profileImageUrl
-- `GET /api/therapists`, `GET /api/therapists/:id`
+- `GET /api/therapists` — Paginated directory with server-side filtering (returns `{items, total, page, pageSize}`)
+- `GET /api/therapists/filters` — Available filter options (languages, countries)
+- `GET /api/therapists/featured` — Featured therapists (array, max 6)
+- `GET /api/therapists/:id` — Single therapist profile
 - `GET/PUT /api/therapist/profile`, `GET /api/therapist/subscription`
 - `POST /api/stripe/create-checkout-session|create-portal-session`
 - `GET /api/admin/dashboard-stats|therapists|users|membership-tiers|events|messages`
@@ -157,6 +160,33 @@ client/src/lib/       — Utilities (queryClient, constants)
 - 4 upcoming events (mix of virtual/in-person, public/members-only)
 - 8 admin documentation articles
 - Re-running `npx tsx server/scripts/seed.ts` clears and re-seeds all data
+
+## Directory API (Phase 3)
+
+### `GET /api/therapists` — Paginated directory listing
+Query params: `search`, `specialization`, `practiceMode`, `language`, `country`, `acceptingClients`, `page`, `pageSize`
+Response: `{ items: TherapistWithUser[], total: number, page: number, pageSize: number }`
+- All filters applied server-side in PostgreSQL (including array column search via `ANY()`)
+- Text search matches against: name (concat), title, city, country, specializations (unnest+ILIKE), languages (unnest+ILIKE)
+- Default pageSize: 200 (fits current map view needs)
+- Results ordered alphabetically by first name, last name
+
+### `GET /api/therapists/filters` — Filter option values
+Response: `{ languages: string[], countries: string[] }`
+- Returns distinct values from approved/active therapists only
+- Specialization options come from the separate `/api/specializations` endpoint
+
+### Client integration
+- Frontend debounces search input (300ms) before sending to API
+- Filter changes reset to page 1
+- Query key includes serialized params for proper cache invalidation: `["/api/therapists", queryParams]`
+- Pagination controls appear when totalPages > 1
+- Map receives all items from current page (pageSize=200 ensures all fit in one page for typical datasets)
+
+### Follow-up recommendations
+- Add PostgreSQL indexes on `specializations` (GIN), `languages` (GIN), `country`, `practice_mode` for large datasets
+- Consider reducing default pageSize and using cursor-based pagination when dataset exceeds ~500 therapists
+- Add `Cache-Control` headers for the `/filters` endpoint (data changes infrequently)
 
 ## Dynamic Home Page
 - Featured Therapists section shows 6 therapists from the directory API
