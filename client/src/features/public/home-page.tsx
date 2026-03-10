@@ -138,9 +138,7 @@ export default function HomePage() {
       <section className="relative border-t border-b bg-muted/30 overflow-hidden" data-testid="section-categories">
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 md:py-12">
-          <h2 className="font-heading sm:text-xl font-semibold text-center mb-6 sm:mb-8 text-[26px]" data-testid="text-categories-heading">
-            Explore by Specialization
-          </h2>
+          <h2 className="font-heading sm:text-xl font-semibold text-center mb-6 sm:mb-8 text-[26px]" data-testid="text-categories-heading">Explore Counselors by Specialization</h2>
           <div className="grid grid-cols-5 gap-3">
             {categories.map((cat) => (
               <Link key={cat.slug} href={`/directory?specialization=${encodeURIComponent(cat.slug)}`}>
