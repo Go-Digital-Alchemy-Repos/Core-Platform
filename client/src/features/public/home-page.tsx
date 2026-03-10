@@ -15,13 +15,6 @@ import {
   Video,
   Calendar,
   ArrowRight,
-  Brain,
-  Fingerprint,
-  UserCheck,
-  Puzzle,
-  Sparkles,
-  BookOpen,
-  Leaf,
   Quote,
   ChevronLeft,
   ChevronRight,
@@ -67,19 +60,6 @@ const testimonials = [
     role: "Cross-Cultural Professional",
     location: "London",
   },
-];
-
-const categories = [
-  { icon: Brain, label: "Anxiety", slug: "Anxiety" },
-  { icon: Fingerprint, label: "Identity & Belonging", slug: "Identity & Belonging" },
-  { icon: Globe, label: "TCK Support", slug: "Third Culture Kids (TCK)" },
-  { icon: UserCheck, label: "Expatriate Adjustment", slug: "Expatriate Adjustment" },
-  { icon: Puzzle, label: "Cross-Cultural", slug: "Cross-Cultural Transitions" },
-  { icon: Heart, label: "Grief & Loss", slug: "Grief & Loss" },
-  { icon: Users, label: "Family Therapy", slug: "Family Therapy" },
-  { icon: Sparkles, label: "Trauma & PTSD", slug: "Trauma & PTSD" },
-  { icon: BookOpen, label: "CBT", slug: "CBT" },
-  { icon: Leaf, label: "Mindfulness", slug: "Mindfulness & Meditation" },
 ];
 
 const benefits = [
@@ -387,27 +367,6 @@ export default function HomePage() {
                 <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      <section className="relative border-t border-b bg-muted/30 overflow-hidden" data-testid="section-categories">
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 md:py-12">
-          <h2 className="font-heading sm:text-xl font-semibold text-center mb-6 sm:mb-8 text-[26px]" data-testid="text-categories-heading">Explore Counselors by Specialization</h2>
-          <div className="grid grid-cols-5 gap-3">
-            {categories.map((cat) => (
-              <Link key={cat.slug} href={`/directory?specialization=${encodeURIComponent(cat.slug)}`}>
-                <div
-                  className="flex flex-col items-center gap-2.5 px-4 py-4 rounded-md hover-elevate cursor-pointer"
-                  data-testid={`link-category-${cat.label.toLowerCase().replace(/\s+/g, "-")}`}
-                >
-                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-accent/10 text-accent">
-                    <cat.icon className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-medium text-center whitespace-nowrap">{cat.label}</span>
-                </div>
-              </Link>
             ))}
           </div>
         </div>

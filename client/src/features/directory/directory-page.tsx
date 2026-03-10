@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Link, useSearch, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Search, MapPin, Monitor, Map, List, Users, ChevronRight, X, SlidersHorizontal, ChevronLeft, CheckCircle, XCircle } from "lucide-react";
+import { Search, MapPin, Monitor, Map, List, Users, ChevronRight, X, SlidersHorizontal, ChevronLeft, CheckCircle, XCircle, Brain, Fingerprint, UserCheck, Puzzle, Heart, Sparkles, BookOpen, Leaf, Globe } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { MapView } from "@/components/directory/map-view";
@@ -55,6 +55,19 @@ const vettedDoesNotMean = [
   "We do not provide clinical supervision",
   "Listing does not constitute an endorsement of specific therapeutic outcomes",
   "We do not guarantee a therapeutic match — but we make finding one easier",
+];
+
+const categories = [
+  { icon: Brain, label: "Anxiety", slug: "Anxiety" },
+  { icon: Fingerprint, label: "Identity & Belonging", slug: "Identity & Belonging" },
+  { icon: Globe, label: "TCK Support", slug: "Third Culture Kids (TCK)" },
+  { icon: UserCheck, label: "Expatriate Adjustment", slug: "Expatriate Adjustment" },
+  { icon: Puzzle, label: "Cross-Cultural", slug: "Cross-Cultural Transitions" },
+  { icon: Heart, label: "Grief & Loss", slug: "Grief & Loss" },
+  { icon: Users, label: "Family Therapy", slug: "Family Therapy" },
+  { icon: Sparkles, label: "Trauma & PTSD", slug: "Trauma & PTSD" },
+  { icon: BookOpen, label: "CBT", slug: "CBT" },
+  { icon: Leaf, label: "Mindfulness", slug: "Mindfulness & Meditation" },
 ];
 
 function getSessionFormatLabel(mode: string | null) {
@@ -319,7 +332,31 @@ export default function DirectoryPage() {
   return (
     <div className="flex flex-col min-h-[100dvh]">
       <Navbar />
-      <div className="h-[calc(100dvh-64px)] flex overflow-hidden">
+      <div className="border-b bg-muted/30 overflow-x-auto" data-testid="section-categories">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2">
+          <div className="flex items-center gap-1 min-w-max">
+            {categories.map((cat) => {
+              const isActive = specialization === cat.slug;
+              return (
+                <button
+                  key={cat.slug}
+                  onClick={() => setSpecialization(isActive ? "all" : cat.slug)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+                    isActive
+                      ? "bg-accent text-accent-foreground"
+                      : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                  data-testid={`button-category-${cat.label.toLowerCase().replace(/\s+/g, "-")}`}
+                >
+                  <cat.icon className="w-3.5 h-3.5" />
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 flex overflow-hidden">
         <div
           className={`${
             mobileView === "list" ? "flex" : "hidden"
