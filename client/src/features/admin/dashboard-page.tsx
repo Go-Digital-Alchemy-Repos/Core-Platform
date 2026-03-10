@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { STALE_TIMES } from "@/lib/queryClient";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import { AdminSidebar } from "./admin-sidebar";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
@@ -25,6 +26,7 @@ export default function AdminDashboardPage() {
 function DashboardContent() {
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/admin/dashboard-stats"],
+    staleTime: STALE_TIMES.LIVE,
   });
 
   if (isLoading) {

@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
+import { STALE_TIMES } from "@/lib/queryClient";
 
 type Specialization = { id: number; name: string; sortOrder: number };
 
 export function useSpecializations() {
   const { data, isLoading } = useQuery<Specialization[]>({
     queryKey: ["/api/specializations"],
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIMES.STATIC,
   });
   return { specializations: data ?? [], isLoading };
 }

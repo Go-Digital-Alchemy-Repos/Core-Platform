@@ -41,13 +41,20 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
+export const STALE_TIMES = {
+  STATIC: Infinity,
+  SESSION: 5 * 60 * 1000,
+  LIVE: 60 * 1000,
+} as const;
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      staleTime: STALE_TIMES.SESSION,
+      gcTime: 10 * 60 * 1000,
       retry: false,
     },
     mutations: {

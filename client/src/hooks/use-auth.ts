@@ -1,11 +1,12 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, getQueryFn, queryClient } from "@/lib/queryClient";
+import { apiRequest, getQueryFn, queryClient, STALE_TIMES } from "@/lib/queryClient";
 import type { User } from "@shared/schema";
 
 export function useAuth() {
   const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/me"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    staleTime: STALE_TIMES.STATIC,
   });
 
   const login = useMutation({

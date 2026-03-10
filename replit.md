@@ -419,3 +419,34 @@ All admin routes still mount at `/api/admin/*`. The hub router applies auth once
 ### Conventions
 - All new route handlers should use `paramString(req.params.xxx)` when passing Express route params to functions that expect `string`
 - The `check` script (`tsc`) must pass with zero errors before merging changes
+
+## Frontend Performance Pass (Phase 7)
+
+### Route-Level Lazy Loading
+- 14 pages converted from eager to lazy imports via `React.lazy()` + `Suspense`
+- **Eagerly loaded** (critical path): HomePage, AboutPage, ContactPage, EventsPage, LoginPage, RegisterPage, ResetPasswordPage, NotFound
+- **Lazy loaded**: All admin pages (8), therapist pages (3), directory pages (2), messages page (1)
+- Suspense fallback: centered `Loader2` spinner via `<PageLoader />`
+- Build output confirms separate chunks: admin therapists (36KB), messages (385KB), map-view (157KB), settings (18KB), etc.
+- Main bundle reduced from ~1.2MB to ~602KB
+
+### React Query Cache Strategy
+- **Global default**: `staleTime: 5min` (SESSION), `gcTime: 10min`, `retry: false`, `refetchOnWindowFocus: false`
+- **Auth query** (`/api/auth/me`): `staleTime: Infinity` (STATIC) — only changes on login/logout via cache invalidation
+- **Specializations**: `staleTime: Infinity` (STATIC) — reference data, rarely changes
+- **Admin dashboard stats**: `staleTime: 60s` (LIVE) — aggregate counters that update frequently
+- **Notification unread count**: `refetchInterval: 30s` — already had polling, unchanged
+- **All other queries**: inherit SESSION default (5min); mutations invalidate relevant caches
+- Exported `STALE_TIMES` constants from `queryClient.ts`: `STATIC` (Infinity), `SESSION` (5min), `LIVE` (60s)
+
+### Files Changed
+- `client/src/App.tsx` — Lazy imports, Suspense wrapper, PageLoader component
+- `client/src/lib/queryClient.ts` — STALE_TIMES constants, staleTime SESSION default, gcTime 10min
+- `client/src/hooks/use-auth.ts` — STATIC staleTime for auth query
+- `client/src/hooks/use-specializations.ts` — STATIC staleTime for reference data
+- `client/src/features/admin/dashboard-page.tsx` — LIVE staleTime for dashboard stats
+
+### Follow-up Recommendations
+- Consider `manualChunks` in Vite rollup config to split the messages-page rich-text-editor (~385KB) into a shared vendor chunk
+- Consider lazy loading the map-view component inside directory-page (already chunked at 157KB but loaded as part of directory bundle)
+- Add route prefetching for likely navigation targets (e.g., prefetch admin chunks after admin login detected)
