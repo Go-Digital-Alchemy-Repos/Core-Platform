@@ -14,3 +14,4 @@ export { notifications, notificationPreferences, insertNotificationSchema, type 
 export { specializations, insertSpecializationSchema, type InsertSpecialization, type Specialization } from "./specializations";
 export { profileViews, insertProfileViewSchema, type InsertProfileView, type ProfileView } from "./profile-views";
 export { savedCounselors, insertSavedCounselorSchema, type InsertSavedCounselor, type SavedCounselor } from "./saved-counselors";
+export { blogPosts, insertBlogPostSchema, type InsertBlogPost, type BlogPost } from "./blog-posts";

@@ -34,6 +34,10 @@ const AdminEventsPage = lazy(() => import("@/features/admin/events-page"));
 const AdminMessagesPage = lazy(() => import("@/features/admin/messages-page"));
 const DocsPage = lazy(() => import("@/features/admin/docs-page"));
 const AdminSettingsPage = lazy(() => import("@/features/admin/settings-page"));
+const AdminBlogPage = lazy(() => import("@/features/admin/blog-page"));
+
+const InsightsPage = lazy(() => import("@/features/public/insights-page"));
+const InsightsPostPage = lazy(() => import("@/features/public/insights-post-page"));
 
 function PageLoader() {
   return (
@@ -51,6 +55,8 @@ function Router() {
         <Route path="/about" component={AboutPage} />
         <Route path="/contact" component={ContactPage} />
         <Route path="/events" component={EventsPage} />
+        <Route path="/insights" component={InsightsPage} />
+        <Route path="/insights/:slug" component={InsightsPostPage} />
         <Route path="/directory" component={DirectoryPage} />
         <Route path="/directory/:id" component={TherapistProfilePage} />
         <Route path="/auth/login" component={LoginPage} />
@@ -107,6 +113,11 @@ function Router() {
         <Route path="/admin/messages">
           <ProtectedRoute roles={["admin"]}>
             <AdminMessagesPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/blog">
+          <ProtectedRoute roles={["admin"]}>
+            <AdminBlogPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/docs">

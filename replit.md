@@ -27,12 +27,13 @@ server/storage/           — Modular data access layer (one file per entity)
 server/routes/            — Top-level route modules + registration index
 server/routes/admin/      — Admin route modules (split by domain)
   index.ts                — Admin router hub (auth + sub-router mounting)
-  dashboard.routes.ts     — GET /dashboard-stats
+  dashboard.routes.ts     — GET /dashboard-stats, GET /dashboard-analytics
   therapists.routes.ts    — Therapist CRUD, approve/reject, activity, subscription
   users.routes.ts         — User CRUD, password reset
   tiers.routes.ts         — Membership tier CRUD
   events.routes.ts        — Event CRUD
   messages.routes.ts      — Contact message management
+  blog.routes.ts          — Blog post CRUD (admin)
 server/config/            — Stripe configuration
 server/webhooks/          — Stripe webhook handler
 server/scripts/           — Database seed scripts
@@ -61,6 +62,7 @@ client/src/lib/           — Utilities (queryClient, constants)
 - `notifications` — In-app notification records (type, title, body, isRead, linkUrl)
 - `notification_preferences` — Per-user settings (emailNewMessage, inAppNewMessage)
 - `specializations` — Dynamic specialization list managed via Admin > Settings > Specializations tab; replaces hardcoded constant
+- `blog_posts` — Blog/insights articles with title, slug, content, category, tags, author, publish state
 
 ### Authentication
 - Custom JWT (not Replit Auth, not Better Auth)

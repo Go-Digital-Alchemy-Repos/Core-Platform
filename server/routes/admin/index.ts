@@ -6,6 +6,7 @@ import usersRoutes from "./users.routes";
 import tiersRoutes from "./tiers.routes";
 import eventsRoutes from "./events.routes";
 import messagesRoutes from "./messages.routes";
+import blogRoutes from "./blog.routes";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/users", usersRoutes);
 router.use("/membership-tiers", tiersRoutes);
 router.use("/events", eventsRoutes);
 router.use("/messages", messagesRoutes);
+router.use("/blog", blogRoutes);
 
 export default router;

@@ -13,6 +13,7 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -30,6 +31,7 @@ const navItems = [
   { title: "Membership Tiers", href: "/admin/membership-tiers", icon: CreditCard, iconColor: "text-amber-600" },
   { title: "Events", href: "/admin/events", icon: CalendarDays, iconColor: "text-purple-600" },
   { title: "Messages", href: "/admin/messages", icon: Mail, iconColor: "text-rose-600" },
+  { title: "Blog", href: "/admin/blog", icon: BookOpen, iconColor: "text-orange-600" },
   { title: "Documentation", href: "/admin/docs", icon: FileText, iconColor: "text-indigo-600" },
   { title: "Settings", href: "/admin/settings", icon: Settings, iconColor: "text-slate-500" },
 ];

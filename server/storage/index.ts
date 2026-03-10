@@ -14,6 +14,7 @@ import { NotificationStorage } from "./notification.storage";
 import { SpecializationStorage } from "./specialization.storage";
 import { ProfileViewStorage } from "./profile-view.storage";
 import { SavedCounselorStorage } from "./saved-counselor.storage";
+import { BlogStorage } from "./blog.storage";
 
 export const storage = {
   users: new UserStorage(),
@@ -32,6 +33,7 @@ export const storage = {
   specializations: new SpecializationStorage(),
   profileViews: new ProfileViewStorage(),
   savedCounselors: new SavedCounselorStorage(),
+  blog: new BlogStorage(),
 };
 
 export type { TherapistSearchParams, TherapistWithUser } from "./therapist.storage";
