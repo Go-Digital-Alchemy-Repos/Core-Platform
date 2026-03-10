@@ -24,14 +24,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 
 const navItems = [
-  { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { title: "Counselors", href: "/admin/therapists", icon: UserCheck },
-  { title: "Users", href: "/admin/users", icon: Users },
-  { title: "Membership Tiers", href: "/admin/membership-tiers", icon: CreditCard },
-  { title: "Events", href: "/admin/events", icon: CalendarDays },
-  { title: "Messages", href: "/admin/messages", icon: Mail },
-  { title: "Documentation", href: "/admin/docs", icon: FileText },
-  { title: "Settings", href: "/admin/settings", icon: Settings },
+  { title: "Dashboard", href: "/admin", icon: LayoutDashboard, iconColor: "text-teal-600" },
+  { title: "Counselors", href: "/admin/therapists", icon: UserCheck, iconColor: "text-emerald-600" },
+  { title: "Users", href: "/admin/users", icon: Users, iconColor: "text-blue-600" },
+  { title: "Membership Tiers", href: "/admin/membership-tiers", icon: CreditCard, iconColor: "text-amber-600" },
+  { title: "Events", href: "/admin/events", icon: CalendarDays, iconColor: "text-purple-600" },
+  { title: "Messages", href: "/admin/messages", icon: Mail, iconColor: "text-rose-600" },
+  { title: "Documentation", href: "/admin/docs", icon: FileText, iconColor: "text-indigo-600" },
+  { title: "Settings", href: "/admin/settings", icon: Settings, iconColor: "text-slate-500" },
 ];
 
 interface AdminSidebarProps {
@@ -96,7 +96,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                     )}
                     data-testid={`link-admin-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
                   >
-                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "" : item.iconColor)} />
                     <span
                       className={cn(
                         "transition-opacity duration-200",
@@ -158,7 +158,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                           onClick={() => setProfileOpen(true)}
                           data-testid="button-sidebar-profile"
                         >
-                          <User className="h-4 w-4" />
+                          <User className="h-4 w-4 text-blue-600" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="right" sideOffset={8}>My Profile</TooltipContent>
@@ -172,7 +172,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                           onClick={() => logout.mutate()}
                           data-testid="button-sidebar-logout"
                         >
-                          <LogOut className="h-4 w-4" />
+                          <LogOut className="h-4 w-4 text-rose-500" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="right" sideOffset={8}>Logout</TooltipContent>
@@ -187,7 +187,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                       onClick={() => setProfileOpen(true)}
                       data-testid="button-sidebar-profile"
                     >
-                      <User className="h-4 w-4 mr-2" />
+                      <User className="h-4 w-4 mr-2 text-blue-600" />
                       My Profile
                     </Button>
                     <Button
@@ -197,7 +197,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                       onClick={() => logout.mutate()}
                       data-testid="button-sidebar-logout"
                     >
-                      <LogOut className="h-4 w-4 mr-2" />
+                      <LogOut className="h-4 w-4 mr-2 text-rose-500" />
                       Logout
                     </Button>
                   </>
