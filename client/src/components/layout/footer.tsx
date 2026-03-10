@@ -86,9 +86,9 @@ export function Footer() {
       </div>
 
       <div className="bg-accent" data-testid="section-disclaimer">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-          <h4 className="font-semibold text-xs mb-3 text-white/90 uppercase tracking-wide">Disclaimer</h4>
-          <div className="text-xs italic text-white/75 leading-relaxed space-y-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
+          <h4 className="font-semibold text-xs mb-2 text-white/90 uppercase tracking-wide">Disclaimer</h4>
+          <div className="text-xs italic text-white/75 leading-snug space-y-1.5">
             <p>
               If you or someone you know is experiencing a mental health emergency:{" "}
               In the U.S. please call <span className="font-semibold text-white not-italic">988</span> for the Suicide and Crisis Lifeline. For other emergencies call <span className="font-semibold text-white not-italic">911</span>.{" "}
