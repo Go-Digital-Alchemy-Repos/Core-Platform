@@ -274,7 +274,6 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
-
       <section className="relative bg-muted/30 overflow-hidden" data-testid="section-statistics">
         <div className="pointer-events-none absolute top-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.12) 0%, transparent 70%)" }} />
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center">
@@ -291,7 +290,6 @@ export default function AboutPage() {
           </p>
         </div>
       </section>
-
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-why-tck-informed">
         <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 md:gap-12 items-center">
           <div className="flex justify-center">
@@ -308,13 +306,10 @@ export default function AboutPage() {
             <h2 className="font-heading text-2xl sm:text-3xl font-semibold mb-3" data-testid="text-why-informed-heading">
               Why TCK Informed?
             </h2>
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Traditional therapy models were developed within a single cultural framework. When TCKs bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A TCK-informed counselor understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.
-            </p>
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
           </div>
         </div>
       </section>
-
       <section className="relative bg-muted/30" data-testid="section-vetted">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16">
@@ -347,7 +342,6 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
-
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-about-testimonials">
         <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-about-testimonials-heading">
           What Are People Saying?
@@ -357,7 +351,6 @@ export default function AboutPage() {
         </p>
         <TestimonialsCarousel />
       </section>
-
       {featuredArticles.length > 0 && (
         <section className="relative bg-muted/30 overflow-hidden" data-testid="section-featured-on">
           <div className="pointer-events-none absolute top-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.12) 0%, transparent 70%)" }} />
@@ -410,7 +403,6 @@ export default function AboutPage() {
           </div>
         </section>
       )}
-
       <section className="max-w-3xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-faqs">
         <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-10 sm:mb-14" data-testid="text-faqs-heading">
           FAQs
@@ -428,7 +420,6 @@ export default function AboutPage() {
           ))}
         </Accordion>
       </section>
-
       <section className="relative bg-muted/30 overflow-hidden" data-testid="section-donate">
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.12) 0%, transparent 70%)" }} />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
