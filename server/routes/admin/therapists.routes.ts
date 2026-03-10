@@ -6,6 +6,7 @@ import { hashPassword } from "../../middleware/auth";
 import { sendApprovalEmail, sendRejectionEmail } from "../../services/email.service";
 import { paramString } from "../../utils/params";
 import { getBaseUrl, notFound, conflict } from "../../utils/route-helpers";
+import { logger } from "../../utils/logger";
 
 const router = Router();
 
@@ -80,7 +81,7 @@ router.post(
         profileWithUser.user.email,
         profileWithUser.user.firstName || "Therapist",
         baseUrl
-      ).catch(() => {});
+      ).catch((err) => logger.email.warn("Failed to send approval email on create", { error: err.message }));
     }
 
     res.status(201).json(profileWithUser);
@@ -106,7 +107,7 @@ router.put(
         profileWithUser.user.email,
         profileWithUser.user.firstName,
         `${baseUrl}/auth/login`
-      ).catch(() => {});
+      ).catch((err) => logger.email.warn("Failed to send approval email", { error: err.message }));
     }
 
     res.json(profileWithUser ?? profile);
@@ -136,7 +137,7 @@ router.put(
         profileWithUser.user.email,
         profileWithUser.user.firstName,
         reason || null
-      ).catch(() => {});
+      ).catch((err) => logger.email.warn("Failed to send rejection email", { error: err.message }));
     }
 
     res.json(profileWithUser ?? profile);

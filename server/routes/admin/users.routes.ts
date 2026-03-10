@@ -6,6 +6,7 @@ import { hashPassword } from "../../middleware/auth";
 import { sendPasswordResetEmail, sendWelcomeEmail } from "../../services/email.service";
 import { paramString } from "../../utils/params";
 import { getBaseUrl, notFound, conflict } from "../../utils/route-helpers";
+import { logger } from "../../utils/logger";
 
 const router = Router();
 
@@ -53,7 +54,7 @@ router.post(
 
     if (data.sendWelcomeEmail) {
       const baseUrl = getBaseUrl(req);
-      sendWelcomeEmail(user.email, user.firstName, `${baseUrl}/auth/login`, data.password).catch(() => {});
+      sendWelcomeEmail(user.email, user.firstName, `${baseUrl}/auth/login`, data.password).catch((err) => logger.email.warn("Failed to send welcome email", { error: err.message }));
     }
 
     const { password, ...safeUser } = user;
@@ -126,7 +127,7 @@ router.post(
       const resetToken = await storage.passwordResets.createToken(user.id);
       const baseUrl = getBaseUrl(req);
       const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken.token}`;
-      sendPasswordResetEmail(user.email, user.firstName, resetUrl).catch(() => {});
+      sendPasswordResetEmail(user.email, user.firstName, resetUrl).catch((err) => logger.email.warn("Failed to send password reset email", { error: err.message }));
       res.json({ message: "Password reset link sent" });
     }
   })

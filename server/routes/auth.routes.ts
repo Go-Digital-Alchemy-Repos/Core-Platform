@@ -17,6 +17,7 @@ import {
   resetPasswordLimiter,
   registerLimiter,
 } from "../middleware/security";
+import { logger } from "../utils/logger";
 
 const router = Router();
 
@@ -74,7 +75,7 @@ router.post(
           `${firstName} ${lastName}`,
           email,
           `${baseUrl}/admin/therapists`
-        ).catch(() => {});
+        ).catch((err) => logger.email.warn("Failed to send therapist registration notification", { error: err.message }));
       } else {
         const { sendNewClientRegistrationEmail } = await import("../services/email.service");
         sendNewClientRegistrationEmail(
@@ -82,7 +83,7 @@ router.post(
           `${firstName} ${lastName}`,
           email,
           `${baseUrl}/admin/users`
-        ).catch(() => {});
+        ).catch((err) => logger.email.warn("Failed to send client registration notification", { error: err.message }));
       }
     }
 
@@ -154,7 +155,7 @@ router.post(
       const baseUrl = `${req.protocol}://${req.get("host")}`;
       const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken.token}`;
       const { sendPasswordResetEmail } = await import("../services/email.service");
-      sendPasswordResetEmail(user.email, user.firstName, resetUrl).catch(() => {});
+      sendPasswordResetEmail(user.email, user.firstName, resetUrl).catch((err) => logger.email.warn("Failed to send password reset email", { error: err.message }));
     }
     res.json({ message: "If an account with that email exists, a password reset link has been sent." });
   })

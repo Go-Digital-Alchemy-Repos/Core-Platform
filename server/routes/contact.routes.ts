@@ -4,6 +4,7 @@ import { asyncHandler } from "../middleware/error-handler";
 import { validateBody } from "../middleware/validation";
 import { insertContactMessageSchema } from "@shared/schema";
 import { sendContactFormEmail } from "../services/email.service";
+import { logger } from "../utils/logger";
 
 const router = Router();
 
@@ -23,7 +24,7 @@ router.post(
         req.body.email || "no-reply@unknown.com",
         req.body.message || "",
         `${baseUrl}/admin`
-      ).catch(() => {});
+      ).catch((err) => logger.email.warn("Failed to send contact form notification", { error: err.message }));
     }
 
     res.status(201).json({ message: "Message sent successfully" });

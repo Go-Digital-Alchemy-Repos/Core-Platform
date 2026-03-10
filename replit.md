@@ -486,3 +486,31 @@ All admin routes still mount at `/api/admin/*`. The hub router applies auth once
 4. **Conversation Sorting** — Update message send logic to set `lastMessageAt`, sort conversation list by it instead of `updatedAt`.
 5. **Geo-Aware Ranking** — Latitude/longitude already exist on profiles; add a Haversine distance query to directory search, allow "sort by distance" when user provides location.
 6. **Onboarding Funnel** — Track profile completeness via existing fields (bio, specializations, credentials, photo) and surface a progress indicator on the therapist dashboard.
+
+## End-of-Day Quality Pass (Phase 9)
+
+### Validation Results
+- TypeScript typecheck: **0 errors**
+- Vite production build: **passes** (14 lazy-loaded chunks + main bundle)
+- All public API endpoints: **200 OK** (directory, events, specializations, featured, filters)
+- Auth flow: **working** (401 unauthenticated, 200 login)
+- Contact form validation: **working** (400 on invalid data)
+- Health endpoints: **ready** (DB connected)
+- No browser console errors
+
+### Bugs Fixed
+- **9 silent `.catch(() => {})` calls replaced with structured logger warnings** across:
+  - `server/routes/admin/therapists.routes.ts` (3 catches: approval email on create, approval email, rejection email)
+  - `server/routes/admin/users.routes.ts` (2 catches: welcome email, password reset email)
+  - `server/routes/auth.routes.ts` (3 catches: therapist registration notification, client registration notification, password reset email)
+  - `server/routes/contact.routes.ts` (1 catch: contact form notification)
+- These were leftover from the Phase 5 route split — Phase 6 added structured logging to email.service.ts but missed the route-level catch handlers
+
+### Code Debt Cleaned
+- All email send failures across the entire codebase now log warnings with error context via `logger.email.warn()`
+- Zero silent `.catch(() => {})` calls remain in the server codebase
+
+### Remaining Risks
+- `tiers.routes.ts` and `events.routes.ts` admin POST/PUT routes do not use Zod schema validation on request bodies (pre-existing, not from recent phases)
+- Messages page chunk is 385KB (rich text editor); could benefit from vendor chunk splitting
+- No automated test suite configured
