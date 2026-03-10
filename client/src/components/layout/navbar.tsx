@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, ChevronDown, UserCog, Search, MessageSquare } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, Search, MessageSquare } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { Button } from "@/components/ui/button";
@@ -75,10 +75,8 @@ export function Navbar() {
           {isLoading ? null : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" data-testid="button-user-menu">
+                <Button variant="outline" size="icon" data-testid="button-user-menu">
                   <User className="h-4 w-4" />
-                  <span className="ml-1">{user.firstName}</span>
-                  <ChevronDown className="ml-1 h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="z-[1000]">
