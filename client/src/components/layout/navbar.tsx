@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, Search, MessageSquare } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, MessageSquare } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { Button } from "@/components/ui/button";
