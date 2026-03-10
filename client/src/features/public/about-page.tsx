@@ -87,27 +87,27 @@ const vettedDoesNotMean = [
 const faqs = [
   {
     question: "What is a Third Culture Kid (TCK)?",
-    answer: "A Third Culture Kid is someone who has spent a significant part of their developmental years in a culture outside their parents' passport country. TCKs often build relationships to multiple cultures while not having full ownership in any single one. The term was coined by sociologist Ruth Hill Useem in the 1950s.",
+    answer: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
   },
   {
     question: "Who can use TCK Wellness to find a counselor?",
-    answer: "Anyone looking for culturally informed mental health support can use our directory. This includes TCKs, Adult TCKs, Cross-Cultural Kids (CCKs), expat families, global nomads, and anyone navigating cross-cultural identity challenges.",
+    answer: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
   },
   {
     question: "How are counselors vetted before joining the directory?",
-    answer: "Every counselor completes a detailed application that includes credential verification, proof of licensure, and evidence of training or lived experience with TCK/cross-cultural populations. Our team reviews each profile before it is published to the directory.",
+    answer: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
   },
   {
     question: "Is TCK Wellness a therapy service?",
-    answer: "No. TCK Wellness is a directory platform that connects individuals with TCK-informed counselors. We do not provide therapy directly. Each counselor listed operates their own independent practice.",
+    answer: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
   },
   {
     question: "Can I use the directory if I live outside the United States?",
-    answer: "Absolutely. Our directory includes counselors from around the world, and many offer virtual sessions across time zones. You can filter by location, language, and practice mode to find the right fit.",
+    answer: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
   },
   {
     question: "How can I support TCK Wellness?",
-    answer: "You can support our mission by donating, sharing our platform with your community, or — if you're a counselor — joining our directory. Every contribution helps us continue connecting TCKs with the care they deserve.",
+    answer: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
   },
 ];
 
