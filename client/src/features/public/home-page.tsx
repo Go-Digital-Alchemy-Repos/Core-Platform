@@ -382,8 +382,9 @@ export default function HomePage() {
         </div>
       </section>
       <TestimonialsCarousel />
-      <section className="bg-[#ffffff4d]" data-testid="section-featured-therapists">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
+      <section className="relative bg-[#ffffff4d] overflow-hidden" data-testid="section-featured-therapists">
+        <div className="pointer-events-none absolute top-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.12) 0%, transparent 70%)" }} />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap mb-8 sm:mb-12">
             <div>
               <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold" data-testid="text-featured-heading">
