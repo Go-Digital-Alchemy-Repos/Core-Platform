@@ -79,11 +79,6 @@ const benefits = [
   },
 ];
 
-const trustStats = [
-  { value: "40+", label: "Counselors" },
-  { value: "15+", label: "Countries" },
-  { value: "1000+", label: "Connections Made" },
-];
 
 export default function HomePage() {
   const { data: events, isLoading: eventsLoading } = useQuery<any[]>({
@@ -108,33 +103,26 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-background/85 dark:bg-background/90" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-14 pb-18 sm:pt-20 sm:pb-24 md:pt-28 md:pb-32">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-5 sm:mb-6" data-testid="text-hero-heading">
+            <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-10 sm:mb-14" data-testid="text-hero-heading">
               Care that understands where TCKs <span className="text-accent">"come from"</span>
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed" data-testid="text-hero-subtitle">
-              A global directory connecting Third Culture Kids with counselors who truly understand the complexity of a cross-cultural life.
-            </p>
-            <div className="flex flex-col xs:flex-row flex-wrap justify-center gap-3 sm:gap-4 mb-10 sm:mb-14">
-              <Link href="/directory">
-                <Button size="lg" className="w-full xs:w-auto bg-accent text-accent-foreground border-accent-border" data-testid="button-browse-directory">
-                  <Search className="h-4 w-4 mr-2" />
-                  Browse Directory
-                </Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button size="lg" variant="outline" className="w-full xs:w-auto border-foreground/20 hover:bg-foreground/5" data-testid="button-join-therapist">
-                  Join as Counselor
-                </Button>
-              </Link>
-            </div>
-
-            <div className="flex justify-center gap-6 sm:gap-8 md:gap-16" data-testid="section-trust-stats">
-              {trustStats.map((stat) => (
-                <div key={stat.label} className="text-center" data-testid={`text-stat-${stat.label.toLowerCase().replace(/\s+/g, "-")}`}>
-                  <p className="text-2xl sm:text-3xl md:text-4xl font-bold font-heading text-accent">{stat.value}</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">{stat.label}</p>
-                </div>
-              ))}
+            <div className="flex flex-col sm:flex-row justify-center gap-8 sm:gap-16">
+              <div className="text-center">
+                <p className="text-base sm:text-lg font-medium mb-4" data-testid="text-hero-support-label">Are you looking for TCK support?</p>
+                <Link href="/directory">
+                  <Button size="lg" className="bg-accent text-accent-foreground border-accent-border" data-testid="button-browse-directory">
+                    Find a Counselor!
+                  </Button>
+                </Link>
+              </div>
+              <div className="text-center">
+                <p className="text-base sm:text-lg font-medium mb-4" data-testid="text-hero-counselor-label">Are you a counselor?</p>
+                <Link href="/auth/register">
+                  <Button size="lg" className="bg-accent text-accent-foreground border-accent-border" data-testid="button-join-therapist">
+                    Join the Network!
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
