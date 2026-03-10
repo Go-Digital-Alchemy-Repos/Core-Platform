@@ -1,0 +1,81 @@
+We are beginning Phase 2 of the TCK Wellness Event Management sprint: enhancing the public and authenticated event detail experience to support richer event information without yet implementing full registration or payment workflows.
+
+IMPORTANT RULES
+- Nondestructive only
+- Preserve current event listing/detail UX patterns unless safely expanding them
+- Do not redesign the events section broadly
+- Keep UI consistent with the current TCK Wellness branding and component system
+- Reuse the counselor detail page map/location pattern wherever practical
+- Do not build registration checkout yet in this phase
+
+PRIMARY GOAL
+Enhance event details pages and event presentation to support:
+- virtual event join link display when appropriate
+- dial-in information display
+- physical location map when location data exists
+- speaker/host presentation if available
+- clear display of event type/state (virtual, in-person, hybrid if supported, free, paid, registration open/closed, etc.)
+- safe display of recording availability for past events when applicable, without yet building the full archive browsing system
+
+IMPLEMENTATION REQUIREMENTS
+1. Inspect:
+   - current public event list and event detail pages
+   - event card components
+   - shared event types/contracts
+   - counselor location map implementation
+   - user role/access patterns for event visibility
+
+2. Update public/authenticated event detail views to render new event information cleanly:
+   - virtual join link
+   - dial-in details
+   - location name/address
+   - small embedded location map if latitude/longitude or equivalent location data exists
+   - host/speaker details
+   - registration state labels
+   - event price label if paid
+   - visibility-safe indicators for recording availability on past events
+
+3. The map should be lightweight and visually consistent with the existing counselor detail location indicator approach.
+
+4. For past events with a recording URL, display that a recording exists in a way that is compatible with the upcoming Recording Archives phase. Do not build the archive list yet, but do make sure event detail pages can handle recorded events gracefully.
+
+5. Preserve current event card/list behavior and only enhance where safe:
+   - badges/labels for free/paid
+   - badges for virtual/in-person
+   - registration open/closed indicators if appropriate
+
+6. Respect event visibility rules and do not expose restricted events or restricted links to unauthorized users.
+
+7. Keep all rendering resilient for older events that lack the new fields.
+
+NONDESTRUCTIVE RULES
+- No full archive implementation yet
+- No registration backend implementation yet
+- No payment flow implementation yet
+- No broad redesign of the events UI
+- No breaking changes to existing routes/pages
+
+VALIDATION CHECKLIST
+1. Typecheck/check passes
+2. Build passes
+3. Existing event lists still render correctly
+4. Event details display virtual/location/recording metadata correctly
+5. Physical location maps render only when appropriate
+6. Unauthorized users do not see restricted event information
+7. Existing events without enhanced metadata still render safely
+
+REQUIRED OUTPUT
+Provide:
+1. Summary of public event UI/detail enhancements
+2. Files changed
+3. Any access-control considerations discovered
+4. Follow-up recommendations for registration and archive phases
+5. Docs update
+
+DOCS UPDATE REQUIREMENT
+Update docs to include:
+- public event rendering behavior
+- virtual/in-person event display logic
+- location map behavior
+- recording availability behavior
+- role/visibility rendering notes

@@ -282,7 +282,7 @@ export default function AboutPage() {
         </div>
       </section>
       <section className="relative bg-muted/30 overflow-hidden" data-testid="section-statistics">
-        <div className="pointer-events-none absolute top-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--primary) / 0.12) 0%, transparent 70%)" }} />
+        <div className="pointer-events-none absolute top-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.12) 0%, transparent 70%)" }} />
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center">
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-stats-heading">The Stats Speak for Themselves</h2>
           <p className="sm:text-base text-muted-foreground mb-10 max-w-3xl mx-auto text-[18px]">
