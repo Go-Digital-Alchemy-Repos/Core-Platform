@@ -11,6 +11,12 @@ import {
 } from "../middleware/auth";
 import { validateBody } from "../middleware/validation";
 import { asyncHandler } from "../middleware/error-handler";
+import {
+  loginLimiter,
+  forgotPasswordLimiter,
+  resetPasswordLimiter,
+  registerLimiter,
+} from "../middleware/security";
 
 const router = Router();
 
@@ -30,6 +36,7 @@ const loginSchema = z.object({
 
 router.post(
   "/register",
+  registerLimiter,
   validateBody(registerSchema),
   asyncHandler(async (req, res) => {
     const { email, password, firstName, lastName, role, specializations } = req.body;
@@ -89,6 +96,7 @@ router.post(
 
 router.post(
   "/login",
+  loginLimiter,
   validateBody(loginSchema),
   asyncHandler(async (req, res) => {
     const { email, password } = req.body;
@@ -136,6 +144,7 @@ const forgotPasswordSchema = z.object({
 
 router.post(
   "/forgot-password",
+  forgotPasswordLimiter,
   validateBody(forgotPasswordSchema),
   asyncHandler(async (req, res) => {
     const { email } = req.body;
@@ -158,6 +167,7 @@ const resetPasswordSchema = z.object({
 
 router.post(
   "/reset-password",
+  resetPasswordLimiter,
   validateBody(resetPasswordSchema),
   asyncHandler(async (req, res) => {
     const { token, password } = req.body;

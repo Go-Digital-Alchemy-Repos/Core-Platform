@@ -5,9 +5,19 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { WebhookHandlers } from "./webhooks/stripe.handler";
+import {
+  enforceRequiredSecrets,
+  securityHeaders,
+  apiLimiter,
+  originCheck,
+} from "./middleware/security";
+
+enforceRequiredSecrets();
 
 const app = express();
 const httpServer = createServer(app);
+
+app.use(securityHeaders());
 
 declare module "http" {
   interface IncomingMessage {
@@ -28,16 +38,40 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
 
 app.use(
   express.json({
+    limit: "1mb",
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: "1mb" }));
 app.use(cookieParser());
 
+app.use("/api", apiLimiter);
+app.use(originCheck);
+
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
+
+const SENSITIVE_PATHS = ["/api/auth/login", "/api/auth/register", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/change-password"];
+const REDACTED_KEYS = ["password", "currentPassword", "newPassword", "token", "resetToken", "secret", "authorization"];
+
+function redactSensitive(obj: any): any {
+  if (!obj || typeof obj !== "object") return obj;
+  if (Array.isArray(obj)) return "[Array]";
+  const redacted: Record<string, any> = {};
+  for (const key of Object.keys(obj)) {
+    if (REDACTED_KEYS.some((rk) => key.toLowerCase().includes(rk.toLowerCase()))) {
+      redacted[key] = "[REDACTED]";
+    } else if (key === "bio" || key === "content" || key === "body" || key === "description") {
+      const val = obj[key];
+      redacted[key] = typeof val === "string" && val.length > 100 ? val.substring(0, 100) + "..." : val;
+    } else {
+      redacted[key] = obj[key];
+    }
+  }
+  return redacted;
+}
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -52,7 +86,7 @@ export function log(message: string, source = "express") {
 
 app.use((req, res, next) => {
   const start = Date.now();
-  const path = req.path;
+  const reqPath = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   const originalResJson = res.json;
@@ -63,10 +97,17 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+    if (reqPath.startsWith("/api")) {
+      let logLine = `${req.method} ${reqPath} ${res.statusCode} in ${duration}ms`;
+
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        if (SENSITIVE_PATHS.some((sp) => reqPath.startsWith(sp))) {
+          logLine += ` :: ${JSON.stringify(redactSensitive(capturedJsonResponse))}`;
+        } else if (reqPath.startsWith("/api/messages")) {
+          logLine += ` :: [message content redacted]`;
+        } else {
+          logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        }
       }
 
       log(logLine);

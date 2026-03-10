@@ -169,9 +169,37 @@ client/src/lib/       — Utilities (queryClient, constants)
 - `npx tsx server/scripts/seed.ts` — Seed test data (40 therapists)
 
 ## Environment Variables
-- `DATABASE_URL` — PostgreSQL connection string
-- `SESSION_SECRET` — JWT signing secret
+- `DATABASE_URL` — PostgreSQL connection string (required in production)
+- `SESSION_SECRET` — JWT signing secret (required in production, must not be the dev default)
+- `APP_URL` — (optional) Trusted origin URL for CSRF origin checks
+- `TRUSTED_ORIGINS` — (optional) Comma-separated list of additional trusted origins
 - Stripe credentials via Replit integration
+
+## Security Hardening (Phase 2)
+
+### Packages Added
+- `helmet` — Security headers (X-Content-Type-Options, X-Frame-Options, etc.)
+- `express-rate-limit` — Rate limiting middleware
+
+### Protections
+1. **Secret enforcement**: `SESSION_SECRET` and `DATABASE_URL` are required in non-dev environments; server fails fast if missing or using dev defaults
+2. **Security headers**: Helmet middleware applied globally (CSP disabled to avoid breaking the SPA)
+3. **Rate limiting** (production only, skipped in dev):
+   - Login: 10 attempts / 15 min
+   - Forgot password: 5 requests / 15 min
+   - Reset password: 10 attempts / 15 min
+   - Registration: 5 attempts / 1 hour
+   - General API: 300 requests / 15 min
+4. **Origin validation**: State-changing requests (POST/PUT/PATCH/DELETE) validated against trusted origins; Stripe webhook exempt
+5. **Body size limits**: JSON and URL-encoded bodies limited to 1MB
+6. **Log redaction**: Passwords, tokens, secrets redacted from response logs; message content fully redacted; long text fields truncated
+7. **Cookie security**: httpOnly, secure (production), sameSite=lax already configured
+
+### Files
+- `server/middleware/security.ts` — All security middleware (helmet, rate limiters, origin check, secret enforcement)
+- `server/index.ts` — Security middleware integration, log redaction
+- `server/middleware/auth.ts` — JWT secret no longer falls back to dev default in production
+- `server/routes/auth.routes.ts` — Rate limiters applied to login, register, forgot-password, reset-password
 
 ## TypeScript Integrity Pass (March 2026)
 

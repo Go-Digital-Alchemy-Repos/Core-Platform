@@ -4,7 +4,8 @@ import jwt from "jsonwebtoken";
 import type { User } from "@shared/schema";
 import type { UserRole } from "@shared/types";
 
-const JWT_SECRET = process.env.SESSION_SECRET || "dev-secret-change-me";
+const isDev = process.env.NODE_ENV !== "production";
+const JWT_SECRET = process.env.SESSION_SECRET || (isDev ? "dev-secret-change-me" : "");
 const JWT_EXPIRY = "7d";
 const COOKIE_NAME = "tck_token";
 
