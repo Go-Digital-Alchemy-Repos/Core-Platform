@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, MessageSquare, Search, X } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, MessageSquare, Search, X, ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { Button } from "@/components/ui/button";
@@ -23,9 +23,12 @@ const navLinks = [
   { label: "About", href: "/about" },
   { label: "Find a Counselor", href: "/directory" },
   { label: "Join the Network", href: "/join" },
+  { label: "Contact", href: "/contact" },
+];
+
+const resourceLinks = [
   { label: "Events", href: "/events" },
   { label: "Insights & Articles", href: "/insights" },
-  { label: "Contact", href: "/contact" },
 ];
 
 export function Navbar() {
@@ -72,6 +75,27 @@ export function Navbar() {
               </Button>
             </Link>
           ))}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className={resourceLinks.some((r) => location === r.href) ? "toggle-elevate toggle-elevated" : ""}
+                data-testid="link-nav-resources"
+              >
+                Resources
+                <ChevronDown className="ml-1 h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="z-[1000]">
+              {resourceLinks.map((link) => (
+                <DropdownMenuItem key={link.href} asChild>
+                  <Link href={link.href} data-testid={`link-nav-resource-${link.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
+                    {link.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <div className="hidden md:flex items-center gap-3 flex-wrap">
@@ -215,6 +239,20 @@ export function Navbar() {
                       variant="ghost"
                       className={`w-full justify-start ${location === link.href ? "toggle-elevate toggle-elevated" : ""}`}
                       data-testid={`link-mobile-${link.label.toLowerCase()}`}
+                      aria-current={location === link.href ? "page" : undefined}
+                    >
+                      {link.label}
+                    </Button>
+                  </Link>
+                ))}
+
+                <p className="px-4 pt-3 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resources</p>
+                {resourceLinks.map((link) => (
+                  <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start pl-6 ${location === link.href ? "toggle-elevate toggle-elevated" : ""}`}
+                      data-testid={`link-mobile-resource-${link.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
                       aria-current={location === link.href ? "page" : undefined}
                     >
                       {link.label}
