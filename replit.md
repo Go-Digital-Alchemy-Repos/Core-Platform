@@ -103,7 +103,8 @@ client/src/lib/           — Utilities (queryClient, constants)
 - `/directory` — Therapist directory (split-pane: scrollable list + sticky map; filters for specialization, language, country, session format; supports `?specialization=` URL param)
 - `/directory/:id` — Therapist profile
 - `/events` — Public events
-- `/auth/login`, `/auth/register` — Authentication
+- `/join` — Join the Network (counselor application page with modal registration + login)
+- `/auth/login`, `/auth/register` — Authentication (legacy full-page forms; navbar Register button now opens client registration modal)
 - `/therapist` — Therapist dashboard (protected)
 - `/admin` — Admin dashboard (protected)
 - `/admin/settings` — System settings (integrations + email templates)

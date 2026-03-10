@@ -35,11 +35,6 @@ import {
   BarChart3,
   Star,
   ArrowRight,
-  FileText,
-  Search,
-  CheckCircle,
-  BadgeCheck,
-  Megaphone,
 } from "lucide-react";
 
 const registerSchema = z

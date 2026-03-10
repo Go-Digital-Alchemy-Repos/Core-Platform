@@ -22,7 +22,7 @@ const navLinks = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
   { label: "Find a Counselor", href: "/directory" },
-  { label: "Join the Network", href: "/auth/register" },
+  { label: "Join the Network", href: "/join" },
   { label: "Events", href: "/events" },
   { label: "Insights & Articles", href: "/insights" },
   { label: "Contact", href: "/contact" },
@@ -33,6 +33,7 @@ export function Navbar() {
   const { user, isLoading, logout, isAdmin, isTherapist } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -181,11 +182,13 @@ export function Navbar() {
                   Login
                 </Button>
               </Link>
-              <Link href="/auth/register">
-                <Button variant="outline" data-testid="link-register">
-                  Register
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                onClick={() => setRegisterOpen(true)}
+                data-testid="button-register"
+              >
+                Register
+              </Button>
             </>
           )}
         </div>
@@ -285,11 +288,17 @@ export function Navbar() {
                         Login
                       </Button>
                     </Link>
-                    <Link href="/auth/register" onClick={() => setMobileOpen(false)}>
-                      <Button variant="outline" className="w-full justify-start" data-testid="link-mobile-register">
-                        Register
-                      </Button>
-                    </Link>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setRegisterOpen(true);
+                        setMobileOpen(false);
+                      }}
+                      data-testid="button-mobile-register"
+                    >
+                      Register
+                    </Button>
                   </>
                 )}
               </div>
@@ -299,6 +308,7 @@ export function Navbar() {
       </div>
 
       <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
+      <RegisterDialog open={registerOpen} onOpenChange={setRegisterOpen} />
     </nav>
   );
 }
