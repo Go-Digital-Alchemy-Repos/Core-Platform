@@ -8,8 +8,6 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
   type ChartConfig,
 } from "@/components/ui/chart";
 import {
@@ -23,7 +21,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  ResponsiveContainer,
 } from "recharts";
 import {
   UserCheck,
@@ -93,6 +90,10 @@ const contactsConfig = {
 
 const specConfig = {
   count: { label: "Counselors", color: "hsl(var(--chart-2))" },
+} satisfies ChartConfig;
+
+const pieConfig = {
+  count: { label: "Count" },
 } satisfies ChartConfig;
 
 function formatMonth(monthStr: string) {
@@ -255,29 +256,27 @@ function DashboardContent() {
           </CardHeader>
           <CardContent>
             {(analytics?.therapistsByStatus ?? []).length > 0 ? (
-              <div className="h-[200px] flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={analytics?.therapistsByStatus}
-                      dataKey="count"
-                      nameKey="status"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={75}
-                      innerRadius={40}
-                      paddingAngle={2}
-                      label={({ status, count }) => `${status} (${count})`}
-                      labelLine={false}
-                    >
-                      {(analytics?.therapistsByStatus ?? []).map((_entry, idx) => (
-                        <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent nameKey="status" />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              <ChartContainer config={pieConfig} className="h-[200px] w-full">
+                <PieChart>
+                  <Pie
+                    data={analytics?.therapistsByStatus}
+                    dataKey="count"
+                    nameKey="status"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={75}
+                    innerRadius={40}
+                    paddingAngle={2}
+                    label={({ status, count }) => `${status} (${count})`}
+                    labelLine={false}
+                  >
+                    {(analytics?.therapistsByStatus ?? []).map((_entry, idx) => (
+                      <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent nameKey="status" />} />
+                </PieChart>
+              </ChartContainer>
             ) : (
               <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
                 No data
@@ -304,29 +303,27 @@ function DashboardContent() {
           </CardHeader>
           <CardContent>
             {(analytics?.usersByRole ?? []).length > 0 ? (
-              <div className="h-[200px] flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={analytics?.usersByRole}
-                      dataKey="count"
-                      nameKey="role"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={75}
-                      innerRadius={40}
-                      paddingAngle={2}
-                      label={({ role, count }) => `${role} (${count})`}
-                      labelLine={false}
-                    >
-                      {(analytics?.usersByRole ?? []).map((_entry, idx) => (
-                        <Cell key={idx} fill={PIE_COLORS[(idx + 1) % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent nameKey="role" />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              <ChartContainer config={pieConfig} className="h-[200px] w-full">
+                <PieChart>
+                  <Pie
+                    data={analytics?.usersByRole}
+                    dataKey="count"
+                    nameKey="role"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={75}
+                    innerRadius={40}
+                    paddingAngle={2}
+                    label={({ role, count }) => `${role} (${count})`}
+                    labelLine={false}
+                  >
+                    {(analytics?.usersByRole ?? []).map((_entry, idx) => (
+                      <Cell key={idx} fill={PIE_COLORS[(idx + 1) % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent nameKey="role" />} />
+                </PieChart>
+              </ChartContainer>
             ) : (
               <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
                 No data
@@ -353,29 +350,27 @@ function DashboardContent() {
           </CardHeader>
           <CardContent>
             {(analytics?.subscriptionsByStatus ?? []).length > 0 ? (
-              <div className="h-[200px] flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={analytics?.subscriptionsByStatus}
-                      dataKey="count"
-                      nameKey="status"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={75}
-                      innerRadius={40}
-                      paddingAngle={2}
-                      label={({ status, count }) => `${status} (${count})`}
-                      labelLine={false}
-                    >
-                      {(analytics?.subscriptionsByStatus ?? []).map((_entry, idx) => (
-                        <Cell key={idx} fill={PIE_COLORS[(idx + 2) % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent nameKey="status" />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              <ChartContainer config={pieConfig} className="h-[200px] w-full">
+                <PieChart>
+                  <Pie
+                    data={analytics?.subscriptionsByStatus}
+                    dataKey="count"
+                    nameKey="status"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={75}
+                    innerRadius={40}
+                    paddingAngle={2}
+                    label={({ status, count }) => `${status} (${count})`}
+                    labelLine={false}
+                  >
+                    {(analytics?.subscriptionsByStatus ?? []).map((_entry, idx) => (
+                      <Cell key={idx} fill={PIE_COLORS[(idx + 2) % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent nameKey="status" />} />
+                </PieChart>
+              </ChartContainer>
             ) : (
               <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
                 No subscriptions yet
