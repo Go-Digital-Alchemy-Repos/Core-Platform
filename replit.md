@@ -20,20 +20,29 @@ A BetterHelp-style counselor directory and subscription platform where TCK-infor
 
 ### File Structure
 ```
-shared/schema/        — Modular Drizzle table definitions
-shared/types/         — Shared TypeScript enums/constants
-server/middleware/     — auth (JWT), validation (Zod), error handling
-server/storage/       — Modular data access layer (one file per entity)
-server/routes/        — Modular Express route handlers
-server/config/        — Stripe configuration
-server/webhooks/      — Stripe webhook handler
-server/scripts/       — Database seed scripts
-server/services/      — R2 (Cloudflare), email services
-uploads/avatars/      — Local avatar storage fallback (when R2 not configured)
-client/src/components/ — Shared UI (layout, directory, shared)
-client/src/features/  — Feature pages (auth, public, directory, therapist, admin)
-client/src/hooks/     — Custom hooks (useAuth, useToast)
-client/src/lib/       — Utilities (queryClient, constants)
+shared/schema/            — Modular Drizzle table definitions
+shared/types/             — Shared TypeScript enums/constants
+server/middleware/        — auth (JWT), validation (Zod), error handling
+server/storage/           — Modular data access layer (one file per entity)
+server/routes/            — Top-level route modules + registration index
+server/routes/admin/      — Admin route modules (split by domain)
+  index.ts                — Admin router hub (auth + sub-router mounting)
+  dashboard.routes.ts     — GET /dashboard-stats
+  therapists.routes.ts    — Therapist CRUD, approve/reject, activity, subscription
+  users.routes.ts         — User CRUD, password reset
+  tiers.routes.ts         — Membership tier CRUD
+  events.routes.ts        — Event CRUD
+  messages.routes.ts      — Contact message management
+server/config/            — Stripe configuration
+server/webhooks/          — Stripe webhook handler
+server/scripts/           — Database seed scripts
+server/services/          — R2 (Cloudflare), email services
+server/utils/             — Shared utilities (params, route-helpers)
+uploads/avatars/          — Local avatar storage fallback (when R2 not configured)
+client/src/components/    — Shared UI (layout, directory, shared)
+client/src/features/      — Feature pages (auth, public, directory, therapist, admin)
+client/src/hooks/         — Custom hooks (useAuth, useToast)
+client/src/lib/           — Utilities (queryClient, constants)
 ```
 
 ### Database Tables
@@ -304,6 +313,49 @@ The two GIN indexes on `specializations` and `languages` arrays were created via
 - **Direct message queries** always scope to a conversation; composite `(conversation_id, created_at)` covers listing, and `(conversation_id, is_read, sender_id)` covers unread count without hitting the main table
 - **Conversation lookups**: `(client_id, counselor_id)` composite covers `getOrCreateConversation()` exact-match queries
 - **Stripe webhook lookups** by `stripe_subscription_id` were doing full table scans; now indexed
+
+## Route & Service Cleanup (Phase 5)
+
+### What Changed
+- **Split monolithic `admin.routes.ts`** (479 lines, 23 routes) into 6 focused domain modules under `server/routes/admin/`
+- **Created shared route helpers** (`server/utils/route-helpers.ts`) with `getBaseUrl()`, `notFound()`, `conflict()` to standardize response patterns
+- **Centralized admin auth** in `server/routes/admin/index.ts` — `authenticateToken` + `requireRole("admin")` applied once at the hub level
+
+### New Files
+- `server/routes/admin/index.ts` — Hub: mounts all admin sub-routers with shared auth middleware
+- `server/routes/admin/dashboard.routes.ts` — `GET /dashboard-stats` (aggregated counts)
+- `server/routes/admin/therapists.routes.ts` — 9 routes: list, create, update, delete, approve, reject, activity, subscription
+- `server/routes/admin/users.routes.ts` — 5 routes: list, create, update, delete, reset-password
+- `server/routes/admin/tiers.routes.ts` — 3 routes: list, create, update
+- `server/routes/admin/events.routes.ts` — 4 routes: list, create, update, delete
+- `server/routes/admin/messages.routes.ts` — 2 routes: list, mark-read
+- `server/utils/route-helpers.ts` — Shared helpers: `getBaseUrl(req)`, `notFound(res, entity)`, `conflict(res, msg)`
+
+### Files Removed
+- `server/routes/admin.routes.ts` — Replaced by `server/routes/admin/` directory
+
+### Files Modified
+- `server/routes/index.ts` — Updated import from `./admin.routes` to `./admin/index`
+
+### Route Registration
+All admin routes still mount at `/api/admin/*`. The hub router applies auth once, then delegates to domain-specific sub-routers:
+- `/api/admin/dashboard-stats` → `dashboard.routes.ts`
+- `/api/admin/therapists/*` → `therapists.routes.ts`
+- `/api/admin/users/*` → `users.routes.ts`
+- `/api/admin/membership-tiers/*` → `tiers.routes.ts`
+- `/api/admin/events/*` → `events.routes.ts`
+- `/api/admin/messages/*` → `messages.routes.ts`
+- `/api/admin/settings/*`, `/api/admin/email-templates/*` → `settings.routes.ts` (unchanged, already separate)
+- `/api/admin/docs/*` → `docs.routes.ts` (unchanged, already separate)
+
+### Remaining Bloat Areas
+- `settings.routes.ts` (224 lines) — Handles both system settings and email template CRUD; could split if it grows further
+- `auth.routes.ts` (≈200 lines) — Contains register, login, forgot/reset password, profile update; reasonably cohesive
+- `messages.routes.ts` (≈150 lines) — Direct messaging with sanitization; single-domain, acceptable size
+
+### Follow-up Recommendations
+- Consider extracting therapist creation workflow (user + profile + email) into an `admin.service.ts` if more orchestration logic is added
+- Consider splitting `settings.routes.ts` into `settings.routes.ts` + `email-templates.routes.ts` if either grows
 
 ## TypeScript Integrity Pass (March 2026)
 

@@ -3,7 +3,7 @@ import authRoutes from "./auth.routes";
 import directoryRoutes from "./directory.routes";
 import therapistRoutes from "./therapist.routes";
 import stripeRoutes from "./stripe.routes";
-import adminRoutes from "./admin.routes";
+import adminRoutes from "./admin/index";
 import settingsRoutes from "./settings.routes";
 import eventsRoutes from "./events.routes";
 import contactRoutes from "./contact.routes";
