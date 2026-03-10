@@ -172,7 +172,7 @@ export function NotificationBell() {
       )}
 
       <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-md z-[1300]">
+        <SheetContent side="right" className="w-full sm:max-w-md z-[1300] px-6">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
