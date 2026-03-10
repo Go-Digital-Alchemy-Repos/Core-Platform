@@ -255,7 +255,7 @@ export default function HomePage() {
             <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold" data-testid="text-events-heading">
               Upcoming Events
             </h2>
-            <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Workshops, webinars, and community gatherings</p>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. </p>
           </div>
           <Link href="/events">
             <Button variant="outline" data-testid="button-view-all-events">
