@@ -1,8 +1,9 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Link, useSearch, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Search, MapPin, Monitor, Map, List, Users, ChevronRight, X, SlidersHorizontal, ChevronLeft } from "lucide-react";
+import { Search, MapPin, Monitor, Map, List, Users, ChevronRight, X, SlidersHorizontal, ChevronLeft, CheckCircle, XCircle } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
 import { MapView } from "@/components/directory/map-view";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,20 @@ interface FilterOptions {
   languages: string[];
   countries: string[];
 }
+
+const vettedMeans = [
+  "Every counselor completes a detailed application process",
+  "Credentials and licensure are verified",
+  "Training or lived experience with TCK/cross-cultural populations is required",
+  "Profiles are reviewed by our team before being published",
+];
+
+const vettedDoesNotMean = [
+  "We are not a licensing or credentialing body",
+  "We do not provide clinical supervision",
+  "Listing does not constitute an endorsement of specific therapeutic outcomes",
+  "We do not guarantee a therapeutic match — but we make finding one easier",
+];
 
 function getSessionFormatLabel(mode: string | null) {
   switch (mode) {
@@ -302,9 +317,9 @@ export default function DirectoryPage() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh]">
+    <div className="flex flex-col min-h-[100dvh]">
       <Navbar />
-      <div className="flex-1 flex overflow-hidden">
+      <div className="h-[calc(100dvh-64px)] flex overflow-hidden">
         <div
           className={`${
             mobileView === "list" ? "flex" : "hidden"
@@ -604,6 +619,65 @@ export default function DirectoryPage() {
           </div>
         </div>
       </div>
+
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-directory-why-tck-informed">
+        <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 md:gap-12 items-center">
+          <div className="flex justify-center">
+            <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=300&h=300&fit=crop&crop=faces"
+                alt="TCK-informed counseling"
+                className="w-full h-full object-cover"
+                data-testid="img-directory-why-tck-informed"
+              />
+            </div>
+          </div>
+          <div>
+            <h2 className="font-heading text-2xl sm:text-3xl font-semibold mb-3" data-testid="text-directory-why-informed-heading">
+              Why TCK Informed?
+            </h2>
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+              Traditional therapy models were developed within a single cultural framework. When TCKs bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A TCK-informed counselor understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative bg-muted/30 overflow-hidden" data-testid="section-directory-vetted">
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16">
+            <div>
+              <h3 className="font-heading text-xl sm:text-2xl font-semibold mb-6 text-center md:text-left" data-testid="text-directory-vetted-means-heading">
+                What does it mean to be "vetted"?
+              </h3>
+              <ul className="space-y-3">
+                {vettedMeans.map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-3" data-testid={`text-directory-vetted-means-${idx}`}>
+                    <CheckCircle className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                    <span className="text-sm sm:text-base text-muted-foreground">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-heading text-xl sm:text-2xl font-semibold mb-6 text-center md:text-left" data-testid="text-directory-vetted-not-heading">
+                What does it NOT mean to be "vetted"?
+              </h3>
+              <ul className="space-y-3">
+                {vettedDoesNotMean.map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-3" data-testid={`text-directory-vetted-not-${idx}`}>
+                    <XCircle className="h-5 w-5 text-muted-foreground/60 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm sm:text-base text-muted-foreground">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
     </div>
   );
 }
