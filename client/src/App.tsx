@@ -40,6 +40,7 @@ const AdminBlogPage = lazy(() => import("@/features/admin/blog-page"));
 
 const InsightsPage = lazy(() => import("@/features/public/insights-page"));
 const InsightsPostPage = lazy(() => import("@/features/public/insights-post-page"));
+const RecordingArchivesPage = lazy(() => import("@/features/public/recording-archives-page"));
 
 function PageLoader() {
   return (
@@ -58,6 +59,7 @@ function Router() {
         <Route path="/contact" component={ContactPage} />
         <Route path="/events" component={EventsPage} />
         <Route path="/events/:id" component={EventDetailPage} />
+        <Route path="/recordings" component={RecordingArchivesPage} />
         <Route path="/join" component={JoinNetworkPage} />
         <Route path="/insights" component={InsightsPage} />
         <Route path="/insights/:slug" component={InsightsPostPage} />

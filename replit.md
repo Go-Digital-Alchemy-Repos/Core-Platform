@@ -395,6 +395,125 @@ Phase 4 extends the Phase 3 free-registration system with Stripe-backed paid eve
 - No admin refund UI built yet — next phase should: call `stripe.refunds.create({ payment_intent: reg.paymentIntentId })`, update `paymentStatus='refunded'`
 - Recommend adding `refundedAt` timestamp and `refundedBy` (admin userId) when building the refund portal
 
+## Recording Archives (Phase 5)
+
+### Overview
+A browseable archive of past events that have a `recordingUrl`. Access is role-aware: only events the user can access appear in the archive (no URL leakage for restricted events). Available at `/recordings` in the nav under Resources → Recording Archives.
+
+### Archive Eligibility Rules
+An event appears in the archive if ALL of the following are true:
+1. `status = 'published'`
+2. `date < now()` (event is in the past)
+3. `recordingUrl IS NOT NULL`
+4. The requesting user passes `canAccessEvent()` for that event's visibility setting
+
+### Visibility / Access Behavior
+| Event Visibility | Who sees it in the archive |
+|---|---|
+| `public` | Everyone, including unauthenticated users |
+| `members_only` | `therapist` and `client` roles only |
+| `counselors_only` | `therapist` role only |
+| `admins_only` | `admin` role only |
+
+Server-side filtering at `GET /api/events/recordings` — ineligible events are excluded entirely (not redacted).
+
+### Archive Browsing Behavior
+- **Page**: `/recordings` — `client/src/features/public/recording-archives-page.tsx`
+- **Layout**: responsive 3-col grid (3 desktop, 2 tablet, 1 mobile)
+- **Card contents**: event title (links to event detail), date, speaker, description excerpt, "Watch Recording" button, thumbnail (event image or video placeholder icon)
+- **Search**: client-side keyword filter across title, speaker name, description
+- **Year filter**: dynamically populated from available event dates
+- **Loading state**: skeleton cards
+- **Empty state**: "No recordings found" with clear-filters button
+
+### Playback / Modal Behavior
+- **YouTube** (`youtube.com`, `youtu.be`): video ID extracted → embedded `<iframe>` in Dialog (`mode: payment`)
+- **Vimeo** (`vimeo.com`, `player.vimeo.com`): video ID extracted → embedded Vimeo player `<iframe>`
+- **All other URLs**: "Open Recording" button → opens in new tab with `rel="noopener noreferrer"` (no iframe for unknown sources — security boundary)
+- Dialog is a full-width modal with aspect-video container
+
+### Event-to-Archive Relationship
+- Each archive entry IS an event record — no separate archive table needed
+- Event detail page (`/events/:id`) recording section has a "Browse all recordings →" link pointing to `/recordings`
+- Admin sets `recordingUrl` on an event via the admin events editor; once the event date passes, it automatically becomes eligible for the archive
+
+### API Endpoint
+- `GET /api/events/recordings` — uses `optionalAuth`; returns filtered list of recording-eligible events the user can access
+- Defined in `server/routes/events.routes.ts` (before the `/:id` route to avoid capture)
+- Storage method: `EventStorage.getRecordingEvents()` in `server/storage/event.storage.ts`
+
+### Follow-up Recommendations
+- Add a "Recording Available" email to registered attendees when admin sets a `recordingUrl` on a past event
+- Consider adding archive tags/topics for filtering in Phase 7+
+- Add download count or view count tracking if analytics become a priority
+
+## Admin Workflow Tools (Phase 6)
+
+### Attendance Tracking
+- **Schema**: `attended boolean` (default false) + `checkedInAt timestamp` (nullable) added to `event_registrations` table
+- **Admin UI**: Registrants sheet has per-row check-in toggle button (Square/CheckSquare icon)
+- **API**: `PUT /api/admin/registrations/:id/checkin` — body `{ attended: boolean }` — updates attended + checkedInAt
+- **Summary**: Registrants sheet summary line includes "X attended" count
+- **CSV export**: Includes "Attended" (Yes/No) and "Checked In At" columns
+
+### Duplicate Event
+- **API**: `POST /api/admin/events/:id/duplicate`
+  - Copies all fields from source event
+  - Sets title to "Copy of {original title}"
+  - Sets status = 'draft' (safe — doesn't publish automatically)
+  - Clears: `date` (set to tomorrow as placeholder), `endDate`, `registrationOpensAt`, `registrationClosesAt`, `recordingUrl`
+- **Admin UI**: "Duplicate" button (Copy icon) on each event card — shows success toast, refreshes event list
+
+### Event Analytics Panel
+- **API**: `GET /api/admin/events/:id/analytics` — returns `{ confirmed, waitlisted, canceled, attended, totalRevenueCents }`
+- **Admin UI**: "Analytics" button (BarChart icon) on each event card → popover showing confirmed/waitlisted/attended counts + revenue (paid events only)
+- **Capacity display**: When event has `capacity` set, event card shows "X / Y seats" badge using confirmed count
+
+### Bulk Notifications
+- **API**: `POST /api/admin/events/:id/notify` — body `{ type: 'reminder' | 'recording' }`
+  - `reminder`: sends event-reminder email to all confirmed registrants (fire-and-forget)
+  - `recording`: sends event-recording-available email to all confirmed registrants (requires `recordingUrl` to be set)
+  - Returns `{ sent: number, message: string }`
+- **Admin UI**: 
+  - "Send Reminder" button (Bell icon) — shown on upcoming events (date > now)
+  - "Notify Recording" button — shown on past events that have `recordingUrl` set
+
+### Event Cancellation Cascade
+- When admin updates event status to 'canceled' via `PUT /api/admin/events/:id`:
+  - All active registrations (confirmed + waitlisted) are updated to canceled via `cancelAllActiveRegistrations(eventId)`
+  - `sendEventCanceledEmail` is sent to each previously confirmed registrant (fire-and-forget)
+  - Count of affected registrations is logged
+
+### New Email Templates (Phase 6)
+| Template Slug | Trigger | Variables |
+|---|---|---|
+| `event-reminder` | Admin bulk notify (type=reminder) | firstName, eventTitle, eventDate, eventLocation |
+| `event-recording-available` | Admin bulk notify (type=recording) | firstName, eventTitle, recordingUrl |
+| `event-canceled` | Event status set to canceled | firstName, eventTitle |
+
+All templates seeded in `server/scripts/seed-email-templates.ts` with fallback content in `server/services/email.service.ts`.
+
+### New Storage Methods (Phase 6)
+- `checkInRegistration(id, attended)` — toggles attended + checkedInAt
+- `getEventAnalytics(eventId)` — aggregates counts and revenue
+- `cancelAllActiveRegistrations(eventId)` — bulk cancel for event cancellation cascade
+- `getConfirmedRegistrations(eventId)` — fetch confirmed registrants for bulk notify
+
+### New Admin API Routes (Phase 6)
+| Route | Purpose |
+|---|---|
+| `PUT /api/admin/registrations/:id/checkin` | Check-in a registrant |
+| `GET /api/admin/events/:id/analytics` | Per-event analytics summary |
+| `POST /api/admin/events/:id/duplicate` | Create draft copy of event |
+| `POST /api/admin/events/:id/notify` | Send bulk notification to confirmed registrants |
+
+### Future Recommendations
+- Add scheduled reminder sending (cron job N days before event)
+- Add self-service refund portal for paid event cancellations
+- Add "no-show" tracking separate from "not checked in"
+- Add a check-in QR code / link for in-person events
+- Consider attendance analytics chart on admin dashboard
+
 ## Dynamic Home Page
 - Featured Therapists section shows 6 therapists from the directory API
 - Upcoming Events section shows 3 events from the events API

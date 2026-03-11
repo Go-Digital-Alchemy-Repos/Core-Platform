@@ -431,4 +431,60 @@ export async function sendRegistrationCanceledEmail(
   return sendEmail(email, subject, html);
 }
 
+export async function sendEventReminderEmail(
+  to: string,
+  firstName: string | null,
+  eventTitle: string,
+  eventDate: string,
+  eventLocation: string | null
+): Promise<boolean> {
+  const vars = {
+    firstName: firstName || "there",
+    eventTitle,
+    eventDate,
+    eventLocation: eventLocation || "See event details",
+  };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "event-reminder",
+    vars,
+    `Reminder: ${eventTitle} is coming up`,
+    `<p>Hi ${vars.firstName}, your event ${eventTitle} is coming up on ${eventDate} at ${vars.eventLocation}.</p>`
+  );
+  if (!isActive) return false;
+  return sendEmail(to, subject, html);
+}
+
+export async function sendRecordingAvailableEmail(
+  to: string,
+  firstName: string | null,
+  eventTitle: string,
+  recordingUrl: string
+): Promise<boolean> {
+  const vars = { firstName: firstName || "there", eventTitle, recordingUrl };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "event-recording-available",
+    vars,
+    `Recording Available: ${eventTitle}`,
+    `<p>Hi ${vars.firstName}, the recording for ${eventTitle} is now available at ${recordingUrl}.</p>`
+  );
+  if (!isActive) return false;
+  return sendEmail(to, subject, html);
+}
+
+export async function sendEventCanceledEmail(
+  to: string,
+  firstName: string | null,
+  eventTitle: string
+): Promise<boolean> {
+  const vars = { firstName: firstName || "there", eventTitle };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "event-canceled",
+    vars,
+    `Event Canceled: ${eventTitle}`,
+    `<p>Hi ${vars.firstName}, the event ${eventTitle} has been canceled.</p>`
+  );
+  if (!isActive) return false;
+  return sendEmail(to, subject, html);
+}
+
 export { baseTemplate, renderTemplate };

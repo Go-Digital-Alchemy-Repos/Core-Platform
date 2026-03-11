@@ -740,12 +740,19 @@ export default function EventDetailPage() {
                     A recording of this event is available to watch. This recording will also be available in the event archives.
                   </p>
                   {userHasAccess ? (
-                    <a href={event.recordingUrl} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" data-testid="button-view-recording">
-                        <Video className="mr-2 h-4 w-4" />
-                        Watch Recording
-                      </Button>
-                    </a>
+                    <div className="space-y-3">
+                      <a href={event.recordingUrl} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" data-testid="button-view-recording">
+                          <Video className="mr-2 h-4 w-4" />
+                          Watch Recording
+                        </Button>
+                      </a>
+                      <p className="text-sm">
+                        <Link href="/recordings" className="text-muted-foreground hover:text-accent transition-colors underline-offset-4 hover:underline" data-testid="link-browse-recordings">
+                          Browse all recordings →
+                        </Link>
+                      </p>
+                    </div>
                   ) : (
                     <p className="text-sm text-muted-foreground italic">
                       <Lock className="inline mr-1 h-3 w-3" />

@@ -3,6 +3,12 @@ import { storage } from "../../storage/index";
 import { asyncHandler } from "../../middleware/error-handler";
 import { paramString } from "../../utils/params";
 import { notFound } from "../../utils/route-helpers";
+import { logger } from "../../utils/logger";
+import {
+  sendEventCanceledEmail,
+  sendEventReminderEmail,
+  sendRecordingAvailableEmail,
+} from "../../services/email.service";
 
 const router = Router();
 
@@ -91,12 +97,127 @@ router.put(
     if (error) {
       return res.status(400).json({ message: error });
     }
-    const event = await storage.events.updateEvent(paramString(req.params.id), req.body);
+    const id = paramString(req.params.id);
+    const oldEvent = await storage.events.getEvent(id);
+    if (!oldEvent) {
+      return notFound(res, "Event");
+    }
+
+    const event = await storage.events.updateEvent(id, req.body);
     if (!event) {
       notFound(res, "Event");
       return;
     }
+
+    // Cancellation cascade
+    if (req.body.status === "canceled" && oldEvent.status !== "canceled") {
+      const canceledCount = await storage.eventRegistrations.cancelAllActiveRegistrations(id);
+      if (canceledCount > 0) {
+        const confirmedRegistrations = await storage.eventRegistrations.getConfirmedRegistrations(id);
+        for (const reg of confirmedRegistrations) {
+          sendEventCanceledEmail(
+            reg.email,
+            reg.fullName.split(" ")[0],
+            event.title
+          ).catch((err) => {
+            logger.email.warn("Failed to send event cancellation email", {
+              email: reg.email,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          });
+        }
+        logger.app.info(`Event ${id} canceled, ${canceledCount} registrations updated.`);
+      }
+    }
+
     res.json(event);
+  })
+);
+
+router.post(
+  "/:id/duplicate",
+  asyncHandler(async (req, res) => {
+    const id = paramString(req.params.id);
+    const sourceEvent = await storage.events.getEvent(id);
+    if (!sourceEvent) {
+      return notFound(res, "Event");
+    }
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(10, 0, 0, 0);
+
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      ...eventData
+    } = sourceEvent;
+
+    const newEvent = await storage.events.createEvent({
+      ...eventData,
+      title: `Copy of ${sourceEvent.title}`,
+      status: "draft",
+      date: tomorrow,
+      endDate: null,
+      registrationOpensAt: null,
+      registrationClosesAt: null,
+      recordingUrl: null,
+    } as any);
+
+    res.status(201).json(newEvent);
+  })
+);
+
+router.get(
+  "/:id/analytics",
+  asyncHandler(async (req, res) => {
+    const id = paramString(req.params.id);
+    const analytics = await storage.eventRegistrations.getEventAnalytics(id);
+    res.json(analytics);
+  })
+);
+
+router.post(
+  "/:id/notify",
+  asyncHandler(async (req, res) => {
+    const id = paramString(req.params.id);
+    const { type } = req.body;
+    if (!type || !["reminder", "recording"].includes(type)) {
+      return res.status(400).json({ message: "Invalid notification type" });
+    }
+
+    const event = await storage.events.getEvent(id);
+    if (!event) {
+      return notFound(res, "Event");
+    }
+
+    if (type === "recording" && !event.recordingUrl) {
+      return res.status(400).json({ message: "Event has no recording URL" });
+    }
+
+    const confirmed = await storage.eventRegistrations.getConfirmedRegistrations(id);
+    const eventDateStr = new Date(event.date).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const eventLocation = event.locationName || event.location || (event.isVirtual ? "Virtual" : null);
+
+    for (const reg of confirmed) {
+      const firstName = reg.fullName.split(" ")[0];
+      if (type === "reminder") {
+        sendEventReminderEmail(reg.email, firstName, event.title, eventDateStr, eventLocation).catch((err) => {
+          logger.email.warn("Failed to send reminder email", { email: reg.email, error: err });
+        });
+      } else if (type === "recording") {
+        sendRecordingAvailableEmail(reg.email, firstName, event.title, event.recordingUrl!).catch((err) => {
+          logger.email.warn("Failed to send recording email", { email: reg.email, error: err });
+        });
+      }
+    }
+
+    res.json({ sent: confirmed.length, message: `Notification sent to ${confirmed.length} registrants` });
   })
 );
 

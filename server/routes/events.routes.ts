@@ -48,6 +48,18 @@ router.get(
 );
 
 router.get(
+  "/recordings",
+  optionalAuth,
+  asyncHandler(async (req, res) => {
+    const eventsList = await storage.events.getRecordingEvents();
+    const userRole = req.user?.role ?? null;
+    
+    const filtered = eventsList.filter(event => canAccessEvent(event, userRole));
+    res.json(filtered);
+  })
+);
+
+router.get(
   "/:id",
   optionalAuth,
   asyncHandler(async (req, res) => {

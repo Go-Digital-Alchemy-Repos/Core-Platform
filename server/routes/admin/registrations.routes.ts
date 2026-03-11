@@ -64,6 +64,25 @@ function escapeCsv(value: string): string {
 }
 
 router.put(
+  "/registrations/:id/checkin",
+  asyncHandler(async (req, res) => {
+    const id = paramString(req.params.id);
+    const { attended } = req.body;
+
+    if (typeof attended !== "boolean") {
+      return res.status(400).json({ message: "attended must be a boolean" });
+    }
+
+    const registration = await storage.eventRegistrations.checkInRegistration(id, attended);
+    if (!registration) {
+      return notFound(res, "Registration");
+    }
+
+    res.json(registration);
+  })
+);
+
+router.put(
   "/registrations/:id/status",
   asyncHandler(async (req, res) => {
     const id = paramString(req.params.id);

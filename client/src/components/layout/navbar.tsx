@@ -28,6 +28,7 @@ const navLinks = [
 
 const resourceLinks = [
   { label: "Events", href: "/events" },
+  { label: "Recording Archives", href: "/recordings" },
   { label: "Insights & Articles", href: "/insights" },
 ];
 

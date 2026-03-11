@@ -45,7 +45,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Pencil, Trash2, CalendarDays, MapPin, Users, Download, MoreHorizontal, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, CalendarDays, MapPin, Users, Download, MoreHorizontal, CheckCircle, Clock, XCircle, Copy, BarChart3, Bell, Square, CheckSquare } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { Event, EventRegistration } from "@shared/schema";
 
 const eventFormSchema = z.object({
@@ -164,7 +165,7 @@ function paymentStatusVariant(status: string | null | undefined): "default" | "s
 }
 
 function downloadCsv(registrations: EventRegistration[], eventTitle: string) {
-  const headers = ["Name", "Email", "Phone", "Status", "Payment Status", "Amount Paid", "Registered At", "Canceled At", "Notes"];
+  const headers = ["Name", "Email", "Phone", "Status", "Payment Status", "Amount Paid", "Registered At", "Canceled At", "Attended", "Checked In At", "Notes"];
   const escCsv = (v: string) => {
     if (v.includes(",") || v.includes('"') || v.includes("\n")) {
       return `"${v.replace(/"/g, '""')}"`;
@@ -180,6 +181,8 @@ function downloadCsv(registrations: EventRegistration[], eventTitle: string) {
     escCsv(r.amountPaid ? (r.amountPaid / 100).toFixed(2) : "0.00"),
     escCsv(r.registeredAt ? new Date(r.registeredAt).toISOString() : ""),
     escCsv(r.canceledAt ? new Date(r.canceledAt).toISOString() : ""),
+    escCsv(r.attended ? "Yes" : "No"),
+    escCsv(r.checkedInAt ? new Date(r.checkedInAt).toISOString() : ""),
     escCsv(r.notes || ""),
   ]);
   const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
@@ -190,6 +193,54 @@ function downloadCsv(registrations: EventRegistration[], eventTitle: string) {
   a.download = `registrations-${eventTitle.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function EventAnalytics({ eventId, registrationEnabled }: { eventId: string; registrationEnabled: boolean }) {
+  const { data: analytics, isLoading } = useQuery<{
+    confirmed: number;
+    waitlisted: number;
+    canceled: number;
+    attended: number;
+    totalRevenueCents: number;
+  }>({
+    queryKey: ["/api/admin/events", eventId, "analytics"],
+    enabled: registrationEnabled,
+  });
+
+  if (isLoading) return <LoadingSpinner />;
+  if (!analytics) return null;
+
+  return (
+    <div className="space-y-3 p-2 min-w-[200px]">
+      <h4 className="font-semibold text-sm border-b pb-2">Event Analytics</h4>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+        <span className="text-muted-foreground">Confirmed:</span>
+        <span className="font-medium text-right">{analytics.confirmed}</span>
+        <span className="text-muted-foreground">Waitlisted:</span>
+        <span className="font-medium text-right">{analytics.waitlisted}</span>
+        <span className="text-muted-foreground">Attended:</span>
+        <span className="font-medium text-right">{analytics.attended}</span>
+        {analytics.totalRevenueCents > 0 && (
+          <>
+            <span className="text-muted-foreground">Revenue:</span>
+            <span className="font-medium text-right">${(analytics.totalRevenueCents / 100).toFixed(2)}</span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CapacityBadge({ eventId, capacity }: { eventId: string; capacity: number }) {
+  const { data: analytics } = useQuery<{ confirmed: number }>({
+    queryKey: ["/api/admin/events", eventId, "analytics"],
+  });
+
+  return (
+    <Badge variant="outline" className="ml-auto" data-testid={`badge-capacity-${eventId}`}>
+      {analytics?.confirmed ?? 0} / {capacity} seats
+    </Badge>
+  );
 }
 
 function EventsContent() {
@@ -213,6 +264,46 @@ function EventsContent() {
   const { data: registrations, isLoading: registrantsLoading } = useQuery<EventRegistration[]>({
     queryKey: ["/api/admin/events", registrantsEvent?.id, "registrations"],
     enabled: !!registrantsEvent,
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("POST", `/api/admin/events/${id}/duplicate`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/events"] });
+      toast({ title: "Event duplicated successfully" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error duplicating event", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const notifyMutation = useMutation({
+    mutationFn: async ({ id, type }: { id: string; type: "reminder" | "recording" }) => {
+      const res = await apiRequest("POST", `/api/admin/events/${id}/notify`, { type });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: "Notifications sent", description: data.message });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error sending notifications", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const checkInMutation = useMutation({
+    mutationFn: async ({ id, attended }: { id: string; attended: boolean }) => {
+      await apiRequest("PUT", `/api/admin/registrations/${id}/checkin`, { attended });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/events", registrantsEvent?.id, "registrations"] });
+      toast({ title: "Attendance updated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error updating attendance", description: err.message, variant: "destructive" });
+    },
   });
 
   const updateStatusMutation = useMutation({
@@ -244,6 +335,7 @@ function EventsContent() {
   const confirmedCount = registrations?.filter((r) => r.status === "confirmed").length ?? 0;
   const waitlistedCount = registrations?.filter((r) => r.status === "waitlisted").length ?? 0;
   const canceledCount = registrations?.filter((r) => r.status === "canceled").length ?? 0;
+  const attendedCount = registrations?.filter((r) => r.attended).length ?? 0;
 
   const createMutation = useMutation({
     mutationFn: async (data: EventFormValues) => {
@@ -370,8 +462,11 @@ function EventsContent() {
           <Card key={event.id} data-testid={`card-event-${event.id}`}>
             <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
               <div>
-                <CardTitle className="text-lg" data-testid={`text-event-title-${event.id}`}>
+                <CardTitle className="text-lg flex items-center gap-2" data-testid={`text-event-title-${event.id}`}>
                   {event.title}
+                  {event.registrationEnabled && event.capacity && (
+                    <CapacityBadge eventId={event.id} capacity={event.capacity} />
+                  )}
                 </CardTitle>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <span className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -387,6 +482,56 @@ function EventsContent() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                {event.registrationEnabled && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        data-testid={`button-analytics-${event.id}`}
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end">
+                      <EventAnalytics eventId={event.id} registrationEnabled={event.registrationEnabled} />
+                    </PopoverContent>
+                  </Popover>
+                )}
+                {new Date(event.date) > new Date() && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => notifyMutation.mutate({ id: event.id, type: "reminder" })}
+                    disabled={notifyMutation.isPending}
+                    data-testid={`button-notify-reminder-${event.id}`}
+                    title="Send Reminder"
+                  >
+                    <Bell className="h-4 w-4" />
+                  </Button>
+                )}
+                {event.recordingUrl && new Date(event.date) < new Date() && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => notifyMutation.mutate({ id: event.id, type: "recording" })}
+                    disabled={notifyMutation.isPending}
+                    data-testid={`button-notify-recording-${event.id}`}
+                    title="Notify Recording"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => duplicateMutation.mutate(event.id)}
+                  disabled={duplicateMutation.isPending}
+                  data-testid={`button-duplicate-event-${event.id}`}
+                  title="Duplicate Event"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
                 <Button
                   size="icon"
                   variant="ghost"
@@ -978,18 +1123,18 @@ function EventsContent() {
           </SheetHeader>
           <SheetBody>
             <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
-              <div className="flex gap-2 flex-wrap">
-                <Badge variant="default" data-testid="badge-confirmed-count">
-                  <CheckCircle className="h-3 w-3 mr-1" />
+              <div className="flex gap-2 flex-wrap text-xs md:text-sm">
+                <Badge variant="default" data-testid="badge-confirmed-count" className="flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" />
                   {confirmedCount} Confirmed
                 </Badge>
-                <Badge variant="secondary" data-testid="badge-waitlisted-count">
-                  <Clock className="h-3 w-3 mr-1" />
+                <Badge variant="secondary" data-testid="badge-waitlisted-count" className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
                   {waitlistedCount} Waitlisted
                 </Badge>
-                <Badge variant="destructive" data-testid="badge-canceled-count">
-                  <XCircle className="h-3 w-3 mr-1" />
-                  {canceledCount} Canceled
+                <Badge variant="outline" data-testid="badge-attended-count" className="flex items-center gap-1">
+                  <CheckSquare className="h-3 w-3" />
+                  {attendedCount} Attended
                 </Badge>
               </div>
               <Button
@@ -1022,19 +1167,38 @@ function EventsContent() {
                   <Card key={reg.id} data-testid={`card-registrant-${reg.id}`}>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium truncate" data-testid={`text-registrant-name-${reg.id}`}>
-                            {reg.fullName}
-                          </p>
-                          <p className="text-sm text-muted-foreground truncate" data-testid={`text-registrant-email-${reg.id}`}>
-                            {reg.email}
-                          </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              onClick={() => checkInMutation.mutate({ id: reg.id, attended: !reg.attended })}
+                              disabled={checkInMutation.isPending}
+                              data-testid={`button-checkin-${reg.id}`}
+                              title={reg.attended ? "Remove check-in" : "Check-in"}
+                            >
+                              {reg.attended ? (
+                                <CheckSquare className="h-4 w-4 text-primary" />
+                              ) : (
+                                <Square className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </Button>
+                            <div>
+                              <p className="font-medium truncate" data-testid={`text-registrant-name-${reg.id}`}>
+                                {reg.fullName}
+                              </p>
+                              <p className="text-sm text-muted-foreground truncate" data-testid={`text-registrant-email-${reg.id}`}>
+                                {reg.email}
+                              </p>
+                            </div>
+                          </div>
                           {reg.phone && (
-                            <p className="text-sm text-muted-foreground" data-testid={`text-registrant-phone-${reg.id}`}>
+                            <p className="text-sm text-muted-foreground ml-10" data-testid={`text-registrant-phone-${reg.id}`}>
                               {reg.phone}
                             </p>
                           )}
-                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <div className="flex items-center gap-2 mt-2 flex-wrap ml-10">
                             <Badge
                               variant={registrationStatusVariant(reg.status)}
                               data-testid={`badge-registrant-status-${reg.id}`}

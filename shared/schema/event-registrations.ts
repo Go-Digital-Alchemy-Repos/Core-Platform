@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { events } from "./events";
@@ -18,6 +18,8 @@ export const eventRegistrations = pgTable("event_registrations", {
   stripeCheckoutSessionId: text("stripe_checkout_session_id"),
   amountPaid: integer("amount_paid"),
   notes: text("notes"),
+  attended: boolean("attended").default(false),
+  checkedInAt: timestamp("checked_in_at"),
   registeredAt: timestamp("registered_at").defaultNow(),
   canceledAt: timestamp("canceled_at"),
 }, (table) => [

@@ -191,6 +191,48 @@ const templates = [
     </div>
     <p style="color:#374151;font-size:15px;line-height:1.6;">We look forward to seeing you there!</p>`),
   },
+  {
+    slug: "event-reminder",
+    name: "Event Reminder",
+    subject: "Reminder: {{eventTitle}} is coming up",
+    description: "Sent as a reminder before an event starts.",
+    variables: ["firstName", "eventTitle", "eventDate", "eventLocation"],
+    htmlBody: baseWrap("Event Reminder", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">This is a reminder that <strong>{{eventTitle}}</strong> is coming up soon.</p>
+    <div style="background:#f3f4f6;border-radius:6px;padding:16px;margin:16px 0;">
+      <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Date:</strong> {{eventDate}}</p>
+      <p style="margin:0;color:#374151;font-size:14px;"><strong>Location:</strong> {{eventLocation}}</p>
+    </div>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">We look forward to seeing you there!</p>`),
+  },
+  {
+    slug: "event-recording-available",
+    name: "Event Recording Available",
+    subject: "Recording Available: {{eventTitle}}",
+    description: "Sent when an event recording is available for viewing.",
+    variables: ["firstName", "eventTitle", "recordingUrl"],
+    htmlBody: baseWrap("Recording Now Available", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">The recording for <strong>{{eventTitle}}</strong> is now available for you to view.</p>
+    <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
+      <tr><td style="background:#2d8a7e;border-radius:6px;padding:12px 28px;">
+        <a href="{{recordingUrl}}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;">View Recording</a>
+      </td></tr>
+    </table>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">You can also find this recording in your dashboard under the Recording Archives section.</p>`),
+  },
+  {
+    slug: "event-canceled",
+    name: "Event Canceled",
+    subject: "Event Canceled: {{eventTitle}}",
+    description: "Sent when an event is canceled by the administrator.",
+    variables: ["firstName", "eventTitle"],
+    htmlBody: baseWrap("Event Cancellation Notice", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">We are writing to inform you that the event <strong>{{eventTitle}}</strong> has been canceled.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">We apologize for any inconvenience this may cause. If you paid for this event, a refund will be processed automatically.</p>`),
+  },
 ];
 
 export async function seedEmailTemplates() {

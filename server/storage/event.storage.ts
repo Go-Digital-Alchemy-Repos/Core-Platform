@@ -1,4 +1,4 @@
-import { eq, gte, lt, asc, desc, and } from "drizzle-orm";
+import { eq, gte, lt, asc, desc, and, sql } from "drizzle-orm";
 import { db } from "../db";
 import { events, type Event, type InsertEvent } from "@shared/schema";
 
@@ -37,6 +37,20 @@ export class EventStorage {
         )
       )
       .orderBy(asc(events.date));
+  }
+
+  async getRecordingEvents(): Promise<Event[]> {
+    return db
+      .select()
+      .from(events)
+      .where(
+        and(
+          lt(events.date, new Date()),
+          eq(events.status, "published"),
+          sql`${events.recordingUrl} IS NOT NULL`
+        )
+      )
+      .orderBy(desc(events.date));
   }
 
   async createEvent(data: InsertEvent): Promise<Event> {
