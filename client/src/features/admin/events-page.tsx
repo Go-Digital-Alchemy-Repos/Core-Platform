@@ -58,6 +58,7 @@ import {
 import { Plus, Pencil, Trash2, CalendarDays, MapPin, Users, Download, MoreHorizontal, CheckCircle, Clock, XCircle, Copy, BarChart3, Bell, Square, CheckSquare } from "lucide-react";
 import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { StructuredDataStatus } from "@/components/shared/structured-data-status";
 import type { Event, EventRegistration } from "@shared/schema";
 
 const eventFormSchema = z.object({
@@ -272,6 +273,11 @@ function EventsContent() {
 
   const watchRegistrationEnabled = form.watch("registrationEnabled");
   const watchRegistrationType = form.watch("registrationType");
+  const watchEventTitle = form.watch("title");
+  const watchEventDescription = form.watch("description");
+  const watchEventDate = form.watch("date");
+  const watchEventLocation = form.watch("location");
+  const watchEventRecordingUrl = form.watch("recordingUrl");
 
   const { data: registrations, isLoading: registrantsLoading } = useQuery<EventRegistration[]>({
     queryKey: ["/api/admin/events", registrantsEvent?.id, "registrations"],
@@ -1135,6 +1141,23 @@ function EventsContent() {
                       )}
                     />
                   </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Structured Data (JSON-LD)</h3>
+                  <StructuredDataStatus
+                    contentType="event"
+                    fields={{
+                      hasTitle: !!watchEventTitle,
+                      hasDescription: !!watchEventDescription,
+                      hasDate: !!watchEventDate,
+                      hasLocation: !!watchEventLocation,
+                      hasRecordingUrl: !!watchEventRecordingUrl,
+                    }}
+                    data-testid="structured-data-status-event"
+                  />
                 </div>
 
               </form>

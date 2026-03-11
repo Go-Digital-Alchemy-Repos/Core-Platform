@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { SeoPreview } from "@/components/shared/seo-preview";
+import { StructuredDataStatus } from "@/components/shared/structured-data-status";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
@@ -147,6 +148,9 @@ export default function CmsPageEditorPage() {
   const watchSeoTitle = form.watch("seoTitle");
   const watchSeoDescription = form.watch("seoDescription");
   const watchOgImageUrl = form.watch("ogImageUrl");
+  const watchNoindex = form.watch("noindex");
+  const watchStatus = form.watch("status");
+  const hasFaqBlocks = (builderContent?.blocks ?? []).some((b: any) => b.type === "faq");
 
   useEffect(() => {
     if (isNew && !slugManuallyEdited.current && watchTitle !== titleRef.current) {
@@ -534,11 +538,18 @@ export default function CmsPageEditorPage() {
                         name="seoTitle"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>SEO Title <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
+                            <div className="flex items-center justify-between">
+                              <FormLabel>SEO Title <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
+                              {(field.value ?? "").length > 0 && (
+                                <span className={`text-xs ${(field.value ?? "").length > 60 ? "text-amber-500" : (field.value ?? "").length < 20 ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400"}`}>
+                                  {(field.value ?? "").length}/60
+                                </span>
+                              )}
+                            </div>
                             <FormControl>
                               <Input placeholder="Overrides page title in search results" {...field} data-testid="input-seo-title" />
                             </FormControl>
-                            <FormDescription className="text-xs">If blank, the page title is used.</FormDescription>
+                            <FormDescription className="text-xs">If blank, the page title is used. Aim for 30–60 characters.</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -659,6 +670,19 @@ export default function CmsPageEditorPage() {
                 ogImage={watchOgImageUrl || ""}
                 source="page"
                 data-testid="seo-preview-panel"
+              />
+
+              <StructuredDataStatus
+                contentType="page"
+                fields={{
+                  hasTitle: !!(watchSeoTitle || watchTitle),
+                  hasDescription: !!watchSeoDescription,
+                  hasImage: !!watchOgImageUrl,
+                  noindex: !!watchNoindex,
+                  isPublished: watchStatus === "published",
+                  hasFaqBlocks,
+                }}
+                data-testid="structured-data-status"
               />
             </div>
           </TabsContent>

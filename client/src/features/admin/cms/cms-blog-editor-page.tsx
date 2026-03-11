@@ -37,6 +37,7 @@ import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { CmsImageUpload } from "./components/cms-image-upload";
 import { SeoPreview } from "@/components/shared/seo-preview";
+import { StructuredDataStatus } from "@/components/shared/structured-data-status";
 import type { BlogPost } from "@shared/schema";
 
 function generateSlug(title: string): string {
@@ -202,6 +203,9 @@ export default function CmsBlogEditorPage() {
   const watchOgImageUrl = form.watch("ogImageUrl");
   const watchCoverImageUrl = form.watch("coverImageUrl");
   const watchBlogTitle = form.watch("title");
+  const watchAuthorName = form.watch("authorName");
+  const watchPublishedAt = form.watch("publishedAt");
+  const watchNoindex = form.watch("noindex");
 
   if (!isNew && isLoading) {
     return (
@@ -481,7 +485,14 @@ export default function CmsBlogEditorPage() {
                       name="seoTitle"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>SEO Title <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
+                          <div className="flex items-center justify-between">
+                            <FormLabel>SEO Title <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
+                            {(field.value ?? "").length > 0 && (
+                              <span className={`text-xs ${(field.value ?? "").length > 60 ? "text-amber-500" : (field.value ?? "").length < 20 ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400"}`}>
+                                {(field.value ?? "").length}/60
+                              </span>
+                            )}
+                          </div>
                           <FormControl>
                             <Input
                               placeholder="Overrides post title in search results"
@@ -490,7 +501,7 @@ export default function CmsBlogEditorPage() {
                             />
                           </FormControl>
                           <FormDescription className="text-xs">
-                            If blank, the post title is used.
+                            If blank, the post title is used. Aim for 30–60 characters.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -586,6 +597,20 @@ export default function CmsBlogEditorPage() {
                   ogImage={watchOgImageUrl || watchCoverImageUrl || ""}
                   source="post"
                   data-testid="seo-preview-panel"
+                />
+
+                <StructuredDataStatus
+                  contentType="post"
+                  fields={{
+                    hasTitle: !!(watchSeoTitle || watchBlogTitle),
+                    hasDescription: !!watchSeoDescription,
+                    hasImage: !!(watchOgImageUrl || watchCoverImageUrl),
+                    hasAuthor: !!watchAuthorName,
+                    hasDate: !!watchPublishedAt || !!isPublished,
+                    noindex: !!watchNoindex,
+                    isPublished: !!isPublished,
+                  }}
+                  data-testid="structured-data-status"
                 />
               </TabsContent>
             </Tabs>
