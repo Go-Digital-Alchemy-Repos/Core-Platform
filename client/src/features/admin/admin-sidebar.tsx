@@ -152,7 +152,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
 
             <nav className="flex flex-col gap-1 px-2 flex-1 overflow-y-auto" data-testid="nav-admin-sidebar">
               {navGroups.map((group, groupIdx) => (
-                <div key={groupIdx}>
+                <div key={groupIdx} className="flex flex-col gap-0.5">
                   {groupIdx > 0 && <Separator className="my-2" />}
                   {group.label && !collapsed && (
                     <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
