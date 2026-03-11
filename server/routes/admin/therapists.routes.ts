@@ -145,6 +145,8 @@ router.put(
 );
 
 const updateTherapistSchema = z.object({
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
   title: z.string().optional().nullable(),
   bio: z.string().optional().nullable(),
   specializations: z.array(z.string()).optional().nullable(),
@@ -166,6 +168,12 @@ const updateTherapistSchema = z.object({
     return v.startsWith("+") && digits.length >= 7 && digits.length <= 15;
   }, "Enter a valid phone number with country code, e.g. +1 (555) 123-4567"),
   website: z.string().optional().nullable(),
+  instagramHandle: z.string().optional().nullable(),
+  facebookHandle: z.string().optional().nullable(),
+  twitterHandle: z.string().optional().nullable(),
+  linkedinHandle: z.string().optional().nullable(),
+  youtubeHandle: z.string().optional().nullable(),
+  tiktokHandle: z.string().optional().nullable(),
   acceptingClients: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
   isApproved: z.boolean().optional(),
@@ -176,10 +184,17 @@ router.put(
   "/:id",
   asyncHandler(async (req, res) => {
     const data = updateTherapistSchema.parse(req.body);
-    const profile = await storage.therapists.updateProfile(paramString(req.params.id), data);
+    const { firstName, lastName, ...profileData } = data;
+    const profile = await storage.therapists.updateProfile(paramString(req.params.id), profileData);
     if (!profile) {
       notFound(res, "Profile");
       return;
+    }
+    if (firstName !== undefined || lastName !== undefined) {
+      await storage.users.updateUser(profile.userId, {
+        ...(firstName !== undefined && { firstName }),
+        ...(lastName !== undefined && { lastName }),
+      });
     }
     await storage.activity.log(profile.userId, "profile_update", "Profile updated by admin");
     const profileWithUser = await storage.therapists.getProfileWithUser(profile.id);
