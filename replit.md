@@ -198,3 +198,94 @@ Mounted in: `server/routes/admin/index.ts`
 
 ### Insert Behavior (important)
 Sections are **copied on insert** — there is no live sync. Editing a saved section does not retroactively update pages where it was already inserted. This is intentional for content stability.
+
+---
+
+## CMS Phase 6 — Blog Integration into CMS
+
+### Overview
+Phase 6 absorbs blog management into the CMS area without rebuilding or breaking the existing blog architecture. The blog backend (schema, storage, public routes) is preserved; the admin experience is upgraded and moved under CMS.
+
+### What Changed (Non-Destructive)
+- **Sidebar**: "Blog" moved from the main admin group to the CMS group at `/admin/cms/blog`
+- **Old `/admin/blog` route**: Preserved in App.tsx (backwards compatible)
+- **New dedicated blog list page**: `/admin/cms/blog` (CmsBlogPage) — card list with search + status filter
+- **New dedicated blog editor**: `/admin/cms/blog/:id` (CmsBlogEditorPage) — full page editor with tabs
+- **Cover image**: Replaced raw URL input with `CmsImageUpload` (R2-backed drag-and-drop)
+- **SEO fields added to blog schema**: `seoTitle`, `seoDescription`, `ogImageUrl` — nullable, no data impact
+- **Blog schema migration**: Applied via `npm run db:push` (added 3 nullable columns)
+- **Date coercion fix**: Blog PUT/POST route now uses `z.coerce.date()` for `publishedAt`
+
+### Blog Editor Tabs
+1. **Content**: Title, slug, author, category, tags, cover image (CmsImageUpload), excerpt, body content, publish toggle
+2. **SEO**: seoTitle, seoDescription (max 160 chars), ogImageUrl (CmsImageUpload)
+
+### Public Blog Behavior (Unchanged)
+- Public URLs: `/insights` (listing) and `/insights/:slug` (article)
+- API: `GET /api/blog` and `GET /api/blog/:slug`
+- Slugs preserved — no SEO regression
+
+### SEO Meta Tags (New in Phase 7)
+Blog post pages at `/insights/:slug` now set:
+- `document.title` = `seoTitle` (or `post.title | TCK Wellness`)
+- `meta[name=description]` = `seoDescription` (or excerpt)
+- `meta[property=og:image]` = `ogImageUrl` (or coverImageUrl)
+- `meta[property=og:title]` = effective SEO title
+
+---
+
+## CMS Phase 7 — Publishing, SEO, Revisions
+
+### Overview
+Phase 7 polishes the CMS editorial workflow: unpublish control, revision restore, SEO meta tag wiring in public pages, and CMS overview improvements.
+
+### Publish/Unpublish Flow (CMS Pages)
+- **Publish**: `POST /api/admin/cms/pages/:id/publish` — sets status to `published` + stamps `publishedAt`
+- **Unpublish**: `POST /api/admin/cms/pages/:id/unpublish` — reverts status to `draft`
+- **UI**: `data-testid="button-publish"` (when draft) / `data-testid="button-unpublish"` (when published)
+- Unpublish button was previously missing; now visible alongside the "Published" badge
+
+### Revision History & Restore
+- Every save (PUT) creates a revision snapshot before applying the change
+- Revision list shown in "Page Settings" tab under "Revision History" (up to 8 shown)
+- **Restore endpoint**: `POST /api/admin/cms/pages/:pageId/revisions/:revisionId/restore`
+  - Saves the current state as a "Before restore" revision
+  - Applies the historical revision's title + content to the live page
+  - Creates a "Restored from revision" revision for the audit trail
+- **UI**: Restore button (`data-testid="button-restore-revision-{id}"`) appears on all non-current revisions
+
+### SEO Meta Tags in Public Pages
+1. **Blog posts** (`/insights/:slug`): `useSeo()` hook in `insights-post-page.tsx` sets title, description, og:image from blog SEO fields
+2. **CMS hybrid pages** (`/`, `/about`, `/contact`, `/join` when published): `CmsPageSeo` component in `cms-hybrid-page.tsx` sets title, description, og:image from CMS page SEO fields
+
+The `useSeo()` hook (`client/src/hooks/use-seo.ts`) directly manipulates `document.head` meta tags and restores `document.title` on cleanup.
+
+### CMS Overview Updates
+- 4 stat cards: Total Pages, Published Pages, Blog Posts, Posts Live
+- 5 quick links: Pages, Blog (orange), Media, Sections, SEO
+- Recent Blog Posts table added below the Recent Pages table
+
+### Files Changed in Phase 6 & 7
+
+| File | Change |
+|---|---|
+| `shared/schema/blog-posts.ts` | Added `seoTitle`, `seoDescription`, `ogImageUrl` columns |
+| `server/routes/admin/blog.routes.ts` | Added `z.coerce.date()` for `publishedAt` field |
+| `server/routes/admin/cms.routes.ts` | Added revision restore endpoint |
+| `server/storage/cms-page-revisions.storage.ts` | Added `getRevision(id)` method |
+| `client/src/features/admin/cms/cms-blog-page.tsx` | New — CMS-styled blog list page |
+| `client/src/features/admin/cms/cms-blog-editor-page.tsx` | New — full blog editor with Content/SEO tabs |
+| `client/src/features/admin/cms/cms-overview-page.tsx` | Added blog stats, Blog quick link, recent posts table |
+| `client/src/features/admin/cms/cms-page-editor-page.tsx` | Added Unpublish button + revision restore UI |
+| `client/src/features/admin/admin-sidebar.tsx` | Moved Blog to CMS group at /admin/cms/blog |
+| `client/src/features/public/insights-post-page.tsx` | Added useSeo() for meta tags |
+| `client/src/features/public/cms-hybrid-page.tsx` | Added CmsPageSeo component for meta tags |
+| `client/src/hooks/use-seo.ts` | New — lightweight DOM meta tag hook |
+| `client/src/App.tsx` | Added routes for /admin/cms/blog, /admin/cms/blog/new, /admin/cms/blog/:id |
+
+### Follow-up Recommendations
+1. **Rich text editor**: Replace the plain Textarea for blog body content with a Markdown or rich-text editor (e.g. TipTap, Monaco) for better writing experience.
+2. **Sitemap**: Generate a dynamic `/sitemap.xml` from published CMS pages and blog posts using the existing slug data.
+3. **OpenGraph `og:type`**: Add `og:type=article` for blog posts and `og:url` for all public pages.
+4. **Archive flow**: The CMS page status includes "archived" but there's no UI for archiving (different from draft). Could be surfaced if needed.
+5. **Blog revisions**: Blog posts don't have a revision history like CMS pages. Could be added following the same pattern if required.
