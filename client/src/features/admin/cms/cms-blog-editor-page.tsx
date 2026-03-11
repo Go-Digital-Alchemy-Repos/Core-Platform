@@ -25,6 +25,13 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ArrowLeft,
   Save,
   Globe,
@@ -32,6 +39,9 @@ import {
   EyeOff,
   BookOpen,
   ExternalLink,
+  Headphones,
+  Link2,
+  FileText,
 } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
@@ -56,8 +66,11 @@ const postFormSchema = z.object({
   category: z.string().optional(),
   tags: z.string().optional(),
   excerpt: z.string().optional(),
-  content: z.string().min(1, "Content is required"),
+  content: z.string().optional().default(""),
   coverImageUrl: z.string().optional(),
+  postType: z.enum(["article", "podcast", "external"]).default("article"),
+  podcastUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  externalUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   isPublished: z.boolean().default(false),
   seoTitle: z.string().optional(),
   seoDescription: z.string().max(160, "Max 160 characters").optional(),
@@ -97,6 +110,9 @@ export default function CmsBlogEditorPage() {
       excerpt: "",
       content: "",
       coverImageUrl: "",
+      postType: "article",
+      podcastUrl: "",
+      externalUrl: "",
       isPublished: false,
       seoTitle: "",
       seoDescription: "",
@@ -116,6 +132,9 @@ export default function CmsBlogEditorPage() {
         excerpt: post.excerpt ?? "",
         content: post.content,
         coverImageUrl: post.coverImageUrl ?? "",
+        postType: (post.postType as "article" | "podcast" | "external") ?? "article",
+        podcastUrl: post.podcastUrl ?? "",
+        externalUrl: post.externalUrl ?? "",
         isPublished: post.isPublished ?? false,
         seoTitle: post.seoTitle ?? "",
         seoDescription: post.seoDescription ?? "",
@@ -143,9 +162,12 @@ export default function CmsBlogEditorPage() {
       title: data.title,
       slug: data.slug || generateSlug(data.title),
       excerpt: data.excerpt || null,
-      content: data.content,
+      content: data.content || "",
       coverImageUrl: data.coverImageUrl || null,
       authorName: data.authorName,
+      postType: data.postType || "article",
+      podcastUrl: data.podcastUrl || null,
+      externalUrl: data.externalUrl || null,
       category: data.category || null,
       tags: tagsArray.length > 0 ? tagsArray : null,
       isPublished: data.isPublished,
@@ -197,6 +219,7 @@ export default function CmsBlogEditorPage() {
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const isPublished = form.watch("isPublished");
+  const watchPostType = form.watch("postType");
   const currentSlug = form.watch("slug");
   const watchSeoTitle = form.watch("seoTitle");
   const watchSeoDescription = form.watch("seoDescription");
@@ -250,12 +273,21 @@ export default function CmsBlogEditorPage() {
           </div>
           <div className="flex items-center gap-2">
             {!isNew && isPublished && (
-              <Button variant="outline" size="sm" asChild>
-                <a href={`/insights/${currentSlug}`} target="_blank" rel="noopener noreferrer" data-testid="button-view-live">
-                  <ExternalLink className="h-4 w-4 mr-1.5" />
-                  View Live
-                </a>
-              </Button>
+              watchPostType === "external" && form.watch("externalUrl") ? (
+                <Button variant="outline" size="sm" asChild>
+                  <a href={form.watch("externalUrl")} target="_blank" rel="noopener noreferrer" data-testid="button-view-live">
+                    <Link2 className="h-4 w-4 mr-1.5" />
+                    View External
+                  </a>
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" asChild>
+                  <a href={`/insights/${currentSlug}`} target="_blank" rel="noopener noreferrer" data-testid="button-view-live">
+                    <ExternalLink className="h-4 w-4 mr-1.5" />
+                    View Live
+                  </a>
+                </Button>
+              )
             )}
             <Button onClick={onSave} disabled={isSaving} data-testid="button-save-post">
               <Save className="h-4 w-4 mr-2" />
@@ -267,13 +299,51 @@ export default function CmsBlogEditorPage() {
         <Form {...form}>
           <form onSubmit={(e) => { e.preventDefault(); onSave(); }}>
             <Tabs defaultValue="content" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="content" data-testid="tab-content">Content</TabsTrigger>
-                <TabsTrigger value="seo" data-testid="tab-seo">
-                  <Globe className="h-3.5 w-3.5 mr-1.5" />
-                  SEO
-                </TabsTrigger>
-              </TabsList>
+              <div className="flex items-center gap-4 flex-wrap">
+                <TabsList>
+                  <TabsTrigger value="content" data-testid="tab-content">Content</TabsTrigger>
+                  <TabsTrigger value="seo" data-testid="tab-seo">
+                    <Globe className="h-3.5 w-3.5 mr-1.5" />
+                    SEO
+                  </TabsTrigger>
+                </TabsList>
+                <FormField
+                  control={form.control}
+                  name="postType"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormLabel className="text-xs text-muted-foreground whitespace-nowrap">Post Type:</FormLabel>
+                      <Select value={field.value || "article"} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger className="h-9 w-[180px]" data-testid="select-post-type">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="article">
+                            <span className="flex items-center gap-2">
+                              <FileText className="h-3.5 w-3.5" />
+                              Article
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="podcast">
+                            <span className="flex items-center gap-2">
+                              <Headphones className="h-3.5 w-3.5" />
+                              Podcast
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="external">
+                            <span className="flex items-center gap-2">
+                              <Link2 className="h-3.5 w-3.5" />
+                              External Article
+                            </span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <TabsContent value="content" className="space-y-4 mt-0">
                 <Card>
@@ -371,6 +441,74 @@ export default function CmsBlogEditorPage() {
                   </CardContent>
                 </Card>
 
+                {watchPostType === "podcast" && (
+                  <Card className="border-purple-200 dark:border-purple-800/50 bg-purple-50/30 dark:bg-purple-950/10">
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <Headphones className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        Podcast Audio
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <FormField
+                        control={form.control}
+                        name="podcastUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Podcast URL</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="https://podcasts.apple.com/... or https://open.spotify.com/episode/..."
+                                {...field}
+                                data-testid="input-podcast-url"
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs">
+                              Link to the podcast episode on any platform (Spotify, Apple Podcasts, SoundCloud, etc.).
+                              An audio player will be displayed at the top of the blog post.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {watchPostType === "external" && (
+                  <Card className="border-blue-200 dark:border-blue-800/50 bg-blue-50/30 dark:bg-blue-950/10">
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <Link2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        External Article
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <FormField
+                        control={form.control}
+                        name="externalUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>External URL</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="https://example.com/article-title"
+                                {...field}
+                                data-testid="input-external-url"
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs">
+                              Clicking this post from the blog grid will open this URL in a new tab.
+                              You can still add an excerpt, cover image, and other details for the card.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-sm text-muted-foreground font-medium">Cover Image</CardTitle>
@@ -405,7 +543,12 @@ export default function CmsBlogEditorPage() {
                       name="excerpt"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Excerpt <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
+                          <FormLabel>
+                            Excerpt
+                            <span className="text-muted-foreground font-normal text-xs ml-1">
+                              {watchPostType === "external" ? "(shown on blog card)" : "(optional)"}
+                            </span>
+                          </FormLabel>
                           <FormControl>
                             <Textarea
                               placeholder="Brief summary for listing cards…"
@@ -423,12 +566,21 @@ export default function CmsBlogEditorPage() {
                       name="content"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Body Content</FormLabel>
+                          <FormLabel>
+                            Body Content
+                            {watchPostType === "external" && (
+                              <span className="text-muted-foreground font-normal text-xs ml-1">(optional)</span>
+                            )}
+                          </FormLabel>
                           <FormControl>
                             <BlogEditor
                               value={field.value ?? ""}
                               onChange={field.onChange}
-                              placeholder="Write your article here…"
+                              placeholder={watchPostType === "podcast"
+                                ? "Write show notes, a transcript, or additional context…"
+                                : watchPostType === "external"
+                                  ? "Optionally add your own commentary or notes…"
+                                  : "Write your article here…"}
                               data-testid="input-post-content"
                             />
                           </FormControl>

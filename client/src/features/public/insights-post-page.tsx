@@ -4,7 +4,9 @@ import { PageLayout } from "@/components/layout/page-layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, User, Headphones, Play, Share2 } from "lucide-react";
 import type { BlogPost, SeoSettings } from "@shared/schema";
 import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
@@ -13,6 +15,60 @@ import {
   buildBreadcrumbLd,
   buildArticleLd,
 } from "@/lib/structured-data";
+
+function PodcastPlayer({ podcastUrl }: { podcastUrl: string }) {
+  const { toast } = useToast();
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Podcast Episode", url: podcastUrl });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(podcastUrl);
+      toast({ title: "Link copied to clipboard" });
+    }
+  };
+
+  return (
+    <Card className="border-purple-200 dark:border-purple-800/40 bg-purple-50/40 dark:bg-purple-950/20 mb-8" data-testid="card-podcast-player">
+      <CardContent className="p-5">
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
+            <Headphones className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-sm mb-1">Listen to this episode</h3>
+            <p className="text-xs text-muted-foreground mb-3">Available on your favorite podcast platform</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                size="sm"
+                className="gap-1.5"
+                asChild
+                data-testid="button-play-podcast"
+              >
+                <a href={podcastUrl} target="_blank" rel="noopener noreferrer">
+                  <Play className="h-3.5 w-3.5" />
+                  Listen Now
+                </a>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={handleShare}
+                data-testid="button-share-podcast"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                Share
+              </Button>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 function PostSeo({ post, globalSeo }: { post: BlogPost; globalSeo?: SeoSettings }) {
   const titleSuffix = globalSeo?.titleSuffix ?? " | TCK Wellness";
@@ -110,7 +166,16 @@ export default function InsightsPostPage() {
           </div>
         )}
 
+        {post.postType === "podcast" && post.podcastUrl && (
+          <PodcastPlayer podcastUrl={post.podcastUrl} />
+        )}
+
         <div className="flex items-center gap-3 mb-4 flex-wrap">
+          {post.postType === "podcast" && (
+            <Badge variant="secondary" data-testid="badge-post-type">
+              <Headphones className="h-3 w-3 mr-1" />Podcast
+            </Badge>
+          )}
           {post.category && (
             <Badge variant="secondary" data-testid="badge-post-category">{post.category}</Badge>
           )}

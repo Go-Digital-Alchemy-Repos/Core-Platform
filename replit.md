@@ -32,7 +32,7 @@ TCK Wellness is a platform designed to connect Third Culture Kids (TCKs) with sp
     - **Notifications**: In-app notification system with user preferences.
     - **CMS**: Nondestructive, block-based page builder for public-facing pages, with revision history and SEO fields. Includes 16 block types and media management via Cloudflare R2.
     - **Reusable CMS Sections**: A library of saved block groups for efficient page building.
-    - **Blog Integration**: Blog management is integrated into the CMS admin, with enhanced editor and SEO fields.
+    - **Blog Integration**: Blog management is integrated into the CMS admin, with enhanced editor and SEO fields. Supports three post types: Article (traditional), Podcast (with podcast URL and player), and External Article (opens in new tab from blog grid). Schema fields: `postType` ("article"|"podcast"|"external"), `podcastUrl`, `externalUrl`.
     - **Hybrid Page Rendering**: Public routes can render either hardcoded React components or published CMS content, with fallback mechanisms.
     - **CMS SEO Foundation**: Global SEO settings stored in a dedicated `seo_settings` table. Admin UI for configuration with R2-backed image upload.
     - **Per-Page & Per-Post SEO Controls**: CMS pages and blog posts have full SEO editing with fields like `seoTitle`, `seoDescription`, `ogImageUrl`, `canonicalUrl`, and `noindex` toggle. Includes live `SeoPreview` card.

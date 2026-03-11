@@ -4,7 +4,7 @@ import { PageLayout } from "@/components/layout/page-layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, BookOpen } from "lucide-react";
+import { ArrowRight, BookOpen, Headphones, ExternalLink } from "lucide-react";
 import type { BlogPost } from "@shared/schema";
 
 export default function InsightsPage() {
@@ -34,67 +34,85 @@ export default function InsightsPage() {
         ) : posts && posts.length > 0 ? (
           <div className="space-y-10">
             {featuredPost && (
-              <Link href={`/insights/${featuredPost.slug}`}>
-                <Card className="overflow-hidden cursor-pointer hover-elevate" data-testid={`card-blog-featured-${featuredPost.id}`}>
-                  <div className="grid grid-cols-1 md:grid-cols-2">
-                    {featuredPost.coverImageUrl && (
-                      <div className="aspect-[16/9] md:aspect-auto md:min-h-[320px] overflow-hidden">
-                        <img
-                          src={featuredPost.coverImageUrl}
-                          alt={featuredPost.title}
-                          className="w-full h-full object-cover"
-                          data-testid={`img-blog-cover-${featuredPost.id}`}
-                        />
-                      </div>
-                    )}
-                    <CardContent className="p-6 sm:p-8 flex flex-col justify-center">
-                      <div className="flex items-center gap-2 mb-3 flex-wrap">
-                        <Badge variant="default" className="text-xs bg-accent text-accent-foreground" data-testid={`badge-featured-${featuredPost.id}`}>
-                          Featured
-                        </Badge>
-                        {featuredPost.category && (
-                          <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${featuredPost.id}`}>
-                            {featuredPost.category}
-                          </Badge>
-                        )}
-                      </div>
-                      <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-semibold mb-3" data-testid={`text-blog-title-${featuredPost.id}`}>
-                        {featuredPost.title}
-                      </h2>
-                      {featuredPost.excerpt && (
-                        <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-4 line-clamp-3">
-                          {featuredPost.excerpt}
-                        </p>
+              featuredPost.postType === "external" && featuredPost.externalUrl ? (
+                <a href={featuredPost.externalUrl} target="_blank" rel="noopener noreferrer">
+                  <Card className="overflow-hidden cursor-pointer hover-elevate" data-testid={`card-blog-featured-${featuredPost.id}`}>
+                    <div className="grid grid-cols-1 md:grid-cols-2">
+                      {featuredPost.coverImageUrl && (
+                        <div className="aspect-[16/9] md:aspect-auto md:min-h-[320px] overflow-hidden">
+                          <img src={featuredPost.coverImageUrl} alt={featuredPost.title} className="w-full h-full object-cover" data-testid={`img-blog-cover-${featuredPost.id}`} />
+                        </div>
                       )}
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">By {featuredPost.authorName}</span>
-                        <span className="text-sm text-accent font-medium flex items-center gap-1">
-                          Read More <ArrowRight className="h-4 w-4" />
-                        </span>
-                      </div>
-                    </CardContent>
-                  </div>
-                </Card>
-              </Link>
+                      <CardContent className="p-6 sm:p-8 flex flex-col justify-center">
+                        <div className="flex items-center gap-2 mb-3 flex-wrap">
+                          <Badge variant="default" className="text-xs bg-accent text-accent-foreground" data-testid={`badge-featured-${featuredPost.id}`}>Featured</Badge>
+                          <Badge variant="outline" className="text-xs" data-testid={`badge-type-${featuredPost.id}`}><ExternalLink className="h-3 w-3 mr-1" />External</Badge>
+                          {featuredPost.category && <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${featuredPost.id}`}>{featuredPost.category}</Badge>}
+                        </div>
+                        <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-semibold mb-3" data-testid={`text-blog-title-${featuredPost.id}`}>{featuredPost.title}</h2>
+                        {featuredPost.excerpt && <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-4 line-clamp-3">{featuredPost.excerpt}</p>}
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">By {featuredPost.authorName}</span>
+                          <span className="text-sm text-accent font-medium flex items-center gap-1">Visit Article <ExternalLink className="h-4 w-4" /></span>
+                        </div>
+                      </CardContent>
+                    </div>
+                  </Card>
+                </a>
+              ) : (
+                <Link href={`/insights/${featuredPost.slug}`}>
+                  <Card className="overflow-hidden cursor-pointer hover-elevate" data-testid={`card-blog-featured-${featuredPost.id}`}>
+                    <div className="grid grid-cols-1 md:grid-cols-2">
+                      {featuredPost.coverImageUrl && (
+                        <div className="aspect-[16/9] md:aspect-auto md:min-h-[320px] overflow-hidden">
+                          <img src={featuredPost.coverImageUrl} alt={featuredPost.title} className="w-full h-full object-cover" data-testid={`img-blog-cover-${featuredPost.id}`} />
+                        </div>
+                      )}
+                      <CardContent className="p-6 sm:p-8 flex flex-col justify-center">
+                        <div className="flex items-center gap-2 mb-3 flex-wrap">
+                          <Badge variant="default" className="text-xs bg-accent text-accent-foreground" data-testid={`badge-featured-${featuredPost.id}`}>Featured</Badge>
+                          {featuredPost.postType === "podcast" && <Badge variant="secondary" className="text-xs" data-testid={`badge-type-${featuredPost.id}`}><Headphones className="h-3 w-3 mr-1" />Podcast</Badge>}
+                          {featuredPost.category && <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${featuredPost.id}`}>{featuredPost.category}</Badge>}
+                        </div>
+                        <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-semibold mb-3" data-testid={`text-blog-title-${featuredPost.id}`}>{featuredPost.title}</h2>
+                        {featuredPost.excerpt && <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-4 line-clamp-3">{featuredPost.excerpt}</p>}
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">By {featuredPost.authorName}</span>
+                          <span className="text-sm text-accent font-medium flex items-center gap-1">
+                            {featuredPost.postType === "podcast" ? "Listen Now" : "Read More"} <ArrowRight className="h-4 w-4" />
+                          </span>
+                        </div>
+                      </CardContent>
+                    </div>
+                  </Card>
+                </Link>
+              )
             )}
 
             {gridPosts.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {gridPosts.map((post) => (
-                  <Link key={post.id} href={`/insights/${post.slug}`}>
+                {gridPosts.map((post) => {
+                  const isExternal = post.postType === "external" && post.externalUrl;
+                  const isPodcast = post.postType === "podcast";
+                  const cardInner = (
                     <Card className="h-full cursor-pointer hover-elevate" data-testid={`card-blog-${post.id}`}>
                       {post.coverImageUrl && (
                         <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
-                          <img
-                            src={post.coverImageUrl}
-                            alt={post.title}
-                            className="w-full h-full object-cover"
-                            data-testid={`img-blog-cover-${post.id}`}
-                          />
+                          <img src={post.coverImageUrl} alt={post.title} className="w-full h-full object-cover" data-testid={`img-blog-cover-${post.id}`} />
                         </div>
                       )}
                       <CardContent className={post.coverImageUrl ? "p-5" : "p-6"}>
                         <div className="flex items-center gap-2 mb-3 flex-wrap">
+                          {isPodcast && (
+                            <Badge variant="secondary" className="text-xs" data-testid={`badge-type-${post.id}`}>
+                              <Headphones className="h-3 w-3 mr-1" />Podcast
+                            </Badge>
+                          )}
+                          {isExternal && (
+                            <Badge variant="outline" className="text-xs" data-testid={`badge-type-${post.id}`}>
+                              <ExternalLink className="h-3 w-3 mr-1" />External
+                            </Badge>
+                          )}
                           {post.category && (
                             <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${post.id}`}>
                               {post.category}
@@ -112,13 +130,26 @@ export default function InsightsPage() {
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">By {post.authorName}</span>
                           <span className="text-xs text-accent font-medium flex items-center gap-1">
-                            Read More <ArrowRight className="h-3 w-3" />
+                            {isExternal ? <>Visit Article <ExternalLink className="h-3 w-3" /></> : isPodcast ? <>Listen Now <ArrowRight className="h-3 w-3" /></> : <>Read More <ArrowRight className="h-3 w-3" /></>}
                           </span>
                         </div>
                       </CardContent>
                     </Card>
-                  </Link>
-                ))}
+                  );
+
+                  if (isExternal) {
+                    return (
+                      <a key={post.id} href={post.externalUrl!} target="_blank" rel="noopener noreferrer">
+                        {cardInner}
+                      </a>
+                    );
+                  }
+                  return (
+                    <Link key={post.id} href={`/insights/${post.slug}`}>
+                      {cardInner}
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>
