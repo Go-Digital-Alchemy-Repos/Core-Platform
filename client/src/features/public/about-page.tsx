@@ -387,15 +387,6 @@ export default function AboutPage() {
                         {post.category && (
                           <Badge variant="secondary" className="text-xs">{post.category}</Badge>
                         )}
-                        {post.publishedAt && (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(post.publishedAt).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </span>
-                        )}
                       </div>
                       <h3 className="font-semibold text-base mb-1 line-clamp-2">{post.title}</h3>
                     </CardContent>

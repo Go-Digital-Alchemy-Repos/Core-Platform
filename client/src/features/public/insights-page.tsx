@@ -4,7 +4,7 @@ import { PageLayout } from "@/components/layout/page-layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ArrowRight, BookOpen } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import type { BlogPost } from "@shared/schema";
 
 export default function InsightsPage() {
@@ -57,16 +57,6 @@ export default function InsightsPage() {
                             {featuredPost.category}
                           </Badge>
                         )}
-                        {featuredPost.publishedAt && (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(featuredPost.publishedAt).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </span>
-                        )}
                       </div>
                       <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-semibold mb-3" data-testid={`text-blog-title-${featuredPost.id}`}>
                         {featuredPost.title}
@@ -109,16 +99,6 @@ export default function InsightsPage() {
                             <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${post.id}`}>
                               {post.category}
                             </Badge>
-                          )}
-                          {post.publishedAt && (
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(post.publishedAt).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}
-                            </span>
                           )}
                         </div>
                         <h2 className="font-semibold text-lg mb-2 line-clamp-2" data-testid={`text-blog-title-${post.id}`}>

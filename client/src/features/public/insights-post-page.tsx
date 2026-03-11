@@ -4,7 +4,7 @@ import { PageLayout } from "@/components/layout/page-layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, ArrowLeft, User } from "lucide-react";
+import { ArrowLeft, User } from "lucide-react";
 import type { BlogPost, SeoSettings } from "@shared/schema";
 import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
@@ -128,16 +128,6 @@ export default function InsightsPostPage() {
             <User className="h-3.5 w-3.5" />
             {post.authorName}
           </span>
-          {post.publishedAt && (
-            <span className="flex items-center gap-1.5" data-testid="text-post-date">
-              <Calendar className="h-3.5 w-3.5" />
-              {new Date(post.publishedAt).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </span>
-          )}
         </div>
 
         {post.excerpt && (
