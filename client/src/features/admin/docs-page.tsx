@@ -137,7 +137,7 @@ export default function DocsPage() {
 
   return (
     <AdminSidebar>
-      <div className="space-y-6">
+      <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-heading font-bold" data-testid="text-page-title">Documentation Library</h1>
           <Button onClick={openCreate} data-testid="button-create-doc">
