@@ -8,6 +8,7 @@ import { AdminSidebar } from "@/features/admin/admin-sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { BlogEditor } from "@/components/shared/blog-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -411,11 +412,10 @@ export default function CmsBlogEditorPage() {
                         <FormItem>
                           <FormLabel>Body Content</FormLabel>
                           <FormControl>
-                            <Textarea
-                              placeholder="Write your article here… Markdown-like formatting is preserved."
-                              rows={18}
-                              className="font-mono text-sm resize-y"
-                              {...field}
+                            <BlogEditor
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                              placeholder="Write your article here…"
                               data-testid="input-post-content"
                             />
                           </FormControl>
