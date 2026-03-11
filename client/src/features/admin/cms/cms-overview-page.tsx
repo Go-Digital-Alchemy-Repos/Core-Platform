@@ -55,8 +55,8 @@ export default function CmsOverviewPage() {
       description: "Write and publish articles at /insights with SEO controls",
       icon: BookOpen,
       href: "/admin/cms/blog",
-      color: "text-orange-500",
-      bg: "bg-orange-50 dark:bg-orange-950/30",
+      color: "text-purple-600",
+      bg: "bg-purple-50 dark:bg-purple-950/30",
       available: true,
     },
     {
@@ -146,8 +146,8 @@ export default function CmsOverviewPage() {
           <Card data-testid="card-stat-blog-total">
             <CardContent className="pt-5">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                  <BookOpen className="h-4.5 w-4.5 text-orange-500" />
+                <div className="h-9 w-9 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                  <BookOpen className="h-4.5 w-4.5 text-purple-600" />
                 </div>
                 <div>
                   {isLoading ? (
@@ -277,7 +277,7 @@ export default function CmsOverviewPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-orange-500" />
+                  <BookOpen className="h-4 w-4 text-purple-600" />
                   Recent Blog Posts
                 </CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => navigate("/admin/cms/blog")}>
