@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Link, useParams } from "wouter";
+import { Link, useParams, useLocation } from "wouter";
 import type { Event } from "@shared/schema/events";
 import type { EventRegistration } from "@shared/schema/event-registrations";
 import { PageLayout } from "@/components/layout/page-layout";
@@ -12,6 +12,7 @@ import { EventLocationMap } from "@/components/shared/event-location-map";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
+import { useEffect } from "react";
 import {
   CalendarDays,
   Clock,
@@ -151,8 +152,11 @@ function RegistrationSection({
     },
   });
 
-  if (!event.registrationEnabled || event.registrationType !== "free") return null;
+  if (!event.registrationEnabled) return null;
   if (isPast || isCanceled) return null;
+
+  const isFree = event.registrationType === "free";
+  const isPaid = event.registrationType === "paid";
 
   if (!user) {
     return (
@@ -163,7 +167,9 @@ function RegistrationSection({
             <h3 className="font-heading text-lg font-semibold">Register for This Event</h3>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            Log in to your account to register for this event.
+            {isPaid 
+              ? `This is a paid event (${formatCurrency(event.registrationFee || 0, event.registrationCurrency || "usd")}). Log in to register and pay.` 
+              : "Log in to your account to register for this event."}
           </p>
           <Link href="/login">
             <Button data-testid="button-login-to-register">
@@ -176,7 +182,7 @@ function RegistrationSection({
     );
   }
 
-  if (registration && registration.status === "confirmed" && registrationState !== "open") {
+  if (registration && registration.status === "confirmed" && (registration.paymentStatus === "paid" || registration.paymentStatus === "not_required") && registrationState !== "open") {
     return (
       <Card className="border-green-600/30" data-testid="card-registration-confirmed-closed">
         <CardContent className="p-5 sm:p-6">
@@ -241,7 +247,21 @@ function RegistrationSection({
     );
   }
 
-  if (registration && registration.status === "confirmed") {
+  const payMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/stripe/create-event-checkout-session", { eventId: event.id });
+      const { url } = await res.json();
+      return url;
+    },
+    onSuccess: (url) => {
+      window.location.href = url;
+    },
+    onError: (error: Error) => {
+      toast({ title: "Checkout failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  if (registration && registration.status === "confirmed" && (registration.paymentStatus === "paid" || registration.paymentStatus === "not_required")) {
     return (
       <Card className="border-green-600/30" data-testid="card-registration-confirmed">
         <CardContent className="p-5 sm:p-6">
@@ -252,18 +272,48 @@ function RegistrationSection({
           <p className="text-sm text-muted-foreground mb-4">
             You are confirmed for this event. We'll send event details and any updates to your email.
           </p>
+          {isFree && (
+            <Button
+              variant="outline"
+              onClick={() => cancelMutation.mutate()}
+              disabled={cancelMutation.isPending}
+              data-testid="button-cancel-registration"
+            >
+              {cancelMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <XCircle className="mr-2 h-4 w-4" />
+              )}
+              Cancel Registration
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isPaid && registration && registration.paymentStatus === "pending") {
+    return (
+      <Card className="border-yellow-600/30" data-testid="card-registration-pending-payment">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <ClockIcon className="h-5 w-5 text-yellow-600" />
+            <h3 className="font-heading text-lg font-semibold">Payment Pending</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            You've started the registration process but haven't completed the payment yet.
+          </p>
           <Button
-            variant="outline"
-            onClick={() => cancelMutation.mutate()}
-            disabled={cancelMutation.isPending}
-            data-testid="button-cancel-registration"
+            onClick={() => payMutation.mutate()}
+            disabled={payMutation.isPending}
+            data-testid="button-resume-checkout"
           >
-            {cancelMutation.isPending ? (
+            {payMutation.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              <XCircle className="mr-2 h-4 w-4" />
+              <Ticket className="mr-2 h-4 w-4" />
             )}
-            Cancel Registration
+            Resume Checkout
           </Button>
         </CardContent>
       </Card>
@@ -307,20 +357,37 @@ function RegistrationSection({
           <h3 className="font-heading text-lg font-semibold">Register for This Event</h3>
         </div>
         <p className="text-sm text-muted-foreground mb-4">
-          Secure your spot for this free event. You'll receive a confirmation email after registering.
+          {isPaid 
+            ? `Secure your spot for this event. Registration fee: ${formatCurrency(event.registrationFee || 0, event.registrationCurrency || "usd")}.`
+            : "Secure your spot for this free event. You'll receive a confirmation email after registering."}
         </p>
-        <Button
-          onClick={() => registerMutation.mutate()}
-          disabled={registerMutation.isPending}
-          data-testid="button-register-event"
-        >
-          {registerMutation.isPending ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Ticket className="mr-2 h-4 w-4" />
-          )}
-          Register for This Event
-        </Button>
+        {isPaid ? (
+          <Button
+            onClick={() => payMutation.mutate()}
+            disabled={payMutation.isPending}
+            data-testid="button-register-and-pay"
+          >
+            {payMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Ticket className="mr-2 h-4 w-4" />
+            )}
+            Register & Pay {formatCurrency(event.registrationFee || 0, event.registrationCurrency || "usd")}
+          </Button>
+        ) : (
+          <Button
+            onClick={() => registerMutation.mutate()}
+            disabled={registerMutation.isPending}
+            data-testid="button-register-event"
+          >
+            {registerMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Ticket className="mr-2 h-4 w-4" />
+            )}
+            Register for This Event
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
@@ -330,11 +397,34 @@ export default function EventDetailPage() {
   const params = useParams<{ id: string }>();
   const eventId = params.id;
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [location, setLocation] = useLocation();
 
   const { data: event, isLoading, error } = useQuery<Event>({
     queryKey: ["/api/events", eventId],
     enabled: !!eventId,
   });
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const checkout = searchParams.get("checkout");
+    if (checkout === "success") {
+      toast({
+        title: "Registration successful!",
+        description: "Your payment has been processed and your registration is confirmed.",
+      });
+      // Clear the query parameters without refreshing the page
+      setLocation(`/events/${eventId}`, { replace: true });
+      // Invalidate queries to fetch the new registration status
+      queryClient.invalidateQueries({ queryKey: ["/api/events", eventId, "registration"] });
+    } else if (checkout === "canceled") {
+      toast({
+        title: "Registration canceled",
+        description: "The payment process was canceled. You can try registering again when you're ready.",
+      });
+      setLocation(`/events/${eventId}`, { replace: true });
+    }
+  }, [eventId, setLocation, toast]);
 
   const isPast = event ? new Date(event.date) < new Date() : false;
   const joinUrl = event?.virtualJoinUrl || event?.zoomLink;

@@ -15,6 +15,7 @@ export const eventRegistrations = pgTable("event_registrations", {
   status: text("status").notNull().default("confirmed"),
   paymentStatus: text("payment_status").default("not_required"),
   paymentIntentId: text("payment_intent_id"),
+  stripeCheckoutSessionId: text("stripe_checkout_session_id"),
   amountPaid: integer("amount_paid"),
   notes: text("notes"),
   registeredAt: timestamp("registered_at").defaultNow(),

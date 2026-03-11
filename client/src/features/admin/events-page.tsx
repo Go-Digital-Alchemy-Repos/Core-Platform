@@ -153,8 +153,18 @@ function registrationStatusVariant(status: string): "default" | "secondary" | "d
   }
 }
 
+function paymentStatusVariant(status: string | null | undefined): "default" | "secondary" | "destructive" | "outline" {
+  switch (status) {
+    case "paid": return "default";
+    case "pending": return "secondary";
+    case "failed": return "destructive";
+    case "refunded": return "outline";
+    default: return "outline";
+  }
+}
+
 function downloadCsv(registrations: EventRegistration[], eventTitle: string) {
-  const headers = ["Name", "Email", "Phone", "Status", "Payment Status", "Registered At", "Canceled At", "Notes"];
+  const headers = ["Name", "Email", "Phone", "Status", "Payment Status", "Amount Paid", "Registered At", "Canceled At", "Notes"];
   const escCsv = (v: string) => {
     if (v.includes(",") || v.includes('"') || v.includes("\n")) {
       return `"${v.replace(/"/g, '""')}"`;
@@ -167,6 +177,7 @@ function downloadCsv(registrations: EventRegistration[], eventTitle: string) {
     escCsv(r.phone || ""),
     escCsv(r.status),
     escCsv(r.paymentStatus || ""),
+    escCsv(r.amountPaid ? (r.amountPaid / 100).toFixed(2) : "0.00"),
     escCsv(r.registeredAt ? new Date(r.registeredAt).toISOString() : ""),
     escCsv(r.canceledAt ? new Date(r.canceledAt).toISOString() : ""),
     escCsv(r.notes || ""),
@@ -1030,6 +1041,25 @@ function EventsContent() {
                             >
                               {reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}
                             </Badge>
+                            {registrantsEvent?.registrationType === "paid" && (
+                              <>
+                                <Badge
+                                  variant={paymentStatusVariant(reg.paymentStatus)}
+                                  data-testid={`badge-payment-status-${reg.id}`}
+                                >
+                                  {reg.paymentStatus ? reg.paymentStatus.replace("_", " ").charAt(0).toUpperCase() + reg.paymentStatus.replace("_", " ").slice(1) : "Not required"}
+                                </Badge>
+                                {reg.amountPaid ? (
+                                  <span className="text-xs font-medium" data-testid={`text-amount-paid-${reg.id}`}>
+                                    ${(reg.amountPaid / 100).toFixed(2)}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground" data-testid={`text-amount-paid-${reg.id}`}>
+                                    —
+                                  </span>
+                                )}
+                              </>
+                            )}
                             <span className="text-xs text-muted-foreground" data-testid={`text-registrant-date-${reg.id}`}>
                               {reg.registeredAt
                                 ? new Date(reg.registeredAt).toLocaleDateString("en-US", {

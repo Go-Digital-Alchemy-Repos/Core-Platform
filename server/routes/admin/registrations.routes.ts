@@ -34,13 +34,14 @@ router.get(
     }
     const registrations = await storage.eventRegistrations.getRegistrationsByEvent(eventId);
 
-    const headers = ["Name", "Email", "Phone", "Status", "Payment Status", "Registered At", "Canceled At", "Notes"];
+    const headers = ["Name", "Email", "Phone", "Status", "Payment Status", "Amount Paid", "Registered At", "Canceled At", "Notes"];
     const rows = registrations.map((r) => [
       escapeCsv(r.fullName),
       escapeCsv(r.email),
       escapeCsv(r.phone || ""),
       escapeCsv(r.status),
       escapeCsv(r.paymentStatus || ""),
+      escapeCsv(r.amountPaid ? (r.amountPaid / 100).toFixed(2) : "0.00"),
       escapeCsv(r.registeredAt ? new Date(r.registeredAt).toISOString() : ""),
       escapeCsv(r.canceledAt ? new Date(r.canceledAt).toISOString() : ""),
       escapeCsv(r.notes || ""),

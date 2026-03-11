@@ -175,6 +175,22 @@ const templates = [
     <p style="color:#374151;font-size:15px;line-height:1.6;">Your registration for <strong>{{eventTitle}}</strong> has been canceled.</p>
     <p style="color:#374151;font-size:15px;line-height:1.6;">If this was a mistake, you can re-register from the event page if spots are still available.</p>`),
   },
+  {
+    slug: "event-payment-confirmation",
+    name: "Event Payment Confirmation",
+    subject: "Payment Confirmed: {{eventTitle}}",
+    description: "Sent when a user successfully pays for an event.",
+    variables: ["firstName", "eventTitle", "eventDate", "eventLocation", "amountPaid"],
+    htmlBody: baseWrap("Payment Confirmed", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Your payment for <strong>{{eventTitle}}</strong> has been confirmed.</p>
+    <div style="background:#f3f4f6;border-radius:6px;padding:16px;margin:16px 0;">
+      <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Amount Paid:</strong> {{amountPaid}}</p>
+      <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Date:</strong> {{eventDate}}</p>
+      <p style="margin:0;color:#374151;font-size:14px;"><strong>Location:</strong> {{eventLocation}}</p>
+    </div>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">We look forward to seeing you there!</p>`),
+  },
 ];
 
 export async function seedEmailTemplates() {

@@ -32,6 +32,14 @@ export class EventRegistrationStorage {
       .orderBy(asc(eventRegistrations.registeredAt));
   }
 
+  async getRegistrationByCheckoutSession(sessionId: string): Promise<EventRegistration | undefined> {
+    const [reg] = await db
+      .select()
+      .from(eventRegistrations)
+      .where(eq(eventRegistrations.stripeCheckoutSessionId, sessionId));
+    return reg;
+  }
+
   async getConfirmedCount(eventId: string): Promise<number> {
     const [result] = await db
       .select({ count: count() })
@@ -72,6 +80,24 @@ export class EventRegistrationStorage {
     const [reg] = await db
       .update(eventRegistrations)
       .set(updates)
+      .where(eq(eventRegistrations.id, id))
+      .returning();
+    return reg;
+  }
+
+  async updatePaymentDetails(
+    id: string,
+    data: {
+      paymentStatus?: string;
+      paymentIntentId?: string;
+      amountPaid?: number;
+      status?: string;
+      stripeCheckoutSessionId?: string;
+    },
+  ): Promise<EventRegistration | undefined> {
+    const [reg] = await db
+      .update(eventRegistrations)
+      .set(data)
       .where(eq(eventRegistrations.id, id))
       .returning();
     return reg;

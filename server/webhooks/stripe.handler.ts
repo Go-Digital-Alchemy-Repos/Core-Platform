@@ -1,6 +1,7 @@
 import { getStripeClient } from "../config/stripe";
 import { storage } from "../storage/index";
 import { logger } from "../utils/logger";
+import { sendPaymentConfirmationEmail } from "../services/email.service";
 
 export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string) {
@@ -19,6 +20,63 @@ export class WebhookHandlers {
       logger.stripe.info(`Webhook received: ${event.type}`, { eventId: event.id });
 
       switch (event.type) {
+        case "checkout.session.completed": {
+          const session = event.data.object;
+          const registrationId = session.metadata?.registrationId;
+
+          if (!registrationId) {
+            logger.stripe.info("Checkout session completed without registrationId metadata", { sessionId: session.id });
+            break;
+          }
+
+          const registration = await storage.eventRegistrations.getRegistration(registrationId);
+          if (!registration) {
+            logger.stripe.warn("Registration not found for checkout session", { registrationId, sessionId: session.id });
+            break;
+          }
+
+          const eventDetails = await storage.events.getEvent(registration.eventId);
+
+          await storage.eventRegistrations.updatePaymentDetails(registrationId, {
+            paymentStatus: "paid",
+            paymentIntentId: session.payment_intent as string,
+            amountPaid: session.amount_total || 0,
+            status: "confirmed",
+          });
+
+          // Fire-and-forget email confirmation
+          if (eventDetails) {
+            const user = await storage.users.getUser(registration.userId);
+            sendPaymentConfirmationEmail(
+              registration.email,
+              user?.firstName || registration.fullName.split(" ")[0] || "there",
+              eventDetails.title,
+              eventDetails.date.toDateString(),
+              eventDetails.location,
+              session.amount_total || 0,
+              session.currency || "usd"
+            ).catch(err => logger.email.error("Failed to send payment confirmation email", err));
+          }
+
+          logger.stripe.info("Event registration payment confirmed", { registrationId, sessionId: session.id });
+          break;
+        }
+
+        case "checkout.session.expired": {
+          const session = event.data.object;
+          const registrationId = session.metadata?.registrationId;
+
+          if (!registrationId) break;
+
+          const registration = await storage.eventRegistrations.getRegistration(registrationId);
+          if (registration && registration.paymentStatus === "pending") {
+            // Cancel or delete orphan registration
+            await storage.eventRegistrations.deleteRegistration(registrationId);
+            logger.stripe.info("Deleted expired pending event registration", { registrationId, sessionId: session.id });
+          }
+          break;
+        }
+
         case "customer.subscription.created":
         case "customer.subscription.updated": {
           const subscription = event.data.object;

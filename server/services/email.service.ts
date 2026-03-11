@@ -361,6 +361,43 @@ export async function sendRegistrationConfirmationEmail(
   return sendEmail(email, subject, html);
 }
 
+export async function sendPaymentConfirmationEmail(
+  to: string,
+  firstName: string | null,
+  eventTitle: string,
+  eventDate: string,
+  eventLocation: string | null,
+  amountPaid: number,
+  currency: string
+): Promise<boolean> {
+  const formattedAmount = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+  }).format(amountPaid / 100);
+
+  const vars = {
+    firstName: firstName || "there",
+    eventTitle,
+    eventDate,
+    eventLocation: eventLocation || "See event details",
+    amountPaid: formattedAmount,
+  };
+
+  const { subject, html, isActive } = await getTemplateHtml(
+    "event-payment-confirmation",
+    vars,
+    `Payment Confirmed: ${eventTitle}`,
+    `<p>Hi ${vars.firstName}, your payment of ${formattedAmount} for ${eventTitle} has been confirmed.</p>
+     <p>Event Details:</p>
+     <ul>
+       <li>Date: ${eventDate}</li>
+       <li>Location: ${vars.eventLocation}</li>
+     </ul>`
+  );
+  if (!isActive) return false;
+  return sendEmail(to, subject, html);
+}
+
 export async function sendWaitlistEmail(
   email: string,
   firstName: string | null,

@@ -311,10 +311,89 @@ When a confirmed registration is canceled:
   - "Registration Opens Soon" with date (future window)
   - "You're Registered" (no cancel, if window closed but user confirmed)
 
-### Follow-up: Paid Registration Phase
-- Schema already supports: `paymentStatus`, `paymentIntentId`, `amountPaid`
-- Route already rejects `registrationType !== 'free'` with descriptive message
-- Next phase: add Stripe checkout session creation, payment webhook handling, paid registration flow
+### Paid Event Registration
+- Implemented in Phase 4 (see below)
+- Free registration route (`POST /api/events/:id/register`) still rejects `registrationType !== 'free'` as a safety net
+
+## Event Registration System (Phase 4 — Paid Events)
+
+### Overview
+Phase 4 extends the Phase 3 free-registration system with Stripe-backed paid event registration. Free and paid registration flows coexist cleanly using separate paths.
+
+### Paid Registration Flow (End-to-End)
+1. User opens event detail page for a `registrationType='paid'` event
+2. User clicks "Register & Pay" → calls `POST /api/stripe/create-event-checkout-session`
+3. Server validates event, access, registration window, capacity, duplicate prevention
+4. Server creates a **pending** registration: `status='confirmed'`, `paymentStatus='pending'`
+5. Server creates a Stripe Checkout Session (`mode: 'payment'`) with `metadata: { registrationId, eventId }`
+6. Server stores `stripeCheckoutSessionId` on the registration record; returns `{ url }`
+7. Frontend redirects user to Stripe Checkout
+8. Stripe fires `checkout.session.completed` webhook on success
+9. Webhook updates registration: `paymentStatus='paid'`, `amountPaid`, `paymentIntentId`; sends payment confirmation email
+10. User lands on `/events/:id?checkout=success` → toast + registration shown as confirmed
+11. If user abandons checkout → `checkout.session.expired` webhook → pending registration deleted
+
+### Free vs Paid Registration Routing
+- **Free events** (`registrationType='free'`): `POST /api/events/:id/register` → immediate confirmed registration (unchanged from Phase 3)
+- **Paid events** (`registrationType='paid'`): `POST /api/stripe/create-event-checkout-session` → Stripe Checkout → webhook confirmation
+
+### New Schema Field
+- `stripeCheckoutSessionId: text` — added to `event_registrations` table; links the registration to its Stripe Checkout Session for webhook reconciliation
+
+### Stripe Integration Notes
+- **New endpoint**: `POST /api/stripe/create-event-checkout-session` (in `server/routes/stripe.routes.ts`)
+- Uses `mode: 'payment'` (not `mode: 'subscription'` — no customer object required, uses `customer_email` pre-fill)
+- `line_items` use `price_data` (inline pricing) since event fees are dynamic, not pre-created Stripe products
+- `metadata` contains `registrationId` and `eventId` for webhook reconciliation
+- Reuses `getUncachableStripeClient()` consistent with existing billing patterns
+- Success URL: `${host}/events/${eventId}?checkout=success&session_id={CHECKOUT_SESSION_ID}`
+- Cancel URL: `${host}/events/${eventId}?checkout=canceled`
+- **No separate Stripe Customer created** for event registrations (unlike therapist subscriptions)
+
+### New Webhook Events Handled (`server/webhooks/stripe.handler.ts`)
+| Event | Action |
+|---|---|
+| `checkout.session.completed` | Sets `paymentStatus='paid'`, `amountPaid`, `paymentIntentId`; sends payment confirmation email |
+| `checkout.session.expired` | Deletes pending registration (clean up orphan) |
+
+### Payment Status Values (`event_registrations.payment_status`)
+| Value | Meaning |
+|---|---|
+| `not_required` | Free event registration (default) |
+| `pending` | Checkout session created, payment not yet confirmed |
+| `paid` | Stripe confirmed payment received |
+| `refunded` | Reserved for future admin-managed refund flow |
+
+### Duplicate Prevention
+- If existing registration has `paymentStatus='pending'`, server retrieves the Stripe Checkout Session and returns its URL (user resumes same session)
+- If registration is confirmed/waitlisted: 409 returned
+- If registration is canceled: new checkout flow created
+
+### Edge Cases Handled
+- **User abandons checkout**: `checkout.session.expired` cleans up pending registration
+- **Capacity during checkout**: Webhook confirms if capacity still available (best-effort; race condition acceptable in first phase)
+- **Registration window closes during checkout**: Webhook still honors payment (user already committed)
+- **Duplicate checkout attempts**: Server returns existing session URL rather than creating a second session
+
+### Admin Payment Visibility
+- Registrants sheet shows Payment Status badge (color-coded: yellow=pending, green=paid, red=failed, blue=refunded, gray=not_required)
+- Amount Paid column shows formatted dollar amount from `amountPaid` (stored as cents)
+- CSV export includes Payment Status and Amount Paid columns
+- Admin can see full payment lifecycle without accessing Stripe dashboard
+
+### Email: Payment Confirmation
+- Template slug: `event-payment-confirmation`
+- Subject: "Payment Confirmed: {{eventTitle}}"
+- Variables: `firstName`, `eventTitle`, `eventDate`, `eventLocation`, `amountPaid` (formatted)
+- Send function: `sendPaymentConfirmationEmail()` in `server/services/email.service.ts`
+- Fired from webhook handler on `checkout.session.completed`
+
+### Future Refund/Cancellation Groundwork
+- `payment_status = 'refunded'` value already defined in schema
+- `paymentIntentId` stored on registration for Stripe refund API calls
+- `amountPaid` available for partial vs full refund logic
+- No admin refund UI built yet — next phase should: call `stripe.refunds.create({ payment_intent: reg.paymentIntentId })`, update `paymentStatus='refunded'`
+- Recommend adding `refundedAt` timestamp and `refundedBy` (admin userId) when building the refund portal
 
 ## Dynamic Home Page
 - Featured Therapists section shows 6 therapists from the directory API
