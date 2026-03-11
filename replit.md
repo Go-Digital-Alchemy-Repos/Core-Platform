@@ -35,6 +35,7 @@ TCK Wellness is a BetterHelp-style platform connecting Third Culture Kids (TCKs)
     - **Blog Integration**: Blog management is integrated into the CMS admin, with enhanced editor and SEO fields.
     - **Hybrid Page Rendering**: Public routes can render either hardcoded React components or published CMS content, with fallback mechanisms.
     - **CMS SEO Foundation**: Global SEO settings (siteName, titleSuffix, defaultMetaDescription, siteUrl, defaultOgImageUrl, organizationName, organizationLogoUrl, social profiles, defaultRobotsNoindex) stored in a dedicated `seo_settings` table. Admin UI at `/admin/cms/seo` with R2-backed image upload. Public endpoint at `/api/seo/global`. Architecture & Roadmap tab documents per-page SEO (available), per-post SEO (available), and planned structured data, sitemap, redirects, and audit features.
+    - **Per-Page & Per-Post SEO Controls**: CMS pages and blog posts each have full SEO editing in their respective editor SEO tabs. Fields: seoTitle, seoDescription, seoKeywords (pages only), ogImageUrl (R2-backed CmsImageUpload), canonicalUrl (pages), noindex boolean toggle. Both editors show a live SeoPreview card (Google SERP snippet + social OG preview). Public rendering falls back to global SEO settings when page/post fields are empty. `noindex` writes robots meta tag; `canonicalUrl` writes canonical link tag.
 
 ### System Design Choices
 - **Modular File Structure**: Backend organized by concern, frontend by feature.

@@ -125,11 +125,20 @@ export default function InsightsPostPage() {
           </p>
         )}
 
-        <div
-          className="prose prose-neutral dark:prose-invert max-w-none"
-          data-testid="div-post-content"
-          dangerouslySetInnerHTML={{ __html: post.content }}
-        />
+        {post.content && post.content.trim().startsWith("<") ? (
+          <div
+            className="prose prose-neutral dark:prose-invert max-w-none"
+            data-testid="div-post-content"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+        ) : (
+          <div
+            className="prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap"
+            data-testid="div-post-content"
+          >
+            {post.content}
+          </div>
+        )}
       </article>
     </PageLayout>
   );
