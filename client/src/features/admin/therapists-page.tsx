@@ -42,8 +42,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Search, Loader2, Trash2, CheckCircle, XCircle, Pencil, Camera, Calendar, LogIn, FileEdit, Clock, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Search, Loader2, Trash2, CheckCircle, ThumbsDown, Pencil, Camera, Calendar, LogIn, FileEdit, Clock, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TherapistWithUser {
   id: string;
@@ -405,49 +406,69 @@ function TherapistsContent() {
                   {t.practiceMode === "in_person" ? "In-Person" : t.practiceMode === "virtual" ? "Virtual" : t.practiceMode === "both" ? "Both" : "\u2014"}
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1 flex-wrap" onClick={(e) => e.stopPropagation()}>
-                    {!t.isApproved && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setApproveTarget(t)}
-                        data-testid={`button-approve-${t.id}`}
-                      >
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Approve
-                      </Button>
-                    )}
-                    {(t.isApproved || !t.rejectionReason) && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setRejectTarget(t)}
-                        data-testid={`button-reject-${t.id}`}
-                      >
-                        <XCircle className="w-4 h-4 mr-1" />
-                        Reject
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setSelectedTherapist(t);
-                        setEditSheetOpen(true);
-                      }}
-                      data-testid={`button-edit-${t.id}`}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setDeleteTarget(t)}
-                      data-testid={`button-delete-${t.id}`}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
+                  <TooltipProvider delayDuration={300}>
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      {!t.isApproved && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setApproveTarget(t)}
+                              data-testid={`button-approve-${t.id}`}
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Approve</TooltipContent>
+                        </Tooltip>
+                      )}
+                      {(t.isApproved || !t.rejectionReason) && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setRejectTarget(t)}
+                              data-testid={`button-reject-${t.id}`}
+                            >
+                              <ThumbsDown className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Reject</TooltipContent>
+                        </Tooltip>
+                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedTherapist(t);
+                              setEditSheetOpen(true);
+                            }}
+                            data-testid={`button-edit-${t.id}`}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Edit</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setDeleteTarget(t)}
+                            data-testid={`button-delete-${t.id}`}
+                          >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Remove</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TooltipProvider>
                 </TableCell>
               </TableRow>
             );
