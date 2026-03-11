@@ -15,6 +15,7 @@ import ContactPage from "@/features/public/contact-page";
 import EventsPage from "@/features/public/events-page";
 const EventDetailPage = lazy(() => import("@/features/public/event-detail-page"));
 import JoinNetworkPage from "@/features/public/join-network-page";
+import { CmsHybridPage } from "@/features/public/cms-hybrid-page";
 
 import LoginPage from "@/features/auth/login-page";
 import RegisterPage from "@/features/auth/register-page";
@@ -60,13 +61,13 @@ function Router() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Switch>
-        <Route path="/" component={HomePage} />
-        <Route path="/about" component={AboutPage} />
-        <Route path="/contact" component={ContactPage} />
+        <Route path="/" component={() => <CmsHybridPage slug="home" fallback={<HomePage />} />} />
+        <Route path="/about" component={() => <CmsHybridPage slug="about" fallback={<AboutPage />} />} />
+        <Route path="/contact" component={() => <CmsHybridPage slug="contact" fallback={<ContactPage />} />} />
+        <Route path="/join" component={() => <CmsHybridPage slug="join" fallback={<JoinNetworkPage />} />} />
         <Route path="/events" component={EventsPage} />
         <Route path="/events/:id" component={EventDetailPage} />
         <Route path="/recordings" component={RecordingArchivesPage} />
-        <Route path="/join" component={JoinNetworkPage} />
         <Route path="/insights" component={InsightsPage} />
         <Route path="/insights/:slug" component={InsightsPostPage} />
         <Route path="/directory" component={DirectoryPage} />

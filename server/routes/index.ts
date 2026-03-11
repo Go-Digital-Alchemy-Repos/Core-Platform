@@ -14,6 +14,7 @@ import notificationsRoutes from "./notifications.routes";
 import specializationsRoutes from "./specializations.routes";
 import blogRoutes from "./blog.routes";
 import registrationRoutes from "./registration.routes";
+import cmsPublicRoutes from "./cms-public.routes";
 import { storage } from "../storage/index";
 
 export function registerApiRoutes(app: Express) {
@@ -32,6 +33,7 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/specializations", specializationsRoutes);
   app.use("/api/blog", blogRoutes);
   app.use("/api/events", registrationRoutes);
+  app.use("/api/cms", cmsPublicRoutes);
 
   app.get("/api/membership-tiers", async (_req, res) => {
     const tiers = await storage.tiers.getActiveTiers();
