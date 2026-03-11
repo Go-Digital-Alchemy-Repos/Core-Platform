@@ -39,6 +39,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,7 +56,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, CalendarDays, MapPin, Users, Download, MoreHorizontal, CheckCircle, Clock, XCircle, Copy, BarChart3, Bell, Square, CheckSquare } from "lucide-react";
+import { Plus, Pencil, Trash2, CalendarDays, MapPin, Users, Download, MoreHorizontal, CheckCircle, Clock, XCircle, Copy, BarChart3, Bell, Square, CheckSquare, Video, Repeat, DollarSign, Globe } from "lucide-react";
 import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { StructuredDataStatus } from "@/components/shared/structured-data-status";
@@ -95,6 +96,12 @@ const eventFormSchema = z.object({
   speakerName: z.string().optional(),
   speakerBio: z.string().optional(),
   speakerImageUrl: z.string().optional(),
+  isRecurring: z.boolean().optional(),
+  recurrencePattern: z.string().optional(),
+  recurrenceInterval: z.coerce.number().optional(),
+  recurrenceDaysOfWeek: z.string().optional(),
+  recurrenceEndDate: z.string().optional(),
+  recurrenceCount: z.coerce.number().optional(),
 });
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
@@ -133,10 +140,17 @@ const defaultFormValues: EventFormValues = {
   speakerName: "",
   speakerBio: "",
   speakerImageUrl: "",
+  isRecurring: false,
+  recurrencePattern: "",
+  recurrenceInterval: 1,
+  recurrenceDaysOfWeek: "",
+  recurrenceEndDate: "",
+  recurrenceCount: undefined,
 };
 
 function statusVariant(status: string | null | undefined): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
+    case "published": return "default";
     case "draft": return "outline";
     case "canceled": return "destructive";
     case "completed": return "secondary";
@@ -261,12 +275,22 @@ function CapacityBadge({ eventId, capacity }: { eventId: string; capacity: numbe
   );
 }
 
+const DAYS_OF_WEEK = [
+  { value: "MO", label: "Mon" },
+  { value: "TU", label: "Tue" },
+  { value: "WE", label: "Wed" },
+  { value: "TH", label: "Thu" },
+  { value: "FR", label: "Fri" },
+  { value: "SA", label: "Sat" },
+  { value: "SU", label: "Sun" },
+];
+
 function EventsContent() {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  const [registrantsEvent, setRegistrantsEvent] = useState<Event | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Event | null>(null);
+  const [activeTab, setActiveTab] = useState("details");
 
   const { data: events, isLoading } = useQuery<Event[]>({
     queryKey: ["/api/admin/events"],
@@ -286,10 +310,12 @@ function EventsContent() {
   const watchEventRecordingUrl = form.watch("recordingUrl");
   const watchShowInArchives = form.watch("showInArchives");
   const watchRecordingAccess = form.watch("recordingAccess");
+  const watchIsRecurring = form.watch("isRecurring");
+  const watchRecurrencePattern = form.watch("recurrencePattern");
 
   const { data: registrations, isLoading: registrantsLoading } = useQuery<EventRegistration[]>({
-    queryKey: ["/api/admin/events", registrantsEvent?.id, "registrations"],
-    enabled: !!registrantsEvent,
+    queryKey: ["/api/admin/events", editingEvent?.id, "registrations"],
+    enabled: !!editingEvent,
   });
 
   const duplicateMutation = useMutation({
@@ -324,7 +350,7 @@ function EventsContent() {
       await apiRequest("PUT", `/api/admin/registrations/${id}/checkin`, { attended });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/events", registrantsEvent?.id, "registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/events", editingEvent?.id, "registrations"] });
       toast({ title: "Attendance updated" });
     },
     onError: (err: Error) => {
@@ -337,7 +363,7 @@ function EventsContent() {
       await apiRequest("PUT", `/api/admin/registrations/${id}/status`, { status });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/events", registrantsEvent?.id, "registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/events", editingEvent?.id, "registrations"] });
       toast({ title: "Registration status updated" });
     },
     onError: (err: Error) => {
@@ -350,7 +376,7 @@ function EventsContent() {
       await apiRequest("DELETE", `/api/admin/registrations/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/events", registrantsEvent?.id, "registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/events", editingEvent?.id, "registrations"] });
       toast({ title: "Registration removed" });
     },
     onError: (err: Error) => {
@@ -360,7 +386,6 @@ function EventsContent() {
 
   const confirmedCount = registrations?.filter((r) => r.status === "confirmed").length ?? 0;
   const waitlistedCount = registrations?.filter((r) => r.status === "waitlisted").length ?? 0;
-  const canceledCount = registrations?.filter((r) => r.status === "canceled").length ?? 0;
   const attendedCount = registrations?.filter((r) => r.attended).length ?? 0;
 
   const createMutation = useMutation({
@@ -415,12 +440,16 @@ function EventsContent() {
       registrationClosesAt: data.registrationClosesAt ? new Date(data.registrationClosesAt).toISOString() : null,
       registrationFee: data.registrationFee || null,
       capacity: data.capacity || null,
+      recurrenceEndDate: data.recurrenceEndDate ? new Date(data.recurrenceEndDate).toISOString() : null,
+      recurrenceCount: data.recurrenceCount || null,
+      recurrenceInterval: data.recurrenceInterval || null,
     };
   }
 
   function openCreate() {
     setEditingEvent(null);
     form.reset(defaultFormValues);
+    setActiveTab("details");
     setDialogOpen(true);
   }
 
@@ -460,7 +489,14 @@ function EventsContent() {
       speakerName: event.speakerName ?? "",
       speakerBio: event.speakerBio ?? "",
       speakerImageUrl: event.speakerImageUrl ?? "",
+      isRecurring: event.isRecurring ?? false,
+      recurrencePattern: event.recurrencePattern ?? "",
+      recurrenceInterval: event.recurrenceInterval ?? 1,
+      recurrenceDaysOfWeek: event.recurrenceDaysOfWeek ?? "",
+      recurrenceEndDate: event.recurrenceEndDate ? new Date(event.recurrenceEndDate).toISOString().slice(0, 16) : "",
+      recurrenceCount: event.recurrenceCount ?? undefined,
     });
+    setActiveTab("details");
     setDialogOpen(true);
   }
 
@@ -570,14 +606,6 @@ function EventsContent() {
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => setRegistrantsEvent(event)}
-                  data-testid={`button-registrants-${event.id}`}
-                >
-                  <Users className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
                   onClick={() => openEdit(event)}
                   data-testid={`button-edit-event-${event.id}`}
                 >
@@ -596,7 +624,7 @@ function EventsContent() {
             </CardHeader>
             <CardContent>
               {event.description && (
-                <p className="text-sm text-muted-foreground mb-2" data-testid={`text-event-desc-${event.id}`}>
+                <p className="text-sm text-muted-foreground mb-2 line-clamp-2" data-testid={`text-event-desc-${event.id}`}>
                   {event.description}
                 </p>
               )}
@@ -615,6 +643,18 @@ function EventsContent() {
                 {event.memberOnly && (
                   <Badge variant="secondary" data-testid={`badge-member-only-${event.id}`}>
                     Members Only
+                  </Badge>
+                )}
+                {event.isRecurring && (
+                  <Badge variant="secondary" data-testid={`badge-recurring-${event.id}`}>
+                    <Repeat className="h-3 w-3 mr-1" />
+                    Recurring
+                  </Badge>
+                )}
+                {event.showInArchives && (
+                  <Badge variant="secondary" data-testid={`badge-archived-${event.id}`}>
+                    <Video className="h-3 w-3 mr-1" />
+                    In Archives
                   </Badge>
                 )}
               </div>
@@ -652,7 +692,7 @@ function EventsContent() {
       </AlertDialog>
 
       <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
-        <SheetContent side="right" size="md">
+        <SheetContent side="right" size="full">
           <SheetHeader>
             <SheetTitle data-testid="text-event-dialog-title">
               {editingEvent ? "Edit Event" : "Create Event"}
@@ -663,298 +703,45 @@ function EventsContent() {
           </SheetHeader>
           <SheetBody>
             <Form {...form}>
-              <form id="event-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form id="event-form" onSubmit={form.handleSubmit(onSubmit)}>
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="w-full grid grid-cols-4 mb-6" data-testid="tabs-event-editor">
+                    <TabsTrigger value="details" className="text-xs sm:text-sm" data-testid="tab-details">
+                      <CalendarDays className="h-3.5 w-3.5 mr-1.5 hidden sm:inline-block" />
+                      Details
+                    </TabsTrigger>
+                    <TabsTrigger value="registrations" className="text-xs sm:text-sm" data-testid="tab-registrations">
+                      <Users className="h-3.5 w-3.5 mr-1.5 hidden sm:inline-block" />
+                      Registrants
+                    </TabsTrigger>
+                    <TabsTrigger value="video-archive" className="text-xs sm:text-sm" data-testid="tab-video-archive">
+                      <Video className="h-3.5 w-3.5 mr-1.5 hidden sm:inline-block" />
+                      Video Archive
+                    </TabsTrigger>
+                    <TabsTrigger value="recurring" className="text-xs sm:text-sm" data-testid="tab-recurring">
+                      <Repeat className="h-3.5 w-3.5 mr-1.5 hidden sm:inline-block" />
+                      Recurring
+                    </TabsTrigger>
+                  </TabsList>
 
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Basic Info</h3>
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Title</FormLabel>
-                          <FormControl>
-                            <Input {...field} data-testid="input-event-title" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Description</FormLabel>
-                          <FormControl>
-                            <Textarea {...field} data-testid="input-event-description" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="imageUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Event Image</FormLabel>
-                          <CmsImageUpload
-                            value={field.value ?? ""}
-                            onChange={field.onChange}
-                            data-testid="input-event-image-url"
-                          />
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Status</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || "published"}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-event-status">
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="draft">Draft</SelectItem>
-                              <SelectItem value="published">Published</SelectItem>
-                              <SelectItem value="canceled">Canceled</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Schedule</h3>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Start Date</FormLabel>
-                            <FormControl>
-                              <Input type="datetime-local" {...field} data-testid="input-event-date" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="endDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>End Date</FormLabel>
-                            <FormControl>
-                              <Input type="datetime-local" {...field} data-testid="input-event-end-date" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="timezone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Timezone</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="e.g. America/New_York" data-testid="input-event-timezone" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Location & Attendance</h3>
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="isVirtual"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center gap-2">
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                              data-testid="switch-event-virtual"
-                            />
-                          </FormControl>
-                          <FormLabel className="!mt-0">Virtual Event</FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location</FormLabel>
-                          <FormControl>
-                            <Input {...field} data-testid="input-event-location" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="locationName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="e.g. Conference Center" data-testid="input-event-location-name" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="locationAddress"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location Address</FormLabel>
-                          <FormControl>
-                            <Input {...field} data-testid="input-event-location-address" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="latitude"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Latitude</FormLabel>
-                            <FormControl>
-                              <Input {...field} data-testid="input-event-latitude" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="longitude"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Longitude</FormLabel>
-                            <FormControl>
-                              <Input {...field} data-testid="input-event-longitude" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="virtualJoinUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Virtual Join URL</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="https://..." data-testid="input-event-virtual-join-url" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="virtualDialInInfo"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Dial-In Info</FormLabel>
-                          <FormControl>
-                            <Textarea {...field} placeholder="Phone number, access code, etc." data-testid="input-event-dial-in-info" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Registration</h3>
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="registrationEnabled"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center gap-2">
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                              data-testid="switch-event-registration"
-                            />
-                          </FormControl>
-                          <FormLabel className="!mt-0">Enable Registration</FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    {watchRegistrationEnabled && (
-                      <>
-                        <FormField
-                          control={form.control}
-                          name="registrationType"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Registration Type</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value || "free"}>
-                                <FormControl>
-                                  <SelectTrigger data-testid="select-event-registration-type">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="free">Free</SelectItem>
-                                  <SelectItem value="paid">Paid</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        {watchRegistrationType === "paid" && (
-                          <div className="grid grid-cols-2 gap-4">
+                  {/* ===== DETAILS TAB ===== */}
+                  <TabsContent value="details" className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Left column */}
+                      <div className="space-y-6">
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base">Basic Info</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
                             <FormField
                               control={form.control}
-                              name="registrationFee"
+                              name="title"
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>Fee (cents)</FormLabel>
+                                  <FormLabel>Title</FormLabel>
                                   <FormControl>
-                                    <Input type="number" {...field} value={field.value ?? ""} data-testid="input-event-registration-fee" />
+                                    <Input {...field} data-testid="input-event-title" />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -962,171 +749,733 @@ function EventsContent() {
                             />
                             <FormField
                               control={form.control}
-                              name="registrationCurrency"
+                              name="description"
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>Currency</FormLabel>
+                                  <FormLabel>Description</FormLabel>
                                   <FormControl>
-                                    <Input {...field} placeholder="usd" data-testid="input-event-registration-currency" />
+                                    <Textarea {...field} rows={4} data-testid="input-event-description" />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
                               )}
                             />
-                          </div>
-                        )}
-                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="imageUrl"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Event Image</FormLabel>
+                                  <CmsImageUpload
+                                    value={field.value ?? ""}
+                                    onChange={field.onChange}
+                                    data-testid="input-event-image-url"
+                                  />
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField
+                                control={form.control}
+                                name="status"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Status</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || "published"}>
+                                      <FormControl>
+                                        <SelectTrigger data-testid="select-event-status">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="draft">Draft</SelectItem>
+                                        <SelectItem value="published">Published</SelectItem>
+                                        <SelectItem value="canceled">Canceled</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="visibility"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Visibility</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || "public"}>
+                                      <FormControl>
+                                        <SelectTrigger data-testid="select-event-visibility">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="public">Public</SelectItem>
+                                        <SelectItem value="members_only">Members Only</SelectItem>
+                                        <SelectItem value="counselors_only">Counselors Only</SelectItem>
+                                        <SelectItem value="admins_only">Admins Only</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            <FormField
+                              control={form.control}
+                              name="memberOnly"
+                              render={({ field }) => (
+                                <FormItem className="flex items-center gap-2">
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                      data-testid="switch-event-member-only"
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="!mt-0">Members Only (legacy)</FormLabel>
+                                </FormItem>
+                              )}
+                            />
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base">Schedule</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField
+                                control={form.control}
+                                name="date"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Start Date</FormLabel>
+                                    <FormControl>
+                                      <Input type="datetime-local" {...field} data-testid="input-event-date" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="endDate"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>End Date</FormLabel>
+                                    <FormControl>
+                                      <Input type="datetime-local" {...field} data-testid="input-event-end-date" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            <FormField
+                              control={form.control}
+                              name="timezone"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Timezone</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="e.g. America/New_York" data-testid="input-event-timezone" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base">Structured Data (JSON-LD)</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <StructuredDataStatus
+                              contentType="event"
+                              fields={{
+                                hasTitle: !!watchEventTitle,
+                                hasDescription: !!watchEventDescription,
+                                hasDate: !!watchEventDate,
+                                hasLocation: !!watchEventLocation,
+                                hasRecordingUrl: !!watchEventRecordingUrl,
+                              }}
+                              data-testid="structured-data-status-event"
+                            />
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {/* Right column */}
+                      <div className="space-y-6">
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base">Location & Attendance</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <FormField
+                              control={form.control}
+                              name="isVirtual"
+                              render={({ field }) => (
+                                <FormItem className="flex items-center gap-2">
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                      data-testid="switch-event-virtual"
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="!mt-0">Virtual Event</FormLabel>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="location"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Location</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} data-testid="input-event-location" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="locationName"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Location Name</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="e.g. Conference Center" data-testid="input-event-location-name" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="locationAddress"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Location Address</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} data-testid="input-event-location-address" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField
+                                control={form.control}
+                                name="latitude"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Latitude</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} data-testid="input-event-latitude" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="longitude"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Longitude</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} data-testid="input-event-longitude" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            <FormField
+                              control={form.control}
+                              name="zoomLink"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Zoom / Meeting Link</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="https://zoom.us/j/..." data-testid="input-event-zoom-link" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="virtualJoinUrl"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Virtual Join URL</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="https://..." data-testid="input-event-virtual-join-url" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="virtualDialInInfo"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Dial-In Info</FormLabel>
+                                  <FormControl>
+                                    <Textarea {...field} placeholder="Phone number, access code, etc." data-testid="input-event-dial-in-info" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base">Speaker / Host</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <FormField
+                              control={form.control}
+                              name="speakerName"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Speaker Name</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} data-testid="input-event-speaker-name" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="speakerBio"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Speaker Bio</FormLabel>
+                                  <FormControl>
+                                    <Textarea {...field} data-testid="input-event-speaker-bio" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="speakerImageUrl"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Speaker Image</FormLabel>
+                                  <CmsImageUpload
+                                    value={field.value ?? ""}
+                                    onChange={field.onChange}
+                                    data-testid="input-event-speaker-image-url"
+                                  />
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* ===== REGISTRANTS TAB ===== */}
+                  <TabsContent value="registrations" className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base">Registration Settings</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
                           <FormField
                             control={form.control}
-                            name="registrationOpensAt"
+                            name="registrationEnabled"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Opens At</FormLabel>
+                              <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-sm font-medium">Enable Registration</FormLabel>
+                                  <p className="text-xs text-muted-foreground">Allow users to register for this event</p>
+                                </div>
                                 <FormControl>
-                                  <Input type="datetime-local" {...field} data-testid="input-event-reg-opens" />
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    data-testid="switch-event-registration"
+                                  />
                                 </FormControl>
-                                <FormMessage />
                               </FormItem>
                             )}
                           />
-                          <FormField
-                            control={form.control}
-                            name="registrationClosesAt"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Closes At</FormLabel>
-                                <FormControl>
-                                  <Input type="datetime-local" {...field} data-testid="input-event-reg-closes" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        <FormField
-                          control={form.control}
-                          name="capacity"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Capacity</FormLabel>
-                              <FormControl>
-                                <Input type="number" {...field} value={field.value ?? ""} data-testid="input-event-capacity" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="waitlistEnabled"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center gap-2">
-                              <FormControl>
-                                <Switch
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                  data-testid="switch-event-waitlist"
+                          {watchRegistrationEnabled && (
+                            <>
+                              <FormField
+                                control={form.control}
+                                name="registrationType"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Registration Type</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || "free"}>
+                                      <FormControl>
+                                        <SelectTrigger data-testid="select-event-registration-type">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="free">Free</SelectItem>
+                                        <SelectItem value="paid">Paid</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              {watchRegistrationType === "paid" && (
+                                <div className="grid grid-cols-2 gap-4">
+                                  <FormField
+                                    control={form.control}
+                                    name="registrationFee"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Fee (cents)</FormLabel>
+                                        <FormControl>
+                                          <Input type="number" {...field} value={field.value ?? ""} data-testid="input-event-registration-fee" />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={form.control}
+                                    name="registrationCurrency"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Currency</FormLabel>
+                                        <FormControl>
+                                          <Input {...field} placeholder="usd" data-testid="input-event-registration-currency" />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </div>
+                              )}
+                              <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                  control={form.control}
+                                  name="registrationOpensAt"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Opens At</FormLabel>
+                                      <FormControl>
+                                        <Input type="datetime-local" {...field} data-testid="input-event-reg-opens" />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
                                 />
-                              </FormControl>
-                              <FormLabel className="!mt-0">Enable Waitlist</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Visibility</h3>
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="visibility"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Visibility</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || "public"}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-event-visibility">
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="public">Public</SelectItem>
-                              <SelectItem value="members_only">Members Only</SelectItem>
-                              <SelectItem value="counselors_only">Counselors Only</SelectItem>
-                              <SelectItem value="admins_only">Admins Only</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="memberOnly"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center gap-2">
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                              data-testid="switch-event-member-only"
-                            />
-                          </FormControl>
-                          <FormLabel className="!mt-0">Members Only (legacy)</FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Recording</h3>
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="recordingUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Recording URL</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="https://..." data-testid="input-event-recording-url" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {watchEventRecordingUrl && (
-                      <>
-                        <FormField
-                          control={form.control}
-                          name="showInArchives"
-                          render={({ field }) => (
-                            <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-sm font-medium">Show in Video Archives</FormLabel>
-                                <p className="text-xs text-muted-foreground">Display this recording on the Video Archives page</p>
+                                <FormField
+                                  control={form.control}
+                                  name="registrationClosesAt"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Closes At</FormLabel>
+                                      <FormControl>
+                                        <Input type="datetime-local" {...field} data-testid="input-event-reg-closes" />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
                               </div>
-                              <FormControl>
-                                <Switch
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                  data-testid="switch-show-in-archives"
-                                />
-                              </FormControl>
-                            </FormItem>
+                              <FormField
+                                control={form.control}
+                                name="capacity"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Capacity</FormLabel>
+                                    <FormControl>
+                                      <Input type="number" {...field} value={field.value ?? ""} data-testid="input-event-capacity" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="waitlistEnabled"
+                                render={({ field }) => (
+                                  <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                                    <div className="space-y-0.5">
+                                      <FormLabel className="text-sm font-medium">Enable Waitlist</FormLabel>
+                                      <p className="text-xs text-muted-foreground">Allow users to join a waitlist when event is full</p>
+                                    </div>
+                                    <FormControl>
+                                      <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        data-testid="switch-event-waitlist"
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                            </>
                           )}
-                        />
+                        </CardContent>
+                      </Card>
 
-                        {watchShowInArchives && (
-                          <>
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-base">Registrants & Waitlist</CardTitle>
+                            {editingEvent && registrations && registrations.length > 0 && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  if (registrations && editingEvent) {
+                                    downloadCsv(registrations, editingEvent.title);
+                                  }
+                                }}
+                                data-testid="button-export-csv"
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                Export CSV
+                              </Button>
+                            )}
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          {!editingEvent ? (
+                            <p className="text-sm text-muted-foreground text-center py-8">Save the event first to manage registrants.</p>
+                          ) : registrantsLoading ? (
+                            <div className="flex items-center justify-center p-8">
+                              <LoadingSpinner />
+                            </div>
+                          ) : !registrations || registrations.length === 0 ? (
+                            <p className="text-center text-muted-foreground py-8" data-testid="text-no-registrants">
+                              No registrants yet.
+                            </p>
+                          ) : (
+                            <>
+                              <div className="flex gap-2 flex-wrap mb-4">
+                                <Badge variant="default" data-testid="badge-confirmed-count" className="flex items-center gap-1">
+                                  <CheckCircle className="h-3 w-3" />
+                                  {confirmedCount} Confirmed
+                                </Badge>
+                                <Badge variant="secondary" data-testid="badge-waitlisted-count" className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {waitlistedCount} Waitlisted
+                                </Badge>
+                                <Badge variant="outline" data-testid="badge-attended-count" className="flex items-center gap-1">
+                                  <CheckSquare className="h-3 w-3" />
+                                  {attendedCount} Attended
+                                </Badge>
+                              </div>
+                              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                                {registrations.map((reg) => (
+                                  <Card key={reg.id} data-testid={`card-registrant-${reg.id}`} className="shadow-none">
+                                    <CardContent className="p-3">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-7 w-7"
+                                              onClick={() => checkInMutation.mutate({ id: reg.id, attended: !reg.attended })}
+                                              disabled={checkInMutation.isPending}
+                                              data-testid={`button-checkin-${reg.id}`}
+                                              title={reg.attended ? "Remove check-in" : "Check-in"}
+                                            >
+                                              {reg.attended ? (
+                                                <CheckSquare className="h-4 w-4 text-primary" />
+                                              ) : (
+                                                <Square className="h-4 w-4 text-muted-foreground" />
+                                              )}
+                                            </Button>
+                                            <div className="min-w-0">
+                                              <p className="font-medium text-sm truncate" data-testid={`text-registrant-name-${reg.id}`}>
+                                                {reg.fullName}
+                                              </p>
+                                              <p className="text-xs text-muted-foreground truncate" data-testid={`text-registrant-email-${reg.id}`}>
+                                                {reg.email}
+                                              </p>
+                                              {reg.phone && (
+                                                <p className="text-xs text-muted-foreground truncate" data-testid={`text-registrant-phone-${reg.id}`}>
+                                                  {reg.phone}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap ml-9">
+                                            {reg.registeredAt && (
+                                              <span className="text-[10px] text-muted-foreground" data-testid={`text-registrant-date-${reg.id}`}>
+                                                Registered {new Date(reg.registeredAt).toLocaleDateString()}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="flex items-center gap-1.5 mt-1 flex-wrap ml-9">
+                                            <Badge
+                                              variant={registrationStatusVariant(reg.status)}
+                                              className="text-[10px]"
+                                              data-testid={`badge-registrant-status-${reg.id}`}
+                                            >
+                                              {reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}
+                                            </Badge>
+                                            {editingEvent?.registrationType === "paid" && (
+                                              <>
+                                                <Badge
+                                                  variant={paymentStatusVariant(reg.paymentStatus)}
+                                                  className="text-[10px]"
+                                                  data-testid={`badge-payment-status-${reg.id}`}
+                                                >
+                                                  {reg.paymentStatus ? reg.paymentStatus.replace("_", " ").charAt(0).toUpperCase() + reg.paymentStatus.replace("_", " ").slice(1) : "N/A"}
+                                                </Badge>
+                                                {reg.amountPaid ? (
+                                                  <span className="text-[10px] font-medium" data-testid={`text-amount-paid-${reg.id}`}>
+                                                    ${(reg.amountPaid / 100).toFixed(2)}
+                                                  </span>
+                                                ) : null}
+                                              </>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-7 w-7"
+                                              data-testid={`button-registrant-actions-${reg.id}`}
+                                            >
+                                              <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            {reg.status !== "confirmed" && (
+                                              <DropdownMenuItem
+                                                onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "confirmed" })}
+                                                data-testid={`action-confirm-${reg.id}`}
+                                              >
+                                                <CheckCircle className="h-4 w-4 mr-2" />
+                                                Confirm
+                                              </DropdownMenuItem>
+                                            )}
+                                            {reg.status !== "waitlisted" && (
+                                              <DropdownMenuItem
+                                                onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "waitlisted" })}
+                                                data-testid={`action-waitlist-${reg.id}`}
+                                              >
+                                                <Clock className="h-4 w-4 mr-2" />
+                                                Waitlist
+                                              </DropdownMenuItem>
+                                            )}
+                                            {reg.status !== "canceled" && (
+                                              <DropdownMenuItem
+                                                onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "canceled" })}
+                                                data-testid={`action-cancel-${reg.id}`}
+                                              >
+                                                <XCircle className="h-4 w-4 mr-2" />
+                                                Cancel
+                                              </DropdownMenuItem>
+                                            )}
+                                            <DropdownMenuItem
+                                              onClick={() => deleteRegistrationMutation.mutate(reg.id)}
+                                              className="text-destructive"
+                                              data-testid={`action-remove-${reg.id}`}
+                                            >
+                                              <Trash2 className="h-4 w-4 mr-2" />
+                                              Remove
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+
+                  {/* ===== VIDEO ARCHIVE TAB ===== */}
+                  <TabsContent value="video-archive" className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Video className="h-4 w-4" />
+                            Recording Link
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="recordingUrl"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Recording URL</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..." data-testid="input-event-recording-url" />
+                                </FormControl>
+                                <p className="text-xs text-muted-foreground">YouTube and Vimeo links are automatically embeddable</p>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          {watchEventRecordingUrl && (
+                            <FormField
+                              control={form.control}
+                              name="showInArchives"
+                              render={({ field }) => (
+                                <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                                  <div className="space-y-0.5">
+                                    <FormLabel className="text-sm font-medium">Show in Video Archives</FormLabel>
+                                    <p className="text-xs text-muted-foreground">Display this recording on the public Video Archives page</p>
+                                  </div>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                      data-testid="switch-show-in-archives"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {watchEventRecordingUrl && watchShowInArchives && (
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <DollarSign className="h-4 w-4" />
+                              Pricing & Access
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
                             <FormField
                               control={form.control}
                               name="recordingAccess"
@@ -1140,15 +1489,10 @@ function EventsContent() {
                                       </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                      <SelectItem value="free">Free</SelectItem>
-                                      <SelectItem value="paid">Paid (One-time Purchase)</SelectItem>
+                                      <SelectItem value="free">Free — Open to all counselors</SelectItem>
+                                      <SelectItem value="paid">Paid — One-time purchase via Stripe</SelectItem>
                                     </SelectContent>
                                   </Select>
-                                  <p className="text-xs text-muted-foreground">
-                                    {field.value === "paid"
-                                      ? "Counselors must purchase to view this recording"
-                                      : "All counselors can view this recording for free"}
-                                  </p>
                                   <FormMessage />
                                 </FormItem>
                               )}
@@ -1179,85 +1523,235 @@ function EventsContent() {
                                         />
                                       </div>
                                     </FormControl>
-                                    <p className="text-xs text-muted-foreground">One-time purchase price via Stripe</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      One-time purchase price. Counselors will pay via Stripe and have permanent access after purchase.
+                                    </p>
                                     <FormMessage />
                                   </FormItem>
                                 )}
                               />
                             )}
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
 
-                <Separator />
+                            <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+                              <h4 className="text-sm font-medium">How it works</h4>
+                              {watchRecordingAccess === "paid" ? (
+                                <ul className="text-xs text-muted-foreground space-y-1.5 list-disc pl-4">
+                                  <li>Counselors see a "Purchase" button on the Video Archives page</li>
+                                  <li>They're redirected to Stripe Checkout to complete payment</li>
+                                  <li>After payment, they have permanent access to the recording</li>
+                                  <li>The recording URL is protected — only purchasers can access it</li>
+                                </ul>
+                              ) : (
+                                <ul className="text-xs text-muted-foreground space-y-1.5 list-disc pl-4">
+                                  <li>All counselors can view this recording for free</li>
+                                  <li>The recording will appear in the Video Archives with a "Free" badge</li>
+                                </ul>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </TabsContent>
 
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Speaker / Host</h3>
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="speakerName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Speaker Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} data-testid="input-event-speaker-name" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="speakerBio"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Speaker Bio</FormLabel>
-                          <FormControl>
-                            <Textarea {...field} data-testid="input-event-speaker-bio" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="speakerImageUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Speaker Image</FormLabel>
-                          <CmsImageUpload
-                            value={field.value ?? ""}
-                            onChange={field.onChange}
-                            data-testid="input-event-speaker-image-url"
+                  {/* ===== RECURRING TAB ===== */}
+                  <TabsContent value="recurring" className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Repeat className="h-4 w-4" />
+                            Recurring Event
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="isRecurring"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-sm font-medium">Make this a recurring event</FormLabel>
+                                  <p className="text-xs text-muted-foreground">Automatically generate future instances of this event</p>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    data-testid="switch-is-recurring"
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
                           />
-                          <FormMessage />
-                        </FormItem>
+
+                          {watchIsRecurring && (
+                            <>
+                              <FormField
+                                control={form.control}
+                                name="recurrencePattern"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Repeat Frequency</FormLabel>
+                                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                                      <FormControl>
+                                        <SelectTrigger data-testid="select-recurrence-pattern">
+                                          <SelectValue placeholder="Select frequency" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="daily">Daily</SelectItem>
+                                        <SelectItem value="weekly">Weekly</SelectItem>
+                                        <SelectItem value="biweekly">Every 2 Weeks</SelectItem>
+                                        <SelectItem value="monthly">Monthly</SelectItem>
+                                        <SelectItem value="quarterly">Quarterly (Every 3 Months)</SelectItem>
+                                        <SelectItem value="yearly">Yearly</SelectItem>
+                                        <SelectItem value="custom">Custom Interval</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              {watchRecurrencePattern === "custom" && (
+                                <FormField
+                                  control={form.control}
+                                  name="recurrenceInterval"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Repeat Every (days)</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          type="number"
+                                          min={1}
+                                          {...field}
+                                          value={field.value ?? ""}
+                                          data-testid="input-recurrence-interval"
+                                        />
+                                      </FormControl>
+                                      <p className="text-xs text-muted-foreground">Number of days between each occurrence</p>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              )}
+
+                              {(watchRecurrencePattern === "weekly" || watchRecurrencePattern === "biweekly") && (
+                                <FormField
+                                  control={form.control}
+                                  name="recurrenceDaysOfWeek"
+                                  render={({ field }) => {
+                                    const selected = field.value ? field.value.split(",").filter(Boolean) : [];
+                                    const toggle = (day: string) => {
+                                      const newVal = selected.includes(day)
+                                        ? selected.filter((d) => d !== day)
+                                        : [...selected, day];
+                                      field.onChange(newVal.join(","));
+                                    };
+                                    return (
+                                      <FormItem>
+                                        <FormLabel>Repeat On</FormLabel>
+                                        <div className="flex flex-wrap gap-2">
+                                          {DAYS_OF_WEEK.map((day) => (
+                                            <Button
+                                              key={day.value}
+                                              type="button"
+                                              size="sm"
+                                              variant={selected.includes(day.value) ? "default" : "outline"}
+                                              onClick={() => toggle(day.value)}
+                                              data-testid={`button-day-${day.value}`}
+                                            >
+                                              {day.label}
+                                            </Button>
+                                          ))}
+                                        </div>
+                                        <FormMessage />
+                                      </FormItem>
+                                    );
+                                  }}
+                                />
+                              )}
+                            </>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {watchIsRecurring && (
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base">End Conditions</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <FormField
+                              control={form.control}
+                              name="recurrenceEndDate"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>End Date</FormLabel>
+                                  <FormControl>
+                                    <Input type="datetime-local" {...field} data-testid="input-recurrence-end-date" />
+                                  </FormControl>
+                                  <p className="text-xs text-muted-foreground">Stop generating events after this date</p>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <div className="relative flex items-center py-2">
+                              <Separator className="flex-1" />
+                              <span className="px-3 text-xs text-muted-foreground">OR</span>
+                              <Separator className="flex-1" />
+                            </div>
+
+                            <FormField
+                              control={form.control}
+                              name="recurrenceCount"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Number of Occurrences</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      min={1}
+                                      max={365}
+                                      {...field}
+                                      value={field.value ?? ""}
+                                      placeholder="e.g. 12"
+                                      data-testid="input-recurrence-count"
+                                    />
+                                  </FormControl>
+                                  <p className="text-xs text-muted-foreground">Total number of event instances to generate</p>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+                              <h4 className="text-sm font-medium">Recurrence Summary</h4>
+                              <p className="text-xs text-muted-foreground">
+                                {!watchRecurrencePattern && "Select a frequency to see the recurrence summary."}
+                                {watchRecurrencePattern === "daily" && "This event will repeat every day."}
+                                {watchRecurrencePattern === "weekly" && `This event will repeat every week${form.getValues("recurrenceDaysOfWeek") ? ` on ${form.getValues("recurrenceDaysOfWeek")?.split(",").join(", ")}` : ""}.`}
+                                {watchRecurrencePattern === "biweekly" && `This event will repeat every 2 weeks${form.getValues("recurrenceDaysOfWeek") ? ` on ${form.getValues("recurrenceDaysOfWeek")?.split(",").join(", ")}` : ""}.`}
+                                {watchRecurrencePattern === "monthly" && "This event will repeat on the same day each month."}
+                                {watchRecurrencePattern === "quarterly" && "This event will repeat every 3 months."}
+                                {watchRecurrencePattern === "yearly" && "This event will repeat on the same date each year."}
+                                {watchRecurrencePattern === "custom" && form.getValues("recurrenceInterval") && ` This event will repeat every ${form.getValues("recurrenceInterval")} day(s).`}
+                              </p>
+                              {(form.getValues("recurrenceEndDate") || form.getValues("recurrenceCount")) && (
+                                <p className="text-xs text-muted-foreground">
+                                  {form.getValues("recurrenceEndDate") && `Ends: ${new Date(form.getValues("recurrenceEndDate")!).toLocaleDateString()}`}
+                                  {form.getValues("recurrenceCount") && `${form.getValues("recurrenceEndDate") ? " · " : ""}${form.getValues("recurrenceCount")} occurrence(s)`}
+                                </p>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
                       )}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Structured Data (JSON-LD)</h3>
-                  <StructuredDataStatus
-                    contentType="event"
-                    fields={{
-                      hasTitle: !!watchEventTitle,
-                      hasDescription: !!watchEventDescription,
-                      hasDate: !!watchEventDate,
-                      hasLocation: !!watchEventLocation,
-                      hasRecordingUrl: !!watchEventRecordingUrl,
-                    }}
-                    data-testid="structured-data-status-event"
-                  />
-                </div>
-
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </form>
             </Form>
           </SheetBody>
@@ -1276,188 +1770,6 @@ function EventsContent() {
                   : "Create Event"}
             </Button>
           </SheetFooter>
-        </SheetContent>
-      </Sheet>
-
-      <Sheet open={!!registrantsEvent} onOpenChange={(open) => { if (!open) setRegistrantsEvent(null); }}>
-        <SheetContent side="right" size="md">
-          <SheetHeader>
-            <SheetTitle data-testid="text-registrants-title">
-              Registrants — {registrantsEvent?.title}
-            </SheetTitle>
-            <SheetDescription className="sr-only">
-              View and manage registrants for this event
-            </SheetDescription>
-          </SheetHeader>
-          <SheetBody>
-            <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
-              <div className="flex gap-2 flex-wrap text-xs md:text-sm">
-                <Badge variant="default" data-testid="badge-confirmed-count" className="flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3" />
-                  {confirmedCount} Confirmed
-                </Badge>
-                <Badge variant="secondary" data-testid="badge-waitlisted-count" className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {waitlistedCount} Waitlisted
-                </Badge>
-                <Badge variant="outline" data-testid="badge-attended-count" className="flex items-center gap-1">
-                  <CheckSquare className="h-3 w-3" />
-                  {attendedCount} Attended
-                </Badge>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (registrations && registrantsEvent) {
-                    downloadCsv(registrations, registrantsEvent.title);
-                  }
-                }}
-                disabled={!registrations || registrations.length === 0}
-                data-testid="button-export-csv"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
-            </div>
-
-            {registrantsLoading ? (
-              <div className="flex items-center justify-center p-8">
-                <LoadingSpinner />
-              </div>
-            ) : !registrations || registrations.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8" data-testid="text-no-registrants">
-                No registrants yet.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {registrations.map((reg) => (
-                  <Card key={reg.id} data-testid={`card-registrant-${reg.id}`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8"
-                              onClick={() => checkInMutation.mutate({ id: reg.id, attended: !reg.attended })}
-                              disabled={checkInMutation.isPending}
-                              data-testid={`button-checkin-${reg.id}`}
-                              title={reg.attended ? "Remove check-in" : "Check-in"}
-                            >
-                              {reg.attended ? (
-                                <CheckSquare className="h-4 w-4 text-primary" />
-                              ) : (
-                                <Square className="h-4 w-4 text-muted-foreground" />
-                              )}
-                            </Button>
-                            <div>
-                              <p className="font-medium truncate" data-testid={`text-registrant-name-${reg.id}`}>
-                                {reg.fullName}
-                              </p>
-                              <p className="text-sm text-muted-foreground truncate" data-testid={`text-registrant-email-${reg.id}`}>
-                                {reg.email}
-                              </p>
-                            </div>
-                          </div>
-                          {reg.phone && (
-                            <p className="text-sm text-muted-foreground ml-10" data-testid={`text-registrant-phone-${reg.id}`}>
-                              {reg.phone}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-2 mt-2 flex-wrap ml-10">
-                            <Badge
-                              variant={registrationStatusVariant(reg.status)}
-                              data-testid={`badge-registrant-status-${reg.id}`}
-                            >
-                              {reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}
-                            </Badge>
-                            {registrantsEvent?.registrationType === "paid" && (
-                              <>
-                                <Badge
-                                  variant={paymentStatusVariant(reg.paymentStatus)}
-                                  data-testid={`badge-payment-status-${reg.id}`}
-                                >
-                                  {reg.paymentStatus ? reg.paymentStatus.replace("_", " ").charAt(0).toUpperCase() + reg.paymentStatus.replace("_", " ").slice(1) : "Not required"}
-                                </Badge>
-                                {reg.amountPaid ? (
-                                  <span className="text-xs font-medium" data-testid={`text-amount-paid-${reg.id}`}>
-                                    ${(reg.amountPaid / 100).toFixed(2)}
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground" data-testid={`text-amount-paid-${reg.id}`}>
-                                    —
-                                  </span>
-                                )}
-                              </>
-                            )}
-                            <span className="text-xs text-muted-foreground" data-testid={`text-registrant-date-${reg.id}`}>
-                              {reg.registeredAt
-                                ? new Date(reg.registeredAt).toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                  })
-                                : "—"}
-                            </span>
-                          </div>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              data-testid={`button-registrant-actions-${reg.id}`}
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {reg.status !== "confirmed" && (
-                              <DropdownMenuItem
-                                onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "confirmed" })}
-                                data-testid={`action-confirm-${reg.id}`}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Confirm
-                              </DropdownMenuItem>
-                            )}
-                            {reg.status !== "waitlisted" && (
-                              <DropdownMenuItem
-                                onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "waitlisted" })}
-                                data-testid={`action-waitlist-${reg.id}`}
-                              >
-                                <Clock className="h-4 w-4 mr-2" />
-                                Waitlist
-                              </DropdownMenuItem>
-                            )}
-                            {reg.status !== "canceled" && (
-                              <DropdownMenuItem
-                                onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "canceled" })}
-                                data-testid={`action-cancel-${reg.id}`}
-                              >
-                                <XCircle className="h-4 w-4 mr-2" />
-                                Cancel
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              onClick={() => deleteRegistrationMutation.mutate(reg.id)}
-                              className="text-destructive"
-                              data-testid={`action-remove-${reg.id}`}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Remove
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </SheetBody>
         </SheetContent>
       </Sheet>
     </div>

@@ -44,6 +44,14 @@ export const events = pgTable("events", {
   speakerName: text("speaker_name"),
   speakerBio: text("speaker_bio"),
   speakerImageUrl: text("speaker_image_url"),
+
+  isRecurring: boolean("is_recurring").default(false),
+  recurrencePattern: text("recurrence_pattern"),
+  recurrenceInterval: integer("recurrence_interval"),
+  recurrenceDaysOfWeek: text("recurrence_days_of_week"),
+  recurrenceEndDate: timestamp("recurrence_end_date"),
+  recurrenceCount: integer("recurrence_count"),
+  parentEventId: varchar("parent_event_id"),
 }, (table) => [
   index("idx_events_date").on(table.date),
 ]);

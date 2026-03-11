@@ -25,7 +25,7 @@ TCK Wellness is a platform designed to connect Third Culture Kids (TCKs) with sp
 - **Core Features**:
     - **Counselor Directory**: Searchable profiles with multi-select specialization filtering, map integration, and toggle filters for "Accepting Clients" and "Willing to Travel".
     - **Subscription Management**: Stripe integration for counselor memberships.
-    - **Event Management**: Creation, management, and display of virtual, in-person, and hybrid events with registration and notifications.
+    - **Event Management**: Creation, management, and display of virtual, in-person, and hybrid events with registration and notifications. Admin event editor uses a full-page tabbed drawer with tabs for Details, Registrants, Video Archive, and Recurring Events. Recurring event fields: `isRecurring`, `recurrencePattern` (daily/weekly/biweekly/monthly/quarterly/yearly/custom), `recurrenceInterval`, `recurrenceDaysOfWeek`, `recurrenceEndDate`, `recurrenceCount`, `parentEventId`.
     - **Recording Archives**: Role-aware video archives for past event recordings. Admins toggle `showInArchives` per event, set access as `free` or `paid` (one-time Stripe purchase), and set a price in cents. Paid recording URLs are server-redacted for non-purchasers. Purchases tracked in `recording_purchases` table with permanent access. Hidden from client-role users.
     - **Admin Dashboard**: Comprehensive management for users, memberships, events, content, and system settings.
     - **Internal Messaging**: Direct messaging with rich text and attachments.
