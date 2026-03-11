@@ -54,6 +54,33 @@ export function registerApiRoutes(app: Express) {
     res.json(settings ?? {});
   });
 
+  app.get("/robots.txt", async (_req, res) => {
+    try {
+      const seoSettings = await storage.seoSettings.get();
+      const siteUrl = seoSettings?.siteUrl?.replace(/\/$/, "") || "";
+      const noindexAll = seoSettings?.defaultRobotsNoindex ?? false;
+
+      const lines: string[] = [];
+      lines.push("User-agent: *");
+      if (noindexAll) {
+        lines.push("Disallow: /");
+      } else {
+        lines.push("Disallow: /admin");
+        lines.push("Disallow: /api");
+        if (siteUrl) {
+          lines.push("");
+          lines.push(`Sitemap: ${siteUrl}/sitemap.xml`);
+        }
+      }
+
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      res.send(lines.join("\n") + "\n");
+    } catch {
+      res.status(500).send("Error generating robots.txt");
+    }
+  });
+
   app.get("/sitemap.xml", async (_req, res) => {
     try {
       const [seoSettings, pages, posts, events] = await Promise.all([

@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { useEffect } from "react";
+import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
 import {
   buildOrganizationLd,
@@ -401,13 +402,25 @@ function RegistrationSection({
   );
 }
 
-function EventJsonLd({ event, globalSeo }: { event: Event; globalSeo?: SeoSettings }) {
+function EventSeo({ event, globalSeo }: { event: Event; globalSeo?: SeoSettings }) {
+  const titleSuffix = globalSeo?.titleSuffix ?? " | TCK Wellness";
   const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const effectiveTitle = `${event.title}${titleSuffix}`;
+  const effectiveDescription = event.description || globalSeo?.defaultMetaDescription || undefined;
+  const effectiveOgImage = event.imageUrl || globalSeo?.defaultOgImageUrl || undefined;
+  const canonical = `${siteUrl}/events/${event.id}`;
+
+  useSeo({
+    title: effectiveTitle,
+    description: effectiveDescription,
+    ogImage: effectiveOgImage,
+    canonical,
+  });
 
   const breadcrumbs = buildBreadcrumbLd([
     { name: "Home", url: siteUrl || "/" },
     { name: "Events", url: `${siteUrl}/events` },
-    { name: event.title, url: `${siteUrl}/events/${event.id}` },
+    { name: event.title, url: canonical },
   ]);
 
   return (
@@ -497,7 +510,7 @@ export default function EventDetailPage() {
 
         {event && (
           <article data-testid={`event-detail-${event.id}`}>
-            <EventJsonLd event={event} globalSeo={globalSeo} />
+            <EventSeo event={event} globalSeo={globalSeo} />
             {isCanceled && (
               <div className="flex items-center gap-3 rounded-md border border-destructive/50 bg-destructive/10 p-4 mb-6" data-testid="banner-event-canceled">
                 <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />

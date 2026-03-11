@@ -204,7 +204,6 @@ export default function CmsBlogEditorPage() {
   const watchCoverImageUrl = form.watch("coverImageUrl");
   const watchBlogTitle = form.watch("title");
   const watchAuthorName = form.watch("authorName");
-  const watchPublishedAt = form.watch("publishedAt");
   const watchNoindex = form.watch("noindex");
 
   if (!isNew && isLoading) {
@@ -606,7 +605,7 @@ export default function CmsBlogEditorPage() {
                     hasDescription: !!watchSeoDescription,
                     hasImage: !!(watchOgImageUrl || watchCoverImageUrl),
                     hasAuthor: !!watchAuthorName,
-                    hasDate: !!watchPublishedAt || !!isPublished,
+                    hasDate: !!isPublished,
                     noindex: !!watchNoindex,
                     isPublished: !!isPublished,
                   }}

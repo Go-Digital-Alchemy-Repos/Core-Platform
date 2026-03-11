@@ -149,6 +149,12 @@ export function CmsSitemapTab() {
                 View sitemap.xml
               </Button>
             </a>
+            <a href="/robots.txt" target="_blank" rel="noopener noreferrer">
+              <Button size="sm" variant="outline" data-testid="button-view-robots">
+                <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                View robots.txt
+              </Button>
+            </a>
             {siteUrl && (
               <code className="text-xs bg-muted px-2 py-1 rounded text-muted-foreground">
                 {siteUrl}/sitemap.xml
