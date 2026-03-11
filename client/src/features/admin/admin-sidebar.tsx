@@ -82,7 +82,8 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   const renderNavItem = (item: NavItem) => {
-    const isActive = location === item.href || (item.href !== "/admin" && location.startsWith(item.href));
+    const exactOnlyRoutes = ["/admin", "/admin/cms"];
+    const isActive = location === item.href || (!exactOnlyRoutes.includes(item.href) && location.startsWith(item.href));
     const linkContent = (
       <Link key={item.href} href={item.href}>
         <span
