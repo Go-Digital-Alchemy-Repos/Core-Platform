@@ -24,6 +24,7 @@ router.get(
         lastName: users.lastName,
         role: users.role,
         profileImageUrl: users.profileImageUrl,
+        isSuspended: users.isSuspended,
         lastLoginAt: users.lastLoginAt,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
@@ -121,6 +122,25 @@ router.delete(
     }
     await storage.users.deleteUser(userId);
     res.json({ message: "User deleted" });
+  })
+);
+
+router.patch(
+  "/:id/suspend",
+  asyncHandler(async (req, res) => {
+    const userId = paramString(req.params.id);
+    if (userId === req.user!.id) {
+      res.status(400).json({ message: "Cannot suspend your own account" });
+      return;
+    }
+    const user = await storage.users.getUser(userId);
+    if (!user) {
+      notFound(res, "User");
+      return;
+    }
+    const updated = await storage.users.updateUser(userId, { isSuspended: !user.isSuspended } as any);
+    const { password, ...safeUser } = updated!;
+    res.json(safeUser);
   })
 );
 

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, index, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   lastName: text("last_name"),
   role: text("role").notNull().default("client"),
   profileImageUrl: text("profile_image_url"),
+  isSuspended: boolean("is_suspended").notNull().default(false),
   lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

@@ -44,7 +44,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import type { User } from "@shared/schema";
 import {
   Plus,
@@ -54,17 +56,12 @@ import {
   Mail,
   MoreHorizontal,
   UserPlus,
-  Shield,
   Eye,
   EyeOff,
+  ShieldAlert,
+  ShieldCheck,
+  AlertTriangle,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 type SafeUser = Omit<User, "password"> & { country?: string | null };
 
@@ -90,14 +87,10 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 function UsersContent() {
-  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
-  const [editUser, setEditUser] = useState<SafeUser | null>(null);
-  const [resetUser, setResetUser] = useState<SafeUser | null>(null);
-  const [deleteUser, setDeleteUser] = useState<SafeUser | null>(null);
-  const [sendResetLinkUser, setSendResetLinkUser] = useState<SafeUser | null>(null);
+  const [detailUser, setDetailUser] = useState<SafeUser | null>(null);
 
   const { data: users, isLoading } = useQuery<SafeUser[]>({
     queryKey: ["/api/admin/users"],
@@ -186,9 +179,16 @@ function UsersContent() {
             {filtered?.map((u) => (
               <TableRow key={u.id} data-testid={`row-user-${u.id}`}>
                 <TableCell data-testid={`text-user-name-${u.id}`}>
-                  <span className="font-medium">
-                    {`${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() || "—"}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">
+                      {`${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() || "—"}
+                    </span>
+                    {u.isSuspended && (
+                      <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-xs">
+                        Suspended
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground" data-testid={`text-user-country-${u.id}`}>
                   {u.country ?? "—"}
@@ -206,49 +206,14 @@ function UsersContent() {
                   {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
                 </TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        data-testid={`button-actions-${u.id}`}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => setEditUser(u)}
-                        data-testid={`action-edit-${u.id}`}
-                      >
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        Edit User
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setResetUser(u)}
-                        data-testid={`action-reset-password-${u.id}`}
-                      >
-                        <KeyRound className="mr-2 h-4 w-4" />
-                        Reset Password
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setSendResetLinkUser(u)}
-                        data-testid={`action-send-reset-link-${u.id}`}
-                      >
-                        <Mail className="mr-2 h-4 w-4" />
-                        Send Reset Link
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => setDeleteUser(u)}
-                        className="text-destructive focus:text-destructive"
-                        data-testid={`action-delete-${u.id}`}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete User
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setDetailUser(u)}
+                    data-testid={`button-actions-${u.id}`}
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -269,13 +234,11 @@ function UsersContent() {
       </div>
 
       <CreateUserSheet open={createOpen} onOpenChange={setCreateOpen} />
-      <EditUserSheet user={editUser} onClose={() => setEditUser(null)} />
-      <ResetPasswordSheet user={resetUser} onClose={() => setResetUser(null)} />
-      <SendResetLinkConfirm
-        user={sendResetLinkUser}
-        onClose={() => setSendResetLinkUser(null)}
+      <UserDetailSheet
+        user={detailUser}
+        onClose={() => setDetailUser(null)}
+        onUserUpdated={(updated) => setDetailUser(updated)}
       />
-      <DeleteUserConfirm user={deleteUser} onClose={() => setDeleteUser(null)} />
     </div>
   );
 }
@@ -311,7 +274,13 @@ function CreateUserSheet({
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard-stats"] });
       toast({ title: "User created successfully" });
-      resetForm();
+      setEmail("");
+      setPassword("");
+      setFirstName("");
+      setLastName("");
+      setRole("client");
+      setSendWelcome(true);
+      setShowPassword(false);
       onOpenChange(false);
     },
     onError: (err: Error) => {
@@ -319,29 +288,13 @@ function CreateUserSheet({
     },
   });
 
-  function resetForm() {
-    setEmail("");
-    setPassword("");
-    setFirstName("");
-    setLastName("");
-    setRole("client");
-    setSendWelcome(true);
-    setShowPassword(false);
-  }
-
   return (
-    <Sheet
-      open={open}
-      onOpenChange={(v) => {
-        if (!v) resetForm();
-        onOpenChange(v);
-      }}
-    >
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" size="default">
         <SheetHeader>
           <SheetTitle className="font-heading">Create New User</SheetTitle>
           <SheetDescription>
-            Create a new account for a customer, counselor, or admin.
+            Add a new user to the platform.
           </SheetDescription>
         </SheetHeader>
         <SheetBody>
@@ -396,6 +349,7 @@ function CreateUserSheet({
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
+                  placeholder="At least 6 characters"
                   data-testid="input-create-password"
                 />
                 <Button
@@ -404,13 +358,8 @@ function CreateUserSheet({
                   size="icon"
                   className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                   onClick={() => setShowPassword(!showPassword)}
-                  data-testid="button-toggle-password-visibility"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
@@ -431,11 +380,11 @@ function CreateUserSheet({
               <Checkbox
                 id="send-welcome"
                 checked={sendWelcome}
-                onCheckedChange={(v) => setSendWelcome(v === true)}
+                onCheckedChange={(v) => setSendWelcome(!!v)}
                 data-testid="checkbox-send-welcome"
               />
-              <Label htmlFor="send-welcome" className="text-sm font-normal cursor-pointer">
-                Send welcome email with login credentials
+              <Label htmlFor="send-welcome" className="font-normal cursor-pointer">
+                Send welcome email
               </Label>
             </div>
           </form>
@@ -463,20 +412,26 @@ function CreateUserSheet({
   );
 }
 
-function EditUserSheet({
+function UserDetailSheet({
   user,
   onClose,
+  onUserUpdated,
 }: {
   user: SafeUser | null;
   onClose: () => void;
+  onUserUpdated: (u: SafeUser) => void;
 }) {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("profile");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("client");
 
-  const isOpen = !!user;
+  const [newPassword, setNewPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   function handleOpen() {
     if (user) {
@@ -484,294 +439,73 @@ function EditUserSheet({
       setLastName(user.lastName ?? "");
       setEmail(user.email);
       setRole(user.role);
+      setNewPassword("");
+      setShowPassword(false);
+      setActiveTab("profile");
     }
   }
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("PUT", `/api/admin/users/${user!.id}`, {
+      const res = await apiRequest("PUT", `/api/admin/users/${user!.id}`, {
         firstName: firstName || null,
         lastName: lastName || null,
         email,
         role,
       });
+      return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (updated: SafeUser) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast({ title: "User updated successfully" });
-      onClose();
+      toast({ title: "Profile updated successfully" });
+      onUserUpdated({ ...user!, ...updated });
     },
     onError: (err: Error) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     },
   });
 
-  return (
-    <Sheet
-      open={isOpen}
-      onOpenChange={(v) => {
-        if (!v) onClose();
-        else handleOpen();
-      }}
-    >
-      <SheetContent side="right" size="default" onOpenAutoFocus={handleOpen}>
-        <SheetHeader>
-          <SheetTitle className="font-heading">Edit User</SheetTitle>
-          <SheetDescription>
-            Update user account details.
-          </SheetDescription>
-        </SheetHeader>
-        <SheetBody>
-          {user && (
-            <form
-              id="edit-user-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                updateMutation.mutate();
-              }}
-              className="space-y-4"
-            >
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-first">First Name</Label>
-                  <Input
-                    id="edit-first"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    data-testid="input-edit-first-name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-last">Last Name</Label>
-                  <Input
-                    id="edit-last"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    data-testid="input-edit-last-name"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-email">Email</Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  data-testid="input-edit-email"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-role">Role</Label>
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger data-testid="select-edit-role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="client">Client</SelectItem>
-                    <SelectItem value="therapist">Counselor</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </form>
-          )}
-        </SheetBody>
-        <SheetFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            data-testid="button-cancel-edit"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            form="edit-user-form"
-            disabled={updateMutation.isPending}
-            data-testid="button-submit-edit"
-          >
-            {updateMutation.isPending ? "Saving..." : "Save Changes"}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-function ResetPasswordSheet({
-  user,
-  onClose,
-}: {
-  user: SafeUser | null;
-  onClose: () => void;
-}) {
-  const { toast } = useToast();
-  const [newPassword, setNewPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-
-  const resetMutation = useMutation({
+  const resetPasswordMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", `/api/admin/users/${user!.id}/reset-password`, {
-        newPassword,
-      });
+      await apiRequest("POST", `/api/admin/users/${user!.id}/reset-password`, { newPassword });
     },
     onSuccess: () => {
       toast({ title: "Password reset successfully" });
       setNewPassword("");
       setShowPassword(false);
-      onClose();
     },
     onError: (err: Error) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     },
   });
 
-  return (
-    <Sheet
-      open={!!user}
-      onOpenChange={(v) => {
-        if (!v) {
-          setNewPassword("");
-          setShowPassword(false);
-          onClose();
-        }
-      }}
-    >
-      <SheetContent side="right" size="default">
-        <SheetHeader>
-          <SheetTitle className="font-heading flex items-center gap-2">
-            <KeyRound className="h-5 w-5" />
-            Reset Password
-          </SheetTitle>
-          <SheetDescription>
-            Set a new password for {user?.firstName} {user?.lastName} ({user?.email}).
-          </SheetDescription>
-        </SheetHeader>
-        <SheetBody>
-          <form
-            id="reset-password-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              resetMutation.mutate();
-            }}
-            className="space-y-4"
-          >
-            <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
-              <div className="relative">
-                <Input
-                  id="new-password"
-                  type={showPassword ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  placeholder="At least 6 characters"
-                  data-testid="input-admin-new-password"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </form>
-        </SheetBody>
-        <SheetFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              setNewPassword("");
-              setShowPassword(false);
-              onClose();
-            }}
-            data-testid="button-cancel-reset"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            form="reset-password-form"
-            disabled={resetMutation.isPending || !newPassword.trim()}
-            data-testid="button-submit-reset"
-          >
-            {resetMutation.isPending ? "Resetting..." : "Reset Password"}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-function SendResetLinkConfirm({
-  user,
-  onClose,
-}: {
-  user: SafeUser | null;
-  onClose: () => void;
-}) {
-  const { toast } = useToast();
-
-  const sendMutation = useMutation({
+  const sendResetLinkMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", `/api/admin/users/${user!.id}/send-reset-link`);
+      await apiRequest("POST", `/api/admin/users/${user!.id}/reset-password`, {});
     },
     onSuccess: () => {
-      toast({ title: "Password reset link sent" });
-      onClose();
+      toast({ title: "Password reset email sent", description: `Reset link sent to ${user?.email}` });
     },
     onError: (err: Error) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     },
   });
 
-  return (
-    <AlertDialog open={!!user} onOpenChange={(v) => !v && onClose()}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Send Password Reset Link</AlertDialogTitle>
-          <AlertDialogDescription>
-            Send a password reset email to {user?.email}?
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel data-testid="button-cancel-send-link">
-            Cancel
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => sendMutation.mutate()}
-            disabled={sendMutation.isPending}
-            data-testid="button-confirm-send-link"
-          >
-            {sendMutation.isPending ? "Sending..." : "Send Link"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
-
-function DeleteUserConfirm({
-  user,
-  onClose,
-}: {
-  user: SafeUser | null;
-  onClose: () => void;
-}) {
-  const { toast } = useToast();
+  const suspendMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${user!.id}/suspend`);
+      return res.json();
+    },
+    onSuccess: (updated: SafeUser) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      const action = updated.isSuspended ? "suspended" : "reactivated";
+      toast({ title: `Account ${action}`, description: `${user?.firstName} ${user?.lastName}'s account has been ${action}.` });
+      onUserUpdated({ ...user!, isSuspended: updated.isSuspended });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -781,6 +515,7 @@ function DeleteUserConfirm({
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard-stats"] });
       toast({ title: "User deleted" });
+      setDeleteConfirmOpen(false);
       onClose();
     },
     onError: (err: Error) => {
@@ -788,30 +523,277 @@ function DeleteUserConfirm({
     },
   });
 
+  const fullName = user ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.email : "";
+
   return (
-    <AlertDialog open={!!user} onOpenChange={(v) => !v && onClose()}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete User</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete {user?.firstName} {user?.lastName} ({user?.email})? This
-            action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel data-testid="button-cancel-delete">
-            Cancel
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => deleteMutation.mutate()}
-            disabled={deleteMutation.isPending}
-            className="bg-destructive text-destructive-foreground"
-            data-testid="button-confirm-delete"
-          >
-            {deleteMutation.isPending ? "Deleting..." : "Delete"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      <Sheet
+        open={!!user}
+        onOpenChange={(v) => {
+          if (!v) onClose();
+          else handleOpen();
+        }}
+      >
+        <SheetContent side="right" size="default" onOpenAutoFocus={handleOpen}>
+          <SheetHeader>
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <SheetTitle className="font-heading" data-testid="text-detail-name">
+                  {fullName}
+                </SheetTitle>
+                <SheetDescription data-testid="text-detail-email">
+                  {user?.email}
+                </SheetDescription>
+              </div>
+              {user && (
+                <div className="flex flex-col items-end gap-1 pt-1">
+                  <Badge
+                    variant="secondary"
+                    className={ROLE_COLORS[user.role] || ""}
+                    data-testid="badge-detail-role"
+                  >
+                    {displayRole(user.role)}
+                  </Badge>
+                  {user.isSuspended && (
+                    <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-xs">
+                      Suspended
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
+          </SheetHeader>
+
+          <SheetBody>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="w-full mb-4">
+                <TabsTrigger value="profile" className="flex-1" data-testid="tab-detail-profile">
+                  Profile
+                </TabsTrigger>
+                <TabsTrigger value="security" className="flex-1" data-testid="tab-detail-security">
+                  Access &amp; Security
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="profile" className="mt-0">
+                {user && (
+                  <form
+                    id="detail-profile-form"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      updateMutation.mutate();
+                    }}
+                    className="space-y-4"
+                  >
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="detail-first">First Name</Label>
+                        <Input
+                          id="detail-first"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          data-testid="input-detail-first-name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="detail-last">Last Name</Label>
+                        <Input
+                          id="detail-last"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          data-testid="input-detail-last-name"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="detail-email">Email</Label>
+                      <Input
+                        id="detail-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        data-testid="input-detail-email"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="detail-role">Role</Label>
+                      <Select value={role} onValueChange={setRole}>
+                        <SelectTrigger data-testid="select-detail-role">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="client">Client</SelectItem>
+                          <SelectItem value="therapist">Counselor</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </form>
+                )}
+              </TabsContent>
+
+              <TabsContent value="security" className="mt-0 space-y-4">
+                <div className="rounded-lg border p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="font-medium text-sm">Reset Password</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Set a new password directly for this account.
+                  </p>
+                  <form
+                    id="detail-reset-form"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      resetPasswordMutation.mutate();
+                    }}
+                    className="flex gap-2"
+                  >
+                    <div className="relative flex-1">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="New password (min 6 chars)"
+                        minLength={6}
+                        required
+                        data-testid="input-detail-new-password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={resetPasswordMutation.isPending || !newPassword.trim()}
+                      data-testid="button-detail-reset-password"
+                    >
+                      {resetPasswordMutation.isPending ? "Saving..." : "Set"}
+                    </Button>
+                  </form>
+                </div>
+
+                <div className="rounded-lg border p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="font-medium text-sm">Send Reset Email</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Email a password reset link to <span className="font-medium">{user?.email}</span>.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => sendResetLinkMutation.mutate()}
+                    disabled={sendResetLinkMutation.isPending}
+                    data-testid="button-detail-send-reset-link"
+                  >
+                    {sendResetLinkMutation.isPending ? "Sending..." : "Send Reset Link"}
+                  </Button>
+                </div>
+
+                <div className="rounded-lg border p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {user?.isSuspended ? (
+                        <ShieldAlert className="h-4 w-4 text-red-500" />
+                      ) : (
+                        <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <h3 className="font-medium text-sm">Suspend Account</h3>
+                    </div>
+                    <Switch
+                      checked={user?.isSuspended ?? false}
+                      onCheckedChange={() => suspendMutation.mutate()}
+                      disabled={suspendMutation.isPending}
+                      data-testid="switch-suspend-account"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {user?.isSuspended
+                      ? "This account is suspended. The user cannot log in."
+                      : "Suspending this account will prevent the user from logging in."}
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                    <h3 className="font-medium text-sm text-destructive">Danger Zone</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Permanently delete this account. This action cannot be undone.
+                  </p>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    data-testid="button-detail-delete"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Account
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </SheetBody>
+
+          {activeTab === "profile" && (
+            <SheetFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                data-testid="button-detail-cancel"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                form="detail-profile-form"
+                disabled={updateMutation.isPending}
+                data-testid="button-detail-save"
+              >
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </SheetFooter>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User Account</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete <strong>{fullName}</strong> ({user?.email})?
+              This action is irreversible — all data associated with this account will be lost and cannot be recovered.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-delete-cancel">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-delete-confirm"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Yes, delete account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

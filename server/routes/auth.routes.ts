@@ -114,6 +114,11 @@ router.post(
       return;
     }
 
+    if (user.isSuspended) {
+      res.status(403).json({ message: "Your account has been suspended. Please contact support." });
+      return;
+    }
+
     await storage.users.updateUser(user.id, { lastLoginAt: new Date() } as any);
     await storage.activity.log(user.id, "login", "User logged in");
 
