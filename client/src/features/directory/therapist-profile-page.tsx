@@ -31,6 +31,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
+import { SiInstagram, SiFacebook, SiX, SiLinkedin, SiYoutube, SiTiktok } from "react-icons/si";
 
 type TherapistWithUser = TherapistProfile & {
   user?: {
@@ -136,6 +137,16 @@ export default function TherapistProfilePage() {
 
   const hasContact = therapist.phone || therapist.website || addressParts.length > 0;
   const isSelf = user?.id === therapist.userId;
+
+  const socialLinks = [
+    { key: "instagram", handle: therapist.instagramHandle, url: `https://instagram.com/${therapist.instagramHandle}`, icon: SiInstagram, color: "text-pink-500", label: "Instagram" },
+    { key: "facebook", handle: therapist.facebookHandle, url: `https://facebook.com/${therapist.facebookHandle}`, icon: SiFacebook, color: "text-blue-600", label: "Facebook" },
+    { key: "twitter", handle: therapist.twitterHandle, url: `https://x.com/${therapist.twitterHandle}`, icon: SiX, color: "text-foreground", label: "X / Twitter" },
+    { key: "linkedin", handle: therapist.linkedinHandle, url: `https://linkedin.com/in/${therapist.linkedinHandle}`, icon: SiLinkedin, color: "text-blue-700", label: "LinkedIn" },
+    { key: "youtube", handle: therapist.youtubeHandle, url: `https://youtube.com/@${therapist.youtubeHandle}`, icon: SiYoutube, color: "text-red-600", label: "YouTube" },
+    { key: "tiktok", handle: therapist.tiktokHandle, url: `https://tiktok.com/@${therapist.tiktokHandle}`, icon: SiTiktok, color: "text-foreground", label: "TikTok" },
+  ].filter((s) => !!s.handle);
+  const hasSocial = socialLinks.length > 0;
 
   return (
     <PageLayout>
@@ -359,6 +370,31 @@ export default function TherapistProfilePage() {
                         </a>
                       </div>
                     )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {hasSocial && (
+              <Card data-testid="card-social">
+                <CardContent className="pt-6">
+                  <h3 className="font-semibold mb-4" data-testid="heading-social">
+                    Connect
+                  </h3>
+                  <div className="flex flex-wrap gap-3">
+                    {socialLinks.map(({ key, url, icon: Icon, color, label }) => (
+                      <a
+                        key={key}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={label}
+                        className={`inline-flex items-center justify-center h-9 w-9 rounded-full bg-muted hover:bg-muted/70 transition-colors ${color}`}
+                        data-testid={`link-social-${key}`}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </a>
+                    ))}
                   </div>
                 </CardContent>
               </Card>

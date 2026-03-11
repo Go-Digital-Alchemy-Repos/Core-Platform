@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, Save } from "lucide-react";
+import { SiInstagram, SiFacebook, SiX, SiLinkedin, SiYoutube, SiTiktok } from "react-icons/si";
 import { AvatarUpload } from "@/components/shared/avatar-upload";
 import { PhoneInput } from "@/components/shared/phone-input";
 import { phoneSchema } from "@/lib/phone-utils";
@@ -39,6 +40,12 @@ const profileFormSchema = z.object({
   zipCode: z.string().optional(),
   phone: phoneSchema,
   website: z.string().optional(),
+  instagramHandle: z.string().optional(),
+  facebookHandle: z.string().optional(),
+  twitterHandle: z.string().optional(),
+  linkedinHandle: z.string().optional(),
+  youtubeHandle: z.string().optional(),
+  tiktokHandle: z.string().optional(),
   acceptingClients: z.boolean().optional(),
 });
 
@@ -72,6 +79,12 @@ export default function ProfileEditPage() {
       zipCode: profile.zipCode ?? "",
       phone: profile.phone ?? "",
       website: profile.website ?? "",
+      instagramHandle: profile.instagramHandle ?? "",
+      facebookHandle: profile.facebookHandle ?? "",
+      twitterHandle: profile.twitterHandle ?? "",
+      linkedinHandle: profile.linkedinHandle ?? "",
+      youtubeHandle: profile.youtubeHandle ?? "",
+      tiktokHandle: profile.tiktokHandle ?? "",
       acceptingClients: profile.acceptingClients ?? true,
     } : {
       title: "",
@@ -89,6 +102,12 @@ export default function ProfileEditPage() {
       zipCode: "",
       phone: "",
       website: "",
+      instagramHandle: "",
+      facebookHandle: "",
+      twitterHandle: "",
+      linkedinHandle: "",
+      youtubeHandle: "",
+      tiktokHandle: "",
       acceptingClients: true,
     },
   });
@@ -442,6 +461,59 @@ export default function ProfileEditPage() {
                     </FormItem>
                   )}
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Social Media</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">Enter your username or handle only — no need to include the full URL.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={form.control} name="instagramHandle" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2"><SiInstagram className="h-4 w-4 text-pink-500" />Instagram</FormLabel>
+                    <FormControl><Input placeholder="yourhandle" {...field} data-testid="input-instagram" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="facebookHandle" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2"><SiFacebook className="h-4 w-4 text-blue-600" />Facebook</FormLabel>
+                    <FormControl><Input placeholder="yourpage" {...field} data-testid="input-facebook" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="twitterHandle" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2"><SiX className="h-4 w-4" />X / Twitter</FormLabel>
+                    <FormControl><Input placeholder="yourhandle" {...field} data-testid="input-twitter" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="linkedinHandle" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2"><SiLinkedin className="h-4 w-4 text-blue-700" />LinkedIn</FormLabel>
+                    <FormControl><Input placeholder="your-name" {...field} data-testid="input-linkedin" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="youtubeHandle" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2"><SiYoutube className="h-4 w-4 text-red-600" />YouTube</FormLabel>
+                    <FormControl><Input placeholder="yourchannel" {...field} data-testid="input-youtube" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="tiktokHandle" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2"><SiTiktok className="h-4 w-4" />TikTok</FormLabel>
+                    <FormControl><Input placeholder="yourhandle" {...field} data-testid="input-tiktok" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
               </div>
             </CardContent>
           </Card>

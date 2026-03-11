@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Search, Loader2, Trash2, CheckCircle, ThumbsDown, Pencil, Camera, Calendar, LogIn, FileEdit, Clock, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { SiInstagram, SiFacebook, SiX, SiLinkedin, SiYoutube, SiTiktok } from "react-icons/si";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -64,6 +65,12 @@ interface TherapistWithUser {
   zipCode: string | null;
   phone: string | null;
   website: string | null;
+  instagramHandle: string | null;
+  facebookHandle: string | null;
+  twitterHandle: string | null;
+  linkedinHandle: string | null;
+  youtubeHandle: string | null;
+  tiktokHandle: string | null;
   acceptingClients: boolean | null;
   isApproved: boolean | null;
   isFeatured: boolean | null;
@@ -129,6 +136,12 @@ const editProfileSchema = z.object({
   zipCode: z.string().optional(),
   phone: phoneSchema,
   website: z.string().optional(),
+  instagramHandle: z.string().optional(),
+  facebookHandle: z.string().optional(),
+  twitterHandle: z.string().optional(),
+  linkedinHandle: z.string().optional(),
+  youtubeHandle: z.string().optional(),
+  tiktokHandle: z.string().optional(),
   acceptingClients: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
   isApproved: z.boolean().optional(),
@@ -1212,6 +1225,55 @@ function OverviewTab({
             )} />
           </div>
 
+          <div className="rounded-lg border p-4 space-y-3">
+            <p className="text-sm font-medium">Social Media</p>
+            <p className="text-xs text-muted-foreground">Enter username/handle only — no full URLs needed.</p>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField control={form.control} name="instagramHandle" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5 text-xs"><SiInstagram className="h-3.5 w-3.5 text-pink-500" />Instagram</FormLabel>
+                  <FormControl><Input placeholder="yourhandle" {...field} className="h-8 text-sm" data-testid="input-edit-instagram" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="facebookHandle" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5 text-xs"><SiFacebook className="h-3.5 w-3.5 text-blue-600" />Facebook</FormLabel>
+                  <FormControl><Input placeholder="yourpage" {...field} className="h-8 text-sm" data-testid="input-edit-facebook" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="twitterHandle" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5 text-xs"><SiX className="h-3.5 w-3.5" />X / Twitter</FormLabel>
+                  <FormControl><Input placeholder="yourhandle" {...field} className="h-8 text-sm" data-testid="input-edit-twitter" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="linkedinHandle" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5 text-xs"><SiLinkedin className="h-3.5 w-3.5 text-blue-700" />LinkedIn</FormLabel>
+                  <FormControl><Input placeholder="your-name" {...field} className="h-8 text-sm" data-testid="input-edit-linkedin" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="youtubeHandle" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5 text-xs"><SiYoutube className="h-3.5 w-3.5 text-red-600" />YouTube</FormLabel>
+                  <FormControl><Input placeholder="yourchannel" {...field} className="h-8 text-sm" data-testid="input-edit-youtube" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="tiktokHandle" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5 text-xs"><SiTiktok className="h-3.5 w-3.5" />TikTok</FormLabel>
+                  <FormControl><Input placeholder="yourhandle" {...field} className="h-8 text-sm" data-testid="input-edit-tiktok" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+          </div>
+
           <div>
             <Label className="text-sm font-medium">Specializations</Label>
             <FormField control={form.control} name="specializations" render={({ field }) => (
@@ -1481,6 +1543,12 @@ function EditTherapistSheet({
       zipCode: therapist.zipCode ?? "",
       phone: therapist.phone ?? "",
       website: therapist.website ?? "",
+      instagramHandle: therapist.instagramHandle ?? "",
+      facebookHandle: therapist.facebookHandle ?? "",
+      twitterHandle: therapist.twitterHandle ?? "",
+      linkedinHandle: therapist.linkedinHandle ?? "",
+      youtubeHandle: therapist.youtubeHandle ?? "",
+      tiktokHandle: therapist.tiktokHandle ?? "",
       acceptingClients: therapist.acceptingClients ?? true,
       isFeatured: therapist.isFeatured ?? false,
       isApproved: therapist.isApproved ?? false,
