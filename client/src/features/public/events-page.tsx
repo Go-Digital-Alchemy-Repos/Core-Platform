@@ -15,6 +15,10 @@ import {
   CalendarIcon,
   ChevronLeft,
   ChevronRight,
+  DollarSign,
+  Video,
+  User,
+  Building,
 } from "lucide-react";
 
 function formatDate(date: string | Date) {
@@ -33,9 +37,33 @@ function formatTime(date: string | Date) {
   });
 }
 
+function getRegistrationStatus(event: Event): { label: string; open: boolean } | null {
+  if (!event.registrationEnabled) return null;
+  const now = new Date();
+  if (event.registrationOpensAt && new Date(event.registrationOpensAt) > now) {
+    return {
+      label: `Registration opens ${formatDate(event.registrationOpensAt)}`,
+      open: false,
+    };
+  }
+  if (event.registrationClosesAt && new Date(event.registrationClosesAt) < now) {
+    return { label: "Registration Closed", open: false };
+  }
+  return { label: "Registration Open", open: true };
+}
+
+function formatPrice(fee: number, currency: string) {
+  const curr = (currency || "usd").toUpperCase();
+  const amount = fee / 100;
+  return `${curr === "USD" ? "$" : curr + " "}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
+}
+
 function EventCard({ event }: { event: Event }) {
   const eventDate = new Date(event.date);
   const isPast = eventDate < new Date();
+  const isHybrid = event.isVirtual && !!(event.location || event.locationName || event.locationAddress);
+  const registrationStatus = getRegistrationStatus(event);
+  const displayLocation = event.locationName || event.locationAddress || event.location;
 
   return (
     <Link href={`/events/${event.id}`}>
@@ -59,10 +87,44 @@ function EventCard({ event }: { event: Event }) {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            {event.isVirtual && (
+            {isHybrid ? (
+              <Badge variant="secondary" data-testid={`badge-hybrid-${event.id}`}>
+                <Monitor className="mr-1 h-3 w-3" />
+                Hybrid
+              </Badge>
+            ) : event.isVirtual ? (
               <Badge variant="secondary" data-testid={`badge-virtual-${event.id}`}>
                 <Monitor className="mr-1 h-3 w-3" />
                 Virtual
+              </Badge>
+            ) : (
+              <Badge variant="secondary" data-testid={`badge-in-person-${event.id}`}>
+                <Building className="mr-1 h-3 w-3" />
+                In-Person
+              </Badge>
+            )}
+            {event.registrationEnabled && event.registrationType === "paid" && event.registrationFee ? (
+              <Badge variant="outline" data-testid={`badge-paid-${event.id}`}>
+                <DollarSign className="mr-1 h-3 w-3" />
+                {formatPrice(event.registrationFee, event.registrationCurrency || "usd")}
+              </Badge>
+            ) : event.registrationEnabled && event.registrationType === "free" ? (
+              <Badge variant="outline" data-testid={`badge-free-${event.id}`}>
+                Free
+              </Badge>
+            ) : null}
+            {registrationStatus && (
+              <Badge
+                variant={registrationStatus.open ? "default" : "outline"}
+                data-testid={`badge-registration-${event.id}`}
+              >
+                {registrationStatus.label}
+              </Badge>
+            )}
+            {isPast && event.recordingUrl && (
+              <Badge variant="secondary" data-testid={`badge-recording-${event.id}`}>
+                <Video className="mr-1 h-3 w-3" />
+                Recording Available
               </Badge>
             )}
             {event.memberOnly && (
@@ -86,11 +148,19 @@ function EventCard({ event }: { event: Event }) {
               {event.description}
             </p>
           )}
-          {event.location && (
+          {event.speakerName && (
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <User className="h-3.5 w-3.5 shrink-0" />
+              <span data-testid={`text-event-speaker-${event.id}`}>
+                {event.speakerName}
+              </span>
+            </div>
+          )}
+          {displayLocation && (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <MapPin className="h-3.5 w-3.5 shrink-0" />
               <span data-testid={`text-event-location-${event.id}`}>
-                {event.location}
+                {displayLocation}
               </span>
             </div>
           )}

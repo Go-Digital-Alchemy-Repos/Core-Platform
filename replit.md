@@ -199,6 +199,52 @@ Response: `{ languages: string[], countries: string[] }`
 - Consider reducing default pageSize and using cursor-based pagination when dataset exceeds ~500 therapists
 - Add `Cache-Control` headers for the `/filters` endpoint (data changes infrequently)
 
+## Public Event Rendering (Phase 2)
+
+### Event Display Logic
+- **Event list** (`/events`): Shows only published, public-visibility events via `getUpcomingEvents()` (status=published + date >= now)
+- **Event detail** (`/events/:id`): Returns any event by direct ID except drafts (blocked server-side)
+- Event cards show badges for: Virtual/In-Person/Hybrid, Free/Paid (with price), Registration Open/Closed, Past, Recording Available
+
+### Virtual / In-Person / Hybrid
+- **Virtual**: `isVirtual=true` with no location data → shows "Virtual" badge, join URL, dial-in info
+- **In-Person**: `isVirtual=false` → shows "In-Person" badge, location info, map
+- **Hybrid**: `isVirtual=true` AND location data exists → shows "Hybrid" badge, both join URL and map
+
+### Location Map
+- Uses `EventLocationMap` component (`client/src/components/shared/event-location-map.tsx`)
+- Renders only when `latitude` + `longitude` exist AND event is not virtual-only
+- Lightweight Leaflet MapContainer with single pin, same tile server and pin SVG as directory map
+- Aspect ratio 16:9, max-height 300px, scroll/drag disabled, rounded corners
+- Reuses the same OpenStreetMap tile layer and pin icon style from `map-view.tsx`
+
+### Recording Availability
+- Past events with `recordingUrl` show a "Recording Available" badge in cards and a dedicated card on detail page
+- Recording card text mentions event archives for forward-compatibility with archive feature
+- Recording URL only shown to users who pass visibility checks (role-based)
+
+### Registration State
+- Derived from `registrationEnabled` + `registrationOpensAt` + `registrationClosesAt` vs current time
+- States: "open" (within window), "closed" (past closes date), "upcoming" (before opens date), "none" (not enabled)
+- Registration section shows: free/paid badge, open/closed/upcoming status, dates, capacity, waitlist note
+
+### Role/Visibility Rendering
+- `canUserAccessEvent()` checks event.visibility against user.role:
+  - `public`: visible to all
+  - `members_only`: requires therapist or client role
+  - `counselors_only`: requires therapist role
+  - `admins_only`: requires admin role
+  - Admin role has access to all visibility levels
+- Unauthorized users see "Log in to access event details" instead of join URLs / recording links
+- Event content (title, date, description) still shown — only restricted links are hidden
+
+### Files
+- `client/src/components/shared/event-location-map.tsx` — Lightweight single-pin Leaflet map
+- `client/src/features/public/events-page.tsx` — Event cards with enhanced badges and info
+- `client/src/features/public/event-detail-page.tsx` — Full detail page with map, speaker, recording, registration, visibility checks
+- `server/storage/event.storage.ts` — `getPublishedEvents()` filters by status=published + visibility=public
+- `server/routes/events.routes.ts` — Public routes; `/all` uses published filter; `/:id` blocks drafts
+
 ## Dynamic Home Page
 - Featured Therapists section shows 6 therapists from the directory API
 - Upcoming Events section shows 3 events from the events API

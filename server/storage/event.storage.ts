@@ -32,7 +32,8 @@ export class EventStorage {
       .where(
         and(
           gte(events.date, new Date()),
-          eq(events.status, "published")
+          eq(events.status, "published"),
+          eq(events.visibility, "public")
         )
       )
       .orderBy(asc(events.date));
