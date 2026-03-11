@@ -423,7 +423,7 @@ function TherapistsContent() {
                           <TooltipContent>Approve</TooltipContent>
                         </Tooltip>
                       )}
-                      {(t.isApproved || !t.rejectionReason) && (
+                      {!t.isApproved && !t.rejectionReason && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
