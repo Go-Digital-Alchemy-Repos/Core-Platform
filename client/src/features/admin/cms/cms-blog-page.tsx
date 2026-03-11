@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ import { format } from "date-fns";
 export default function CmsBlogPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -152,7 +153,8 @@ export default function CmsBlogPage() {
             {filtered.map((post) => (
               <Card
                 key={post.id}
-                className="hover:border-orange-200 dark:hover:border-orange-800 transition-colors"
+                className="hover:border-orange-200 dark:hover:border-orange-800 transition-colors cursor-pointer"
+                onClick={() => navigate(`/admin/cms/blog/${post.id}`)}
                 data-testid={`card-post-${post.id}`}
               >
                 <CardContent className="p-4 flex items-center justify-between gap-4">
@@ -184,7 +186,7 @@ export default function CmsBlogPage() {
                       <span className="ml-2 font-mono text-xs text-muted-foreground/60">/insights/{post.slug}</span>
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                     {post.isPublished && (
                       <Button
                         variant="ghost"
@@ -198,17 +200,6 @@ export default function CmsBlogPage() {
                         </a>
                       </Button>
                     )}
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="sm"
-                      data-testid={`button-edit-post-${post.id}`}
-                    >
-                      <Link href={`/admin/cms/blog/${post.id}`}>
-                        <Pencil className="h-4 w-4 mr-1.5" />
-                        Edit
-                      </Link>
-                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
