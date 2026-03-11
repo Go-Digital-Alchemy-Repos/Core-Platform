@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, Redirect } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import type { Event } from "@shared/schema/events";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -149,6 +150,7 @@ function RecordingSkeleton() {
 }
 
 export default function RecordingArchivesPage() {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [yearFilter, setYearFilter] = useState("all");
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -181,6 +183,10 @@ export default function RecordingArchivesPage() {
   }, [recordings, search, yearFilter]);
 
   const embedUrl = selectedEvent?.recordingUrl ? getVideoEmbedUrl(selectedEvent.recordingUrl) : null;
+
+  if (user && user.role === "client") {
+    return <Redirect to="/" />;
+  }
 
   return (
     <PageLayout>

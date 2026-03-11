@@ -25,9 +25,9 @@ const navLinks = [
   { label: "Join the Network", href: "/join" },
 ];
 
-const resourceLinks = [
+const allResourceLinks = [
   { label: "Events", href: "/events" },
-  { label: "Recording Archives", href: "/recordings" },
+  { label: "Recording Archives", href: "/recordings", hideFromClients: true },
   { label: "Insights & Articles", href: "/insights" },
 ];
 
@@ -43,6 +43,11 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [, navigate] = useLocation();
+
+  const isClient = user && user.role === "client";
+  const resourceLinks = allResourceLinks.filter(
+    (link) => !(link.hideFromClients && isClient)
+  );
 
   useEffect(() => {
     if (searchOpen && searchInputRef.current) {
