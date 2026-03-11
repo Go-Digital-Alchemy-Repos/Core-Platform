@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PageLayout } from "@/components/layout/page-layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { MapView } from "@/components/directory/map-view";
 import {
   Globe,
   Heart,
@@ -314,15 +315,31 @@ export default function HomePage() {
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
-  const { data: featuredTherapistsData, isLoading: featuredLoading } = useQuery<any[]>({
-    queryKey: ["/api/therapists/featured"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+  const { data: allTherapistsData, isLoading: therapistsLoading } = useQuery<any>({
+    queryKey: ["/api/therapists", "pageSize=500"],
+    queryFn: async () => {
+      const res = await fetch("/api/therapists?pageSize=500");
+      if (!res.ok) throw new Error("Failed to fetch therapists");
+      return res.json();
+    },
   });
   const { data: blogPosts } = useQuery<any[]>({
     queryKey: ["/api/blog"],
   });
 
-  const featuredTherapists = featuredTherapistsData ?? [];
+  const mapTherapists = useMemo(
+    () =>
+      (allTherapistsData?.items ?? []).map((t: any) => ({
+        profile: t,
+        user: {
+          firstName: t.user?.firstName ?? null,
+          lastName: t.user?.lastName ?? null,
+          profileImageUrl: t.user?.profileImageUrl ?? null,
+        },
+      })),
+    [allTherapistsData]
+  );
+
   const upcomingEvents = events?.slice(0, 3) ?? [];
   const recentArticles = blogPosts?.slice(0, 6) ?? [];
 
@@ -389,73 +406,35 @@ export default function HomePage() {
         </div>
       </section>
       <TestimonialsCarousel />
-      <section className="relative bg-[#ffffff4d] overflow-hidden" data-testid="section-featured-therapists">
+      <section className="relative bg-[#ffffff4d] overflow-hidden" data-testid="section-counselor-map">
         <div className="pointer-events-none absolute top-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.12) 0%, transparent 70%)" }} />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap mb-8 sm:mb-12">
             <div>
-              <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold" data-testid="text-featured-heading">
-                Featured Counselors
+              <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold" data-testid="text-map-heading">
+                Our Counselors Around the World
               </h2>
-              <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">TCK-informed professionals from around the world</p>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Click a pin to learn more about a TCK-informed professional near you</p>
             </div>
             <Link href="/directory">
               <Button variant="outline" data-testid="button-view-all-therapists">
-                View All <ArrowRight className="ml-2 h-4 w-4" />
+                Find a Counselor <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
 
-          {featuredLoading ? (
+          {therapistsLoading ? (
             <div className="flex justify-center py-16">
               <LoadingSpinner />
             </div>
-          ) : featuredTherapists.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {featuredTherapists.map((therapist: any) => (
-                <Link key={therapist.id} href={`/directory/${therapist.id}`}>
-                  <Card className="h-full cursor-pointer hover-elevate" data-testid={`card-featured-therapist-${therapist.id}`}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-4 mb-4">
-                        <Avatar className="h-14 w-14 flex-shrink-0">
-                          <AvatarImage src={therapist.user?.profileImageUrl ?? undefined} alt={`${therapist.user?.firstName} ${therapist.user?.lastName}`} />
-                          <AvatarFallback className="bg-accent/10 text-accent font-semibold">
-                            {therapist.user?.firstName?.[0]}{therapist.user?.lastName?.[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <h3 className="font-semibold truncate" data-testid={`text-therapist-name-${therapist.id}`}>
-                            {therapist.user?.firstName} {therapist.user?.lastName}
-                          </h3>
-                          <p className="text-sm text-muted-foreground truncate">{therapist.title}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
-                        {therapist.practiceMode === "virtual" ? (
-                          <><Video className="h-3.5 w-3.5 flex-shrink-0" /> Virtual Only</>
-                        ) : therapist.city ? (
-                          <><MapPin className="h-3.5 w-3.5 flex-shrink-0" /> {therapist.city}{therapist.country ? `, ${therapist.country}` : ""}</>
-                        ) : (
-                          <><Globe className="h-3.5 w-3.5 flex-shrink-0" /> Global</>
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap gap-1.5">
-                        {therapist.specializations?.slice(0, 3).map((s: string) => (
-                          <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
-                        ))}
-                        {therapist.specializations?.length > 3 && (
-                          <Badge variant="outline" className="text-xs">+{therapist.specializations.length - 3}</Badge>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
           ) : (
-            <p className="text-center text-muted-foreground py-12">No counselors available yet.</p>
+            <MapView
+              therapists={mapTherapists}
+              height="500px"
+              interactive
+              zoom={2}
+              center={[20, 0]}
+            />
           )}
         </div>
       </section>
