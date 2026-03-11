@@ -68,6 +68,11 @@ import {
 
 type SafeUser = Omit<User, "password"> & { country?: string | null };
 
+function displayRole(role: string): string {
+  if (role === "therapist") return "Counselor";
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
 export default function AdminUsersPage() {
   return (
     <ProtectedRoute roles={["admin"]}>
@@ -194,7 +199,7 @@ function UsersContent() {
                     className={ROLE_COLORS[u.role] || ""}
                     data-testid={`badge-role-${u.id}`}
                   >
-                    {u.role.charAt(0).toUpperCase() + u.role.slice(1)}
+                    {displayRole(u.role)}
                   </Badge>
                 </TableCell>
                 <TableCell data-testid={`text-user-created-${u.id}`}>
@@ -565,7 +570,7 @@ function EditUserSheet({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="client">Client</SelectItem>
-                    <SelectItem value="therapist">Therapist</SelectItem>
+                    <SelectItem value="therapist">Counselor</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>

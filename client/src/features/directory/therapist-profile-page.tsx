@@ -116,7 +116,7 @@ export default function TherapistProfilePage() {
   }
 
   const fullName =
-    [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") || "Therapist";
+    [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") || "Counselor";
   const initials = `${(therapist.user?.firstName || "")[0] || ""}${(therapist.user?.lastName || "")[0] || ""}`.toUpperCase();
   const specializations = therapist.specializations || [];
   const languages = therapist.languages || [];

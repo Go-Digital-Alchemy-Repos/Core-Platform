@@ -100,7 +100,7 @@ function TherapistRow({
   onHover: (id: string | null) => void;
 }) {
   const initials = `${(user.firstName || "")[0] || ""}${(user.lastName || "")[0] || ""}`.toUpperCase();
-  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Therapist";
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Counselor";
   const specializations = profile.specializations || [];
   const displayedSpecs = specializations.slice(0, 2);
   const remainingCount = specializations.length - 2;

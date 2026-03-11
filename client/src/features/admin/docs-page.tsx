@@ -27,7 +27,7 @@ import type { Doc } from "@shared/schema";
 const DOC_CATEGORIES = [
   "Getting Started",
   "User Management",
-  "Therapist Management",
+  "Counselor Management",
   "Subscriptions & Billing",
   "Directory & Search",
   "Events",
