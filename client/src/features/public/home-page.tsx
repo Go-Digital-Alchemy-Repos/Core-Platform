@@ -337,7 +337,7 @@ export default function HomePage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-14 pb-18 sm:pt-20 sm:pb-24 md:pt-28 md:pb-32">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-10 sm:mb-14" data-testid="text-hero-heading">
-              Care that understands where TCKs <span className="text-accent">"come from"</span>
+              Care that understands where TCKs <span className="text-accent">"come from".</span>
             </h1>
             <div className="flex flex-col sm:flex-row justify-center gap-8 sm:gap-16">
               <div className="text-center">
