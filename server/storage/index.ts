@@ -19,6 +19,7 @@ import { EventRegistrationStorage } from "./event-registration.storage";
 import { CmsPagesStorage } from "./cms-pages.storage";
 import { CmsPageRevisionsStorage } from "./cms-page-revisions.storage";
 import { CmsMediaStorage } from "./cms-media.storage";
+import { CmsSectionsStorage } from "./cms-sections.storage";
 
 export const storage = {
   users: new UserStorage(),
@@ -42,6 +43,7 @@ export const storage = {
   cmsPages: new CmsPagesStorage(),
   cmsPageRevisions: new CmsPageRevisionsStorage(),
   cmsMedia: new CmsMediaStorage(),
+  cmsSections: new CmsSectionsStorage(),
 };
 
 export type { TherapistSearchParams, TherapistWithUser } from "./therapist.storage";

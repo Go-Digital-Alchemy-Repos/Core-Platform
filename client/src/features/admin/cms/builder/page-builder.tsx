@@ -1,16 +1,29 @@
 import { useState, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Plus,
   Trash2,
@@ -38,10 +51,16 @@ import {
   Globe,
   Phone,
   GripVertical,
+  Bookmark,
+  Search,
+  Blocks,
 } from "lucide-react";
 import { BLOCK_REGISTRY, getBlockDef, createBlock, type BlockInstance, type BuilderContent } from "./block-registry";
 import { BlockEditor } from "./block-editor";
 import { PageRenderer, BlockRenderer } from "./block-renderer";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import type { CmsSection } from "@shared/schema";
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Sparkles,
@@ -63,6 +82,8 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Phone,
 };
 
+const SECTION_CATEGORIES = ["general", "hero", "cta", "testimonials", "faq", "features", "content", "team"];
+
 function BlockIcon({ name, className }: { name: string; className?: string }) {
   const Icon = ICON_MAP[name] ?? Layers;
   return <Icon className={className} />;
@@ -73,10 +94,183 @@ interface PageBuilderProps {
   onChange: (content: BuilderContent) => void;
 }
 
+interface SaveSectionDialogProps {
+  block: BlockInstance;
+  onClose: () => void;
+}
+
+function SaveSectionDialog({ block, onClose }: SaveSectionDialogProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("general");
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/cms/sections", {
+        name,
+        description,
+        category,
+        blocks: [block],
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/sections"] });
+      toast({ title: "Saved as reusable section" });
+      onClose();
+    },
+    onError: () => toast({ title: "Failed to save section", variant: "destructive" }),
+  });
+
+  return (
+    <div className="space-y-4 pt-2">
+      <div className="space-y-1.5">
+        <Label>Section Name</Label>
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Homepage Hero"
+          data-testid="input-save-section-name"
+          autoFocus
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label>Category</Label>
+        <Select value={category} onValueChange={setCategory}>
+          <SelectTrigger data-testid="select-save-section-category">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SECTION_CATEGORIES.map((c) => (
+              <SelectItem key={c} value={c} className="capitalize">{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5">
+        <Label>Description <span className="text-muted-foreground font-normal text-xs">(optional)</span></Label>
+        <Textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="When to use this section…"
+          rows={2}
+          data-testid="input-save-section-description"
+        />
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <Button
+          onClick={() => saveMutation.mutate()}
+          disabled={!name.trim() || saveMutation.isPending}
+          data-testid="button-confirm-save-section"
+        >
+          {saveMutation.isPending ? "Saving…" : "Save Section"}
+        </Button>
+      </DialogFooter>
+    </div>
+  );
+}
+
+interface SectionsLibraryProps {
+  onInsert: (blocks: BlockInstance[]) => void;
+}
+
+function SectionsLibrary({ onInsert }: SectionsLibraryProps) {
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+
+  const { data: sections = [], isLoading } = useQuery<CmsSection[]>({
+    queryKey: ["/api/admin/cms/sections"],
+  });
+
+  const filtered = sections.filter((s) => {
+    const matchSearch = !search || s.name.toLowerCase().includes(search.toLowerCase());
+    const matchCat = categoryFilter === "all" || s.category === categoryFilter;
+    return matchSearch && matchCat;
+  });
+
+  const insertSection = (section: CmsSection) => {
+    const blocks = Array.isArray(section.blocks) ? (section.blocks as BlockInstance[]) : [];
+    const remapped = blocks.map((b) => ({
+      ...b,
+      id: crypto.randomUUID(),
+    }));
+    onInsert(remapped);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search saved sections…"
+            className="pl-8 h-8 text-sm"
+            data-testid="input-library-search"
+          />
+        </div>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-32 h-8 text-xs" data-testid="select-library-category">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" className="text-xs">All</SelectItem>
+            {SECTION_CATEGORIES.map((c) => (
+              <SelectItem key={c} value={c} className="text-xs capitalize">{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">Loading…</div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-32 text-muted-foreground gap-2">
+          <Blocks className="h-8 w-8 opacity-30" />
+          <p className="text-sm font-medium">{search ? "No sections match" : "No saved sections yet"}</p>
+          <p className="text-xs">
+            {search ? "Try a different search" : "Save a block as a reusable section using the bookmark icon on any block"}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          {filtered.map((section) => {
+            const blockCount = Array.isArray(section.blocks) ? section.blocks.length : 0;
+            return (
+              <button
+                key={section.id}
+                onClick={() => insertSection(section)}
+                className="flex items-start gap-2.5 p-3 rounded-lg border hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30 text-left transition-colors group"
+                data-testid={`insert-section-${section.id}`}
+              >
+                <div className="h-7 w-7 rounded-md bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0">
+                  <Layers className="h-3.5 w-3.5 text-violet-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium leading-tight truncate">{section.name}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <Badge variant="secondary" className="text-[9px] capitalize px-1 py-0">{section.category ?? "general"}</Badge>
+                    <span className="text-[10px] text-muted-foreground">{blockCount} block{blockCount !== 1 ? "s" : ""}</span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [savingSectionBlockId, setSavingSectionBlockId] = useState<string | null>(null);
 
   const blocks = content.blocks ?? [];
 
@@ -92,6 +286,11 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     const block = createBlock(type);
     setBlocks([...blocks, block]);
     setSelectedId(block.id);
+    setAddDialogOpen(false);
+  };
+
+  const insertBlocks = (newBlocks: BlockInstance[]) => {
+    setBlocks([...blocks, ...newBlocks]);
     setAddDialogOpen(false);
   };
 
@@ -115,6 +314,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const updateBlockProps = (id: string, props: Record<string, unknown>) => {
     setBlocks(blocks.map((b) => (b.id === id ? { ...b, props } : b)));
   };
+
+  const savingBlock = savingSectionBlockId ? blocks.find((b) => b.id === savingSectionBlockId) ?? null : null;
 
   if (previewMode) {
     return (
@@ -144,6 +345,51 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     );
   }
 
+  const AddBlockDialogContent = () => (
+    <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0">
+      <DialogHeader className="px-6 pt-6 pb-0">
+        <DialogTitle>Add Content</DialogTitle>
+      </DialogHeader>
+      <Tabs defaultValue="blocks" className="flex-1 flex flex-col overflow-hidden">
+        <div className="px-6 pt-3">
+          <TabsList className="w-full">
+            <TabsTrigger value="blocks" className="flex-1 gap-1.5">
+              <Layers className="h-3.5 w-3.5" />
+              Block Types
+            </TabsTrigger>
+            <TabsTrigger value="sections" className="flex-1 gap-1.5" data-testid="tab-saved-sections">
+              <Bookmark className="h-3.5 w-3.5" />
+              Saved Sections
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="blocks" className="flex-1 overflow-y-auto px-6 pb-6 pt-3 mt-0">
+          <div className="grid grid-cols-2 gap-2">
+            {BLOCK_REGISTRY.map((def) => (
+              <button
+                key={def.type}
+                onClick={() => addBlock(def.type)}
+                className="flex items-start gap-3 p-3 rounded-lg border hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30 text-left transition-colors group"
+                data-testid={`block-type-${def.type}`}
+              >
+                <div className="h-8 w-8 rounded-md bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-200 dark:group-hover:bg-violet-900/50 transition-colors">
+                  <BlockIcon name={def.iconName} className="h-4 w-4 text-violet-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium leading-tight">{def.label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{def.description}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </TabsContent>
+        <TabsContent value="sections" className="flex-1 overflow-y-auto px-6 pb-6 pt-3 mt-0">
+          <SectionsLibrary onInsert={(newBlocks) => insertBlocks(newBlocks)} />
+        </TabsContent>
+      </Tabs>
+    </DialogContent>
+  );
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -171,29 +417,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                 Add Block
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Choose a Block Type</DialogTitle>
-              </DialogHeader>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {BLOCK_REGISTRY.map((def) => (
-                  <button
-                    key={def.type}
-                    onClick={() => addBlock(def.type)}
-                    className="flex items-start gap-3 p-3 rounded-lg border hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30 text-left transition-colors group"
-                    data-testid={`block-type-${def.type}`}
-                  >
-                    <div className="h-8 w-8 rounded-md bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-200 dark:group-hover:bg-violet-900/50 transition-colors">
-                      <BlockIcon name={def.iconName} className="h-4 w-4 text-violet-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium leading-tight">{def.label}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{def.description}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </DialogContent>
+            <AddBlockDialogContent />
           </Dialog>
         </div>
       </div>
@@ -203,7 +427,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           <Layers className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
           <p className="font-medium text-muted-foreground">No blocks yet</p>
           <p className="text-xs text-muted-foreground mt-1 mb-4">
-            Add content blocks to build this page
+            Add content blocks or insert from your saved sections library
           </p>
           <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
             <DialogTrigger asChild>
@@ -212,29 +436,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                 Add First Block
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Choose a Block Type</DialogTitle>
-              </DialogHeader>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {BLOCK_REGISTRY.map((def) => (
-                  <button
-                    key={def.type}
-                    onClick={() => addBlock(def.type)}
-                    className="flex items-start gap-3 p-3 rounded-lg border hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30 text-left transition-colors group"
-                    data-testid={`block-type-empty-${def.type}`}
-                  >
-                    <div className="h-8 w-8 rounded-md bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0">
-                      <BlockIcon name={def.iconName} className="h-4 w-4 text-violet-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{def.label}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{def.description}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </DialogContent>
+            <AddBlockDialogContent />
           </Dialog>
         </div>
       ) : (
@@ -305,6 +507,16 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-amber-600"
+                        onClick={() => setSavingSectionBlockId(block.id)}
+                        data-testid={`button-save-section-${block.id}`}
+                        title="Save as reusable section"
+                      >
+                        <Bookmark className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-6 w-6 text-destructive hover:text-destructive"
                         onClick={() => removeBlock(block.id)}
                         data-testid={`button-delete-block-${block.id}`}
@@ -355,6 +567,26 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           )}
         </div>
       )}
+
+      <Dialog
+        open={!!savingSectionBlockId}
+        onOpenChange={(open) => { if (!open) setSavingSectionBlockId(null); }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bookmark className="h-4 w-4 text-amber-500" />
+              Save as Reusable Section
+            </DialogTitle>
+          </DialogHeader>
+          {savingBlock && (
+            <SaveSectionDialog
+              block={savingBlock}
+              onClose={() => setSavingSectionBlockId(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

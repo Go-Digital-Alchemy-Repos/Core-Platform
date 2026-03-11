@@ -44,6 +44,8 @@ const CmsPagesPage = lazy(() => import("@/features/admin/cms/cms-pages-page"));
 const CmsPageEditorPage = lazy(() => import("@/features/admin/cms/cms-page-editor-page"));
 const CmsMediaPage = lazy(() => import("@/features/admin/cms/cms-media-page"));
 const CmsSeoPage = lazy(() => import("@/features/admin/cms/cms-seo-page"));
+const CmsSectionsPage = lazy(() => import("@/features/admin/cms/cms-sections-page"));
+const CmsSectionEditorPage = lazy(() => import("@/features/admin/cms/cms-section-editor-page"));
 
 const InsightsPage = lazy(() => import("@/features/public/insights-page"));
 const InsightsPostPage = lazy(() => import("@/features/public/insights-post-page"));
@@ -166,6 +168,21 @@ function Router() {
         <Route path="/admin/cms/media">
           <ProtectedRoute roles={["admin"]}>
             <CmsMediaPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/sections/new">
+          <ProtectedRoute roles={["admin"]}>
+            <CmsSectionEditorPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/sections/:id">
+          <ProtectedRoute roles={["admin"]}>
+            <CmsSectionEditorPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/sections">
+          <ProtectedRoute roles={["admin"]}>
+            <CmsSectionsPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/seo">

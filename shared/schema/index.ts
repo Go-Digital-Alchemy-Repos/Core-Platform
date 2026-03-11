@@ -19,3 +19,4 @@ export { eventRegistrations, insertEventRegistrationSchema, type InsertEventRegi
 export { cmsPages, insertCmsPageSchema, type InsertCmsPage, type CmsPage } from "./cms-pages";
 export { cmsPageRevisions, insertCmsPageRevisionSchema, type InsertCmsPageRevision, type CmsPageRevision } from "./cms-page-revisions";
 export { cmsMedia, insertCmsMediaSchema, type InsertCmsMedia, type CmsMediaAsset } from "./cms-media";
+export { cmsSections, insertCmsSectionSchema, type InsertCmsSection, type CmsSection } from "./cms-sections";

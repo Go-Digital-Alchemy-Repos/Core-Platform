@@ -145,3 +145,56 @@ To revert to the hardcoded page:
 2. **SEO tags:** Once pages are published, wire the CMS `seoTitle`/`seoDescription`/`ogImageUrl` into `<meta>` tags via a `Helmet`-style component in `CmsHybridPage`.
 3. **Join page:** The join page has a registration dialog — the CMS version seeds marketing content + CTA. The actual registration form remains in the hardcoded component; publish the CMS version when the marketing copy is finalized.
 4. **Home page:** The hero block in the seed is a starter — replace the background image via the CMS media library before publishing.
+
+---
+
+## CMS Phase 5 — Reusable Sections
+
+### Overview
+Phase 5 adds a library of reusable block groups ("sections") that can be saved once and inserted into any CMS page via the page builder. This speeds up page building by letting admins compose pages from pre-built, branded content blocks.
+
+### Database
+- Table: `cms_sections` — `id` (uuid), `name`, `description`, `category`, `blocks` (jsonb array), `createdAt`, `updatedAt`
+- Schema in `shared/schema.ts`: `cmsSections`, `insertCmsSectionSchema`, `CmsSection`, `InsertCmsSection`
+- Migration: run `npm run db:push` if not already applied
+
+### API Endpoints (admin-only, JWT-authenticated)
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/admin/cms/sections` | List all sections |
+| POST | `/api/admin/cms/sections` | Create a new section |
+| GET | `/api/admin/cms/sections/:id` | Get section by ID |
+| PUT | `/api/admin/cms/sections/:id` | Update section |
+| DELETE | `/api/admin/cms/sections/:id` | Delete section |
+
+Routes file: `server/routes/admin/cms-sections.routes.ts`
+Mounted in: `server/routes/admin/index.ts`
+
+### Frontend Routes
+| Path | Component |
+|---|---|
+| `/admin/cms/sections` | `CmsSectionsPage` — card grid + search/filter + delete |
+| `/admin/cms/sections/new` | `CmsSectionEditorPage` — create new section |
+| `/admin/cms/sections/:id` | `CmsSectionEditorPage` — edit existing section |
+
+### Key Files Changed in Phase 5
+| File | Change |
+|---|---|
+| `shared/schema.ts` | Added `cmsSections` table, insert schema, types |
+| `server/storage.ts` + `server/storage/` | Sections CRUD methods |
+| `server/routes/admin/cms-sections.routes.ts` | New — REST API for sections |
+| `server/routes/admin/index.ts` | Mount `cmsSectionsRoutes` at `/cms` |
+| `client/src/features/admin/cms/cms-sections-page.tsx` | New — sections list page |
+| `client/src/features/admin/cms/cms-section-editor-page.tsx` | New — section editor with PageBuilder |
+| `client/src/features/admin/cms/builder/page-builder.tsx` | Rewritten with Bookmark-to-save per block + "Saved Sections" library tab in Add Block dialog |
+| `client/src/features/admin/admin-sidebar.tsx` | Added "Sections" nav item under CMS group |
+| `client/src/App.tsx` | Added lazy imports + routes for CmsSectionsPage and CmsSectionEditorPage |
+
+### How Reusable Sections Work
+1. **Save a block as a section:** In any page builder, click the bookmark icon on any block → fill in name/category/description → "Save Section". The block is copied as a new section record.
+2. **Manage sections:** `/admin/cms/sections` shows all saved sections as cards with name, category badge, block count, and edit/delete actions.
+3. **Create/edit sections directly:** `/admin/cms/sections/new` or `/admin/cms/sections/:id` provides a full editor with the PageBuilder for complex multi-block sections.
+4. **Insert into pages:** In any page builder's "Add Block" dialog → switch to "Saved Sections" tab → click any section to insert its blocks. Blocks are deep-copied with new UUIDs so edits to the page don't affect the section library.
+
+### Insert Behavior (important)
+Sections are **copied on insert** — there is no live sync. Editing a saved section does not retroactively update pages where it was already inserted. This is intentional for content stability.

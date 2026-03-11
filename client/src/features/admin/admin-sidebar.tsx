@@ -18,6 +18,7 @@ import {
   FileCode,
   Image,
   SearchIcon,
+  Blocks,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -58,6 +59,7 @@ const navGroups: NavGroup[] = [
       { title: "CMS Overview", href: "/admin/cms", icon: Globe, iconColor: "text-violet-600" },
       { title: "Pages", href: "/admin/cms/pages", icon: FileCode, iconColor: "text-violet-500" },
       { title: "Media", href: "/admin/cms/media", icon: Image, iconColor: "text-violet-400" },
+      { title: "Sections", href: "/admin/cms/sections", icon: Blocks, iconColor: "text-violet-400" },
       { title: "SEO", href: "/admin/cms/seo", icon: SearchIcon, iconColor: "text-violet-400" },
     ],
   },

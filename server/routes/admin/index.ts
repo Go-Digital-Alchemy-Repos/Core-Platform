@@ -10,6 +10,7 @@ import blogRoutes from "./blog.routes";
 import registrationRoutes from "./registrations.routes";
 import cmsRoutes from "./cms.routes";
 import cmsMediaRoutes from "./cms-media.routes";
+import cmsSectionsRoutes from "./cms-sections.routes";
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use("/blog", blogRoutes);
 router.use("/", registrationRoutes);
 router.use("/cms", cmsRoutes);
 router.use("/cms", cmsMediaRoutes);
+router.use("/cms", cmsSectionsRoutes);
 
 export default router;
