@@ -38,6 +38,9 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import type { SeoSettings } from "@shared/schema";
+import { CmsSeoAuditTab } from "./cms-seo-audit-tab";
+import { CmsRedirectsTab } from "./cms-redirects-tab";
+import { CmsSitemapTab } from "./cms-sitemap-tab";
 
 const seoFormSchema = z.object({
   siteName: z.string().min(1, "Site name is required"),
@@ -98,20 +101,20 @@ const ROADMAP_ITEMS = [
   {
     icon: Map,
     title: "Sitemap Generation",
-    description: "Auto-generate XML sitemap from published CMS pages, blog posts, and counselor profiles with crawl priority controls.",
-    status: "planned",
+    description: "Auto-generated /sitemap.xml from all published CMS pages, blog posts, and public events. Draft and noindex content is automatically excluded. Preview available in the Sitemap tab.",
+    status: "available",
   },
   {
     icon: ListChecks,
     title: "Redirects Manager",
-    description: "Manage 301/302 redirects for slug changes and retired pages without touching server config.",
-    status: "planned",
+    description: "Manage 301/302 redirects for slug changes and retired pages. Redirects are applied server-side before the frontend loads. Toggle active/inactive without deleting.",
+    status: "available",
   },
   {
     icon: BarChart2,
     title: "SEO Audit",
-    description: "Scan published pages for missing titles, descriptions, canonical issues, and image alt tags.",
-    status: "planned",
+    description: "Scans all CMS pages, blog posts, and events for missing SEO title, meta description, social image, noindex flags, and publication status. Includes direct edit links.",
+    status: "available",
   },
 ];
 
@@ -218,8 +221,11 @@ export default function CmsSeoPage() {
         </div>
 
         <Tabs defaultValue="settings">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="settings" data-testid="tab-seo-settings">Global Settings</TabsTrigger>
+            <TabsTrigger value="audit" data-testid="tab-seo-audit">SEO Audit</TabsTrigger>
+            <TabsTrigger value="redirects" data-testid="tab-seo-redirects">Redirects</TabsTrigger>
+            <TabsTrigger value="sitemap" data-testid="tab-seo-sitemap">Sitemap</TabsTrigger>
             <TabsTrigger value="roadmap" data-testid="tab-seo-roadmap">Architecture & Roadmap</TabsTrigger>
           </TabsList>
 
@@ -620,6 +626,18 @@ export default function CmsSeoPage() {
                 </p>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="audit">
+            <CmsSeoAuditTab />
+          </TabsContent>
+
+          <TabsContent value="redirects">
+            <CmsRedirectsTab />
+          </TabsContent>
+
+          <TabsContent value="sitemap">
+            <CmsSitemapTab />
           </TabsContent>
         </Tabs>
       </div>

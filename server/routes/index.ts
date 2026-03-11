@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import authRoutes from "./auth.routes";
 import directoryRoutes from "./directory.routes";
 import therapistRoutes from "./therapist.routes";
@@ -16,6 +16,15 @@ import blogRoutes from "./blog.routes";
 import registrationRoutes from "./registration.routes";
 import cmsPublicRoutes from "./cms-public.routes";
 import { storage } from "../storage/index";
+
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
 
 export function registerApiRoutes(app: Express) {
   app.use("/api/auth", authRoutes);
@@ -43,5 +52,98 @@ export function registerApiRoutes(app: Express) {
   app.get("/api/seo/global", async (_req, res) => {
     const settings = await storage.seoSettings.get();
     res.json(settings ?? {});
+  });
+
+  app.get("/sitemap.xml", async (_req, res) => {
+    try {
+      const [seoSettings, pages, posts, events] = await Promise.all([
+        storage.seoSettings.get(),
+        storage.cmsPages.getAllPages(),
+        storage.blog.getAllPosts(),
+        storage.events.getAllEvents(),
+      ]);
+
+      const base = seoSettings?.siteUrl?.replace(/\/$/, "") || "";
+
+      const urls: Array<{ loc: string; lastmod?: string; changefreq?: string; priority?: string }> = [];
+
+      urls.push({ loc: base || "/", changefreq: "weekly", priority: "1.0" });
+
+      const staticRoutes = [
+        { path: "/about", changefreq: "monthly", priority: "0.7" },
+        { path: "/insights", changefreq: "weekly", priority: "0.8" },
+        { path: "/events", changefreq: "daily", priority: "0.8" },
+        { path: "/directory", changefreq: "daily", priority: "0.9" },
+        { path: "/join", changefreq: "monthly", priority: "0.6" },
+        { path: "/contact", changefreq: "monthly", priority: "0.5" },
+      ];
+      for (const r of staticRoutes) {
+        urls.push({ loc: `${base}${r.path}`, changefreq: r.changefreq, priority: r.priority });
+      }
+
+      for (const page of pages) {
+        if (page.status !== "published" || page.noindex) continue;
+        if (["home", "about", "contact", "join"].includes(page.slug)) continue;
+        urls.push({
+          loc: `${base}/${page.slug}`,
+          lastmod: page.updatedAt ? new Date(page.updatedAt).toISOString().split("T")[0] : undefined,
+          changefreq: "monthly",
+          priority: "0.6",
+        });
+      }
+
+      for (const post of posts) {
+        if (!post.isPublished || post.noindex) continue;
+        urls.push({
+          loc: `${base}/insights/${post.slug}`,
+          lastmod: post.updatedAt ? new Date(post.updatedAt).toISOString().split("T")[0] : undefined,
+          changefreq: "monthly",
+          priority: "0.7",
+        });
+      }
+
+      for (const event of events) {
+        if (event.status === "draft" || event.visibility !== "public") continue;
+        urls.push({
+          loc: `${base}/events/${event.id}`,
+          changefreq: "weekly",
+          priority: "0.7",
+        });
+      }
+
+      const xml = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        ...urls.map((u) => {
+          const parts = [`  <url>`, `    <loc>${escapeXml(u.loc)}</loc>`];
+          if (u.lastmod) parts.push(`    <lastmod>${u.lastmod}</lastmod>`);
+          if (u.changefreq) parts.push(`    <changefreq>${u.changefreq}</changefreq>`);
+          if (u.priority) parts.push(`    <priority>${u.priority}</priority>`);
+          parts.push(`  </url>`);
+          return parts.join("\n");
+        }),
+        "</urlset>",
+      ].join("\n");
+
+      res.set("Content-Type", "application/xml; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=3600");
+      res.send(xml);
+    } catch (err) {
+      res.status(500).send("Error generating sitemap");
+    }
+  });
+
+  app.use(async (req: Request, res: Response, next: NextFunction) => {
+    if (req.method !== "GET" || req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
+      return next();
+    }
+    try {
+      const redirect = await storage.redirects.getActiveForPath(req.path);
+      if (redirect) {
+        return res.redirect(redirect.statusCode, redirect.toPath);
+      }
+    } catch {
+    }
+    next();
   });
 }

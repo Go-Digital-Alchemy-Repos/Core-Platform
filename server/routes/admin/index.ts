@@ -12,6 +12,8 @@ import cmsRoutes from "./cms.routes";
 import cmsMediaRoutes from "./cms-media.routes";
 import cmsSectionsRoutes from "./cms-sections.routes";
 import cmsSeoRoutes from "./cms-seo.routes";
+import cmsRedirectsRoutes from "./cms-redirects.routes";
+import cmsAuditRoutes from "./cms-audit.routes";
 
 const router = Router();
 
@@ -30,5 +32,7 @@ router.use("/cms", cmsRoutes);
 router.use("/cms", cmsMediaRoutes);
 router.use("/cms", cmsSectionsRoutes);
 router.use("/cms", cmsSeoRoutes);
+router.use("/cms", cmsRedirectsRoutes);
+router.use("/cms", cmsAuditRoutes);
 
 export default router;

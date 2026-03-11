@@ -21,3 +21,4 @@ export { cmsPageRevisions, insertCmsPageRevisionSchema, type InsertCmsPageRevisi
 export { cmsMedia, insertCmsMediaSchema, type InsertCmsMedia, type CmsMediaAsset } from "./cms-media";
 export { cmsSections, insertCmsSectionSchema, type InsertCmsSection, type CmsSection } from "./cms-sections";
 export { seoSettings, insertSeoSettingsSchema, type InsertSeoSettings, type SeoSettings } from "./seo-settings";
+export { redirects, insertRedirectSchema, type InsertRedirect, type Redirect } from "./redirects";
