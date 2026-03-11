@@ -73,3 +73,91 @@ TCK Wellness is a BetterHelp-style platform featuring a counselor directory and 
 - **express-rate-limit**: Middleware for API rate limiting.
 - **Wouter**: Lightweight React router.
 - **TanStack Query**: Data fetching and caching library for React.
+---
+
+## CMS Phase 2 — Visual Page Builder
+
+### Overview
+A structured block-based page builder was added to the CMS admin. Admins can add, edit, reorder, and remove content blocks on any CMS page. Block content is stored as JSON in the `cms_pages.content` column and is future-ready for public page rendering.
+
+### Builder Architecture
+
+**Files:**
+- `client/src/features/admin/cms/builder/block-registry.ts` — Typed block definitions (propDefs, defaultProps, label, icon, description)
+- `client/src/features/admin/cms/builder/block-renderer.tsx` — React renderers for every block type (used in preview + future public output)
+- `client/src/features/admin/cms/builder/block-editor.tsx` — Dynamic prop editor panel (renders form fields based on PropDef types)
+- `client/src/features/admin/cms/builder/page-builder.tsx` — Main builder UI (block list, add dialog, reorder, select, preview mode)
+- `client/src/features/admin/cms/cms-page-editor-page.tsx` — Updated to 3-tab layout: Builder | Page Settings | SEO
+
+### Content JSON Structure
+The `cms_pages.content` jsonb column stores:
+```json
+{
+  "blocks": [
+    {
+      "id": "uuid-v4",
+      "type": "hero",
+      "props": {
+        "heading": "Welcome to TCK Wellness",
+        "subheading": "...",
+        "ctaText": "Find a Counselor",
+        "ctaLink": "/directory",
+        "backgroundImageUrl": "",
+        "overlayOpacity": 50
+      }
+    }
+  ]
+}
+```
+
+### Block Registry (16 Block Types)
+
+| Type | Label | Description |
+|---|---|---|
+| `hero` | Hero | Full-width hero with heading, subheading, CTA buttons, optional background image |
+| `section-header` | Section Header | Eyebrow label, title, subtitle with alignment |
+| `rich-text` | Rich Text | HTML content with left/center/right alignment |
+| `text-image` | Text + Image | Side-by-side layout with configurable image position |
+| `cta` | Call to Action | Bold CTA with two buttons and light/dark/accent variants |
+| `cards-grid` | Cards Grid | Icon + text cards in 2/3/4 column grid |
+| `faq` | FAQ | Accordion-style Q&A list |
+| `testimonials` | Testimonials | Quote cards with name, role, location |
+| `featured-counselors` | Featured Counselors | Live grid from `/api/therapists/featured` |
+| `events-preview` | Events Preview | Live upcoming events from `/api/events` |
+| `blog-preview` | Blog Preview | Live published blog posts from `/api/blog` |
+| `button-group` | Button Group | Multiple buttons with variant and alignment control |
+| `image-block` | Image Block | Standalone image with caption and width control |
+| `video-embed` | Video Embed | YouTube/Vimeo embed with aspect ratio control |
+| `contact-info` | Contact Info | Icon + label + value items |
+| `divider` | Divider / Spacer | Line, dots, or invisible spacer with configurable spacing |
+
+### PropDef Types
+Each block prop is typed as one of: `text`, `textarea`, `richtext`, `image-url`, `url`, `select`, `boolean`, `number`, `array-items`. The `array-items` type renders an inline item editor for complex repeating data (FAQ Q&As, testimonials, cards, buttons, etc.).
+
+### Image Upload Handling
+All `image-url` props show:
+1. A text input for direct URL entry
+2. An upload button that calls `POST /api/uploads/attachment` (R2 or local fallback)
+3. A visible notice: "R2 media picker coming in next phase — direct upload active now"
+
+### Editor UX — 3-Tab Layout
+- **Builder tab** (default): Full page builder with add/reorder/delete/edit workflow
+- **Page Settings tab**: Title, slug, page type, status + revision history sidebar
+- **SEO tab**: SEO title, meta description (with character counter), keywords, OG image upload
+
+### Builder Interactions
+- **Add Block**: Opens dialog showing all 16 block types as clickable cards
+- **Edit Block**: Click pencil icon → right-side panel opens with dynamic form matching the block's propDefs
+- **Reorder**: Up/Down chevron buttons on each block row
+- **Delete Block**: Trash icon with immediate removal (no confirm dialog — undo is via revision history)
+- **Preview**: Renders all blocks in a scrollable preview panel using the same BlockRenderer components
+
+### Public Rendering Compatibility
+`BlockRenderer` and `PageRenderer` components in `block-renderer.tsx` are designed to be imported by future public page routes. No public routes currently use CMS content — the existing hardcoded public pages remain unchanged.
+
+### Known Limitations & Next Phase Recommendations
+1. **No drag-and-drop reorder** — uses up/down buttons; drag-and-drop is deferred
+2. **Image fields use direct upload** — R2 media library picker is the next phase
+3. **Rich text** is a plain textarea — a Tiptap integration upgrade is planned
+4. **No public page rendering** — public routes still use hardcoded pages; CMS page output routing is next
+5. **Testimonials/Cards arrays** have no inline reorder — items can be deleted and re-added
