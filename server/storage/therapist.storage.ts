@@ -5,7 +5,7 @@ import { users } from "@shared/schema";
 
 export interface TherapistSearchParams {
   search?: string;
-  specialization?: string;
+  specializations?: string[];
   practiceMode?: string;
   language?: string;
   country?: string;
@@ -49,10 +49,12 @@ function buildFilterConditions(params: TherapistSearchParams): SQL[] {
     conditions.push(eq(therapistProfiles.acceptingClients, params.acceptingClients));
   }
 
-  if (params.specialization) {
-    conditions.push(
-      sql`${therapistProfiles.specializations} @> ARRAY[${params.specialization}]::text[]`
-    );
+  if (params.specializations && params.specializations.length > 0) {
+    for (const spec of params.specializations) {
+      conditions.push(
+        sql`${therapistProfiles.specializations} @> ARRAY[${spec}]::text[]`
+      );
+    }
   }
 
   if (params.language) {

@@ -22,9 +22,12 @@ router.get(
     const parsedPage = Math.max(1, parseInt(page as string) || 1);
     const parsedPageSize = Math.min(200, Math.max(1, parseInt(pageSize as string) || 200));
 
+    const specValue = specialization as string | undefined;
+    const specArray = specValue ? specValue.split(",").filter(Boolean) : undefined;
+
     const result = await storage.therapists.listProfilesPaginated({
       search: search as string,
-      specialization: specialization as string,
+      specializations: specArray,
       practiceMode: practiceMode as string,
       language: language as string,
       country: country as string,

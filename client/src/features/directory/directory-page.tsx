@@ -213,7 +213,10 @@ export default function DirectoryPage() {
 
   const [search, setSearch] = useState(initParams.get("search") || "");
   const [sessionFormat, setSessionFormat] = useState(initParams.get("practiceMode") || "all");
-  const [specialization, setSpecialization] = useState(initParams.get("specialization") || "all");
+  const [specializations, setSpecializations] = useState<string[]>(() => {
+    const val = initParams.get("specialization");
+    return val ? val.split(",").filter(Boolean) : [];
+  });
   const [language, setLanguage] = useState(initParams.get("language") || "all");
   const [country, setCountry] = useState(initParams.get("country") || "all");
   const [acceptingClients, setAcceptingClients] = useState(initParams.get("acceptingClients") === "true");
@@ -231,7 +234,8 @@ export default function DirectoryPage() {
       return;
     }
     const sp = new URLSearchParams(queryString);
-    setSpecialization(sp.get("specialization") || "all");
+    const specVal = sp.get("specialization");
+    setSpecializations(specVal ? specVal.split(",").filter(Boolean) : []);
     setLanguage(sp.get("language") || "all");
     setSessionFormat(sp.get("practiceMode") || "all");
     setCountry(sp.get("country") || "all");
@@ -244,12 +248,12 @@ export default function DirectoryPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, sessionFormat, specialization, language, country, acceptingClients]);
+  }, [debouncedSearch, sessionFormat, specializations, language, country, acceptingClients]);
 
   useEffect(() => {
     const p = new URLSearchParams();
     if (debouncedSearch) p.set("search", debouncedSearch);
-    if (specialization !== "all") p.set("specialization", specialization);
+    if (specializations.length > 0) p.set("specialization", specializations.join(","));
     if (sessionFormat !== "all") p.set("practiceMode", sessionFormat);
     if (language !== "all") p.set("language", language);
     if (country !== "all") p.set("country", country);
@@ -259,14 +263,14 @@ export default function DirectoryPage() {
     const newPath = qs ? `/directory?${qs}` : "/directory";
     isInternalUpdate.current = true;
     navigate(newPath, { replace: true });
-  }, [debouncedSearch, specialization, sessionFormat, language, country, acceptingClients, page]);
+  }, [debouncedSearch, specializations, sessionFormat, language, country, acceptingClients, page]);
 
   const { specializations: specList } = useSpecializations();
 
   const queryParams = useMemo(() => {
     const p = new URLSearchParams();
     if (debouncedSearch) p.set("search", debouncedSearch);
-    if (specialization !== "all") p.set("specialization", specialization);
+    if (specializations.length > 0) p.set("specialization", specializations.join(","));
     if (sessionFormat !== "all") p.set("practiceMode", sessionFormat);
     if (language !== "all") p.set("language", language);
     if (country !== "all") p.set("country", country);
@@ -274,7 +278,7 @@ export default function DirectoryPage() {
     p.set("page", String(page));
     p.set("pageSize", "200");
     return p.toString();
-  }, [debouncedSearch, specialization, sessionFormat, language, country, acceptingClients, page]);
+  }, [debouncedSearch, specializations, sessionFormat, language, country, acceptingClients, page]);
 
   const { data, isLoading } = useQuery<PaginatedResponse>({
     queryKey: ["/api/therapists", queryParams],
@@ -314,7 +318,7 @@ export default function DirectoryPage() {
 
   const activeFilterCount = [
     sessionFormat !== "all",
-    specialization !== "all",
+    specializations.length > 0,
     language !== "all",
     country !== "all",
     acceptingClients,
@@ -322,7 +326,7 @@ export default function DirectoryPage() {
 
   const clearAllFilters = () => {
     setSessionFormat("all");
-    setSpecialization("all");
+    setSpecializations([]);
     setLanguage("all");
     setCountry("all");
     setAcceptingClients(false);
@@ -336,11 +340,15 @@ export default function DirectoryPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2">
           <div className="flex items-center gap-1 min-w-max">
             {categories.map((cat) => {
-              const isActive = specialization === cat.slug;
+              const isActive = specializations.includes(cat.slug);
               return (
                 <button
                   key={cat.slug}
-                  onClick={() => setSpecialization(isActive ? "all" : cat.slug)}
+                  onClick={() =>
+                    setSpecializations((prev) =>
+                      isActive ? prev.filter((s) => s !== cat.slug) : [...prev, cat.slug]
+                    )
+                  }
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
                     isActive
                       ? "bg-accent text-accent-foreground"
@@ -433,18 +441,37 @@ export default function DirectoryPage() {
               <div className="space-y-2.5 pt-0.5" data-testid="panel-filters">
                 <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-[11px] text-muted-foreground mb-1 block">Specialization</Label>
-                    <Select value={specialization} onValueChange={setSpecialization}>
-                      <SelectTrigger className="h-9 text-xs w-full" data-testid="select-specialization">
-                        <SelectValue placeholder="All Specializations" />
-                      </SelectTrigger>
-                      <SelectContent className="z-[1000] max-h-[280px]">
-                        <SelectItem value="all">All Specializations</SelectItem>
-                        {specList.map((s) => (
-                          <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-[11px] text-muted-foreground mb-1 block">
+                      Specializations {specializations.length > 0 && `(${specializations.length})`}
+                    </Label>
+                    <div
+                      className="border rounded-md max-h-[180px] overflow-y-auto p-1.5 space-y-0.5"
+                      data-testid="multi-select-specialization"
+                    >
+                      {specList.map((s) => {
+                        const checked = specializations.includes(s.name);
+                        return (
+                          <label
+                            key={s.name}
+                            className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs cursor-pointer transition-colors ${
+                              checked ? "bg-accent/10 text-foreground" : "hover:bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={() =>
+                                setSpecializations((prev) =>
+                                  checked ? prev.filter((v) => v !== s.name) : [...prev, s.name]
+                                )
+                              }
+                              className="h-3.5 w-3.5"
+                              data-testid={`checkbox-spec-${s.name.toLowerCase().replace(/\s+/g, "-")}`}
+                            />
+                            <span className="truncate">{s.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
                   <div>
                     <Label className="text-[11px] text-muted-foreground mb-1 block">Language</Label>
@@ -521,14 +548,18 @@ export default function DirectoryPage() {
 
             {!showFilters && activeFilterCount > 0 && (
               <div className="flex flex-wrap gap-1.5" data-testid="active-filter-badges">
-                {specialization !== "all" && (
-                  <Badge variant="secondary" className="text-xs gap-1 max-w-[140px]">
-                    <span className="truncate">{specialization}</span>
-                    <button onClick={() => setSpecialization("all")} aria-label={`Remove ${specialization} filter`} className="flex-shrink-0 ml-0.5">
+                {specializations.map((spec) => (
+                  <Badge key={spec} variant="secondary" className="text-xs gap-1 max-w-[140px]">
+                    <span className="truncate">{spec}</span>
+                    <button
+                      onClick={() => setSpecializations((prev) => prev.filter((s) => s !== spec))}
+                      aria-label={`Remove ${spec} filter`}
+                      className="flex-shrink-0 ml-0.5"
+                    >
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
-                )}
+                ))}
                 {language !== "all" && (
                   <Badge variant="secondary" className="text-xs gap-1">
                     {language}
