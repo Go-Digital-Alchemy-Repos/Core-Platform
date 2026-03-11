@@ -89,6 +89,9 @@ const eventFormSchema = z.object({
   capacity: z.coerce.number().optional(),
   waitlistEnabled: z.boolean().optional(),
   recordingUrl: z.string().optional(),
+  showInArchives: z.boolean().optional(),
+  recordingAccess: z.string().optional(),
+  recordingPrice: z.coerce.number().optional(),
   speakerName: z.string().optional(),
   speakerBio: z.string().optional(),
   speakerImageUrl: z.string().optional(),
@@ -124,6 +127,9 @@ const defaultFormValues: EventFormValues = {
   capacity: undefined,
   waitlistEnabled: false,
   recordingUrl: "",
+  showInArchives: false,
+  recordingAccess: "free",
+  recordingPrice: undefined,
   speakerName: "",
   speakerBio: "",
   speakerImageUrl: "",
@@ -278,6 +284,8 @@ function EventsContent() {
   const watchEventDate = form.watch("date");
   const watchEventLocation = form.watch("location");
   const watchEventRecordingUrl = form.watch("recordingUrl");
+  const watchShowInArchives = form.watch("showInArchives");
+  const watchRecordingAccess = form.watch("recordingAccess");
 
   const { data: registrations, isLoading: registrantsLoading } = useQuery<EventRegistration[]>({
     queryKey: ["/api/admin/events", registrantsEvent?.id, "registrations"],
@@ -446,6 +454,9 @@ function EventsContent() {
       capacity: event.capacity ?? undefined,
       waitlistEnabled: event.waitlistEnabled ?? false,
       recordingUrl: event.recordingUrl ?? "",
+      showInArchives: event.showInArchives ?? false,
+      recordingAccess: event.recordingAccess ?? "free",
+      recordingPrice: event.recordingPrice ?? undefined,
       speakerName: event.speakerName ?? "",
       speakerBio: event.speakerBio ?? "",
       speakerImageUrl: event.speakerImageUrl ?? "",
@@ -1091,6 +1102,93 @@ function EventsContent() {
                         </FormItem>
                       )}
                     />
+
+                    {watchEventRecordingUrl && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="showInArchives"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-sm font-medium">Show in Video Archives</FormLabel>
+                                <p className="text-xs text-muted-foreground">Display this recording on the Video Archives page</p>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  data-testid="switch-show-in-archives"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        {watchShowInArchives && (
+                          <>
+                            <FormField
+                              control={form.control}
+                              name="recordingAccess"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Access Type</FormLabel>
+                                  <Select value={field.value || "free"} onValueChange={field.onChange}>
+                                    <FormControl>
+                                      <SelectTrigger data-testid="select-recording-access">
+                                        <SelectValue placeholder="Select access type" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="free">Free</SelectItem>
+                                      <SelectItem value="paid">Paid (One-time Purchase)</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <p className="text-xs text-muted-foreground">
+                                    {field.value === "paid"
+                                      ? "Counselors must purchase to view this recording"
+                                      : "All counselors can view this recording for free"}
+                                  </p>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            {watchRecordingAccess === "paid" && (
+                              <FormField
+                                control={form.control}
+                                name="recordingPrice"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Price (USD)</FormLabel>
+                                    <FormControl>
+                                      <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          min="0.50"
+                                          className="pl-7"
+                                          placeholder="29.99"
+                                          value={field.value ? (field.value / 100).toFixed(2) : ""}
+                                          onChange={(e) => {
+                                            const cents = Math.round(parseFloat(e.target.value || "0") * 100);
+                                            field.onChange(cents);
+                                          }}
+                                          data-testid="input-recording-price"
+                                        />
+                                      </div>
+                                    </FormControl>
+                                    <p className="text-xs text-muted-foreground">One-time purchase price via Stripe</p>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
 

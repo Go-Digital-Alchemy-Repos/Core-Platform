@@ -19,6 +19,9 @@ export const events = pgTable("events", {
   virtualJoinUrl: text("virtual_join_url"),
   virtualDialInInfo: text("virtual_dial_in_info"),
   recordingUrl: text("recording_url"),
+  showInArchives: boolean("show_in_archives").default(false),
+  recordingAccess: text("recording_access").default("free"),
+  recordingPrice: integer("recording_price"),
 
   registrationEnabled: boolean("registration_enabled").default(false),
   registrationType: text("registration_type").default("free"),

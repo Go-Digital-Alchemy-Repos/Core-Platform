@@ -22,3 +22,4 @@ export { cmsMedia, insertCmsMediaSchema, type InsertCmsMedia, type CmsMediaAsset
 export { cmsSections, insertCmsSectionSchema, type InsertCmsSection, type CmsSection } from "./cms-sections";
 export { seoSettings, insertSeoSettingsSchema, type InsertSeoSettings, type SeoSettings } from "./seo-settings";
 export { redirects, insertRedirectSchema, type InsertRedirect, type Redirect } from "./redirects";
+export { recordingPurchases, insertRecordingPurchaseSchema, type InsertRecordingPurchase, type RecordingPurchase } from "./recording-purchases";

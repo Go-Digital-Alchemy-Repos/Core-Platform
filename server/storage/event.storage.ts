@@ -47,7 +47,8 @@ export class EventStorage {
         and(
           lt(events.date, new Date()),
           eq(events.status, "published"),
-          sql`${events.recordingUrl} IS NOT NULL`
+          sql`${events.recordingUrl} IS NOT NULL`,
+          eq(events.showInArchives, true)
         )
       )
       .orderBy(desc(events.date));

@@ -1,8 +1,11 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link, Redirect } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link, Redirect, useSearch } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { Event } from "@shared/schema/events";
+import type { RecordingPurchase } from "@shared/schema/recording-purchases";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,12 +14,14 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search,
-  Calendar,
   User,
   Video,
   Play,
   ExternalLink,
   Filter,
+  Lock,
+  ShoppingCart,
+  CheckCircle,
 } from "lucide-react";
 import {
   Dialog,
@@ -40,16 +45,18 @@ function formatDate(date: string | Date) {
   });
 }
 
+function formatPrice(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
 function getVideoEmbedUrl(url: string) {
   if (!url) return null;
 
-  // YouTube
   const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
   if (ytMatch) {
     return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1`;
   }
 
-  // Vimeo
   const vimeoMatch = url.match(/(?:vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)/);
   if (vimeoMatch) {
     return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
@@ -58,7 +65,24 @@ function getVideoEmbedUrl(url: string) {
   return null;
 }
 
-function RecordingCard({ event, onWatch }: { event: Event; onWatch: (event: Event) => void }) {
+function RecordingCard({
+  event,
+  onWatch,
+  onPurchase,
+  isPurchased,
+  isPurchasing,
+  isLoggedIn,
+}: {
+  event: Event;
+  onWatch: (event: Event) => void;
+  onPurchase: (eventId: string) => void;
+  isPurchased: boolean;
+  isPurchasing: boolean;
+  isLoggedIn: boolean;
+}) {
+  const isPaid = event.recordingAccess === "paid" && event.recordingPrice;
+  const canWatch = !isPaid || isPurchased;
+
   return (
     <Card data-testid={`card-recording-${event.id}`} className="flex flex-col h-full hover-elevate overflow-visible">
       <div className="aspect-video relative overflow-hidden rounded-t-md bg-muted flex items-center justify-center">
@@ -71,28 +95,48 @@ function RecordingCard({ event, onWatch }: { event: Event; onWatch: (event: Even
         ) : (
           <Video className="h-12 w-12 text-muted-foreground/40" />
         )}
-        <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-          <Button 
-            size="icon" 
-            variant="secondary" 
-            className="rounded-full h-12 w-12 shadow-lg"
-            onClick={() => onWatch(event)}
-            data-testid={`button-play-overlay-${event.id}`}
-          >
-            <Play className="h-6 w-6 fill-current" />
-          </Button>
-        </div>
+        {canWatch && (
+          <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+            <Button
+              size="icon"
+              variant="secondary"
+              className="rounded-full h-12 w-12 shadow-lg"
+              onClick={() => onWatch(event)}
+              data-testid={`button-play-overlay-${event.id}`}
+            >
+              <Play className="h-6 w-6 fill-current" />
+            </Button>
+          </div>
+        )}
+        {isPaid && !isPurchased && (
+          <div className="absolute top-2 right-2">
+            <Badge className="bg-amber-500 text-white border-0 shadow-md" data-testid={`badge-paid-${event.id}`}>
+              <Lock className="h-3 w-3 mr-1" />
+              {formatPrice(event.recordingPrice!)}
+            </Badge>
+          </div>
+        )}
+        {isPaid && isPurchased && (
+          <div className="absolute top-2 right-2">
+            <Badge className="bg-green-600 text-white border-0 shadow-md" data-testid={`badge-purchased-${event.id}`}>
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Purchased
+            </Badge>
+          </div>
+        )}
+        {!isPaid && (
+          <div className="absolute top-2 right-2">
+            <Badge variant="secondary" className="shadow-md" data-testid={`badge-free-${event.id}`}>
+              Free
+            </Badge>
+          </div>
+        )}
       </div>
       <CardHeader className="flex-none p-4 pb-2">
         <div className="flex justify-between items-start gap-2 mb-1">
           <Badge variant="outline" className="text-[10px] uppercase tracking-wider" data-testid={`text-recording-date-${event.id}`}>
             {formatDate(event.date)}
           </Badge>
-          {event.registrationEnabled && (
-            <Badge variant="secondary" className="text-[10px]" data-testid={`badge-recording-type-${event.id}`}>
-              {event.registrationType === "paid" ? "Paid Event" : "Free Event"}
-            </Badge>
-          )}
         </div>
         <Link href={`/events/${event.id}`}>
           <CardTitle className="text-base line-clamp-2 cursor-pointer hover:text-primary transition-colors" data-testid={`text-recording-title-${event.id}`}>
@@ -112,14 +156,33 @@ function RecordingCard({ event, onWatch }: { event: Event; onWatch: (event: Even
         </p>
       </CardContent>
       <CardFooter className="flex-none p-4 pt-0">
-        <Button 
-          className="w-full" 
-          onClick={() => onWatch(event)}
-          data-testid={`button-watch-recording-${event.id}`}
-        >
-          <Play className="mr-2 h-4 w-4 fill-current" />
-          Watch Recording
-        </Button>
+        {canWatch ? (
+          <Button
+            className="w-full"
+            onClick={() => onWatch(event)}
+            data-testid={`button-watch-recording-${event.id}`}
+          >
+            <Play className="mr-2 h-4 w-4 fill-current" />
+            Watch Recording
+          </Button>
+        ) : isLoggedIn ? (
+          <Button
+            className="w-full"
+            onClick={() => onPurchase(event.id)}
+            disabled={isPurchasing}
+            data-testid={`button-purchase-recording-${event.id}`}
+          >
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            {isPurchasing ? "Redirecting..." : `Purchase for ${formatPrice(event.recordingPrice!)}`}
+          </Button>
+        ) : (
+          <Button className="w-full" asChild data-testid={`button-login-to-purchase-${event.id}`}>
+            <Link href="/auth/login">
+              <Lock className="mr-2 h-4 w-4" />
+              Log In to Purchase
+            </Link>
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
@@ -151,12 +214,40 @@ function RecordingSkeleton() {
 
 export default function RecordingArchivesPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const searchParams = useSearch();
   const [search, setSearch] = useState("");
   const [yearFilter, setYearFilter] = useState("all");
+  const [accessFilter, setAccessFilter] = useState("all");
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   const { data: recordings, isLoading } = useQuery<Event[]>({
     queryKey: ["/api/events/recordings"],
+  });
+
+  const { data: purchases } = useQuery<RecordingPurchase[]>({
+    queryKey: ["/api/events/recordings/my-purchases"],
+    enabled: !!user,
+  });
+
+  const purchasedEventIds = useMemo(() => {
+    if (!purchases) return new Set<string>();
+    return new Set(
+      purchases.filter((p) => p.stripePaymentIntentId).map((p) => p.eventId)
+    );
+  }, [purchases]);
+
+  const purchaseMutation = useMutation({
+    mutationFn: async (eventId: string) => {
+      const res = await apiRequest("POST", "/api/stripe/create-recording-checkout", { eventId });
+      return res.json();
+    },
+    onSuccess: (data: { url: string }) => {
+      window.location.href = data.url;
+    },
+    onError: (err: Error) => {
+      toast({ title: "Purchase failed", description: err.message, variant: "destructive" });
+    },
   });
 
   const years = useMemo(() => {
@@ -171,21 +262,32 @@ export default function RecordingArchivesPage() {
   const filteredRecordings = useMemo(() => {
     if (!recordings) return [];
     return recordings.filter((event) => {
-      const matchesSearch = 
+      const matchesSearch =
         event.title.toLowerCase().includes(search.toLowerCase()) ||
         (event.speakerName?.toLowerCase().includes(search.toLowerCase()) ?? false);
-      
+
       const eventYear = new Date(event.date).getFullYear().toString();
       const matchesYear = yearFilter === "all" || eventYear === yearFilter;
 
-      return matchesSearch && matchesYear;
+      const matchesAccess =
+        accessFilter === "all" ||
+        (accessFilter === "free" && event.recordingAccess !== "paid") ||
+        (accessFilter === "paid" && event.recordingAccess === "paid") ||
+        (accessFilter === "purchased" && purchasedEventIds.has(event.id));
+
+      return matchesSearch && matchesYear && matchesAccess;
     });
-  }, [recordings, search, yearFilter]);
+  }, [recordings, search, yearFilter, accessFilter, purchasedEventIds]);
 
   const embedUrl = selectedEvent?.recordingUrl ? getVideoEmbedUrl(selectedEvent.recordingUrl) : null;
 
   if (user && user.role === "client") {
     return <Redirect to="/" />;
+  }
+
+  const checkoutStatus = new URLSearchParams(searchParams).get("checkout");
+  if (checkoutStatus === "success") {
+    queryClient.invalidateQueries({ queryKey: ["/api/events/recordings/my-purchases"] });
   }
 
   return (
@@ -194,10 +296,20 @@ export default function RecordingArchivesPage() {
         <div className="mb-8 space-y-4">
           <div className="space-y-2">
             <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight" data-testid="text-archives-heading">
-              Recording Archives
+              Video Archives
             </h1>
-            <p className="text-muted-foreground text-lg max-w-3xl" data-testid="text-archives-subtitle">Browse our collection of past trainings and webinars. </p>
+            <p className="text-muted-foreground text-lg max-w-3xl" data-testid="text-archives-subtitle">Browse our collection of past trainings and webinars.</p>
           </div>
+
+          {checkoutStatus === "success" && (
+            <div className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800 p-4 flex items-center gap-3" data-testid="alert-purchase-success">
+              <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+              <div>
+                <p className="font-medium text-green-800 dark:text-green-200">Purchase successful!</p>
+                <p className="text-sm text-green-700 dark:text-green-300">You now have permanent access to the recording.</p>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center pt-4">
             <div className="relative flex-1 w-full max-w-md">
@@ -225,6 +337,17 @@ export default function RecordingArchivesPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={accessFilter} onValueChange={setAccessFilter}>
+                <SelectTrigger className="w-[140px]" data-testid="select-access-filter">
+                  <SelectValue placeholder="All Access" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Videos</SelectItem>
+                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  {user && <SelectItem value="purchased">My Purchases</SelectItem>}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -234,10 +357,14 @@ export default function RecordingArchivesPage() {
         ) : filteredRecordings.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="grid-recordings">
             {filteredRecordings.map((event) => (
-              <RecordingCard 
-                key={event.id} 
-                event={event} 
-                onWatch={setSelectedEvent} 
+              <RecordingCard
+                key={event.id}
+                event={event}
+                onWatch={setSelectedEvent}
+                onPurchase={(eventId) => purchaseMutation.mutate(eventId)}
+                isPurchased={purchasedEventIds.has(event.id)}
+                isPurchasing={purchaseMutation.isPending && purchaseMutation.variables === event.id}
+                isLoggedIn={!!user}
               />
             ))}
           </div>

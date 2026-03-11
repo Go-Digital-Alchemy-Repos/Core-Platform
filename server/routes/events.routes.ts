@@ -2,7 +2,7 @@ import { Router } from "express";
 import { storage } from "../storage/index";
 import { asyncHandler } from "../middleware/error-handler";
 import { paramString } from "../utils/params";
-import { optionalAuth } from "../middleware/auth";
+import { optionalAuth, authenticateToken } from "../middleware/auth";
 import type { Event } from "@shared/schema/events";
 
 const router = Router();
@@ -53,9 +53,50 @@ router.get(
   asyncHandler(async (req, res) => {
     const eventsList = await storage.events.getRecordingEvents();
     const userRole = req.user?.role ?? null;
-    
-    const filtered = eventsList.filter(event => canAccessEvent(event, userRole));
+    const userId = req.user?.id ?? null;
+
+    let purchasedEventIds = new Set<string>();
+    if (userId) {
+      const purchases = await storage.recordingPurchases.getByUser(userId);
+      purchasedEventIds = new Set(
+        purchases.filter((p) => p.stripePaymentIntentId).map((p) => p.eventId)
+      );
+    }
+
+    const filtered = eventsList
+      .filter((event) => canAccessEvent(event, userRole))
+      .map((event) => {
+        if (event.recordingAccess === "paid" && event.recordingPrice) {
+          if (userRole === "admin" || purchasedEventIds.has(event.id)) {
+            return event;
+          }
+          return { ...event, recordingUrl: null };
+        }
+        return event;
+      });
     res.json(filtered);
+  })
+);
+
+router.get(
+  "/recordings/my-purchases",
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    const purchases = await storage.recordingPurchases.getByUser(req.user!.id);
+    res.json(purchases);
+  })
+);
+
+router.get(
+  "/recordings/:eventId/purchase-status",
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    const eventId = paramString(req.params.eventId);
+    const purchase = await storage.recordingPurchases.getByUserAndEvent(req.user!.id, eventId);
+    res.json({
+      purchased: !!(purchase && purchase.stripePaymentIntentId),
+      pending: !!(purchase && !purchase.stripePaymentIntentId && purchase.stripeCheckoutSessionId),
+    });
   })
 );
 

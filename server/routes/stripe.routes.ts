@@ -227,4 +227,97 @@ router.get(
   })
 );
 
+router.post(
+  "/create-recording-checkout",
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    const { eventId } = req.body;
+    if (!eventId) {
+      res.status(400).json({ message: "eventId is required" });
+      return;
+    }
+
+    const event = await storage.events.getEvent(eventId);
+    if (!event) {
+      res.status(404).json({ message: "Event not found" });
+      return;
+    }
+
+    if (event.status !== "published") {
+      res.status(400).json({ message: "Event is not available" });
+      return;
+    }
+
+    if (!canAccessEvent(event, req.user!.role)) {
+      res.status(403).json({ message: "You do not have access to this event" });
+      return;
+    }
+
+    if (!event.recordingUrl || !event.showInArchives) {
+      res.status(400).json({ message: "Recording is not available" });
+      return;
+    }
+
+    if (event.recordingAccess !== "paid" || !event.recordingPrice || event.recordingPrice < 50) {
+      res.status(400).json({ message: "This recording is free" });
+      return;
+    }
+
+    const user = req.user!;
+    const existing = await storage.recordingPurchases.getByUserAndEvent(user.id, eventId);
+    if (existing && existing.stripePaymentIntentId) {
+      res.status(409).json({ message: "You have already purchased this recording" });
+      return;
+    }
+
+    const stripe = await getUncachableStripeClient();
+
+    if (existing && existing.stripeCheckoutSessionId) {
+      try {
+        const session = await stripe.checkout.sessions.retrieve(existing.stripeCheckoutSessionId);
+        if (session.status === "open") {
+          res.json({ url: session.url });
+          return;
+        }
+      } catch (err) {}
+    }
+
+    let purchase;
+    if (existing) {
+      purchase = existing;
+    } else {
+      purchase = await storage.recordingPurchases.create({
+        eventId,
+        userId: user.id,
+      });
+    }
+
+    const host = req.headers.origin || `${req.protocol}://${req.hostname}`;
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: { name: `Recording: ${event.title}` },
+            unit_amount: event.recordingPrice,
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${host}/recordings?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${host}/recordings?checkout=canceled`,
+      metadata: { recordingPurchaseId: purchase.id, eventId },
+      customer_email: user.email,
+    });
+
+    await storage.recordingPurchases.updatePaymentDetails(purchase.id, {
+      stripeCheckoutSessionId: session.id,
+    });
+
+    res.json({ url: session.url });
+  })
+);
+
 export default router;

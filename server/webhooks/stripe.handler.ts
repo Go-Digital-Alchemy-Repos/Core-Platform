@@ -22,7 +22,22 @@ export class WebhookHandlers {
       switch (event.type) {
         case "checkout.session.completed": {
           const session = event.data.object;
+          const recordingPurchaseId = session.metadata?.recordingPurchaseId;
           const registrationId = session.metadata?.registrationId;
+
+          if (recordingPurchaseId) {
+            const purchase = await storage.recordingPurchases.getByCheckoutSession(session.id);
+            if (purchase) {
+              await storage.recordingPurchases.updatePaymentDetails(purchase.id, {
+                stripePaymentIntentId: session.payment_intent as string,
+                amountPaid: session.amount_total || 0,
+              });
+              logger.stripe.info("Recording purchase confirmed", { purchaseId: purchase.id, sessionId: session.id });
+            } else {
+              logger.stripe.warn("Recording purchase not found for checkout session", { recordingPurchaseId, sessionId: session.id });
+            }
+            break;
+          }
 
           if (!registrationId) {
             logger.stripe.info("Checkout session completed without registrationId metadata", { sessionId: session.id });
@@ -44,7 +59,6 @@ export class WebhookHandlers {
             status: "confirmed",
           });
 
-          // Fire-and-forget email confirmation
           if (eventDetails) {
             const user = await storage.users.getUser(registration.userId);
             sendPaymentConfirmationEmail(
@@ -64,13 +78,22 @@ export class WebhookHandlers {
 
         case "checkout.session.expired": {
           const session = event.data.object;
+          const recordingPurchaseId = session.metadata?.recordingPurchaseId;
           const registrationId = session.metadata?.registrationId;
+
+          if (recordingPurchaseId) {
+            const purchase = await storage.recordingPurchases.getByCheckoutSession(session.id);
+            if (purchase && !purchase.stripePaymentIntentId) {
+              await storage.recordingPurchases.delete(purchase.id);
+              logger.stripe.info("Deleted expired pending recording purchase", { purchaseId: purchase.id, sessionId: session.id });
+            }
+            break;
+          }
 
           if (!registrationId) break;
 
           const registration = await storage.eventRegistrations.getRegistration(registrationId);
           if (registration && registration.paymentStatus === "pending") {
-            // Cancel or delete orphan registration
             await storage.eventRegistrations.deleteRegistration(registrationId);
             logger.stripe.info("Deleted expired pending event registration", { registrationId, sessionId: session.id });
           }
