@@ -171,7 +171,6 @@ function UsersContent() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="w-12"></TableHead>
@@ -184,9 +183,6 @@ function UsersContent() {
                   <span className="font-medium">
                     {`${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() || "—"}
                   </span>
-                </TableCell>
-                <TableCell data-testid={`text-user-email-${u.id}`}>
-                  {u.email}
                 </TableCell>
                 <TableCell>
                   <Badge
