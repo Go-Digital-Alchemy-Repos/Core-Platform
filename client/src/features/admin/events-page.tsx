@@ -359,6 +359,9 @@ function EventsContent() {
       setDialogOpen(false);
       form.reset(defaultFormValues);
     },
+    onError: (error: Error) => {
+      toast({ title: "Failed to create event", description: error.message, variant: "destructive" });
+    },
   });
 
   const updateMutation = useMutation({
@@ -368,10 +371,13 @@ function EventsContent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/events"] });
-      toast({ title: "Event updated" });
+      toast({ title: "Event saved" });
       setDialogOpen(false);
       setEditingEvent(null);
       form.reset(defaultFormValues);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to save event", description: error.message, variant: "destructive" });
     },
   });
 
@@ -1140,7 +1146,7 @@ function EventsContent() {
               {createMutation.isPending || updateMutation.isPending
                 ? "Saving..."
                 : editingEvent
-                  ? "Update Event"
+                  ? "Save Event"
                   : "Create Event"}
             </Button>
           </SheetFooter>

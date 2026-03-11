@@ -20,6 +20,21 @@ function isValidDate(d: Date): boolean {
   return d instanceof Date && !isNaN(d.getTime());
 }
 
+const DATE_FIELDS = ["date", "endDate", "registrationOpensAt", "registrationClosesAt"] as const;
+
+function coerceDates(data: Record<string, unknown>): Record<string, unknown> {
+  const result = { ...data };
+  for (const field of DATE_FIELDS) {
+    if (result[field] !== undefined && result[field] !== null && result[field] !== "") {
+      const d = new Date(result[field] as string);
+      result[field] = isValidDate(d) ? d : null;
+    } else if (result[field] === "" || result[field] === null) {
+      result[field] = null;
+    }
+  }
+  return result;
+}
+
 function validateEventData(data: any): string | null {
   if (data.status && !VALID_STATUSES.includes(data.status)) {
     return `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`;
@@ -85,7 +100,7 @@ router.post(
     if (error) {
       return res.status(400).json({ message: error });
     }
-    const event = await storage.events.createEvent(req.body);
+    const event = await storage.events.createEvent(coerceDates(req.body) as any);
     res.status(201).json(event);
   })
 );
@@ -103,7 +118,7 @@ router.put(
       return notFound(res, "Event");
     }
 
-    const event = await storage.events.updateEvent(id, req.body);
+    const event = await storage.events.updateEvent(id, coerceDates(req.body) as any);
     if (!event) {
       notFound(res, "Event");
       return;
