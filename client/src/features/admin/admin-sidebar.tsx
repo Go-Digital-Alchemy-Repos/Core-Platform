@@ -145,9 +145,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                     "font-heading text-lg font-semibold whitespace-nowrap transition-opacity duration-200",
                     collapsed ? "opacity-0 w-0" : "opacity-100"
                   )}
-                >
-                  Admin Panel
-                </h2>
+                >Admin Dashboard</h2>
               </div>
             </div>
 

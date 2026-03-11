@@ -36,6 +36,7 @@ import {
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { CmsImageUpload } from "./components/cms-image-upload";
+import { SeoPreview } from "@/components/shared/seo-preview";
 import type { BlogPost } from "@shared/schema";
 
 function generateSlug(title: string): string {
@@ -60,6 +61,7 @@ const postFormSchema = z.object({
   seoTitle: z.string().optional(),
   seoDescription: z.string().max(160, "Max 160 characters").optional(),
   ogImageUrl: z.string().optional(),
+  noindex: z.boolean().default(false),
 });
 
 type PostForm = z.infer<typeof postFormSchema>;
@@ -98,6 +100,7 @@ export default function CmsBlogEditorPage() {
       seoTitle: "",
       seoDescription: "",
       ogImageUrl: "",
+      noindex: false,
     },
   });
 
@@ -116,6 +119,7 @@ export default function CmsBlogEditorPage() {
         seoTitle: post.seoTitle ?? "",
         seoDescription: post.seoDescription ?? "",
         ogImageUrl: post.ogImageUrl ?? "",
+        noindex: post.noindex ?? false,
       });
       slugManuallyEdited.current = true;
       setInitialized(true);
@@ -148,6 +152,7 @@ export default function CmsBlogEditorPage() {
       seoTitle: data.seoTitle || null,
       seoDescription: data.seoDescription || null,
       ogImageUrl: data.ogImageUrl || null,
+      noindex: data.noindex ?? false,
     };
   };
 
@@ -192,6 +197,11 @@ export default function CmsBlogEditorPage() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const isPublished = form.watch("isPublished");
   const currentSlug = form.watch("slug");
+  const watchSeoTitle = form.watch("seoTitle");
+  const watchSeoDescription = form.watch("seoDescription");
+  const watchOgImageUrl = form.watch("ogImageUrl");
+  const watchCoverImageUrl = form.watch("coverImageUrl");
+  const watchBlogTitle = form.watch("title");
 
   if (!isNew && isLoading) {
     return (
@@ -457,12 +467,12 @@ export default function CmsBlogEditorPage() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="seo" className="mt-0">
+              <TabsContent value="seo" className="mt-0 space-y-4">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Globe className="h-4 w-4 text-muted-foreground" />
-                      SEO Settings
+                      Search Engine
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -493,7 +503,7 @@ export default function CmsBlogEditorPage() {
                         <FormItem>
                           <FormLabel>
                             Meta Description
-                            <span className="ml-2 text-xs font-normal text-muted-foreground">
+                            <span className={`ml-2 text-xs font-normal ${(field.value ?? "").length > 130 ? "text-amber-500" : "text-muted-foreground"}`}>
                               ({(field.value ?? "").length}/160)
                             </span>
                           </FormLabel>
@@ -514,6 +524,42 @@ export default function CmsBlogEditorPage() {
                     />
                     <FormField
                       control={form.control}
+                      name="noindex"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+                            <div>
+                              <FormLabel className="text-sm font-medium cursor-pointer">
+                                Hide from search engines
+                              </FormLabel>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Sets noindex,nofollow. Use for drafts or unlisted posts.
+                              </p>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                data-testid="switch-noindex"
+                              />
+                            </FormControl>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      Social / Open Graph
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <FormField
+                      control={form.control}
                       name="ogImageUrl"
                       render={({ field }) => (
                         <FormItem>
@@ -522,7 +568,8 @@ export default function CmsBlogEditorPage() {
                             <CmsImageUpload
                               value={field.value ?? ""}
                               onChange={field.onChange}
-                              helpText="Shown when the article is shared on social media. Recommended: 1200 × 630 px. Defaults to cover image if not set."
+                              helpText="Shown when the article is shared on social media. Recommended: 1200 × 630 px. Defaults to cover image, then global OG image."
+                              data-testid="og-image-upload"
                             />
                           </FormControl>
                           <FormMessage />
@@ -531,6 +578,15 @@ export default function CmsBlogEditorPage() {
                     />
                   </CardContent>
                 </Card>
+
+                <SeoPreview
+                  title={watchSeoTitle || watchBlogTitle || ""}
+                  description={watchSeoDescription || ""}
+                  url={`${typeof window !== "undefined" ? window.location.origin : ""}/insights/${currentSlug || ""}`}
+                  ogImage={watchOgImageUrl || watchCoverImageUrl || ""}
+                  source="post"
+                  data-testid="seo-preview-panel"
+                />
               </TabsContent>
             </Tabs>
           </form>

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, jsonb, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users } from "./users";
@@ -15,6 +15,8 @@ export const cmsPages = pgTable("cms_pages", {
   seoDescription: text("seo_description"),
   seoKeywords: text("seo_keywords"),
   ogImageUrl: text("og_image_url"),
+  canonicalUrl: text("canonical_url"),
+  noindex: boolean("noindex").default(false),
   createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
   updatedBy: varchar("updated_by").references(() => users.id, { onDelete: "set null" }),
   publishedAt: timestamp("published_at"),

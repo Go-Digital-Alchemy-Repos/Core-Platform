@@ -30,6 +30,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { SeoPreview } from "@/components/shared/seo-preview";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
@@ -57,6 +59,8 @@ const editorSchema = z.object({
   seoDescription: z.string().max(160, "Max 160 characters").optional(),
   seoKeywords: z.string().optional(),
   ogImageUrl: z.string().optional(),
+  canonicalUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  noindex: z.boolean().default(false),
 });
 
 type EditorForm = z.infer<typeof editorSchema>;
@@ -115,6 +119,8 @@ export default function CmsPageEditorPage() {
       seoDescription: "",
       seoKeywords: "",
       ogImageUrl: "",
+      canonicalUrl: "",
+      noindex: false,
     },
   });
 
@@ -129,12 +135,19 @@ export default function CmsPageEditorPage() {
         seoDescription: page.seoDescription ?? "",
         seoKeywords: page.seoKeywords ?? "",
         ogImageUrl: page.ogImageUrl ?? "",
+        canonicalUrl: page.canonicalUrl ?? "",
+        noindex: page.noindex ?? false,
       });
       setBuilderContent(parseBuilderContent(page.content));
     }
   }, [page, form]);
 
   const watchTitle = form.watch("title");
+  const watchSlug = form.watch("slug");
+  const watchSeoTitle = form.watch("seoTitle");
+  const watchSeoDescription = form.watch("seoDescription");
+  const watchOgImageUrl = form.watch("ogImageUrl");
+
   useEffect(() => {
     if (isNew && !slugManuallyEdited.current && watchTitle !== titleRef.current) {
       titleRef.current = watchTitle;
@@ -505,14 +518,14 @@ export default function CmsPageEditorPage() {
           </TabsContent>
 
           <TabsContent value="seo" className="mt-0">
-            <div className="max-w-2xl">
+            <div className="max-w-2xl space-y-5">
               <Form {...form}>
-                <form className="space-y-6">
+                <form className="space-y-5">
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
                         <Globe className="h-4 w-4 text-muted-foreground" />
-                        SEO Settings
+                        Search Engine
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -521,10 +534,11 @@ export default function CmsPageEditorPage() {
                         name="seoTitle"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>SEO Title</FormLabel>
+                            <FormLabel>SEO Title <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
                             <FormControl>
                               <Input placeholder="Overrides page title in search results" {...field} data-testid="input-seo-title" />
                             </FormControl>
+                            <FormDescription className="text-xs">If blank, the page title is used.</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -536,7 +550,7 @@ export default function CmsPageEditorPage() {
                           <FormItem>
                             <FormLabel>
                               Meta Description
-                              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                              <span className={`ml-2 text-xs font-normal ${(field.value ?? "").length > 130 ? "text-amber-500" : "text-muted-foreground"}`}>
                                 ({(field.value ?? "").length}/160)
                               </span>
                             </FormLabel>
@@ -557,7 +571,7 @@ export default function CmsPageEditorPage() {
                         name="seoKeywords"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Keywords</FormLabel>
+                            <FormLabel>Keywords <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
                             <FormControl>
                               <Input placeholder="comma, separated, keywords" {...field} data-testid="input-seo-keywords" />
                             </FormControl>
@@ -567,14 +581,66 @@ export default function CmsPageEditorPage() {
                       />
                       <FormField
                         control={form.control}
+                        name="canonicalUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Canonical URL <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://tckwellness.com/about" {...field} data-testid="input-canonical-url" />
+                            </FormControl>
+                            <FormDescription className="text-xs">
+                              Override the canonical link tag. Leave blank to auto-generate from the page slug.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="noindex"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+                              <div>
+                                <FormLabel className="text-sm font-medium cursor-pointer">
+                                  Hide from search engines
+                                </FormLabel>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  Sets noindex,nofollow. Use for private or staging pages.
+                                </p>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  data-testid="switch-noindex"
+                                />
+                              </FormControl>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                        Social / Open Graph
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <FormField
+                        control={form.control}
                         name="ogImageUrl"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Open Graph Image</FormLabel>
+                            <FormLabel>Open Graph Image <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
                             <CmsImageUpload
                               value={field.value ?? ""}
                               onChange={field.onChange}
-                              helpText="Recommended: 1200 × 630 px. Shown when the page is shared on social media."
+                              helpText="Recommended: 1200 × 630 px. Shown when the page is shared on social media. Falls back to global default OG image."
                               data-testid="og-image-upload"
                             />
                             <FormMessage />
@@ -585,6 +651,15 @@ export default function CmsPageEditorPage() {
                   </Card>
                 </form>
               </Form>
+
+              <SeoPreview
+                title={watchSeoTitle || watchTitle || ""}
+                description={watchSeoDescription || ""}
+                url={`${typeof window !== "undefined" ? window.location.origin : ""}/${watchSlug || ""}`}
+                ogImage={watchOgImageUrl || ""}
+                source="page"
+                data-testid="seo-preview-panel"
+              />
             </div>
           </TabsContent>
         </Tabs>

@@ -5,15 +5,25 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, ArrowLeft, User } from "lucide-react";
-import type { BlogPost } from "@shared/schema";
+import type { BlogPost, SeoSettings } from "@shared/schema";
 import { useSeo } from "@/hooks/use-seo";
 
-function PostSeo({ post }: { post: BlogPost }) {
+function PostSeo({ post, globalSeo }: { post: BlogPost; globalSeo?: SeoSettings }) {
+  const titleSuffix = globalSeo?.titleSuffix ?? " | TCK Wellness";
+  const effectiveTitle = post.seoTitle || `${post.title}${titleSuffix}`;
+  const effectiveDescription =
+    post.seoDescription || post.excerpt || globalSeo?.defaultMetaDescription || undefined;
+  const effectiveOgImage =
+    post.ogImageUrl || post.coverImageUrl || globalSeo?.defaultOgImageUrl || undefined;
+  const siteOrigin =
+    globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+
   useSeo({
-    title: post.seoTitle || `${post.title} | TCK Wellness`,
-    description: post.seoDescription || post.excerpt || undefined,
-    ogImage: post.ogImageUrl || post.coverImageUrl || undefined,
-    canonical: `${window.location.origin}/insights/${post.slug}`,
+    title: effectiveTitle,
+    description: effectiveDescription,
+    ogImage: effectiveOgImage,
+    canonical: `${siteOrigin}/insights/${post.slug}`,
+    noindex: post.noindex ?? false,
   });
   return null;
 }
@@ -23,6 +33,11 @@ export default function InsightsPostPage() {
 
   const { data: post, isLoading, error } = useQuery<BlogPost>({
     queryKey: ["/api/blog", params.slug],
+  });
+
+  const { data: globalSeo } = useQuery<SeoSettings>({
+    queryKey: ["/api/seo/global"],
+    staleTime: 10 * 60 * 1000,
   });
 
   if (isLoading) {
@@ -54,7 +69,7 @@ export default function InsightsPostPage() {
 
   return (
     <PageLayout>
-      <PostSeo post={post} />
+      <PostSeo post={post} globalSeo={globalSeo} />
       <article className="max-w-3xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
         <Link href="/insights">
           <Button variant="ghost" size="sm" className="mb-6" data-testid="button-back-insights">
@@ -79,45 +94,42 @@ export default function InsightsPostPage() {
             <Badge variant="secondary" data-testid="badge-post-category">{post.category}</Badge>
           )}
           {post.tags?.map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
+            <Badge key={tag} variant="outline" data-testid={`badge-post-tag-${tag}`}>{tag}</Badge>
           ))}
         </div>
 
-        <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight mb-4" data-testid="text-post-title">
+        <h1 className="text-3xl sm:text-4xl font-heading font-semibold mb-4" data-testid="text-post-title">
           {post.title}
         </h1>
 
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8 pb-8 border-b">
-          <span className="flex items-center gap-1.5">
-            <User className="h-4 w-4" />
+        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8 flex-wrap">
+          <span className="flex items-center gap-1.5" data-testid="text-post-author">
+            <User className="h-3.5 w-3.5" />
             {post.authorName}
           </span>
           {post.publishedAt && (
-            <span className="flex items-center gap-1.5">
-              <Calendar className="h-4 w-4" />
+            <span className="flex items-center gap-1.5" data-testid="text-post-date">
+              <Calendar className="h-3.5 w-3.5" />
               {new Date(post.publishedAt).toLocaleDateString("en-US", {
+                year: "numeric",
                 month: "long",
                 day: "numeric",
-                year: "numeric",
               })}
             </span>
           )}
         </div>
 
-        {post.content && post.content.trim().startsWith("<") ? (
-          <div
-            className="prose prose-slate dark:prose-invert max-w-none leading-relaxed"
-            data-testid="text-post-content"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
-        ) : (
-          <div
-            className="prose prose-slate dark:prose-invert max-w-none leading-relaxed whitespace-pre-wrap"
-            data-testid="text-post-content"
-          >
-            {post.content}
-          </div>
+        {post.excerpt && (
+          <p className="text-lg text-muted-foreground mb-8 leading-relaxed" data-testid="text-post-excerpt">
+            {post.excerpt}
+          </p>
         )}
+
+        <div
+          className="prose prose-neutral dark:prose-invert max-w-none"
+          data-testid="div-post-content"
+          dangerouslySetInnerHTML={{ __html: post.content }}
+        />
       </article>
     </PageLayout>
   );
