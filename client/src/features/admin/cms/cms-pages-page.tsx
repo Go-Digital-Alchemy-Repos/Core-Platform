@@ -120,7 +120,7 @@ export default function CmsPagesPage() {
                 </thead>
                 <tbody>
                   {pages.map((page) => (
-                    <tr key={page.id} className="border-b last:border-0 hover:bg-muted/20" data-testid={`row-page-${page.id}`}>
+                    <tr key={page.id} className="border-b last:border-0 hover:bg-muted/20 cursor-pointer" onClick={() => navigate(`/admin/cms/pages/${page.id}`)} data-testid={`row-page-${page.id}`}>
                       <td className="py-3 px-2 font-medium">{page.title}</td>
                       <td className="py-3 px-2 text-muted-foreground font-mono text-xs hidden md:table-cell">{page.slug}</td>
                       <td className="py-3 px-2 hidden lg:table-cell">
@@ -141,7 +141,7 @@ export default function CmsPagesPage() {
                         {page.updatedAt ? format(new Date(page.updatedAt), "MMM d, yyyy") : "—"}
                       </td>
                       <td className="py-3 px-2">
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                           <Button
                             variant="ghost"
                             size="icon"
