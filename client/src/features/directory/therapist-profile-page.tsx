@@ -202,6 +202,12 @@ export default function TherapistProfilePage() {
                         Not Accepting
                       </Badge>
                     )}
+                    {therapist.willingToTravel && (
+                      <Badge variant="secondary" data-testid="badge-willing-to-travel">
+                        <Globe className="h-3 w-3 mr-1" />
+                        Willing to Travel
+                      </Badge>
+                    )}
                     {locationParts.length > 0 && (
                       <span className="text-sm text-muted-foreground flex items-center gap-1">
                         <MapPin className="h-3 w-3 flex-shrink-0" />

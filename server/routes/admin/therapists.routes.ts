@@ -43,6 +43,7 @@ const createTherapistSchema = z.object({
   }, "Enter a valid phone number with country code, e.g. +1 (555) 123-4567"),
   website: z.string().optional(),
   acceptingClients: z.boolean().optional(),
+  willingToTravel: z.boolean().optional(),
   isApproved: z.boolean().optional(),
 });
 
@@ -175,6 +176,7 @@ const updateTherapistSchema = z.object({
   youtubeHandle: z.string().optional().nullable(),
   tiktokHandle: z.string().optional().nullable(),
   acceptingClients: z.boolean().optional(),
+  willingToTravel: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
   isApproved: z.boolean().optional(),
   isActive: z.boolean().optional(),

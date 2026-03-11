@@ -14,6 +14,7 @@ export interface DirectoryFilters {
   search: string;
   practiceMode: string;
   acceptingClients: boolean;
+  willingToTravel: boolean;
 }
 
 interface FilterPanelProps {
@@ -73,6 +74,20 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
         />
         <Label htmlFor="filter-accepting" className="text-sm cursor-pointer">
           Accepting Clients
+        </Label>
+      </div>
+
+      <div className="flex items-center gap-2 pb-1">
+        <Checkbox
+          id="filter-willing-travel"
+          checked={filters.willingToTravel}
+          onCheckedChange={(checked) =>
+            onChange({ ...filters, willingToTravel: checked === true })
+          }
+          data-testid="checkbox-willing-to-travel"
+        />
+        <Label htmlFor="filter-willing-travel" className="text-sm cursor-pointer">
+          Willing to Travel
         </Label>
       </div>
     </div>

@@ -220,6 +220,7 @@ export default function DirectoryPage() {
   const [language, setLanguage] = useState(initParams.get("language") || "all");
   const [country, setCountry] = useState(initParams.get("country") || "all");
   const [acceptingClients, setAcceptingClients] = useState(initParams.get("acceptingClients") === "true");
+  const [willingToTravel, setWillingToTravel] = useState(initParams.get("willingToTravel") === "true");
   const [showFilters, setShowFilters] = useState(false);
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -240,6 +241,7 @@ export default function DirectoryPage() {
     setSessionFormat(sp.get("practiceMode") || "all");
     setCountry(sp.get("country") || "all");
     setAcceptingClients(sp.get("acceptingClients") === "true");
+    setWillingToTravel(sp.get("willingToTravel") === "true");
     const searchParam = sp.get("search") || "";
     if (searchParam !== search) setSearch(searchParam);
     const pageParam = parseInt(sp.get("page") || "1") || 1;
@@ -248,7 +250,7 @@ export default function DirectoryPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, sessionFormat, specializations, language, country, acceptingClients]);
+  }, [debouncedSearch, sessionFormat, specializations, language, country, acceptingClients, willingToTravel]);
 
   useEffect(() => {
     const p = new URLSearchParams();
@@ -258,12 +260,13 @@ export default function DirectoryPage() {
     if (language !== "all") p.set("language", language);
     if (country !== "all") p.set("country", country);
     if (acceptingClients) p.set("acceptingClients", "true");
+    if (willingToTravel) p.set("willingToTravel", "true");
     if (page > 1) p.set("page", String(page));
     const qs = p.toString();
     const newPath = qs ? `/directory?${qs}` : "/directory";
     isInternalUpdate.current = true;
     navigate(newPath, { replace: true });
-  }, [debouncedSearch, specializations, sessionFormat, language, country, acceptingClients, page]);
+  }, [debouncedSearch, specializations, sessionFormat, language, country, acceptingClients, willingToTravel, page]);
 
   const { specializations: specList } = useSpecializations();
 
@@ -275,10 +278,11 @@ export default function DirectoryPage() {
     if (language !== "all") p.set("language", language);
     if (country !== "all") p.set("country", country);
     if (acceptingClients) p.set("acceptingClients", "true");
+    if (willingToTravel) p.set("willingToTravel", "true");
     p.set("page", String(page));
     p.set("pageSize", "200");
     return p.toString();
-  }, [debouncedSearch, specializations, sessionFormat, language, country, acceptingClients, page]);
+  }, [debouncedSearch, specializations, sessionFormat, language, country, acceptingClients, willingToTravel, page]);
 
   const { data, isLoading } = useQuery<PaginatedResponse>({
     queryKey: ["/api/therapists", queryParams],
@@ -322,6 +326,7 @@ export default function DirectoryPage() {
     language !== "all",
     country !== "all",
     acceptingClients,
+    willingToTravel,
   ].filter(Boolean).length;
 
   const clearAllFilters = () => {
@@ -330,6 +335,7 @@ export default function DirectoryPage() {
     setLanguage("all");
     setCountry("all");
     setAcceptingClients(false);
+    setWillingToTravel(false);
     setSearch("");
   };
 
@@ -518,17 +524,31 @@ export default function DirectoryPage() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Checkbox
-                      id="filter-accepting"
-                      checked={acceptingClients}
-                      onCheckedChange={(checked) => setAcceptingClients(checked === true)}
-                      data-testid="checkbox-accepting-clients"
-                      className="h-4 w-4"
-                    />
-                    <Label htmlFor="filter-accepting" className="text-xs cursor-pointer whitespace-nowrap">
-                      Accepting clients
-                    </Label>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <Checkbox
+                        id="filter-accepting"
+                        checked={acceptingClients}
+                        onCheckedChange={(checked) => setAcceptingClients(checked === true)}
+                        data-testid="checkbox-accepting-clients"
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="filter-accepting" className="text-xs cursor-pointer whitespace-nowrap">
+                        Accepting clients
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Checkbox
+                        id="filter-willing-travel"
+                        checked={willingToTravel}
+                        onCheckedChange={(checked) => setWillingToTravel(checked === true)}
+                        data-testid="checkbox-willing-to-travel"
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="filter-willing-travel" className="text-xs cursor-pointer whitespace-nowrap">
+                        Willing to travel
+                      </Label>
+                    </div>
                   </div>
                   {activeFilterCount > 0 && (
                     <Button
@@ -588,6 +608,14 @@ export default function DirectoryPage() {
                   <Badge variant="secondary" className="text-xs gap-1">
                     Accepting
                     <button onClick={() => setAcceptingClients(false)} aria-label="Remove accepting clients filter" className="flex-shrink-0 ml-0.5">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {willingToTravel && (
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    Willing to Travel
+                    <button onClick={() => setWillingToTravel(false)} aria-label="Remove willing to travel filter" className="flex-shrink-0 ml-0.5">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>

@@ -10,6 +10,7 @@ export interface TherapistSearchParams {
   language?: string;
   country?: string;
   acceptingClients?: boolean;
+  willingToTravel?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -47,6 +48,10 @@ function buildFilterConditions(params: TherapistSearchParams): SQL[] {
 
   if (params.acceptingClients !== undefined) {
     conditions.push(eq(therapistProfiles.acceptingClients, params.acceptingClients));
+  }
+
+  if (params.willingToTravel !== undefined) {
+    conditions.push(eq(therapistProfiles.willingToTravel, params.willingToTravel));
   }
 
   if (params.specializations && params.specializations.length > 0) {

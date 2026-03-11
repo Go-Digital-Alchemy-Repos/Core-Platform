@@ -47,6 +47,7 @@ const profileFormSchema = z.object({
   youtubeHandle: z.string().optional(),
   tiktokHandle: z.string().optional(),
   acceptingClients: z.boolean().optional(),
+  willingToTravel: z.boolean().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -86,6 +87,7 @@ export default function ProfileEditPage() {
       youtubeHandle: profile.youtubeHandle ?? "",
       tiktokHandle: profile.tiktokHandle ?? "",
       acceptingClients: profile.acceptingClients ?? true,
+      willingToTravel: profile.willingToTravel ?? false,
     } : {
       title: "",
       bio: "",
@@ -109,6 +111,7 @@ export default function ProfileEditPage() {
       youtubeHandle: "",
       tiktokHandle: "",
       acceptingClients: true,
+      willingToTravel: false,
     },
   });
 
@@ -341,6 +344,25 @@ export default function ProfileEditPage() {
                         checked={field.value}
                         onCheckedChange={field.onChange}
                         data-testid="switch-accepting-clients"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="willingToTravel"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between gap-2 rounded-md border p-3">
+                    <div>
+                      <FormLabel>Willing to Travel</FormLabel>
+                      <p className="text-sm text-muted-foreground">Toggle whether you are willing to travel for sessions</p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        data-testid="switch-willing-to-travel"
                       />
                     </FormControl>
                   </FormItem>

@@ -72,6 +72,7 @@ interface TherapistWithUser {
   youtubeHandle: string | null;
   tiktokHandle: string | null;
   acceptingClients: boolean | null;
+  willingToTravel: boolean | null;
   isApproved: boolean | null;
   isFeatured: boolean | null;
   isActive: boolean | null;
@@ -116,6 +117,7 @@ const createTherapistSchema = z.object({
   phone: phoneSchema,
   website: z.string().optional(),
   acceptingClients: z.boolean().optional(),
+  willingToTravel: z.boolean().optional(),
   isApproved: z.boolean().optional(),
 });
 type CreateTherapistValues = z.infer<typeof createTherapistSchema>;
@@ -143,6 +145,7 @@ const editProfileSchema = z.object({
   youtubeHandle: z.string().optional(),
   tiktokHandle: z.string().optional(),
   acceptingClients: z.boolean().optional(),
+  willingToTravel: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
   isApproved: z.boolean().optional(),
 });
@@ -634,6 +637,7 @@ function AddTherapistSheet({
       phone: "",
       website: "",
       acceptingClients: true,
+      willingToTravel: false,
       isApproved: true,
     },
   });
@@ -825,6 +829,14 @@ function AddTherapistSheet({
                       <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-add-acceptingClients" />
                     </FormControl>
                     <FormLabel className="!mt-0">Accepting Clients</FormLabel>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="willingToTravel" render={({ field }) => (
+                  <FormItem className="flex items-center gap-2">
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-add-willingToTravel" />
+                    </FormControl>
+                    <FormLabel className="!mt-0">Willing to Travel</FormLabel>
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="isApproved" render={({ field }) => (
@@ -1084,6 +1096,14 @@ function OverviewTab({
                   <FormLabel className="!mt-0 text-sm">Accepting Clients</FormLabel>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-edit-acceptingClients" />
+                  </FormControl>
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="willingToTravel" render={({ field }) => (
+                <FormItem className="flex items-center justify-between">
+                  <FormLabel className="!mt-0 text-sm">Willing to Travel</FormLabel>
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-edit-willingToTravel" />
                   </FormControl>
                 </FormItem>
               )} />
@@ -1550,6 +1570,7 @@ function EditTherapistSheet({
       youtubeHandle: therapist.youtubeHandle ?? "",
       tiktokHandle: therapist.tiktokHandle ?? "",
       acceptingClients: therapist.acceptingClients ?? true,
+      willingToTravel: therapist.willingToTravel ?? false,
       isFeatured: therapist.isFeatured ?? false,
       isApproved: therapist.isApproved ?? false,
     },

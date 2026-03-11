@@ -15,6 +15,7 @@ router.get(
       language,
       country,
       acceptingClients,
+      willingToTravel,
       page,
       pageSize,
     } = req.query;
@@ -32,6 +33,7 @@ router.get(
       language: language as string,
       country: country as string,
       acceptingClients: acceptingClients === "true" ? true : undefined,
+      willingToTravel: willingToTravel === "true" ? true : undefined,
       page: parsedPage,
       pageSize: parsedPageSize,
     });

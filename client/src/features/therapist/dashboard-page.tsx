@@ -205,6 +205,9 @@ export default function TherapistDashboardPage() {
               {profile.acceptingClients && (
                 <Badge variant="outline">Accepting Clients</Badge>
               )}
+              {profile.willingToTravel && (
+                <Badge variant="outline">Willing to Travel</Badge>
+              )}
             </div>
             {profile.title && (
               <p className="text-sm text-muted-foreground">{profile.title}</p>

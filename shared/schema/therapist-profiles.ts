@@ -31,6 +31,7 @@ export const therapistProfiles = pgTable("therapist_profiles", {
   youtubeHandle: text("youtube_handle"),
   tiktokHandle: text("tiktok_handle"),
   acceptingClients: boolean("accepting_clients").default(true),
+  willingToTravel: boolean("willing_to_travel").default(false),
   isFeatured: boolean("is_featured").default(false),
   featuredUntil: timestamp("featured_until"),
   isApproved: boolean("is_approved").default(false),

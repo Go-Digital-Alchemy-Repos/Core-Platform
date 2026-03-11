@@ -23,7 +23,7 @@ TCK Wellness is a platform designed to connect Third Culture Kids (TCKs) with sp
 - **Database**: PostgreSQL with Drizzle ORM.
 - **Authentication**: Custom JWT with `bcryptjs` and HTTP-only cookies, supporting admin, therapist, and client roles.
 - **Core Features**:
-    - **Counselor Directory**: Searchable profiles with filtering and map integration.
+    - **Counselor Directory**: Searchable profiles with multi-select specialization filtering, map integration, and toggle filters for "Accepting Clients" and "Willing to Travel".
     - **Subscription Management**: Stripe integration for counselor memberships.
     - **Event Management**: Creation, management, and display of virtual, in-person, and hybrid events with registration and notifications.
     - **Recording Archives**: Role-aware archive for past event recordings.
