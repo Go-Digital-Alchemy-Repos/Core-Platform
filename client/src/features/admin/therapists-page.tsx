@@ -964,6 +964,7 @@ function OverviewTab({
   isUserPending,
   onAvatarUpload,
   isAvatarUploading,
+  localImageUrl,
 }: {
   therapist: TherapistWithUser;
   form: ReturnType<typeof useForm<EditProfileValues>>;
@@ -974,6 +975,7 @@ function OverviewTab({
   isUserPending: boolean;
   onAvatarUpload: (file: File) => void;
   isAvatarUploading: boolean;
+  localImageUrl: string | null;
 }) {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { specializations: specList } = useSpecializations();
@@ -1001,8 +1003,8 @@ function OverviewTab({
         <div className="flex flex-col items-center gap-3 p-4 rounded-lg border bg-muted/30">
           <div className="relative group">
             <Avatar className="h-24 w-24" data-testid="avatar-edit-profile">
-              {therapist.user?.profileImageUrl && (
-                <AvatarImage src={therapist.user.profileImageUrl} />
+              {localImageUrl && (
+                <AvatarImage src={localImageUrl} />
               )}
               <AvatarFallback className="text-xl">{getInitials(therapist)}</AvatarFallback>
             </Avatar>
@@ -1459,6 +1461,7 @@ function EditTherapistSheet({
 }) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
+  const [localImageUrl, setLocalImageUrl] = useState<string | null>(therapist.user?.profileImageUrl ?? null);
 
   const form = useForm<EditProfileValues>({
     resolver: zodResolver(editProfileSchema),
@@ -1516,7 +1519,8 @@ function EditTherapistSheet({
       if (!res.ok) throw new Error("Upload failed");
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: { url: string }) => {
+      setLocalImageUrl(data.url);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/therapists"] });
       toast({ title: "Avatar updated" });
     },
@@ -1533,8 +1537,8 @@ function EditTherapistSheet({
         <SheetHeader>
           <div className="flex items-center gap-3 flex-wrap">
             <Avatar className="h-10 w-10">
-              {therapist.user?.profileImageUrl && (
-                <AvatarImage src={therapist.user.profileImageUrl} />
+              {localImageUrl && (
+                <AvatarImage src={localImageUrl} />
               )}
               <AvatarFallback>{getInitials(therapist)}</AvatarFallback>
             </Avatar>
@@ -1568,6 +1572,7 @@ function EditTherapistSheet({
                 isUserPending={updateUserMutation.isPending}
                 onAvatarUpload={(file) => avatarMutation.mutate(file)}
                 isAvatarUploading={avatarMutation.isPending}
+                localImageUrl={localImageUrl}
               />
             </TabsContent>
             <TabsContent value="membership" className="mt-4">
