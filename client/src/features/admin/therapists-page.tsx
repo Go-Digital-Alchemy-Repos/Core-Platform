@@ -42,7 +42,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Search, Loader2, Trash2, CheckCircle, XCircle, Pencil, Camera, Calendar, LogIn, FileEdit, Clock, X } from "lucide-react";
+import { Plus, Search, Loader2, Trash2, CheckCircle, XCircle, Pencil, Camera, Calendar, LogIn, FileEdit, Clock, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface TherapistWithUser {
@@ -148,6 +148,19 @@ function TherapistsContent() {
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  type SortCol = "name" | "email" | "location" | "status" | "sessionFormat";
+  const [sortCol, setSortCol] = useState<SortCol>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const toggleSort = (col: SortCol) => {
+    if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortCol(col); setSortDir("asc"); }
+  };
+  const SortIcon = ({ col }: { col: SortCol }) => {
+    if (sortCol !== col) return <ArrowUpDown className="ml-1 h-3.5 w-3.5 opacity-40" />;
+    return sortDir === "asc"
+      ? <ArrowUp className="ml-1 h-3.5 w-3.5" />
+      : <ArrowDown className="ml-1 h-3.5 w-3.5" />;
+  };
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [selectedTherapist, setSelectedTherapist] = useState<TherapistWithUser | null>(null);
@@ -254,6 +267,31 @@ function TherapistsContent() {
     return true;
   });
 
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      let valA = "";
+      let valB = "";
+      if (sortCol === "name") {
+        valA = `${a.user?.lastName ?? ""} ${a.user?.firstName ?? ""}`.toLowerCase().trim();
+        valB = `${b.user?.lastName ?? ""} ${b.user?.firstName ?? ""}`.toLowerCase().trim();
+      } else if (sortCol === "email") {
+        valA = (a.user?.email ?? "").toLowerCase();
+        valB = (b.user?.email ?? "").toLowerCase();
+      } else if (sortCol === "location") {
+        valA = [a.city, a.country].filter(Boolean).join(", ").toLowerCase();
+        valB = [b.city, b.country].filter(Boolean).join(", ").toLowerCase();
+      } else if (sortCol === "status") {
+        valA = getStatusInfo(a).label.toLowerCase();
+        valB = getStatusInfo(b).label.toLowerCase();
+      } else if (sortCol === "sessionFormat") {
+        valA = a.practiceMode ?? "";
+        valB = b.practiceMode ?? "";
+      }
+      const cmp = valA.localeCompare(valB);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [filtered, sortCol, sortDir]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -300,16 +338,36 @@ function TherapistsContent() {
         <TableHeader>
           <TableRow>
             <TableHead className="w-[50px]"></TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Session Format</TableHead>
+            <TableHead>
+              <button onClick={() => toggleSort("name")} className="flex items-center font-medium hover:text-foreground" data-testid="sort-name">
+                Name<SortIcon col="name" />
+              </button>
+            </TableHead>
+            <TableHead>
+              <button onClick={() => toggleSort("email")} className="flex items-center font-medium hover:text-foreground" data-testid="sort-email">
+                Email<SortIcon col="email" />
+              </button>
+            </TableHead>
+            <TableHead>
+              <button onClick={() => toggleSort("location")} className="flex items-center font-medium hover:text-foreground" data-testid="sort-location">
+                Location<SortIcon col="location" />
+              </button>
+            </TableHead>
+            <TableHead>
+              <button onClick={() => toggleSort("status")} className="flex items-center font-medium hover:text-foreground" data-testid="sort-status">
+                Status<SortIcon col="status" />
+              </button>
+            </TableHead>
+            <TableHead>
+              <button onClick={() => toggleSort("sessionFormat")} className="flex items-center font-medium hover:text-foreground" data-testid="sort-session-format">
+                Session Format<SortIcon col="sessionFormat" />
+              </button>
+            </TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filtered.map((t) => {
+          {sorted.map((t) => {
             const status = getStatusInfo(t);
             return (
               <TableRow
