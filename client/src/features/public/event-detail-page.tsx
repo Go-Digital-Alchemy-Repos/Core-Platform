@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
 import type { Event } from "@shared/schema/events";
+import type { EventRegistration } from "@shared/schema/event-registrations";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { EventLocationMap } from "@/components/shared/event-location-map";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import {
   CalendarDays,
   Clock,
@@ -26,6 +29,11 @@ import {
   AlertTriangle,
   Building2,
   Wifi,
+  CheckCircle2,
+  XCircle,
+  ClockIcon,
+  Loader2,
+  LogIn,
 } from "lucide-react";
 
 function formatFullDate(date: string | Date) {
@@ -90,6 +98,231 @@ function EventDetailSkeleton() {
         <Skeleton className="h-4 w-3/4" />
       </div>
     </div>
+  );
+}
+
+function RegistrationSection({
+  event,
+  user,
+  isPast,
+  isCanceled,
+}: {
+  event: Event;
+  user: { id: string; role: string; email: string; firstName: string } | null;
+  isPast: boolean;
+  isCanceled: boolean;
+}) {
+  const { toast } = useToast();
+  const registrationState = getRegistrationState(event);
+
+  const {
+    data: registration,
+    isLoading: regLoading,
+  } = useQuery<EventRegistration | null>({
+    queryKey: ["/api/events", event.id, "registration"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+    enabled: !!user && event.registrationEnabled === true && !isPast && !isCanceled,
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/events/${event.id}/register`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events", event.id, "registration"] });
+      toast({ title: "Registered successfully", description: "You have been registered for this event." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Registration failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/events/${event.id}/registration`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events", event.id, "registration"] });
+      toast({ title: "Registration canceled", description: "Your registration has been canceled." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Cancellation failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  if (!event.registrationEnabled || event.registrationType !== "free") return null;
+  if (isPast || isCanceled) return null;
+
+  if (!user) {
+    return (
+      <Card data-testid="card-registration-login">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <LogIn className="h-5 w-5 text-accent" />
+            <h3 className="font-heading text-lg font-semibold">Register for This Event</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Log in to your account to register for this event.
+          </p>
+          <Link href="/login">
+            <Button data-testid="button-login-to-register">
+              <LogIn className="mr-2 h-4 w-4" />
+              Log in to Register
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (registration && registration.status === "confirmed" && registrationState !== "open") {
+    return (
+      <Card className="border-green-600/30" data-testid="card-registration-confirmed-closed">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="h-5 w-5 text-green-600" />
+            <h3 className="font-heading text-lg font-semibold">You're Registered</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            You are confirmed for this event.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (registrationState === "closed" && (!registration || registration.status === "canceled")) {
+    return (
+      <Card data-testid="card-registration-closed">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex items-center gap-3">
+            <XCircle className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <h3 className="font-heading text-lg font-semibold">Registration Closed</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Registration for this event has closed.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (registrationState === "upcoming") {
+    return (
+      <Card data-testid="card-registration-upcoming">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex items-center gap-3">
+            <ClockIcon className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <h3 className="font-heading text-lg font-semibold">Registration Opens Soon</h3>
+              {event.registrationOpensAt && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Registration opens on {formatFullDate(event.registrationOpensAt)} at {formatTime(event.registrationOpensAt)}.
+                </p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (regLoading) {
+    return (
+      <Card data-testid="card-registration-loading">
+        <CardContent className="p-5 sm:p-6 flex items-center gap-3">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Checking registration status...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (registration && registration.status === "confirmed") {
+    return (
+      <Card className="border-green-600/30" data-testid="card-registration-confirmed">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <CheckCircle2 className="h-5 w-5 text-green-600" />
+            <h3 className="font-heading text-lg font-semibold">You're Registered</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            You are confirmed for this event. We'll send event details and any updates to your email.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => cancelMutation.mutate()}
+            disabled={cancelMutation.isPending}
+            data-testid="button-cancel-registration"
+          >
+            {cancelMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <XCircle className="mr-2 h-4 w-4" />
+            )}
+            Cancel Registration
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (registration && registration.status === "waitlisted") {
+    return (
+      <Card className="border-yellow-600/30" data-testid="card-registration-waitlisted">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <ClockIcon className="h-5 w-5 text-yellow-600" />
+            <h3 className="font-heading text-lg font-semibold">You're on the Waitlist</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            This event is at capacity. You'll be automatically confirmed if a spot opens up, and we'll notify you by email.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => cancelMutation.mutate()}
+            disabled={cancelMutation.isPending}
+            data-testid="button-cancel-waitlist"
+          >
+            {cancelMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <XCircle className="mr-2 h-4 w-4" />
+            )}
+            Leave Waitlist
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card data-testid="card-registration-register">
+      <CardContent className="p-5 sm:p-6">
+        <div className="flex items-center gap-3 mb-3">
+          <Ticket className="h-5 w-5 text-accent" />
+          <h3 className="font-heading text-lg font-semibold">Register for This Event</h3>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Secure your spot for this free event. You'll receive a confirmation email after registering.
+        </p>
+        <Button
+          onClick={() => registerMutation.mutate()}
+          disabled={registerMutation.isPending}
+          data-testid="button-register-event"
+        >
+          {registerMutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Ticket className="mr-2 h-4 w-4" />
+          )}
+          Register for This Event
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -434,8 +667,8 @@ export default function EventDetailPage() {
             )}
 
             {!isPast && !isCanceled && !isCompleted && (
-              <div className="border-t pt-8" data-testid="section-event-join">
-                <h2 className="font-heading text-xl font-semibold mb-3">
+              <div className="border-t pt-8 space-y-6" data-testid="section-event-join">
+                <h2 className="font-heading text-xl font-semibold">
                   {event.isVirtual ? "Join This Event" : "Attend This Event"}
                 </h2>
 
@@ -451,54 +684,78 @@ export default function EventDetailPage() {
                       </Button>
                     </Link>
                   </div>
-                ) : event.isVirtual && joinUrl ? (
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      {isHybrid
-                        ? "This is a hybrid event. You can attend virtually or in person."
-                        : "This is a virtual event. Click below to join or register."}
-                    </p>
-                    <a href={joinUrl} target="_blank" rel="noopener noreferrer">
-                      <Button
-                        size="lg"
-                        className="bg-accent text-accent-foreground border-accent-border"
-                        data-testid="button-event-join"
-                      >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Join / Register
-                      </Button>
-                    </a>
-                    {event.virtualDialInInfo && (
-                      <Card className="mt-2" data-testid="section-dial-in">
-                        <CardContent className="p-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
-                            <p className="text-sm font-medium">Dial-In Information</p>
-                          </div>
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap pl-6">
-                            {event.virtualDialInInfo}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
                 ) : (
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      {displayLocationName
-                        ? `This event will be held at ${displayLocationName}. Registration details will be provided soon.`
-                        : "Registration details will be provided soon. Please check back for updates."}
-                    </p>
-                    {event.memberOnly && (
-                      <p className="text-sm text-muted-foreground">
-                        This event is exclusive to TCK Wellness members.{" "}
-                        <Link href="/join" className="text-accent underline underline-offset-2">
-                          Join the network
-                        </Link>{" "}
-                        to get access.
-                      </p>
+                  <>
+                    {event.isVirtual && joinUrl && (
+                      <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                          {isHybrid
+                            ? "This is a hybrid event. You can attend virtually or in person."
+                            : "This is a virtual event. Click below to join."}
+                        </p>
+                        <a href={joinUrl} target="_blank" rel="noopener noreferrer">
+                          <Button
+                            size="lg"
+                            className="bg-accent text-accent-foreground border-accent-border"
+                            data-testid="button-event-join"
+                          >
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Join Virtual Event
+                          </Button>
+                        </a>
+                        {event.virtualDialInInfo && (
+                          <Card className="mt-2" data-testid="section-dial-in">
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Phone className="h-4 w-4 text-muted-foreground" />
+                                <p className="text-sm font-medium">Dial-In Information</p>
+                              </div>
+                              <p className="text-sm text-muted-foreground whitespace-pre-wrap pl-6">
+                                {event.virtualDialInInfo}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
                     )}
-                  </div>
+
+                    {event.registrationEnabled && event.registrationType === "free" && (
+                      <RegistrationSection
+                        event={event}
+                        user={user as any}
+                        isPast={isPast}
+                        isCanceled={isCanceled}
+                      />
+                    )}
+
+                    {!event.registrationEnabled && !event.isVirtual && (
+                      <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                          {displayLocationName
+                            ? `This event will be held at ${displayLocationName}. Registration details will be provided soon.`
+                            : "Registration details will be provided soon. Please check back for updates."}
+                        </p>
+                      </div>
+                    )}
+
+                    {!event.registrationEnabled && event.isVirtual && !joinUrl && (
+                      <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                          Virtual event details will be provided soon. Please check back for updates.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {event.memberOnly && !event.registrationEnabled && (
+                  <p className="text-sm text-muted-foreground">
+                    This event is exclusive to TCK Wellness members.{" "}
+                    <Link href="/join" className="text-accent underline underline-offset-2">
+                      Join the network
+                    </Link>{" "}
+                    to get access.
+                  </p>
                 )}
               </div>
             )}

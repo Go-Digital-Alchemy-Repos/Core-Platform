@@ -245,6 +245,77 @@ Response: `{ languages: string[], countries: string[] }`
 - `server/storage/event.storage.ts` — `getPublishedEvents()` filters by status=published + visibility=public
 - `server/routes/events.routes.ts` — Public routes; `/all` uses published filter; `/:id` blocks drafts
 
+## Event Registration System (Phase 3)
+
+### Data Model
+- **Table**: `event_registrations` (`shared/schema/event-registrations.ts`)
+- **Fields**: id, eventId (FK→events), userId (FK→users), fullName, email, phone, status, paymentStatus, paymentIntentId, amountPaid, notes, registeredAt, canceledAt
+- **Status values**: 'confirmed', 'waitlisted', 'canceled'
+- **Payment status values**: 'not_required', 'pending', 'paid', 'refunded' (forward-compatible for paid phase)
+- **Unique constraint**: (eventId, userId) prevents duplicate registrations
+- **Indexes**: eventId, userId, composite (eventId, userId)
+
+### Registration Rules & Validation
+1. Event must be published (`status = 'published'`)
+2. `registrationEnabled` must be true
+3. `registrationType` must be 'free' (paid not yet implemented)
+4. Registration window must be open (between `registrationOpensAt` and `registrationClosesAt`)
+5. Event must not have already occurred
+6. User must be authenticated
+7. Duplicate registrations prevented (409 if already registered)
+8. Capacity enforced: if at capacity with `waitlistEnabled`, user is waitlisted; if no waitlist, returns 400
+
+### Waitlist Promotion
+When a confirmed registration is canceled:
+- System automatically promotes the first waitlisted registrant (by registeredAt) to confirmed
+- Promoted user receives a registration confirmation email
+
+### Public API Routes (`server/routes/registration.routes.ts`)
+- `POST /api/events/:id/register` — Register authenticated user (validates all rules)
+- `GET /api/events/:id/registration` — Get current user's registration (404 if none/canceled)
+- `DELETE /api/events/:id/registration` — Cancel current user's registration
+
+### Admin API Routes (`server/routes/admin/registrations.routes.ts`)
+- `GET /api/admin/events/:id/registrations` — List all registrations for event
+- `GET /api/admin/events/:id/registrations/csv` — Download CSV export
+- `PUT /api/admin/registrations/:id/status` — Update status (confirmed/waitlisted/canceled)
+- `DELETE /api/admin/registrations/:id` — Remove registration entirely
+
+### CSV Export
+- Server-side generation via admin endpoint
+- Columns: Name, Email, Phone, Status, Payment Status, Registered At, Canceled At, Notes
+- Filename: `registrations-{event-title}-{date}.csv`
+- Proper CSV escaping for commas, quotes, newlines
+
+### Admin Registrant Management
+- Accessed from event card's Users icon button in admin events page
+- Shows registrant count summary (confirmed / waitlisted / canceled)
+- Per-registrant actions via dropdown: Confirm, Waitlist, Cancel, Remove
+- CSV export button in sheet header
+
+### Email Templates
+- `event-registration-confirmation` — Sent on successful registration (vars: firstName, eventTitle, eventDate, eventLocation)
+- `event-registration-waitlisted` — Sent when added to waitlist (vars: firstName, eventTitle, eventDate)
+- `event-registration-canceled` — Sent on cancellation (vars: firstName, eventTitle)
+- All templates seeded in `server/scripts/seed-email-templates.ts`
+- Fallback content in `server/services/email.service.ts`
+- Emails sent fire-and-forget (don't block API response)
+
+### Public Event Detail Registration UI
+- Shows contextual registration card based on state:
+  - "Log in to Register" (unauthenticated)
+  - "Register for This Event" (eligible, open)
+  - "You're Registered" with cancel option (confirmed)
+  - "You're on the Waitlist" with leave option (waitlisted)
+  - "Registration Closed" (window passed)
+  - "Registration Opens Soon" with date (future window)
+  - "You're Registered" (no cancel, if window closed but user confirmed)
+
+### Follow-up: Paid Registration Phase
+- Schema already supports: `paymentStatus`, `paymentIntentId`, `amountPaid`
+- Route already rejects `registrationType !== 'free'` with descriptive message
+- Next phase: add Stripe checkout session creation, payment webhook handling, paid registration flow
+
 ## Dynamic Home Page
 - Featured Therapists section shows 6 therapists from the directory API
 - Upcoming Events section shows 3 events from the events API

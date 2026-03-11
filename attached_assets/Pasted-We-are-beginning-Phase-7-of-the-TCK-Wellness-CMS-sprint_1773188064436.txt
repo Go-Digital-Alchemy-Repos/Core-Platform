@@ -1,0 +1,93 @@
+We are beginning Phase 7 of the TCK Wellness CMS sprint: SEO, publishing workflow, revision improvements, and overall CMS polish.
+
+CONTEXT
+The CMS now includes pages, builder architecture, media uploads, seeded public pages, reusable sections, and blog integration. This phase should tighten publishing workflow, revision usability, and SEO controls while keeping the system practical and maintainable.
+
+IMPORTANT RULES
+- Nondestructive only
+- Preserve public routes and SEO-critical behavior
+- Preserve current page and blog functionality
+- Do not overbuild enterprise CMS complexity
+- Any image-based SEO/social preview fields should use the CMS R2-backed upload/media selection flow, not raw image URLs
+
+PRIMARY GOAL
+Complete the CMS with strong editorial workflow and SEO basics, including:
+- draft/published flow polish
+- preview workflow
+- revision/history usability improvements
+- page/blog SEO field management
+- social preview image handling
+- CMS UX cleanup
+
+IMPLEMENTATION REQUIREMENTS
+1. Inspect:
+   - CMS pages
+   - revisions groundwork
+   - publishing flow
+   - blog integration
+   - current SEO/meta handling
+   - media upload handling
+
+2. Improve publish workflow so admins can clearly manage:
+   - draft
+   - published
+   - last updated
+   - preview state
+   - future-ready unpublish/archive support if practical
+
+3. Improve revision/history behavior in a practical way, such as:
+   - revision list
+   - timestamps
+   - editor attribution if available
+   - compare/restore groundwork or minimal rollback if safe
+
+4. Add or improve SEO controls for pages and blog content:
+   - meta title
+   - meta description
+   - canonical URL
+   - open graph/social image support
+   - noindex if useful and aligned with current patterns
+
+5. Ensure image-based SEO/social fields use the CMS media upload flow and R2-backed assets.
+
+6. Improve CMS UI polish where needed:
+   - labels
+   - navigation consistency
+   - status badges
+   - empty states
+   - save/publish affordances
+   - validation messaging
+
+7. Keep implementation modular and aligned with the existing TCK Wellness design system.
+
+NONDESTRUCTIVE RULES
+- No slug breakage
+- No public SEO regression
+- No raw image URL reintroduction
+- No broad admin redesign outside CMS scope
+
+VALIDATION CHECKLIST
+1. Typecheck/check passes
+2. Build passes
+3. Draft/publish flow works correctly
+4. Preview workflow works correctly
+5. Revision/history UI works safely
+6. SEO fields persist and render correctly
+7. Social/SEO images use R2-backed upload flow
+8. Public pages/blog remain stable
+
+REQUIRED OUTPUT
+Provide:
+1. Summary of publishing/SEO/revision work
+2. Files changed
+3. Any public rendering/meta notes
+4. Remaining follow-up recommendations
+5. Docs update
+
+DOCS UPDATE REQUIREMENT
+Update docs to include:
+- publishing workflow
+- revision/history behavior
+- SEO field handling
+- social image upload behavior
+- CMS editorial flow notes

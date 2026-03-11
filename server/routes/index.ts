@@ -13,6 +13,7 @@ import messagesRoutes from "./messages.routes";
 import notificationsRoutes from "./notifications.routes";
 import specializationsRoutes from "./specializations.routes";
 import blogRoutes from "./blog.routes";
+import registrationRoutes from "./registration.routes";
 import { storage } from "../storage/index";
 
 export function registerApiRoutes(app: Express) {
@@ -30,6 +31,7 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/notifications", notificationsRoutes);
   app.use("/api/specializations", specializationsRoutes);
   app.use("/api/blog", blogRoutes);
+  app.use("/api/events", registrationRoutes);
 
   app.get("/api/membership-tiers", async (_req, res) => {
     const tiers = await storage.tiers.getActiveTiers();

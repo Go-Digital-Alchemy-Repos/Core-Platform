@@ -39,8 +39,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Plus, Pencil, Trash2, CalendarDays, MapPin } from "lucide-react";
-import type { Event } from "@shared/schema";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Pencil, Trash2, CalendarDays, MapPin, Users, Download, MoreHorizontal, CheckCircle, Clock, XCircle } from "lucide-react";
+import type { Event, EventRegistration } from "@shared/schema";
 
 const eventFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -138,10 +144,48 @@ export default function AdminEventsPage() {
   );
 }
 
+function registrationStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+  switch (status) {
+    case "confirmed": return "default";
+    case "waitlisted": return "secondary";
+    case "canceled": return "destructive";
+    default: return "outline";
+  }
+}
+
+function downloadCsv(registrations: EventRegistration[], eventTitle: string) {
+  const headers = ["Name", "Email", "Phone", "Status", "Payment Status", "Registered At", "Canceled At", "Notes"];
+  const escCsv = (v: string) => {
+    if (v.includes(",") || v.includes('"') || v.includes("\n")) {
+      return `"${v.replace(/"/g, '""')}"`;
+    }
+    return v;
+  };
+  const rows = registrations.map((r) => [
+    escCsv(r.fullName),
+    escCsv(r.email),
+    escCsv(r.phone || ""),
+    escCsv(r.status),
+    escCsv(r.paymentStatus || ""),
+    escCsv(r.registeredAt ? new Date(r.registeredAt).toISOString() : ""),
+    escCsv(r.canceledAt ? new Date(r.canceledAt).toISOString() : ""),
+    escCsv(r.notes || ""),
+  ]);
+  const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `registrations-${eventTitle.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function EventsContent() {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [registrantsEvent, setRegistrantsEvent] = useState<Event | null>(null);
 
   const { data: events, isLoading } = useQuery<Event[]>({
     queryKey: ["/api/admin/events"],
@@ -154,6 +198,41 @@ function EventsContent() {
 
   const watchRegistrationEnabled = form.watch("registrationEnabled");
   const watchRegistrationType = form.watch("registrationType");
+
+  const { data: registrations, isLoading: registrantsLoading } = useQuery<EventRegistration[]>({
+    queryKey: ["/api/admin/events", registrantsEvent?.id, "registrations"],
+    enabled: !!registrantsEvent,
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      await apiRequest("PUT", `/api/admin/registrations/${id}/status`, { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/events", registrantsEvent?.id, "registrations"] });
+      toast({ title: "Registration status updated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteRegistrationMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/admin/registrations/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/events", registrantsEvent?.id, "registrations"] });
+      toast({ title: "Registration removed" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const confirmedCount = registrations?.filter((r) => r.status === "confirmed").length ?? 0;
+  const waitlistedCount = registrations?.filter((r) => r.status === "waitlisted").length ?? 0;
+  const canceledCount = registrations?.filter((r) => r.status === "canceled").length ?? 0;
 
   const createMutation = useMutation({
     mutationFn: async (data: EventFormValues) => {
@@ -297,6 +376,14 @@ function EventsContent() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => setRegistrantsEvent(event)}
+                  data-testid={`button-registrants-${event.id}`}
+                >
+                  <Users className="h-4 w-4" />
+                </Button>
                 <Button
                   size="icon"
                   variant="ghost"
@@ -865,6 +952,150 @@ function EventsContent() {
                   : "Create Event"}
             </Button>
           </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={!!registrantsEvent} onOpenChange={(open) => { if (!open) setRegistrantsEvent(null); }}>
+        <SheetContent side="right" size="md">
+          <SheetHeader>
+            <SheetTitle data-testid="text-registrants-title">
+              Registrants — {registrantsEvent?.title}
+            </SheetTitle>
+            <SheetDescription className="sr-only">
+              View and manage registrants for this event
+            </SheetDescription>
+          </SheetHeader>
+          <SheetBody>
+            <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+              <div className="flex gap-2 flex-wrap">
+                <Badge variant="default" data-testid="badge-confirmed-count">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  {confirmedCount} Confirmed
+                </Badge>
+                <Badge variant="secondary" data-testid="badge-waitlisted-count">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {waitlistedCount} Waitlisted
+                </Badge>
+                <Badge variant="destructive" data-testid="badge-canceled-count">
+                  <XCircle className="h-3 w-3 mr-1" />
+                  {canceledCount} Canceled
+                </Badge>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (registrations && registrantsEvent) {
+                    downloadCsv(registrations, registrantsEvent.title);
+                  }
+                }}
+                disabled={!registrations || registrations.length === 0}
+                data-testid="button-export-csv"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
+
+            {registrantsLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <LoadingSpinner />
+              </div>
+            ) : !registrations || registrations.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8" data-testid="text-no-registrants">
+                No registrants yet.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {registrations.map((reg) => (
+                  <Card key={reg.id} data-testid={`card-registrant-${reg.id}`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate" data-testid={`text-registrant-name-${reg.id}`}>
+                            {reg.fullName}
+                          </p>
+                          <p className="text-sm text-muted-foreground truncate" data-testid={`text-registrant-email-${reg.id}`}>
+                            {reg.email}
+                          </p>
+                          {reg.phone && (
+                            <p className="text-sm text-muted-foreground" data-testid={`text-registrant-phone-${reg.id}`}>
+                              {reg.phone}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            <Badge
+                              variant={registrationStatusVariant(reg.status)}
+                              data-testid={`badge-registrant-status-${reg.id}`}
+                            >
+                              {reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground" data-testid={`text-registrant-date-${reg.id}`}>
+                              {reg.registeredAt
+                                ? new Date(reg.registeredAt).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })
+                                : "—"}
+                            </span>
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              data-testid={`button-registrant-actions-${reg.id}`}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {reg.status !== "confirmed" && (
+                              <DropdownMenuItem
+                                onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "confirmed" })}
+                                data-testid={`action-confirm-${reg.id}`}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Confirm
+                              </DropdownMenuItem>
+                            )}
+                            {reg.status !== "waitlisted" && (
+                              <DropdownMenuItem
+                                onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "waitlisted" })}
+                                data-testid={`action-waitlist-${reg.id}`}
+                              >
+                                <Clock className="h-4 w-4 mr-2" />
+                                Waitlist
+                              </DropdownMenuItem>
+                            )}
+                            {reg.status !== "canceled" && (
+                              <DropdownMenuItem
+                                onClick={() => updateStatusMutation.mutate({ id: reg.id, status: "canceled" })}
+                                data-testid={`action-cancel-${reg.id}`}
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Cancel
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => deleteRegistrationMutation.mutate(reg.id)}
+                              className="text-destructive"
+                              data-testid={`action-remove-${reg.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Remove
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </SheetBody>
         </SheetContent>
       </Sheet>
     </div>

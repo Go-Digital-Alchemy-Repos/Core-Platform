@@ -138,6 +138,43 @@ const templates = [
       </td></tr>
     </table>`),
   },
+  {
+    slug: "event-registration-confirmation",
+    name: "Event Registration Confirmation",
+    subject: "Registration Confirmed: {{eventTitle}}",
+    description: "Sent when a user successfully registers for an event.",
+    variables: ["firstName", "eventTitle", "eventDate", "eventLocation"],
+    htmlBody: baseWrap("Registration Confirmed", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">You're registered for <strong>{{eventTitle}}</strong>!</p>
+    <div style="background:#f3f4f6;border-radius:6px;padding:16px;margin:16px 0;">
+      <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Date:</strong> {{eventDate}}</p>
+      <p style="margin:0;color:#374151;font-size:14px;"><strong>Location:</strong> {{eventLocation}}</p>
+    </div>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">We look forward to seeing you there. If you need to cancel your registration, you can do so from the event page.</p>`),
+  },
+  {
+    slug: "event-registration-waitlisted",
+    name: "Event Registration Waitlisted",
+    subject: "Waitlisted: {{eventTitle}}",
+    description: "Sent when a user is added to the waitlist for a full event.",
+    variables: ["firstName", "eventTitle", "eventDate"],
+    htmlBody: baseWrap("You're on the Waitlist", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">The event <strong>{{eventTitle}}</strong> on {{eventDate}} is currently at capacity. You've been added to the waitlist.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">If a spot becomes available, you'll be automatically moved to confirmed status and we'll let you know.</p>`),
+  },
+  {
+    slug: "event-registration-canceled",
+    name: "Event Registration Canceled",
+    subject: "Registration Canceled: {{eventTitle}}",
+    description: "Sent when a user's event registration is canceled.",
+    variables: ["firstName", "eventTitle"],
+    htmlBody: baseWrap("Registration Canceled", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Your registration for <strong>{{eventTitle}}</strong> has been canceled.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">If this was a mistake, you can re-register from the event page if spots are still available.</p>`),
+  },
 ];
 
 export async function seedEmailTemplates() {

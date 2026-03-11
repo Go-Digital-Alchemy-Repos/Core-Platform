@@ -1,0 +1,100 @@
+We are beginning Phase 3 of the TCK Wellness CMS sprint: implementing the CMS media upload experience and replacing image URL-style inputs with Cloudflare R2-backed upload/dropzone workflows.
+
+CONTEXT
+The CMS builder and CMS page architecture now exist or are underway. The CMS must NOT rely on admins pasting image URLs for content blocks or page visuals. Instead, anywhere in CMS where an admin would provide an image or background image, the UI must support drag-and-drop upload and/or media selection, with assets stored in Cloudflare R2.
+
+THIS REQUIREMENT IS CRITICAL
+Anywhere in the CMS that offers:
+- image
+- background image
+- hero background image
+- section image
+- thumbnail image
+- card image
+- preview image
+- reusable section image
+- blog feature image (if integrated here)
+- any image URL field
+must be converted away from raw URL entry and into a Cloudflare R2-backed upload flow.
+
+PRIMARY GOAL
+Build a CMS media pipeline and upload UX that:
+- uses drag-and-drop upload/dropzone patterns
+- stores uploaded assets in Cloudflare R2
+- returns/stores the resulting asset URL/reference
+- integrates cleanly into builder block editing
+- can be reused later by Pages, Blog, Reusable Components, and SEO/social image features
+
+IMPLEMENTATION REQUIREMENTS
+1. Inspect:
+   - current Cloudflare R2 integration patterns
+   - any existing upload/media components
+   - any current image field handling in admin
+   - current CMS builder property editing
+   - any existing asset storage models
+
+2. Build or extend a CMS media upload workflow that includes:
+   - drag-and-drop upload UI
+   - file selection fallback
+   - upload progress/state
+   - upload success/failure handling
+   - preview of uploaded media
+   - remove/replace media controls
+
+3. Integrate this upload/media flow into CMS builder editing so that image-bearing blocks use:
+   - upload dropzone
+   - media selection if a media library exists or is added
+   - stored R2-backed asset references
+and NOT pasted raw image URLs.
+
+4. Replace any existing or provisional CMS image URL inputs with the new upload/media workflow.
+
+5. Support both standard image use cases and background image use cases.
+
+6. If useful, add a basic CMS Media area or Media library shell that can list uploaded CMS assets.
+Do not overbuild DAM features, but do make media reuse possible where practical.
+
+7. Ensure uploads are validated sensibly:
+   - accepted file types
+   - size limits
+   - basic error handling
+   - secure/private/public behavior consistent with current website media needs
+
+8. Keep the implementation compatible with future use in:
+   - CMS Pages
+   - Reusable Sections
+   - Blog feature images
+   - SEO/social preview images
+   - other public content modules
+
+NONDESTRUCTIVE RULES
+- No raw image URL inputs should remain as the primary CMS image entry method
+- Do not break existing R2 usage elsewhere in the app
+- No unrelated storage refactors
+- No broad media overengineering
+
+VALIDATION CHECKLIST
+1. Typecheck/check passes
+2. Build passes
+3. CMS image inputs now use upload/dropzone UX
+4. Uploaded assets are stored in Cloudflare R2
+5. Image preview/replace/remove flows work correctly
+6. Existing non-CMS R2 features remain stable
+7. Builder blocks with image/background media save and render correctly in admin preview
+
+REQUIRED OUTPUT
+Provide:
+1. Summary of media/upload work completed
+2. Files changed
+3. R2 integration notes
+4. Any data model/storage notes
+5. Follow-up recommendations
+6. Docs update
+
+DOCS UPDATE REQUIREMENT
+Update docs to include:
+- CMS media upload architecture
+- R2 storage behavior for CMS assets
+- supported file rules
+- how block image/background media is stored
+- reuse strategy for future CMS modules

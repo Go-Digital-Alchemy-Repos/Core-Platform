@@ -15,3 +15,4 @@ export { specializations, insertSpecializationSchema, type InsertSpecialization,
 export { profileViews, insertProfileViewSchema, type InsertProfileView, type ProfileView } from "./profile-views";
 export { savedCounselors, insertSavedCounselorSchema, type InsertSavedCounselor, type SavedCounselor } from "./saved-counselors";
 export { blogPosts, insertBlogPostSchema, type InsertBlogPost, type BlogPost } from "./blog-posts";
+export { eventRegistrations, insertEventRegistrationSchema, type InsertEventRegistration, type EventRegistration } from "./event-registrations";

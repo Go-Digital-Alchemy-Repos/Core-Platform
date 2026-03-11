@@ -1,0 +1,71 @@
+We are beginning Phase 6 of the TCK Wellness CMS sprint: integrating the existing blog into the new CMS area.
+
+CONTEXT
+TCK Wellness already has a blog feature. We do NOT want to rebuild it blindly if there are salvageable models, routes, services, and admin patterns already in place. The goal is to absorb blog management into the CMS area and align it with the new CMS architecture where practical.
+
+IMPORTANT RULES
+- Nondestructive only
+- Preserve current public blog behavior and slugs
+- Reuse existing blog architecture where practical
+- Do not force a full blog rewrite unless clearly necessary
+- Any blog image inputs, featured image fields, hero images, or social images must use the Cloudflare R2-backed upload/dropzone workflow, not pasted image URLs
+
+PRIMARY GOAL
+Move or integrate blog management into CMS in a practical way while preserving existing blog functionality.
+
+IMPLEMENTATION REQUIREMENTS
+1. Inspect:
+   - current blog schema/models
+   - blog admin routes/pages
+   - public blog rendering
+   - CMS architecture
+   - media/upload patterns
+   - SEO handling
+
+2. Integrate blog into CMS navigation and admin flow so that blog management lives under CMS in a common-sense way.
+
+3. Reuse the current blog data model where practical, unless small structural changes are needed to align with CMS conventions.
+
+4. Improve blog editing/admin experience where useful by borrowing from CMS patterns such as:
+   - better SEO fields
+   - draft/published handling
+   - revision compatibility if practical
+   - media upload handling
+   - related content organization
+
+5. Ensure blog image/media handling uses the CMS R2 upload flow.
+
+6. Preserve current public blog URLs, rendering behavior, and existing content.
+
+7. If blog content can safely share editor tooling/components with CMS pages, do so without overcomplicating the architecture.
+
+NONDESTRUCTIVE RULES
+- No public blog route breakage
+- No content loss
+- No SEO slug breakage
+- No raw image URL inputs for blog media
+- No unnecessary blog rewrite
+
+VALIDATION CHECKLIST
+1. Typecheck/check passes
+2. Build passes
+3. Blog management appears under CMS
+4. Existing blog posts still render correctly
+5. Blog media uploads work through R2-backed CMS media flow
+6. Existing slugs and SEO remain stable
+
+REQUIRED OUTPUT
+Provide:
+1. Summary of blog integration work
+2. Files changed
+3. Reused vs changed blog architecture notes
+4. Any migration notes if applicable
+5. Follow-up recommendations
+6. Docs update
+
+DOCS UPDATE REQUIREMENT
+Update docs to include:
+- blog placement within CMS
+- reused blog architecture decisions
+- blog media upload handling
+- blog/CMS relationship notes

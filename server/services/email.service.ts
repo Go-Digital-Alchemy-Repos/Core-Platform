@@ -338,4 +338,60 @@ export async function sendNewMessageEmail(
   return sendEmail(to, `New message from ${senderName} — TCK Wellness`, html);
 }
 
+export async function sendRegistrationConfirmationEmail(
+  email: string,
+  firstName: string | null,
+  eventTitle: string,
+  eventDate: string,
+  eventLocation: string | null
+): Promise<boolean> {
+  const vars = {
+    firstName: firstName || "there",
+    eventTitle,
+    eventDate,
+    eventLocation: eventLocation || "See event details",
+  };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "event-registration-confirmation",
+    vars,
+    `Registration Confirmed: ${eventTitle}`,
+    `<p>Hi ${vars.firstName}, you're registered for ${eventTitle} on ${eventDate}.</p>`
+  );
+  if (!isActive) return false;
+  return sendEmail(email, subject, html);
+}
+
+export async function sendWaitlistEmail(
+  email: string,
+  firstName: string | null,
+  eventTitle: string,
+  eventDate: string
+): Promise<boolean> {
+  const vars = { firstName: firstName || "there", eventTitle, eventDate };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "event-registration-waitlisted",
+    vars,
+    `Waitlisted: ${eventTitle}`,
+    `<p>Hi ${vars.firstName}, you've been added to the waitlist for ${eventTitle}.</p>`
+  );
+  if (!isActive) return false;
+  return sendEmail(email, subject, html);
+}
+
+export async function sendRegistrationCanceledEmail(
+  email: string,
+  firstName: string | null,
+  eventTitle: string
+): Promise<boolean> {
+  const vars = { firstName: firstName || "there", eventTitle };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "event-registration-canceled",
+    vars,
+    `Registration Canceled: ${eventTitle}`,
+    `<p>Hi ${vars.firstName}, your registration for ${eventTitle} has been canceled.</p>`
+  );
+  if (!isActive) return false;
+  return sendEmail(email, subject, html);
+}
+
 export { baseTemplate, renderTemplate };

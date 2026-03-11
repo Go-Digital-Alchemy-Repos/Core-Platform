@@ -1,0 +1,129 @@
+We are beginning a major nondestructive CMS buildout for the TCK Wellness application.
+
+CONTEXT
+TCK Wellness already has:
+- an admin dashboard
+- public website pages
+- blog functionality
+- role-based authentication
+- modern React + TypeScript + Tailwind + shadcn/ui frontend patterns
+- Express + TypeScript + shared schema/storage/backend patterns
+- Cloudflare R2 support already used elsewhere in the application
+
+We now need to add a new Admin sidebar area called CMS. This CMS will become the admin control center for editing and managing the public-facing website pages and content surfaces using a modern page-builder-driven experience.
+
+IMPORTANT SCOPE
+CMS v1 is for PUBLIC-FACING website pages and content management only.
+Do NOT attempt to make authenticated dashboards, counselor tools, admin operational pages, messaging, billing flows, or other app-internal screens visually editable in this first CMS rollout.
+
+IMPORTANT RULES
+- Nondestructive only
+- Preserve all current website behavior, routes, blog behavior, and admin behavior
+- Do not break current public rendering
+- Do not remove existing pages or blog features
+- Additive implementation only
+- Adapt to TCK Wellness as a single-site CMS inside the existing app
+- Do not introduce unnecessary multi-tenant/workspace/site abstractions
+- Keep architecture modular and future-ready
+- Anywhere in the CMS that would normally use an image URL input, plan for Cloudflare R2-backed upload/dropzone handling instead of raw URL inputs
+
+PRIMARY GOAL
+Build the CMS foundation and admin architecture, including:
+- CMS sidebar section in Admin
+- CMS overview page
+- CMS Pages module
+- CMS page schema/model
+- CMS page revisions groundwork
+- draft/published workflow groundwork
+- modular CMS routes/services/storage
+- admin permissions for CMS access
+- future-ready support for visual builder, reusable sections, blog integration, media, and SEO
+
+REQUIRED CMS AREAS TO PREPARE
+Create or scaffold the following CMS areas:
+- Overview
+- Pages
+- Blog
+- Media
+- SEO
+- Components / Reusable Sections
+
+Only fully implement CMS Overview + CMS Pages in this phase.
+The others may be placeholders or partial shells if useful for future routing consistency.
+
+IMPLEMENTATION REQUIREMENTS
+1. Inspect:
+   - current admin sidebar and navigation structure
+   - current admin routing structure
+   - current public page routes
+   - current blog architecture
+   - shared schema/types
+   - storage/services patterns
+   - current R2 integration patterns
+   - any current SEO/content/page configuration structures
+
+2. Add a new Admin sidebar section labeled CMS with sensible subnavigation.
+
+3. Create a CMS page model suitable for public website pages with fields such as:
+   - title
+   - slug/path
+   - status (draft/published)
+   - page type/template
+   - builder content storage field (JSON or equivalent)
+   - SEO groundwork fields
+   - source/origin metadata for future seeding/import
+   - timestamps
+   - createdBy/updatedBy if aligned with current app patterns
+
+4. Create a CMS page revisions model or equivalent revision-tracking groundwork.
+This does not yet require full rollback UX, but should be future-ready.
+
+5. Add modular CMS routes/services/storage consistent with current architecture.
+
+6. Create CMS Pages admin list view with:
+   - page title
+   - slug/path
+   - status
+   - updated at
+   - actions such as create, edit, preview placeholder, revisions placeholder
+
+7. Add basic create/edit page metadata forms, but do NOT yet build the full drag-and-drop builder in this phase.
+
+8. Ensure permissions restrict CMS access appropriately to admin users.
+
+9. Keep the architecture ready for future integration of builder blocks, reusable sections, blog, media, and SEO.
+
+NONDESTRUCTIVE RULES
+- No replacement of current public rendering yet
+- No forced migration of all existing pages yet
+- No blog removal
+- No route deletions
+- No app-wide redesign
+- No multi-tenant rewrite
+
+VALIDATION CHECKLIST
+1. Typecheck/check passes
+2. Build passes
+3. Admin sidebar shows CMS section correctly
+4. CMS Overview and CMS Pages routes load
+5. Admin can create/edit CMS page metadata
+6. Existing public pages still work unchanged
+7. Existing blog still works unchanged
+8. New schema/migrations are safe and nondestructive
+
+REQUIRED OUTPUT
+Provide:
+1. Summary of CMS foundation work completed
+2. Files changed grouped by area
+3. Schema/migration notes
+4. Architectural decisions made
+5. Follow-up recommendations for next CMS phase
+6. Docs update
+
+DOCS UPDATE REQUIREMENT
+Update docs to include:
+- CMS architecture overview
+- CMS pages model
+- revision groundwork
+- admin sidebar changes
+- future builder/media/blog/SEO roadmap
