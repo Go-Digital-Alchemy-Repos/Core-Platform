@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import type { Event } from "@shared/schema/events";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,6 +59,7 @@ function formatPrice(fee: number, currency: string) {
 }
 
 function EventCard({ event }: { event: Event }) {
+  const [, navigate] = useLocation();
   const eventDate = new Date(event.date);
   const isPast = eventDate < new Date();
   const isHybrid = event.isVirtual && !!(event.location || event.locationName || event.locationAddress);
@@ -70,6 +71,7 @@ function EventCard({ event }: { event: Event }) {
       <Card
         data-testid={`card-event-${event.id}`}
         className={`cursor-pointer hover-elevate ${isPast ? "opacity-60" : ""}`}
+        onClick={() => navigate(`/events/${event.id}`)}
       >
         <CardHeader className="flex flex-col sm:flex-row items-start justify-between gap-2 space-y-0 pb-3">
           <div className="space-y-1 min-w-0">
