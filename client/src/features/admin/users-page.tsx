@@ -66,7 +66,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type SafeUser = Omit<User, "password">;
+type SafeUser = Omit<User, "password"> & { country?: string | null };
 
 export default function AdminUsersPage() {
   return (
@@ -171,6 +171,7 @@ function UsersContent() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Location</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="w-12"></TableHead>
@@ -183,6 +184,9 @@ function UsersContent() {
                   <span className="font-medium">
                     {`${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() || "—"}
                   </span>
+                </TableCell>
+                <TableCell className="text-muted-foreground" data-testid={`text-user-country-${u.id}`}>
+                  {u.country ?? "—"}
                 </TableCell>
                 <TableCell>
                   <Badge
@@ -246,7 +250,7 @@ function UsersContent() {
             {(!filtered || filtered.length === 0) && (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={6}
                   className="text-center text-muted-foreground py-8"
                 >
                   {search || roleFilter !== "all"

@@ -1,5 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
+import { db } from "../../db";
+import { users, therapistProfiles } from "@shared/schema";
 import { storage } from "../../storage/index";
 import { asyncHandler } from "../../middleware/error-handler";
 import { hashPassword } from "../../middleware/auth";
@@ -13,9 +16,22 @@ const router = Router();
 router.get(
   "/",
   asyncHandler(async (_req, res) => {
-    const users = await storage.users.getAllUsers();
-    const safeUsers = users.map(({ password, ...u }) => u);
-    res.json(safeUsers);
+    const rows = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        profileImageUrl: users.profileImageUrl,
+        lastLoginAt: users.lastLoginAt,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+        country: therapistProfiles.country,
+      })
+      .from(users)
+      .leftJoin(therapistProfiles, eq(therapistProfiles.userId, users.id));
+    res.json(rows);
   })
 );
 
