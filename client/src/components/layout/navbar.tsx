@@ -23,7 +23,6 @@ const navLinks = [
   { label: "About", href: "/about" },
   { label: "Find a Counselor", href: "/directory" },
   { label: "Join the Network", href: "/join" },
-  { label: "Contact", href: "/contact" },
 ];
 
 const resourceLinks = [
@@ -106,6 +105,16 @@ export function Navbar() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+          <Link href="/contact">
+            <Button
+              variant="ghost"
+              className={location === "/contact" ? "toggle-elevate toggle-elevated" : ""}
+              data-testid="link-nav-contact"
+              aria-current={location === "/contact" ? "page" : undefined}
+            >
+              Contact
+            </Button>
+          </Link>
         </div>
 
         <div className="hidden md:flex items-center gap-3 flex-wrap">
@@ -293,6 +302,16 @@ export function Navbar() {
                     </Button>
                   </Link>
                 ))}
+                <Link href="/contact" onClick={() => setMobileOpen(false)}>
+                  <Button
+                    variant="ghost"
+                    className={`w-full justify-start ${location === "/contact" ? "toggle-elevate toggle-elevated" : ""}`}
+                    data-testid="link-mobile-contact"
+                    aria-current={location === "/contact" ? "page" : undefined}
+                  >
+                    Contact
+                  </Button>
+                </Link>
 
                 <div className="my-3 border-t" />
 
