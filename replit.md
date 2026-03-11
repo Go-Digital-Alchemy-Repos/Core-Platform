@@ -34,6 +34,7 @@ TCK Wellness is a BetterHelp-style platform connecting Third Culture Kids (TCKs)
     - **Reusable CMS Sections**: A library of saved block groups for efficient page building.
     - **Blog Integration**: Blog management is integrated into the CMS admin, with enhanced editor and SEO fields.
     - **Hybrid Page Rendering**: Public routes can render either hardcoded React components or published CMS content, with fallback mechanisms.
+    - **CMS SEO Foundation**: Global SEO settings (siteName, titleSuffix, defaultMetaDescription, siteUrl, defaultOgImageUrl, organizationName, organizationLogoUrl, social profiles, defaultRobotsNoindex) stored in a dedicated `seo_settings` table. Admin UI at `/admin/cms/seo` with R2-backed image upload. Public endpoint at `/api/seo/global`. Architecture & Roadmap tab documents per-page SEO (available), per-post SEO (available), and planned structured data, sitemap, redirects, and audit features.
 
 ### System Design Choices
 - **Modular File Structure**: Backend organized by concern, frontend by feature.
@@ -153,7 +154,7 @@ Non-image URL fields (website URLs, Zoom join links, recording URLs in Events) a
 
 4. **Large bundle chunks** — `dashboard-page` (428 KB) and `messages-page` (378 KB) exceed Vite's 500 KB warning threshold. These are pre-existing and unrelated to the CMS sprint. Lazy loading with `React.lazy()` would reduce initial load time.
 
-5. **CMS SEO Settings page** — Currently a "Coming Soon" placeholder. Global SEO defaults (title templates, robots.txt, sitemap) are not yet implemented.
+5. ~~**CMS SEO Settings page**~~ — **Resolved.** Global SEO settings now implemented with full admin UI, `seo_settings` table, and public `/api/seo/global` endpoint.
 
 ### Files Changed in EOD Pass
 

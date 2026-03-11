@@ -11,6 +11,7 @@ import registrationRoutes from "./registrations.routes";
 import cmsRoutes from "./cms.routes";
 import cmsMediaRoutes from "./cms-media.routes";
 import cmsSectionsRoutes from "./cms-sections.routes";
+import cmsSeoRoutes from "./cms-seo.routes";
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.use("/", registrationRoutes);
 router.use("/cms", cmsRoutes);
 router.use("/cms", cmsMediaRoutes);
 router.use("/cms", cmsSectionsRoutes);
+router.use("/cms", cmsSeoRoutes);
 
 export default router;

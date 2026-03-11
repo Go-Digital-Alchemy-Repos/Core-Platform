@@ -1,0 +1,77 @@
+We are beginning Phase 5 of the CMS > SEO sprint for TCK Wellness: polishing the SEO system with previews, validation, and editorial usability improvements.
+
+CONTEXT
+The CMS SEO system now includes global settings, page/post SEO fields, structured data output, and technical SEO tools. We now need to make the experience more editor-friendly and safer.
+
+IMPORTANT RULES
+- Nondestructive only
+- Preserve public routing and metadata behavior
+- Keep validation useful, not overly strict or noisy
+- Any SEO/social images must continue using the Cloudflare R2-backed upload/media flow, not raw URLs
+
+PRIMARY GOAL
+Improve the CMS > SEO experience with:
+- search/social preview cards
+- validation and guidance
+- structured data/admin visibility
+- cleaner editorial workflow
+- practical warnings for missing or weak SEO fields
+
+IMPLEMENTATION REQUIREMENTS
+1. Inspect:
+   - CMS SEO settings
+   - page/post SEO forms
+   - structured data engine
+   - media upload flow
+   - technical SEO audit screens
+
+2. Add editor-friendly previews where practical, such as:
+   - search result title/description preview
+   - social share preview card
+   - indication of whether key schema types are present on a content type
+
+3. Add sensible validation and guidance for:
+   - missing SEO title
+   - missing meta description
+   - missing social image
+   - suspiciously long/short values if practical
+   - canonical issues if obvious
+Do not over-police editors.
+
+4. Improve labels, empty states, save/publish affordances, and overall SEO-area usability.
+
+5. Surface structured data status in admin where practical, such as:
+   - which schema types apply to this page/post/event
+   - whether required source fields for those schema types are present
+Do not build a full crawler or validator clone.
+
+6. Keep UX consistent with the TCK Wellness design system.
+
+NONDESTRUCTIVE RULES
+- No public SEO regressions
+- No raw image URL fields
+- No unrelated admin redesign
+- No overly strict validation that blocks normal publishing without good reason
+
+VALIDATION CHECKLIST
+1. Typecheck/check passes
+2. Build passes
+3. SEO previews render correctly
+4. Validation/guidance works sensibly
+5. Structured data status visibility works in admin
+6. Public rendering remains stable
+
+REQUIRED OUTPUT
+Provide:
+1. Summary of SEO polish completed
+2. Files changed
+3. Preview/validation notes
+4. Any remaining follow-up recommendations
+5. Docs update
+
+DOCS UPDATE REQUIREMENT
+Update docs to include:
+- preview behavior
+- editorial validation rules
+- structured data visibility in admin
+- final SEO workflow notes

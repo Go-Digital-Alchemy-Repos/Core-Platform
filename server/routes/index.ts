@@ -39,4 +39,9 @@ export function registerApiRoutes(app: Express) {
     const tiers = await storage.tiers.getActiveTiers();
     res.json(tiers);
   });
+
+  app.get("/api/seo/global", async (_req, res) => {
+    const settings = await storage.seoSettings.get();
+    res.json(settings ?? {});
+  });
 }
