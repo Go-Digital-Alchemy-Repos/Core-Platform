@@ -166,17 +166,6 @@ export default function ContactPage() {
           </div>
 
           <div className="space-y-4">
-            <Card data-testid="card-contact-email">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-3">
-                  <Mail className="w-5 h-5 text-accent mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold text-sm mb-1">Email</h3>
-                    <p className="text-sm text-muted-foreground">hello@tckwellness.com</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
             <Card data-testid="card-contact-location">
               <CardContent className="pt-6">
                 <div className="flex items-start gap-3">

@@ -14,6 +14,10 @@ import {
   ChevronLeft,
   ChevronRight,
   BookOpen,
+  Globe,
+  FileCode,
+  Image,
+  SearchIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -24,16 +28,45 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 
-const navItems = [
-  { title: "Dashboard", href: "/admin", icon: LayoutDashboard, iconColor: "text-teal-600" },
-  { title: "Counselors", href: "/admin/therapists", icon: UserCheck, iconColor: "text-emerald-600" },
-  { title: "Users", href: "/admin/users", icon: Users, iconColor: "text-blue-600" },
-  { title: "Membership Tiers", href: "/admin/membership-tiers", icon: CreditCard, iconColor: "text-amber-600" },
-  { title: "Events", href: "/admin/events", icon: CalendarDays, iconColor: "text-purple-600" },
-  { title: "Messages", href: "/admin/messages", icon: Mail, iconColor: "text-rose-600" },
-  { title: "Blog", href: "/admin/blog", icon: BookOpen, iconColor: "text-orange-600" },
-  { title: "Documentation", href: "/admin/docs", icon: FileText, iconColor: "text-indigo-600" },
-  { title: "Settings", href: "/admin/settings", icon: Settings, iconColor: "text-slate-500" },
+interface NavItem {
+  title: string;
+  href: string;
+  icon: React.ElementType;
+  iconColor: string;
+}
+
+interface NavGroup {
+  label?: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    items: [
+      { title: "Dashboard", href: "/admin", icon: LayoutDashboard, iconColor: "text-teal-600" },
+      { title: "Counselors", href: "/admin/therapists", icon: UserCheck, iconColor: "text-emerald-600" },
+      { title: "Users", href: "/admin/users", icon: Users, iconColor: "text-blue-600" },
+      { title: "Membership Tiers", href: "/admin/membership-tiers", icon: CreditCard, iconColor: "text-amber-600" },
+      { title: "Events", href: "/admin/events", icon: CalendarDays, iconColor: "text-purple-600" },
+      { title: "Messages", href: "/admin/messages", icon: Mail, iconColor: "text-rose-600" },
+      { title: "Blog", href: "/admin/blog", icon: BookOpen, iconColor: "text-orange-600" },
+    ],
+  },
+  {
+    label: "CMS",
+    items: [
+      { title: "CMS Overview", href: "/admin/cms", icon: Globe, iconColor: "text-violet-600" },
+      { title: "Pages", href: "/admin/cms/pages", icon: FileCode, iconColor: "text-violet-500" },
+      { title: "Media", href: "/admin/cms/media", icon: Image, iconColor: "text-violet-400" },
+      { title: "SEO", href: "/admin/cms/seo", icon: SearchIcon, iconColor: "text-violet-400" },
+    ],
+  },
+  {
+    items: [
+      { title: "Documentation", href: "/admin/docs", icon: FileText, iconColor: "text-indigo-600" },
+      { title: "Settings", href: "/admin/settings", icon: Settings, iconColor: "text-slate-500" },
+    ],
+  },
 ];
 
 interface AdminSidebarProps {
@@ -45,6 +78,46 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
   const { user, logout } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+
+  const renderNavItem = (item: NavItem) => {
+    const isActive = location === item.href || (item.href !== "/admin" && location.startsWith(item.href));
+    const linkContent = (
+      <Link key={item.href} href={item.href}>
+        <span
+          className={cn(
+            "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium cursor-pointer hover-elevate whitespace-nowrap overflow-hidden",
+            isActive
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground"
+          )}
+          data-testid={`link-admin-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
+        >
+          <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "" : item.iconColor)} />
+          <span
+            className={cn(
+              "transition-opacity duration-200",
+              collapsed ? "opacity-0" : "opacity-100"
+            )}
+          >
+            {item.title}
+          </span>
+        </span>
+      </Link>
+    );
+
+    if (collapsed) {
+      return (
+        <Tooltip key={item.href}>
+          <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8}>
+            {item.title}
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return linkContent;
+  };
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -74,46 +147,19 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                 </h2>
               </div>
             </div>
-            <nav className="flex flex-col gap-1 px-2 flex-1" data-testid="nav-admin-sidebar">
-              {navItems.map((item) => {
-                const isActive = location === item.href;
-                const linkContent = (
-                  <Link key={item.href} href={item.href}>
-                    <span
-                      className={cn(
-                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium cursor-pointer hover-elevate whitespace-nowrap overflow-hidden",
-                        isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground"
-                      )}
-                      data-testid={`link-admin-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
-                    >
-                      <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "" : item.iconColor)} />
-                      <span
-                        className={cn(
-                          "transition-opacity duration-200",
-                          collapsed ? "opacity-0" : "opacity-100"
-                        )}
-                      >
-                        {item.title}
-                      </span>
-                    </span>
-                  </Link>
-                );
 
-                if (collapsed) {
-                  return (
-                    <Tooltip key={item.href}>
-                      <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                      <TooltipContent side="right" sideOffset={8}>
-                        {item.title}
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                }
-
-                return linkContent;
-              })}
+            <nav className="flex flex-col gap-1 px-2 flex-1 overflow-y-auto" data-testid="nav-admin-sidebar">
+              {navGroups.map((group, groupIdx) => (
+                <div key={groupIdx}>
+                  {groupIdx > 0 && <Separator className="my-2" />}
+                  {group.label && !collapsed && (
+                    <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                      {group.label}
+                    </p>
+                  )}
+                  {group.items.map(renderNavItem)}
+                </div>
+              ))}
             </nav>
 
             {user && (

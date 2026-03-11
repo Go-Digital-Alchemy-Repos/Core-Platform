@@ -16,6 +16,8 @@ import { ProfileViewStorage } from "./profile-view.storage";
 import { SavedCounselorStorage } from "./saved-counselor.storage";
 import { BlogStorage } from "./blog.storage";
 import { EventRegistrationStorage } from "./event-registration.storage";
+import { CmsPagesStorage } from "./cms-pages.storage";
+import { CmsPageRevisionsStorage } from "./cms-page-revisions.storage";
 
 export const storage = {
   users: new UserStorage(),
@@ -36,6 +38,8 @@ export const storage = {
   savedCounselors: new SavedCounselorStorage(),
   blog: new BlogStorage(),
   eventRegistrations: new EventRegistrationStorage(),
+  cmsPages: new CmsPagesStorage(),
+  cmsPageRevisions: new CmsPageRevisionsStorage(),
 };
 
 export type { TherapistSearchParams, TherapistWithUser } from "./therapist.storage";

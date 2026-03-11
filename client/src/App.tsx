@@ -38,6 +38,12 @@ const DocsPage = lazy(() => import("@/features/admin/docs-page"));
 const AdminSettingsPage = lazy(() => import("@/features/admin/settings-page"));
 const AdminBlogPage = lazy(() => import("@/features/admin/blog-page"));
 
+const CmsOverviewPage = lazy(() => import("@/features/admin/cms/cms-overview-page"));
+const CmsPagesPage = lazy(() => import("@/features/admin/cms/cms-pages-page"));
+const CmsPageEditorPage = lazy(() => import("@/features/admin/cms/cms-page-editor-page"));
+const CmsMediaPage = lazy(() => import("@/features/admin/cms/cms-media-page"));
+const CmsSeoPage = lazy(() => import("@/features/admin/cms/cms-seo-page"));
+
 const InsightsPage = lazy(() => import("@/features/public/insights-page"));
 const InsightsPostPage = lazy(() => import("@/features/public/insights-post-page"));
 const RecordingArchivesPage = lazy(() => import("@/features/public/recording-archives-page"));
@@ -134,6 +140,36 @@ function Router() {
         <Route path="/admin/settings">
           <ProtectedRoute roles={["admin"]}>
             <AdminSettingsPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms">
+          <ProtectedRoute roles={["admin"]}>
+            <CmsOverviewPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/pages/new">
+          <ProtectedRoute roles={["admin"]}>
+            <CmsPageEditorPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/pages/:id">
+          <ProtectedRoute roles={["admin"]}>
+            <CmsPageEditorPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/pages">
+          <ProtectedRoute roles={["admin"]}>
+            <CmsPagesPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/media">
+          <ProtectedRoute roles={["admin"]}>
+            <CmsMediaPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/seo">
+          <ProtectedRoute roles={["admin"]}>
+            <CmsSeoPage />
           </ProtectedRoute>
         </Route>
 

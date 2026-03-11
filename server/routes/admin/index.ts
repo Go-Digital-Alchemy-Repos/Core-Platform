@@ -8,6 +8,7 @@ import eventsRoutes from "./events.routes";
 import messagesRoutes from "./messages.routes";
 import blogRoutes from "./blog.routes";
 import registrationRoutes from "./registrations.routes";
+import cmsRoutes from "./cms.routes";
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use("/events", eventsRoutes);
 router.use("/messages", messagesRoutes);
 router.use("/blog", blogRoutes);
 router.use("/", registrationRoutes);
+router.use("/cms", cmsRoutes);
 
 export default router;
