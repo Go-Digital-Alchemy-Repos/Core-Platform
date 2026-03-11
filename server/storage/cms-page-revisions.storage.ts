@@ -12,6 +12,14 @@ export class CmsPageRevisionsStorage {
       .limit(20);
   }
 
+  async getRevision(id: string): Promise<CmsPageRevision | undefined> {
+    const [rev] = await db
+      .select()
+      .from(cmsPageRevisions)
+      .where(eq(cmsPageRevisions.id, id));
+    return rev;
+  }
+
   async createRevision(data: InsertCmsPageRevision): Promise<CmsPageRevision> {
     const [revision] = await db.insert(cmsPageRevisions).values(data).returning();
     return revision;

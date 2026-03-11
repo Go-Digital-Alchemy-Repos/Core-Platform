@@ -38,6 +38,8 @@ const AdminMessagesPage = lazy(() => import("@/features/admin/messages-page"));
 const DocsPage = lazy(() => import("@/features/admin/docs-page"));
 const AdminSettingsPage = lazy(() => import("@/features/admin/settings-page"));
 const AdminBlogPage = lazy(() => import("@/features/admin/blog-page"));
+const CmsBlogPage = lazy(() => import("@/features/admin/cms/cms-blog-page"));
+const CmsBlogEditorPage = lazy(() => import("@/features/admin/cms/cms-blog-editor-page"));
 
 const CmsOverviewPage = lazy(() => import("@/features/admin/cms/cms-overview-page"));
 const CmsPagesPage = lazy(() => import("@/features/admin/cms/cms-pages-page"));
@@ -168,6 +170,21 @@ function Router() {
         <Route path="/admin/cms/media">
           <ProtectedRoute roles={["admin"]}>
             <CmsMediaPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/blog/new">
+          <ProtectedRoute roles={["admin"]}>
+            <CmsBlogEditorPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/blog/:id">
+          <ProtectedRoute roles={["admin"]}>
+            <CmsBlogEditorPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/blog">
+          <ProtectedRoute roles={["admin"]}>
+            <CmsBlogPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/sections/new">

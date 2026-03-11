@@ -175,4 +175,48 @@ router.get("/pages/:id/revisions", async (req, res) => {
   }
 });
 
+router.post("/pages/:pageId/revisions/:revisionId/restore", async (req, res) => {
+  try {
+    const pageId = paramString(req.params.pageId);
+    const revisionId = paramString(req.params.revisionId);
+    const adminId = (req as any).user?.id;
+
+    const page = await storage.cmsPages.getPage(pageId);
+    if (!page) return res.status(404).json({ error: "Page not found" });
+
+    const revision = await storage.cmsPageRevisions.getRevision(revisionId);
+    if (!revision || revision.pageId !== pageId) {
+      return res.status(404).json({ error: "Revision not found" });
+    }
+
+    await storage.cmsPageRevisions.createRevision({
+      pageId,
+      title: page.title,
+      content: page.content as Record<string, unknown>,
+      status: page.status,
+      changedBy: adminId,
+      changeNote: "Before restore",
+    });
+
+    const restored = await storage.cmsPages.updatePage(pageId, {
+      title: revision.title,
+      content: revision.content as Record<string, unknown>,
+      updatedBy: adminId,
+    });
+
+    await storage.cmsPageRevisions.createRevision({
+      pageId,
+      title: revision.title,
+      content: revision.content as Record<string, unknown>,
+      status: page.status,
+      changedBy: adminId,
+      changeNote: "Restored from revision",
+    });
+
+    res.json(restored);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to restore revision" });
+  }
+});
+
 export default router;

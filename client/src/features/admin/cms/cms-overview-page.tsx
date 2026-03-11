@@ -5,21 +5,40 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Globe, FileCode, Image, SearchIcon, Plus, ArrowRight, Clock } from "lucide-react";
-import type { CmsPage } from "@shared/schema";
+import {
+  Globe,
+  FileCode,
+  Image,
+  SearchIcon,
+  Plus,
+  ArrowRight,
+  Clock,
+  BookOpen,
+  Blocks,
+} from "lucide-react";
+import type { CmsPage, BlogPost } from "@shared/schema";
 import { format } from "date-fns";
 
 export default function CmsOverviewPage() {
   const [, navigate] = useLocation();
 
-  const { data: pages = [], isLoading } = useQuery<CmsPage[]>({
+  const { data: pages = [], isLoading: pagesLoading } = useQuery<CmsPage[]>({
     queryKey: ["/api/admin/cms/pages"],
   });
+
+  const { data: posts = [], isLoading: postsLoading } = useQuery<BlogPost[]>({
+    queryKey: ["/api/admin/blog"],
+  });
+
+  const isLoading = pagesLoading || postsLoading;
 
   const totalPages = pages.length;
   const publishedPages = pages.filter((p) => p.status === "published").length;
   const draftPages = pages.filter((p) => p.status === "draft").length;
   const recentPages = pages.slice(0, 5);
+
+  const totalPosts = posts.length;
+  const publishedPosts = posts.filter((p) => p.isPublished).length;
 
   const quickLinks = [
     {
@@ -32,13 +51,31 @@ export default function CmsOverviewPage() {
       available: true,
     },
     {
+      title: "Blog",
+      description: "Write and publish articles at /insights with SEO controls",
+      icon: BookOpen,
+      href: "/admin/cms/blog",
+      color: "text-orange-500",
+      bg: "bg-orange-50 dark:bg-orange-950/30",
+      available: true,
+    },
+    {
       title: "Media Library",
       description: "Upload and manage images and files via Cloudflare R2",
       icon: Image,
       href: "/admin/cms/media",
       color: "text-violet-500",
       bg: "bg-violet-50 dark:bg-violet-950/30",
-      available: false,
+      available: true,
+    },
+    {
+      title: "Sections",
+      description: "Save and reuse block groups across any page",
+      icon: Blocks,
+      href: "/admin/cms/sections",
+      color: "text-violet-400",
+      bg: "bg-violet-50 dark:bg-violet-950/30",
+      available: true,
     },
     {
       title: "SEO Settings",
@@ -60,7 +97,7 @@ export default function CmsOverviewPage() {
               Content Management System
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage your public-facing website pages and content
+              Manage your public-facing website pages, blog, and media
             </p>
           </div>
           <Button onClick={() => navigate("/admin/cms/pages/new")} data-testid="button-create-page">
@@ -69,63 +106,81 @@ export default function CmsOverviewPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <Card data-testid="card-stat-total">
-            <CardContent className="pt-6">
+            <CardContent className="pt-5">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                  <Globe className="h-5 w-5 text-violet-600" />
+                <div className="h-9 w-9 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                  <Globe className="h-4.5 w-4.5 text-violet-600" />
                 </div>
                 <div>
                   {isLoading ? (
-                    <Skeleton className="h-7 w-12" />
+                    <Skeleton className="h-6 w-10" />
                   ) : (
-                    <p className="text-2xl font-bold" data-testid="text-stat-total">{totalPages}</p>
+                    <p className="text-xl font-bold" data-testid="text-stat-total">{totalPages}</p>
                   )}
-                  <p className="text-sm text-muted-foreground">Total Pages</p>
+                  <p className="text-xs text-muted-foreground">Total Pages</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card data-testid="card-stat-published">
-            <CardContent className="pt-6">
+            <CardContent className="pt-5">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <Globe className="h-5 w-5 text-green-600" />
+                <div className="h-9 w-9 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <Globe className="h-4.5 w-4.5 text-green-600" />
                 </div>
                 <div>
                   {isLoading ? (
-                    <Skeleton className="h-7 w-12" />
+                    <Skeleton className="h-6 w-10" />
                   ) : (
-                    <p className="text-2xl font-bold" data-testid="text-stat-published">{publishedPages}</p>
+                    <p className="text-xl font-bold" data-testid="text-stat-published">{publishedPages}</p>
                   )}
-                  <p className="text-sm text-muted-foreground">Published</p>
+                  <p className="text-xs text-muted-foreground">Published Pages</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card data-testid="card-stat-draft">
-            <CardContent className="pt-6">
+          <Card data-testid="card-stat-blog-total">
+            <CardContent className="pt-5">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                  <FileCode className="h-5 w-5 text-amber-600" />
+                <div className="h-9 w-9 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                  <BookOpen className="h-4.5 w-4.5 text-orange-500" />
                 </div>
                 <div>
                   {isLoading ? (
-                    <Skeleton className="h-7 w-12" />
+                    <Skeleton className="h-6 w-10" />
                   ) : (
-                    <p className="text-2xl font-bold" data-testid="text-stat-draft">{draftPages}</p>
+                    <p className="text-xl font-bold" data-testid="text-stat-blog-total">{totalPosts}</p>
                   )}
-                  <p className="text-sm text-muted-foreground">Drafts</p>
+                  <p className="text-xs text-muted-foreground">Blog Posts</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card data-testid="card-stat-blog-published">
+            <CardContent className="pt-5">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                  <BookOpen className="h-4.5 w-4.5 text-emerald-500" />
+                </div>
+                <div>
+                  {isLoading ? (
+                    <Skeleton className="h-6 w-10" />
+                  ) : (
+                    <p className="text-xl font-bold" data-testid="text-stat-blog-published">{publishedPosts}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">Posts Live</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {quickLinks.map((link) => (
             <Card
               key={link.href}
@@ -133,19 +188,19 @@ export default function CmsOverviewPage() {
               onClick={() => link.available && navigate(link.href)}
               data-testid={`card-quicklink-${link.title.toLowerCase().replace(/\s+/g, "-")}`}
             >
-              <CardContent className="pt-6">
-                <div className={`h-10 w-10 rounded-lg ${link.bg} flex items-center justify-center mb-3`}>
-                  <link.icon className={`h-5 w-5 ${link.color}`} />
+              <CardContent className="pt-5 pb-4">
+                <div className={`h-9 w-9 rounded-lg ${link.bg} flex items-center justify-center mb-3`}>
+                  <link.icon className={`h-4.5 w-4.5 ${link.color}`} />
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-1">
                   <h3 className="font-semibold text-sm">{link.title}</h3>
                   {link.available ? (
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
                   ) : (
                     <Badge variant="outline" className="text-[10px]">Soon</Badge>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{link.description}</p>
+                <p className="text-[11px] text-muted-foreground leading-snug">{link.description}</p>
               </CardContent>
             </Card>
           ))}
@@ -159,7 +214,7 @@ export default function CmsOverviewPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {pagesLoading ? (
               <div className="space-y-3">
                 {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
               </div>
@@ -199,7 +254,10 @@ export default function CmsOverviewPage() {
                       <td className="py-2 font-medium">{page.title}</td>
                       <td className="py-2 text-muted-foreground font-mono text-xs">{page.slug}</td>
                       <td className="py-2">
-                        <Badge variant={page.status === "published" ? "default" : "outline"} className="text-xs">
+                        <Badge
+                          variant={page.status === "published" ? "default" : "outline"}
+                          className={`text-xs ${page.status === "published" ? "bg-emerald-600" : ""}`}
+                        >
                           {page.status}
                         </Badge>
                       </td>
@@ -213,6 +271,59 @@ export default function CmsOverviewPage() {
             )}
           </CardContent>
         </Card>
+
+        {posts.length > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-orange-500" />
+                  Recent Blog Posts
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/admin/cms/blog")}>
+                  View all
+                  <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <table className="w-full text-sm" data-testid="table-recent-posts">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 text-muted-foreground font-medium">Title</th>
+                    <th className="text-left py-2 text-muted-foreground font-medium">Author</th>
+                    <th className="text-left py-2 text-muted-foreground font-medium">Status</th>
+                    <th className="text-left py-2 text-muted-foreground font-medium">Published</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {posts.slice(0, 5).map((post) => (
+                    <tr
+                      key={post.id}
+                      className="border-b last:border-0 hover:bg-muted/30 cursor-pointer"
+                      onClick={() => navigate(`/admin/cms/blog/${post.id}`)}
+                      data-testid={`row-recent-post-${post.id}`}
+                    >
+                      <td className="py-2 font-medium truncate max-w-[200px]">{post.title}</td>
+                      <td className="py-2 text-muted-foreground">{post.authorName}</td>
+                      <td className="py-2">
+                        <Badge
+                          variant={post.isPublished ? "default" : "outline"}
+                          className={`text-xs ${post.isPublished ? "bg-emerald-600" : ""}`}
+                        >
+                          {post.isPublished ? "Published" : "Draft"}
+                        </Badge>
+                      </td>
+                      <td className="py-2 text-muted-foreground">
+                        {post.publishedAt ? format(new Date(post.publishedAt), "MMM d, yyyy") : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AdminSidebar>
   );

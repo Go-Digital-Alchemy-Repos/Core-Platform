@@ -6,6 +6,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, ArrowLeft, User } from "lucide-react";
 import type { BlogPost } from "@shared/schema";
+import { useSeo } from "@/hooks/use-seo";
+
+function PostSeo({ post }: { post: BlogPost }) {
+  useSeo({
+    title: post.seoTitle || `${post.title} | TCK Wellness`,
+    description: post.seoDescription || post.excerpt || undefined,
+    ogImage: post.ogImageUrl || post.coverImageUrl || undefined,
+    canonical: `${window.location.origin}/insights/${post.slug}`,
+  });
+  return null;
+}
 
 export default function InsightsPostPage() {
   const params = useParams<{ slug: string }>();
@@ -43,6 +54,7 @@ export default function InsightsPostPage() {
 
   return (
     <PageLayout>
+      <PostSeo post={post} />
       <article className="max-w-3xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
         <Link href="/insights">
           <Button variant="ghost" size="sm" className="mb-6" data-testid="button-back-insights">

@@ -190,9 +190,7 @@ export default function RecordingArchivesPage() {
             <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight" data-testid="text-archives-heading">
               Recording Archives
             </h1>
-            <p className="text-muted-foreground text-lg max-w-3xl" data-testid="text-archives-subtitle">
-              Browse our collection of past trainings and webinars. Access is available to members based on their subscription tier.
-            </p>
+            <p className="text-muted-foreground text-lg max-w-3xl" data-testid="text-archives-subtitle">Browse our collection of past trainings and webinars. </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center pt-4">

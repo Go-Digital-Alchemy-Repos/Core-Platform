@@ -38,7 +38,10 @@ import {
   Clock,
   Info,
   Eye,
+  EyeOff,
   Layers,
+  RotateCcw,
+  Loader2,
 } from "lucide-react";
 import type { CmsPage, CmsPageRevision } from "@shared/schema";
 import { format } from "date-fns";
@@ -183,6 +186,36 @@ export default function CmsPageEditorPage() {
     onError: () => toast({ title: "Failed to publish page", variant: "destructive" }),
   });
 
+  const unpublishMutation = useMutation({
+    mutationFn: () => apiRequest("POST", `/api/admin/cms/pages/${id}/unpublish`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id] });
+      toast({ title: "Page unpublished — reverted to draft" });
+    },
+    onError: () => toast({ title: "Failed to unpublish page", variant: "destructive" }),
+  });
+
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+  const restoreMutation = useMutation({
+    mutationFn: (revisionId: string) =>
+      apiRequest("POST", `/api/admin/cms/pages/${id}/revisions/${revisionId}/restore`),
+    onSuccess: async (res) => {
+      const restored = await res.json();
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id, "revisions"] });
+      setBuilderContent(parseBuilderContent(restored?.content));
+      form.setValue("title", restored?.title ?? form.getValues("title"));
+      setRestoringId(null);
+      toast({ title: "Revision restored successfully" });
+    },
+    onError: () => {
+      setRestoringId(null);
+      toast({ title: "Failed to restore revision", variant: "destructive" });
+    },
+  });
+
   const onSave = () => {
     form.handleSubmit((formData) => {
       const payload = { ...formData, content: builderContent };
@@ -233,6 +266,28 @@ export default function CmsPageEditorPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {!isNew && page?.status === "published" && (
+              <>
+                <Badge className="bg-green-600 text-white" data-testid="badge-published">
+                  <Globe className="h-3 w-3 mr-1" />
+                  Published
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => unpublishMutation.mutate()}
+                  disabled={unpublishMutation.isPending}
+                  data-testid="button-unpublish"
+                >
+                  {unpublishMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  ) : (
+                    <EyeOff className="h-4 w-4 mr-1.5" />
+                  )}
+                  Unpublish
+                </Button>
+              </>
+            )}
             {!isNew && page?.status !== "published" && (
               <Button
                 variant="outline"
@@ -240,15 +295,13 @@ export default function CmsPageEditorPage() {
                 disabled={publishMutation.isPending}
                 data-testid="button-publish"
               >
-                <Eye className="h-4 w-4 mr-2" />
+                {publishMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Eye className="h-4 w-4 mr-2" />
+                )}
                 Publish
               </Button>
-            )}
-            {!isNew && page?.status === "published" && (
-              <Badge className="bg-green-600 text-white" data-testid="badge-published">
-                <Globe className="h-3 w-3 mr-1" />
-                Published
-              </Badge>
             )}
             <Button
               onClick={onSave}
@@ -396,20 +449,43 @@ export default function CmsPageEditorPage() {
                         <p className="text-xs text-muted-foreground">No revisions yet</p>
                       ) : (
                         <div className="space-y-2" data-testid="list-revisions">
-                          {revisions.slice(0, 5).map((rev, idx) => (
+                          {revisions.slice(0, 8).map((rev, idx) => (
                             <div key={rev.id} className="text-xs border-b last:border-0 pb-2 last:pb-0" data-testid={`item-revision-${rev.id}`}>
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium">{idx === 0 ? "Current" : `v${revisions.length - idx}`}</span>
-                                <Badge variant="outline" className="text-[10px]">{rev.status}</Badge>
+                              <div className="flex items-center justify-between gap-1 flex-wrap">
+                                <div>
+                                  <span className="font-medium">{idx === 0 ? "Current" : `v${revisions.length - idx}`}</span>
+                                  <span className="text-muted-foreground ml-1.5">
+                                    {rev.createdAt ? format(new Date(rev.createdAt), "MMM d 'at' h:mm a") : "—"}
+                                  </span>
+                                </div>
+                                {idx > 0 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-5 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
+                                    disabled={restoringId === rev.id || restoreMutation.isPending}
+                                    onClick={() => {
+                                      setRestoringId(rev.id);
+                                      restoreMutation.mutate(rev.id);
+                                    }}
+                                    data-testid={`button-restore-revision-${rev.id}`}
+                                  >
+                                    {restoringId === rev.id ? (
+                                      <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                    ) : (
+                                      <RotateCcw className="h-2.5 w-2.5" />
+                                    )}
+                                    <span className="ml-1">Restore</span>
+                                  </Button>
+                                )}
                               </div>
-                              <p className="text-muted-foreground mt-0.5">
-                                {rev.createdAt ? format(new Date(rev.createdAt), "MMM d 'at' h:mm a") : "—"}
-                              </p>
-                              {rev.changeNote && <p className="text-muted-foreground italic">{rev.changeNote}</p>}
+                              {rev.changeNote && (
+                                <p className="text-muted-foreground italic mt-0.5">{rev.changeNote}</p>
+                              )}
                             </div>
                           ))}
-                          {revisions.length > 5 && (
-                            <p className="text-xs text-muted-foreground">+{revisions.length - 5} older revisions</p>
+                          {revisions.length > 8 && (
+                            <p className="text-xs text-muted-foreground">+{revisions.length - 8} older revisions</p>
                           )}
                         </div>
                       )}

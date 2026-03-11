@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -14,6 +15,39 @@ function parseCmsContent(content: unknown): BlockInstance[] {
   if (!content || typeof content !== "object") return [];
   const c = content as BuilderContent;
   return Array.isArray(c.blocks) ? c.blocks : [];
+}
+
+function CmsPageSeo({ page }: { page: CmsPage }) {
+  useEffect(() => {
+    const prevTitle = document.title;
+    const effectiveTitle = page.seoTitle || page.title;
+
+    if (effectiveTitle) document.title = `${effectiveTitle} | TCK Wellness`;
+
+    const setMeta = (name: string, content: string, property = false) => {
+      const attr = property ? "property" : "name";
+      let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${name}"]`);
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute(attr, name);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", content);
+    };
+
+    if (page.seoDescription) {
+      setMeta("description", page.seoDescription);
+      setMeta("og:description", page.seoDescription, true);
+    }
+    if (effectiveTitle) setMeta("og:title", effectiveTitle, true);
+    if (page.ogImageUrl) setMeta("og:image", page.ogImageUrl, true);
+
+    return () => {
+      document.title = prevTitle;
+    };
+  }, [page]);
+
+  return null;
 }
 
 export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
@@ -40,6 +74,7 @@ export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
 
   return (
     <div className="min-h-screen flex flex-col" data-testid="cms-public-page">
+      <CmsPageSeo page={page} />
       <Navbar />
       <main className="flex-1">
         {blocks.length > 0 ? (
