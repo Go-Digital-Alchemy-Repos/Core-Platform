@@ -161,3 +161,121 @@ All `image-url` props show:
 3. **Rich text** is a plain textarea — a Tiptap integration upgrade is planned
 4. **No public page rendering** — public routes still use hardcoded pages; CMS page output routing is next
 5. **Testimonials/Cards arrays** have no inline reorder — items can be deleted and re-added
+
+---
+
+## CMS Phase 3 — Media Upload & R2 Media Library
+
+### Overview
+All image fields across the CMS (page builder blocks and SEO OG image) now use a fully functional drag-and-drop upload workflow backed by Cloudflare R2. A `cms_media` catalog table tracks every CMS-uploaded asset. A real Media Library admin page replaces the previous placeholder.
+
+### New Database Table
+
+**`cms_media`** — tracks uploaded CMS assets:
+| Column | Type | Notes |
+|---|---|---|
+| `id` | varchar (UUID) | Auto-generated |
+| `filename` | text | Server-generated `{timestamp}-{safeName}` |
+| `originalName` | text | Original user filename |
+| `url` | text | Public URL (R2 or local fallback) |
+| `mimeType` | text | e.g. `image/webp` |
+| `fileSize` | integer | Bytes |
+| `r2Key` | text | R2 object key (e.g. `cms/media/…`), null if local fallback |
+| `alt` | text | Optional alt text |
+| `uploadedBy` | varchar | FK → users.id |
+| `createdAt` | timestamp | Auto set |
+
+### Upload API
+
+**`POST /api/admin/cms/upload`** (admin-only)
+- Accepts: `multipart/form-data` with `file` field
+- Accepted types: `image/png`, `image/jpeg`, `image/webp`, `image/gif`
+- Max size: 10 MB
+- R2 key path: `cms/media/{timestamp}-{safeName}`
+- Local fallback: `/uploads/cms/` (when R2 is not configured)
+- Returns: Full `CmsMediaAsset` JSON (id, url, filename, mimeType, fileSize, etc.)
+
+**`GET /api/admin/cms/media`** — list all CMS media (ordered by newest first)
+
+**`PATCH /api/admin/cms/media/:id/alt`** — update alt text for an asset
+
+**`DELETE /api/admin/cms/media/:id`** — delete asset from DB and R2/local storage
+
+### Frontend Components
+
+**`client/src/features/admin/cms/components/cms-image-upload.tsx`** — `CmsImageUpload`
+- Primary reusable upload component for all CMS image fields
+- Drag-and-drop zone with `onDrop`/`onDragOver` handlers (no external library)
+- Click-to-browse file input fallback
+- Real-time upload progress via `XMLHttpRequest` (supports `onprogress`)
+- Preview state: shows uploaded image with hover-revealed Replace / Library / Remove buttons
+- "Pick from library" button opens `MediaPickerDialog`
+- Error display: toasts for type errors, size errors, network errors
+- `data-testid` props for all interactive elements
+
+**`client/src/features/admin/cms/components/media-picker-dialog.tsx`** — `MediaPickerDialog`
+- Grid picker for browsing already-uploaded CMS media
+- Search filter (by filename and alt text)
+- Fetches from `GET /api/admin/cms/media`
+- Click to select → fires `onSelect(url, asset)` callback
+
+### Integration Points
+
+**Block editor (`builder/block-editor.tsx`)**
+- All `image-url` propDef fields replaced with `CmsImageUpload`
+- This covers every block type that has image props: hero (backgroundImageUrl), text-image, cards-grid items, testimonials items, image-block, etc.
+- Works inside `ArrayItemsField` for repeating items that include image-url sub-props
+
+**Page editor SEO tab (`cms-page-editor-page.tsx`)**
+- Open Graph image field replaced with `CmsImageUpload`
+- Help text: "Recommended: 1200 × 630 px"
+- No longer uses the old `/api/uploads/attachment` endpoint
+
+**Media Library page (`cms-media-page.tsx`)**
+- Full gallery view of all CMS uploaded assets (5-column grid)
+- Thumbnail hover reveals filename + file size
+- Click thumbnail → detail dialog with image preview, URL copy, delete button
+- Delete triggers AlertDialog confirmation, then calls `DELETE /api/admin/cms/media/:id`
+- Upload dialog inline on the page (uses `CmsImageUpload`)
+- Search by filename/alt text
+
+### R2 Storage Behavior for CMS Assets
+
+- R2 key prefix: `cms/media/` (separate from `avatars/` and `attachments/`)
+- Public URL format: `{R2_PUBLIC_URL}/cms/media/{filename}` or `https://{bucket}.r2.dev/cms/media/{filename}`
+- Local fallback: `/uploads/cms/{filename}` (served as static files in development)
+- On delete: if `r2Key` is set, calls `r2Service.deleteFile(r2Key)` before deleting DB record
+
+### Supported File Rules
+
+| Rule | Value |
+|---|---|
+| Accepted types | PNG, JPEG, WebP, GIF |
+| Max file size | 10 MB |
+| Rejected types | PDF, video, SVG (CMS image-only context) |
+
+### Reuse Strategy for Future CMS Modules
+
+`CmsImageUpload` is a self-contained component that accepts `value: string` (current URL) + `onChange: (url: string) => void`. Drop it anywhere another CMS module needs an image field:
+- Blog post feature images
+- Reusable Section thumbnail
+- Counselor directory banner
+- Event cover images
+
+`MediaPickerDialog` can be opened independently with `open`/`onOpenChange`/`onSelect` props, so any future module can offer "Pick from library" without coupling to `CmsImageUpload`.
+
+### Files Changed in Phase 3
+
+| File | Change |
+|---|---|
+| `shared/schema/cms-media.ts` | New — `cms_media` table + types |
+| `shared/schema/index.ts` | Export `cmsMedia` |
+| `server/storage/cms-media.storage.ts` | New — CRUD storage class |
+| `server/storage/index.ts` | Register `CmsMediaStorage` |
+| `server/routes/admin/cms-media.routes.ts` | New — upload + media CRUD API |
+| `server/routes/admin/index.ts` | Mount `cmsMediaRoutes` at `/cms` |
+| `client/src/features/admin/cms/components/cms-image-upload.tsx` | New — dropzone upload component |
+| `client/src/features/admin/cms/components/media-picker-dialog.tsx` | New — library picker dialog |
+| `client/src/features/admin/cms/builder/block-editor.tsx` | Replace `ImageUrlField` with `CmsImageUpload` |
+| `client/src/features/admin/cms/cms-page-editor-page.tsx` | Replace OG image URL input with `CmsImageUpload` |
+| `client/src/features/admin/cms/cms-media-page.tsx` | Full rewrite — real gallery with upload/delete |

@@ -18,3 +18,4 @@ export { blogPosts, insertBlogPostSchema, type InsertBlogPost, type BlogPost } f
 export { eventRegistrations, insertEventRegistrationSchema, type InsertEventRegistration, type EventRegistration } from "./event-registrations";
 export { cmsPages, insertCmsPageSchema, type InsertCmsPage, type CmsPage } from "./cms-pages";
 export { cmsPageRevisions, insertCmsPageRevisionSchema, type InsertCmsPageRevision, type CmsPageRevision } from "./cms-page-revisions";
+export { cmsMedia, insertCmsMediaSchema, type InsertCmsMedia, type CmsMediaAsset } from "./cms-media";

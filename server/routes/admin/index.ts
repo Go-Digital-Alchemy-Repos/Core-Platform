@@ -9,6 +9,7 @@ import messagesRoutes from "./messages.routes";
 import blogRoutes from "./blog.routes";
 import registrationRoutes from "./registrations.routes";
 import cmsRoutes from "./cms.routes";
+import cmsMediaRoutes from "./cms-media.routes";
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.use("/messages", messagesRoutes);
 router.use("/blog", blogRoutes);
 router.use("/", registrationRoutes);
 router.use("/cms", cmsRoutes);
+router.use("/cms", cmsMediaRoutes);
 
 export default router;

@@ -1,0 +1,245 @@
+import { useRef, useState, useCallback } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { UploadCloud, X, RefreshCw, Image, Library } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { MediaPickerDialog } from "./media-picker-dialog";
+import type { CmsMediaAsset } from "@shared/schema";
+
+const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const MAX_BYTES = 10 * 1024 * 1024;
+
+export interface CmsImageUploadProps {
+  value: string;
+  onChange: (url: string) => void;
+  label?: string;
+  helpText?: string;
+  className?: string;
+  "data-testid"?: string;
+}
+
+export function CmsImageUpload({
+  value,
+  onChange,
+  label,
+  helpText,
+  className,
+  "data-testid": testId,
+}: CmsImageUploadProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      if (!ACCEPTED_TYPES.includes(file.type)) {
+        throw new Error("Only PNG, JPEG, WebP, and GIF files are accepted");
+      }
+      if (file.size > MAX_BYTES) {
+        throw new Error(`File must be under 10 MB (this file is ${(file.size / (1024 * 1024)).toFixed(1)} MB)`);
+      }
+
+      const fd = new FormData();
+      fd.append("file", file);
+
+      return new Promise<CmsMediaAsset>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/admin/cms/upload");
+        xhr.withCredentials = true;
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress(Math.round((e.loaded / e.total) * 90));
+          }
+        };
+
+        xhr.onload = () => {
+          setUploadProgress(100);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch {
+              reject(new Error("Invalid server response"));
+            }
+          } else {
+            try {
+              const err = JSON.parse(xhr.responseText);
+              reject(new Error(err.error || "Upload failed"));
+            } catch {
+              reject(new Error(`Upload failed (${xhr.status})`));
+            }
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.send(fd);
+      });
+    },
+    onSuccess: (asset) => {
+      onChange(asset.url);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/media"] });
+      toast({ title: "Image uploaded successfully" });
+      setTimeout(() => setUploadProgress(0), 800);
+    },
+    onError: (err: Error) => {
+      setUploadProgress(0);
+      toast({ title: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleFile = useCallback(
+    (file: File | undefined | null) => {
+      if (file) uploadMutation.mutate(file);
+    },
+    [uploadMutation]
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const file = e.dataTransfer.files[0];
+      handleFile(file);
+    },
+    [handleFile]
+  );
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => setIsDragging(false);
+
+  const isUploading = uploadMutation.isPending;
+
+  return (
+    <div className={cn("space-y-1.5", className)} data-testid={testId}>
+      {label && (
+        <p className="text-sm font-medium leading-none">{label}</p>
+      )}
+
+      {value ? (
+        <div className="relative group rounded-lg border bg-muted/20 overflow-hidden">
+          <img
+            src={value}
+            alt="Preview"
+            className="w-full object-cover max-h-48 rounded-lg"
+            data-testid={testId ? `${testId}-preview` : "cms-image-preview"}
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors rounded-lg" />
+          <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="h-7 px-2 text-xs gap-1 shadow"
+              onClick={() => fileInputRef.current?.click()}
+              data-testid={testId ? `${testId}-replace` : "cms-image-replace"}
+            >
+              <RefreshCw className="h-3 w-3" />
+              Replace
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="h-7 px-2 text-xs gap-1 shadow"
+              onClick={() => setPickerOpen(true)}
+              data-testid={testId ? `${testId}-library` : "cms-image-library"}
+            >
+              <Library className="h-3 w-3" />
+              Library
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              className="h-7 w-7 p-0 shadow"
+              onClick={() => onChange("")}
+              data-testid={testId ? `${testId}-remove` : "cms-image-remove"}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={cn(
+            "relative border-2 border-dashed rounded-lg transition-colors cursor-pointer",
+            isDragging
+              ? "border-violet-400 bg-violet-50 dark:bg-violet-950/20"
+              : "border-muted-foreground/25 hover:border-violet-300 bg-muted/10 hover:bg-muted/20"
+          )}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onClick={() => !isUploading && fileInputRef.current?.click()}
+          data-testid={testId ? `${testId}-dropzone` : "cms-image-dropzone"}
+        >
+          {isUploading ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-8 px-4">
+              <div className="h-10 w-10 rounded-full bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+                <UploadCloud className="h-5 w-5 text-violet-500 animate-bounce" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">Uploading…</p>
+              <Progress value={uploadProgress} className="w-full max-w-[200px] h-1.5" />
+              <p className="text-xs text-muted-foreground">{uploadProgress}%</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 py-7 px-4 text-center select-none">
+              <div className="h-11 w-11 rounded-full bg-muted/60 flex items-center justify-center mb-1">
+                <Image className="h-5 w-5 text-muted-foreground/60" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground/80">
+                  Drop image here or{" "}
+                  <span className="text-violet-500 hover:text-violet-600 underline underline-offset-2">browse</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">PNG, JPG, WebP, GIF · Max 10 MB</p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="mt-1 h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPickerOpen(true);
+                }}
+                data-testid={testId ? `${testId}-pick-library` : "cms-image-pick-library"}
+              >
+                <Library className="h-3.5 w-3.5" />
+                Pick from library
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        className="hidden"
+        onChange={(e) => handleFile(e.target.files?.[0])}
+        data-testid={testId ? `${testId}-file-input` : "cms-image-file-input"}
+      />
+
+      {helpText && (
+        <p className="text-xs text-muted-foreground">{helpText}</p>
+      )}
+
+      <MediaPickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={(url) => onChange(url)}
+      />
+    </div>
+  );
+}

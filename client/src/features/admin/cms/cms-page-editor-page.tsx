@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { CmsImageUpload } from "./components/cms-image-upload";
 import { useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -36,7 +37,6 @@ import {
   Globe,
   Clock,
   Info,
-  Upload,
   Eye,
   Layers,
 } from "lucide-react";
@@ -86,7 +86,6 @@ export default function CmsPageEditorPage() {
   const { toast } = useToast();
   const titleRef = useRef<string>("");
   const slugManuallyEdited = useRef(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [builderContent, setBuilderContent] = useState<BuilderContent>(EMPTY_CONTENT);
   const [activeTab, setActiveTab] = useState("builder");
 
@@ -184,25 +183,6 @@ export default function CmsPageEditorPage() {
     onError: () => toast({ title: "Failed to publish page", variant: "destructive" }),
   });
 
-  const uploadImageMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/uploads/attachment", {
-        method: "POST",
-        credentials: "include",
-        body: fd,
-      });
-      if (!res.ok) throw new Error("Upload failed");
-      return res.json();
-    },
-    onSuccess: (data: { url: string }) => {
-      form.setValue("ogImageUrl", data.url);
-      toast({ title: "Image uploaded" });
-    },
-    onError: () => toast({ title: "Image upload failed", variant: "destructive" }),
-  });
-
   const onSave = () => {
     form.handleSubmit((formData) => {
       const payload = { ...formData, content: builderContent };
@@ -227,7 +207,6 @@ export default function CmsPageEditorPage() {
     );
   }
 
-  const ogImageUrl = form.watch("ogImageUrl");
 
   return (
     <AdminSidebar>
@@ -516,37 +495,12 @@ export default function CmsPageEditorPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Open Graph Image</FormLabel>
-                            <div className="space-y-2">
-                              {ogImageUrl && (
-                                <img src={ogImageUrl} alt="OG preview" className="h-24 w-full object-cover rounded-md border" data-testid="img-og-preview" />
-                              )}
-                              <div className="flex gap-2">
-                                <FormControl>
-                                  <Input placeholder="https://... or upload" {...field} data-testid="input-og-image-url" />
-                                </FormControl>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => fileInputRef.current?.click()}
-                                  disabled={uploadImageMutation.isPending}
-                                  data-testid="button-upload-og-image"
-                                >
-                                  <Upload className="h-4 w-4" />
-                                </Button>
-                              </div>
-                              <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) uploadImageMutation.mutate(file);
-                                  e.target.value = "";
-                                }}
-                              />
-                            </div>
+                            <CmsImageUpload
+                              value={field.value ?? ""}
+                              onChange={field.onChange}
+                              helpText="Recommended: 1200 × 630 px. Shown when the page is shared on social media."
+                              data-testid="og-image-upload"
+                            />
                             <FormMessage />
                           </FormItem>
                         )}

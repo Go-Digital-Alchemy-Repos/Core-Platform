@@ -1,5 +1,3 @@
-import { useRef } from "react";
-import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,85 +11,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { Upload, Plus, Trash2, GripVertical, AlertCircle } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import type { BlockDef, PropDef } from "./block-registry";
+import { CmsImageUpload } from "../components/cms-image-upload";
 
 interface BlockEditorProps {
   blockDef: BlockDef;
   props: Record<string, unknown>;
   onChange: (props: Record<string, unknown>) => void;
-}
-
-function ImageUrlField({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  onChange: (val: string) => void;
-  placeholder?: string;
-}) {
-  const { toast } = useToast();
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/uploads/attachment", {
-        method: "POST",
-        credentials: "include",
-        body: fd,
-      });
-      if (!res.ok) throw new Error("Upload failed");
-      return res.json() as Promise<{ url: string }>;
-    },
-    onSuccess: (data) => {
-      onChange(data.url);
-      toast({ title: "Image uploaded" });
-    },
-    onError: () => toast({ title: "Upload failed", variant: "destructive" }),
-  });
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex gap-2">
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder ?? "Upload or enter image URL"}
-          className="font-mono text-xs"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="flex-shrink-0"
-          onClick={() => fileRef.current?.click()}
-          disabled={uploadMutation.isPending}
-          title="Upload image"
-        >
-          <Upload className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-      <p className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400">
-        <AlertCircle className="h-3 w-3 flex-shrink-0" />
-        R2 media picker coming in next phase — direct upload active now
-      </p>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) uploadMutation.mutate(f);
-          e.target.value = "";
-        }}
-      />
-    </div>
-  );
 }
 
 function ArrayItemsField({
@@ -136,6 +63,7 @@ function ArrayItemsField({
               size="icon"
               className="h-6 w-6 text-destructive"
               onClick={() => removeItem(idx)}
+              data-testid={`array-item-remove-${idx}`}
             >
               <Trash2 className="h-3 w-3" />
             </Button>
@@ -143,7 +71,13 @@ function ArrayItemsField({
           {schema.map((field) => (
             <div key={field.key} className="space-y-1">
               <Label className="text-[11px] text-muted-foreground">{field.label}</Label>
-              {field.type === "textarea" ? (
+              {field.type === "image-url" ? (
+                <CmsImageUpload
+                  value={String(item[field.key] ?? "")}
+                  onChange={(url) => updateItem(idx, field.key, url)}
+                  data-testid={`array-item-${idx}-${field.key}`}
+                />
+              ) : field.type === "textarea" ? (
                 <Textarea
                   value={String(item[field.key] ?? "")}
                   onChange={(e) => updateItem(idx, field.key, e.target.value)}
@@ -185,6 +119,7 @@ function ArrayItemsField({
         size="sm"
         className="w-full text-xs"
         onClick={addItem}
+        data-testid="array-items-add"
       >
         <Plus className="h-3 w-3 mr-1" />
         Add {propDef.label.replace(/s$/, "")}
@@ -215,6 +150,7 @@ function PropField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={propDef.placeholder}
           className="text-sm"
+          data-testid={`prop-input-${propDef.key}`}
         />
       );
     case "textarea":
@@ -226,19 +162,20 @@ function PropField({
           placeholder={propDef.placeholder}
           rows={4}
           className="text-sm"
+          data-testid={`prop-textarea-${propDef.key}`}
         />
       );
     case "image-url":
       return (
-        <ImageUrlField
+        <CmsImageUpload
           value={strVal}
-          onChange={onChange}
-          placeholder={propDef.placeholder}
+          onChange={(url) => onChange(url)}
+          data-testid={`prop-image-${propDef.key}`}
         />
       );
     case "select":
       return (
-        <Select value={strVal} onValueChange={onChange}>
+        <Select value={strVal} onValueChange={onChange} data-testid={`prop-select-${propDef.key}`}>
           <SelectTrigger>
             <SelectValue placeholder="Select…" />
           </SelectTrigger>
@@ -254,7 +191,11 @@ function PropField({
     case "boolean":
       return (
         <div className="flex items-center gap-2">
-          <Switch checked={boolVal} onCheckedChange={onChange} />
+          <Switch
+            checked={boolVal}
+            onCheckedChange={onChange}
+            data-testid={`prop-switch-${propDef.key}`}
+          />
           <span className="text-sm text-muted-foreground">{boolVal ? "Enabled" : "Disabled"}</span>
         </div>
       );
@@ -267,6 +208,7 @@ function PropField({
           max={propDef.max}
           onChange={(e) => onChange(Number(e.target.value))}
           className="text-sm"
+          data-testid={`prop-number-${propDef.key}`}
         />
       );
     case "array-items":
