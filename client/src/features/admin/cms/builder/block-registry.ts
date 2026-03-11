@@ -117,7 +117,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
       { key: "ctaLink", label: "Primary Button Link", type: "url", placeholder: "/directory" },
       { key: "ctaSecondaryText", label: "Secondary Button Text", type: "text", placeholder: "e.g. Learn More" },
       { key: "ctaSecondaryLink", label: "Secondary Button Link", type: "url", placeholder: "/about" },
-      { key: "backgroundImageUrl", label: "Background Image", type: "image-url", placeholder: "Upload or enter URL" },
+      { key: "backgroundImageUrl", label: "Background Image", type: "image-url", placeholder: "Upload or select image" },
       { key: "overlayOpacity", label: "Overlay Opacity (%)", type: "number", min: 0, max: 100 },
     ],
   },
@@ -169,7 +169,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     propDefs: [
       { key: "heading", label: "Heading", type: "text", placeholder: "Section heading" },
       { key: "body", label: "Body Text", type: "textarea", placeholder: "Main text content" },
-      { key: "imageUrl", label: "Image", type: "image-url", placeholder: "Upload or enter URL" },
+      { key: "imageUrl", label: "Image", type: "image-url", placeholder: "Upload or select image" },
       { key: "imageAlt", label: "Image Alt Text", type: "text", placeholder: "Descriptive alt text" },
       { key: "imageCaption", label: "Image Caption", type: "text", placeholder: "Optional caption" },
       { key: "imagePosition", label: "Image Position", type: "select", options: IMAGE_POSITION_OPTIONS },
@@ -368,7 +368,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
       width: "contained",
     },
     propDefs: [
-      { key: "imageUrl", label: "Image", type: "image-url", placeholder: "Upload or enter URL" },
+      { key: "imageUrl", label: "Image", type: "image-url", placeholder: "Upload or select image" },
       { key: "alt", label: "Alt Text", type: "text", placeholder: "Descriptive alt text for accessibility" },
       { key: "caption", label: "Caption", type: "text", placeholder: "Optional image caption" },
       { key: "width", label: "Image Width", type: "select", options: IMAGE_WIDTH_OPTIONS },

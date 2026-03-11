@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
 import {
   Dialog,
   DialogContent,
@@ -312,12 +313,10 @@ function BlogContent() {
               />
             </div>
             <div>
-              <Label htmlFor="coverImageUrl">Cover Image URL</Label>
-              <Input
-                id="coverImageUrl"
+              <Label>Cover Image</Label>
+              <CmsImageUpload
                 value={formData.coverImageUrl}
-                onChange={(e) => setFormData((f) => ({ ...f, coverImageUrl: e.target.value }))}
-                placeholder="https://..."
+                onChange={(url) => setFormData((f) => ({ ...f, coverImageUrl: url }))}
                 data-testid="input-post-cover"
               />
             </div>

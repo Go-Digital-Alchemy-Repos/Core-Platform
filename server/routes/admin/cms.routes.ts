@@ -30,6 +30,7 @@ router.get("/pages", async (req, res) => {
     const pages = await storage.cmsPages.getAllPages();
     res.json(pages);
   } catch (error) {
+    console.error("[cms] Failed to fetch pages:", error);
     res.status(500).json({ error: "Failed to fetch CMS pages" });
   }
 });
@@ -68,6 +69,7 @@ router.post("/pages", async (req, res) => {
 
     res.status(201).json(page);
   } catch (error) {
+    console.error("[cms] Failed to create page:", error);
     res.status(500).json({ error: "Failed to create CMS page" });
   }
 });
@@ -79,6 +81,7 @@ router.get("/pages/:id", async (req, res) => {
     if (!page) return res.status(404).json({ error: "Page not found" });
     res.json(page);
   } catch (error) {
+    console.error("[cms] Failed to fetch page:", error);
     res.status(500).json({ error: "Failed to fetch CMS page" });
   }
 });
@@ -117,6 +120,7 @@ router.put("/pages/:id", async (req, res) => {
     const updated = await storage.cmsPages.updatePage(id, { ...data, updatedBy: adminId });
     res.json(updated);
   } catch (error) {
+    console.error("[cms] Failed to update page:", error);
     res.status(500).json({ error: "Failed to update CMS page" });
   }
 });
@@ -135,6 +139,7 @@ router.delete("/pages/:id", async (req, res) => {
     await storage.cmsPages.deletePage(id);
     res.json({ success: true });
   } catch (error) {
+    console.error("[cms] Failed to delete page:", error);
     res.status(500).json({ error: "Failed to delete CMS page" });
   }
 });
@@ -147,6 +152,7 @@ router.post("/pages/:id/publish", async (req, res) => {
     if (!page) return res.status(404).json({ error: "Page not found" });
     res.json(page);
   } catch (error) {
+    console.error("[cms] Failed to publish page:", error);
     res.status(500).json({ error: "Failed to publish CMS page" });
   }
 });
@@ -159,6 +165,7 @@ router.post("/pages/:id/unpublish", async (req, res) => {
     if (!page) return res.status(404).json({ error: "Page not found" });
     res.json(page);
   } catch (error) {
+    console.error("[cms] Failed to unpublish page:", error);
     res.status(500).json({ error: "Failed to unpublish CMS page" });
   }
 });
@@ -171,6 +178,7 @@ router.get("/pages/:id/revisions", async (req, res) => {
     const revisions = await storage.cmsPageRevisions.getRevisions(id);
     res.json(revisions);
   } catch (error) {
+    console.error("[cms] Failed to fetch revisions:", error);
     res.status(500).json({ error: "Failed to fetch revisions" });
   }
 });
@@ -215,6 +223,7 @@ router.post("/pages/:pageId/revisions/:revisionId/restore", async (req, res) => 
 
     res.json(restored);
   } catch (error) {
+    console.error("[cms] Failed to restore revision:", error);
     res.status(500).json({ error: "Failed to restore revision" });
   }
 });
