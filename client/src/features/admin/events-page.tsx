@@ -56,6 +56,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, CalendarDays, MapPin, Users, Download, MoreHorizontal, CheckCircle, Clock, XCircle, Copy, BarChart3, Bell, Square, CheckSquare } from "lucide-react";
+import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { Event, EventRegistration } from "@shared/schema";
 
@@ -681,10 +682,12 @@ function EventsContent() {
                       name="imageUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Image URL</FormLabel>
-                          <FormControl>
-                            <Input {...field} data-testid="input-event-image-url" />
-                          </FormControl>
+                          <FormLabel>Event Image</FormLabel>
+                          <CmsImageUpload
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            data-testid="input-event-image-url"
+                          />
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1121,10 +1124,12 @@ function EventsContent() {
                       name="speakerImageUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Speaker Image URL</FormLabel>
-                          <FormControl>
-                            <Input {...field} data-testid="input-event-speaker-image-url" />
-                          </FormControl>
+                          <FormLabel>Speaker Image</FormLabel>
+                          <CmsImageUpload
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            data-testid="input-event-speaker-image-url"
+                          />
                           <FormMessage />
                         </FormItem>
                       )}
