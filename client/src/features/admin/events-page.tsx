@@ -494,7 +494,7 @@ function EventsContent() {
 
       <div className="space-y-4">
         {events?.map((event) => (
-          <Card key={event.id} data-testid={`card-event-${event.id}`}>
+          <Card key={event.id} data-testid={`card-event-${event.id}`} className="cursor-pointer hover:border-primary/40 transition-colors" onClick={() => openEdit(event)}>
             <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
               <div>
                 <CardTitle className="text-lg flex items-center gap-2" data-testid={`text-event-title-${event.id}`}>
@@ -516,7 +516,7 @@ function EventsContent() {
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 {event.registrationEnabled && (
                   <Popover>
                     <PopoverTrigger asChild>
