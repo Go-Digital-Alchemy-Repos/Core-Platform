@@ -92,8 +92,8 @@ const ROADMAP_ITEMS = [
   {
     icon: Code2,
     title: "Structured Data / JSON-LD",
-    description: "Generate Organization, WebSite, Article, and BreadcrumbList JSON-LD from saved settings and page data.",
-    status: "planned",
+    description: "Organization, WebSite, BreadcrumbList, Article (blog posts), Event (event detail), VideoObject (events with recordings), and FAQPage (CMS pages with FAQ blocks) are generated automatically from real content using JSON-LD.",
+    status: "available",
   },
   {
     icon: Map,

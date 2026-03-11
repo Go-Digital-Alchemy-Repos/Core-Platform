@@ -2,6 +2,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useParams, useLocation } from "wouter";
 import type { Event } from "@shared/schema/events";
 import type { EventRegistration } from "@shared/schema/event-registrations";
+import type { SeoSettings } from "@shared/schema";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { useEffect } from "react";
+import { JsonLd } from "@/components/shared/json-ld";
+import {
+  buildOrganizationLd,
+  buildBreadcrumbLd,
+  buildEventLd,
+  buildVideoObjectLd,
+} from "@/lib/structured-data";
 import {
   CalendarDays,
   Clock,
@@ -393,6 +401,27 @@ function RegistrationSection({
   );
 }
 
+function EventJsonLd({ event, globalSeo }: { event: Event; globalSeo?: SeoSettings }) {
+  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+
+  const breadcrumbs = buildBreadcrumbLd([
+    { name: "Home", url: siteUrl || "/" },
+    { name: "Events", url: `${siteUrl}/events` },
+    { name: event.title, url: `${siteUrl}/events/${event.id}` },
+  ]);
+
+  return (
+    <JsonLd
+      schemas={[
+        globalSeo ? buildOrganizationLd(globalSeo) : null,
+        breadcrumbs,
+        buildEventLd(event, globalSeo),
+        buildVideoObjectLd(event, globalSeo),
+      ]}
+    />
+  );
+}
+
 export default function EventDetailPage() {
   const params = useParams<{ id: string }>();
   const eventId = params.id;
@@ -403,6 +432,11 @@ export default function EventDetailPage() {
   const { data: event, isLoading, error } = useQuery<Event>({
     queryKey: ["/api/events", eventId],
     enabled: !!eventId,
+  });
+
+  const { data: globalSeo } = useQuery<SeoSettings>({
+    queryKey: ["/api/seo/global"],
+    staleTime: 10 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -463,6 +497,7 @@ export default function EventDetailPage() {
 
         {event && (
           <article data-testid={`event-detail-${event.id}`}>
+            <EventJsonLd event={event} globalSeo={globalSeo} />
             {isCanceled && (
               <div className="flex items-center gap-3 rounded-md border border-destructive/50 bg-destructive/10 p-4 mb-6" data-testid="banner-event-canceled">
                 <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />

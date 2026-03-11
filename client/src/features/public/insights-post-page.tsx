@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Calendar, ArrowLeft, User } from "lucide-react";
 import type { BlogPost, SeoSettings } from "@shared/schema";
 import { useSeo } from "@/hooks/use-seo";
+import { JsonLd } from "@/components/shared/json-ld";
+import {
+  buildOrganizationLd,
+  buildBreadcrumbLd,
+  buildArticleLd,
+} from "@/lib/structured-data";
 
 function PostSeo({ post, globalSeo }: { post: BlogPost; globalSeo?: SeoSettings }) {
   const titleSuffix = globalSeo?.titleSuffix ?? " | TCK Wellness";
@@ -25,7 +31,22 @@ function PostSeo({ post, globalSeo }: { post: BlogPost; globalSeo?: SeoSettings 
     canonical: `${siteOrigin}/insights/${post.slug}`,
     noindex: post.noindex ?? false,
   });
-  return null;
+
+  const breadcrumbs = buildBreadcrumbLd([
+    { name: "Home", url: siteOrigin || "/" },
+    { name: "Insights", url: `${siteOrigin}/insights` },
+    { name: post.title, url: `${siteOrigin}/insights/${post.slug}` },
+  ]);
+
+  return (
+    <JsonLd
+      schemas={[
+        globalSeo ? buildOrganizationLd(globalSeo) : null,
+        breadcrumbs,
+        buildArticleLd(post, globalSeo),
+      ]}
+    />
+  );
 }
 
 export default function InsightsPostPage() {

@@ -5,6 +5,13 @@ import { Footer } from "@/components/layout/footer";
 import { PageRenderer } from "@/features/admin/cms/builder/block-renderer";
 import type { BlockInstance, BuilderContent } from "@/features/admin/cms/builder/block-registry";
 import type { CmsPage, SeoSettings } from "@shared/schema";
+import { JsonLd } from "@/components/shared/json-ld";
+import {
+  buildOrganizationLd,
+  buildBreadcrumbLd,
+  buildFaqPageLd,
+  extractFaqItems,
+} from "@/lib/structured-data";
 
 interface CmsHybridPageProps {
   slug: string;
@@ -91,7 +98,31 @@ function CmsPageSeo({ page, globalSeo }: { page: CmsPage; globalSeo?: SeoSetting
     };
   }, [page, globalSeo]);
 
-  return null;
+  const origin =
+    globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+
+  const isHome = page.slug === "home" || page.slug === "";
+  const pageUrl = page.canonicalUrl || (isHome ? origin : `${origin}/${page.slug}`);
+  const pageLabel = page.seoTitle || page.title;
+
+  const breadcrumbs = isHome
+    ? null
+    : buildBreadcrumbLd([
+        { name: "Home", url: origin || "/" },
+        { name: pageLabel, url: pageUrl },
+      ]);
+
+  const faqItems = extractFaqItems(page.content);
+
+  return (
+    <JsonLd
+      schemas={[
+        globalSeo ? buildOrganizationLd(globalSeo) : null,
+        breadcrumbs,
+        buildFaqPageLd(faqItems),
+      ]}
+    />
+  );
 }
 
 export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
