@@ -349,17 +349,35 @@ export default function MessagesPage() {
     enabled: !!user,
   });
 
+  const createConversationMutation = useMutation({
+    mutationFn: async (counselorUserId: string) => {
+      const res = await apiRequest("POST", "/api/messages/conversations", { counselorId: counselorUserId });
+      return res.json();
+    },
+    onSuccess: (conv: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/messages/conversations"] });
+      setSelectedId(conv.id);
+      setMobileView("thread");
+    },
+  });
+
+  const [counselorHandled, setCounselorHandled] = useState(false);
+
   useEffect(() => {
-    if (user && counselorParam && conversations && !selectedId) {
+    if (user && counselorParam && conversations && !counselorHandled) {
       const existing = conversations.find(
         (c) => c.counselorId === counselorParam || c.clientId === counselorParam
       );
       if (existing) {
         setSelectedId(existing.id);
         setMobileView("thread");
+        setCounselorHandled(true);
+      } else if (!createConversationMutation.isPending) {
+        setCounselorHandled(true);
+        createConversationMutation.mutate(counselorParam);
       }
     }
-  }, [user, counselorParam, conversations, selectedId]);
+  }, [user, counselorParam, conversations, counselorHandled]);
 
   const selectedConv = conversations?.find((c) => c.id === selectedId);
 
