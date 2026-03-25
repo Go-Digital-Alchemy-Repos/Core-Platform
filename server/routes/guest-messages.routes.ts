@@ -91,13 +91,16 @@ router.get(
   "/",
   authenticateToken,
   asyncHandler(async (req, res) => {
-    const userId = req.user!.id;
     if (req.user!.role !== "therapist" && req.user!.role !== "admin") {
       res.status(403).json({ message: "Forbidden" });
       return;
     }
 
-    const messages = await storage.guestMessages.getByCounselorId(userId);
+    const counselorId = req.user!.role === "admin" && req.query.counselorId
+      ? String(req.query.counselorId)
+      : req.user!.id;
+
+    const messages = await storage.guestMessages.getByCounselorId(counselorId);
     res.json(messages);
   })
 );
