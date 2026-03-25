@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
@@ -21,13 +20,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { MapView } from "@/components/directory/map-view";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
@@ -60,7 +52,6 @@ export default function TherapistProfilePage() {
   const id = params?.id;
   const [, navigate] = useLocation();
   const { user } = useAuth();
-  const [loginPromptOpen, setLoginPromptOpen] = useState(false);
 
   const { data: therapist, isLoading, error } = useQuery<TherapistWithUser>({
     queryKey: ["/api/therapists", id],
@@ -78,12 +69,12 @@ export default function TherapistProfilePage() {
   });
 
   const handleContact = () => {
+    if (!therapist?.userId) return;
+    if (user && user.id === therapist.userId) return;
     if (!user) {
-      setLoginPromptOpen(true);
+      navigate(`/messages?counselor=${therapist.userId}`);
       return;
     }
-    if (!therapist?.userId) return;
-    if (user.id === therapist.userId) return;
     startConversationMutation.mutate(therapist.userId);
   };
 
@@ -301,7 +292,7 @@ export default function TherapistProfilePage() {
                   </Button>
                   {!user && (
                     <p className="text-xs text-muted-foreground text-center mt-2">
-                      Account required to send messages
+                      Send a message — no account required
                     </p>
                   )}
                 </CardContent>
@@ -408,28 +399,6 @@ export default function TherapistProfilePage() {
           </div>
         </div>
       </div>
-      <Dialog open={loginPromptOpen} onOpenChange={setLoginPromptOpen}>
-        <DialogContent data-testid="dialog-login-prompt">
-          <DialogHeader>
-            <DialogTitle>Sign in to send messages</DialogTitle>
-            <DialogDescription>
-              You need an account to contact counselors. Login or create a free account to get started.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-2 pt-2">
-            <Link href="/auth/login">
-              <Button className="w-full bg-accent text-accent-foreground border-accent-border" data-testid="button-prompt-login">
-                Login
-              </Button>
-            </Link>
-            <Link href="/auth/register">
-              <Button variant="outline" className="w-full" data-testid="button-prompt-register">
-                Create an Account
-              </Button>
-            </Link>
-          </div>
-        </DialogContent>
-      </Dialog>
     </PageLayout>
   );
 }

@@ -27,6 +27,7 @@ const TherapistProfilePage = lazy(() => import("@/features/directory/therapist-p
 const TherapistDashboardPage = lazy(() => import("@/features/therapist/dashboard-page"));
 const ProfileEditPage = lazy(() => import("@/features/therapist/profile-edit-page"));
 const SubscriptionPage = lazy(() => import("@/features/therapist/subscription-page"));
+const GuestMessagesPage = lazy(() => import("@/features/therapist/guest-messages-page"));
 const MessagesPage = lazy(() => import("@/features/messages/messages-page"));
 
 const AdminDashboardPage = lazy(() => import("@/features/admin/dashboard-page"));
@@ -96,11 +97,13 @@ function Router() {
           </ProtectedRoute>
         </Route>
 
-        <Route path="/messages">
-          <ProtectedRoute roles={["client", "therapist", "admin"]}>
-            <MessagesPage />
+        <Route path="/therapist/guest-messages">
+          <ProtectedRoute roles={["therapist"]}>
+            <GuestMessagesPage />
           </ProtectedRoute>
         </Route>
+
+        <Route path="/messages" component={MessagesPage} />
 
         <Route path="/admin">
           <ProtectedRoute roles={["admin"]}>

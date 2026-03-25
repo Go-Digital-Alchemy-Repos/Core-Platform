@@ -23,3 +23,4 @@ export { cmsSections, insertCmsSectionSchema, type InsertCmsSection, type CmsSec
 export { seoSettings, insertSeoSettingsSchema, type InsertSeoSettings, type SeoSettings } from "./seo-settings";
 export { redirects, insertRedirectSchema, type InsertRedirect, type Redirect } from "./redirects";
 export { recordingPurchases, insertRecordingPurchaseSchema, type InsertRecordingPurchase, type RecordingPurchase } from "./recording-purchases";
+export { guestMessages, insertGuestMessageSchema, type InsertGuestMessage, type GuestMessage } from "./guest-messages";

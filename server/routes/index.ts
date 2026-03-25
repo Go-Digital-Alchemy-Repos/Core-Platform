@@ -15,6 +15,7 @@ import specializationsRoutes from "./specializations.routes";
 import blogRoutes from "./blog.routes";
 import registrationRoutes from "./registration.routes";
 import cmsPublicRoutes from "./cms-public.routes";
+import guestMessagesRoutes from "./guest-messages.routes";
 import { storage } from "../storage/index";
 
 function escapeXml(str: string): string {
@@ -43,6 +44,7 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/blog", blogRoutes);
   app.use("/api/events", registrationRoutes);
   app.use("/api/cms", cmsPublicRoutes);
+  app.use("/api/guest-messages", guestMessagesRoutes);
 
   app.get("/api/membership-tiers", async (_req, res) => {
     const tiers = await storage.tiers.getActiveTiers();

@@ -71,6 +71,15 @@ export const registerLimiter = rateLimit({
   skip: () => isDev,
 });
 
+export const guestMessageLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many messages. Please try again later." },
+  skip: () => isDev,
+});
+
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,

@@ -28,6 +28,8 @@ const registerSchema = z
       required_error: "Please select a role",
     }),
     specializations: z.array(z.string()).optional(),
+    ageAcknowledged: z.literal(true, { errorMap: () => ({ message: "You must confirm you are 18 or older" }) }),
+    phiAcknowledged: z.literal(true, { errorMap: () => ({ message: "You must acknowledge the PHI disclaimer" }) }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -42,6 +44,8 @@ export default function RegisterPage() {
   const { toast } = useToast();
   const { specializations: specList } = useSpecializations();
 
+  const redirectTo = new URLSearchParams(window.location.search).get("redirectTo");
+
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -52,12 +56,18 @@ export default function RegisterPage() {
       confirmPassword: "",
       role: "client",
       specializations: [],
+      ageAcknowledged: undefined as unknown as true,
+      phiAcknowledged: undefined as unknown as true,
     },
   });
 
   const selectedRole = form.watch("role");
 
   function redirectByRole(role: string) {
+    if (redirectTo) {
+      setLocation(redirectTo);
+      return;
+    }
     if (role === "admin") {
       setLocation("/admin");
     } else if (role === "therapist") {
@@ -68,7 +78,7 @@ export default function RegisterPage() {
   }
 
   async function onSubmit(values: RegisterForm) {
-    const { confirmPassword, specializations, ...rest } = values;
+    const { confirmPassword, specializations, ageAcknowledged, phiAcknowledged, ...rest } = values;
     const data = {
       ...rest,
       ...(rest.role === "therapist" && specializations && specializations.length > 0 ? { specializations } : {}),
@@ -267,6 +277,54 @@ export default function RegisterPage() {
                       </FormItem>
                     )}
                   />
+
+                  <div className="border rounded-md p-4 space-y-3 bg-muted/30">
+                    <p className="text-sm font-medium">Required Acknowledgments</p>
+
+                    <FormField
+                      control={form.control}
+                      name="ageAcknowledged"
+                      render={({ field }) => (
+                        <FormItem className="flex items-start gap-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value === true}
+                              onCheckedChange={(checked) => field.onChange(checked === true ? true : undefined)}
+                              data-testid="checkbox-age-acknowledgment"
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="text-sm font-normal cursor-pointer">
+                              I confirm that I am 18 years of age or older
+                            </FormLabel>
+                            <FormMessage />
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="phiAcknowledged"
+                      render={({ field }) => (
+                        <FormItem className="flex items-start gap-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value === true}
+                              onCheckedChange={(checked) => field.onChange(checked === true ? true : undefined)}
+                              data-testid="checkbox-phi-acknowledgment"
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="text-sm font-normal cursor-pointer">
+                              I acknowledge that any information shared on this platform may include Protected Health Information (PHI). I understand that while TCK Wellness takes reasonable precautions, this platform is not a substitute for professional medical advice, and I consent to sharing information at my own discretion.
+                            </FormLabel>
+                            <FormMessage />
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   <Button
                     type="submit"

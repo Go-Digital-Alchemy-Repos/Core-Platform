@@ -1,14 +1,26 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { MessageSquare, Send, ArrowLeft, User, FileText, Image as ImageIcon, Download } from "lucide-react";
+import { MessageSquare, Send, ArrowLeft, User, FileText, Image as ImageIcon, Download, Phone, Mail, Shield, UserPlus, CheckCircle2 } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { RichTextEditor, type RichTextEditorHandle } from "@/components/shared/rich-text-editor";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { ConversationWithParticipants, MessageWithSender } from "@/../../server/storage/message.storage";
 
@@ -34,12 +46,288 @@ function getOtherParticipant(
   return userId === conv.clientId ? conv.counselor : conv.client;
 }
 
-export default function MessagesPage() {
-  const [location] = useLocation();
-  const searchParams = new URLSearchParams(location.includes("?") ? location.split("?")[1] : "");
-  const initialConvId = searchParams.get("conversation");
+function GuestEntryModal({
+  open,
+  onOpenChange,
+  counselorId,
+  onContinueAsGuest,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  counselorId: string;
+  onContinueAsGuest: () => void;
+}) {
+  const [, setLocation] = useLocation();
 
-  const { user } = useAuth();
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md" data-testid="dialog-guest-entry">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-accent" />
+            Contact This Counselor
+          </DialogTitle>
+          <DialogDescription>
+            Choose how you'd like to send your message
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 pt-2">
+          <div className="border rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4 text-accent" />
+              <span className="font-medium text-sm">Create a Free Account</span>
+            </div>
+            <ul className="text-xs text-muted-foreground space-y-1 pl-6 list-disc">
+              <li>Save your conversations</li>
+              <li>Receive replies directly</li>
+              <li>Browse and save counselor profiles</li>
+              <li>Register for events</li>
+            </ul>
+            <Button
+              className="w-full bg-accent text-accent-foreground border-accent-border"
+              onClick={() => {
+                const redirect = encodeURIComponent(`/messages?counselor=${counselorId}`);
+                setLocation(`/auth/register?redirectTo=${redirect}`);
+              }}
+              data-testid="button-register-free"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Register for Free
+            </Button>
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">or</span>
+            </div>
+          </div>
+
+          <div className="border rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-sm">Continue as Guest</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Send a one-time message with your contact information. The counselor will reply via your preferred contact method.
+            </p>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={onContinueAsGuest}
+              data-testid="button-continue-guest"
+            >
+              Continue as Guest
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function GuestComposeForm({ counselorId }: { counselorId: string }) {
+  const { toast } = useToast();
+  const [senderName, setSenderName] = useState("");
+  const [contactMethod, setContactMethod] = useState<"phone" | "email">("email");
+  const [contactValue, setContactValue] = useState("");
+  const [message, setMessage] = useState("");
+  const [ageAcknowledged, setAgeAcknowledged] = useState(false);
+  const [phiAcknowledged, setPhiAcknowledged] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const sendGuestMutation = useMutation({
+    mutationFn: async (data: {
+      counselorId: string;
+      senderName?: string;
+      contactMethod: string;
+      contactValue: string;
+      message: string;
+      ageAcknowledged: boolean;
+      phiAcknowledged: boolean;
+    }) => {
+      const res = await apiRequest("POST", "/api/guest-messages", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      setSent(true);
+      toast({ title: "Message sent!", description: "The counselor will contact you soon." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to send", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const canSend =
+    message.trim().length > 0 &&
+    contactValue.trim().length > 0 &&
+    ageAcknowledged &&
+    phiAcknowledged;
+
+  const handleSend = () => {
+    if (!canSend) return;
+    sendGuestMutation.mutate({
+      counselorId,
+      senderName: senderName.trim() || undefined,
+      contactMethod,
+      contactValue: contactValue.trim(),
+      message: message.trim(),
+      ageAcknowledged: true,
+      phiAcknowledged: true,
+    });
+  };
+
+  if (sent) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4 text-center" data-testid="guest-message-sent">
+        <CheckCircle2 className="h-12 w-12 text-green-500 mb-4" />
+        <h2 className="text-xl font-heading font-semibold mb-2">Message Sent Successfully</h2>
+        <p className="text-sm text-muted-foreground max-w-md">
+          Your message has been delivered to the counselor. They will reach out to you
+          via {contactMethod === "phone" ? "phone" : "email"} at the contact information you provided.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-xl mx-auto py-8 px-4" data-testid="guest-compose-form">
+      <h2 className="text-xl font-heading font-semibold mb-1">Send a Guest Message</h2>
+      <p className="text-sm text-muted-foreground mb-6">
+        Fill out the form below to send a one-time message to this counselor.
+      </p>
+
+      <div className="space-y-5">
+        <div>
+          <Label htmlFor="guest-name" className="text-sm font-medium">Your Name (optional)</Label>
+          <Input
+            id="guest-name"
+            placeholder="Your name"
+            value={senderName}
+            onChange={(e) => setSenderName(e.target.value)}
+            className="mt-1"
+            data-testid="input-guest-name"
+          />
+        </div>
+
+        <div>
+          <Label className="text-sm font-medium">Contact Preference</Label>
+          <div className="flex gap-3 mt-2">
+            <Button
+              type="button"
+              variant={contactMethod === "email" ? "default" : "outline"}
+              size="sm"
+              onClick={() => { setContactMethod("email"); setContactValue(""); }}
+              className={contactMethod === "email" ? "bg-accent text-accent-foreground" : ""}
+              data-testid="button-contact-email"
+            >
+              <Mail className="h-4 w-4 mr-1.5" />
+              Email
+            </Button>
+            <Button
+              type="button"
+              variant={contactMethod === "phone" ? "default" : "outline"}
+              size="sm"
+              onClick={() => { setContactMethod("phone"); setContactValue(""); }}
+              className={contactMethod === "phone" ? "bg-accent text-accent-foreground" : ""}
+              data-testid="button-contact-phone"
+            >
+              <Phone className="h-4 w-4 mr-1.5" />
+              Phone
+            </Button>
+          </div>
+          <div className="mt-2">
+            {contactMethod === "email" ? (
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                value={contactValue}
+                onChange={(e) => setContactValue(e.target.value)}
+                data-testid="input-guest-contact-value"
+              />
+            ) : (
+              <Input
+                type="tel"
+                placeholder="(555) 123-4567"
+                value={contactValue}
+                onChange={(e) => setContactValue(e.target.value)}
+                data-testid="input-guest-contact-value"
+              />
+            )}
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="guest-message" className="text-sm font-medium">Your Message</Label>
+          <Textarea
+            id="guest-message"
+            placeholder="Tell the counselor what you're looking for..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={5}
+            className="mt-1"
+            data-testid="textarea-guest-message"
+          />
+        </div>
+
+        <div className="border rounded-md p-4 space-y-3 bg-muted/30">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Shield className="h-4 w-4 text-accent" />
+            Required Acknowledgments
+          </div>
+
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="guest-age"
+              checked={ageAcknowledged}
+              onCheckedChange={(checked) => setAgeAcknowledged(checked === true)}
+              data-testid="checkbox-guest-age"
+            />
+            <Label htmlFor="guest-age" className="text-sm font-normal cursor-pointer leading-normal">
+              I confirm that I am 18 years of age or older
+            </Label>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="guest-phi"
+              checked={phiAcknowledged}
+              onCheckedChange={(checked) => setPhiAcknowledged(checked === true)}
+              data-testid="checkbox-guest-phi"
+            />
+            <Label htmlFor="guest-phi" className="text-sm font-normal cursor-pointer leading-normal">
+              I acknowledge that any information shared on this platform may include Protected Health Information (PHI). I understand that while TCK Wellness takes reasonable precautions, this platform is not a substitute for professional medical advice, and I consent to sharing information at my own discretion.
+            </Label>
+          </div>
+        </div>
+
+        <Button
+          className="w-full bg-accent text-accent-foreground border-accent-border"
+          disabled={!canSend || sendGuestMutation.isPending}
+          onClick={handleSend}
+          data-testid="button-send-guest-message"
+        >
+          {sendGuestMutation.isPending ? (
+            <LoadingSpinner className="h-4 w-4 mr-2" />
+          ) : (
+            <Send className="h-4 w-4 mr-2" />
+          )}
+          Send Message
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export default function MessagesPage() {
+  const searchParams = new URLSearchParams(window.location.search);
+  const initialConvId = searchParams.get("conversation");
+  const counselorParam = searchParams.get("counselor");
+
+  const { user, isLoading: authLoading } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(initialConvId);
   const [mobileView, setMobileView] = useState<"list" | "thread">(
     initialConvId ? "thread" : "list"
@@ -47,9 +335,31 @@ export default function MessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<RichTextEditorHandle | null>(null);
 
+  const [showGuestModal, setShowGuestModal] = useState(false);
+  const [guestMode, setGuestMode] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !user && counselorParam) {
+      setShowGuestModal(true);
+    }
+  }, [user, authLoading, counselorParam]);
+
   const { data: conversations, isLoading: convsLoading } = useQuery<ConversationWithParticipants[]>({
     queryKey: ["/api/messages/conversations"],
+    enabled: !!user,
   });
+
+  useEffect(() => {
+    if (user && counselorParam && conversations && !selectedId) {
+      const existing = conversations.find(
+        (c) => c.counselorId === counselorParam || c.clientId === counselorParam
+      );
+      if (existing) {
+        setSelectedId(existing.id);
+        setMobileView("thread");
+      }
+    }
+  }, [user, counselorParam, conversations, selectedId]);
 
   const selectedConv = conversations?.find((c) => c.id === selectedId);
 
@@ -58,7 +368,7 @@ export default function MessagesPage() {
     messages: MessageWithSender[];
   }>({
     queryKey: ["/api/messages/conversations", selectedId],
-    enabled: !!selectedId,
+    enabled: !!selectedId && !!user,
   });
 
   const sendMutation = useMutation({
@@ -90,7 +400,7 @@ export default function MessagesPage() {
   });
 
   useEffect(() => {
-    if (selectedId) {
+    if (selectedId && user) {
       markReadMutation.mutate(selectedId);
     }
   }, [selectedId]);
@@ -122,6 +432,70 @@ export default function MessagesPage() {
 
   const messages = threadData?.messages ?? [];
 
+  if (authLoading) {
+    return (
+      <PageLayout>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex justify-center py-16">
+          <LoadingSpinner />
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (!user && counselorParam) {
+    return (
+      <PageLayout>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          <h1 className="text-2xl font-heading font-semibold mb-6" data-testid="text-messages-heading">
+            Contact Counselor
+          </h1>
+
+          <GuestEntryModal
+            open={showGuestModal}
+            onOpenChange={setShowGuestModal}
+            counselorId={counselorParam}
+            onContinueAsGuest={() => {
+              setShowGuestModal(false);
+              setGuestMode(true);
+            }}
+          />
+
+          {guestMode && <GuestComposeForm counselorId={counselorParam} />}
+
+          {!guestMode && !showGuestModal && (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
+              <MessageSquare className="h-12 w-12 opacity-20" />
+              <p className="text-sm">Choose how you'd like to contact this counselor</p>
+              <Button
+                variant="outline"
+                onClick={() => setShowGuestModal(true)}
+                data-testid="button-reopen-modal"
+              >
+                Show Options
+              </Button>
+            </div>
+          )}
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (!user) {
+    return (
+      <PageLayout>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          <h1 className="text-2xl font-heading font-semibold mb-6" data-testid="text-messages-heading">
+            Messages
+          </h1>
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
+            <MessageSquare className="h-12 w-12 opacity-20" />
+            <p className="text-sm">Please sign in to view your messages</p>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
   return (
     <PageLayout>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -131,7 +505,6 @@ export default function MessagesPage() {
 
         <div className="border rounded-lg overflow-hidden" style={{ height: "calc(100vh - 220px)", minHeight: 500 }}>
           <div className="flex h-full">
-            {/* Conversation list — hidden on mobile when thread is open */}
             <div
               className={`flex flex-col border-r bg-background ${
                 mobileView === "thread" ? "hidden sm:flex" : "flex"
@@ -204,7 +577,6 @@ export default function MessagesPage() {
               </div>
             </div>
 
-            {/* Thread panel */}
             <div
               className={`flex flex-col flex-1 min-w-0 ${
                 mobileView === "list" ? "hidden sm:flex" : "flex"
@@ -217,7 +589,6 @@ export default function MessagesPage() {
                 </div>
               ) : (
                 <>
-                  {/* Thread header */}
                   <div className="flex items-center gap-3 px-4 py-3 border-b bg-background">
                     <Button
                       variant="ghost"
@@ -249,7 +620,6 @@ export default function MessagesPage() {
                     })()}
                   </div>
 
-                  {/* Messages */}
                   <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
                     {threadLoading ? (
                       <div className="flex justify-center py-12">
@@ -336,7 +706,6 @@ export default function MessagesPage() {
                     <div ref={messagesEndRef} />
                   </div>
 
-                  {/* Send input */}
                   <div className="border-t px-4 py-3 bg-background">
                     <div className="flex gap-2 items-end">
                       <RichTextEditor
