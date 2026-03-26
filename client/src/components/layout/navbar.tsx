@@ -19,7 +19,6 @@ import { NotificationBell } from "@/components/shared/notification-bell";
 import { RegisterDialog } from "@/components/shared/register-dialog";
 
 const navLinks = [
-  { label: "Home", href: "/" },
   { label: "About", href: "/about" },
   { label: "Find a Mental Health Professional", href: "/directory" },
   { label: "Join the Network", href: "/join" },
