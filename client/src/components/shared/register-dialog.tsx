@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,9 @@ const registerSchema = z
     email: z.string().email("Please enter a valid email"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
+    ageAcknowledged: z.literal(true, {
+      errorMap: () => ({ message: "You must confirm you are 18 or older" }),
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -58,11 +62,12 @@ export function RegisterDialog({
       email: "",
       password: "",
       confirmPassword: "",
+      ageAcknowledged: false as unknown as true,
     },
   });
 
   async function onSubmit(values: RegisterForm) {
-    const { confirmPassword, ...rest } = values;
+    const { confirmPassword, ageAcknowledged, ...rest } = values;
     register.mutate(
       { ...rest, role: "client" },
       {
@@ -160,6 +165,28 @@ export function RegisterDialog({
                     <Input type="password" placeholder="Re-enter your password" data-testid="input-register-confirm-password" {...field} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="ageAcknowledged"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value === true}
+                      onCheckedChange={field.onChange}
+                      data-testid="checkbox-age-acknowledged"
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="text-sm font-normal cursor-pointer">
+                      I confirm that I am 18 years of age or older
+                    </FormLabel>
+                    <FormMessage />
+                  </div>
                 </FormItem>
               )}
             />
