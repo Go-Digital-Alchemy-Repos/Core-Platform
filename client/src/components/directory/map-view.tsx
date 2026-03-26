@@ -9,13 +9,11 @@ import type { User } from "@shared/schema/users";
 const pinSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40" fill="none">
   <path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.268 21.732 0 14 0z" fill="#1e3a5f"/>
   <circle cx="14" cy="14" r="7" fill="white"/>
-  <circle cx="14" cy="14" r="4" fill="#2d8a7e"/>
 </svg>`;
 
 const pinHighlightSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="48" viewBox="0 0 34 48" fill="none">
   <path d="M17 0C7.611 0 0 7.611 0 17c0 12.75 17 31 17 31s17-18.25 17-31C34 7.611 26.389 0 17 0z" fill="#2d8a7e"/>
   <circle cx="17" cy="17" r="8.5" fill="white"/>
-  <circle cx="17" cy="17" r="5" fill="#1e3a5f"/>
 </svg>`;
 
 const pinIcon = L.divIcon({
