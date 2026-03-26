@@ -13,7 +13,7 @@ export { activityLogs, type ActivityLog } from "./activity-logs";
 export { notifications, notificationPreferences, insertNotificationSchema, type InsertNotification, type Notification, type NotificationPreferences } from "./notifications";
 export { specializations, insertSpecializationSchema, type InsertSpecialization, type Specialization } from "./specializations";
 export { profileViews, insertProfileViewSchema, type InsertProfileView, type ProfileView } from "./profile-views";
-export { savedCounselors, insertSavedCounselorSchema, type InsertSavedCounselor, type SavedCounselor } from "./saved-counselors";
+export { savedProfessionals, insertSavedProfessionalSchema, type InsertSavedProfessional, type SavedProfessional } from "./saved-professionals";
 export { blogPosts, insertBlogPostSchema, type InsertBlogPost, type BlogPost } from "./blog-posts";
 export { eventRegistrations, insertEventRegistrationSchema, type InsertEventRegistration, type EventRegistration } from "./event-registrations";
 export { cmsPages, insertCmsPageSchema, type InsertCmsPage, type CmsPage } from "./cms-pages";

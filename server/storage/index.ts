@@ -13,7 +13,7 @@ import { ActivityStorage } from "./activity.storage";
 import { NotificationStorage } from "./notification.storage";
 import { SpecializationStorage } from "./specialization.storage";
 import { ProfileViewStorage } from "./profile-view.storage";
-import { SavedCounselorStorage } from "./saved-counselor.storage";
+import { SavedProfessionalStorage } from "./saved-professional.storage";
 import { BlogStorage } from "./blog.storage";
 import { EventRegistrationStorage } from "./event-registration.storage";
 import { CmsPagesStorage } from "./cms-pages.storage";
@@ -41,7 +41,7 @@ export const storage = {
   notifications: new NotificationStorage(),
   specializations: new SpecializationStorage(),
   profileViews: new ProfileViewStorage(),
-  savedCounselors: new SavedCounselorStorage(),
+  savedProfessionals: new SavedProfessionalStorage(),
   blog: new BlogStorage(),
   eventRegistrations: new EventRegistrationStorage(),
   cmsPages: new CmsPagesStorage(),

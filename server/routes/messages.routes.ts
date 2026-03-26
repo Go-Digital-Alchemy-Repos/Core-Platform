@@ -22,26 +22,26 @@ router.use(authenticateToken);
 router.post(
   "/conversations",
   asyncHandler(async (req, res) => {
-    const { counselorId } = z.object({ counselorId: z.string() }).parse(req.body);
+    const { professionalId } = z.object({ professionalId: z.string() }).parse(req.body);
     const userId = req.user!.id;
 
     let clientId: string;
-    let finalCounselorId: string;
+    let finalProfessionalId: string;
 
     if (req.user!.role === "therapist") {
       const profile = await storage.therapists.getProfileByUserId(userId);
       if (!profile) {
-        res.status(400).json({ message: "Counselor profile not found" });
+        res.status(400).json({ message: "Mental health professional profile not found" });
         return;
       }
-      clientId = counselorId;
-      finalCounselorId = userId;
+      clientId = professionalId;
+      finalProfessionalId = userId;
     } else {
       clientId = userId;
-      finalCounselorId = counselorId;
+      finalProfessionalId = professionalId;
     }
 
-    const conversation = await storage.messages.getOrCreateConversation(clientId, finalCounselorId);
+    const conversation = await storage.messages.getOrCreateConversation(clientId, finalProfessionalId);
     res.json(conversation);
   })
 );
@@ -64,7 +64,7 @@ router.get(
       return;
     }
     const userId = req.user!.id;
-    if (conv.clientId !== userId && conv.counselorId !== userId) {
+    if (conv.clientId !== userId && conv.professionalId !== userId) {
       res.status(403).json({ message: "Forbidden" });
       return;
     }
@@ -90,7 +90,7 @@ router.post(
       return;
     }
     const userId = req.user!.id;
-    if (conv.clientId !== userId && conv.counselorId !== userId) {
+    if (conv.clientId !== userId && conv.professionalId !== userId) {
       res.status(403).json({ message: "Forbidden" });
       return;
     }
@@ -105,7 +105,7 @@ router.post(
 
     setImmediate(async () => {
       try {
-        const recipientId = conv.clientId === userId ? conv.counselorId : conv.clientId;
+        const recipientId = conv.clientId === userId ? conv.professionalId : conv.clientId;
         const [sender, recipient] = await Promise.all([
           storage.users.getUser(userId),
           storage.users.getUser(recipientId),
@@ -148,7 +148,7 @@ router.put(
       return;
     }
     const userId = req.user!.id;
-    if (conv.clientId !== userId && conv.counselorId !== userId) {
+    if (conv.clientId !== userId && conv.professionalId !== userId) {
       res.status(403).json({ message: "Forbidden" });
       return;
     }

@@ -13,12 +13,12 @@ const homeContent = {
       id: uid(),
       type: "hero",
       props: {
-        heading: "Counseling for Those Who've Called Many Places Home",
+        heading: "Mental Health Support for Those Who've Called Many Places Home",
         subheading:
-          "TCK Wellness connects Third Culture Kids, expats, and globally-mobile families with counselors who truly understand their experience.",
-        ctaText: "Find a Counselor",
+          "TCK Wellness connects Third Culture Kids, expats, and globally-mobile families with mental health professionals who truly understand their experience.",
+        ctaText: "Find a Mental Health Professional",
         ctaLink: "/directory",
-        ctaSecondaryText: "Join as a Counselor",
+        ctaSecondaryText: "Join as a Mental Health Professional",
         ctaSecondaryLink: "/join",
         backgroundImageUrl: "",
         overlayOpacity: 50,
@@ -33,7 +33,7 @@ const homeContent = {
         eyebrow: "WHY TCK WELLNESS",
         title: "Built for Those Who've Lived Between Worlds",
         subtitle:
-          "We connect Third Culture Kids and globally-mobile individuals with counselors who truly understand their unique challenges.",
+          "We connect Third Culture Kids and globally-mobile individuals with mental health professionals who truly understand their unique challenges.",
         alignment: "center",
       },
     },
@@ -46,7 +46,7 @@ const homeContent = {
           {
             icon: "Globe",
             title: "Culturally Informed Care",
-            body: "Every counselor in our directory understands the unique challenges of growing up across cultures.",
+            body: "Every mental health professional in our directory understands the unique challenges of growing up across cultures.",
           },
           {
             icon: "Heart",
@@ -63,10 +63,10 @@ const homeContent = {
     },
     {
       id: uid(),
-      type: "featured-counselors",
+      type: "featured-professionals",
       props: {
-        heading: "Meet Our Counselors",
-        subheading: "Browse our vetted network of culturally informed counselors.",
+        heading: "Meet Our Mental Health Professionals",
+        subheading: "Browse our vetted network of culturally informed mental health professionals.",
         limit: 6,
       },
     },
@@ -75,11 +75,11 @@ const homeContent = {
       type: "testimonials",
       props: {
         heading: "What People Are Saying",
-        subheading: "Hear from TCKs, expat families, and counselors who have found their match.",
+        subheading: "Hear from TCKs, expat families, and mental health professionals who have found their match.",
         items: [
           {
             quote:
-              "For the first time, I didn't have to explain what it means to grow up between cultures. My counselor just understood.",
+              "For the first time, I didn't have to explain what it means to grow up between cultures. My mental health professional just understood.",
             name: "Sarah M.",
             role: "Adult TCK",
             location: "Singapore",
@@ -88,7 +88,7 @@ const homeContent = {
           },
           {
             quote:
-              "TCK Wellness connected me with a counselor who speaks my language — literally and figuratively. It's been life-changing.",
+              "TCK Wellness connected me with a mental health professional who speaks my language — literally and figuratively. It's been life-changing.",
             name: "James K.",
             role: "Expat Parent",
             location: "Dubai",
@@ -97,9 +97,9 @@ const homeContent = {
           },
           {
             quote:
-              "As a counselor, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
+              "As a mental health professional, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
             name: "Dr. Amara O.",
-            role: "Licensed Counselor",
+            role: "Licensed Mental Health Professional",
             location: "Nairobi",
             avatarUrl:
               "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&h=100&fit=crop&crop=faces",
@@ -115,7 +115,7 @@ const homeContent = {
           },
           {
             quote:
-              "The specialization filters helped me find a counselor experienced with military kid transitions. Highly recommend.",
+              "The specialization filters helped me find a mental health professional experienced with military kid transitions. Highly recommend.",
             name: "Marcus W.",
             role: "Military TCK",
             location: "Virginia, USA",
@@ -139,7 +139,7 @@ const homeContent = {
       type: "events-preview",
       props: {
         heading: "Upcoming Events",
-        subheading: "Join our community events for TCKs and counselors.",
+        subheading: "Join our community events for TCKs and mental health professionals.",
         limit: 3,
       },
     },
@@ -147,12 +147,12 @@ const homeContent = {
       id: uid(),
       type: "cta",
       props: {
-        heading: "Ready to Find Your Counselor?",
+        heading: "Ready to Find Your Mental Health Professional?",
         subheading:
-          "Browse our directory of vetted counselors who specialize in cross-cultural mental health.",
+          "Browse our directory of vetted mental health professionals who specialize in cross-cultural mental health.",
         primaryText: "Browse the Directory",
         primaryLink: "/directory",
-        secondaryText: "Join as a Counselor",
+        secondaryText: "Join as a Mental Health Professional",
         secondaryLink: "/join",
         variant: "accent",
       },
@@ -168,8 +168,8 @@ const aboutContent = {
       props: {
         heading: "About TCK Wellness",
         subheading:
-          "We exist to bridge the gap between Third Culture Kids and counselors who truly understand what it means to grow up between worlds.",
-        ctaText: "Find a Counselor",
+          "We exist to bridge the gap between Third Culture Kids and mental health professionals who truly understand what it means to grow up between worlds.",
+        ctaText: "Find a Mental Health Professional",
         ctaLink: "/directory",
         ctaSecondaryText: "Our Mission",
         ctaSecondaryLink: "#mission",
@@ -221,7 +221,7 @@ const aboutContent = {
         eyebrow: "OUR VETTING",
         title: "What Our Vetting Process Means — and Doesn't Mean",
         subtitle:
-          "We take our responsibility to both counselors and clients seriously. Here's what you can expect from our process.",
+          "We take our responsibility to both mental health professionals and clients seriously. Here's what you can expect from our process.",
         alignment: "center",
       },
     },
@@ -232,7 +232,7 @@ const aboutContent = {
         content: `<div>
 <h3>What vetting means:</h3>
 <ul>
-<li>Every counselor completes a detailed application process</li>
+<li>Every mental health professional completes a detailed application process</li>
 <li>Credentials and licensure are verified</li>
 <li>Training or lived experience with TCK/cross-cultural populations is required</li>
 <li>Profiles are reviewed by our team before being published</li>
@@ -269,29 +269,29 @@ const aboutContent = {
               "A Third Culture Kid (TCK) is a person who has spent a significant part of their developmental years outside their parents' culture. They build relationships with multiple cultures while not having full ownership of any, creating what is often called a 'third culture' — a blend of their passport country and host countries.",
           },
           {
-            question: "Who can use TCK Wellness to find a counselor?",
+            question: "Who can use TCK Wellness to find a mental health professional?",
             answer:
               "TCK Wellness is for anyone who has had a cross-cultural upbringing or is navigating globally-mobile life: TCKs of all ages, expat families, international students, military families, missionary kids, diplomats' children, and cross-cultural professionals.",
           },
           {
-            question: "How are counselors vetted before joining the directory?",
+            question: "How are mental health professionals vetted before joining the directory?",
             answer:
-              "Every counselor completes an application process, provides verified credentials, and must demonstrate training or lived experience with TCK and cross-cultural populations. Our team reviews each profile before it goes live in the directory.",
+              "Every mental health professional completes an application process, provides verified credentials, and must demonstrate training or lived experience with TCK and cross-cultural populations. Our team reviews each profile before it goes live in the directory.",
           },
           {
             question: "Is TCK Wellness a therapy service?",
             answer:
-              "No. TCK Wellness is a directory and community platform. We connect individuals with qualified counselors — we do not provide therapy directly. All therapeutic relationships are between clients and their chosen counselors.",
+              "No. TCK Wellness is a directory and community platform. We connect individuals with qualified mental health professionals — we do not provide therapy directly. All therapeutic relationships are between clients and their chosen mental health professionals.",
           },
           {
             question: "Can I use the directory if I live outside the United States?",
             answer:
-              "Yes. Our counselors serve clients globally, with many offering online/telehealth sessions. Use the location and online session filters in the directory to find counselors who can work with you wherever you are.",
+              "Yes. Our mental health professionals serve clients globally, with many offering online/telehealth sessions. Use the location and online session filters in the directory to find mental health professionals who can work with you wherever you are.",
           },
           {
             question: "How can I support TCK Wellness?",
             answer:
-              "You can support us by sharing the platform with TCKs and expat communities, following us on social media, attending our events, or if you're a counselor — joining our network.",
+              "You can support us by sharing the platform with TCKs and expat communities, following us on social media, attending our events, or if you're a mental health professional — joining our network.",
           },
         ],
       },
@@ -301,11 +301,11 @@ const aboutContent = {
       type: "testimonials",
       props: {
         heading: "Stories from Our Community",
-        subheading: "Real experiences from TCKs and counselors who found connection through our platform.",
+        subheading: "Real experiences from TCKs and mental health professionals who found connection through our platform.",
         items: [
           {
             quote:
-              "For the first time, I didn't have to explain what it means to grow up between cultures. My counselor just understood.",
+              "For the first time, I didn't have to explain what it means to grow up between cultures. My mental health professional just understood.",
             name: "Sarah M.",
             role: "Adult TCK",
             location: "Singapore",
@@ -314,9 +314,9 @@ const aboutContent = {
           },
           {
             quote:
-              "As a counselor, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
+              "As a mental health professional, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
             name: "Dr. Amara O.",
-            role: "Licensed Counselor",
+            role: "Licensed Mental Health Professional",
             location: "Nairobi",
             avatarUrl:
               "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&h=100&fit=crop&crop=faces",
@@ -337,8 +337,8 @@ const aboutContent = {
       id: uid(),
       type: "cta",
       props: {
-        heading: "Find a Counselor Who Gets It",
-        subheading: "Browse our directory of vetted counselors with lived cross-cultural experience.",
+        heading: "Find a Mental Health Professional Who Gets It",
+        subheading: "Browse our directory of vetted mental health professionals with lived cross-cultural experience.",
         primaryText: "Browse the Directory",
         primaryLink: "/directory",
         secondaryText: "Join Our Network",
@@ -384,7 +384,7 @@ const contactContent = {
       type: "rich-text",
       props: {
         content:
-          "<p>Use the contact form on this page to reach out. We typically respond within 1-2 business days. For urgent counseling needs, please browse our <a href='/directory'>counselor directory</a> directly.</p>",
+          "<p>Use the contact form on this page to reach out. We typically respond within 1-2 business days. For urgent counseling needs, please browse our <a href='/directory'>mental health professional directory</a> directly.</p>",
         alignment: "center",
       },
     },
@@ -430,7 +430,7 @@ const joinContent = {
           {
             icon: "Globe",
             title: "Directory Listing",
-            body: "Be discoverable by TCKs, expats, and cross-cultural families searching for counselors like you.",
+            body: "Be discoverable by TCKs, expats, and cross-cultural families searching for mental health professionals like you.",
           },
           {
             icon: "Users",
@@ -445,7 +445,7 @@ const joinContent = {
           {
             icon: "Calendar",
             title: "Community Access",
-            body: "Access webinars, events, and resources designed to support counselors working with cross-cultural populations.",
+            body: "Access webinars, events, and resources designed to support mental health professionals working with cross-cultural populations.",
           },
         ],
       },
@@ -456,7 +456,7 @@ const joinContent = {
       props: {
         eyebrow: "THE PROCESS",
         title: "How Joining Works",
-        subtitle: "Our vetting process ensures quality and trust for clients and counselors alike.",
+        subtitle: "Our vetting process ensures quality and trust for clients and mental health professionals alike.",
         alignment: "center",
       },
     },
@@ -469,7 +469,7 @@ const joinContent = {
           {
             icon: "ClipboardCheck",
             title: "1. Submit Your Application",
-            body: "Complete our detailed counselor application with your credentials and cross-cultural experience.",
+            body: "Complete our detailed application with your credentials and cross-cultural experience.",
           },
           {
             icon: "ShieldCheck",
@@ -567,9 +567,9 @@ const pages = [
     pageType: "home" as const,
     status: "draft" as const,
     content: homeContent,
-    seoTitle: "TCK Wellness — Counseling for Third Culture Kids",
+    seoTitle: "TCK Wellness — Mental Health Support for Third Culture Kids",
     seoDescription:
-      "Find a counselor who understands your cross-cultural experience. TCK Wellness connects Third Culture Kids, expats, and globally-mobile families with specialized counselors.",
+      "Find a mental health professional who understands your cross-cultural experience. TCK Wellness connects Third Culture Kids, expats, and globally-mobile families with specialized mental health professionals.",
   },
   {
     slug: "about",
@@ -579,7 +579,7 @@ const pages = [
     content: aboutContent,
     seoTitle: "About TCK Wellness",
     seoDescription:
-      "Learn about TCK Wellness, our mission to support Third Culture Kids, and how we vet counselors for cross-cultural competency.",
+      "Learn about TCK Wellness, our mission to support Third Culture Kids, and how we vet mental health professionals for cross-cultural competency.",
   },
   {
     slug: "contact",
@@ -589,17 +589,17 @@ const pages = [
     content: contactContent,
     seoTitle: "Contact TCK Wellness",
     seoDescription:
-      "Get in touch with the TCK Wellness team. We're here to help you find the right counselor or answer questions about our platform.",
+      "Get in touch with the TCK Wellness team. We're here to help you find the right mental health professional or answer questions about our platform.",
   },
   {
     slug: "join",
-    title: "Join as a Counselor",
+    title: "Join as a Mental Health Professional",
     pageType: "custom" as const,
     status: "draft" as const,
     content: joinContent,
-    seoTitle: "Join the TCK Wellness Counselor Network",
+    seoTitle: "Join the TCK Wellness Mental Health Professional Network",
     seoDescription:
-      "Apply to join the TCK Wellness counselor network. Reach TCKs and cross-cultural families who need your specialized expertise.",
+      "Apply to join the TCK Wellness mental health professional network. Reach TCKs and cross-cultural families who need your specialized expertise.",
   },
 ];
 

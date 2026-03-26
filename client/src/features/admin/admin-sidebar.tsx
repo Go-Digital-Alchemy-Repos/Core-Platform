@@ -45,7 +45,7 @@ const navGroups: NavGroup[] = [
   {
     items: [
       { title: "Dashboard", href: "/admin", icon: LayoutDashboard, iconColor: "text-teal-600" },
-      { title: "Counselors", href: "/admin/therapists", icon: UserCheck, iconColor: "text-emerald-600" },
+      { title: "Mental Health Professionals", href: "/admin/therapists", icon: UserCheck, iconColor: "text-emerald-600" },
       { title: "User Manager", href: "/admin/users", icon: Users, iconColor: "text-blue-600" },
       { title: "Membership Tiers", href: "/admin/membership-tiers", icon: CreditCard, iconColor: "text-amber-600" },
       { title: "Events", href: "/admin/events", icon: CalendarDays, iconColor: "text-purple-600" },

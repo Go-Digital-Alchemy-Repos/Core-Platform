@@ -92,7 +92,7 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
         {markered.map((t) => {
           const fullName =
             [t.user.firstName, t.user.lastName].filter(Boolean).join(" ") ||
-            "Counselor";
+            "Mental Health Professional";
           const isHighlighted = highlightedId === t.profile.id;
           return (
             <Marker

@@ -89,7 +89,7 @@ export function RegisterDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Create an Account</DialogTitle>
-          <DialogDescription>Join TCK Wellness to find your counselor</DialogDescription>
+          <DialogDescription>Join TCK Wellness to find your mental health professional</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

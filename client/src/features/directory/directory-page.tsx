@@ -44,7 +44,7 @@ interface FilterOptions {
 }
 
 const vettedMeans = [
-  "Every counselor completes a detailed application process",
+  "Every mental health professional completes a detailed application process",
   "Credentials and licensure are verified",
   "Training or lived experience with TCK/cross-cultural populations is required",
   "Profiles are reviewed by our team before being published",
@@ -100,7 +100,7 @@ function TherapistRow({
   onHover: (id: string | null) => void;
 }) {
   const initials = `${(user.firstName || "")[0] || ""}${(user.lastName || "")[0] || ""}`.toUpperCase();
-  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Counselor";
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Mental Health Professional";
   const specializations = profile.specializations || [];
   const displayedSpecs = specializations.slice(0, 2);
   const remainingCount = specializations.length - 2;
@@ -380,12 +380,12 @@ export default function DirectoryPage() {
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <h1 className="sm:text-lg font-heading font-semibold text-[30px]" data-testid="text-directory-heading">
-                  Find a Counselor
+                  Find a Mental Health Professional
                 </h1>
                 {!isLoading && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1 mt-[10px] mb-[10px]" data-testid="text-results-count">
                     <Users className="h-3 w-3 flex-shrink-0" />
-                    {total} counselor{total !== 1 ? "s" : ""} available
+                    {total} mental health professional{total !== 1 ? "s" : ""} available
                   </p>
                 )}
               </div>
@@ -630,7 +630,7 @@ export default function DirectoryPage() {
             ) : therapists.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-4 text-center" data-testid="text-no-results">
                 <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm font-medium text-muted-foreground">No counselors found</p>
+                <p className="text-sm font-medium text-muted-foreground">No mental health professionals found</p>
                 <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your search or filters</p>
                 {activeFilterCount > 0 && (
                   <Button
@@ -733,7 +733,7 @@ export default function DirectoryPage() {
               Why TCK Informed?
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Traditional therapy models were developed within a single cultural framework. When TCKs bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A TCK-informed counselor understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.
+              Traditional therapy models were developed within a single cultural framework. When TCKs bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A TCK-informed mental health professional understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.
             </p>
           </div>
         </div>

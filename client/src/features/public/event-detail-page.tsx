@@ -571,7 +571,7 @@ export default function EventDetailPage() {
                 <Badge variant="outline" data-testid="badge-event-visibility">
                   <Lock className="mr-1 h-3 w-3" />
                   {event.visibility === "members_only" ? "Members Only" :
-                   event.visibility === "counselors_only" ? "Counselors Only" :
+                   event.visibility === "counselors_only" ? "Mental Health Professionals Only" :
                    event.visibility === "admins_only" ? "Admins Only" : event.visibility}
                 </Badge>
               )}

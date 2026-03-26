@@ -191,8 +191,8 @@ export default function RegisterPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="client">Client - Looking for a counselor</SelectItem>
-                            <SelectItem value="therapist">Counselor - Join the directory</SelectItem>
+                            <SelectItem value="client">Client - Looking for a mental health professional</SelectItem>
+                            <SelectItem value="therapist">Mental Health Professional - Join the directory</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

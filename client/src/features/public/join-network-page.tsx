@@ -111,7 +111,7 @@ const applicationSteps = [
   },
 ];
 
-function CounselorRegisterDialog({
+function ProfessionalRegisterDialog({
   open,
   onOpenChange,
 }: {
@@ -164,7 +164,7 @@ function CounselorRegisterDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Counselor Application</DialogTitle>
+          <DialogTitle>Mental Health Professional Application</DialogTitle>
           <DialogDescription>Fill in your details to apply for membership</DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -177,7 +177,7 @@ function CounselorRegisterDialog({
                   <FormItem>
                     <FormLabel>First Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="John" data-testid="input-counselor-first-name" {...field} />
+                      <Input placeholder="John" data-testid="input-professional-first-name" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -190,7 +190,7 @@ function CounselorRegisterDialog({
                   <FormItem>
                     <FormLabel>Last Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Doe" data-testid="input-counselor-last-name" {...field} />
+                      <Input placeholder="Doe" data-testid="input-professional-last-name" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -205,7 +205,7 @@ function CounselorRegisterDialog({
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="you@example.com" data-testid="input-counselor-email" {...field} />
+                    <Input type="email" placeholder="you@example.com" data-testid="input-professional-email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -219,14 +219,14 @@ function CounselorRegisterDialog({
                 <FormItem>
                   <FormLabel>Specializations</FormLabel>
                   <p className="text-xs text-muted-foreground mb-2">Select all that apply. You can update these later from your profile.</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 max-h-48 overflow-y-auto border rounded-md p-3" data-testid="checkbox-group-counselor-specializations">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 max-h-48 overflow-y-auto border rounded-md p-3" data-testid="checkbox-group-professional-specializations">
                     {specList.map(({ name: spec }) => {
                       const current = form.getValues("specializations") || [];
                       const isChecked = current.includes(spec);
                       return (
                         <div key={spec} className="flex items-center gap-2">
                           <Checkbox
-                            id={`counselor-spec-${spec}`}
+                            id={`professional-spec-${spec}`}
                             checked={isChecked}
                             onCheckedChange={(checked) => {
                               const prev = form.getValues("specializations") || [];
@@ -236,9 +236,9 @@ function CounselorRegisterDialog({
                                 form.setValue("specializations", prev.filter((s) => s !== spec), { shouldDirty: true });
                               }
                             }}
-                            data-testid={`checkbox-counselor-spec-${spec.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+                            data-testid={`checkbox-professional-spec-${spec.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
                           />
-                          <Label htmlFor={`counselor-spec-${spec}`} className="text-xs font-normal cursor-pointer leading-tight">
+                          <Label htmlFor={`professional-spec-${spec}`} className="text-xs font-normal cursor-pointer leading-tight">
                             {spec}
                           </Label>
                         </div>
@@ -257,7 +257,7 @@ function CounselorRegisterDialog({
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="At least 8 characters" data-testid="input-counselor-password" {...field} />
+                    <Input type="password" placeholder="At least 8 characters" data-testid="input-professional-password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -271,14 +271,14 @@ function CounselorRegisterDialog({
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Re-enter your password" data-testid="input-counselor-confirm-password" {...field} />
+                    <Input type="password" placeholder="Re-enter your password" data-testid="input-professional-confirm-password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={isPending} data-testid="button-counselor-register">
+            <Button type="submit" className="w-full" disabled={isPending} data-testid="button-professional-register">
               {isPending ? (
                 <LoadingSpinner className="h-4 w-4 mr-2" />
               ) : (
@@ -338,7 +338,7 @@ function LoginDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Member Login</DialogTitle>
-          <DialogDescription>Sign in to your counselor account</DialogDescription>
+          <DialogDescription>Sign in to your mental health professional account</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -391,7 +391,7 @@ export default function JoinNetworkPage() {
     <PageLayout>
       <section className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="section-join-hero">
         <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title">
-          Are you a TCK-Informed Counselor?{" "}
+          Are you a TCK-Informed Mental Health Professional?{" "}
           <span className="text-accent">Join the Network!</span>
         </h1>
 
@@ -476,7 +476,7 @@ export default function JoinNetworkPage() {
         </div>
       </section>
 
-      <CounselorRegisterDialog open={registerOpen} onOpenChange={setRegisterOpen} />
+      <ProfessionalRegisterDialog open={registerOpen} onOpenChange={setRegisterOpen} />
       <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
     </PageLayout>
   );

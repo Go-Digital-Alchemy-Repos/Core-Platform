@@ -26,23 +26,23 @@ import Autoplay from "embla-carousel-autoplay";
 
 const testimonials = [
   {
-    quote: "For the first time, I didn't have to explain what it means to grow up between cultures. My counselor just understood.",
+    quote: "For the first time, I didn't have to explain what it means to grow up between cultures. My mental health professional just understood.",
     name: "Sarah M.",
     role: "Adult TCK",
     location: "Singapore",
     avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "TCK Wellness connected me with a counselor who speaks my language — literally and figuratively. It's been life-changing.",
+    quote: "TCK Wellness connected me with a mental health professional who speaks my language — literally and figuratively. It's been life-changing.",
     name: "James K.",
     role: "Expat Parent",
     location: "Dubai",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "As a counselor, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
+    quote: "As a mental health professional, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
     name: "Dr. Amara O.",
-    role: "Licensed Counselor",
+    role: "Licensed Mental Health Professional",
     location: "Nairobi",
     avatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&h=100&fit=crop&crop=faces",
   },
@@ -54,7 +54,7 @@ const testimonials = [
     avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "The specialization filters helped me find a counselor experienced with military kid transitions. Highly recommend.",
+    quote: "The specialization filters helped me find a mental health professional experienced with military kid transitions. Highly recommend.",
     name: "Marcus W.",
     role: "Military TCK",
     location: "Virginia, USA",
@@ -73,7 +73,7 @@ const benefits = [
   {
     icon: Globe,
     title: "Culturally Informed Care",
-    description: "Every counselor in our directory understands the unique challenges of growing up across cultures.",
+    description: "Every mental health professional in our directory understands the unique challenges of growing up across cultures.",
   },
   {
     icon: Heart,
@@ -112,7 +112,7 @@ function TestimonialsCarousel() {
           What People Are Saying
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mx-auto mb-10 sm:mb-14">
-          Hear from TCKs, expat families, and counselors who have found their match.
+          Hear from TCKs, expat families, and mental health professionals who have found their match.
         </p>
         <div className="relative">
           <div className="overflow-hidden" ref={emblaRef}>
@@ -352,12 +352,12 @@ export default function HomePage() {
                 <p className="text-base sm:text-lg font-medium mb-4" data-testid="text-hero-support-label">Are you looking for TCK support?</p>
                 <Link href="/directory">
                   <Button size="lg" className="bg-accent text-accent-foreground border-accent-border" data-testid="button-browse-directory">
-                    Find a Counselor!
+                    Find a Mental Health Professional!
                   </Button>
                 </Link>
               </div>
               <div className="text-center">
-                <p className="text-base sm:text-lg font-medium mb-4" data-testid="text-hero-counselor-label">Are you a counselor?</p>
+                <p className="text-base sm:text-lg font-medium mb-4" data-testid="text-hero-professional-label">Are you a mental health professional?</p>
                 <Link href="/auth/register">
                   <Button size="lg" className="bg-accent text-accent-foreground border-accent-border" data-testid="button-join-therapist">
                     Join the Network!
@@ -397,19 +397,19 @@ export default function HomePage() {
         </div>
       </section>
       <TestimonialsCarousel />
-      <section className="relative bg-[#ffffff4d] overflow-hidden" data-testid="section-counselor-map">
+      <section className="relative bg-[#ffffff4d] overflow-hidden" data-testid="section-professional-map">
         <div className="pointer-events-none absolute top-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.12) 0%, transparent 70%)" }} />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap mb-8 sm:mb-12">
             <div>
               <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold" data-testid="text-map-heading">
-                Our Counselors Around the World
+                Our Mental Health Professionals Around the World
               </h2>
               <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Click a pin to learn more about a TCK-informed professional near you</p>
             </div>
             <Link href="/directory">
               <Button variant="outline" data-testid="button-view-all-therapists">
-                Find a Counselor <ArrowRight className="ml-2 h-4 w-4" />
+                Find a Mental Health Professional <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -481,7 +481,7 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="section-cta">
         <div className="max-w-2xl mx-auto">
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold mb-3 sm:mb-4" data-testid="text-cta-heading">
-            Are You a TCK-Informed Counselor?
+            Are You a TCK-Informed Mental Health Professional?
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto mb-8 sm:mb-10 leading-relaxed">
             Join our growing directory and connect with clients who need your unique expertise. List your practice and reach the global TCK community.

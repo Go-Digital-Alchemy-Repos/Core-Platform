@@ -246,12 +246,12 @@ function TestimonialsBlock({ props }: { props: Record<string, unknown> }) {
   );
 }
 
-function FeaturedCounselorsBlock({ props }: { props: Record<string, unknown> }) {
-  const { data: counselors } = useQuery<{ id: string; title: string; user?: { firstName?: string; lastName?: string } }[]>({
+function FeaturedProfessionalsBlock({ props }: { props: Record<string, unknown> }) {
+  const { data: professionals } = useQuery<{ id: string; title: string; user?: { firstName?: string; lastName?: string } }[]>({
     queryKey: ["/api/therapists/featured"],
   });
   const limit = num(props.limit, 3);
-  const visible = (counselors ?? []).slice(0, limit);
+  const visible = (professionals ?? []).slice(0, limit);
   return (
     <div className="py-4">
       {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
@@ -260,7 +260,7 @@ function FeaturedCounselorsBlock({ props }: { props: Record<string, unknown> }) 
         {visible.length === 0 ? (
           <div className="col-span-3 text-center py-8 text-muted-foreground">
             <UserCheck className="h-8 w-8 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Featured counselors will appear here</p>
+            <p className="text-sm">Featured mental health professionals will appear here</p>
           </div>
         ) : visible.map((c) => (
           <Card key={c.id} className="text-center hover:shadow-md transition-shadow">
@@ -469,7 +469,8 @@ const RENDERERS: Record<string, React.ComponentType<{ props: Record<string, unkn
   "cards-grid": CardsGridBlock,
   faq: FaqBlock,
   testimonials: TestimonialsBlock,
-  "featured-counselors": FeaturedCounselorsBlock,
+  "featured-professionals": FeaturedProfessionalsBlock,
+  "featured-counselors": FeaturedProfessionalsBlock,
   "events-preview": EventsPreviewBlock,
   "blog-preview": BlogPreviewBlock,
   "button-group": ButtonGroupBlock,

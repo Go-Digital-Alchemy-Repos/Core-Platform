@@ -161,7 +161,7 @@ function statusVariant(status: string | null | undefined): "default" | "secondar
 function visibilityLabel(v: string | null | undefined): string {
   switch (v) {
     case "members_only": return "Members Only";
-    case "counselors_only": return "Counselors Only";
+    case "counselors_only": return "Mental Health Professionals Only";
     case "admins_only": return "Admins Only";
     default: return "Public";
   }
@@ -814,7 +814,7 @@ function EventsContent() {
                                       <SelectContent>
                                         <SelectItem value="public">Public</SelectItem>
                                         <SelectItem value="members_only">Members Only</SelectItem>
-                                        <SelectItem value="counselors_only">Counselors Only</SelectItem>
+                                        <SelectItem value="counselors_only">Mental Health Professionals Only</SelectItem>
                                         <SelectItem value="admins_only">Admins Only</SelectItem>
                                       </SelectContent>
                                     </Select>
@@ -1489,7 +1489,7 @@ function EventsContent() {
                                       </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                      <SelectItem value="free">Free — Open to all counselors</SelectItem>
+                                      <SelectItem value="free">Free — Open to all mental health professionals</SelectItem>
                                       <SelectItem value="paid">Paid — One-time purchase via Stripe</SelectItem>
                                     </SelectContent>
                                   </Select>
@@ -1524,7 +1524,7 @@ function EventsContent() {
                                       </div>
                                     </FormControl>
                                     <p className="text-xs text-muted-foreground">
-                                      One-time purchase price. Counselors will pay via Stripe and have permanent access after purchase.
+                                      One-time purchase price. Mental health professionals will pay via Stripe and have permanent access after purchase.
                                     </p>
                                     <FormMessage />
                                   </FormItem>
@@ -1536,14 +1536,14 @@ function EventsContent() {
                               <h4 className="text-sm font-medium">How it works</h4>
                               {watchRecordingAccess === "paid" ? (
                                 <ul className="text-xs text-muted-foreground space-y-1.5 list-disc pl-4">
-                                  <li>Counselors see a "Purchase" button on the Video Archives page</li>
+                                  <li>Mental health professionals see a "Purchase" button on the Video Archives page</li>
                                   <li>They're redirected to Stripe Checkout to complete payment</li>
                                   <li>After payment, they have permanent access to the recording</li>
                                   <li>The recording URL is protected — only purchasers can access it</li>
                                 </ul>
                               ) : (
                                 <ul className="text-xs text-muted-foreground space-y-1.5 list-disc pl-4">
-                                  <li>All counselors can view this recording for free</li>
+                                  <li>All mental health professionals can view this recording for free</li>
                                   <li>The recording will appear in the Video Archives with a "Free" badge</li>
                                 </ul>
                               )}

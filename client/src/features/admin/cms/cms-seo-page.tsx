@@ -341,7 +341,7 @@ export default function CmsSeoPage() {
                               />
                             </FormControl>
                             <FormDescription className="text-xs">
-                              Appended to page titles — e.g. "Find a Counselor | TCK Wellness"
+                              Appended to page titles — e.g. "Find a Mental Health Professional | TCK Wellness"
                             </FormDescription>
                             <FormMessage />
                           </FormItem>

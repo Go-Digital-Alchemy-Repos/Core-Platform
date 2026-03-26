@@ -59,8 +59,8 @@ export default function TherapistProfilePage() {
   });
 
   const startConversationMutation = useMutation({
-    mutationFn: async (counselorUserId: string) => {
-      const res = await apiRequest("POST", "/api/messages/conversations", { counselorId: counselorUserId });
+    mutationFn: async (professionalUserId: string) => {
+      const res = await apiRequest("POST", "/api/messages/conversations", { professionalId: professionalUserId });
       return res.json();
     },
     onSuccess: (conv) => {
@@ -72,7 +72,7 @@ export default function TherapistProfilePage() {
     if (!therapist?.userId) return;
     if (user && user.id === therapist.userId) return;
     if (!user) {
-      navigate(`/messages?counselor=${therapist.userId}`);
+      navigate(`/messages?professional=${therapist.userId}`);
       return;
     }
     startConversationMutation.mutate(therapist.userId);
@@ -93,7 +93,7 @@ export default function TherapistProfilePage() {
       <PageLayout>
         <div className="container mx-auto px-4 py-16 text-center flex flex-col items-center gap-4">
           <p className="text-lg text-muted-foreground" data-testid="text-not-found">
-            Counselor not found.
+            Mental health professional not found.
           </p>
           <Link href="/directory">
             <Button variant="outline" data-testid="link-back-directory">
@@ -107,7 +107,7 @@ export default function TherapistProfilePage() {
   }
 
   const fullName =
-    [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") || "Counselor";
+    [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") || "Mental Health Professional";
   const initials = `${(therapist.user?.firstName || "")[0] || ""}${(therapist.user?.lastName || "")[0] || ""}`.toUpperCase();
   const specializations = therapist.specializations || [];
   const languages = therapist.languages || [];
@@ -281,14 +281,14 @@ export default function TherapistProfilePage() {
                     size="lg"
                     onClick={handleContact}
                     disabled={startConversationMutation.isPending}
-                    data-testid="button-contact-counselor"
+                    data-testid="button-contact-professional"
                   >
                     {startConversationMutation.isPending ? (
                       <LoadingSpinner className="h-4 w-4 mr-2" />
                     ) : (
                       <MessageSquare className="h-4 w-4 mr-2" />
                     )}
-                    Contact This Counselor
+                    Contact This Mental Health Professional
                   </Button>
                   {!user && (
                     <p className="text-xs text-muted-foreground text-center mt-2">
@@ -327,7 +327,7 @@ export default function TherapistProfilePage() {
                   </div>
                   <p className="text-sm font-medium">Virtual Practice</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    This counselor offers sessions online and is available worldwide.
+                    This mental health professional offers sessions online and is available worldwide.
                   </p>
                 </CardContent>
               </Card>

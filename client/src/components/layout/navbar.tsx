@@ -21,7 +21,7 @@ import { RegisterDialog } from "@/components/shared/register-dialog";
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
-  { label: "Find a Counselor", href: "/directory" },
+  { label: "Find a Mental Health Professional", href: "/directory" },
   { label: "Join the Network", href: "/join" },
 ];
 
@@ -186,7 +186,7 @@ export function Navbar() {
                     <DropdownMenuItem asChild>
                       <Link href="/therapist" data-testid="link-therapist-dashboard">
                         <LayoutDashboard className="mr-2 h-4 w-4" />
-                        Counselor Dashboard
+                        Mental Health Professional Dashboard
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -329,7 +329,7 @@ export function Navbar() {
                       <Link href="/therapist" onClick={() => setMobileOpen(false)}>
                         <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-therapist">
                           <LayoutDashboard className="mr-2 h-4 w-4" />
-                          Counselor Dashboard
+                          Mental Health Professional Dashboard
                         </Button>
                       </Link>
                     )}

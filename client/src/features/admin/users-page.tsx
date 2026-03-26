@@ -66,7 +66,7 @@ import {
 type SafeUser = Omit<User, "password"> & { country?: string | null };
 
 function displayRole(role: string): string {
-  if (role === "therapist") return "Counselor";
+  if (role === "therapist") return "Mental Health Professional";
   return role.charAt(0).toUpperCase() + role.slice(1);
 }
 
@@ -145,7 +145,7 @@ function UsersContent() {
               Admins ({counts.admin})
             </TabsTrigger>
             <TabsTrigger value="therapist" data-testid="tab-therapist">
-              Counselors ({counts.therapist})
+              Mental Health Professionals ({counts.therapist})
             </TabsTrigger>
             <TabsTrigger value="client" data-testid="tab-client">
               Clients ({counts.client})
@@ -371,7 +371,7 @@ function CreateUserSheet({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="client">Client</SelectItem>
-                  <SelectItem value="therapist">Counselor</SelectItem>
+                  <SelectItem value="therapist">Mental Health Professional</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
@@ -624,7 +624,7 @@ function UserDetailSheet({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="client">Client</SelectItem>
-                          <SelectItem value="therapist">Counselor</SelectItem>
+                          <SelectItem value="therapist">Mental Health Professional</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>

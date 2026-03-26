@@ -43,18 +43,18 @@ function getOtherParticipant(
   conv: ConversationWithParticipants,
   userId: string
 ) {
-  return userId === conv.clientId ? conv.counselor : conv.client;
+  return userId === conv.clientId ? conv.professional : conv.client;
 }
 
 function GuestEntryModal({
   open,
   onOpenChange,
-  counselorId,
+  professionalId,
   onContinueAsGuest,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  counselorId: string;
+  professionalId: string;
   onContinueAsGuest: () => void;
 }) {
   const [, setLocation] = useLocation();
@@ -65,7 +65,7 @@ function GuestEntryModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-accent" />
-            Contact This Counselor
+            Contact This Mental Health Professional
           </DialogTitle>
           <DialogDescription>
             Choose how you'd like to send your message
@@ -81,13 +81,13 @@ function GuestEntryModal({
             <ul className="text-xs text-muted-foreground space-y-1 pl-6 list-disc">
               <li>Save your conversations</li>
               <li>Receive replies directly</li>
-              <li>Browse and save counselor profiles</li>
+              <li>Browse and save mental health professional profiles</li>
               <li>Register for events</li>
             </ul>
             <Button
               className="w-full bg-accent text-accent-foreground border-accent-border"
               onClick={() => {
-                const redirect = encodeURIComponent(`/messages?counselor=${counselorId}`);
+                const redirect = encodeURIComponent(`/messages?professional=${professionalId}`);
                 setLocation(`/auth/register?redirectTo=${redirect}`);
               }}
               data-testid="button-register-free"
@@ -112,7 +112,7 @@ function GuestEntryModal({
               <span className="font-medium text-sm">Continue as Guest</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Send a one-time message with your contact information. The counselor will reply via your preferred contact method.
+              Send a one-time message with your contact information. The mental health professional will reply via your preferred contact method.
             </p>
             <Button
               variant="outline"
@@ -129,7 +129,7 @@ function GuestEntryModal({
   );
 }
 
-function GuestComposeForm({ counselorId }: { counselorId: string }) {
+function GuestComposeForm({ professionalId }: { professionalId: string }) {
   const { toast } = useToast();
   const [senderName, setSenderName] = useState("");
   const [contactMethod, setContactMethod] = useState<"phone" | "email">("email");
@@ -141,7 +141,7 @@ function GuestComposeForm({ counselorId }: { counselorId: string }) {
 
   const sendGuestMutation = useMutation({
     mutationFn: async (data: {
-      counselorId: string;
+      professionalId: string;
       senderName?: string;
       contactMethod: string;
       contactValue: string;
@@ -154,7 +154,7 @@ function GuestComposeForm({ counselorId }: { counselorId: string }) {
     },
     onSuccess: () => {
       setSent(true);
-      toast({ title: "Message sent!", description: "The counselor will contact you soon." });
+      toast({ title: "Message sent!", description: "The mental health professional will contact you soon." });
     },
     onError: (error: Error) => {
       toast({ title: "Failed to send", description: error.message, variant: "destructive" });
@@ -170,7 +170,7 @@ function GuestComposeForm({ counselorId }: { counselorId: string }) {
   const handleSend = () => {
     if (!canSend) return;
     sendGuestMutation.mutate({
-      counselorId,
+      professionalId,
       senderName: senderName.trim() || undefined,
       contactMethod,
       contactValue: contactValue.trim(),
@@ -186,7 +186,7 @@ function GuestComposeForm({ counselorId }: { counselorId: string }) {
         <CheckCircle2 className="h-12 w-12 text-green-500 mb-4" />
         <h2 className="text-xl font-heading font-semibold mb-2">Message Sent Successfully</h2>
         <p className="text-sm text-muted-foreground max-w-md">
-          Your message has been delivered to the counselor. They will reach out to you
+          Your message has been delivered to the mental health professional. They will reach out to you
           via {contactMethod === "phone" ? "phone" : "email"} at the contact information you provided.
         </p>
       </div>
@@ -197,7 +197,7 @@ function GuestComposeForm({ counselorId }: { counselorId: string }) {
     <div className="max-w-xl mx-auto py-8 px-4" data-testid="guest-compose-form">
       <h2 className="text-xl font-heading font-semibold mb-1">Send a Guest Message</h2>
       <p className="text-sm text-muted-foreground mb-6">
-        Fill out the form below to send a one-time message to this counselor.
+        Fill out the form below to send a one-time message to this mental health professional.
       </p>
 
       <div className="space-y-5">
@@ -264,7 +264,7 @@ function GuestComposeForm({ counselorId }: { counselorId: string }) {
           <Label htmlFor="guest-message" className="text-sm font-medium">Your Message</Label>
           <Textarea
             id="guest-message"
-            placeholder="Tell the counselor what you're looking for..."
+            placeholder="Tell the mental health professional what you're looking for..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={5}
@@ -325,7 +325,7 @@ function GuestComposeForm({ counselorId }: { counselorId: string }) {
 export default function MessagesPage() {
   const searchParams = new URLSearchParams(window.location.search);
   const initialConvId = searchParams.get("conversation");
-  const counselorParam = searchParams.get("counselor");
+  const professionalParam = searchParams.get("professional") || searchParams.get("counselor");
 
   const { user, isLoading: authLoading } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(initialConvId);
@@ -339,10 +339,10 @@ export default function MessagesPage() {
   const [guestMode, setGuestMode] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user && counselorParam) {
+    if (!authLoading && !user && professionalParam) {
       setShowGuestModal(true);
     }
-  }, [user, authLoading, counselorParam]);
+  }, [user, authLoading, professionalParam]);
 
   const { data: conversations, isLoading: convsLoading } = useQuery<ConversationWithParticipants[]>({
     queryKey: ["/api/messages/conversations"],
@@ -350,8 +350,8 @@ export default function MessagesPage() {
   });
 
   const createConversationMutation = useMutation({
-    mutationFn: async (counselorUserId: string) => {
-      const res = await apiRequest("POST", "/api/messages/conversations", { counselorId: counselorUserId });
+    mutationFn: async (professionalUserId: string) => {
+      const res = await apiRequest("POST", "/api/messages/conversations", { professionalId: professionalUserId });
       return res.json();
     },
     onSuccess: (conv: any) => {
@@ -361,23 +361,23 @@ export default function MessagesPage() {
     },
   });
 
-  const [counselorHandled, setCounselorHandled] = useState(false);
+  const [professionalHandled, setProfessionalHandled] = useState(false);
 
   useEffect(() => {
-    if (user && counselorParam && conversations && !counselorHandled) {
+    if (user && professionalParam && conversations && !professionalHandled) {
       const existing = conversations.find(
-        (c) => c.counselorId === counselorParam || c.clientId === counselorParam
+        (c) => c.professionalId === professionalParam || c.clientId === professionalParam
       );
       if (existing) {
         setSelectedId(existing.id);
         setMobileView("thread");
-        setCounselorHandled(true);
+        setProfessionalHandled(true);
       } else if (!createConversationMutation.isPending) {
-        setCounselorHandled(true);
-        createConversationMutation.mutate(counselorParam);
+        setProfessionalHandled(true);
+        createConversationMutation.mutate(professionalParam);
       }
     }
-  }, [user, counselorParam, conversations, counselorHandled]);
+  }, [user, professionalParam, conversations, professionalHandled]);
 
   const selectedConv = conversations?.find((c) => c.id === selectedId);
 
@@ -460,30 +460,30 @@ export default function MessagesPage() {
     );
   }
 
-  if (!user && counselorParam) {
+  if (!user && professionalParam) {
     return (
       <PageLayout>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <h1 className="text-2xl font-heading font-semibold mb-6" data-testid="text-messages-heading">
-            Contact Counselor
+            Contact Mental Health Professional
           </h1>
 
           <GuestEntryModal
             open={showGuestModal}
             onOpenChange={setShowGuestModal}
-            counselorId={counselorParam}
+            professionalId={professionalParam}
             onContinueAsGuest={() => {
               setShowGuestModal(false);
               setGuestMode(true);
             }}
           />
 
-          {guestMode && <GuestComposeForm counselorId={counselorParam} />}
+          {guestMode && <GuestComposeForm professionalId={professionalParam} />}
 
           {!guestMode && !showGuestModal && (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
               <MessageSquare className="h-12 w-12 opacity-20" />
-              <p className="text-sm">Choose how you'd like to contact this counselor</p>
+              <p className="text-sm">Choose how you'd like to contact this mental health professional</p>
               <Button
                 variant="outline"
                 onClick={() => setShowGuestModal(true)}
@@ -543,7 +543,7 @@ export default function MessagesPage() {
                   <div className="flex flex-col items-center justify-center py-16 px-4 text-center text-muted-foreground">
                     <MessageSquare className="h-10 w-10 mb-3 opacity-30" />
                     <p className="text-sm font-medium">No conversations yet</p>
-                    <p className="text-xs mt-1 opacity-70">Browse the directory to contact a counselor</p>
+                    <p className="text-xs mt-1 opacity-70">Browse the directory to contact a mental health professional</p>
                   </div>
                 ) : (
                   conversations.map((conv) => {
@@ -630,7 +630,7 @@ export default function MessagesPage() {
                           <div>
                             <p className="text-sm font-semibold">{other.firstName} {other.lastName}</p>
                             <p className="text-xs text-muted-foreground capitalize">
-                              {other.role === "therapist" ? "Counselor" : other.role}
+                              {other.role === "therapist" ? "Mental Health Professional" : other.role}
                             </p>
                           </div>
                         </>

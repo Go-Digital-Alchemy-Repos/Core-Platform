@@ -13,7 +13,7 @@ export interface ParticipantInfo {
 
 export interface ConversationWithParticipants extends Conversation {
   client: ParticipantInfo;
-  counselor: ParticipantInfo;
+  professional: ParticipantInfo;
   lastMessage?: { content: string; createdAt: Date | null; senderId: string } | null;
   unreadCount: number;
 }
@@ -27,17 +27,17 @@ const clientUsers = db.$with("client_users").as(
 );
 
 export class MessageStorage {
-  async getOrCreateConversation(clientId: string, counselorId: string): Promise<Conversation> {
+  async getOrCreateConversation(clientId: string, professionalId: string): Promise<Conversation> {
     const [existing] = await db
       .select()
       .from(conversations)
-      .where(and(eq(conversations.clientId, clientId), eq(conversations.counselorId, counselorId)));
+      .where(and(eq(conversations.clientId, clientId), eq(conversations.professionalId, professionalId)));
 
     if (existing) return existing;
 
     const [created] = await db
       .insert(conversations)
-      .values({ clientId, counselorId })
+      .values({ clientId, professionalId })
       .returning();
 
     return created;
@@ -52,7 +52,7 @@ export class MessageStorage {
     const rows = await db
       .select()
       .from(conversations)
-      .where(or(eq(conversations.clientId, userId), eq(conversations.counselorId, userId)))
+      .where(or(eq(conversations.clientId, userId), eq(conversations.professionalId, userId)))
       .orderBy(desc(conversations.updatedAt));
 
     if (rows.length === 0) return [];
@@ -61,7 +61,7 @@ export class MessageStorage {
 
     for (const conv of rows) {
       const [clientUser] = await db.select().from(users).where(eq(users.id, conv.clientId));
-      const [counselorUser] = await db.select().from(users).where(eq(users.id, conv.counselorId));
+      const [professionalUser] = await db.select().from(users).where(eq(users.id, conv.professionalId));
 
       const [lastMsg] = await db
         .select()
@@ -90,12 +90,12 @@ export class MessageStorage {
           profileImageUrl: clientUser?.profileImageUrl ?? null,
           role: clientUser?.role ?? "client",
         },
-        counselor: {
-          id: counselorUser?.id ?? conv.counselorId,
-          firstName: counselorUser?.firstName ?? null,
-          lastName: counselorUser?.lastName ?? null,
-          profileImageUrl: counselorUser?.profileImageUrl ?? null,
-          role: counselorUser?.role ?? "therapist",
+        professional: {
+          id: professionalUser?.id ?? conv.professionalId,
+          firstName: professionalUser?.firstName ?? null,
+          lastName: professionalUser?.lastName ?? null,
+          profileImageUrl: professionalUser?.profileImageUrl ?? null,
+          role: professionalUser?.role ?? "therapist",
         },
         lastMessage: lastMsg
           ? { content: lastMsg.content, createdAt: lastMsg.createdAt, senderId: lastMsg.senderId }
@@ -175,7 +175,7 @@ export class MessageStorage {
     const convs = await db
       .select({ id: conversations.id })
       .from(conversations)
-      .where(or(eq(conversations.clientId, userId), eq(conversations.counselorId, userId)));
+      .where(or(eq(conversations.clientId, userId), eq(conversations.professionalId, userId)));
 
     if (convs.length === 0) return 0;
 

@@ -6,7 +6,7 @@ import { users } from "./users";
 
 export const guestMessages = pgTable("guest_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  counselorId: varchar("counselor_id").notNull().references(() => users.id),
+  professionalId: varchar("professional_id").notNull().references(() => users.id),
   senderName: text("sender_name"),
   contactMethod: text("contact_method").notNull(),
   contactValue: text("contact_value").notNull(),
@@ -16,8 +16,8 @@ export const guestMessages = pgTable("guest_messages", {
   isRead: boolean("is_read").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
-  index("idx_guest_msg_counselor").on(table.counselorId),
-  index("idx_guest_msg_read").on(table.counselorId, table.isRead),
+  index("idx_guest_msg_counselor").on(table.professionalId),
+  index("idx_guest_msg_read").on(table.professionalId, table.isRead),
   index("idx_guest_msg_created").on(table.createdAt),
 ]);
 

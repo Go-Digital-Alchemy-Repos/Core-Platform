@@ -5,7 +5,7 @@ import { z } from "zod";
 import { users } from "./users";
 import { therapistProfiles } from "./therapist-profiles";
 
-export const savedCounselors = pgTable("saved_counselors", {
+export const savedProfessionals = pgTable("saved_professionals", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   profileId: varchar("profile_id").notNull().references(() => therapistProfiles.id),
@@ -16,10 +16,10 @@ export const savedCounselors = pgTable("saved_counselors", {
   unique("uq_sc_user_profile").on(table.userId, table.profileId),
 ]);
 
-export const insertSavedCounselorSchema = createInsertSchema(savedCounselors).omit({
+export const insertSavedProfessionalSchema = createInsertSchema(savedProfessionals).omit({
   id: true,
   createdAt: true,
 });
 
-export type InsertSavedCounselor = z.infer<typeof insertSavedCounselorSchema>;
-export type SavedCounselor = typeof savedCounselors.$inferSelect;
+export type InsertSavedProfessional = z.infer<typeof insertSavedProfessionalSchema>;
+export type SavedProfessional = typeof savedProfessionals.$inferSelect;

@@ -22,7 +22,7 @@ Identity questions are common: "Where are you from?" becomes a complicated quest
 
 Why TCK-Informed Counseling Matters
 
-Traditional therapy approaches may not fully address the nuances of the TCK experience. A counselor who understands cross-cultural transitions, ambiguous loss, and multicultural identity development can provide more effective support. This is why TCK Wellness exists — to bridge the gap between Third Culture Kids and culturally competent mental health professionals.`,
+Traditional therapy approaches may not fully address the nuances of the TCK experience. A mental health professional who understands cross-cultural transitions, ambiguous loss, and multicultural identity development can provide more effective support. This is why TCK Wellness exists — to bridge the gap between Third Culture Kids and culturally competent mental health professionals.`,
     coverImageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=450&fit=crop",
     authorName: "Dr. Sarah Chen",
     category: "TCK Identity",
@@ -55,7 +55,7 @@ Others don't understand why you're sad about leaving a place. "You'll make new f
 
 What You Can Do
 
-Acknowledging grief of place is the first step toward healing. Working with a counselor who understands cross-cultural experiences can help you process these losses and develop a portable sense of home within yourself.`,
+Acknowledging grief of place is the first step toward healing. Working with a mental health professional who understands cross-cultural experiences can help you process these losses and develop a portable sense of home within yourself.`,
     coverImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=450&fit=crop",
     authorName: "Claire O'Brien",
     category: "Mental Health",
@@ -84,7 +84,7 @@ Help your children see their multicultural background as a superpower, not a bur
 Know When to Seek Help
 Some signs that your TCK might benefit from professional support include persistent sadness, withdrawal from activities they once enjoyed, academic decline, or difficulty forming new friendships after a reasonable adjustment period.
 
-A TCK-informed counselor can provide invaluable support during transitions. Don't hesitate to reach out — seeking help is a sign of strength, not weakness.`,
+A TCK-informed mental health professional can provide invaluable support during transitions. Don't hesitate to reach out — seeking help is a sign of strength, not weakness.`,
     coverImageUrl: "https://images.unsplash.com/photo-1536640712-4d4c36ff0e4e?w=800&h=450&fit=crop",
     authorName: "Dr. Omar Hassan",
     category: "Parenting",
@@ -141,7 +141,7 @@ Finding Authenticity
 
 The goal isn't to stop code-switching — it's a valuable skill. Instead, it's about developing a core sense of self that remains stable across contexts. This means identifying your fundamental values, beliefs, and characteristics that persist regardless of the cultural setting you're in.
 
-Therapy can provide a safe space to explore these questions. A TCK-informed counselor can help you integrate your multiple cultural selves into a coherent identity that feels authentic and grounded.`,
+Therapy can provide a safe space to explore these questions. A TCK-informed mental health professional can help you integrate your multiple cultural selves into a coherent identity that feels authentic and grounded.`,
     coverImageUrl: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&h=450&fit=crop",
     authorName: "Amara Joseph",
     category: "TCK Identity",
@@ -163,17 +163,17 @@ For example, a therapist might interpret a TCK's difficulty answering "Where are
 
 What Makes Counseling "TCK-Informed"?
 
-TCK-informed counselors understand the developmental model of cross-cultural transitions. They recognize concepts like:
+TCK-informed mental health professionals understand the developmental model of cross-cultural transitions. They recognize concepts like:
 
 - Ambiguous loss: The grief of losing a place or community without a clear "ending"
 - Hidden immigrants: People who look like they belong but feel culturally different
 - Cultural marginality: Living on the edges of multiple cultures without fully belonging to any
 
-These counselors can normalize the TCK experience while also addressing genuine mental health concerns. They know when cultural adjustment is a natural process and when it has crossed into something that needs clinical attention.
+These mental health professionals can normalize the TCK experience while also addressing genuine mental health concerns. They know when cultural adjustment is a natural process and when it has crossed into something that needs clinical attention.
 
 Finding the Right Fit
 
-The TCK Wellness directory helps you find counselors who understand these nuances. Every counselor in our network has training or lived experience with cross-cultural identity, ensuring you won't have to spend your sessions explaining what it means to be a TCK.`,
+The TCK Wellness directory helps you find mental health professionals who understand these nuances. Every mental health professional in our network has training or lived experience with cross-cultural identity, ensuring you won't have to spend your sessions explaining what it means to be a TCK.`,
     coverImageUrl: "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=800&h=450&fit=crop",
     authorName: "Dr. Amara Okafor",
     category: "Counseling",
@@ -207,7 +207,7 @@ The Paradox of Belonging
 
 Interestingly, many TCKs find that once they stop trying to belong to a single place, they discover they belong everywhere — and nowhere — and that's okay. This paradox becomes a source of freedom rather than pain.
 
-A skilled counselor can help you navigate this journey from rootlessness to what author Ruth Van Reken calls "rooted in relationships" — a portable sense of home that you carry in your heart.`,
+A skilled mental health professional can help you navigate this journey from rootlessness to what author Ruth Van Reken calls "rooted in relationships" — a portable sense of home that you carry in your heart.`,
     coverImageUrl: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=450&fit=crop",
     authorName: "Isabella Reyes",
     category: "Wellness",
@@ -244,7 +244,7 @@ Coping Strategies
 
 Allow yourself to grieve. Don't minimize your experience. Seek out other TCKs and internationally-minded communities. And most importantly, don't feel guilty for struggling — re-entry shock is a well-documented psychological experience, not a personal failing.
 
-Professional support from a counselor who understands re-entry can make a tremendous difference. They can help normalize your experience and provide tools for building a meaningful life in a context that feels unfamiliar.`,
+Professional support from a mental health professional who understands re-entry can make a tremendous difference. They can help normalize your experience and provide tools for building a meaningful life in a context that feels unfamiliar.`,
     coverImageUrl: "https://images.unsplash.com/photo-1436491865332-7a61a109db05?w=800&h=450&fit=crop",
     authorName: "Dr. Yuki Tanaka",
     category: "TCK Identity",

@@ -203,7 +203,7 @@ function TherapistsContent() {
     onSuccess: () => {
       invalidateAll();
       setAddSheetOpen(false);
-      toast({ title: "Counselor created successfully" });
+      toast({ title: "Mental health professional created successfully" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -219,7 +219,7 @@ function TherapistsContent() {
       invalidateAll();
       setEditSheetOpen(false);
       setSelectedTherapist(null);
-      toast({ title: "Counselor updated successfully" });
+      toast({ title: "Mental health professional updated successfully" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -233,7 +233,7 @@ function TherapistsContent() {
     onSuccess: () => {
       invalidateAll();
       setApproveTarget(null);
-      toast({ title: "Counselor approved" });
+      toast({ title: "Mental health professional approved" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -248,7 +248,7 @@ function TherapistsContent() {
       invalidateAll();
       setRejectTarget(null);
       setRejectReason("");
-      toast({ title: "Counselor rejected" });
+      toast({ title: "Mental health professional rejected" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -262,7 +262,7 @@ function TherapistsContent() {
     onSuccess: () => {
       invalidateAll();
       setDeleteTarget(null);
-      toast({ title: "Counselor removed" });
+      toast({ title: "Mental health professional removed" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -321,11 +321,11 @@ function TherapistsContent() {
     <div className="p-6">
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <h1 className="text-2xl font-heading font-semibold" data-testid="text-admin-therapists-title">
-          Counselors
+          Mental Health Professionals
         </h1>
         <Button onClick={() => setAddSheetOpen(true)} data-testid="button-add-therapist">
           <Plus className="w-4 h-4 mr-2" />
-          Add Counselor
+          Add Mental Health Professional
         </Button>
       </div>
 
@@ -522,7 +522,7 @@ function TherapistsContent() {
       <AlertDialog open={!!approveTarget} onOpenChange={(open) => !open && setApproveTarget(null)}>
         <AlertDialogContent data-testid="dialog-approve-confirm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Approve Counselor</AlertDialogTitle>
+            <AlertDialogTitle>Approve Mental Health Professional</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to approve {approveTarget?.user?.firstName} {approveTarget?.user?.lastName}? They will be listed in the public directory.
             </AlertDialogDescription>
@@ -544,7 +544,7 @@ function TherapistsContent() {
       <Sheet open={!!rejectTarget} onOpenChange={(open) => { if (!open) { setRejectTarget(null); setRejectReason(""); } }}>
         <SheetContent side="right" size="default" data-testid="dialog-reject">
           <SheetHeader>
-            <SheetTitle>Reject Counselor</SheetTitle>
+            <SheetTitle>Reject Mental Health Professional</SheetTitle>
             <SheetDescription>
               Provide a reason for rejecting {rejectTarget?.user?.firstName} {rejectTarget?.user?.lastName}.
             </SheetDescription>
@@ -582,7 +582,7 @@ function TherapistsContent() {
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent data-testid="dialog-delete-confirm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Counselor</AlertDialogTitle>
+            <AlertDialogTitle>Delete Mental Health Professional</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to remove {deleteTarget?.user?.firstName} {deleteTarget?.user?.lastName}? This action will deactivate their profile.
             </AlertDialogDescription>
@@ -646,8 +646,8 @@ function AddTherapistSheet({
     <Sheet open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) form.reset(); }}>
       <SheetContent side="right" size="lg" data-testid="dialog-add-therapist">
         <SheetHeader>
-          <SheetTitle>Add New Counselor</SheetTitle>
-          <SheetDescription>Create a new counselor account and profile.</SheetDescription>
+          <SheetTitle>Add New Mental Health Professional</SheetTitle>
+          <SheetDescription>Create a new mental health professional account and profile.</SheetDescription>
         </SheetHeader>
         <SheetBody>
           <Form {...form}>
@@ -694,7 +694,7 @@ function AddTherapistSheet({
               <FormField control={form.control} name="bio" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Bio</FormLabel>
-                  <FormControl><Textarea placeholder="About the counselor..." className="min-h-[80px]" {...field} data-testid="input-add-bio" /></FormControl>
+                  <FormControl><Textarea placeholder="About the mental health professional..." className="min-h-[80px]" {...field} data-testid="input-add-bio" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -1109,7 +1109,7 @@ function OverviewTab({
               )} />
               <FormField control={form.control} name="isFeatured" render={({ field }) => (
                 <FormItem className="flex items-center justify-between">
-                  <FormLabel className="!mt-0 text-sm">Featured Counselor</FormLabel>
+                  <FormLabel className="!mt-0 text-sm">Featured Mental Health Professional</FormLabel>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-edit-isFeatured" />
                   </FormControl>
@@ -1380,7 +1380,7 @@ function MembershipTab({ therapistId }: { therapistId: string }) {
     return (
       <div className="text-center py-12 text-muted-foreground" data-testid="text-no-subscription">
         <p className="text-lg font-medium">No Active Subscription</p>
-        <p className="text-sm mt-1">This counselor does not have an active subscription.</p>
+        <p className="text-sm mt-1">This mental health professional does not have an active subscription.</p>
       </div>
     );
   }
@@ -1641,7 +1641,7 @@ function EditTherapistSheet({
               {status.label}
             </Badge>
           </div>
-          <SheetDescription className="sr-only">Edit counselor profile details</SheetDescription>
+          <SheetDescription className="sr-only">Edit mental health professional profile details</SheetDescription>
         </SheetHeader>
         <SheetBody>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

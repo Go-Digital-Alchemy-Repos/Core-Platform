@@ -737,7 +737,7 @@ function SpecializationsTab() {
                 Specialization Settings
               </CardTitle>
               <CardDescription className="mt-1">
-                Manage the list of specializations available in counselor profiles and the directory filter.
+                Manage the list of specializations available in mental health professional profiles and the directory filter.
               </CardDescription>
             </div>
             <Button
@@ -870,7 +870,7 @@ function SpecializationsTab() {
           <SheetHeader>
             <SheetTitle>Delete Specialization</SheetTitle>
             <SheetDescription>
-              This will remove <strong>{deleteTarget?.name}</strong> from the directory filters and counselor profile options. Existing profiles that already have this specialization will retain it until they save changes.
+              This will remove <strong>{deleteTarget?.name}</strong> from the directory filters and mental health professional profile options. Existing profiles that already have this specialization will retain it until they save changes.
             </SheetDescription>
           </SheetHeader>
           <SheetFooter className="mt-6">

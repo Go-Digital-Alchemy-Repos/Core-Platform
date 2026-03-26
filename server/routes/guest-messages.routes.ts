@@ -13,7 +13,7 @@ const phoneRegex = /^[\d\s\-+().]{7,20}$/;
 
 const createGuestMessageSchema = z
   .object({
-    counselorId: z.string().min(1),
+    professionalId: z.string().min(1),
     senderName: z.string().max(100).optional(),
     contactMethod: z.enum(["phone", "email"]),
     contactValue: z.string().min(1).max(200),
@@ -37,9 +37,9 @@ router.post(
   asyncHandler(async (req, res) => {
     const body = createGuestMessageSchema.parse(req.body);
 
-    const counselor = await storage.users.getUser(body.counselorId);
-    if (!counselor || counselor.role !== "therapist") {
-      res.status(404).json({ message: "Counselor not found" });
+    const professional = await storage.users.getUser(body.professionalId);
+    if (!professional || professional.role !== "therapist") {
+      res.status(404).json({ message: "Mental health professional not found" });
       return;
     }
 
@@ -56,7 +56,7 @@ router.post(
     });
 
     const guestMsg = await storage.guestMessages.create({
-      counselorId: body.counselorId,
+      professionalId: body.professionalId,
       senderName: cleanName,
       contactMethod: body.contactMethod,
       contactValue: cleanContact,
@@ -67,11 +67,11 @@ router.post(
 
     setImmediate(async () => {
       try {
-        const prefs = await storage.notifications.getPreferences(body.counselorId);
+        const prefs = await storage.notifications.getPreferences(body.professionalId);
         const senderDisplay = cleanName || "A visitor";
         if (prefs.inAppNewMessage) {
           await storage.notifications.create({
-            userId: body.counselorId,
+            userId: body.professionalId,
             type: "new_message",
             title: `New guest message from ${senderDisplay}`,
             body: `${senderDisplay} sent you a message. Contact: ${body.contactMethod} - ${cleanContact}`,
@@ -96,11 +96,11 @@ router.get(
       return;
     }
 
-    const counselorId = req.user!.role === "admin" && req.query.counselorId
-      ? String(req.query.counselorId)
+    const professionalId = req.user!.role === "admin" && req.query.professionalId
+      ? String(req.query.professionalId)
       : req.user!.id;
 
-    const messages = await storage.guestMessages.getByCounselorId(counselorId);
+    const messages = await storage.guestMessages.getByProfessionalId(professionalId);
     res.json(messages);
   })
 );
@@ -115,7 +115,7 @@ router.put(
       res.status(404).json({ message: "Message not found" });
       return;
     }
-    if (msg.counselorId !== req.user!.id && req.user!.role !== "admin") {
+    if (msg.professionalId !== req.user!.id && req.user!.role !== "admin") {
       res.status(403).json({ message: "Forbidden" });
       return;
     }
@@ -134,7 +134,7 @@ router.delete(
       res.status(404).json({ message: "Message not found" });
       return;
     }
-    if (msg.counselorId !== req.user!.id && req.user!.role !== "admin") {
+    if (msg.professionalId !== req.user!.id && req.user!.role !== "admin") {
       res.status(403).json({ message: "Forbidden" });
       return;
     }

@@ -102,8 +102,8 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: "Full-width hero with heading, subheading, and CTA buttons",
     defaultProps: {
       heading: "Welcome to TCK Wellness",
-      subheading: "Connecting Third Culture Kids with counselors who understand your world.",
-      ctaText: "Find a Counselor",
+      subheading: "Connecting Third Culture Kids with mental health professionals who understand your world.",
+      ctaText: "Find a Mental Health Professional",
       ctaLink: "/directory",
       ctaSecondaryText: "Learn More",
       ctaSecondaryLink: "/about",
@@ -113,7 +113,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     propDefs: [
       { key: "heading", label: "Heading", type: "text", placeholder: "Main heading" },
       { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Supporting text beneath the heading" },
-      { key: "ctaText", label: "Primary Button Text", type: "text", placeholder: "e.g. Find a Counselor" },
+      { key: "ctaText", label: "Primary Button Text", type: "text", placeholder: "e.g. Find a Mental Health Professional" },
       { key: "ctaLink", label: "Primary Button Link", type: "url", placeholder: "/directory" },
       { key: "ctaSecondaryText", label: "Secondary Button Text", type: "text", placeholder: "e.g. Learn More" },
       { key: "ctaSecondaryLink", label: "Secondary Button Link", type: "url", placeholder: "/about" },
@@ -129,7 +129,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       eyebrow: "Our Approach",
       title: "Why TCK-Informed Care Matters",
-      subtitle: "We match you with counselors who understand the TCK experience.",
+      subtitle: "We match you with mental health professionals who understand the TCK experience.",
       alignment: "center",
     },
     propDefs: [
@@ -160,7 +160,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: "Side-by-side text and image with configurable position",
     defaultProps: {
       heading: "About Our Mission",
-      body: "We provide access to culturally informed counselors who understand what it means to grow up between worlds.",
+      body: "We provide access to culturally informed mental health professionals who understand what it means to grow up between worlds.",
       imageUrl: "",
       imageAlt: "About TCK Wellness",
       imageCaption: "",
@@ -182,8 +182,8 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: "Bold call-to-action section with one or two buttons",
     defaultProps: {
       heading: "Ready to Get Started?",
-      subheading: "Find a TCK-informed counselor and begin your journey today.",
-      primaryText: "Browse Counselors",
+      subheading: "Find a TCK-informed mental health professional and begin your journey today.",
+      primaryText: "Browse Mental Health Professionals",
       primaryLink: "/directory",
       secondaryText: "Join the Network",
       secondaryLink: "/join",
@@ -209,7 +209,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
       subtitle: "",
       columns: "3",
       cards: [
-        { title: "Culturally Informed", description: "Counselors who understand the TCK experience.", icon: "Globe" },
+        { title: "Culturally Informed", description: "Mental health professionals who understand the TCK experience.", icon: "Globe" },
         { title: "Specialized Support", description: "Targeted help for unique TCK challenges.", icon: "Heart" },
         { title: "Global Community", description: "Connect with others who share your journey.", icon: "Users" },
       ],
@@ -239,7 +239,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
       title: "Frequently Asked Questions",
       items: [
         { question: "What is a Third Culture Kid?", answer: "A TCK is someone who spent a significant part of their developmental years in a culture different from their parents'." },
-        { question: "How are counselors vetted?", answer: "All counselors complete a thorough application and background verification process." },
+        { question: "How are mental health professionals vetted?", answer: "All mental health professionals complete a thorough application and background verification process." },
       ],
     },
     propDefs: [
@@ -263,7 +263,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       title: "What Our Community Says",
       items: [
-        { quote: "Finding a counselor who truly understood my TCK experience was life-changing.", name: "Sarah M.", role: "TCK Client", location: "Singapore" },
+        { quote: "Finding a mental health professional who truly understood my TCK experience was life-changing.", name: "Sarah M.", role: "TCK Client", location: "Singapore" },
         { quote: "I finally feel seen and understood in a way I never did before.", name: "James T.", role: "TCK Client", location: "Germany" },
       ],
     },
@@ -283,19 +283,35 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     ],
   },
   {
-    type: "featured-counselors",
-    label: "Featured Counselors",
+    type: "featured-professionals",
+    label: "Featured Mental Health Professionals",
     iconName: "UserCheck",
-    description: "Live grid of featured counselors from the directory",
+    description: "Live grid of featured mental health professionals from the directory",
     defaultProps: {
-      title: "Meet Our Counselors",
-      subtitle: "Browse our network of TCK-informed counselors.",
+      title: "Meet Our Mental Health Professionals",
+      subtitle: "Browse our network of TCK-informed mental health professionals.",
       limit: 3,
     },
     propDefs: [
       { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
       { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Supporting text" },
-      { key: "limit", label: "Max Counselors to Show", type: "number", min: 1, max: 12 },
+      { key: "limit", label: "Max Mental Health Professionals to Show", type: "number", min: 1, max: 12 },
+    ],
+  },
+  {
+    type: "featured-counselors",
+    label: "Featured Mental Health Professionals",
+    iconName: "UserCheck",
+    description: "Live grid of featured mental health professionals from the directory",
+    defaultProps: {
+      title: "Meet Our Mental Health Professionals",
+      subtitle: "Browse our network of TCK-informed mental health professionals.",
+      limit: 3,
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
+      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Supporting text" },
+      { key: "limit", label: "Max Mental Health Professionals to Show", type: "number", min: 1, max: 12 },
     ],
   },
   {

@@ -31,7 +31,7 @@ router.put(
     }
 
     const updated = await storage.therapists.updateProfile(profile.id, req.body);
-    await storage.activity.log(req.user!.id, "profile_update", "Profile updated by counselor");
+    await storage.activity.log(req.user!.id, "profile_update", "Profile updated by mental health professional");
     res.json(updated);
   })
 );

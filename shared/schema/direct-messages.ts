@@ -7,15 +7,15 @@ import { users } from "./users";
 export const conversations = pgTable("conversations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   clientId: varchar("client_id").notNull().references(() => users.id),
-  counselorId: varchar("counselor_id").notNull().references(() => users.id),
+  professionalId: varchar("professional_id").notNull().references(() => users.id),
   lastMessageAt: timestamp("last_message_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_conv_client_id").on(table.clientId),
-  index("idx_conv_counselor_id").on(table.counselorId),
+  index("idx_conv_counselor_id").on(table.professionalId),
   index("idx_conv_updated_at").on(table.updatedAt),
-  index("idx_conv_participants").on(table.clientId, table.counselorId),
+  index("idx_conv_participants").on(table.clientId, table.professionalId),
   index("idx_conv_last_message").on(table.lastMessageAt),
 ]);
 

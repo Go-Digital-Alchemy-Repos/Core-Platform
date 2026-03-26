@@ -33,23 +33,23 @@ const stats = [
 
 const testimonials = [
   {
-    quote: "For the first time, I didn't have to explain what it means to grow up between cultures. My counselor just understood.",
+    quote: "For the first time, I didn't have to explain what it means to grow up between cultures. My mental health professional just understood.",
     name: "Sarah M.",
     role: "Adult TCK",
     location: "Singapore",
     avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "TCK Wellness connected me with a counselor who speaks my language — literally and figuratively. It's been life-changing.",
+    quote: "TCK Wellness connected me with a mental health professional who speaks my language — literally and figuratively. It's been life-changing.",
     name: "James K.",
     role: "Expat Parent",
     location: "Dubai",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "As a counselor, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
+    quote: "As a mental health professional, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
     name: "Dr. Amara O.",
-    role: "Licensed Counselor",
+    role: "Licensed Mental Health Professional",
     location: "Nairobi",
     avatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&h=100&fit=crop&crop=faces",
   },
@@ -61,7 +61,7 @@ const testimonials = [
     avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "The specialization filters helped me find a counselor experienced with military kid transitions. Highly recommend.",
+    quote: "The specialization filters helped me find a mental health professional experienced with military kid transitions. Highly recommend.",
     name: "Marcus W.",
     role: "Military TCK",
     location: "Virginia, USA",
@@ -77,7 +77,7 @@ const testimonials = [
 ];
 
 const vettedMeans = [
-  "Every counselor completes a detailed application process",
+  "Every mental health professional completes a detailed application process",
   "Credentials and licensure are verified",
   "Training or lived experience with TCK/cross-cultural populations is required",
   "Profiles are reviewed by our team before being published",
@@ -96,11 +96,11 @@ const faqs = [
     answer: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
   },
   {
-    question: "Who can use TCK Wellness to find a counselor?",
+    question: "Who can use TCK Wellness to find a mental health professional?",
     answer: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
   },
   {
-    question: "How are counselors vetted before joining the directory?",
+    question: "How are mental health professionals vetted before joining the directory?",
     answer: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
   },
   {
@@ -255,7 +255,7 @@ export default function AboutPage() {
                 History
               </h2>
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                TCK Wellness was born from the lived experience of growing up between cultures. Our founders — Adult TCKs and mental health advocates — experienced firsthand how difficult it is to find a counselor who truly understands what it means to call multiple countries "home." In 2024, they set out to build a bridge between Third Culture Kids and the culturally competent professionals who serve them.
+                TCK Wellness was born from the lived experience of growing up between cultures. Our founders — Adult TCKs and mental health advocates — experienced firsthand how difficult it is to find a mental health professional who truly understands what it means to call multiple countries "home." In 2024, they set out to build a bridge between Third Culture Kids and the culturally competent professionals who serve them.
               </p>
             </div>
 
@@ -264,7 +264,7 @@ export default function AboutPage() {
                 Vision & Mission
               </h2>
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Our vision is a world where every Third Culture Kid has access to mental health support that honors their multicultural identity. Our mission is to build the most trusted directory of TCK-informed counselors — vetted, accessible, and global — so that no one has to navigate the complexities of cross-cultural life alone.
+                Our vision is a world where every Third Culture Kid has access to mental health support that honors their multicultural identity. Our mission is to build the most trusted directory of TCK-informed mental health professionals — vetted, accessible, and global — so that no one has to navigate the complexities of cross-cultural life alone.
               </p>
             </div>
           </div>
@@ -315,7 +315,7 @@ export default function AboutPage() {
               Why TCK Informed?
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Traditional therapy models were developed within a single cultural framework. When TCKs bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A TCK-informed counselor understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.
+              Traditional therapy models were developed within a single cultural framework. When TCKs bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A TCK-informed mental health professional understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.
             </p>
           </div>
         </div>
@@ -358,7 +358,7 @@ export default function AboutPage() {
           What Are People Saying?
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mx-auto mb-10 sm:mb-14">
-          Hear from TCKs, expat families, and counselors who have found their match.
+          Hear from TCKs, expat families, and mental health professionals who have found their match.
         </p>
         <TestimonialsCarousel />
       </section>

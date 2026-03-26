@@ -89,7 +89,7 @@ const contactsConfig = {
 } satisfies ChartConfig;
 
 const specConfig = {
-  count: { label: "Counselors", color: "hsl(var(--chart-2))" },
+  count: { label: "Mental Health Professionals", color: "hsl(var(--chart-2))" },
 } satisfies ChartConfig;
 
 const pieConfig = {
@@ -140,7 +140,7 @@ function DashboardContent() {
 
   const statCards = [
     { title: "Total Users", value: analytics?.totalUsers ?? 0, icon: Users, color: "text-blue-500" },
-    { title: "Total Counselors", value: stats?.totalTherapists ?? 0, icon: UserCheck, color: "text-emerald-500" },
+    { title: "Total Mental Health Professionals", value: stats?.totalTherapists ?? 0, icon: UserCheck, color: "text-emerald-500" },
     { title: "Active Subscriptions", value: stats?.activeSubscriptions ?? 0, icon: CreditCard, color: "text-violet-500" },
     { title: "Pending Approvals", value: stats?.pendingTherapists ?? 0, icon: Clock, color: "text-amber-500" },
     { title: "Unread Messages", value: stats?.unreadMessages ?? 0, icon: Mail, color: "text-rose-500" },
@@ -251,7 +251,7 @@ function DashboardContent() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card data-testid="card-therapist-status">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Counselor Status</CardTitle>
+            <CardTitle className="text-base">Mental Health Professional Status</CardTitle>
             <CardDescription>Approval breakdown</CardDescription>
           </CardHeader>
           <CardContent>
@@ -395,7 +395,7 @@ function DashboardContent() {
         <Card data-testid="card-top-specializations">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Top Specializations</CardTitle>
-            <CardDescription>Most common counselor specializations</CardDescription>
+            <CardDescription>Most common mental health professional specializations</CardDescription>
           </CardHeader>
           <CardContent>
             {(analytics?.topSpecializations ?? []).length > 0 ? (
