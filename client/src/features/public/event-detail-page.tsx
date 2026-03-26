@@ -256,20 +256,6 @@ function RegistrationSection({
     );
   }
 
-  const payMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/stripe/create-event-checkout-session", { eventId: event.id });
-      const { url } = await res.json();
-      return url;
-    },
-    onSuccess: (url) => {
-      window.location.href = url;
-    },
-    onError: (error: Error) => {
-      toast({ title: "Checkout failed", description: error.message, variant: "destructive" });
-    },
-  });
-
   if (registration && registration.status === "confirmed" && (registration.paymentStatus === "paid" || registration.paymentStatus === "not_required")) {
     return (
       <Card className="border-green-600/30" data-testid="card-registration-confirmed">
@@ -310,20 +296,8 @@ function RegistrationSection({
             <h3 className="font-heading text-lg font-semibold">Payment Pending</h3>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            You've started the registration process but haven't completed the payment yet.
+            You've registered but payment has not been completed yet. Please contact us for payment details.
           </p>
-          <Button
-            onClick={() => payMutation.mutate()}
-            disabled={payMutation.isPending}
-            data-testid="button-resume-checkout"
-          >
-            {payMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Ticket className="mr-2 h-4 w-4" />
-            )}
-            Resume Checkout
-          </Button>
         </CardContent>
       </Card>
     );
@@ -371,18 +345,11 @@ function RegistrationSection({
             : "Secure your spot for this free event. You'll receive a confirmation email after registering."}
         </p>
         {isPaid ? (
-          <Button
-            onClick={() => payMutation.mutate()}
-            disabled={payMutation.isPending}
-            data-testid="button-register-and-pay"
-          >
-            {payMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Ticket className="mr-2 h-4 w-4" />
-            )}
-            Register & Pay {formatCurrency(event.registrationFee || 0, event.registrationCurrency || "usd")}
-          </Button>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Registration fee: {formatCurrency(event.registrationFee || 0, event.registrationCurrency || "usd")}. Online payments are not currently enabled. Please contact us to register.
+            </p>
+          </div>
         ) : (
           <Button
             onClick={() => registerMutation.mutate()}

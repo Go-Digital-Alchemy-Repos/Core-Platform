@@ -4,13 +4,13 @@
 TCK Wellness is a platform designed to connect Third Culture Kids (TCKs) with specialized mental health counselors. It aims to provide essential mental health support to the TCK community through features such as a searchable counselor directory, custom authentication, map integration, subscription management, and a comprehensive admin dashboard.
 
 ## User Preferences
-- All visible text uses "Counselor"/"Counselors" throughout the UI (navbar, footer, home, directory, admin, auth pages).
+- All visible text uses "Mental Health Professional" throughout the UI (navbar, footer, home, directory, admin, auth pages).
 - Code identifiers, API routes (`/api/therapist/*`, `/api/therapists`), DB columns, and role values (`"therapist"`) remain unchanged.
 
 ## System Architecture
 
 ### UI/UX Decisions
-- **Consistent Terminology**: "Counselor"/"Counselors" is used across all UI.
+- **Consistent Terminology**: "Mental Health Professional(s)" is used across all UI.
 - **Component Library**: `shadcn/ui` with Tailwind CSS for a responsive design.
 - **Responsive Design**: Custom breakpoints (xs=480px, sm=640px, md=768px, lg=1024px, xl=1280px).
 - **Form/Detail Popups**: `Sheet` components for forms and details; `AlertDialog` for confirmations.
@@ -24,9 +24,9 @@ TCK Wellness is a platform designed to connect Third Culture Kids (TCKs) with sp
 - **Authentication**: Custom JWT with `bcryptjs` and HTTP-only cookies, supporting admin, therapist, and client roles.
 - **Core Features**:
     - **Counselor Directory**: Searchable profiles with multi-select specialization filtering, map integration, and toggle filters for "Accepting Clients" and "Willing to Travel".
-    - **Subscription Management**: Stripe integration for counselor memberships.
+    - **Subscription Management**: Membership tiers for professionals (payments not currently enabled).
     - **Event Management**: Creation, management, and display of virtual, in-person, and hybrid events with registration and notifications. Admin event editor uses a full-page tabbed drawer with tabs for Details, Registrants, Video Archive, and Recurring Events. Recurring event fields: `isRecurring`, `recurrencePattern` (daily/weekly/biweekly/monthly/quarterly/yearly/custom), `recurrenceInterval`, `recurrenceDaysOfWeek`, `recurrenceEndDate`, `recurrenceCount`, `parentEventId`.
-    - **Recording Archives**: Role-aware video archives for past event recordings. Admins toggle `showInArchives` per event, set access as `free` or `paid` (one-time Stripe purchase), and set a price in cents. Paid recording URLs are server-redacted for non-purchasers. Purchases tracked in `recording_purchases` table with permanent access. Hidden from client-role users.
+    - **Recording Archives**: Role-aware video archives for past event recordings. Admins toggle `showInArchives` per event, set access as `free` or `paid`, and set a price in cents. Paid recording URLs are server-redacted for non-purchasers. Purchases tracked in `recording_purchases` table with permanent access. Hidden from client-role users.
     - **Admin Dashboard**: Comprehensive management for users, memberships, events, content, and system settings.
     - **Internal Messaging**: Direct messaging with rich text and attachments. Includes guest messaging for unauthenticated visitors via a separate `guest_messages` table (not tied to the conversations system). Guest messages require age 18+ and PHI/HIPAA acknowledgment checkboxes.
     - **Guest Messaging Flow**: When unauthenticated visitors click "Contact This Counselor," they navigate to `/messages?counselor=<id>` where a modal offers "Register for Free" or "Continue as Guest." Guest compose form requires contact preference (phone/email), contact value, message, and two acknowledgment checkboxes. Rate-limited POST endpoint. Counselors view guest messages at `/therapist/guest-messages`.

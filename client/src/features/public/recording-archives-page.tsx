@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link, Redirect, useSearch } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Event } from "@shared/schema/events";
 import type { RecordingPurchase } from "@shared/schema/recording-purchases";
@@ -237,19 +237,6 @@ export default function RecordingArchivesPage() {
     );
   }, [purchases]);
 
-  const purchaseMutation = useMutation({
-    mutationFn: async (eventId: string) => {
-      const res = await apiRequest("POST", "/api/stripe/create-recording-checkout", { eventId });
-      return res.json();
-    },
-    onSuccess: (data: { url: string }) => {
-      window.location.href = data.url;
-    },
-    onError: (err: Error) => {
-      toast({ title: "Purchase failed", description: err.message, variant: "destructive" });
-    },
-  });
-
   const years = useMemo(() => {
     if (!recordings) return [];
     const yearSet = new Set<string>();
@@ -361,9 +348,9 @@ export default function RecordingArchivesPage() {
                 key={event.id}
                 event={event}
                 onWatch={setSelectedEvent}
-                onPurchase={(eventId) => purchaseMutation.mutate(eventId)}
+                onPurchase={() => {}}
                 isPurchased={purchasedEventIds.has(event.id)}
-                isPurchasing={purchaseMutation.isPending && purchaseMutation.variables === event.id}
+                isPurchasing={false}
                 isLoggedIn={!!user}
               />
             ))}

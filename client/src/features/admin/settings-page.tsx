@@ -82,33 +82,6 @@ interface IntegrationConfig {
 
 const INTEGRATIONS: IntegrationConfig[] = [
   {
-    category: "stripe",
-    title: "Stripe",
-    description: "Payment processing for therapist subscriptions",
-    icon: CreditCard,
-    replitConnected: true,
-    fields: [
-      {
-        key: "stripe_secret_key",
-        label: "Secret Key",
-        isSecret: true,
-        placeholder: "sk_live_...",
-      },
-      {
-        key: "stripe_publishable_key",
-        label: "Publishable Key",
-        isSecret: false,
-        placeholder: "pk_live_...",
-      },
-      {
-        key: "stripe_webhook_secret",
-        label: "Webhook Secret",
-        isSecret: true,
-        placeholder: "whsec_...",
-      },
-    ],
-  },
-  {
     category: "mailgun",
     title: "Mailgun",
     description: "Transactional email delivery service",

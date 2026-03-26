@@ -130,9 +130,7 @@ export const originCheck: RequestHandler = (req: Request, res: Response, next: N
     return next();
   }
 
-  if (req.path === "/api/stripe/webhook") {
-    return next();
-  }
+
 
   if (isDev) {
     return next();

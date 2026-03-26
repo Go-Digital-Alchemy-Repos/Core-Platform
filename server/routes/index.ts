@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import authRoutes from "./auth.routes";
 import directoryRoutes from "./directory.routes";
 import therapistRoutes from "./therapist.routes";
-import stripeRoutes from "./stripe.routes";
+
 import adminRoutes from "./admin/index";
 import settingsRoutes from "./settings.routes";
 import eventsRoutes from "./events.routes";
@@ -31,7 +31,7 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/auth", authRoutes);
   app.use("/api/therapists", directoryRoutes);
   app.use("/api/therapist", therapistRoutes);
-  app.use("/api/stripe", stripeRoutes);
+
   app.use("/api/admin", adminRoutes);
   app.use("/api/admin", settingsRoutes);
   app.use("/api/events", eventsRoutes);

@@ -1,12 +1,10 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, getQueryFn } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
 import type { TherapistSubscription, MembershipTier } from "@shared/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle, AlertCircle, Clock, CreditCard, ExternalLink, Loader2, Check } from "lucide-react";
+import { CheckCircle, AlertCircle, Clock, CreditCard, Check } from "lucide-react";
 
 function getStatusBadge(status: string | undefined) {
   switch (status) {
@@ -24,46 +22,14 @@ function getStatusBadge(status: string | undefined) {
 }
 
 export default function SubscriptionPage() {
-  const { toast } = useToast();
-
   const { data: subscription, isLoading: subLoading } = useQuery<TherapistSubscription | null>({
-    queryKey: ["/api/stripe/subscription-status"],
+    queryKey: ["/api/membership-tiers"],
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
   const { data: tiers, isLoading: tiersLoading } = useQuery<MembershipTier[]>({
     queryKey: ["/api/membership-tiers"],
     queryFn: getQueryFn({ on401: "throw" }),
-  });
-
-  const checkoutMutation = useMutation({
-    mutationFn: async (priceId: string) => {
-      const res = await apiRequest("POST", "/api/stripe/create-checkout-session", { priceId });
-      return await res.json();
-    },
-    onSuccess: (data: { url: string }) => {
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const portalMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/stripe/create-portal-session");
-      return await res.json();
-    },
-    onSuccess: (data: { url: string }) => {
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
   });
 
   if (subLoading || tiersLoading) {
@@ -85,7 +51,7 @@ export default function SubscriptionPage() {
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <h1 className="text-2xl font-heading font-semibold" data-testid="text-subscription-title">
-        Subscription
+        Membership
       </h1>
 
       <Card data-testid="card-current-plan">
@@ -93,37 +59,18 @@ export default function SubscriptionPage() {
           <div>
             <CardTitle className="text-base">Current Plan</CardTitle>
             <CardDescription>
-              {subscription?.status === "active"
-                ? "Your subscription is active"
-                : "No active subscription"}
+              {subscription ? "Your membership details" : "No active membership"}
             </CardDescription>
           </div>
           <CreditCard className="h-5 w-5 text-muted-foreground" />
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center gap-2 flex-wrap">
-            {getStatusBadge(subscription?.status ?? undefined)}
-            {subscription?.currentPeriodEnd && (
-              <span className="text-sm text-muted-foreground">
-                Current period ends {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
-              </span>
-            )}
+            {getStatusBadge(undefined)}
           </div>
-          {subscription?.stripeCustomerId && (
-            <Button
-              variant="outline"
-              onClick={() => portalMutation.mutate()}
-              disabled={portalMutation.isPending}
-              data-testid="button-manage-billing"
-            >
-              {portalMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <ExternalLink className="w-4 h-4 mr-2" />
-              )}
-              Manage Billing
-            </Button>
-          )}
+          <p className="text-sm text-muted-foreground">
+            Online payments are not currently enabled. Please contact us for membership details.
+          </p>
         </CardContent>
       </Card>
 
@@ -164,33 +111,6 @@ export default function SubscriptionPage() {
                         </li>
                       ))}
                     </ul>
-                  )}
-                  {tier.stripePriceIdMonthly && (
-                    <Button
-                      className="w-full"
-                      onClick={() => checkoutMutation.mutate(tier.stripePriceIdMonthly!)}
-                      disabled={checkoutMutation.isPending}
-                      data-testid={`button-subscribe-${tier.id}`}
-                    >
-                      {checkoutMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : null}
-                      Subscribe Monthly
-                    </Button>
-                  )}
-                  {tier.stripePriceIdAnnual && (
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => checkoutMutation.mutate(tier.stripePriceIdAnnual!)}
-                      disabled={checkoutMutation.isPending}
-                      data-testid={`button-subscribe-annual-${tier.id}`}
-                    >
-                      {checkoutMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : null}
-                      Subscribe Annually
-                    </Button>
                   )}
                 </CardContent>
               </Card>

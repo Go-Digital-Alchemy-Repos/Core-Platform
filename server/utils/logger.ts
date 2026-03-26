@@ -44,7 +44,7 @@ export const logger = {
   http: createLogger("http"),
   email: createLogger("email"),
   r2: createLogger("r2"),
-  stripe: createLogger("stripe"),
+
   auth: createLogger("auth"),
   app: createLogger("app"),
   db: createLogger("db"),

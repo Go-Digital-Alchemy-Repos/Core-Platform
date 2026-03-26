@@ -1490,7 +1490,7 @@ function EventsContent() {
                                     </FormControl>
                                     <SelectContent>
                                       <SelectItem value="free">Free — Open to all mental health professionals</SelectItem>
-                                      <SelectItem value="paid">Paid — One-time purchase via Stripe</SelectItem>
+                                      <SelectItem value="paid">Paid — One-time purchase</SelectItem>
                                     </SelectContent>
                                   </Select>
                                   <FormMessage />
@@ -1524,7 +1524,7 @@ function EventsContent() {
                                       </div>
                                     </FormControl>
                                     <p className="text-xs text-muted-foreground">
-                                      One-time purchase price. Mental health professionals will pay via Stripe and have permanent access after purchase.
+                                      One-time purchase price. Mental health professionals will pay and have permanent access after purchase.
                                     </p>
                                     <FormMessage />
                                   </FormItem>
@@ -1537,7 +1537,7 @@ function EventsContent() {
                               {watchRecordingAccess === "paid" ? (
                                 <ul className="text-xs text-muted-foreground space-y-1.5 list-disc pl-4">
                                   <li>Mental health professionals see a "Purchase" button on the Video Archives page</li>
-                                  <li>They're redirected to Stripe Checkout to complete payment</li>
+                                  <li>They complete payment to gain access</li>
                                   <li>After payment, they have permanent access to the recording</li>
                                   <li>The recording URL is protected — only purchasers can access it</li>
                                 </ul>

@@ -1432,9 +1432,9 @@ function MembershipTab({ therapistId }: { therapistId: string }) {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Stripe ID</p>
-            <p className="text-sm mt-1 font-mono text-muted-foreground truncate" data-testid="text-stripe-id">
-              {subscription.stripeSubscriptionId ?? "N/A"}
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Subscription ID</p>
+            <p className="text-sm mt-1 font-mono text-muted-foreground truncate" data-testid="text-subscription-id">
+              {subscription.id ?? "N/A"}
             </p>
           </CardContent>
         </Card>
