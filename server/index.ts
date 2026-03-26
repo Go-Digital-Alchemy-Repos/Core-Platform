@@ -4,6 +4,7 @@ import path from "path";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { WebhookHandlers } from "./webhooks/stripe.handler";
 import {
   enforceRequiredSecrets,
   securityHeaders,
@@ -25,6 +26,17 @@ declare module "http" {
     rawBody: unknown;
   }
 }
+
+app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  try {
+    const signature = req.headers["stripe-signature"] as string;
+    await WebhookHandlers.processWebhook(req.body, signature);
+    res.json({ received: true });
+  } catch (err) {
+    logger.stripe.error("Webhook endpoint error", err, { reqId: req.requestId });
+    res.status(400).json({ error: "Webhook processing failed" });
+  }
+});
 
 app.use(
   express.json({

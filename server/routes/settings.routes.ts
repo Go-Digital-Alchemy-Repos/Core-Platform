@@ -73,13 +73,25 @@ router.delete(
 );
 
 const testConnectionSchema = z.object({
-  integration: z.enum(["mailgun", "cloudflare_r2"]),
+  integration: z.enum(["stripe", "mailgun", "cloudflare_r2"]),
 });
 
 router.post(
   "/settings/test-connection",
   asyncHandler(async (req, res) => {
     const { integration } = testConnectionSchema.parse(req.body);
+
+    if (integration === "stripe") {
+      try {
+        const { getStripeClient } = await import("../config/stripe");
+        const stripe = await getStripeClient();
+        await stripe.accounts.retrieve();
+        res.json({ success: true, message: "Stripe connection successful" });
+      } catch (err: any) {
+        res.json({ success: false, message: err.message || "Stripe connection failed" });
+      }
+      return;
+    }
 
     if (integration === "mailgun") {
       const result = await testMailgunConnection();
