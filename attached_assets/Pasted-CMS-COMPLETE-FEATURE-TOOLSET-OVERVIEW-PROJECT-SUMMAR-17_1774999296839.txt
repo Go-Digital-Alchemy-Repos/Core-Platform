@@ -1,0 +1,220 @@
+CMS — COMPLETE FEATURE & TOOLSET OVERVIEW
+==========================================
+
+PROJECT SUMMARY
+---------------
+Full-stack CMS. Built with React + Vite (frontend), Express + Drizzle ORM + PostgreSQL (backend). Dark-themed design system. Includes a visual block-based page builder (Puck editor), blog/post management, theme system, landing page generator, campaign packs, navigation menus, and a comprehensive admin panel.
+
+
+========================================
+1. VISUAL PAGE BUILDER (Puck Editor)
+========================================
+Block-based drag-and-drop editor for assembling pages. Each block has configurable fields (text, textarea, number, select, checkbox, array, image, icon). Supports draft/published/scheduled workflows, content validation, and HTML sanitization.
+
+BLOCK REGISTRY SYSTEM:
+- Central registry with registerBlock() / getBlock() / getAllBlocks()
+- Each block has: type, label, category, version, description, renderComponent, defaultProps, puckFields
+- Field types: text, textarea, number, select, checkbox, array, object, image, icon
+
+BLOCK CATEGORIES (5):
+1. Layout — Structural and hero sections
+2. Marketing — Conversion-focused blocks
+3. Trust — Social proof and credibility
+4. Media — Image and visual content
+5. Utility — Informational and supporting content
+
+
+========================================
+2. ALL CMS BLOCKS
+========================================
+
+LAYOUT:
+- Hero — Full-width hero with headline, subtitle, badge, primary/secondary CTAs, background image/video, split or stacked layouts, overlay opacity, min height, theme variants
+
+MARKETING:
+- Feature List — Icon + title + description list in 1-3 columns
+- Feature Grid — Grid of feature cards with icons, titles, descriptions, gradient title highlight
+- Call to Action — Headline, subheadline, primary/secondary CTA buttons
+- CTA (Variant) — Title with gradient highlight, subtitle, icon button, secondary button
+- Objection Busters — Common concerns with reassuring responses
+- Before & After Expectations — Timeline-style "what to expect" milestones
+
+TRUST:
+- Testimonials — Customer quotes with avatars; manual or Google Reviews auto-fetch; cards or slider layout
+- Trust Bar — Row of trust signals with icons, labels, sublabels (row or wrap layout)
+- Press Mentions — Media/press logo display with optional links
+- Social Proof Stats — Key statistics with values and labels plus disclaimer
+
+MEDIA:
+- Image — Single image with alt, caption, aspect ratio, rounded corners, optional link
+- Image Grid — Multi-image grid with configurable columns and spacing
+- Video Embed — YouTube/Vimeo embed with thumbnail and caption
+- Slider — Image/content slider
+
+UTILITY:
+- Rich Text — HTML content block with title and alignment options
+- FAQ — Accordion-style Q&A with multi-open toggle
+- Divider — Horizontal rule (solid/dashed/dotted/thick, default/primary color)
+- Spacer — Vertical spacing (xs/sm/md/lg/xl)
+- Stats Bar — Row of stats with icons, values, labels
+- Icon Grid — Grid of icon + title cards (2-5 columns)
+- Blog Post Feed — Paginated post grid/list with search, category filter, tag filter
+- Blog Featured Post — Large featured blog post card
+- Section Reference — Reference to a saved/reusable section by ID
+- Benefit Stack — Benefits list in stack or timeline layout with icons and emphasis toggle
+- Science Explainer — Evidence-based content sections with citations and disclaimer
+- Safety Checklist — Required/optional checklist items with disclaimer
+- Guarantee & Warranty — Guarantee bullets, warranty summary, support CTA
+- Delivery & Setup — Step-by-step process with "what's included" list
+- Recovery Use Cases — Persona-based messaging for different audiences with bullet points
+- Protocol Builder — Step-by-step protocols by experience level with safety disclaimer
+
+
+========================================
+3. THEME SYSTEM
+========================================
+CSS-variable based theming with full design token architecture.
+
+THEME TOKEN CATEGORIES:
+- Colors (15 tokens): bg, surface, surfaceAlt, text, textMuted, border, primary, primaryText, secondary, secondaryText, accent, accentText, success, warning, danger
+- Typography: fontFamily, fontSizeScale, lineHeight, letterSpacing
+- Radius: sm, md, lg, xl
+- Shadows: sm, md, lg
+- Spacing: base value + scale array
+- Buttons: radius (sm/md/lg), style (solid/soft/outline), paddingY, paddingX
+- Layout: containerMaxWidth, sectionPaddingY, sectionPaddingX
+
+10 THEME PRESETS:
+1. Ocean Blue — Deep ocean tones with cyan accents (default)
+2. Midnight — Ultra-dark with soft blue
+3. Minimal Light — Clean white/gray light mode
+4. Contrast Pro — High-contrast dark with vivid accents
+5. Warm Neutral — Earthy tones with terracotta/orange
+6. Slate & Blue — Cool blue-gray with steel accents
+7. Frost — Icy crystalline pale blue
+8. Charcoal Gold — Deep charcoal with premium gold
+9. Clean Clinical — Spa-like serene mint/teal light theme
+10. Energetic Blue Pop — Vibrant electric blue + purple
+
+
+========================================
+4. PAGE TEMPLATES (Pre-built Layouts)
+========================================
+1. Blank Page — Empty canvas
+2. Landing Page v1 — Hero + features + testimonials + trust bar + CTA + FAQ
+3. Content Story v1 — Hero + rich text + image grid + features + testimonials + CTA
+4. Conversion Funnel v1 — Hero + trust bar + testimonials + CTA + FAQ + closing CTA
+5. Blog Page v1 — Hero + featured post card + searchable post feed + CTA
+
+
+========================================
+5. CMS DESIGN PRIMITIVES
+========================================
+Shared components used across all blocks:
+
+TYPOGRAPHY: Heading, Text, Eyebrow
+LAYOUT: Container, Section, Stack
+MOTION: FadeIn (Framer Motion wrapper)
+UI: CmsButton
+UNKNOWN: UnknownBlock (fallback for unrecognized block types)
+
+
+========================================
+6. LANDING PAGE & CAMPAIGN GENERATORS
+========================================
+- Landing Page Generator: 4-step wizard for deterministic assembly of high-conversion landing pages
+- Campaign Pack Generator: Coordinated multi-page campaign bundles for promotions
+
+
+========================================
+7. BLOG / POST MANAGEMENT
+========================================
+- Status workflow: Draft → Published → Archived
+- Scheduled publishing
+- Tags and categories with slug-based filtering
+- SEO fields (meta title, description, OG tags)
+- Rich text editing
+- Featured post designation
+- Post feed with search, category/tag filters, pagination
+
+
+========================================
+8. NAVIGATION & MENUS
+========================================
+- Drag-and-drop menu builder
+- Nested items (up to depth 3)
+- Location binding (Header, Footer, etc.)
+- Sidebar management
+
+
+========================================
+9. SAVED SECTIONS & KITS
+========================================
+- Reusable block groups ("Sections")
+- Can be referenced via SectionRef block or detached for per-page customization
+- Managed via admin routes
+
+
+========================================
+10. SEO MANAGEMENT
+========================================
+- Per-page/post meta titles and descriptions
+- Open Graph tags
+- JSON-LD structured data
+- Google Analytics 4 integration (page views + events)
+
+
+========================================
+11. MEDIA MANAGEMENT
+========================================
+- Centralized media library
+- Image upload with R2/Object Storage backend
+- Logo branding upload, preview, and dynamic display
+- Image field renderer for block editor (custom Puck field)
+
+
+========================================
+12. PAGE STATUS WORKFLOW
+========================================
+- Draft — Work in progress, not publicly visible
+- Published — Live and publicly accessible
+- Schedule — Set a future publish date/time
+
+
+========================================
+13. ADMIN CMS ROUTES (Backend)
+========================================
+- Pages: CRUD, publish/unpublish, schedule
+- Posts: CRUD, publish/schedule/archive, categories, tags
+- Menus: CRUD, drag-and-drop reorder
+- Sections: CRUD, reusable section management
+- Templates: List and apply page templates
+- Themes: Get/set active theme, list presets, custom token overrides
+- Site Settings: Global config (branding, SEO defaults, etc.)
+- Sidebars: Sidebar widget management
+- Generator: Landing page assembly, campaign pack assembly
+
+
+========================================
+14. PUBLIC CMS ROUTES (Frontend Rendering)
+========================================
+- /page/:slug — Dynamic CMS pages
+- /blog and /blog/:slug — Blog listing and detail
+- /api/cms/pages/:slug — Page content JSON
+- /api/cms/sections/:id — Section content JSON
+- /api/cms/settings — Public site settings
+- /api/cms/theme — Active theme tokens
+- /api/cms/sidebars — Sidebar content
+
+
+========================================
+15. TECH STACK SUMMARY
+========================================
+Frontend: React 18, Vite, Tailwind CSS, Framer Motion, Radix UI, wouter (routing), Puck (page builder)
+Backend: Express 4, Node.js v22+, Drizzle ORM
+Database: PostgreSQL
+Storage: Object Storage / Cloudflare R2
+Auth: Custom email/password + magic link
+Real-time: Socket.IO for notifications
+Email: Mailgun
+Analytics: Google Analytics 4
