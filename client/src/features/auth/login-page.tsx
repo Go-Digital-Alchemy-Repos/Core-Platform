@@ -144,6 +144,42 @@ export default function LoginPage() {
               </div>
             </CardContent>
           </Card>
+
+          {import.meta.env.DEV && (
+            <Card className="border-dashed border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                  Dev Test Accounts
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <button
+                  type="button"
+                  className="w-full rounded-md border border-amber-200 dark:border-amber-800 bg-white dark:bg-amber-950/30 px-3 py-2 text-left text-sm hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                  data-testid="button-fill-client"
+                  onClick={() => {
+                    form.setValue("email", "client@test.com");
+                    form.setValue("password", "Client123!");
+                  }}
+                >
+                  <span className="font-medium text-amber-800 dark:text-amber-300">Customer</span>
+                  <span className="ml-2 text-muted-foreground">client@test.com / Client123!</span>
+                </button>
+                <button
+                  type="button"
+                  className="w-full rounded-md border border-amber-200 dark:border-amber-800 bg-white dark:bg-amber-950/30 px-3 py-2 text-left text-sm hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                  data-testid="button-fill-therapist"
+                  onClick={() => {
+                    form.setValue("email", "therapist@test.com");
+                    form.setValue("password", "Therapist123!");
+                  }}
+                >
+                  <span className="font-medium text-amber-800 dark:text-amber-300">Therapist</span>
+                  <span className="ml-2 text-muted-foreground">therapist@test.com / Therapist123!</span>
+                </button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </PageLayout>
