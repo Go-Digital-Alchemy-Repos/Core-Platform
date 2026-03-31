@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { UserPen, CreditCard, CheckCircle, AlertCircle, Clock, XCircle, AlertTriangle, Send } from "lucide-react";
+import { UserPen, CreditCard, CheckCircle, AlertCircle, Clock, XCircle, AlertTriangle, Send, ClipboardList } from "lucide-react";
 
 
 function computeProfileCompletion(profile: TherapistProfile | null): number {
@@ -98,13 +98,21 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
       <AlertTitle data-testid="text-approval-title">Registered</AlertTitle>
       <AlertDescription data-testid="text-approval-message" className="space-y-3">
         <p>Welcome! To be listed in our counselor directory, you'll need to complete your profile and submit an application for review.</p>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Link href="/therapist/profile">
             <Button size="sm" data-testid="button-complete-profile">
               <UserPen className="w-4 h-4 mr-2" />
               Complete Your Profile
             </Button>
           </Link>
+          <Button
+            size="sm"
+            className="bg-accent text-accent-foreground hover:bg-accent/90"
+            data-testid="button-apply-membership"
+          >
+            <ClipboardList className="w-4 h-4 mr-2" />
+            Apply for Membership and Get Listed
+          </Button>
         </div>
       </AlertDescription>
     </Alert>
