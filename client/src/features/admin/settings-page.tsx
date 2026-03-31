@@ -86,7 +86,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
     title: "Stripe",
     description: "Payment processing for therapist subscriptions",
     icon: CreditCard,
-    replitConnected: true,
+    replitConnected: false,
     fields: [
       {
         key: "stripe_secret_key",

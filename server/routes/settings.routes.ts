@@ -53,6 +53,11 @@ router.put(
       data.isSecret
     );
 
+    if (data.category === "stripe") {
+      const { resetStripeClient } = await import("../config/stripe");
+      resetStripeClient();
+    }
+
     if (data.category === "cloudflare_r2") {
       r2Service.resetClient();
     }
