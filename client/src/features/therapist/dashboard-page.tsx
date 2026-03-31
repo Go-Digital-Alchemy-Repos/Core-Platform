@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { UserPen, CreditCard, CheckCircle, AlertCircle, Clock, XCircle, AlertTriangle } from "lucide-react";
+import { UserPen, CreditCard, CheckCircle, AlertCircle, Clock, XCircle, AlertTriangle, Send } from "lucide-react";
 
 
 function computeProfileCompletion(profile: TherapistProfile | null): number {
@@ -78,12 +78,34 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
     );
   }
 
+  const hasProfileContent = profile.title || profile.bio || (profile.specializations && profile.specializations.length > 0);
+
+  if (hasProfileContent) {
+    return (
+      <Alert data-testid="banner-approval-status" className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-100">
+        <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        <AlertTitle data-testid="text-approval-title">Under Review</AlertTitle>
+        <AlertDescription data-testid="text-approval-message">
+          Your application is under review. You'll receive an email once it's been reviewed.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
-    <Alert data-testid="banner-approval-status" className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-100">
-      <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-      <AlertTitle data-testid="text-approval-title">Under Review</AlertTitle>
-      <AlertDescription data-testid="text-approval-message">
-        Your application is under review. You'll receive an email once it's been reviewed.
+    <Alert data-testid="banner-approval-status" className="border-blue-500/50 bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100">
+      <Send className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+      <AlertTitle data-testid="text-approval-title">Registered</AlertTitle>
+      <AlertDescription data-testid="text-approval-message" className="space-y-3">
+        <p>Welcome! To be listed in our counselor directory, you'll need to complete your profile and submit an application for review.</p>
+        <div className="flex gap-2">
+          <Link href="/therapist/profile">
+            <Button size="sm" data-testid="button-complete-profile">
+              <UserPen className="w-4 h-4 mr-2" />
+              Complete Your Profile
+            </Button>
+          </Link>
+        </div>
       </AlertDescription>
     </Alert>
   );
