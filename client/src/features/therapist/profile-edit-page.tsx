@@ -2,7 +2,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { apiRequest, getQueryFn, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { TherapistProfile } from "@shared/schema";
@@ -59,6 +59,7 @@ export default function ProfileEditPage() {
   const { user } = useAuth();
   const { specializations: specList } = useSpecializations();
   const [otherLangOpen, setOtherLangOpen] = useState(false);
+  const customLangInputRef = useRef<HTMLInputElement>(null);
 
   const { data: profile, isLoading } = useQuery<TherapistProfile | null>({
     queryKey: ["/api/therapist/profile"],
@@ -346,7 +347,7 @@ export default function ProfileEditPage() {
                           )}
                           <div className="flex gap-2">
                             <Input
-                              id="custom-language-input"
+                              ref={customLangInputRef}
                               placeholder="Enter language..."
                               maxLength={50}
                               onKeyDown={(e) => {
@@ -367,11 +368,10 @@ export default function ProfileEditPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                const input = document.getElementById("custom-language-input") as HTMLInputElement;
-                                const val = input?.value.trim();
+                                const val = customLangInputRef.current?.value.trim();
                                 if (val && !isDuplicate(val)) {
                                   field.onChange([...(field.value ?? []), val]);
-                                  input.value = "";
+                                  if (customLangInputRef.current) customLangInputRef.current.value = "";
                                 }
                               }}
                               data-testid="button-add-custom-language"

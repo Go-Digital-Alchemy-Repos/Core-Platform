@@ -618,6 +618,7 @@ function AddTherapistSheet({
 }) {
   const { specializations: specList } = useSpecializations();
   const [otherLangOpen, setOtherLangOpen] = useState(false);
+  const addCustomLangInputRef = useRef<HTMLInputElement>(null);
   const form = useForm<CreateTherapistValues>({
     resolver: zodResolver(createTherapistSchema),
     defaultValues: {
@@ -863,7 +864,7 @@ function AddTherapistSheet({
                           )}
                           <div className="flex gap-2">
                             <Input
-                              id="add-custom-language-input"
+                              ref={addCustomLangInputRef}
                               placeholder="Enter language..."
                               maxLength={50}
                               onKeyDown={(e) => {
@@ -884,11 +885,10 @@ function AddTherapistSheet({
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                const input = document.getElementById("add-custom-language-input") as HTMLInputElement;
-                                const val = input?.value.trim();
+                                const val = addCustomLangInputRef.current?.value.trim();
                                 if (val && !isDuplicate(val)) {
                                   field.onChange([...(field.value ?? []), val]);
-                                  input.value = "";
+                                  if (addCustomLangInputRef.current) addCustomLangInputRef.current.value = "";
                                 }
                               }}
                               data-testid="button-add-custom-language"
