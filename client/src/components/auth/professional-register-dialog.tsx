@@ -97,7 +97,7 @@ export function ProfessionalRegisterDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Mental Health Professional Application</DialogTitle>
+          <DialogTitle>Mental Health Professional Registration</DialogTitle>
           <DialogDescription>Fill in your details to apply for membership</DialogDescription>
         </DialogHeader>
         <Form {...form}>
