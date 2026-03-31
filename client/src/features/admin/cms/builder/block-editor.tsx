@@ -34,7 +34,7 @@ function ArrayItemsField({
 
   const addItem = () => {
     const blank: Record<string, unknown> = {};
-    schema.forEach((s) => (blank[s.key] = ""));
+    schema.forEach((s) => (blank[s.key] = s.type === "boolean" ? false : ""));
     onChange([...value, blank]);
   };
 
@@ -71,7 +71,16 @@ function ArrayItemsField({
           {schema.map((field) => (
             <div key={field.key} className="space-y-1">
               <Label className="text-[11px] text-muted-foreground">{field.label}</Label>
-              {field.type === "image-url" ? (
+              {field.type === "boolean" ? (
+                <div className="flex items-center gap-2 pt-1">
+                  <Switch
+                    checked={Boolean(item[field.key])}
+                    onCheckedChange={(checked) => updateItem(idx, field.key, checked)}
+                    data-testid={`array-item-${idx}-${field.key}`}
+                  />
+                  <span className="text-xs text-muted-foreground">{Boolean(item[field.key]) ? "Yes" : "No"}</span>
+                </div>
+              ) : field.type === "image-url" ? (
                 <CmsImageUpload
                   value={String(item[field.key] ?? "")}
                   onChange={(url) => updateItem(idx, field.key, url)}

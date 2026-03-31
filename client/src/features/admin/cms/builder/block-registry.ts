@@ -66,6 +66,12 @@ const COLUMNS_OPTIONS = [
   { label: "4 columns", value: "4" },
 ];
 
+const FEATURE_LIST_COLUMNS_OPTIONS = [
+  { label: "1 column", value: "1" },
+  { label: "2 columns", value: "2" },
+  { label: "3 columns", value: "3" },
+];
+
 const SPACING_OPTIONS = [
   { label: "Extra Small (16px)", value: "xs" },
   { label: "Small (32px)", value: "sm" },
@@ -526,7 +532,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     propDefs: [
       { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
       { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
-      { key: "columns", label: "Columns", type: "select", options: COLUMNS_OPTIONS },
+      { key: "columns", label: "Columns", type: "select", options: FEATURE_LIST_COLUMNS_OPTIONS },
       {
         key: "features",
         label: "Features",
@@ -890,9 +896,9 @@ export const BLOCK_REGISTRY: BlockDef[] = [
       title: "Our Commitment to You",
       subtitle: "",
       items: [
-        "Every professional is individually vetted and verified",
-        "Your privacy and confidentiality are always protected",
-        "Support team available if you need help finding the right match",
+        { text: "Every professional is individually vetted and verified" },
+        { text: "Your privacy and confidentiality are always protected" },
+        { text: "Support team available if you need help finding the right match" },
       ],
       ctaText: "Contact Support",
       ctaLink: "/contact",

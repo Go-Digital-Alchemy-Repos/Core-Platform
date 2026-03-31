@@ -518,7 +518,7 @@ function DividerBlock({ props }: { props: Record<string, unknown> }) {
 
 function FeatureListBlock({ props }: { props: Record<string, unknown> }) {
   const cols = str(props.columns) || "3";
-  const colsClass = cols === "2" ? "md:grid-cols-2" : cols === "4" ? "md:grid-cols-4" : "md:grid-cols-3";
+  const colsClass = cols === "1" ? "grid-cols-1" : cols === "2" ? "md:grid-cols-2" : "md:grid-cols-3";
   const features = arr<{ icon: string; title: string; description: string }>(props.features);
   return (
     <div className="py-4" data-testid="block-feature-list">
