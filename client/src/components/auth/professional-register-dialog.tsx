@@ -98,7 +98,7 @@ export function ProfessionalRegisterDialog({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Mental Health Professional Registration</DialogTitle>
-          <DialogDescription>Fill in your details to apply for membership</DialogDescription>
+          <DialogDescription>Fill in your basic details to register. Once you've registered for an account you'll be able to apply for membership and be listed on the directory.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
