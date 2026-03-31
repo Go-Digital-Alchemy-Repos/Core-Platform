@@ -221,16 +221,19 @@ function Router() {
 
 function SetupGuard({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
-  const { data: setupStatus, isLoading } = useQuery<{ needsSetup: boolean }>({
+  const { data: setupStatus, isLoading, isError } = useQuery<{ needsSetup: boolean }>({
     queryKey: ["/api/setup/status"],
     staleTime: 60_000,
+    retry: 2,
   });
 
+  const needsSetup = setupStatus?.needsSetup === true || (isError && !setupStatus);
+
   useEffect(() => {
-    if (setupStatus?.needsSetup && location !== "/setup") {
+    if (needsSetup && location !== "/setup") {
       setLocation("/setup");
     }
-  }, [setupStatus, location, setLocation]);
+  }, [needsSetup, location, setLocation]);
 
   if (isLoading) {
     return (
