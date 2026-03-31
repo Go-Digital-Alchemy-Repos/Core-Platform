@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, index, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer, index, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users } from "./users";
@@ -8,6 +8,8 @@ export const providerApplications = pgTable("provider_applications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   status: text("status").notNull().default("draft"),
+  currentStep: integer("current_step").notNull().default(0),
+  formData: jsonb("form_data").default({}),
   paymentStatus: text("payment_status").notNull().default("not_started"),
   referencesStatus: text("references_status").notNull().default("not_started"),
   backgroundCheckStatus: text("background_check_status").notNull().default("not_started"),
@@ -42,6 +44,8 @@ export const providerApplicationCredentials = pgTable("provider_application_cred
   issuer: text("issuer"),
   licenseNumber: text("license_number"),
   stateOrCountry: text("state_or_country"),
+  middleName: text("middle_name"),
+  verificationUrl: text("verification_url"),
   issuedAt: timestamp("issued_at"),
   expiresAt: timestamp("expires_at"),
   documentUrl: text("document_url"),

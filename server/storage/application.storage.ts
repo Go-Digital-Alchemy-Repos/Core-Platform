@@ -55,6 +55,8 @@ export class ApplicationStorage {
         id: providerApplications.id,
         userId: providerApplications.userId,
         status: providerApplications.status,
+        currentStep: providerApplications.currentStep,
+        formData: providerApplications.formData,
         paymentStatus: providerApplications.paymentStatus,
         referencesStatus: providerApplications.referencesStatus,
         backgroundCheckStatus: providerApplications.backgroundCheckStatus,
@@ -126,6 +128,8 @@ export class ApplicationStorage {
     issuer?: string;
     licenseNumber?: string;
     stateOrCountry?: string;
+    middleName?: string;
+    verificationUrl?: string;
     issuedAt?: Date;
     expiresAt?: Date;
     documentUrl?: string;
@@ -139,6 +143,12 @@ export class ApplicationStorage {
       .select()
       .from(providerApplicationCredentials)
       .where(eq(providerApplicationCredentials.applicationId, applicationId));
+  }
+
+  async deleteCredential(id: string, applicationId: string): Promise<void> {
+    await db
+      .delete(providerApplicationCredentials)
+      .where(and(eq(providerApplicationCredentials.id, id), eq(providerApplicationCredentials.applicationId, applicationId)));
   }
 
   async updateCredential(id: string, data: Partial<{ verificationStatus: string; documentUrl: string }>): Promise<ProviderApplicationCredential | undefined> {
@@ -166,6 +176,12 @@ export class ApplicationStorage {
       .select()
       .from(providerApplicationReferences)
       .where(eq(providerApplicationReferences.applicationId, applicationId));
+  }
+
+  async deleteReference(id: string, applicationId: string): Promise<void> {
+    await db
+      .delete(providerApplicationReferences)
+      .where(and(eq(providerApplicationReferences.id, id), eq(providerApplicationReferences.applicationId, applicationId)));
   }
 
   async updateReference(id: string, data: Partial<{ status: string; responseReceivedAt: Date; responseData: unknown }>): Promise<ProviderApplicationReference | undefined> {

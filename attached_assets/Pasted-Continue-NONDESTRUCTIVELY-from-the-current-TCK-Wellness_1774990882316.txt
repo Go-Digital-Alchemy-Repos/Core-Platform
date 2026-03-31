@@ -1,0 +1,117 @@
+Continue NONDESTRUCTIVELY from the current TCK Wellness codebase and preserve all existing functionality.
+
+Now build the provider-facing membership application wizard that begins when a logged-in provider clicks:
+“Apply for Membership and Get Listed”
+
+Requirements:
+- This must be a multi-step wizard
+- It must autosave
+- It must be resumable
+- It must not interfere with existing profile editing
+- It must create/use a provider_application record in draft status
+- It must use the new route and schema foundation already created
+- It must feel polished and production-ready
+- It must be mobile responsive
+- It must use the existing design system and UI patterns
+
+Build the following steps:
+
+STEP 0 — Before You Begin
+Include:
+- estimated time: 50–60 minutes
+- recommendation to complete in one sitting
+- reminder to have 3 references ready
+- application fee explanation:
+  - $150 fee
+  - $50 non-refundable
+  - $100 refunded if not approved
+- placeholder area for “Preview vetting criteria” PDF link
+- acknowledgment checkbox:
+  “I have reviewed the information above and am ready to begin.”
+
+STEP 1 — Contact Information
+Fields:
+- Full Name
+- Email Address
+- Phone Number
+- City & Country of Residence
+
+STEP 2 — Professional Information
+Fields:
+- applying as a TCK-informed:
+  - Mental Health Professional
+  - Debriefer
+  - Coach
+- Professional Title
+- Organization / Practice Name
+- Professional Website (optional)
+
+Credential repeater:
+- Credential Type
+- Licensure or certification number
+- State or country of issuance
+- Middle name
+- Link to verification page or certificate
+- Add another
+
+Design this so future proof-of-licensure uploads/dropzone support can be added later without rework.
+
+STEP 3 — TCK-Informed Questions
+Create this section as a configurable narrative-question section.
+If final exact questions are not yet defined in code, scaffold it so future question copy can be updated without architecture changes.
+
+STEP 4 — References
+Collect exactly 3 references:
+- Name
+- Relationship to applicant
+- Email Address
+
+Include guidance copy explaining who to include and that references will receive a confidential form after submission.
+
+STEP 5 — Accessibility Discount
+Fields:
+- starting fee per appointment
+- do you offer sliding-scale or reduced-fee sessions for TCKs? yes/no
+- optional explanation/details
+
+Store fields needed for later admin discount review.
+Do not auto-approve discount logic yet.
+
+STEP 6 — Terms & Conditions
+Include:
+- independent professional acknowledgment
+- no employee/agent/representative relationship
+- no endorsement by TCK Wellness
+- sole professional responsibility
+- responsibility for licenses/credentials/insurance
+- must accurately represent qualifications
+- must notify TCK Wellness of disciplinary/licensure issues
+- indemnification language
+- directory removal-at-discretion language
+- typed full legal name acknowledgment/signature
+
+Also include structured fields/flags for:
+- agreement to maintain professional liability insurance
+- agreement to provide proof of licensure
+- future extensible conditional logic for statement-of-faith handling if needed
+
+Wizard UX requirements:
+- stepper/progress UI
+- autosave indicator
+- step-level validation
+- final submission validation preparation
+- resume support if provider leaves and comes back
+- drafts persist
+- after submit later, normal editing should be restricted
+
+For THIS prompt:
+- Build the full wizard UI and autosave behavior
+- Wire it to schema and routes
+- Store data in draft application records
+- Do NOT yet finalize payment submission or automation triggers
+
+At the end, provide:
+1. New components/screens added
+2. What autosave/resume behavior now works
+3. What fields are persisted
+4. What remains for payment/submission automation in the next prompt
