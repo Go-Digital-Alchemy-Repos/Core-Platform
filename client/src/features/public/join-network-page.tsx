@@ -22,6 +22,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -207,6 +208,9 @@ function ProfessionalRegisterDialog({
                   <FormControl>
                     <Input type="email" placeholder="you@example.com" data-testid="input-professional-email" {...field} />
                   </FormControl>
+                  <FormDescription data-testid="text-email-privacy-note">
+                    Your email will remain hidden and private at all times from the public.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
