@@ -49,3 +49,14 @@ export async function getStripePublishableKey(): Promise<string> {
   const { stripePublishableKey } = await fetchStripeCredentials();
   return stripePublishableKey;
 }
+
+export async function getStripeWebhookSecret(): Promise<string | null> {
+  try {
+    const settings = await storage.settings.getDecryptedCategory("stripe");
+    if (settings.stripe_webhook_secret) {
+      return settings.stripe_webhook_secret;
+    }
+  } catch (_e) {
+  }
+  return process.env.STRIPE_WEBHOOK_SECRET || null;
+}

@@ -7,7 +7,8 @@ export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string) {
     try {
       const stripe = await getStripeClient();
-      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      const { getStripeWebhookSecret } = await import("../config/stripe");
+      const webhookSecret = await getStripeWebhookSecret();
 
       let event;
       if (webhookSecret) {
