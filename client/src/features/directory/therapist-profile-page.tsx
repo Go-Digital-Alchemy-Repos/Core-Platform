@@ -292,7 +292,7 @@ export default function TherapistProfilePage() {
                         data-testid="button-contact-professional"
                       >
                         <Mail className="h-4 w-4 mr-2" />
-                        Contact This Mental Health Professional
+                        Contact {displayName}
                       </Button>
                       <p className="text-xs text-muted-foreground text-center mt-2">
                         Send a message — no account required
