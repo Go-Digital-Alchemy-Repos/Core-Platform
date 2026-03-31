@@ -2,28 +2,20 @@ import Stripe from "stripe";
 import { storage } from "../storage/index";
 
 async function fetchStripeCredentials(): Promise<{ stripeSecretKey: string; stripePublishableKey: string }> {
+  let settings: Record<string, string> = {};
   try {
-    const settings = await storage.settings.getDecryptedCategory("stripe");
-    if (settings.stripe_secret_key) {
-      return {
-        stripeSecretKey: settings.stripe_secret_key,
-        stripePublishableKey: settings.stripe_publishable_key || "",
-      };
-    }
+    settings = await storage.settings.getDecryptedCategory("stripe");
   } catch (_e) {
   }
 
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
+  const stripeSecretKey = settings.stripe_secret_key || process.env.STRIPE_SECRET_KEY;
+  const stripePublishableKey = settings.stripe_publishable_key || process.env.STRIPE_PUBLISHABLE_KEY || "";
 
-  if (!secretKey) {
+  if (!stripeSecretKey) {
     throw new Error("Stripe secret key not configured. Set it in Admin > Settings > Integrations or via STRIPE_SECRET_KEY env var.");
   }
 
-  return {
-    stripeSecretKey: secretKey,
-    stripePublishableKey: publishableKey || "",
-  };
+  return { stripeSecretKey, stripePublishableKey };
 }
 
 export async function getUncachableStripeClient(): Promise<Stripe> {
