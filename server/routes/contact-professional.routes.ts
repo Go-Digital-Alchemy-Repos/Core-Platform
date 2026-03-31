@@ -21,7 +21,23 @@ const contactProfessionalSchema = z.object({
   senderName: z.string().min(1).max(100),
   senderEmail: z.string().email().max(255),
   message: z.string().min(10).max(5000),
-});
+  preferredContact: z.enum(["email", "phone", "text"]),
+  phone: z.string().max(30).optional(),
+}).refine(
+  (data) => {
+    if (data.preferredContact === "phone" || data.preferredContact === "text") {
+      return !!data.phone && data.phone.trim().length >= 7;
+    }
+    return true;
+  },
+  { message: "Phone number is required when preferred contact is phone call or text message", path: ["phone"] }
+);
+
+const PREFERRED_CONTACT_LABELS: Record<string, string> = {
+  email: "Email",
+  phone: "Phone Call",
+  text: "Text Message",
+};
 
 router.post("/", guestMessageLimiter, async (req: Request, res: Response) => {
   const parsed = contactProfessionalSchema.safeParse(req.body);
@@ -29,7 +45,7 @@ router.post("/", guestMessageLimiter, async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Invalid form data", details: parsed.error.flatten().fieldErrors });
   }
 
-  const { professionalUserId, senderName, senderEmail, message } = parsed.data;
+  const { professionalUserId, senderName, senderEmail, message, preferredContact, phone } = parsed.data;
 
   try {
     const profile = await storage.therapists.getProfileByUserId(professionalUserId);
@@ -46,6 +62,12 @@ router.post("/", guestMessageLimiter, async (req: Request, res: Response) => {
     const safeName = escapeHtml(senderName);
     const safeEmail = escapeHtml(senderEmail);
     const safeMessage = escapeHtml(message);
+    const safePhone = phone ? escapeHtml(phone) : null;
+    const contactLabel = PREFERRED_CONTACT_LABELS[preferredContact] || "Email";
+
+    const phoneRow = safePhone
+      ? `<p style="margin: 0 0 8px 0;"><strong>Phone:</strong> ${safePhone}</p>`
+      : "";
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -55,6 +77,8 @@ router.post("/", guestMessageLimiter, async (req: Request, res: Response) => {
         <div style="background: #f9f9f9; border-left: 4px solid #4f8c7c; padding: 16px; margin: 16px 0; border-radius: 4px;">
           <p style="margin: 0 0 8px 0;"><strong>From:</strong> ${safeName}</p>
           <p style="margin: 0 0 8px 0;"><strong>Email:</strong> <a href="mailto:${safeEmail}">${safeEmail}</a></p>
+          ${phoneRow}
+          <p style="margin: 0 0 8px 0;"><strong>Preferred Contact Method:</strong> ${contactLabel}</p>
           <p style="margin: 0 0 8px 0;"><strong>Message:</strong></p>
           <p style="margin: 0; white-space: pre-wrap;">${safeMessage}</p>
         </div>

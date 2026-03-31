@@ -60,7 +60,7 @@ export default function TherapistProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
+  const [contactForm, setContactForm] = useState({ name: "", email: "", message: "", preferredContact: "email" as "email" | "phone" | "text", phone: "" });
   const [showContactForm, setShowContactForm] = useState(false);
 
   const { data: therapist, isLoading, error } = useQuery<TherapistWithUser>({
@@ -69,13 +69,13 @@ export default function TherapistProfilePage() {
   });
 
   const sendEmailMutation = useMutation({
-    mutationFn: async (data: { professionalUserId: string; senderName: string; senderEmail: string; message: string }) => {
+    mutationFn: async (data: { professionalUserId: string; senderName: string; senderEmail: string; message: string; preferredContact: string; phone?: string }) => {
       const res = await apiRequest("POST", "/api/contact-professional", data);
       return res.json();
     },
     onSuccess: () => {
       toast({ title: "Message sent", description: "Your message has been emailed to this mental health professional." });
-      setContactForm({ name: "", email: "", message: "" });
+      setContactForm({ name: "", email: "", message: "", preferredContact: "email", phone: "" });
       setShowContactForm(false);
     },
     onError: (err: any) => {
@@ -86,12 +86,17 @@ export default function TherapistProfilePage() {
   const handleSendEmail = (e: React.FormEvent) => {
     e.preventDefault();
     if (!therapist?.userId) return;
-    sendEmailMutation.mutate({
+    const payload: { professionalUserId: string; senderName: string; senderEmail: string; message: string; preferredContact: string; phone?: string } = {
       professionalUserId: therapist.userId,
       senderName: contactForm.name,
       senderEmail: contactForm.email,
       message: contactForm.message,
-    });
+      preferredContact: contactForm.preferredContact,
+    };
+    if (contactForm.preferredContact !== "email" && contactForm.phone) {
+      payload.phone = contactForm.phone;
+    }
+    sendEmailMutation.mutate(payload);
   };
 
   const isSelf = user && therapist?.userId === user.id;
@@ -328,6 +333,47 @@ export default function TherapistProfilePage() {
                           data-testid="input-sender-email"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label>Preferred Method of Contact</Label>
+                        <div className="flex flex-col gap-2">
+                          {([
+                            { value: "email", label: "Email" },
+                            { value: "phone", label: "Phone Call" },
+                            { value: "text", label: "Text Message" },
+                          ] as const).map((option) => (
+                            <label
+                              key={option.value}
+                              className="flex items-center gap-2 cursor-pointer text-sm"
+                              data-testid={`radio-contact-${option.value}`}
+                            >
+                              <input
+                                type="radio"
+                                name="preferredContact"
+                                value={option.value}
+                                checked={contactForm.preferredContact === option.value}
+                                onChange={() => setContactForm((f) => ({ ...f, preferredContact: option.value }))}
+                                className="accent-primary h-4 w-4"
+                              />
+                              {option.label}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      {(contactForm.preferredContact === "phone" || contactForm.preferredContact === "text") && (
+                        <div className="space-y-1.5">
+                          <Label htmlFor="sender-phone">Your Phone Number</Label>
+                          <Input
+                            id="sender-phone"
+                            type="tel"
+                            value={contactForm.phone}
+                            onChange={(e) => setContactForm((f) => ({ ...f, phone: e.target.value }))}
+                            required
+                            maxLength={30}
+                            placeholder="(555) 123-4567"
+                            data-testid="input-sender-phone"
+                          />
+                        </div>
+                      )}
                       <div className="space-y-1.5">
                         <Label htmlFor="sender-message">Message</Label>
                         <Textarea
