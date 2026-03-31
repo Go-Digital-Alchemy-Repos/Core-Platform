@@ -1,3 +1,4 @@
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -60,6 +61,14 @@ export default function ProfileEditPage() {
   const { specializations: specList } = useSpecializations();
   const [otherLangOpen, setOtherLangOpen] = useState(false);
   const customLangInputRef = useRef<HTMLInputElement>(null);
+
+  const predefinedNames = useMemo(
+    () => new Set(specList.map((s) => s.name)),
+    [specList]
+  );
+
+  const [otherChecked, setOtherChecked] = useState(false);
+  const [otherValue, setOtherValue] = useState("");
 
   const { data: profile, isLoading } = useQuery<TherapistProfile | null>({
     queryKey: ["/api/therapist/profile"],
@@ -133,8 +142,30 @@ export default function ProfileEditPage() {
     },
   });
 
+  useEffect(() => {
+    if (profile?.specializations && predefinedNames.size > 0) {
+      const customSpecs = profile.specializations.filter((s) => !predefinedNames.has(s));
+      if (customSpecs.length > 0) {
+        setOtherChecked(true);
+        setOtherValue(customSpecs.join(", "));
+      } else {
+        setOtherChecked(false);
+        setOtherValue("");
+      }
+    }
+  }, [profile, predefinedNames]);
+
   function onSubmit(data: ProfileFormValues) {
-    updateMutation.mutate(data);
+    const predefined = (data.specializations ?? []).filter((s) => predefinedNames.has(s));
+    if (otherChecked && otherValue.trim()) {
+      const customEntries = otherValue
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      predefined.push(...customEntries);
+    }
+    const unique = [...new Set(predefined)];
+    updateMutation.mutate({ ...data, specializations: unique });
   }
 
   if (isLoading) {
@@ -260,7 +291,34 @@ export default function ProfileEditPage() {
                           </Label>
                         </div>
                       ))}
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="spec-other"
+                          checked={otherChecked}
+                          onCheckedChange={(checked) => {
+                            const isChecked = !!checked;
+                            setOtherChecked(isChecked);
+                            if (!isChecked) {
+                              setOtherValue("");
+                            }
+                          }}
+                          data-testid="checkbox-spec-other"
+                        />
+                        <Label htmlFor="spec-other" className="text-sm cursor-pointer">
+                          Other
+                        </Label>
+                      </div>
                     </div>
+                    {otherChecked && (
+                      <div className="mt-3">
+                        <Input
+                          placeholder="Enter custom specialty (comma-separated for multiple)"
+                          value={otherValue}
+                          onChange={(e) => setOtherValue(e.target.value)}
+                          data-testid="input-spec-other"
+                        />
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
