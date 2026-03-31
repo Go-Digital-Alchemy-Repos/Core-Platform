@@ -269,6 +269,10 @@ export class ApplicationStorage {
 
   async addBackgroundCheck(data: {
     applicationId: string;
+    vendorName?: string | null;
+    vendorExternalId?: string | null;
+    status?: string;
+    providerFacingLabel?: string;
     provider?: string;
     externalId?: string;
   }): Promise<ProviderBackgroundCheck> {
@@ -284,10 +288,23 @@ export class ApplicationStorage {
     return check;
   }
 
-  async updateBackgroundCheck(id: string, data: Partial<{ status: string; result: string; completedAt: Date; reportUrl: string }>): Promise<ProviderBackgroundCheck | undefined> {
+  async updateBackgroundCheck(id: string, data: Partial<{
+    status: string;
+    result: string;
+    completedAt: Date;
+    reportUrl: string;
+    vendorName: string;
+    vendorExternalId: string;
+    providerFacingLabel: string;
+    adminStatusDetails: string;
+    notes: string;
+    requestedAt: Date;
+    lastStatusSyncAt: Date;
+    updatedAt: Date;
+  }>): Promise<ProviderBackgroundCheck | undefined> {
     const [check] = await db
       .update(providerBackgroundChecks)
-      .set(data)
+      .set({ ...data, updatedAt: new Date() })
       .where(eq(providerBackgroundChecks.id, id))
       .returning();
     return check;

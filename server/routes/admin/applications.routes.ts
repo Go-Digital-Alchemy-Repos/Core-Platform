@@ -2,6 +2,14 @@ import { Router } from "express";
 import { storage } from "../../storage/index";
 import { asyncHandler } from "../../middleware/error-handler";
 import { APPLICATION_STATUS } from "@shared/types";
+import {
+  initiateBackgroundCheck,
+  syncBackgroundCheckStatus,
+  resendBackgroundCheckInvite,
+  adminUpdateBackgroundCheck,
+  BACKGROUND_CHECK_STATUSES,
+  type BackgroundCheckStatus,
+} from "../../services/background-check.service";
 
 const router = Router();
 
@@ -116,7 +124,7 @@ router.patch(
 );
 
 router.post(
-  "/:id/background-check",
+  "/:id/background-check/initiate",
   asyncHandler(async (req, res) => {
     const application = await storage.applications.getById(req.params.id);
     if (!application) {
@@ -124,22 +132,29 @@ router.post(
       return;
     }
 
-    const check = await storage.applications.addBackgroundCheck({
+    const applicantData = {
       applicationId: application.id,
-      provider: req.body.provider,
-      externalId: req.body.externalId,
-    });
+      userId: application.userId,
+      ...(typeof application.formData === "object" && application.formData !== null ? application.formData as Record<string, unknown> : {}),
+    };
 
-    await storage.applications.update(application.id, {
-      backgroundCheckStatus: "in_progress",
-      status: "background_check_in_progress",
-    });
+    const check = await initiateBackgroundCheck(
+      application.id,
+      applicantData,
+      req.body.vendorName,
+    );
+
+    if (!check) {
+      res.status(500).json({ message: "Failed to initiate background check" });
+      return;
+    }
 
     await storage.applications.addTimelineEntry({
       applicationId: application.id,
       action: "background_check_initiated",
       fromStatus: application.status,
-      toStatus: "background_check_in_progress",
+      toStatus: application.status,
+      note: `Background check initiated${req.body.vendorName ? ` via ${req.body.vendorName}` : ""}`,
       performedBy: req.user!.id,
     });
 
@@ -147,27 +162,83 @@ router.post(
   })
 );
 
+router.post(
+  "/:id/background-check/sync",
+  asyncHandler(async (req, res) => {
+    const check = await syncBackgroundCheckStatus(req.params.id);
+    if (!check) {
+      res.status(404).json({ message: "Background check not found" });
+      return;
+    }
+    res.json(check);
+  })
+);
+
+router.post(
+  "/:id/background-check/resend",
+  asyncHandler(async (req, res) => {
+    const success = await resendBackgroundCheckInvite(req.params.id);
+    if (!success) {
+      res.status(400).json({ message: "Unable to resend invite" });
+      return;
+    }
+
+    await storage.applications.addTimelineEntry({
+      applicationId: req.params.id,
+      action: "background_check_invite_resent",
+      note: "Background check invite resent",
+      performedBy: req.user!.id,
+    });
+
+    res.json({ success: true });
+  })
+);
+
 router.patch(
   "/:id/background-check",
   asyncHandler(async (req, res) => {
-    const bgCheck = await storage.applications.getBackgroundCheck(req.params.id);
-    if (!bgCheck) {
+    const { status, notes, result, adminStatusDetails, vendorExternalId, reportUrl } = req.body;
+
+    if (status && !BACKGROUND_CHECK_STATUSES.includes(status)) {
+      res.status(400).json({ message: "Invalid background check status", validStatuses: BACKGROUND_CHECK_STATUSES });
+      return;
+    }
+
+    if (reportUrl && typeof reportUrl === "string" && !reportUrl.startsWith("https://")) {
+      res.status(400).json({ message: "Report URL must use HTTPS" });
+      return;
+    }
+
+    if (notes && typeof notes === "string" && notes.length > 2000) {
+      res.status(400).json({ message: "Notes must be 2000 characters or fewer" });
+      return;
+    }
+
+    if (adminStatusDetails && typeof adminStatusDetails === "string" && adminStatusDetails.length > 500) {
+      res.status(400).json({ message: "Admin status details must be 500 characters or fewer" });
+      return;
+    }
+
+    const updated = await adminUpdateBackgroundCheck(req.params.id, {
+      status: status as BackgroundCheckStatus,
+      notes,
+      result,
+      adminStatusDetails,
+      vendorExternalId,
+      reportUrl,
+    });
+
+    if (!updated) {
       res.status(404).json({ message: "Background check not found" });
       return;
     }
 
-    const updated = await storage.applications.updateBackgroundCheck(bgCheck.id, {
-      status: req.body.status,
-      result: req.body.result,
-      completedAt: req.body.status === "completed" ? new Date() : undefined,
-      reportUrl: req.body.reportUrl,
+    await storage.applications.addTimelineEntry({
+      applicationId: req.params.id,
+      action: "background_check_updated",
+      note: `Background check ${status ? `status changed to ${status}` : "updated"}${notes ? ` — ${notes}` : ""}`,
+      performedBy: req.user!.id,
     });
-
-    if (req.body.status === "completed") {
-      await storage.applications.update(req.params.id, {
-        backgroundCheckStatus: "completed",
-      });
-    }
 
     res.json(updated);
   })

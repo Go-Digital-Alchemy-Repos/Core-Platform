@@ -1,0 +1,81 @@
+Continue NONDESTRUCTIVELY from the existing TCK Wellness codebase and preserve all current working functionality.
+
+Now implement the BACKGROUND CHECK stage scaffolding as a first-class part of the provider application pipeline.
+
+Important security rule:
+Do NOT hardcode, expose, or preserve any live third-party credentials in source code, seed data, docs content, admin UI, logs, or client-side code. If any credentials were included in planning notes, do not use them directly. Build secure env-based scaffolding only.
+
+Business requirements:
+- background check is a required stage after application submission
+- provider should be able to see status
+- admin should be able to see status and notes
+- system should be architected so BackgroundChecks.com integration can be connected cleanly later
+- for now, do not block the full app build on final third-party hookup
+
+Build the following:
+
+A. Background check data model
+Create support for:
+- application linkage
+- vendor name
+- vendor external ID
+- requested_at
+- last_status_sync_at
+- status
+- notes
+- provider-facing status label
+- admin-facing status details
+
+Suggested status values:
+- not_sent
+- pending
+- invited
+- in_progress
+- clear
+- consider
+- issue
+- expired
+- completed
+
+B. Background check service layer
+Create a modular service abstraction for:
+- create invite/order
+- sync status
+- resend/retry
+- manual admin override/update if authorized
+
+Do not fully wire the third-party API if that is not yet ready, but create the proper internal integration boundary now.
+
+C. Provider-facing status display
+Update the applicant status page to clearly show:
+- not sent
+- pending
+- in progress
+- complete
+- issue/action needed
+
+D. Admin-facing background check support
+On admin applicant detail, prepare a background check section that can show:
+- vendor
+- status
+- timestamps
+- notes
+- external IDs
+- manual update/resend tools if authorized
+
+E. Submission flow hookup
+After application submission, create a background check record in the correct initial state and add timeline entries.
+
+Implementation rules:
+- no secrets hardcoded
+- no credentials in UI
+- no destructive changes
+- modular service design only
+- preserve working application/reference flow
+- keep this ready for later BackgroundChecks.com API hookup
+
+At the end, provide:
+1. What background check scaffolding now exists
+2. What env vars or configuration placeholders are needed
+3. Which parts are fully wired vs scaffolded
+4. What remains for future live API integration

@@ -5,6 +5,7 @@ import { asyncHandler } from "../middleware/error-handler";
 import { getUncachableStripeClient } from "../config/stripe";
 import { logger } from "../utils/logger";
 import { sendReferenceRequestEmail } from "../services/email.service";
+import { createBackgroundCheckRecord } from "../services/background-check.service";
 
 const APPLICATION_FEE_CENTS = 15000;
 const REFUND_ELIGIBLE_CENTS = 10000;
@@ -43,12 +44,21 @@ router.get(
       createdAt: r.createdAt,
     }));
 
+    const sanitizedBgCheck = backgroundCheck ? {
+      id: backgroundCheck.id,
+      status: backgroundCheck.status,
+      providerFacingLabel: backgroundCheck.providerFacingLabel,
+      requestedAt: backgroundCheck.requestedAt,
+      completedAt: backgroundCheck.completedAt,
+      createdAt: backgroundCheck.createdAt,
+    } : null;
+
     res.json({
       ...application,
       timeline,
       credentials,
       references: sanitizedReferences,
-      backgroundCheck,
+      backgroundCheck: sanitizedBgCheck,
       interview,
       decision,
     });
@@ -376,6 +386,18 @@ router.post(
       note: `Reference request emails sent to ${references.length} references`,
       performedBy: req.user!.id,
     });
+
+    try {
+      await createBackgroundCheckRecord(application.id);
+      await storage.applications.addTimelineEntry({
+        applicationId: application.id,
+        action: "background_check_record_created",
+        note: "Background check record created — awaiting initiation",
+        performedBy: req.user!.id,
+      });
+    } catch (err) {
+      logger.app.error("Failed to create background check record on submit", err, { applicationId: application.id });
+    }
 
     res.json(updated);
   })

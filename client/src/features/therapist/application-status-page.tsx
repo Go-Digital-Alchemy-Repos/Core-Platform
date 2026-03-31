@@ -108,8 +108,8 @@ function getProgressSteps(application: any): ProgressStep[] {
     {
       label: "Background Check",
       icon: Shield,
-      status: stepState([bgStatus], 1),
-      detail: bgStatus === "completed" ? "Completed" : bgStatus === "in_progress" ? "In progress" : undefined,
+      status: bgStatus === "completed" ? "complete" : bgStatus === "in_progress" ? "current" : stepState([bgStatus], 1),
+      detail: application.backgroundCheck?.providerFacingLabel || (bgStatus === "completed" ? "Completed" : bgStatus === "in_progress" ? "In progress" : undefined),
     },
     {
       label: "References",
@@ -351,6 +351,49 @@ export default function ApplicationStatusPage() {
           <ProgressTracker steps={progressSteps} />
         </CardContent>
       </Card>
+
+      {application.backgroundCheck && !["draft", "withdrawn"].includes(status) && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              Background Check
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Status</span>
+              <span className={`text-sm font-medium ${
+                application.backgroundCheck.status === "clear" || application.backgroundCheck.status === "completed" ? "text-green-600" :
+                application.backgroundCheck.status === "issue" || application.backgroundCheck.status === "expired" ? "text-red-600" :
+                application.backgroundCheck.status === "invited" ? "text-orange-600" :
+                application.backgroundCheck.status === "in_progress" ? "text-blue-600" :
+                "text-muted-foreground"
+              }`} data-testid="text-bg-check-status">
+                {application.backgroundCheck.status === "clear" || application.backgroundCheck.status === "completed" ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 inline mr-1" />
+                ) : null}
+                {application.backgroundCheck.providerFacingLabel || "Not Started"}
+              </span>
+            </div>
+            {application.backgroundCheck.status === "invited" && (
+              <p className="text-xs text-orange-600 mt-2">
+                Please check your email for instructions to complete the background check.
+              </p>
+            )}
+            {application.backgroundCheck.status === "issue" && (
+              <p className="text-xs text-red-600 mt-2">
+                There is an issue with your background check. Our team will be in touch.
+              </p>
+            )}
+            {application.backgroundCheck.completedAt && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Completed {new Date(application.backgroundCheck.completedAt).toLocaleDateString()}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {application.references && application.references.length > 0 && !["draft", "withdrawn"].includes(status) && (
         <Card className="mt-6">
