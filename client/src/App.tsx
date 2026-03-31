@@ -20,6 +20,7 @@ import { CmsHybridPage } from "@/features/public/cms-hybrid-page";
 import LoginPage from "@/features/auth/login-page";
 import RegisterPage from "@/features/auth/register-page";
 import ResetPasswordPage from "@/features/auth/reset-password-page";
+const AdminSetupPage = lazy(() => import("@/features/auth/admin-setup-page"));
 
 const DirectoryPage = lazy(() => import("@/features/directory/directory-page"));
 const TherapistProfilePage = lazy(() => import("@/features/directory/therapist-profile-page"));
@@ -80,6 +81,7 @@ function Router() {
         <Route path="/auth/login" component={LoginPage} />
         <Route path="/auth/register" component={RegisterPage} />
         <Route path="/auth/reset-password" component={ResetPasswordPage} />
+        <Route path="/setup" component={AdminSetupPage} />
 
         <Route path="/therapist">
           <ProtectedRoute roles={["therapist"]}>

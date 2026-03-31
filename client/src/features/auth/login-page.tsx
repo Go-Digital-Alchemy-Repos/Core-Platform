@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { PageLayout } from "@/components/layout/page-layout";
@@ -11,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { LogIn, Shield, Stethoscope, UserCheck } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { Link } from "wouter";
 
 const loginSchema = z.object({
@@ -21,35 +22,20 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-const testAccounts = [
-  {
-    label: "Admin",
-    email: "admin@tckwellness.com",
-    password: "Admin123!",
-    icon: Shield,
-    role: "admin",
-  },
-  {
-    label: "Mental Health Professional",
-    email: "therapist@test.com",
-    password: "Therapist123!",
-    icon: Stethoscope,
-    role: "therapist",
-  },
-  {
-    label: "Client",
-    email: "client@test.com",
-    password: "Client123!",
-    icon: UserCheck,
-    role: "client",
-  },
-];
-
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { login } = useAuth();
   const { toast } = useToast();
-  const [quickLoginPending, setQuickLoginPending] = useState<string | null>(null);
+
+  const { data: setupStatus } = useQuery<{ needsSetup: boolean }>({
+    queryKey: ["/api/setup/status"],
+  });
+
+  useEffect(() => {
+    if (setupStatus?.needsSetup) {
+      setLocation("/setup");
+    }
+  }, [setupStatus, setLocation]);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -83,31 +69,6 @@ export default function LoginPage() {
         });
       },
     });
-  }
-
-  async function handleQuickLogin(account: typeof testAccounts[0]) {
-    setQuickLoginPending(account.label);
-    form.setValue("email", account.email);
-    form.setValue("password", account.password);
-
-    login.mutate(
-      { email: account.email, password: account.password },
-      {
-        onSuccess: (data: any) => {
-          toast({ title: "Welcome back!", description: `Logged in as ${account.label}` });
-          setQuickLoginPending(null);
-          redirectByRole(data.role);
-        },
-        onError: (error: Error) => {
-          setQuickLoginPending(null);
-          toast({
-            title: "Login failed",
-            description: error.message || "Could not log in with test account",
-            variant: "destructive",
-          });
-        },
-      }
-    );
   }
 
   const isPending = login.isPending;
@@ -177,7 +138,7 @@ export default function LoginPage() {
                     disabled={isPending}
                     data-testid="button-login"
                   >
-                    {isPending && !quickLoginPending ? (
+                    {isPending ? (
                       <LoadingSpinner className="h-4 w-4 mr-2" />
                     ) : (
                       <LogIn className="h-4 w-4 mr-2" />
@@ -193,40 +154,6 @@ export default function LoginPage() {
                   Register here
                 </Link>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-dashed border-2 border-amber-400/50 bg-amber-50/50 dark:bg-amber-950/20" data-testid="card-test-accounts">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Shield className="h-4 w-4 text-amber-600" />
-                Test Accounts
-              </CardTitle>
-              <CardDescription>Click any button to instantly log in with a test account</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {testAccounts.map((account) => (
-                <div key={account.label} className="space-y-1">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-3"
-                    disabled={isPending}
-                    onClick={() => handleQuickLogin(account)}
-                    data-testid={`button-quick-login-${account.role}`}
-                  >
-                    {quickLoginPending === account.label ? (
-                      <LoadingSpinner className="h-4 w-4" />
-                    ) : (
-                      <account.icon className="h-4 w-4" />
-                    )}
-                    <span className="font-medium">{account.label}</span>
-                  </Button>
-                  <div className="flex gap-4 px-2 text-xs text-muted-foreground" data-testid={`text-credentials-${account.role}`}>
-                    <span>{account.email}</span>
-                    <span className="font-mono">{account.password}</span>
-                  </div>
-                </div>
-              ))}
             </CardContent>
           </Card>
         </div>
