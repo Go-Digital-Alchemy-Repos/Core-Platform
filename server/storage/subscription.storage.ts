@@ -39,6 +39,14 @@ export class SubscriptionStorage {
     return sub;
   }
 
+  async getByStripeCustomerId(customerId: string): Promise<TherapistSubscription | undefined> {
+    const [sub] = await db
+      .select()
+      .from(therapistSubscriptions)
+      .where(eq(therapistSubscriptions.stripeCustomerId, customerId));
+    return sub;
+  }
+
   async getActiveSubscriptions(): Promise<TherapistSubscription[]> {
     return db
       .select()

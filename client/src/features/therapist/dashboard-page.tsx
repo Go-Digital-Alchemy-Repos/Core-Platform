@@ -51,52 +51,13 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
 
   if (!profile) return null;
 
-  if (profile.isApproved) {
+  if (application && application.status === "active_member") {
     return (
       <Alert data-testid="banner-approval-status" className="border-green-500/50 bg-green-50 dark:bg-green-950/30 text-green-900 dark:text-green-100">
         <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-        <AlertTitle data-testid="text-approval-title">Approved</AlertTitle>
+        <AlertTitle data-testid="text-approval-title">Active Member</AlertTitle>
         <AlertDescription data-testid="text-approval-message">
-          Your profile is approved and live in the directory!
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (application && application.status === "denied") {
-    const decisionReason = application.decision?.reason || profile.rejectionReason;
-    return (
-      <Alert data-testid="banner-approval-status" variant="destructive">
-        <XCircle className="h-4 w-4" />
-        <AlertTitle data-testid="text-approval-title">Application Not Approved</AlertTitle>
-        <AlertDescription data-testid="text-approval-message" className="space-y-2">
-          <p>Your application was not approved.</p>
-          {decisionReason && <p className="font-medium" data-testid="text-rejection-reason">Reason: {decisionReason}</p>}
-          <Link href="/contact">
-            <Button variant="outline" size="sm" data-testid="link-contact-support" className="mt-1">
-              <AlertTriangle className="w-4 h-4 mr-2" />
-              Contact Support
-            </Button>
-          </Link>
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (profile.rejectionReason) {
-    return (
-      <Alert data-testid="banner-approval-status" variant="destructive">
-        <XCircle className="h-4 w-4" />
-        <AlertTitle data-testid="text-approval-title">Application Not Approved</AlertTitle>
-        <AlertDescription data-testid="text-approval-message" className="space-y-2">
-          <p>Your application was not approved.</p>
-          <p className="font-medium" data-testid="text-rejection-reason">Reason: {profile.rejectionReason}</p>
-          <Link href="/contact">
-            <Button variant="outline" size="sm" data-testid="link-contact-support" className="mt-1">
-              <AlertTriangle className="w-4 h-4 mr-2" />
-              Contact Support
-            </Button>
-          </Link>
+          Your membership is active and your profile is live in the counselor directory. Complete your profile to attract more clients.
         </AlertDescription>
       </Alert>
     );
@@ -115,6 +76,60 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
               Activate Membership
             </Button>
           </Link>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (application && application.status === "denied") {
+    const decisionReason = application.decision?.reason || profile.rejectionReason;
+    return (
+      <Alert data-testid="banner-approval-status" variant="destructive">
+        <XCircle className="h-4 w-4" />
+        <AlertTitle data-testid="text-approval-title">Application Not Approved</AlertTitle>
+        <AlertDescription data-testid="text-approval-message" className="space-y-2">
+          <p>Your application was not approved.</p>
+          {decisionReason && <p className="font-medium" data-testid="text-rejection-reason">Reason: {decisionReason}</p>}
+          {application.refundStatus === "eligible" && application.refundEligibleAmount && (
+            <p className="text-sm">A refund of ${(application.refundEligibleAmount / 100).toFixed(2)} has been marked for processing.</p>
+          )}
+          <Link href="/contact">
+            <Button variant="outline" size="sm" data-testid="link-contact-support" className="mt-1">
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Contact Support
+            </Button>
+          </Link>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (profile.rejectionReason && (!application || application.status !== "denied")) {
+    return (
+      <Alert data-testid="banner-approval-status" variant="destructive">
+        <XCircle className="h-4 w-4" />
+        <AlertTitle data-testid="text-approval-title">Application Not Approved</AlertTitle>
+        <AlertDescription data-testid="text-approval-message" className="space-y-2">
+          <p>Your application was not approved.</p>
+          <p className="font-medium" data-testid="text-rejection-reason">Reason: {profile.rejectionReason}</p>
+          <Link href="/contact">
+            <Button variant="outline" size="sm" data-testid="link-contact-support" className="mt-1">
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Contact Support
+            </Button>
+          </Link>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (profile.isApproved) {
+    return (
+      <Alert data-testid="banner-approval-status" className="border-green-500/50 bg-green-50 dark:bg-green-950/30 text-green-900 dark:text-green-100">
+        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+        <AlertTitle data-testid="text-approval-title">Approved</AlertTitle>
+        <AlertDescription data-testid="text-approval-message">
+          Your profile is approved and live in the directory!
         </AlertDescription>
       </Alert>
     );

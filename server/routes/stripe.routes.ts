@@ -154,8 +154,15 @@ router.post(
       return;
     }
 
-    const stripe = await getUncachableStripeClient();
     const user = req.user!;
+
+    const application = await storage.applications.getByUserId(user.id);
+    if (!application || !["approved_pending_subscription", "active_member"].includes(application.status)) {
+      res.status(403).json({ message: "Your application must be approved before you can subscribe. Please complete the application process first." });
+      return;
+    }
+
+    const stripe = await getUncachableStripeClient();
 
     let subscription = await storage.subscriptions.getSubscriptionByTherapist(user.id);
     let customerId = subscription?.stripeCustomerId;

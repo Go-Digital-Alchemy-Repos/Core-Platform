@@ -13,8 +13,11 @@ export class WebhookHandlers {
       let event;
       if (webhookSecret) {
         event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+      } else if (process.env.NODE_ENV === "production") {
+        logger.stripe.error("STRIPE_WEBHOOK_SECRET not set in production — rejecting webhook");
+        throw new Error("Webhook signature verification is required in production");
       } else {
-        logger.stripe.warn("STRIPE_WEBHOOK_SECRET not set — skipping signature verification");
+        logger.stripe.warn("STRIPE_WEBHOOK_SECRET not set — skipping signature verification (dev only)");
         event = JSON.parse(payload.toString());
       }
 
@@ -61,6 +64,26 @@ export class WebhookHandlers {
               logger.stripe.info("Recording purchase confirmed", { purchaseId: purchase.id, sessionId: session.id });
             } else {
               logger.stripe.warn("Recording purchase not found for checkout session", { recordingPurchaseId, sessionId: session.id });
+            }
+            break;
+          }
+
+          if (session.mode === "subscription" && session.subscription && session.customer) {
+            const sub = await storage.subscriptions.getByStripeCustomerId(session.customer as string);
+            if (sub) {
+              await storage.subscriptions.updateSubscription(sub.id, {
+                stripeSubscriptionId: session.subscription as string,
+              });
+              logger.stripe.info("Linked stripeSubscriptionId from checkout", {
+                subscriptionId: session.subscription,
+                customerId: session.customer,
+                localSubId: sub.id,
+              });
+            } else {
+              logger.stripe.warn("No local subscription found for customer during subscription checkout", {
+                customerId: session.customer,
+                sessionId: session.id,
+              });
             }
             break;
           }
@@ -140,21 +163,62 @@ export class WebhookHandlers {
 
         case "customer.subscription.deleted": {
           const subscription = event.data.object;
-          await storage.subscriptions.updateByStripeSubscriptionId(subscription.id, {
+          const canceledSub = await storage.subscriptions.updateByStripeSubscriptionId(subscription.id, {
             status: "canceled",
           });
           logger.stripe.info("Subscription canceled", { subscriptionId: subscription.id });
+
+          if (canceledSub?.therapistId) {
+            try {
+              const profile = await storage.therapists.getProfileByUserId(canceledSub.therapistId);
+              if (profile) {
+                await storage.therapists.updateProfile(profile.id, { isActive: false });
+              }
+            } catch (err) {
+              logger.stripe.error("Failed to deactivate profile on subscription cancellation", err);
+            }
+          }
           break;
         }
 
         case "invoice.payment_succeeded": {
           const invoice = event.data.object;
           if (invoice.subscription) {
-            await storage.subscriptions.updateByStripeSubscriptionId(
+            const updatedSub = await storage.subscriptions.updateByStripeSubscriptionId(
               invoice.subscription as string,
               { status: "active" }
             );
             logger.stripe.info("Invoice payment succeeded", { subscriptionId: invoice.subscription });
+
+            if (updatedSub?.therapistId) {
+              try {
+                const application = await storage.applications.getByUserId(updatedSub.therapistId);
+                if (application && application.status === "approved_pending_subscription") {
+                  await storage.applications.update(application.id, {
+                    status: "active_member",
+                    decisionStatus: "completed",
+                  } as any);
+
+                  await storage.applications.addTimelineEntry({
+                    applicationId: application.id,
+                    action: "subscription_activated",
+                    fromStatus: "approved_pending_subscription",
+                    toStatus: "active_member",
+                    note: "Membership subscription activated — provider is now an active member",
+                    performedBy: updatedSub.therapistId,
+                  });
+
+                  const profile = await storage.therapists.getProfileByUserId(updatedSub.therapistId);
+                  if (profile) {
+                    await storage.therapists.updateProfile(profile.id, { isActive: true });
+                  }
+
+                  logger.stripe.info("Application transitioned to active_member", { applicationId: application.id, therapistId: updatedSub.therapistId });
+                }
+              } catch (err) {
+                logger.stripe.error("Failed to transition application on subscription activation", err);
+              }
+            }
           }
           break;
         }

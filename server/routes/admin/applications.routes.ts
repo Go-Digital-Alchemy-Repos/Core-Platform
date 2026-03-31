@@ -116,6 +116,19 @@ router.patch(
       });
 
       await storage.users.updateUser(application.userId, { isApproved: false });
+
+      if (application.paymentStatus === "paid" && application.refundEligibleAmount && application.refundStatus !== "refunded") {
+        await storage.applications.update(application.id, {
+          refundStatus: "eligible",
+        } as any);
+
+        await storage.applications.addTimelineEntry({
+          applicationId: application.id,
+          action: "refund_eligible",
+          note: `Refundable amount of $${(application.refundEligibleAmount / 100).toFixed(2)} marked as eligible for refund`,
+          performedBy: req.user!.id,
+        });
+      }
     }
 
     await storage.activity.log(req.user!.id, "application_status_changed", `Application ${application.id} status changed to ${status}`);

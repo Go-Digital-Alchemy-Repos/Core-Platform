@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { apiRequest, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { TherapistSubscription, MembershipTier } from "@shared/schema";
@@ -6,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle, AlertCircle, Clock, CreditCard, ExternalLink, Loader2, Check } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CheckCircle, AlertCircle, Clock, CreditCard, ExternalLink, Loader2, Check, Lock, ClipboardList } from "lucide-react";
 
 function getStatusBadge(status: string | undefined) {
   switch (status) {
@@ -34,6 +36,10 @@ export default function SubscriptionPage() {
   const { data: tiers, isLoading: tiersLoading } = useQuery<MembershipTier[]>({
     queryKey: ["/api/membership-tiers"],
     queryFn: getQueryFn({ on401: "throw" }),
+  });
+
+  const { data: application } = useQuery<any>({
+    queryKey: ["/api/therapist/application"],
   });
 
   const checkoutMutation = useMutation({
@@ -79,6 +85,9 @@ export default function SubscriptionPage() {
       </div>
     );
   }
+
+  const isApprovedForSubscription = application &&
+    ["approved_pending_subscription", "active_member"].includes(application.status);
 
   const activeTiers = (tiers ?? []).filter((t) => t.isActive).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
@@ -127,7 +136,34 @@ export default function SubscriptionPage() {
         </CardContent>
       </Card>
 
-      {activeTiers.length > 0 && (
+      {!isApprovedForSubscription && (
+        <Alert data-testid="alert-subscription-gated">
+          <Lock className="h-4 w-4" />
+          <AlertTitle>Application Required</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <p>Membership subscriptions are available after your application has been approved. Please complete the application process first.</p>
+            {!application || application.status === "draft" ? (
+              <Link href="/therapist/apply">
+                <Button size="sm" variant="outline" data-testid="button-start-application">
+                  <ClipboardList className="w-4 h-4 mr-2" />
+                  Start Application
+                </Button>
+              </Link>
+            ) : application.status === "denied" ? (
+              <p className="text-sm text-muted-foreground">Your application was not approved. Please contact support for more information.</p>
+            ) : (
+              <Link href="/therapist/application/status">
+                <Button size="sm" variant="outline" data-testid="button-view-app-status">
+                  <ClipboardList className="w-4 h-4 mr-2" />
+                  View Application Status
+                </Button>
+              </Link>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isApprovedForSubscription && activeTiers.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold mb-4" data-testid="text-available-plans">
             Available Plans
