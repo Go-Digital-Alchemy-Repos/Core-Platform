@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useForm } from "react-hook-form";
@@ -689,12 +689,16 @@ function ImageGridBlock({ props }: { props: Record<string, unknown> }) {
 function SliderBlock({ props }: { props: Record<string, unknown> }) {
   const [current, setCurrent] = useState(0);
   const slides = arr<{ imageUrl: string; heading: string; description: string }>(props.slides);
+  useEffect(() => {
+    if (slides.length > 0 && current >= slides.length) setCurrent(Math.max(0, slides.length - 1));
+  }, [slides.length, current]);
   if (slides.length === 0) return (
     <div className="py-4 rounded-xl bg-muted/40 border border-dashed h-48 flex items-center justify-center">
       <p className="text-sm text-muted-foreground">Add slides to display here</p>
     </div>
   );
-  const slide = slides[current];
+  const safeIdx = Math.min(current, slides.length - 1);
+  const slide = slides[safeIdx];
   return (
     <div className="py-4" data-testid="block-slider">
       {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-6">{str(props.title)}</h2>}
