@@ -521,6 +521,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
               const def = getBlockDef(block.type);
               const isSelected = block.id === selectedId;
               const dynamic = isDynamicBlock(block.type);
+              const dynamicEditable = dynamic && def && def.propDefs.length > 0;
               return (
                 <div
                   key={block.id}
@@ -546,7 +547,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                           Dynamic
                         </Badge>
                       )}
-                      {!dynamic && (() => {
+                      {(!dynamic || dynamicEditable) && (() => {
                         const subtitle = typeof block.props.title === "string" && block.props.title
                           ? block.props.title
                           : typeof block.props.heading === "string" && block.props.heading
@@ -558,7 +559,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                       })()}
                     </span>
                     <div className="flex items-center gap-0.5 flex-shrink-0">
-                      {!dynamic && (
+                      {(!dynamic || dynamicEditable) && (
                         <>
                           <Button
                             variant="ghost"
@@ -584,7 +585,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                           </Button>
                         </>
                       )}
-                      {!dynamic && (
+                      {(!dynamic || dynamicEditable) && (
                         <>
                           <Button
                             variant="ghost"
