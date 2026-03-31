@@ -16,6 +16,7 @@ import registrationRoutes from "./registration.routes";
 import cmsPublicRoutes from "./cms-public.routes";
 import contactProfessionalRoutes from "./contact-professional.routes";
 import setupRoutes from "./setup.routes";
+import applicationRoutes from "./application.routes";
 import { storage } from "../storage/index";
 
 function escapeXml(str: string): string {
@@ -45,6 +46,7 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/cms", cmsPublicRoutes);
   app.use("/api/contact-professional", contactProfessionalRoutes);
   app.use("/api/setup", setupRoutes);
+  app.use("/api/therapist/application", applicationRoutes);
 
   app.get("/api/membership-tiers", async (_req, res) => {
     const tiers = await storage.tiers.getActiveTiers();

@@ -45,6 +45,10 @@ function getStatusBadge(status: string | undefined) {
 }
 
 function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
+  const { data: application } = useQuery<any>({
+    queryKey: ["/api/therapist/application"],
+  });
+
   if (!profile) return null;
 
   if (profile.isApproved) {
@@ -54,6 +58,26 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
         <AlertTitle data-testid="text-approval-title">Approved</AlertTitle>
         <AlertDescription data-testid="text-approval-message">
           Your profile is approved and live in the directory!
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (application && application.status === "denied") {
+    const decisionReason = application.decision?.reason || profile.rejectionReason;
+    return (
+      <Alert data-testid="banner-approval-status" variant="destructive">
+        <XCircle className="h-4 w-4" />
+        <AlertTitle data-testid="text-approval-title">Application Not Approved</AlertTitle>
+        <AlertDescription data-testid="text-approval-message" className="space-y-2">
+          <p>Your application was not approved.</p>
+          {decisionReason && <p className="font-medium" data-testid="text-rejection-reason">Reason: {decisionReason}</p>}
+          <Link href="/contact">
+            <Button variant="outline" size="sm" data-testid="link-contact-support" className="mt-1">
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Contact Support
+            </Button>
+          </Link>
         </AlertDescription>
       </Alert>
     );
@@ -78,15 +102,37 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
     );
   }
 
-  const hasProfileContent = profile.title || profile.bio || (profile.specializations && profile.specializations.length > 0);
+  if (application && application.status === "approved_pending_subscription") {
+    return (
+      <Alert data-testid="banner-approval-status" className="border-green-500/50 bg-green-50 dark:bg-green-950/30 text-green-900 dark:text-green-100">
+        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+        <AlertTitle data-testid="text-approval-title">Approved — Activate Membership</AlertTitle>
+        <AlertDescription data-testid="text-approval-message" className="space-y-3">
+          <p>Congratulations! Your application has been approved. Activate your membership subscription to be listed in the counselor directory.</p>
+          <Link href="/therapist/subscription">
+            <Button size="sm" data-testid="button-activate-subscription">
+              <CreditCard className="w-4 h-4 mr-2" />
+              Activate Membership
+            </Button>
+          </Link>
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
-  if (hasProfileContent) {
+  if (application && !["draft", "withdrawn"].includes(application.status)) {
     return (
       <Alert data-testid="banner-approval-status" className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-100">
         <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-        <AlertTitle data-testid="text-approval-title">Under Review</AlertTitle>
-        <AlertDescription data-testid="text-approval-message">
-          Your application is under review. You'll receive an email once it's been reviewed.
+        <AlertTitle data-testid="text-approval-title">Application In Progress</AlertTitle>
+        <AlertDescription data-testid="text-approval-message" className="space-y-3">
+          <p>Your application is being reviewed. You'll be notified as it progresses through each step.</p>
+          <Link href="/therapist/application/status">
+            <Button size="sm" variant="outline" data-testid="button-view-application-status">
+              <ClipboardList className="w-4 h-4 mr-2" />
+              View Application Status
+            </Button>
+          </Link>
         </AlertDescription>
       </Alert>
     );
@@ -105,14 +151,16 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
               Complete Your Profile
             </Button>
           </Link>
-          <Button
-            size="sm"
-            className="bg-accent text-accent-foreground hover:bg-accent/90"
-            data-testid="button-apply-membership"
-          >
-            <ClipboardList className="w-4 h-4 mr-2" />
-            Apply for Membership and Get Listed
-          </Button>
+          <Link href="/therapist/apply">
+            <Button
+              size="sm"
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              data-testid="button-apply-membership"
+            >
+              <ClipboardList className="w-4 h-4 mr-2" />
+              Apply for Membership and Get Listed
+            </Button>
+          </Link>
         </div>
       </AlertDescription>
     </Alert>

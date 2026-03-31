@@ -13,6 +13,7 @@ import cmsSectionsRoutes from "./cms-sections.routes";
 import cmsSeoRoutes from "./cms-seo.routes";
 import cmsRedirectsRoutes from "./cms-redirects.routes";
 import cmsAuditRoutes from "./cms-audit.routes";
+import applicationsRoutes from "./applications.routes";
 
 const router = Router();
 
@@ -32,5 +33,6 @@ router.use("/cms", cmsSectionsRoutes);
 router.use("/cms", cmsSeoRoutes);
 router.use("/cms", cmsRedirectsRoutes);
 router.use("/cms", cmsAuditRoutes);
+router.use("/applications", applicationsRoutes);
 
 export default router;

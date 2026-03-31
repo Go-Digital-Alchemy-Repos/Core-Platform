@@ -18,6 +18,7 @@ import {
   Image,
   SearchIcon,
   Blocks,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -48,6 +49,7 @@ const navGroups: NavGroup[] = [
       { title: "User Manager", href: "/admin/users", icon: Users, iconColor: "text-blue-600" },
       { title: "Membership Tiers", href: "/admin/membership-tiers", icon: CreditCard, iconColor: "text-amber-600" },
       { title: "Events", href: "/admin/events", icon: CalendarDays, iconColor: "text-purple-600" },
+      { title: "Applications", href: "/admin/applications", icon: ClipboardList, iconColor: "text-orange-600" },
     ],
   },
   {

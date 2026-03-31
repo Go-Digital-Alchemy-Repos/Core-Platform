@@ -96,3 +96,46 @@ export const ALL_LANGUAGES = [
   "Ukrainian", "Urdu", "Uzbek", "Vietnamese", "Welsh", "Wolof",
   "Xhosa", "Yiddish", "Yoruba", "Zulu",
 ] as const;
+
+export const APPLICATION_STATUS = [
+  "draft",
+  "submitted",
+  "awaiting_background_check",
+  "background_check_in_progress",
+  "awaiting_references",
+  "references_in_progress",
+  "ready_for_interview",
+  "interview_scheduled",
+  "interview_completed",
+  "approved_pending_subscription",
+  "active_member",
+  "denied",
+  "withdrawn",
+] as const;
+export type ApplicationStatus = (typeof APPLICATION_STATUS)[number];
+
+export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
+  draft: "Draft",
+  submitted: "Submitted",
+  awaiting_background_check: "Awaiting Background Check",
+  background_check_in_progress: "Background Check In Progress",
+  awaiting_references: "Awaiting References",
+  references_in_progress: "References In Progress",
+  ready_for_interview: "Ready for Interview",
+  interview_scheduled: "Interview Scheduled",
+  interview_completed: "Interview Completed",
+  approved_pending_subscription: "Approved — Activate Membership",
+  active_member: "Active Member",
+  denied: "Denied",
+  withdrawn: "Withdrawn",
+};
+
+export const SUB_STATUS_VALUES = [
+  "not_started",
+  "pending",
+  "in_progress",
+  "completed",
+  "failed",
+  "waived",
+] as const;
+export type SubStatus = (typeof SUB_STATUS_VALUES)[number];

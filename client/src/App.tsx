@@ -28,6 +28,8 @@ const TherapistProfilePage = lazy(() => import("@/features/directory/therapist-p
 const TherapistDashboardPage = lazy(() => import("@/features/therapist/dashboard-page"));
 const ProfileEditPage = lazy(() => import("@/features/therapist/profile-edit-page"));
 const SubscriptionPage = lazy(() => import("@/features/therapist/subscription-page"));
+const ApplicationPage = lazy(() => import("@/features/therapist/application-page"));
+const ApplicationStatusPage = lazy(() => import("@/features/therapist/application-status-page"));
 const AdminDashboardPage = lazy(() => import("@/features/admin/dashboard-page"));
 const AdminTherapistsPage = lazy(() => import("@/features/admin/therapists-page"));
 const AdminUsersPage = lazy(() => import("@/features/admin/users-page"));
@@ -39,6 +41,8 @@ const AdminBlogPage = lazy(() => import("@/features/admin/blog-page"));
 const CmsBlogPage = lazy(() => import("@/features/admin/cms/cms-blog-page"));
 const CmsBlogEditorPage = lazy(() => import("@/features/admin/cms/cms-blog-editor-page"));
 
+const AdminApplicationsPage = lazy(() => import("@/features/admin/applications-page"));
+const AdminApplicationDetailPage = lazy(() => import("@/features/admin/application-detail-page"));
 const CmsOverviewPage = lazy(() => import("@/features/admin/cms/cms-overview-page"));
 const CmsPagesPage = lazy(() => import("@/features/admin/cms/cms-pages-page"));
 const CmsPageEditorPage = lazy(() => import("@/features/admin/cms/cms-page-editor-page"));
@@ -94,6 +98,16 @@ function Router() {
             <SubscriptionPage />
           </ProtectedRoute>
         </Route>
+        <Route path="/therapist/apply">
+          <ProtectedRoute roles={["therapist"]}>
+            <ApplicationPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/therapist/application/status">
+          <ProtectedRoute roles={["therapist"]}>
+            <ApplicationStatusPage />
+          </ProtectedRoute>
+        </Route>
 
         <Route path="/admin">
           <ProtectedRoute roles={["admin"]}>
@@ -133,6 +147,16 @@ function Router() {
         <Route path="/admin/settings">
           <ProtectedRoute roles={["admin"]}>
             <AdminSettingsPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/applications/:id">
+          <ProtectedRoute roles={["admin"]}>
+            <AdminApplicationDetailPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/applications">
+          <ProtectedRoute roles={["admin"]}>
+            <AdminApplicationsPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms">

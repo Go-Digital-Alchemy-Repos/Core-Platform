@@ -24,3 +24,21 @@ export { seoSettings, insertSeoSettingsSchema, type InsertSeoSettings, type SeoS
 export { redirects, insertRedirectSchema, type InsertRedirect, type Redirect } from "./redirects";
 export { recordingPurchases, insertRecordingPurchaseSchema, type InsertRecordingPurchase, type RecordingPurchase } from "./recording-purchases";
 export { guestMessages, insertGuestMessageSchema, type InsertGuestMessage, type GuestMessage } from "./guest-messages";
+export {
+  providerApplications,
+  providerApplicationTimeline,
+  providerApplicationCredentials,
+  providerApplicationReferences,
+  providerBackgroundChecks,
+  providerInterviews,
+  providerApplicationDecisions,
+  insertProviderApplicationSchema,
+  type InsertProviderApplication,
+  type ProviderApplication,
+  type ProviderApplicationTimeline,
+  type ProviderApplicationCredential,
+  type ProviderApplicationReference,
+  type ProviderBackgroundCheck,
+  type ProviderInterview,
+  type ProviderApplicationDecision,
+} from "./provider-applications";

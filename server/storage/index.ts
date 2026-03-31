@@ -22,6 +22,7 @@ import { CmsSectionsStorage } from "./cms-sections.storage";
 import { SeoSettingsStorage } from "./seo-settings.storage";
 import { RedirectsStorage } from "./redirects.storage";
 import { RecordingPurchaseStorage } from "./recording-purchase.storage";
+import { ApplicationStorage } from "./application.storage";
 export const storage = {
   users: new UserStorage(),
   therapists: new TherapistStorage(),
@@ -47,6 +48,7 @@ export const storage = {
   seoSettings: new SeoSettingsStorage(),
   redirects: new RedirectsStorage(),
   recordingPurchases: new RecordingPurchaseStorage(),
+  applications: new ApplicationStorage(),
 };
 
 export type { TherapistSearchParams, TherapistWithUser } from "./therapist.storage";
