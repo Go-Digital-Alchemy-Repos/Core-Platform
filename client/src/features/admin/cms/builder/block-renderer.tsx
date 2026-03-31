@@ -402,7 +402,7 @@ function ButtonGroupBlock({ props }: { props: Record<string, unknown> }) {
       {buttons.length === 0 ? (
         <p className="text-muted-foreground text-sm">Add buttons to display here</p>
       ) : buttons.map((btn, i) => (
-        <Button key={i} variant={(btn.variant === "outline" || btn.variant === "secondary" || btn.variant === "ghost" || btn.variant === "link" || btn.variant === "destructive") ? btn.variant : "default"} size="lg">
+        <Button key={i} variant={(btn.variant === "outline" || btn.variant === "secondary" || btn.variant === "ghost" || btn.variant === "destructive") ? btn.variant : "default"} size="lg">
           {btn.text}
         </Button>
       ))}

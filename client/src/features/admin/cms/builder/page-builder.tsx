@@ -55,7 +55,7 @@ import {
   Search,
   Blocks,
   Lock,
-  Map,
+  Map as MapIcon,
   UserPlus,
   List,
   ShieldCheck,
@@ -76,7 +76,7 @@ import {
   Rss,
   Users,
 } from "lucide-react";
-import { BLOCK_REGISTRY, getBlockDef, createBlock, isDynamicBlock, type BlockInstance, type BuilderContent, type BlockCategory, type BlockDef } from "./block-registry";
+import { BLOCK_REGISTRY, ALL_BLOCKS, getBlockDef, createBlock, isDynamicBlock, type BlockInstance, type BuilderContent, type BlockCategory, type BlockDef } from "./block-registry";
 import { BlockEditor } from "./block-editor";
 import { PageRenderer, BlockRenderer } from "./block-renderer";
 import { useToast } from "@/hooks/use-toast";
@@ -101,7 +101,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Heading,
   Globe,
   Phone,
-  Map,
+  Map: MapIcon,
   Mail: Globe,
   UserPlus,
   Lock,
@@ -433,7 +433,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         </div>
         <TabsContent value="blocks" className="flex-1 overflow-y-auto px-6 pb-6 pt-3 mt-0">
           <div className="space-y-5">
-            {groupBlocksByCategory(BLOCK_REGISTRY).map(({ category, label, items }) => (
+            {groupBlocksByCategory(ALL_BLOCKS).map(({ category, label, items }) => (
               <div key={category}>
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{label}</h3>
                 <div className="grid grid-cols-2 gap-2">
