@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ClipboardList, Eye, Loader2 } from "lucide-react";
+import { ClipboardList, Eye, Loader2, Search, Filter } from "lucide-react";
 import { AdminSidebar } from "./admin-sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -22,7 +24,31 @@ function statusBadgeVariant(status: ApplicationStatus): "default" | "secondary" 
   return "outline";
 }
 
+function subStatusBadge(value: string) {
+  if (value === "completed" || value === "paid" || value === "clear") return "default";
+  if (value === "in_progress") return "outline";
+  if (value === "issue" || value === "consider") return "destructive";
+  return "secondary";
+}
+
+const FILTER_OPTIONS = [
+  { value: "", label: "All Applications" },
+  { value: "submitted", label: "Submitted" },
+  { value: "awaiting_background_check,background_check_in_progress", label: "Waiting on Background Check" },
+  { value: "awaiting_references,references_in_progress", label: "Waiting on References" },
+  { value: "ready_for_interview,interview_scheduled", label: "Ready for / In Interview" },
+  { value: "interview_completed", label: "Interview Completed" },
+  { value: "approved_pending_subscription", label: "Approved — Pending Subscription" },
+  { value: "active_member", label: "Active Members" },
+  { value: "denied", label: "Denied" },
+  { value: "withdrawn", label: "Withdrawn" },
+  { value: "draft", label: "Drafts" },
+];
+
 export default function AdminApplicationsPage() {
+  const [statusFilter, setStatusFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
   const { data: applications, isLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/applications"],
   });
@@ -41,6 +67,19 @@ export default function AdminApplicationsPage() {
     (stats?.interview_scheduled ?? 0) +
     (stats?.interview_completed ?? 0);
 
+  const filterStatuses = statusFilter ? statusFilter.split(",") : [];
+
+  const filtered = (applications ?? []).filter((app: any) => {
+    if (filterStatuses.length > 0 && !filterStatuses.includes(app.status)) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const name = (app.userName || "").toLowerCase();
+      const email = (app.userEmail || "").toLowerCase();
+      if (!name.includes(q) && !email.includes(q)) return false;
+    }
+    return true;
+  });
+
   return (
     <AdminSidebar>
       <div className="p-6">
@@ -51,7 +90,7 @@ export default function AdminApplicationsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">Total</p>
@@ -80,59 +119,124 @@ export default function AdminApplicationsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <ClipboardList className="w-4 h-4" />
-              All Applications
-            </CardTitle>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardList className="w-4 h-4" />
+                Applications ({filtered.length})
+              </CardTitle>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8 h-9 w-full sm:w-56"
+                    data-testid="input-search-applications"
+                  />
+                </div>
+                <div className="relative">
+                  <Filter className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <select
+                    className="pl-8 h-9 border rounded-md text-sm bg-background pr-3 w-full sm:w-auto"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    data-testid="select-status-filter"
+                  >
+                    {FILTER_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : applications && applications.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Applicant</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Submitted</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {applications.map((app: any) => (
-                    <TableRow key={app.id} data-testid={`row-application-${app.id}`}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium text-sm">{app.userName}</p>
-                          <p className="text-xs text-muted-foreground">{app.userEmail}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={statusBadgeVariant(app.status as ApplicationStatus)}>
-                          {APPLICATION_STATUS_LABELS[app.status as ApplicationStatus] ?? app.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : "—"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Link href={`/admin/applications/${app.id}`}>
-                          <Button variant="ghost" size="sm" data-testid={`button-view-${app.id}`}>
-                            <Eye className="w-4 h-4 mr-1" />
-                            View
-                          </Button>
-                        </Link>
-                      </TableCell>
+            ) : filtered.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Applicant</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead>Payment</TableHead>
+                      <TableHead>Background</TableHead>
+                      <TableHead>References</TableHead>
+                      <TableHead>Interview</TableHead>
+                      <TableHead>Decision</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((app: any) => {
+                      const fd = (typeof app.formData === "object" && app.formData) || {};
+                      return (
+                        <TableRow key={app.id} data-testid={`row-application-${app.id}`}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-sm">{app.userName}</p>
+                              <p className="text-xs text-muted-foreground">{app.userEmail}</p>
+                              {fd.applyingAs && (
+                                <p className="text-xs text-muted-foreground capitalize">{fd.applyingAs}</p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={statusBadgeVariant(app.status as ApplicationStatus)} className="text-xs whitespace-nowrap">
+                              {APPLICATION_STATUS_LABELS[app.status as ApplicationStatus] ?? app.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                            {app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={subStatusBadge(app.paymentStatus)} className="text-xs">
+                              {app.paymentStatus}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={subStatusBadge(app.backgroundCheckStatus)} className="text-xs">
+                              {app.backgroundCheckStatus}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={subStatusBadge(app.referencesStatus)} className="text-xs">
+                              {app.referencesStatus}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={subStatusBadge(app.interviewStatus)} className="text-xs">
+                              {app.interviewStatus}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={subStatusBadge(app.decisionStatus)} className="text-xs">
+                              {app.decisionStatus}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Link href={`/admin/applications/${app.id}`}>
+                              <Button variant="ghost" size="sm" data-testid={`button-view-${app.id}`}>
+                                <Eye className="w-4 h-4 mr-1" />
+                                View
+                              </Button>
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>No applications yet</p>
+                <p>{searchQuery || statusFilter ? "No applications match your filters" : "No applications yet"}</p>
               </div>
             )}
           </CardContent>

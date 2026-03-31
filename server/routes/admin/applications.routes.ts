@@ -10,6 +10,7 @@ import {
   BACKGROUND_CHECK_STATUSES,
   type BackgroundCheckStatus,
 } from "../../services/background-check.service";
+import { sendReferenceRequestEmail } from "../../services/email.service";
 
 const router = Router();
 
@@ -241,6 +242,63 @@ router.patch(
     });
 
     res.json(updated);
+  })
+);
+
+router.post(
+  "/:id/references/:refId/resend",
+  asyncHandler(async (req, res) => {
+    const application = await storage.applications.getById(req.params.id);
+    if (!application) {
+      res.status(404).json({ message: "Application not found" });
+      return;
+    }
+
+    const refs = await storage.applications.getReferences(req.params.id);
+    const ref = refs.find((r: any) => r.id === req.params.refId);
+    if (!ref) {
+      res.status(404).json({ message: "Reference not found" });
+      return;
+    }
+
+    if (ref.status === "completed") {
+      res.status(400).json({ message: "Reference already completed" });
+      return;
+    }
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const token = ref.secureToken;
+    if (!token) {
+      res.status(400).json({ message: "Reference has no secure token" });
+      return;
+    }
+
+    const applicantName = ref.applicantNameSnapshot || "Applicant";
+    const referenceUrl = `${baseUrl}/reference/${token}`;
+    const sent = await sendReferenceRequestEmail(
+      ref.refereeEmail,
+      ref.refereeName,
+      applicantName,
+      referenceUrl
+    );
+
+    if (sent) {
+      await storage.applications.updateReference(ref.id, {
+        emailSentAt: new Date(),
+        status: ref.status === "draft" ? "email_sent" : ref.status,
+      });
+
+      await storage.applications.addTimelineEntry({
+        applicationId: application.id,
+        action: "reference_email_resent",
+        note: `Reference email resent to ${ref.refereeName} (${ref.refereeEmail})`,
+        performedBy: req.user!.id,
+      });
+
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ message: "Failed to send email" });
+    }
   })
 );
 

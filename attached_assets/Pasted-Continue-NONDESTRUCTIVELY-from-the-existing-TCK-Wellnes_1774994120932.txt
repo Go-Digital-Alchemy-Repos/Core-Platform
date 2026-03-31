@@ -1,0 +1,118 @@
+Continue NONDESTRUCTIVELY from the existing TCK Wellness codebase and preserve all current working functionality.
+
+Now build the ADMIN review and decision area for provider applications.
+
+Admins need to be able to click into a pending applicant and see:
+- where they are in the process
+- their full submitted application
+- references and their responses
+- background check status
+- interview status
+- approval/denial controls
+
+Build the following:
+
+A. Admin application list page
+Include columns/filters for:
+- applicant name
+- provider type
+- overall application status
+- submitted date
+- payment status
+- background check status
+- references completion
+- interview status
+- decision status
+
+Add useful filters such as:
+- submitted
+- waiting on references
+- waiting on background check
+- ready for interview
+- approved pending subscription
+- denied
+
+B. Admin applicant detail page
+Create a polished detail view with sections/tabs:
+
+1. Overview
+- applicant identity
+- provider type
+- dates
+- current stage
+- payment status
+- accessibility discount requested
+- assigned reviewer if applicable
+- quick actions
+
+2. Application
+- full submitted application snapshot
+- readable structured answers
+
+3. Credentials / Licensure
+- credential entries
+- verification notes
+- future proof-of-licensure support scaffolding
+- manual verification fields
+
+4. References
+- each reference card
+- sent/opened/submitted status
+- full responses
+- concern flags highlighted
+- resend email action
+
+5. Background Check
+- vendor
+- status
+- timestamps
+- external ID
+- notes
+- manual update tools if authorized
+
+6. Interview
+- scheduled date/time
+- interviewer
+- internal notes
+- completion flag
+- outcome summary
+- recommendation
+
+7. Decision
+- approve
+- deny
+- future-ready request-more-info/reopen support
+
+8. Timeline / Activity
+- draft started
+- submitted
+- payment received
+- references sent
+- references completed
+- background check changes
+- interview updates
+- decision made
+
+C. Interview tracking
+Support manual admin interview workflow:
+- schedule date/time field
+- interviewer field
+- notes
+- completed flag
+- summary/recommendation
+
+D. Accessibility discount review support
+Allow admins to review submitted starting fee/sliding-scale answers and mark discount review outcome without auto-approving purely from applicant answers.
+
+Implementation rules:
+- preserve current admin architecture and styling
+- do not create destructive schema rewrites
+- keep logic modular
+- maintain typed status handling
+- do not break other admin areas
+
+At the end, provide:
+1. What admin screens and tools were added
+2. What review/decision actions are live
+3. What interview tracking now supports
+4. What remains for the final approval/subscription-gating prompt
