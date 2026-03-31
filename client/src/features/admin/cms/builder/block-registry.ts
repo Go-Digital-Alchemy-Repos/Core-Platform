@@ -95,6 +95,37 @@ const DIVIDER_STYLE_OPTIONS = [
   { label: "Dots", value: "dots" },
 ];
 
+const HERO_LAYOUT_OPTIONS = [
+  { label: "Stacked (centered)", value: "stacked" },
+  { label: "Split (text left, image right)", value: "split" },
+];
+
+const HERO_MIN_HEIGHT_OPTIONS = [
+  { label: "Small (320px)", value: "320" },
+  { label: "Medium (420px)", value: "420" },
+  { label: "Large (560px)", value: "560" },
+  { label: "Extra Large (700px)", value: "700" },
+  { label: "Full Screen", value: "100vh" },
+];
+
+const COLUMNS_EXTENDED_OPTIONS = [
+  { label: "2 columns", value: "2" },
+  { label: "3 columns", value: "3" },
+  { label: "4 columns", value: "4" },
+  { label: "5 columns", value: "5" },
+];
+
+const BENEFIT_LAYOUT_OPTIONS = [
+  { label: "Stack", value: "stack" },
+  { label: "Timeline", value: "timeline" },
+];
+
+const EXPERIENCE_LEVEL_OPTIONS = [
+  { label: "Beginner", value: "beginner" },
+  { label: "Intermediate", value: "intermediate" },
+  { label: "Advanced", value: "advanced" },
+];
+
 export const BLOCK_REGISTRY: BlockDef[] = [
   {
     type: "hero",
@@ -110,8 +141,13 @@ export const BLOCK_REGISTRY: BlockDef[] = [
       ctaSecondaryLink: "/about",
       backgroundImageUrl: "",
       overlayOpacity: 50,
+      badge: "",
+      layout: "stacked",
+      videoBackgroundUrl: "",
+      minHeight: "420",
     },
     propDefs: [
+      { key: "badge", label: "Badge Text", type: "text", placeholder: "e.g. New, Coming Soon" },
       { key: "heading", label: "Heading", type: "text", placeholder: "Main heading" },
       { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Supporting text beneath the heading" },
       { key: "ctaText", label: "Primary Button Text", type: "text", placeholder: "e.g. Find a Mental Health Professional" },
@@ -119,7 +155,10 @@ export const BLOCK_REGISTRY: BlockDef[] = [
       { key: "ctaSecondaryText", label: "Secondary Button Text", type: "text", placeholder: "e.g. Learn More" },
       { key: "ctaSecondaryLink", label: "Secondary Button Link", type: "url", placeholder: "/about" },
       { key: "backgroundImageUrl", label: "Background Image", type: "image-url", placeholder: "Upload or select image" },
+      { key: "videoBackgroundUrl", label: "Video Background URL", type: "url", placeholder: "https://example.com/video.mp4" },
       { key: "overlayOpacity", label: "Overlay Opacity (%)", type: "number", min: 0, max: 100 },
+      { key: "layout", label: "Layout", type: "select", options: HERO_LAYOUT_OPTIONS },
+      { key: "minHeight", label: "Min Height (px)", type: "select", options: HERO_MIN_HEIGHT_OPTIONS },
     ],
   },
   {
@@ -447,6 +486,494 @@ export const BLOCK_REGISTRY: BlockDef[] = [
       { key: "spacing", label: "Spacing", type: "select", options: SPACING_OPTIONS },
     ],
   },
+  {
+    type: "feature-list",
+    label: "Feature List",
+    iconName: "List",
+    description: "Icon + title + description features in a configurable column layout",
+    defaultProps: {
+      title: "Key Features",
+      subtitle: "",
+      columns: "3",
+      features: [
+        { icon: "CheckCircle", title: "Vetted Professionals", description: "Every professional is carefully reviewed and verified." },
+        { icon: "Globe", title: "Global Reach", description: "Connect with professionals worldwide." },
+        { icon: "Heart", title: "Culturally Informed", description: "Professionals who understand the TCK experience." },
+      ],
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
+      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      { key: "columns", label: "Columns", type: "select", options: COLUMNS_OPTIONS },
+      {
+        key: "features",
+        label: "Features",
+        type: "array-items",
+        itemSchema: [
+          { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. CheckCircle, Globe" },
+          { key: "title", label: "Title", type: "text", placeholder: "Feature title" },
+          { key: "description", label: "Description", type: "textarea", placeholder: "Feature description" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "objection-busters",
+    label: "Objection Busters",
+    iconName: "ShieldCheck",
+    description: "Address common concerns with reassuring responses",
+    defaultProps: {
+      title: "Common Questions & Concerns",
+      subtitle: "",
+      items: [
+        { concern: "Will the professional understand my background?", response: "Every professional in our directory has specific training or lived experience with cross-cultural populations." },
+        { concern: "Is online therapy effective?", response: "Research consistently shows that online therapy can be as effective as in-person sessions for many conditions." },
+      ],
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
+      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      {
+        key: "items",
+        label: "Objections",
+        type: "array-items",
+        itemSchema: [
+          { key: "concern", label: "Concern", type: "text", placeholder: "What they worry about" },
+          { key: "response", label: "Response", type: "textarea", placeholder: "Reassuring answer" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "before-after",
+    label: "Before & After",
+    iconName: "ArrowRight",
+    description: "Timeline-style milestones showing transformation or progress",
+    defaultProps: {
+      title: "Your Journey",
+      subtitle: "",
+      items: [
+        { before: "Feeling isolated and misunderstood", after: "Connected with a professional who gets it", milestone: "Week 1" },
+        { before: "Struggling to articulate cross-cultural grief", after: "Learning frameworks to process your experience", milestone: "Month 1" },
+        { before: "Navigating identity confusion alone", after: "Building confidence in your multicultural identity", milestone: "Month 3" },
+      ],
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
+      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      {
+        key: "items",
+        label: "Milestones",
+        type: "array-items",
+        itemSchema: [
+          { key: "milestone", label: "Milestone Label", type: "text", placeholder: "e.g. Week 1, Step 1" },
+          { key: "before", label: "Before", type: "text", placeholder: "Starting point" },
+          { key: "after", label: "After", type: "text", placeholder: "Outcome" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "trust-bar",
+    label: "Trust Bar",
+    iconName: "Shield",
+    description: "Row of trust signals with icons and labels",
+    defaultProps: {
+      items: [
+        { icon: "ShieldCheck", label: "Verified Professionals" },
+        { icon: "Lock", label: "Secure & Confidential" },
+        { icon: "Globe", label: "Global Network" },
+        { icon: "Heart", label: "TCK-Informed Care" },
+      ],
+    },
+    propDefs: [
+      {
+        key: "items",
+        label: "Trust Signals",
+        type: "array-items",
+        itemSchema: [
+          { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. ShieldCheck, Lock" },
+          { key: "label", label: "Label", type: "text", placeholder: "Trust signal text" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "press-mentions",
+    label: "Press Mentions",
+    iconName: "Newspaper",
+    description: "Display media logos with optional links",
+    defaultProps: {
+      title: "As Seen In",
+      items: [
+        { name: "Publication Name", logoUrl: "", link: "" },
+      ],
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "e.g. As Seen In, Featured By" },
+      {
+        key: "items",
+        label: "Press Items",
+        type: "array-items",
+        itemSchema: [
+          { key: "name", label: "Publication Name", type: "text", placeholder: "e.g. CNN, Forbes" },
+          { key: "logoUrl", label: "Logo Image", type: "image-url", placeholder: "Upload logo" },
+          { key: "link", label: "Link (optional)", type: "url", placeholder: "https://..." },
+        ],
+      },
+    ],
+  },
+  {
+    type: "social-proof-stats",
+    label: "Social Proof Stats",
+    iconName: "TrendingUp",
+    description: "Key statistics with values, labels, and optional disclaimer",
+    defaultProps: {
+      title: "",
+      stats: [
+        { value: "500+", label: "Professionals in Network" },
+        { value: "40+", label: "Countries Represented" },
+        { value: "10,000+", label: "TCKs Connected" },
+      ],
+      disclaimer: "",
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Optional heading" },
+      {
+        key: "stats",
+        label: "Statistics",
+        type: "array-items",
+        itemSchema: [
+          { key: "value", label: "Value", type: "text", placeholder: "e.g. 500+, 98%" },
+          { key: "label", label: "Label", type: "text", placeholder: "What the stat represents" },
+        ],
+      },
+      { key: "disclaimer", label: "Disclaimer", type: "text", placeholder: "Optional disclaimer text" },
+    ],
+  },
+  {
+    type: "image-grid",
+    label: "Image Grid",
+    iconName: "Grid3X3",
+    description: "Multi-image grid with configurable columns",
+    defaultProps: {
+      title: "",
+      columns: "3",
+      gap: "md",
+      images: [],
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Optional heading" },
+      { key: "columns", label: "Columns", type: "select", options: COLUMNS_OPTIONS },
+      { key: "gap", label: "Gap Size", type: "select", options: SPACING_OPTIONS },
+      {
+        key: "images",
+        label: "Images",
+        type: "array-items",
+        itemSchema: [
+          { key: "url", label: "Image", type: "image-url", placeholder: "Upload image" },
+          { key: "alt", label: "Alt Text", type: "text", placeholder: "Image description" },
+          { key: "caption", label: "Caption", type: "text", placeholder: "Optional caption" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "slider",
+    label: "Content Slider",
+    iconName: "GalleryHorizontal",
+    description: "Image or content slider with navigation controls",
+    defaultProps: {
+      title: "",
+      slides: [
+        { imageUrl: "", heading: "Slide 1", description: "First slide description" },
+        { imageUrl: "", heading: "Slide 2", description: "Second slide description" },
+      ],
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Optional heading" },
+      {
+        key: "slides",
+        label: "Slides",
+        type: "array-items",
+        itemSchema: [
+          { key: "imageUrl", label: "Image", type: "image-url", placeholder: "Upload slide image" },
+          { key: "heading", label: "Heading", type: "text", placeholder: "Slide heading" },
+          { key: "description", label: "Description", type: "textarea", placeholder: "Slide description" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "stats-bar",
+    label: "Stats Bar",
+    iconName: "BarChart3",
+    description: "Horizontal row of stats with icons, values, and labels",
+    defaultProps: {
+      items: [
+        { icon: "Users", value: "1,000+", label: "Active Members" },
+        { icon: "Globe", value: "45+", label: "Countries" },
+        { icon: "Star", value: "4.9", label: "Average Rating" },
+      ],
+    },
+    propDefs: [
+      {
+        key: "items",
+        label: "Stats",
+        type: "array-items",
+        itemSchema: [
+          { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. Users, Globe" },
+          { key: "value", label: "Value", type: "text", placeholder: "e.g. 1,000+" },
+          { key: "label", label: "Label", type: "text", placeholder: "Stat description" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "icon-grid",
+    label: "Icon Grid",
+    iconName: "Grid2X2",
+    description: "Icon + title cards in a configurable grid",
+    defaultProps: {
+      title: "",
+      subtitle: "",
+      columns: "4",
+      items: [
+        { icon: "Globe", title: "International" },
+        { icon: "Heart", title: "Compassionate" },
+        { icon: "Users", title: "Community" },
+        { icon: "ShieldCheck", title: "Trusted" },
+      ],
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Optional heading" },
+      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      { key: "columns", label: "Columns", type: "select", options: COLUMNS_EXTENDED_OPTIONS },
+      {
+        key: "items",
+        label: "Items",
+        type: "array-items",
+        itemSchema: [
+          { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. Globe, Heart" },
+          { key: "title", label: "Title", type: "text", placeholder: "Item title" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "benefit-stack",
+    label: "Benefit Stack",
+    iconName: "ListChecks",
+    description: "Benefits list in a stack or timeline layout",
+    defaultProps: {
+      title: "Benefits",
+      subtitle: "",
+      layout: "stack",
+      items: [
+        { icon: "CheckCircle", title: "Expert Guidance", description: "Work with professionals who specialize in cross-cultural challenges." },
+        { icon: "Globe", title: "Global Accessibility", description: "Find support no matter where you are in the world." },
+        { icon: "Heart", title: "Cultural Understanding", description: "Be understood without having to explain your background." },
+      ],
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
+      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      { key: "layout", label: "Layout", type: "select", options: BENEFIT_LAYOUT_OPTIONS },
+      {
+        key: "items",
+        label: "Benefits",
+        type: "array-items",
+        itemSchema: [
+          { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. CheckCircle" },
+          { key: "title", label: "Title", type: "text", placeholder: "Benefit title" },
+          { key: "description", label: "Description", type: "textarea", placeholder: "Benefit description" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "science-explainer",
+    label: "Science Explainer",
+    iconName: "FlaskConical",
+    description: "Evidence-based content with citations and sources",
+    defaultProps: {
+      title: "The Research Behind Our Approach",
+      body: "",
+      citations: [
+        { text: "TCK Training Research Study, 2024", url: "" },
+      ],
+    },
+    propDefs: [
+      { key: "title", label: "Title", type: "text", placeholder: "Section heading" },
+      { key: "body", label: "Content", type: "richtext", placeholder: "Explain the evidence..." },
+      {
+        key: "citations",
+        label: "Citations",
+        type: "array-items",
+        itemSchema: [
+          { key: "text", label: "Citation Text", type: "text", placeholder: "Author, Year, Title" },
+          { key: "url", label: "Link (optional)", type: "url", placeholder: "https://..." },
+        ],
+      },
+    ],
+  },
+  {
+    type: "safety-checklist",
+    label: "Safety Checklist",
+    iconName: "ClipboardCheck",
+    description: "Required and optional items with disclaimer",
+    defaultProps: {
+      title: "Safety & Quality Standards",
+      disclaimer: "",
+      items: [
+        { text: "Licensed mental health professional", required: true },
+        { text: "Cross-cultural training or experience", required: true },
+        { text: "Background verification completed", required: true },
+        { text: "Specialized in TCK-related challenges", required: false },
+      ],
+    },
+    propDefs: [
+      { key: "title", label: "Title", type: "text", placeholder: "Section heading" },
+      { key: "disclaimer", label: "Disclaimer", type: "textarea", placeholder: "Optional legal disclaimer" },
+      {
+        key: "items",
+        label: "Checklist Items",
+        type: "array-items",
+        itemSchema: [
+          { key: "text", label: "Item Text", type: "text", placeholder: "Checklist item" },
+          { key: "required", label: "Required?", type: "boolean" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "guarantee-warranty",
+    label: "Guarantee & Assurance",
+    iconName: "BadgeCheck",
+    description: "Guarantee points with a support CTA",
+    defaultProps: {
+      title: "Our Commitment to You",
+      subtitle: "",
+      items: [
+        "Every professional is individually vetted and verified",
+        "Your privacy and confidentiality are always protected",
+        "Support team available if you need help finding the right match",
+      ],
+      ctaText: "Contact Support",
+      ctaLink: "/contact",
+    },
+    propDefs: [
+      { key: "title", label: "Title", type: "text", placeholder: "Section heading" },
+      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      {
+        key: "items",
+        label: "Guarantee Points",
+        type: "array-items",
+        itemSchema: [
+          { key: "text", label: "Point", type: "text", placeholder: "Guarantee bullet point" },
+        ],
+      },
+      { key: "ctaText", label: "CTA Button Text", type: "text", placeholder: "Button label" },
+      { key: "ctaLink", label: "CTA Link", type: "url", placeholder: "/contact" },
+    ],
+  },
+  {
+    type: "delivery-setup",
+    label: "Process Steps",
+    iconName: "Workflow",
+    description: "Step-by-step process with optional included items list",
+    defaultProps: {
+      title: "How It Works",
+      subtitle: "",
+      steps: [
+        { step: "1", title: "Browse the Directory", description: "Search by specialty, location, or language." },
+        { step: "2", title: "Review Profiles", description: "Read about their approach and qualifications." },
+        { step: "3", title: "Make Contact", description: "Reach out directly through their profile." },
+      ],
+      includedItems: [],
+    },
+    propDefs: [
+      { key: "title", label: "Title", type: "text", placeholder: "Section heading" },
+      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      {
+        key: "steps",
+        label: "Steps",
+        type: "array-items",
+        itemSchema: [
+          { key: "step", label: "Step Number/Label", type: "text", placeholder: "e.g. 1, Step A" },
+          { key: "title", label: "Title", type: "text", placeholder: "Step title" },
+          { key: "description", label: "Description", type: "textarea", placeholder: "Step details" },
+        ],
+      },
+      {
+        key: "includedItems",
+        label: "What's Included (optional)",
+        type: "array-items",
+        itemSchema: [
+          { key: "text", label: "Item", type: "text", placeholder: "Included item" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "recovery-use-cases",
+    label: "Use Cases",
+    iconName: "Users",
+    description: "Persona-based messaging showing who this is for",
+    defaultProps: {
+      title: "Who Is TCK Wellness For?",
+      subtitle: "",
+      personas: [
+        { title: "Adult TCKs", description: "Adults who grew up across cultures and need support navigating identity, belonging, and transitions.", icon: "User" },
+        { title: "Expat Families", description: "Parents raising children between cultures who want proactive mental health support.", icon: "Users" },
+        { title: "Organizations", description: "Companies and schools supporting internationally mobile employees and students.", icon: "Building2" },
+      ],
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
+      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      {
+        key: "personas",
+        label: "Personas",
+        type: "array-items",
+        itemSchema: [
+          { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. User, Users" },
+          { key: "title", label: "Persona Title", type: "text", placeholder: "e.g. Adult TCKs" },
+          { key: "description", label: "Description", type: "textarea", placeholder: "Who they are and what they need" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "protocol-builder",
+    label: "Protocol Builder",
+    iconName: "ListOrdered",
+    description: "Step-by-step protocols organized by experience level",
+    defaultProps: {
+      title: "Getting Started Guide",
+      subtitle: "",
+      level: "beginner",
+      steps: [
+        { title: "Create Your Account", description: "Sign up for free and set your preferences." },
+        { title: "Explore the Directory", description: "Use filters to find professionals matching your needs." },
+        { title: "Schedule a Session", description: "Contact a professional and book your first appointment." },
+      ],
+    },
+    propDefs: [
+      { key: "title", label: "Title", type: "text", placeholder: "Protocol title" },
+      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      { key: "level", label: "Experience Level", type: "select", options: EXPERIENCE_LEVEL_OPTIONS },
+      {
+        key: "steps",
+        label: "Steps",
+        type: "array-items",
+        itemSchema: [
+          { key: "title", label: "Step Title", type: "text", placeholder: "Step title" },
+          { key: "description", label: "Description", type: "textarea", placeholder: "Step details" },
+        ],
+      },
+    ],
+  },
 ];
 
 export const DYNAMIC_BLOCK_TYPES: BlockDef[] = [
@@ -461,6 +988,34 @@ export const DYNAMIC_BLOCK_TYPES: BlockDef[] = [
       subtitle: "Click a pin to learn more about a TCK-informed professional near you",
     },
     propDefs: [],
+  },
+  {
+    type: "blog-post-feed",
+    label: "Blog Post Feed (Live)",
+    iconName: "Rss",
+    description: "Paginated blog post grid with search and category filters",
+    isDynamic: true,
+    defaultProps: {
+      title: "All Articles",
+      postsPerPage: 9,
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
+      { key: "postsPerPage", label: "Posts Per Page", type: "number", min: 3, max: 24 },
+    ],
+  },
+  {
+    type: "blog-featured-post",
+    label: "Blog Featured Post (Live)",
+    iconName: "FileText",
+    description: "Large featured blog post card from latest published post",
+    isDynamic: true,
+    defaultProps: {
+      title: "Featured Article",
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Optional heading" },
+    ],
   },
   {
     type: "contact-form",

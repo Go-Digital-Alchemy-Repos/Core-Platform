@@ -24,6 +24,10 @@ import {
   MousePointerClick, Image, Play, Minus, Heading,
   Map, Lock, UserPlus, Send, Loader2, ArrowRight,
   AlertCircle, ClipboardCheck, BarChart3, Search, User, ShieldCheck,
+  List, Shield, Newspaper, TrendingUp, Grid3X3, Rss,
+  ListChecks, FlaskConical, BadgeCheck, Workflow, ListOrdered,
+  ChevronLeft, ChevronRight, GalleryHorizontal, Grid2X2, Building2,
+  ExternalLink, XCircle,
 } from "lucide-react";
 import { ProfessionalRegisterDialog } from "@/components/auth/professional-register-dialog";
 import { LoginDialog } from "@/components/auth/login-dialog";
@@ -40,6 +44,10 @@ const LUCIDE_MAP: Record<string, React.ElementType> = {
   MousePointerClick, Image, Play, Minus, Heading,
   Map, Lock, UserPlus, Send, ArrowRight,
   AlertCircle, ClipboardCheck, BarChart3, Search, User, ShieldCheck,
+  List, Shield, Newspaper, TrendingUp, Grid3X3, Rss,
+  ListChecks, FlaskConical, BadgeCheck, Workflow, ListOrdered,
+  ChevronLeft, ChevronRight, GalleryHorizontal, Grid2X2, Building2,
+  ExternalLink, XCircle,
 };
 
 function LucideIcon({ name, className }: { name: string; className?: string }) {
@@ -81,23 +89,41 @@ const IMAGE_WIDTH_MAP: Record<string, string> = {
 
 function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const bg = str(props.backgroundImageUrl);
+  const videoBg = str(props.videoBackgroundUrl);
   const opacity = num(props.overlayOpacity as number, 50);
+  const layout = str(props.layout) || "stacked";
+  const badge = str(props.badge);
+  const minH = str(props.minHeight) || "420";
+  const minHeightStyle = minH === "100vh" ? "100vh" : `${minH}px`;
+  const isSplit = layout === "split";
+
   return (
     <section
-      className="relative min-h-[420px] flex items-center justify-center text-center overflow-hidden rounded-lg"
-      style={bg ? { backgroundImage: `url(${bg})`, backgroundSize: "cover", backgroundPosition: "center" } : { background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)" }}
+      className={`relative flex items-center overflow-hidden rounded-lg ${isSplit ? "justify-start text-left" : "justify-center text-center"}`}
+      style={{
+        minHeight: minHeightStyle,
+        ...(bg && !videoBg ? { backgroundImage: `url(${bg})`, backgroundSize: "cover", backgroundPosition: "center" } : !videoBg ? { background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)" } : {}),
+      }}
     >
-      {(bg || true) && (
-        <div className="absolute inset-0 bg-black rounded-lg" style={{ opacity: opacity / 100 }} />
+      {videoBg && (
+        <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
+          <source src={videoBg} type="video/mp4" />
+        </video>
       )}
-      <div className="relative z-10 px-8 py-16 max-w-3xl mx-auto">
+      <div className="absolute inset-0 bg-black rounded-lg" style={{ opacity: opacity / 100 }} />
+      <div className={`relative z-10 px-8 py-16 ${isSplit ? "max-w-2xl" : "max-w-3xl mx-auto"}`}>
+        {badge && (
+          <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-semibold mb-4 border border-accent/30">
+            {badge}
+          </span>
+        )}
         <h1 className="text-4xl md:text-5xl font-heading font-bold text-white mb-4 leading-tight">
           {str(props.heading) || "Hero Heading"}
         </h1>
         {str(props.subheading) && (
-          <p className="text-lg text-white/80 mb-8 max-w-xl mx-auto">{str(props.subheading)}</p>
+          <p className={`text-lg text-white/80 mb-8 ${isSplit ? "" : "max-w-xl mx-auto"}`}>{str(props.subheading)}</p>
         )}
-        <div className="flex flex-wrap gap-3 justify-center">
+        <div className={`flex flex-wrap gap-3 ${isSplit ? "justify-start" : "justify-center"}`}>
           {str(props.ctaText) && (
             <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
               {str(props.ctaText)}
@@ -110,6 +136,11 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
           )}
         </div>
       </div>
+      {isSplit && bg && (
+        <div className="hidden md:block absolute right-0 top-0 bottom-0 w-1/3">
+          <img src={bg} alt="" className="w-full h-full object-cover" />
+        </div>
+      )}
     </section>
   );
 }
@@ -484,6 +515,553 @@ function DividerBlock({ props }: { props: Record<string, unknown> }) {
   return <hr className={`border-border ${heightClass} border-0 border-t-[1px] my-auto`} />;
 }
 
+function FeatureListBlock({ props }: { props: Record<string, unknown> }) {
+  const cols = str(props.columns) || "3";
+  const colsClass = cols === "2" ? "md:grid-cols-2" : cols === "4" ? "md:grid-cols-4" : "md:grid-cols-3";
+  const features = arr<{ icon: string; title: string; description: string }>(props.features);
+  return (
+    <div className="py-4" data-testid="block-feature-list">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
+      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-8">{str(props.subtitle)}</p>}
+      <div className={`grid grid-cols-1 ${colsClass} gap-8`}>
+        {features.map((f, i) => (
+          <div key={i} className="flex items-start gap-4" data-testid={`feature-item-${i}`}>
+            <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+              <LucideIcon name={f.icon || "CheckCircle"} className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm mb-1">{f.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{f.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ObjectionBustersBlock({ props }: { props: Record<string, unknown> }) {
+  const items = arr<{ concern: string; response: string }>(props.items);
+  return (
+    <div className="py-4" data-testid="block-objection-busters">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
+      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-8">{str(props.subtitle)}</p>}
+      <div className="space-y-6 max-w-3xl mx-auto">
+        {items.map((item, i) => (
+          <div key={i} className="rounded-xl border p-6" data-testid={`objection-item-${i}`}>
+            <div className="flex items-start gap-3 mb-3">
+              <XCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <p className="font-medium text-sm">{item.concern}</p>
+            </div>
+            <div className="flex items-start gap-3 pl-8">
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground leading-relaxed">{item.response}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BeforeAfterBlock({ props }: { props: Record<string, unknown> }) {
+  const items = arr<{ milestone: string; before: string; after: string }>(props.items);
+  return (
+    <div className="py-4" data-testid="block-before-after">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
+      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-8">{str(props.subtitle)}</p>}
+      <div className="relative max-w-3xl mx-auto">
+        <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border hidden sm:block" />
+        <div className="space-y-8">
+          {items.map((item, i) => (
+            <div key={i} className="flex gap-4 sm:gap-6" data-testid={`milestone-item-${i}`}>
+              <div className="relative z-10 flex-shrink-0 w-12 h-12 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-xs">
+                {item.milestone}
+              </div>
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-lg bg-destructive/5 border border-destructive/20 p-3">
+                  <p className="text-xs font-medium text-destructive mb-1">Before</p>
+                  <p className="text-sm text-muted-foreground">{item.before}</p>
+                </div>
+                <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-3">
+                  <p className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After</p>
+                  <p className="text-sm text-muted-foreground">{item.after}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TrustBarBlock({ props }: { props: Record<string, unknown> }) {
+  const items = arr<{ icon: string; label: string }>(props.items);
+  return (
+    <div className="py-4 border-y bg-muted/20" data-testid="block-trust-bar">
+      <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+        {items.map((item, i) => (
+          <div key={i} className="flex items-center gap-2 text-muted-foreground" data-testid={`trust-signal-${i}`}>
+            <LucideIcon name={item.icon || "CheckCircle"} className="h-4 w-4 text-accent" />
+            <span className="text-sm font-medium">{item.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PressMentionsBlock({ props }: { props: Record<string, unknown> }) {
+  const items = arr<{ name: string; logoUrl: string; link: string }>(props.items);
+  return (
+    <div className="py-4" data-testid="block-press-mentions">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-8">{str(props.title)}</h2>}
+      <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12">
+        {items.map((item, i) => {
+          const content = item.logoUrl ? (
+            <img src={item.logoUrl} alt={item.name} className="h-8 sm:h-10 object-contain opacity-60 hover:opacity-100 transition-opacity" />
+          ) : (
+            <span className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">{item.name}</span>
+          );
+          return item.link ? (
+            <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1" data-testid={`press-item-${i}`}>
+              {content}
+              <ExternalLink className="h-3 w-3 text-muted-foreground" />
+            </a>
+          ) : (
+            <div key={i} data-testid={`press-item-${i}`}>{content}</div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SocialProofStatsBlock({ props }: { props: Record<string, unknown> }) {
+  const stats = arr<{ value: string; label: string }>(props.stats);
+  return (
+    <div className="py-4" data-testid="block-social-proof-stats">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-8">{str(props.title)}</h2>}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+        {stats.map((stat, i) => (
+          <div key={i} className="text-center" data-testid={`stat-item-${i}`}>
+            <p className="text-3xl md:text-4xl font-bold text-accent">{stat.value}</p>
+            <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+      {str(props.disclaimer) && (
+        <p className="text-xs text-muted-foreground text-center mt-6 italic">{str(props.disclaimer)}</p>
+      )}
+    </div>
+  );
+}
+
+function ImageGridBlock({ props }: { props: Record<string, unknown> }) {
+  const cols = str(props.columns) || "3";
+  const colsClass = cols === "2" ? "md:grid-cols-2" : cols === "4" ? "md:grid-cols-4" : "md:grid-cols-3";
+  const gapSize = str(props.gap) || "md";
+  const gapClass = gapSize === "sm" ? "gap-2" : gapSize === "lg" ? "gap-6" : gapSize === "xl" ? "gap-8" : "gap-4";
+  const images = arr<{ url: string; alt: string; caption: string }>(props.images);
+  return (
+    <div className="py-4" data-testid="block-image-grid">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-8">{str(props.title)}</h2>}
+      {images.length === 0 ? (
+        <div className="rounded-xl bg-muted/40 border border-dashed h-48 flex items-center justify-center">
+          <p className="text-sm text-muted-foreground">Add images to display here</p>
+        </div>
+      ) : (
+        <div className={`grid grid-cols-1 ${colsClass} ${gapClass}`}>
+          {images.map((img, i) => (
+            <div key={i} data-testid={`grid-image-${i}`}>
+              <img src={img.url} alt={img.alt} className="w-full rounded-lg object-cover aspect-square" />
+              {img.caption && <p className="text-xs text-muted-foreground text-center mt-1">{img.caption}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SliderBlock({ props }: { props: Record<string, unknown> }) {
+  const [current, setCurrent] = useState(0);
+  const slides = arr<{ imageUrl: string; heading: string; description: string }>(props.slides);
+  if (slides.length === 0) return (
+    <div className="py-4 rounded-xl bg-muted/40 border border-dashed h-48 flex items-center justify-center">
+      <p className="text-sm text-muted-foreground">Add slides to display here</p>
+    </div>
+  );
+  const slide = slides[current];
+  return (
+    <div className="py-4" data-testid="block-slider">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-6">{str(props.title)}</h2>}
+      <div className="relative rounded-xl overflow-hidden bg-muted/20 border">
+        {slide.imageUrl && (
+          <img src={slide.imageUrl} alt={slide.heading} className="w-full aspect-[16/9] object-cover" />
+        )}
+        <div className={`${slide.imageUrl ? "absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent" : ""} p-6 sm:p-8`}>
+          {slide.heading && <h3 className={`text-xl font-heading font-bold mb-2 ${slide.imageUrl ? "text-white" : ""}`}>{slide.heading}</h3>}
+          {slide.description && <p className={`text-sm ${slide.imageUrl ? "text-white/80" : "text-muted-foreground"}`}>{slide.description}</p>}
+        </div>
+      </div>
+      {slides.length > 1 && (
+        <div className="flex items-center justify-center gap-4 mt-4">
+          <Button variant="outline" size="icon" className="rounded-full h-8 w-8" onClick={() => setCurrent((c) => (c - 1 + slides.length) % slides.length)} data-testid="button-slider-prev">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex gap-1.5">
+            {slides.map((_, i) => (
+              <button key={i} className={`w-2 h-2 rounded-full transition-colors ${i === current ? "bg-accent" : "bg-muted-foreground/30"}`} onClick={() => setCurrent(i)} data-testid={`button-slider-dot-${i}`} />
+            ))}
+          </div>
+          <Button variant="outline" size="icon" className="rounded-full h-8 w-8" onClick={() => setCurrent((c) => (c + 1) % slides.length)} data-testid="button-slider-next">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatsBarBlock({ props }: { props: Record<string, unknown> }) {
+  const items = arr<{ icon: string; value: string; label: string }>(props.items);
+  return (
+    <div className="py-6 bg-muted/30 rounded-xl" data-testid="block-stats-bar">
+      <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 px-4">
+        {items.map((item, i) => (
+          <div key={i} className="flex items-center gap-3" data-testid={`stats-bar-item-${i}`}>
+            <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
+              <LucideIcon name={item.icon || "Star"} className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <p className="text-lg font-bold">{item.value}</p>
+              <p className="text-xs text-muted-foreground">{item.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function IconGridBlock({ props }: { props: Record<string, unknown> }) {
+  const cols = str(props.columns) || "4";
+  const colsClass = cols === "2" ? "md:grid-cols-2" : cols === "3" ? "md:grid-cols-3" : cols === "5" ? "md:grid-cols-5" : "md:grid-cols-4";
+  const items = arr<{ icon: string; title: string }>(props.items);
+  return (
+    <div className="py-4" data-testid="block-icon-grid">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
+      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-8">{str(props.subtitle)}</p>}
+      <div className={`grid grid-cols-2 ${colsClass} gap-4`}>
+        {items.map((item, i) => (
+          <div key={i} className="flex flex-col items-center gap-2 p-4 rounded-xl border hover:shadow-sm transition-shadow" data-testid={`icon-grid-item-${i}`}>
+            <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center">
+              <LucideIcon name={item.icon || "Globe"} className="h-6 w-6 text-accent" />
+            </div>
+            <p className="text-sm font-medium text-center">{item.title}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BenefitStackBlock({ props }: { props: Record<string, unknown> }) {
+  const layout = str(props.layout) || "stack";
+  const items = arr<{ icon: string; title: string; description: string }>(props.items);
+  const isTimeline = layout === "timeline";
+  return (
+    <div className="py-4" data-testid="block-benefit-stack">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold mb-2">{str(props.title)}</h2>}
+      {str(props.subtitle) && <p className="text-muted-foreground mb-8">{str(props.subtitle)}</p>}
+      <div className={`relative ${isTimeline ? "pl-8" : ""}`}>
+        {isTimeline && <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-accent/20" />}
+        <div className={isTimeline ? "space-y-6" : "space-y-4"}>
+          {items.map((item, i) => (
+            <div key={i} className={`flex items-start gap-4 ${isTimeline ? "relative" : "p-4 rounded-lg border"}`} data-testid={`benefit-item-${i}`}>
+              {isTimeline && <div className="absolute -left-5 top-1 h-4 w-4 rounded-full bg-accent border-2 border-background" />}
+              <div className={`h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 ${isTimeline ? "" : ""}`}>
+                <LucideIcon name={item.icon || "CheckCircle"} className="h-4 w-4 text-accent" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm">{item.title}</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">{item.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScienceExplainerBlock({ props }: { props: Record<string, unknown> }) {
+  const citations = arr<{ text: string; url: string }>(props.citations);
+  return (
+    <div className="py-4" data-testid="block-science-explainer">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold mb-6">{str(props.title)}</h2>}
+      {str(props.body) && (
+        <div className="prose prose-sm max-w-none text-foreground mb-6" dangerouslySetInnerHTML={{ __html: str(props.body) }} />
+      )}
+      {citations.length > 0 && (
+        <div className="border-t pt-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Sources</p>
+          <ol className="space-y-1">
+            {citations.map((c, i) => (
+              <li key={i} className="text-xs text-muted-foreground" data-testid={`citation-${i}`}>
+                {c.url ? (
+                  <a href={c.url} target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-2 hover:text-accent/80">
+                    {c.text}
+                  </a>
+                ) : c.text}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SafetyChecklistBlock({ props }: { props: Record<string, unknown> }) {
+  const items = arr<{ text: string; required: boolean }>(props.items);
+  return (
+    <div className="py-4" data-testid="block-safety-checklist">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold mb-6">{str(props.title)}</h2>}
+      <div className="space-y-3 max-w-2xl">
+        {items.map((item, i) => (
+          <div key={i} className="flex items-start gap-3" data-testid={`checklist-item-${i}`}>
+            <CheckCircle className={`h-5 w-5 flex-shrink-0 mt-0.5 ${item.required ? "text-accent" : "text-muted-foreground/50"}`} />
+            <div className="flex items-center gap-2">
+              <span className="text-sm">{item.text}</span>
+              {item.required && <span className="text-[10px] font-medium text-accent bg-accent/10 px-1.5 py-0.5 rounded">Required</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+      {str(props.disclaimer) && (
+        <p className="text-xs text-muted-foreground mt-6 italic border-t pt-4">{str(props.disclaimer)}</p>
+      )}
+    </div>
+  );
+}
+
+function GuaranteeWarrantyBlock({ props }: { props: Record<string, unknown> }) {
+  const items = arr<{ text: string } | string>(props.items);
+  return (
+    <div className="py-4" data-testid="block-guarantee-warranty">
+      <div className="rounded-2xl bg-accent/5 border border-accent/20 p-8 text-center">
+        <BadgeCheck className="h-10 w-10 text-accent mx-auto mb-4" />
+        {str(props.title) && <h2 className="text-2xl font-heading font-bold mb-2">{str(props.title)}</h2>}
+        {str(props.subtitle) && <p className="text-muted-foreground mb-6">{str(props.subtitle)}</p>}
+        <ul className="space-y-2 max-w-lg mx-auto text-left mb-6">
+          {items.map((item, i) => {
+            const text = typeof item === "string" ? item : (item as { text: string }).text;
+            return (
+              <li key={i} className="flex items-start gap-2" data-testid={`guarantee-item-${i}`}>
+                <CheckCircle className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
+                <span className="text-sm">{text}</span>
+              </li>
+            );
+          })}
+        </ul>
+        {str(props.ctaText) && (
+          <Button className="bg-accent text-accent-foreground">{str(props.ctaText)}</Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DeliverySetupBlock({ props }: { props: Record<string, unknown> }) {
+  const steps = arr<{ step: string; title: string; description: string }>(props.steps);
+  const includedItems = arr<{ text: string } | string>(props.includedItems);
+  return (
+    <div className="py-4" data-testid="block-delivery-setup">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
+      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-8">{str(props.subtitle)}</p>}
+      <div className="relative max-w-3xl mx-auto mb-8">
+        <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border hidden sm:block" />
+        <div className="space-y-6">
+          {steps.map((step, i) => (
+            <div key={i} className="flex gap-4 sm:gap-6" data-testid={`setup-step-${i}`}>
+              <div className="relative z-10 flex-shrink-0 w-12 h-12 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-sm">
+                {step.step}
+              </div>
+              <div className="pt-2">
+                <h3 className="font-semibold text-sm sm:text-base mb-1">{step.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {includedItems.length > 0 && (
+        <div className="bg-muted/30 rounded-xl p-6 max-w-3xl mx-auto">
+          <h3 className="font-semibold text-sm mb-3">What's Included</h3>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {includedItems.map((item, i) => {
+              const text = typeof item === "string" ? item : (item as { text: string }).text;
+              return (
+                <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="h-3.5 w-3.5 text-accent flex-shrink-0" />
+                  {text}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RecoveryUseCasesBlock({ props }: { props: Record<string, unknown> }) {
+  const personas = arr<{ icon: string; title: string; description: string }>(props.personas);
+  return (
+    <div className="py-4" data-testid="block-recovery-use-cases">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
+      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-8">{str(props.subtitle)}</p>}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {personas.map((p, i) => (
+          <Card key={i} className="text-center hover:shadow-md transition-shadow" data-testid={`persona-card-${i}`}>
+            <CardContent className="pt-8 pb-6">
+              <div className="h-14 w-14 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
+                <LucideIcon name={p.icon || "User"} className="h-7 w-7 text-accent" />
+              </div>
+              <h3 className="font-semibold mb-2">{p.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{p.description}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProtocolBuilderBlock({ props }: { props: Record<string, unknown> }) {
+  const level = str(props.level) || "beginner";
+  const steps = arr<{ title: string; description: string }>(props.steps);
+  const levelColors: Record<string, string> = {
+    beginner: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    intermediate: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    advanced: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  };
+  return (
+    <div className="py-4" data-testid="block-protocol-builder">
+      <div className="flex items-center gap-3 mb-6">
+        {str(props.title) && <h2 className="text-2xl font-heading font-bold">{str(props.title)}</h2>}
+        <span className={`text-xs font-semibold px-2 py-1 rounded-full capitalize ${levelColors[level] || levelColors.beginner}`}>
+          {level}
+        </span>
+      </div>
+      {str(props.subtitle) && <p className="text-muted-foreground mb-6">{str(props.subtitle)}</p>}
+      <div className="space-y-4">
+        {steps.map((step, i) => (
+          <div key={i} className="flex gap-4 items-start" data-testid={`protocol-step-${i}`}>
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-sm">
+              {i + 1}
+            </div>
+            <div className="flex-1 border rounded-lg p-4">
+              <h3 className="font-semibold text-sm mb-1">{step.title}</h3>
+              <p className="text-sm text-muted-foreground">{step.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BlogPostFeedBlock({ props }: { props: Record<string, unknown> }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const { data: posts } = useQuery<{ id: string; title: string; excerpt: string; slug: string; category?: string; coverImageUrl?: string; isPublished?: boolean }[]>({
+    queryKey: ["/api/blog"],
+  });
+  const postsPerPage = num(props.postsPerPage, 9);
+  const published = (posts ?? []).filter((p) => (p as any).isPublished);
+  const filtered = searchQuery
+    ? published.filter((p) => p.title.toLowerCase().includes(searchQuery.toLowerCase()) || (p.category ?? "").toLowerCase().includes(searchQuery.toLowerCase()))
+    : published;
+  const visible = filtered.slice(0, postsPerPage);
+  return (
+    <div className="py-4" data-testid="block-blog-post-feed">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-6">{str(props.title)}</h2>}
+      <div className="flex justify-center mb-6">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search articles..." className="pl-9" data-testid="input-blog-search" />
+        </div>
+      </div>
+      {visible.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />
+          <p className="text-sm">{searchQuery ? "No articles match your search" : "No articles published yet"}</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {visible.map((p) => (
+            <Link key={p.id} href={`/insights/${p.slug}`}>
+              <Card className="h-full cursor-pointer hover:shadow-md transition-shadow" data-testid={`blog-feed-card-${p.id}`}>
+                {p.coverImageUrl && (
+                  <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
+                    <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <CardContent className="p-4">
+                  <p className="font-semibold text-sm mb-1 line-clamp-2">{p.title}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-3">{p.excerpt}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BlogFeaturedPostBlock({ props }: { props: Record<string, unknown> }) {
+  const { data: posts } = useQuery<{ id: string; title: string; excerpt: string; slug: string; coverImageUrl?: string; isPublished?: boolean }[]>({
+    queryKey: ["/api/blog"],
+  });
+  const featured = (posts ?? []).filter((p) => (p as any).isPublished)[0];
+  return (
+    <div className="py-4" data-testid="block-blog-featured-post">
+      {str(props.title) && <h2 className="text-2xl font-heading font-bold mb-6">{str(props.title)}</h2>}
+      {!featured ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />
+          <p className="text-sm">Featured article will appear here</p>
+        </div>
+      ) : (
+        <Link href={`/insights/${featured.slug}`}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden" data-testid="blog-featured-card">
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              {featured.coverImageUrl && (
+                <div className="aspect-[16/9] md:aspect-auto overflow-hidden">
+                  <img src={featured.coverImageUrl} alt={featured.title} className="w-full h-full object-cover" />
+                </div>
+              )}
+              <CardContent className="p-6 flex flex-col justify-center">
+                <h3 className="text-xl font-heading font-bold mb-3">{featured.title}</h3>
+                <p className="text-sm text-muted-foreground line-clamp-4">{featured.excerpt}</p>
+                <div className="mt-4">
+                  <span className="text-sm text-accent font-medium inline-flex items-center gap-1">
+                    Read Article <ArrowRight className="h-3.5 w-3.5" />
+                  </span>
+                </div>
+              </CardContent>
+            </div>
+          </Card>
+        </Link>
+      )}
+    </div>
+  );
+}
+
 const contactFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Please enter a valid email"),
@@ -740,6 +1318,23 @@ const RENDERERS: Record<string, React.ComponentType<{ props: Record<string, unkn
   "video-embed": VideoEmbedBlock,
   "contact-info": ContactInfoBlock,
   divider: DividerBlock,
+  "feature-list": FeatureListBlock,
+  "objection-busters": ObjectionBustersBlock,
+  "before-after": BeforeAfterBlock,
+  "trust-bar": TrustBarBlock,
+  "press-mentions": PressMentionsBlock,
+  "social-proof-stats": SocialProofStatsBlock,
+  "image-grid": ImageGridBlock,
+  slider: SliderBlock,
+  "stats-bar": StatsBarBlock,
+  "icon-grid": IconGridBlock,
+  "benefit-stack": BenefitStackBlock,
+  "science-explainer": ScienceExplainerBlock,
+  "safety-checklist": SafetyChecklistBlock,
+  "guarantee-warranty": GuaranteeWarrantyBlock,
+  "delivery-setup": DeliverySetupBlock,
+  "recovery-use-cases": RecoveryUseCasesBlock,
+  "protocol-builder": ProtocolBuilderBlock,
 };
 
 export function BlockRenderer({ block, isAdminPreview }: { block: BlockInstance; isAdminPreview?: boolean }) {
@@ -750,6 +1345,8 @@ export function BlockRenderer({ block, isAdminPreview }: { block: BlockInstance;
     if (block.type === "therapist-map") return <TherapistMapBlock props={block.props} />;
     if (block.type === "contact-form") return <ContactFormBlock />;
     if (block.type === "join-registration-form") return <JoinRegistrationFormBlock />;
+    if (block.type === "blog-post-feed") return <BlogPostFeedBlock props={block.props} />;
+    if (block.type === "blog-featured-post") return <BlogFeaturedPostBlock props={block.props} />;
   }
 
   const Renderer = RENDERERS[block.type];
