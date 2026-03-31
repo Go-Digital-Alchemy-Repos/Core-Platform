@@ -31,7 +31,6 @@ const allowlist = [
   "passport-local",
   "pg",
   "stripe",
-  "stripe-replit-sync",
   "uuid",
   "ws",
   "xlsx",
