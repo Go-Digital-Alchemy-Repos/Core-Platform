@@ -807,7 +807,8 @@ function AddTherapistSheet({
                   const showOther = otherLangOpen || customLangs.length > 0;
                   const isDuplicate = (val: string) => {
                     const lower = val.toLowerCase();
-                    return (field.value ?? []).some((l: string) => l.toLowerCase() === lower);
+                    return (field.value ?? []).some((l: string) => l.toLowerCase() === lower)
+                      || LANGUAGES.some((l) => l.toLowerCase() === lower);
                   };
                   return (
                     <FormItem>
