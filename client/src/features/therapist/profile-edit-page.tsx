@@ -2,6 +2,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useState } from "react";
 import { apiRequest, getQueryFn, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { TherapistProfile } from "@shared/schema";
@@ -17,7 +18,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, X, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { SiInstagram, SiFacebook, SiX, SiLinkedin, SiYoutube, SiTiktok } from "react-icons/si";
 import { AvatarUpload } from "@/components/shared/avatar-upload";
 import { PhoneInput } from "@/components/shared/phone-input";
@@ -56,6 +58,7 @@ export default function ProfileEditPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { specializations: specList } = useSpecializations();
+  const [otherLangOpen, setOtherLangOpen] = useState(false);
 
   const { data: profile, isLoading } = useQuery<TherapistProfile | null>({
     queryKey: ["/api/therapist/profile"],
@@ -272,33 +275,117 @@ export default function ProfileEditPage() {
               <FormField
                 control={form.control}
                 name="languages"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {LANGUAGES.map((lang) => (
-                        <div key={lang} className="flex items-center space-x-2">
+                render={({ field }) => {
+                  const presetSet = new Set<string>(LANGUAGES);
+                  const customLangs = (field.value ?? []).filter((l) => !presetSet.has(l));
+                  const showOther = otherLangOpen || customLangs.length > 0;
+                  const isDuplicate = (val: string) => {
+                    const lower = val.toLowerCase();
+                    return (field.value ?? []).some((l) => l.toLowerCase() === lower);
+                  };
+                  return (
+                    <FormItem>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {LANGUAGES.map((lang) => (
+                          <div key={lang} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`lang-${lang}`}
+                              checked={field.value?.includes(lang)}
+                              onCheckedChange={(checked) => {
+                                const current = field.value ?? [];
+                                field.onChange(
+                                  checked
+                                    ? [...current, lang]
+                                    : current.filter((l) => l !== lang)
+                                );
+                              }}
+                              data-testid={`checkbox-lang-${lang}`}
+                            />
+                            <Label htmlFor={`lang-${lang}`} className="text-sm cursor-pointer">
+                              {lang}
+                            </Label>
+                          </div>
+                        ))}
+                        <div className="flex items-center space-x-2">
                           <Checkbox
-                            id={`lang-${lang}`}
-                            checked={field.value?.includes(lang)}
+                            id="lang-other"
+                            checked={showOther}
                             onCheckedChange={(checked) => {
-                              const current = field.value ?? [];
-                              field.onChange(
-                                checked
-                                  ? [...current, lang]
-                                  : current.filter((l) => l !== lang)
-                              );
+                              if (checked) {
+                                setOtherLangOpen(true);
+                              } else {
+                                setOtherLangOpen(false);
+                                field.onChange((field.value ?? []).filter((l) => presetSet.has(l)));
+                              }
                             }}
-                            data-testid={`checkbox-lang-${lang}`}
+                            data-testid="checkbox-lang-other"
                           />
-                          <Label htmlFor={`lang-${lang}`} className="text-sm cursor-pointer">
-                            {lang}
+                          <Label htmlFor="lang-other" className="text-sm cursor-pointer">
+                            Other
                           </Label>
                         </div>
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                      </div>
+                      {showOther && (
+                        <div className="mt-3 space-y-2">
+                          {customLangs.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {customLangs.map((lang) => (
+                                <Badge key={lang} variant="secondary" className="gap-1" data-testid={`badge-custom-lang-${lang}`}>
+                                  {lang}
+                                  <button
+                                    type="button"
+                                    onClick={() => field.onChange((field.value ?? []).filter((l) => l !== lang))}
+                                    className="ml-0.5 hover:text-destructive"
+                                    data-testid={`remove-custom-lang-${lang}`}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex gap-2">
+                            <Input
+                              id="custom-language-input"
+                              placeholder="Enter language..."
+                              maxLength={50}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  const val = (e.target as HTMLInputElement).value.trim();
+                                  if (val && !isDuplicate(val)) {
+                                    field.onChange([...(field.value ?? []), val]);
+                                    (e.target as HTMLInputElement).value = "";
+                                  }
+                                }
+                              }}
+                              className="max-w-[200px]"
+                              data-testid="input-custom-language"
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                const input = document.getElementById("custom-language-input") as HTMLInputElement;
+                                const val = input?.value.trim();
+                                if (val && !isDuplicate(val)) {
+                                  field.onChange([...(field.value ?? []), val]);
+                                  input.value = "";
+                                }
+                              }}
+                              data-testid="button-add-custom-language"
+                            >
+                              <Plus className="h-4 w-4 mr-1" />
+                              Add
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </CardContent>
           </Card>
