@@ -35,6 +35,14 @@ export class ApplicationStorage {
     return app;
   }
 
+  async getByStripeCheckoutSession(sessionId: string): Promise<ProviderApplication | undefined> {
+    const [app] = await db
+      .select()
+      .from(providerApplications)
+      .where(eq(providerApplications.stripeCheckoutSessionId, sessionId));
+    return app;
+  }
+
   async create(data: InsertProviderApplication): Promise<ProviderApplication> {
     const [app] = await db.insert(providerApplications).values(data).returning();
     return app;
@@ -57,7 +65,14 @@ export class ApplicationStorage {
         status: providerApplications.status,
         currentStep: providerApplications.currentStep,
         formData: providerApplications.formData,
+        submittedSnapshot: providerApplications.submittedSnapshot,
         paymentStatus: providerApplications.paymentStatus,
+        paidAt: providerApplications.paidAt,
+        amountPaid: providerApplications.amountPaid,
+        refundEligibleAmount: providerApplications.refundEligibleAmount,
+        refundStatus: providerApplications.refundStatus,
+        stripeCheckoutSessionId: providerApplications.stripeCheckoutSessionId,
+        stripePaymentIntentId: providerApplications.stripePaymentIntentId,
         referencesStatus: providerApplications.referencesStatus,
         backgroundCheckStatus: providerApplications.backgroundCheckStatus,
         interviewStatus: providerApplications.interviewStatus,

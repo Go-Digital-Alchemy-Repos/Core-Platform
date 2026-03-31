@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import {
   ArrowLeft, ArrowRight, Send, CheckCircle2, Loader2, Clock,
   FileText, User, Briefcase, MessageSquare, Users, DollarSign, Shield,
-  Plus, X, Save, ExternalLink, AlertCircle
+  Plus, X, Save, ExternalLink, AlertCircle, CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -898,12 +898,15 @@ export default function ApplicationPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const searchString = useSearch();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<FormData>({});
   const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [initialized, setInitialized] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const paymentChecked = useRef(false);
 
   const { data: application, isLoading } = useQuery<any>({
     queryKey: ["/api/therapist/application"],
@@ -930,6 +933,42 @@ export default function ApplicationPage() {
     },
     onError: () => {
       setAutosaveStatus("error");
+    },
+  });
+
+  const paymentMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/therapist/application/create-payment-session");
+      return res.json();
+    },
+    onSuccess: (data: { url: string }) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: (err: any) => {
+      toast({ title: "Payment failed", description: err?.message || "Could not initiate payment.", variant: "destructive" });
+    },
+  });
+
+  const confirmPaymentMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/therapist/application/confirm-payment");
+      return res.json();
+    },
+    onSuccess: (data: { paid: boolean }) => {
+      if (data.paid) {
+        queryClient.invalidateQueries({ queryKey: ["/api/therapist/application"] });
+        toast({ title: "Payment confirmed!", description: "Your application fee has been processed. You can now submit your application." });
+        setPaymentProcessing(false);
+      } else {
+        toast({ title: "Payment not confirmed", description: "We couldn't verify your payment. Please try again.", variant: "destructive" });
+        setPaymentProcessing(false);
+      }
+    },
+    onError: (err: any) => {
+      setPaymentProcessing(false);
+      toast({ title: "Payment verification failed", description: err?.message || "Please contact support if you were charged.", variant: "destructive" });
     },
   });
 
@@ -971,6 +1010,23 @@ export default function ApplicationPage() {
     }
   }, [application, user]);
 
+  useEffect(() => {
+    if (!searchString || paymentChecked.current) return;
+    const params = new URLSearchParams(searchString);
+    if (params.get("payment") === "success") {
+      paymentChecked.current = true;
+      setPaymentProcessing(true);
+      setCurrentStep(6);
+      confirmPaymentMutation.mutate();
+      window.history.replaceState({}, "", "/therapist/apply");
+    } else if (params.get("payment") === "canceled") {
+      paymentChecked.current = true;
+      toast({ title: "Payment canceled", description: "You can try again when you're ready." });
+      setCurrentStep(6);
+      window.history.replaceState({}, "", "/therapist/apply");
+    }
+  }, [searchString]);
+
   const triggerAutosave = useCallback((newFormData: FormData, step: number) => {
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     setAutosaveStatus("saving");
@@ -1006,7 +1062,7 @@ export default function ApplicationPage() {
     }
   }, [currentStep, formData, application, handleStepChange]);
 
-  const handleSubmit = useCallback(() => {
+  const handlePayAndSubmit = useCallback(() => {
     for (let i = 0; i < WIZARD_STEPS.length; i++) {
       const v = getStepValidation(i, formData, application);
       if (!v.valid) {
@@ -1015,10 +1071,18 @@ export default function ApplicationPage() {
         return;
       }
     }
+
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
-    autosaveMutation.mutate({ formData, currentStep }, {
-      onSuccess: () => submitApplication.mutate(),
-    });
+
+    if (application?.paymentStatus === "paid") {
+      autosaveMutation.mutate({ formData, currentStep }, {
+        onSuccess: () => submitApplication.mutate(),
+      });
+    } else {
+      autosaveMutation.mutate({ formData, currentStep }, {
+        onSuccess: () => paymentMutation.mutate(),
+      });
+    }
   }, [formData, application, currentStep]);
 
   const completedSteps = new Set<number>();
@@ -1027,6 +1091,8 @@ export default function ApplicationPage() {
       completedSteps.add(i);
     }
   }
+
+  const isPaid = application?.paymentStatus === "paid";
 
   if (isLoading) {
     return (
@@ -1095,6 +1161,13 @@ export default function ApplicationPage() {
 
       <StepIndicator currentStep={currentStep} onStepClick={handleStepChange} completedSteps={completedSteps} />
 
+      {paymentProcessing && (
+        <Alert className="mb-4 border-blue-200 dark:border-blue-800">
+          <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+          <AlertDescription>Confirming your payment... Please wait.</AlertDescription>
+        </Alert>
+      )}
+
       {validationError && (
         <Alert variant="destructive" className="mb-4" data-testid="alert-validation-error">
           <AlertCircle className="h-4 w-4" />
@@ -1114,6 +1187,34 @@ export default function ApplicationPage() {
         </CardContent>
       </Card>
 
+      {isLastStep && allComplete && (
+        <Card className="mt-4 border-primary/30">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <CreditCard className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                {isPaid ? (
+                  <div>
+                    <p className="font-medium text-green-700 dark:text-green-400">Application fee paid</p>
+                    <p className="text-sm text-muted-foreground mt-1">Your $150.00 application fee has been processed. Click below to submit your application for review.</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="font-medium">Application Fee: $150.00</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      A one-time application fee is required to submit. $50 is non-refundable (processing). $100 will be refunded if your application is not approved.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 italic">
+                      You will be redirected to a secure payment page. Your application data is saved automatically.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="flex items-center justify-between mt-6">
         <Button
           variant="outline"
@@ -1126,15 +1227,26 @@ export default function ApplicationPage() {
         </Button>
         <div className="flex gap-2">
           {isLastStep && allComplete ? (
-            <Button
-              onClick={handleSubmit}
-              disabled={submitApplication.isPending || autosaveMutation.isPending}
-              className="bg-green-600 hover:bg-green-700"
-              data-testid="button-submit-application"
-            >
-              {submitApplication.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-              Submit Application
-            </Button>
+            isPaid ? (
+              <Button
+                onClick={handlePayAndSubmit}
+                disabled={submitApplication.isPending || autosaveMutation.isPending || paymentProcessing}
+                className="bg-green-600 hover:bg-green-700"
+                data-testid="button-submit-application"
+              >
+                {submitApplication.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                Submit Application
+              </Button>
+            ) : (
+              <Button
+                onClick={handlePayAndSubmit}
+                disabled={paymentMutation.isPending || autosaveMutation.isPending || paymentProcessing}
+                data-testid="button-pay-and-submit"
+              >
+                {paymentMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
+                Pay & Submit — $150.00
+              </Button>
+            )
           ) : (
             <Button
               onClick={handleNext}
@@ -1150,7 +1262,7 @@ export default function ApplicationPage() {
 
       {isLastStep && !allComplete && (
         <div className="mt-4 text-center">
-          <p className="text-sm text-muted-foreground">Complete all steps to enable submission.</p>
+          <p className="text-sm text-muted-foreground">Complete all steps to enable payment and submission.</p>
           <div className="flex flex-wrap justify-center gap-2 mt-2">
             {WIZARD_STEPS.map((step, idx) => {
               if (completedSteps.has(idx)) return null;

@@ -23,8 +23,33 @@ export class WebhookHandlers {
       switch (event.type) {
         case "checkout.session.completed": {
           const session = event.data.object;
+          const applicationId = session.metadata?.applicationId;
           const recordingPurchaseId = session.metadata?.recordingPurchaseId;
           const registrationId = session.metadata?.registrationId;
+
+          if (applicationId && session.metadata?.type === "application_fee") {
+            const application = await storage.applications.getById(applicationId);
+            if (application && application.paymentStatus !== "paid") {
+              await storage.applications.update(application.id, {
+                paymentStatus: "paid",
+                paidAt: new Date(),
+                amountPaid: session.amount_total || 15000,
+                refundEligibleAmount: 10000,
+                stripePaymentIntentId: session.payment_intent as string,
+              } as any);
+
+              await storage.applications.addTimelineEntry({
+                applicationId: application.id,
+                action: "payment_completed",
+                note: `Application fee of $${((session.amount_total || 15000) / 100).toFixed(2)} confirmed via webhook`,
+              });
+
+              logger.stripe.info("Application fee payment confirmed via webhook", { applicationId: application.id, sessionId: session.id });
+            } else {
+              logger.stripe.warn("Application not found for checkout session", { applicationId, sessionId: session.id });
+            }
+            break;
+          }
 
           if (recordingPurchaseId) {
             const purchase = await storage.recordingPurchases.getByCheckoutSession(session.id);

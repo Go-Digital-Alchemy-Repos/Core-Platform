@@ -1,10 +1,14 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Clock, CheckCircle2, XCircle, AlertCircle, FileSearch, Loader2 } from "lucide-react";
+import {
+  ArrowLeft, Clock, CheckCircle2, XCircle, AlertCircle, FileSearch, Loader2,
+  Shield, Users, Video, FileCheck, Mail, CreditCard, AlertTriangle
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { APPLICATION_STATUS_LABELS, type ApplicationStatus } from "@shared/types";
@@ -23,6 +27,201 @@ function statusColor(status: ApplicationStatus) {
   if (status === "denied") return "bg-red-50 dark:bg-red-950/30 border-red-500/50";
   if (status === "withdrawn") return "bg-gray-50 dark:bg-gray-900/30 border-gray-500/50";
   return "bg-blue-50 dark:bg-blue-950/30 border-blue-500/50";
+}
+
+function statusDescription(status: ApplicationStatus) {
+  const map: Record<string, string> = {
+    submitted: "Your application has been received and is being reviewed by our team.",
+    awaiting_background_check: "We are preparing to initiate a background check. You will receive an email with instructions.",
+    background_check_in_progress: "Your background check is currently being processed.",
+    awaiting_references: "We are reaching out to your professional references.",
+    references_in_progress: "Waiting for responses from your references.",
+    ready_for_interview: "Your application is ready for an interview. We'll be in touch to schedule.",
+    interview_scheduled: "Your interview has been scheduled. Check your email for details.",
+    interview_completed: "Your interview is complete. A decision will be made soon.",
+    approved_pending_subscription: "Congratulations! You've been approved. Activate your membership subscription to be listed in our directory.",
+    active_member: "You are an active member of the TCK Wellness counselor network!",
+    denied: "We appreciate your interest, but we are unable to approve your application at this time. If you paid the application fee, the $100 refundable portion will be returned within 5–10 business days.",
+    withdrawn: "You have withdrawn your application.",
+  };
+  return map[status] || "";
+}
+
+interface ProgressStep {
+  label: string;
+  icon: typeof Clock;
+  status: "complete" | "current" | "upcoming" | "failed";
+  detail?: string;
+}
+
+function getProgressSteps(application: any): ProgressStep[] {
+  const status = application.status as ApplicationStatus;
+  const bgStatus = application.backgroundCheckStatus;
+  const refStatus = application.referencesStatus;
+  const intStatus = application.interviewStatus;
+  const decStatus = application.decisionStatus;
+
+  const statusOrder = [
+    "submitted",
+    "awaiting_background_check", "background_check_in_progress",
+    "awaiting_references", "references_in_progress",
+    "ready_for_interview", "interview_scheduled", "interview_completed",
+    "approved_pending_subscription", "active_member",
+  ];
+  const currentIdx = statusOrder.indexOf(status);
+
+  function stepState(checkStatuses: string[], thresholdIdx: number): ProgressStep["status"] {
+    if (checkStatuses.includes("completed")) return "complete";
+    if (checkStatuses.includes("failed")) return "failed";
+    if (currentIdx >= thresholdIdx) return "current";
+    return "upcoming";
+  }
+
+  const refCount = application.references?.length ?? 0;
+
+  return [
+    {
+      label: "Application Submitted",
+      icon: FileCheck,
+      status: currentIdx >= 0 ? "complete" : "upcoming",
+      detail: application.submittedAt ? `Submitted ${new Date(application.submittedAt).toLocaleDateString()}` : undefined,
+    },
+    {
+      label: "Application Fee",
+      icon: CreditCard,
+      status: application.paymentStatus === "paid" ? "complete" : "upcoming",
+      detail: application.paidAt ? `Paid ${new Date(application.paidAt).toLocaleDateString()}` : undefined,
+    },
+    {
+      label: "Background Check",
+      icon: Shield,
+      status: stepState([bgStatus], 1),
+      detail: bgStatus === "completed" ? "Completed" : bgStatus === "in_progress" ? "In progress" : undefined,
+    },
+    {
+      label: "References",
+      icon: Users,
+      status: stepState([refStatus], 3),
+      detail: `${refCount} reference${refCount !== 1 ? "s" : ""} on file`,
+    },
+    {
+      label: "Interview",
+      icon: Video,
+      status: stepState([intStatus], 5),
+      detail: intStatus === "completed" ? "Completed" : intStatus === "in_progress" ? "Scheduled" : undefined,
+    },
+    {
+      label: "Final Review",
+      icon: FileSearch,
+      status: stepState([decStatus], 7),
+      detail: decStatus === "completed" ? (status === "denied" ? "Not approved" : "Approved") : undefined,
+    },
+  ];
+}
+
+function ProgressTracker({ steps }: { steps: ProgressStep[] }) {
+  return (
+    <div className="space-y-0">
+      {steps.map((step, idx) => {
+        const Icon = step.icon;
+        const isLast = idx === steps.length - 1;
+        return (
+          <div key={step.label} className="flex gap-3">
+            <div className="flex flex-col items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                step.status === "complete" ? "bg-green-100 dark:bg-green-900/30 text-green-600" :
+                step.status === "current" ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600" :
+                step.status === "failed" ? "bg-red-100 dark:bg-red-900/30 text-red-600" :
+                "bg-muted text-muted-foreground"
+              }`}>
+                {step.status === "complete" ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+              </div>
+              {!isLast && (
+                <div className={`w-0.5 h-6 ${
+                  step.status === "complete" ? "bg-green-300 dark:bg-green-700" : "bg-muted-foreground/20"
+                }`} />
+              )}
+            </div>
+            <div className={`pb-4 ${isLast ? "pb-0" : ""}`}>
+              <p className={`text-sm font-medium ${
+                step.status === "current" ? "text-blue-700 dark:text-blue-400" :
+                step.status === "complete" ? "text-green-700 dark:text-green-400" :
+                step.status === "failed" ? "text-red-700 dark:text-red-400" :
+                "text-muted-foreground"
+              }`}>{step.label}</p>
+              {step.detail && <p className="text-xs text-muted-foreground mt-0.5">{step.detail}</p>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function WhatHappensNext({ status }: { status: ApplicationStatus }) {
+  if (["active_member", "denied", "withdrawn"].includes(status)) return null;
+
+  const items = [
+    {
+      icon: Shield,
+      title: "Background Check",
+      description: "You will receive an email with instructions to complete a background check. Please complete it within 48 hours of receiving the link.",
+      highlight: ["submitted", "awaiting_background_check"].includes(status),
+    },
+    {
+      icon: Mail,
+      title: "Reference Verification",
+      description: "Your 3 professional references will receive a confidential reference form via email. We recommend letting them know to expect it.",
+      highlight: ["submitted", "awaiting_references", "references_in_progress"].includes(status),
+    },
+    {
+      icon: Video,
+      title: "Interview",
+      description: "After your background check and references are complete, you may be invited for a brief video interview with our team.",
+      highlight: ["ready_for_interview", "interview_scheduled"].includes(status),
+    },
+    {
+      icon: FileCheck,
+      title: "Final Review & Decision",
+      description: "Our team will review your complete application and make a decision. You will be notified via email.",
+      highlight: ["interview_completed"].includes(status),
+    },
+    {
+      icon: CreditCard,
+      title: "Refund Policy",
+      description: "If your application is not approved, the $100 refundable portion of your application fee will be returned within 5–10 business days.",
+      highlight: false,
+    },
+  ];
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="text-base">What Happens Next</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {items.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={item.title}
+                className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${
+                  item.highlight ? "bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800" : ""
+                }`}
+              >
+                <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${item.highlight ? "text-blue-600" : "text-muted-foreground"}`} />
+                <div>
+                  <p className={`text-sm font-medium ${item.highlight ? "text-blue-900 dark:text-blue-300" : ""}`}>{item.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function ApplicationStatusPage() {
@@ -88,6 +287,7 @@ export default function ApplicationStatusPage() {
   const status = application.status as ApplicationStatus;
   const canWithdraw = !["active_member", "denied", "withdrawn"].includes(status);
   const timeline = application.timeline ?? [];
+  const progressSteps = getProgressSteps(application);
 
   return (
     <div className="container max-w-2xl mx-auto py-8 px-4">
@@ -108,18 +308,7 @@ export default function ApplicationStatusPage() {
           {APPLICATION_STATUS_LABELS[status] ?? status}
         </AlertTitle>
         <AlertDescription>
-          {status === "submitted" && "Your application has been received and is being reviewed by our team."}
-          {status === "awaiting_background_check" && "We are preparing to initiate a background check."}
-          {status === "background_check_in_progress" && "Your background check is currently being processed."}
-          {status === "awaiting_references" && "We are reaching out to your professional references."}
-          {status === "references_in_progress" && "Waiting for responses from your references."}
-          {status === "ready_for_interview" && "Your application is ready for an interview. We'll be in touch to schedule."}
-          {status === "interview_scheduled" && "Your interview has been scheduled. Check your email for details."}
-          {status === "interview_completed" && "Your interview is complete. A decision will be made soon."}
-          {status === "approved_pending_subscription" && "Congratulations! You've been approved. Activate your membership subscription to be listed in our directory."}
-          {status === "active_member" && "You are an active member of the TCK Wellness counselor network!"}
-          {status === "denied" && "We appreciate your interest, but we are unable to approve your application at this time."}
-          {status === "withdrawn" && "You have withdrawn your application."}
+          {statusDescription(status)}
         </AlertDescription>
       </Alert>
 
@@ -133,36 +322,66 @@ export default function ApplicationStatusPage() {
         </div>
       )}
 
+      {status === "denied" && application.decision?.reason && (
+        <Alert variant="destructive" className="mt-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Reason</AlertTitle>
+          <AlertDescription>{application.decision.reason}</AlertDescription>
+        </Alert>
+      )}
+
       <Card className="mt-6">
         <CardHeader>
           <CardTitle className="text-base">Application Progress</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-              <span className="text-sm">Credentials</span>
-              <Badge variant="outline">{application.credentials?.length ?? 0} added</Badge>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-              <span className="text-sm">References</span>
-              <Badge variant="outline">{application.references?.length ?? 0} added</Badge>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-              <span className="text-sm">Background Check</span>
-              <Badge variant="outline">{application.backgroundCheckStatus}</Badge>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-              <span className="text-sm">Interview</span>
-              <Badge variant="outline">{application.interviewStatus}</Badge>
-            </div>
-          </div>
+          <ProgressTracker steps={progressSteps} />
         </CardContent>
       </Card>
 
-      {timeline.length > 0 && (
-        <Card className="mt-4">
+      {application.paymentStatus === "paid" && application.paidAt && (
+        <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="text-base">Timeline</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <CreditCard className="w-4 h-4" />
+              Payment Receipt
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Amount Paid</p>
+                <p className="font-medium">${((application.amountPaid || 15000) / 100).toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Date</p>
+                <p className="font-medium">{new Date(application.paidAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Non-Refundable Portion</p>
+                <p className="font-medium">$50.00</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Refundable Deposit</p>
+                <p className="font-medium">${((application.refundEligibleAmount || 10000) / 100).toFixed(2)}</p>
+              </div>
+              {application.stripePaymentIntentId && (
+                <div className="col-span-2">
+                  <p className="text-muted-foreground">Transaction Reference</p>
+                  <p className="font-mono text-xs">{application.stripePaymentIntentId}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <WhatHappensNext status={status} />
+
+      {timeline.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-base">Activity Timeline</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -170,10 +389,10 @@ export default function ApplicationStatusPage() {
                 <div key={entry.id} className="flex gap-3 text-sm">
                   <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">{entry.action.replace(/_/g, " ")}</p>
+                    <p className="font-medium capitalize">{entry.action.replace(/_/g, " ")}</p>
                     {entry.note && <p className="text-muted-foreground text-xs">{entry.note}</p>}
                     <p className="text-muted-foreground text-xs">
-                      {entry.createdAt && new Date(entry.createdAt).toLocaleDateString()}
+                      {entry.createdAt && new Date(entry.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
                     </p>
                   </div>
                 </div>
@@ -185,9 +404,11 @@ export default function ApplicationStatusPage() {
 
       {canWithdraw && (
         <div className="mt-6 text-center">
+          <Separator className="mb-6" />
+          <p className="text-sm text-muted-foreground mb-3">If you need to withdraw your application, you can do so below. This action cannot be undone.</p>
           <Button
             variant="outline"
-            className="text-red-600 hover:text-red-700"
+            className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
             onClick={() => withdraw.mutate()}
             disabled={withdraw.isPending}
             data-testid="button-withdraw-application"

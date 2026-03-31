@@ -2,6 +2,11 @@ import { Router } from "express";
 import { storage } from "../storage/index";
 import { authenticateToken, requireRole } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
+import { getUncachableStripeClient } from "../config/stripe";
+import { logger } from "../utils/logger";
+
+const APPLICATION_FEE_CENTS = 15000;
+const REFUND_ELIGIBLE_CENTS = 10000;
 
 const router = Router();
 
@@ -97,6 +102,152 @@ router.patch(
 );
 
 router.post(
+  "/create-payment-session",
+  asyncHandler(async (req, res) => {
+    const application = await storage.applications.getByUserId(req.user!.id);
+    if (!application) {
+      res.status(404).json({ message: "Application not found" });
+      return;
+    }
+
+    if (application.status !== "draft") {
+      res.status(400).json({ message: "Application has already been submitted" });
+      return;
+    }
+
+    if (application.paymentStatus === "paid") {
+      res.status(400).json({ message: "Application fee has already been paid" });
+      return;
+    }
+
+    const credentials = await storage.applications.getCredentials(application.id);
+    if (credentials.length === 0) {
+      res.status(400).json({ message: "At least one credential is required" });
+      return;
+    }
+
+    const references = await storage.applications.getReferences(application.id);
+    if (references.length < 3) {
+      res.status(400).json({ message: "Three professional references are required" });
+      return;
+    }
+
+    const formData = (application as any).formData as Record<string, any> || {};
+    if (!formData.termsAccepted || !formData.termsSignature) {
+      res.status(400).json({ message: "Terms and conditions must be accepted and signed" });
+      return;
+    }
+
+    if (application.stripeCheckoutSessionId) {
+      try {
+        const stripe = await getUncachableStripeClient();
+        const existingSession = await stripe.checkout.sessions.retrieve(application.stripeCheckoutSessionId);
+        if (existingSession.status === "open") {
+          res.json({ url: existingSession.url });
+          return;
+        }
+      } catch (err) {
+        logger.stripe.warn("Previous checkout session not found, creating new one");
+      }
+    }
+
+    const stripe = await getUncachableStripeClient();
+    const user = req.user!;
+    const host = process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || req.hostname}`;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: "TCK Wellness — Counselor Application Fee",
+              description: "$50 non-refundable processing fee + $100 refundable deposit",
+            },
+            unit_amount: APPLICATION_FEE_CENTS,
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${host}/therapist/apply?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${host}/therapist/apply?payment=canceled`,
+      metadata: {
+        applicationId: application.id,
+        userId: user.id,
+        type: "application_fee",
+      },
+      customer_email: user.email,
+    });
+
+    await storage.applications.update(application.id, {
+      stripeCheckoutSessionId: session.id,
+      paymentStatus: "pending",
+    } as any);
+
+    await storage.applications.addTimelineEntry({
+      applicationId: application.id,
+      action: "payment_initiated",
+      note: "Application fee payment initiated via Stripe",
+      performedBy: req.user!.id,
+    });
+
+    res.json({ url: session.url });
+  })
+);
+
+router.post(
+  "/confirm-payment",
+  asyncHandler(async (req, res) => {
+    const application = await storage.applications.getByUserId(req.user!.id);
+    if (!application) {
+      res.status(404).json({ message: "Application not found" });
+      return;
+    }
+
+    if (application.paymentStatus === "paid") {
+      res.json({ paid: true, application });
+      return;
+    }
+
+    if (!application.stripeCheckoutSessionId) {
+      res.status(400).json({ message: "No payment session found" });
+      return;
+    }
+
+    try {
+      const stripe = await getUncachableStripeClient();
+      const session = await stripe.checkout.sessions.retrieve(application.stripeCheckoutSessionId);
+
+      if (session.payment_status === "paid") {
+        const updated = await storage.applications.update(application.id, {
+          paymentStatus: "paid",
+          paidAt: new Date(),
+          amountPaid: APPLICATION_FEE_CENTS,
+          refundEligibleAmount: REFUND_ELIGIBLE_CENTS,
+          stripePaymentIntentId: session.payment_intent as string,
+        } as any);
+
+        await storage.applications.addTimelineEntry({
+          applicationId: application.id,
+          action: "payment_completed",
+          note: `Application fee of $${(APPLICATION_FEE_CENTS / 100).toFixed(2)} paid`,
+          performedBy: req.user!.id,
+        });
+
+        res.json({ paid: true, application: updated });
+        return;
+      }
+    } catch (err) {
+      logger.stripe.error("Error confirming application payment", err);
+    }
+
+    res.json({ paid: false });
+  })
+);
+
+router.post(
   "/submit",
   asyncHandler(async (req, res) => {
     const application = await storage.applications.getByUserId(req.user!.id);
@@ -107,6 +258,11 @@ router.post(
 
     if (application.status !== "draft") {
       res.status(400).json({ message: "Application has already been submitted" });
+      return;
+    }
+
+    if (application.paymentStatus !== "paid") {
+      res.status(400).json({ message: "Application fee must be paid before submitting" });
       return;
     }
 
@@ -128,15 +284,29 @@ router.post(
       return;
     }
 
-    if (!formData.readyAcknowledgment) {
-      res.status(400).json({ message: "You must acknowledge you have reviewed the pre-application information" });
-      return;
-    }
+    const snapshot = {
+      formData,
+      credentials: credentials.map(c => ({
+        credentialType: c.credentialType,
+        issuer: c.issuer,
+        licenseNumber: c.licenseNumber,
+        stateOrCountry: c.stateOrCountry,
+        middleName: c.middleName,
+        verificationUrl: c.verificationUrl,
+      })),
+      references: references.map(r => ({
+        refereeName: r.refereeName,
+        refereeEmail: r.refereeEmail,
+        relationship: r.relationship,
+      })),
+      submittedAt: new Date().toISOString(),
+    };
 
     const updated = await storage.applications.update(application.id, {
       status: "submitted",
       submittedAt: new Date(),
-    });
+      submittedSnapshot: snapshot,
+    } as any);
 
     await storage.applications.addTimelineEntry({
       applicationId: application.id,

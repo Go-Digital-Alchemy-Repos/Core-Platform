@@ -1,0 +1,72 @@
+Continue NONDESTRUCTIVELY from the existing TCK Wellness codebase and preserve all current working functionality.
+
+Now implement the final submission stage for the provider application wizard.
+
+This application has a separate APPLICATION FEE and must not be confused with the recurring membership subscription.
+
+Business rules:
+- application fee is $150
+- $50 is non-refundable
+- if application is not approved, $100 is refunded
+- recurring membership subscription should only become available AFTER approval
+
+Tasks:
+
+A. Build the final application payment step
+- Use the app’s existing payment architecture/patterns
+- Treat this as a one-time application fee
+- Store payment intent/transaction metadata
+- Add fields for:
+  - paid_at
+  - amount_paid
+  - refund_eligible_amount
+  - payment_status
+  - refund_status if needed
+
+B. Build final submission behavior
+When the provider successfully pays and submits:
+- validate all required application steps
+- mark application as submitted
+- freeze/store a submitted snapshot of the application
+- restrict casual editing after submission
+- create application timeline events
+- update dashboard/provider status from draft/in-progress to submitted
+
+C. Build the provider-facing “Application Submitted / Status” page
+After submission, show a polished status page with:
+- application submitted
+- background check status
+- references completed count
+- interview status
+- final review status
+
+Also show the “what happens next” content:
+- background check email arrives in coming days
+- must complete within 48 hours once sent
+- 3 references will receive forms
+- interview happens later
+- final approval follows review
+- if not approved, $100 is refunded
+
+D. Update dashboard status card logic
+After successful submission, dashboard should show:
+- Application Submitted
+- progress summary
+- clear next-step messaging
+
+E. Ensure recurring membership subscription remains gated
+Do NOT let providers activate recurring membership yet.
+Instead show informative status/copy until approval.
+
+Implementation rules:
+- reuse existing payment code where possible
+- do not break existing subscription system
+- keep application fee logic separate from membership billing
+- do not expose any sensitive payment internals in UI
+- maintain strong typing and modularity
+
+At the end, provide:
+1. What payment/submission logic was added
+2. How application fee is stored
+3. How dashboard behavior changed after submission
+4. What is now ready for automation in the next prompt

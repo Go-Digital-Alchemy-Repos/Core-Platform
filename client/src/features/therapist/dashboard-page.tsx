@@ -120,6 +120,35 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
     );
   }
 
+  if (application && application.status === "submitted") {
+    return (
+      <Alert data-testid="banner-approval-status" className="border-blue-500/50 bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100">
+        <Send className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <AlertTitle data-testid="text-approval-title">Application Submitted</AlertTitle>
+        <AlertDescription data-testid="text-approval-message" className="space-y-3">
+          <p>Your application has been submitted and is under review. You'll be notified at each stage of the process.</p>
+          <div className="flex flex-wrap gap-2 text-xs mt-2">
+            <span className={`px-2 py-0.5 rounded-full ${application.paymentStatus === "paid" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>
+              Fee Paid
+            </span>
+            <span className={`px-2 py-0.5 rounded-full ${application.backgroundCheckStatus !== "not_started" ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>
+              Background Check
+            </span>
+            <span className={`px-2 py-0.5 rounded-full ${application.referencesStatus !== "not_started" ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>
+              References
+            </span>
+          </div>
+          <Link href="/therapist/application/status">
+            <Button size="sm" variant="outline" data-testid="button-view-application-status">
+              <ClipboardList className="w-4 h-4 mr-2" />
+              View Full Status
+            </Button>
+          </Link>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   if (application && !["draft", "withdrawn"].includes(application.status)) {
     return (
       <Alert data-testid="banner-approval-status" className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-100">
