@@ -1,6 +1,6 @@
 import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
-import { rm } from "fs/promises";
+import { rm, cp } from "fs/promises";
 
 async function buildAll() {
   await rm("dist", { recursive: true, force: true });
@@ -22,6 +22,9 @@ async function buildAll() {
     packages: "bundle",
     logLevel: "info",
   });
+
+  console.log("copying migrations...");
+  await cp("migrations", "dist/migrations", { recursive: true });
 }
 
 buildAll().catch((err) => {

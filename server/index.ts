@@ -150,6 +150,11 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  if (process.env.NODE_ENV === "production") {
+    const { runMigrations } = await import("./migrate");
+    await runMigrations();
+  }
+
   await registerRoutes(httpServer, app);
 
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {

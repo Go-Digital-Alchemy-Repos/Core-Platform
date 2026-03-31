@@ -58,7 +58,9 @@ TCK Wellness is a platform designed to connect Third Culture Kids (TCKs) with sp
 - **Database SSL**: Production database connections automatically enable SSL unless the `DATABASE_URL` already includes `sslmode=`.
 - **Vite Plugins**: Replit-specific Vite plugins are conditionally loaded only when `REPL_ID` is present, so builds work cleanly on Railway.
 - **Server Bundle**: esbuild bundles all server dependencies into a single `dist/index.cjs` for a self-contained production artifact.
-- **Required Environment Variables on Railway**: `DATABASE_URL`, `SESSION_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, plus any other service-specific keys (Mailgun, R2, etc.). Optionally set `APP_URL` and `TRUSTED_ORIGINS` for origin checking.
+- **Auto-Migrations**: On production startup, the server automatically runs Drizzle ORM migrations from `dist/migrations/` before accepting requests. The build script copies the `migrations/` folder into `dist/`. Use `npx drizzle-kit generate` locally after schema changes to create new migration files.
+- **First-Visit Admin Setup**: When no admin user exists (fresh database), all routes redirect to `/setup` where the initial admin account can be created. Optionally secured with a `SETUP_TOKEN` env var.
+- **Required Environment Variables on Railway**: `DATABASE_URL`, `SESSION_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, plus any other service-specific keys (Mailgun, R2, etc.). Optionally set `APP_URL` and `TRUSTED_ORIGINS` for origin checking, and `SETUP_TOKEN` for securing initial admin setup.
 
 ## External Dependencies
 - **Stripe**: Subscription processing and paid event registrations.
