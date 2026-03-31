@@ -12,6 +12,24 @@ import {
 } from "../../services/background-check.service";
 import { sendReferenceRequestEmail } from "../../services/email.service";
 
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  draft: ["submitted", "withdrawn"],
+  submitted: ["awaiting_background_check", "background_check_in_progress", "awaiting_references", "references_in_progress", "ready_for_interview", "denied", "withdrawn"],
+  awaiting_background_check: ["background_check_in_progress", "awaiting_references", "references_in_progress", "ready_for_interview", "denied", "withdrawn"],
+  background_check_in_progress: ["awaiting_references", "references_in_progress", "ready_for_interview", "denied", "withdrawn"],
+  awaiting_references: ["references_in_progress", "ready_for_interview", "denied", "withdrawn"],
+  references_in_progress: ["ready_for_interview", "denied", "withdrawn"],
+  ready_for_interview: ["interview_scheduled", "approved_pending_subscription", "denied", "withdrawn"],
+  interview_scheduled: ["interview_completed", "approved_pending_subscription", "denied", "withdrawn"],
+  interview_completed: ["approved_pending_subscription", "denied", "withdrawn"],
+  approved_pending_subscription: ["active_member", "denied", "withdrawn"],
+  active_member: [],
+  denied: [],
+  withdrawn: [],
+};
+
+const RESEND_COOLDOWN_MS = 5 * 60 * 1000;
+
 const router = Router();
 
 router.get(
@@ -74,6 +92,15 @@ router.patch(
     const application = await storage.applications.getById(req.params.id);
     if (!application) {
       res.status(404).json({ message: "Application not found" });
+      return;
+    }
+
+    const allowed = ALLOWED_TRANSITIONS[application.status];
+    if (allowed && !allowed.includes(status)) {
+      res.status(400).json({
+        message: `Cannot transition from "${application.status}" to "${status}"`,
+        allowedTransitions: allowed,
+      });
       return;
     }
 
@@ -279,6 +306,15 @@ router.post(
       return;
     }
 
+    if (ref.emailSentAt) {
+      const elapsed = Date.now() - new Date(ref.emailSentAt).getTime();
+      if (elapsed < RESEND_COOLDOWN_MS) {
+        const waitMinutes = Math.ceil((RESEND_COOLDOWN_MS - elapsed) / 60000);
+        res.status(429).json({ message: `Please wait ${waitMinutes} minute(s) before resending` });
+        return;
+      }
+    }
+
     const baseUrl = `${req.protocol}://${req.get("host")}`;
     const token = ref.secureToken;
     if (!token) {
@@ -324,6 +360,15 @@ router.post(
       return;
     }
 
+    const allowed = ALLOWED_TRANSITIONS[application.status];
+    if (allowed && !allowed.includes("interview_scheduled")) {
+      res.status(400).json({
+        message: `Cannot schedule interview from "${application.status}"`,
+        allowedTransitions: allowed,
+      });
+      return;
+    }
+
     const interview = await storage.applications.addInterview({
       applicationId: application.id,
       scheduledAt: req.body.scheduledAt ? new Date(req.body.scheduledAt) : undefined,
@@ -356,6 +401,23 @@ router.patch(
     if (!interview) {
       res.status(404).json({ message: "Interview not found" });
       return;
+    }
+
+    if (req.body.outcome) {
+      const application = await storage.applications.getById(req.params.id);
+      if (!application) {
+        res.status(404).json({ message: "Application not found" });
+        return;
+      }
+
+      const allowed = ALLOWED_TRANSITIONS[application.status];
+      if (allowed && !allowed.includes("interview_completed")) {
+        res.status(400).json({
+          message: `Cannot complete interview from "${application.status}"`,
+          allowedTransitions: allowed,
+        });
+        return;
+      }
     }
 
     const updated = await storage.applications.updateInterview(interview.id, {
@@ -392,10 +454,21 @@ router.post(
       return;
     }
 
+    const note = req.body.note;
+    if (!note || typeof note !== "string" || !note.trim()) {
+      res.status(400).json({ message: "Note text is required" });
+      return;
+    }
+
+    if (note.length > 2000) {
+      res.status(400).json({ message: "Note must be 2000 characters or fewer" });
+      return;
+    }
+
     const entry = await storage.applications.addTimelineEntry({
       applicationId: application.id,
       action: "admin_note",
-      note: req.body.note,
+      note: note.trim(),
       performedBy: req.user!.id,
     });
 

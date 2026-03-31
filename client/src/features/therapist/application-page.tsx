@@ -1062,7 +1062,11 @@ export default function ApplicationPage() {
     }
   }, [currentStep, formData, application, handleStepChange]);
 
+  const submittingRef = useRef(false);
+
   const handlePayAndSubmit = useCallback(() => {
+    if (submittingRef.current) return;
+
     for (let i = 0; i < WIZARD_STEPS.length; i++) {
       const v = getStepValidation(i, formData, application);
       if (!v.valid) {
@@ -1072,15 +1076,22 @@ export default function ApplicationPage() {
       }
     }
 
+    submittingRef.current = true;
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
 
     if (application?.paymentStatus === "paid") {
       autosaveMutation.mutate({ formData, currentStep }, {
-        onSuccess: () => submitApplication.mutate(),
+        onSuccess: () => submitApplication.mutate(undefined, {
+          onSettled: () => { submittingRef.current = false; },
+        }),
+        onError: () => { submittingRef.current = false; },
       });
     } else {
       autosaveMutation.mutate({ formData, currentStep }, {
-        onSuccess: () => paymentMutation.mutate(),
+        onSuccess: () => paymentMutation.mutate(undefined, {
+          onSettled: () => { submittingRef.current = false; },
+        }),
+        onError: () => { submittingRef.current = false; },
       });
     }
   }, [formData, application, currentStep]);
@@ -1094,6 +1105,12 @@ export default function ApplicationPage() {
 
   const isPaid = application?.paymentStatus === "paid";
 
+  useEffect(() => {
+    if (application && application.status !== "draft") {
+      setLocation("/therapist/application/status");
+    }
+  }, [application, setLocation]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -1103,7 +1120,6 @@ export default function ApplicationPage() {
   }
 
   if (application && application.status !== "draft") {
-    setLocation("/therapist/application/status");
     return null;
   }
 

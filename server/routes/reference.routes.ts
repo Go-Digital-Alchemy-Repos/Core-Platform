@@ -9,7 +9,7 @@ router.get(
   "/:token",
   asyncHandler(async (req, res) => {
     const { token } = req.params;
-    if (!token || token.length < 32) {
+    if (!token || typeof token !== "string" || !/^[a-f0-9]{96}$/.test(token)) {
       res.status(400).json({ message: "Invalid reference link" });
       return;
     }
@@ -55,7 +55,7 @@ router.post(
   "/:token",
   asyncHandler(async (req, res) => {
     const { token } = req.params;
-    if (!token || token.length < 32) {
+    if (!token || typeof token !== "string" || !/^[a-f0-9]{96}$/.test(token)) {
       res.status(400).json({ message: "Invalid reference link" });
       return;
     }
@@ -92,15 +92,24 @@ router.post(
       recommendationComments,
     } = req.body;
 
+    const MAX_TEXT_LENGTH = 5000;
     const errors: string[] = [];
     if (!firstName || typeof firstName !== "string" || !firstName.trim()) errors.push("Your first name is required");
+    if (typeof firstName === "string" && firstName.length > 200) errors.push("First name is too long");
     if (!howKnown || typeof howKnown !== "string" || !howKnown.trim()) errors.push("How you know the applicant is required");
+    if (typeof howKnown === "string" && howKnown.length > MAX_TEXT_LENGTH) errors.push("Response is too long (max 5000 characters)");
     if (!tckObservation || typeof tckObservation !== "string" || !tckObservation.trim()) errors.push("TCK observation response is required");
+    if (typeof tckObservation === "string" && tckObservation.length > MAX_TEXT_LENGTH) errors.push("Response is too long (max 5000 characters)");
     if (!tckUnderstanding || typeof tckUnderstanding !== "string" || !tckUnderstanding.trim()) errors.push("TCK understanding response is required");
+    if (typeof tckUnderstanding === "string" && tckUnderstanding.length > MAX_TEXT_LENGTH) errors.push("Response is too long (max 5000 characters)");
     if (!culturalConnection || typeof culturalConnection !== "string" || !culturalConnection.trim()) errors.push("Cultural connection response is required");
+    if (typeof culturalConnection === "string" && culturalConnection.length > MAX_TEXT_LENGTH) errors.push("Response is too long (max 5000 characters)");
     if (!safetyConcern || !["yes", "no"].includes(safetyConcern)) errors.push("Safety concern answer is required (yes/no)");
+    if (typeof safetyConcernDetails === "string" && safetyConcernDetails.length > MAX_TEXT_LENGTH) errors.push("Details text is too long");
     if (!professionalConcern || !["yes", "no"].includes(professionalConcern)) errors.push("Professional concern answer is required (yes/no)");
+    if (typeof professionalConcernDetails === "string" && professionalConcernDetails.length > MAX_TEXT_LENGTH) errors.push("Details text is too long");
     if (!recommendation || !["yes", "no"].includes(recommendation)) errors.push("Recommendation answer is required (yes/no)");
+    if (typeof recommendationComments === "string" && recommendationComments.length > MAX_TEXT_LENGTH) errors.push("Comments are too long");
 
     if (errors.length > 0) {
       res.status(400).json({ message: errors[0] });

@@ -232,6 +232,10 @@ export default function TherapistDashboardPage() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
+  const { data: application } = useQuery<any>({
+    queryKey: ["/api/therapist/application"],
+  });
+
   const completion = computeProfileCompletion(profile ?? null);
   const isApproved = profile?.isApproved === true;
 
@@ -305,15 +309,20 @@ export default function TherapistDashboardPage() {
                 </span>
               )}
             </div>
-            {!isApproved && (
+            {!isApproved && !application?.status?.includes("denied") && (
               <p className="text-sm text-muted-foreground" data-testid="text-approval-note">
                 Complete the approval process before subscribing
+              </p>
+            )}
+            {application?.status === "denied" && (
+              <p className="text-sm text-muted-foreground" data-testid="text-approval-note">
+                Application was not approved
               </p>
             )}
             <Link href="/therapist/subscription">
               <Button variant="outline" className="w-full" data-testid="button-manage-subscription">
                 <CreditCard className="w-4 h-4 mr-2" />
-                Manage Subscription
+                {subscription?.status === "active" ? "Manage Subscription" : "View Subscription Options"}
               </Button>
             </Link>
           </CardContent>
@@ -328,7 +337,11 @@ export default function TherapistDashboardPage() {
           <CardContent className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-medium">Status:</span>
-              {profile.isApproved ? (
+              {application?.status === "active_member" ? (
+                <Badge variant="default"><CheckCircle className="w-3 h-3 mr-1" /> Active Member</Badge>
+              ) : application?.status === "denied" ? (
+                <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" /> Not Approved</Badge>
+              ) : profile.isApproved ? (
                 <Badge variant="default"><CheckCircle className="w-3 h-3 mr-1" /> Approved</Badge>
               ) : (
                 <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" /> Pending Approval</Badge>
