@@ -132,8 +132,6 @@ app.use((req, res, next) => {
       if (capturedJsonResponse) {
         if (SENSITIVE_PATHS.some((sp) => reqPath.startsWith(sp))) {
           bodyStr = truncateBody(JSON.stringify(redactSensitive(capturedJsonResponse)));
-        } else if (reqPath.startsWith("/api/messages")) {
-          bodyStr = "[message content redacted]";
         } else {
           bodyStr = truncateBody(JSON.stringify(capturedJsonResponse));
         }

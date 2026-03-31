@@ -9,13 +9,12 @@ import eventsRoutes from "./events.routes";
 import contactRoutes from "./contact.routes";
 import docsRoutes from "./docs.routes";
 import uploadRoutes from "./upload.routes";
-import messagesRoutes from "./messages.routes";
 import notificationsRoutes from "./notifications.routes";
 import specializationsRoutes from "./specializations.routes";
 import blogRoutes from "./blog.routes";
 import registrationRoutes from "./registration.routes";
 import cmsPublicRoutes from "./cms-public.routes";
-import guestMessagesRoutes from "./guest-messages.routes";
+import contactProfessionalRoutes from "./contact-professional.routes";
 import setupRoutes from "./setup.routes";
 import { storage } from "../storage/index";
 
@@ -39,13 +38,12 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/contact", contactRoutes);
   app.use("/api/admin/docs", docsRoutes);
   app.use("/api/uploads", uploadRoutes);
-  app.use("/api/messages", messagesRoutes);
   app.use("/api/notifications", notificationsRoutes);
   app.use("/api/specializations", specializationsRoutes);
   app.use("/api/blog", blogRoutes);
   app.use("/api/events", registrationRoutes);
   app.use("/api/cms", cmsPublicRoutes);
-  app.use("/api/guest-messages", guestMessagesRoutes);
+  app.use("/api/contact-professional", contactProfessionalRoutes);
   app.use("/api/setup", setupRoutes);
 
   app.get("/api/membership-tiers", async (_req, res) => {

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
@@ -10,7 +11,8 @@ import {
   CheckCircle2,
   XCircle,
   Video,
-  MessageSquare,
+  Mail,
+  Send,
 } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
@@ -19,8 +21,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { MapView } from "@/components/directory/map-view";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
 import { SiInstagram, SiFacebook, SiX, SiLinkedin, SiYoutube, SiTiktok } from "react-icons/si";
@@ -52,31 +58,43 @@ export default function TherapistProfilePage() {
   const id = params?.id;
   const [, navigate] = useLocation();
   const { user } = useAuth();
+  const { toast } = useToast();
+
+  const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
+  const [showContactForm, setShowContactForm] = useState(false);
 
   const { data: therapist, isLoading, error } = useQuery<TherapistWithUser>({
     queryKey: ["/api/therapists", id],
     enabled: !!id,
   });
 
-  const startConversationMutation = useMutation({
-    mutationFn: async (professionalUserId: string) => {
-      const res = await apiRequest("POST", "/api/messages/conversations", { professionalId: professionalUserId });
+  const sendEmailMutation = useMutation({
+    mutationFn: async (data: { professionalUserId: string; senderName: string; senderEmail: string; message: string }) => {
+      const res = await apiRequest("POST", "/api/contact-professional", data);
       return res.json();
     },
-    onSuccess: (conv) => {
-      navigate(`/messages?conversation=${conv.id}`);
+    onSuccess: () => {
+      toast({ title: "Message sent", description: "Your message has been emailed to this mental health professional." });
+      setContactForm({ name: "", email: "", message: "" });
+      setShowContactForm(false);
+    },
+    onError: (err: any) => {
+      toast({ title: "Failed to send", description: err.message || "Something went wrong. Please try again.", variant: "destructive" });
     },
   });
 
-  const handleContact = () => {
+  const handleSendEmail = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!therapist?.userId) return;
-    if (user && user.id === therapist.userId) return;
-    if (!user) {
-      navigate(`/messages?professional=${therapist.userId}`);
-      return;
-    }
-    startConversationMutation.mutate(therapist.userId);
+    sendEmailMutation.mutate({
+      professionalUserId: therapist.userId,
+      senderName: contactForm.name,
+      senderEmail: contactForm.email,
+      message: contactForm.message,
+    });
   };
+
+  const isSelf = user && therapist?.userId === user.id;
 
   if (isLoading) {
     return (
@@ -106,194 +124,252 @@ export default function TherapistProfilePage() {
     );
   }
 
-  const fullName =
-    [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") || "Mental Health Professional";
-  const initials = `${(therapist.user?.firstName || "")[0] || ""}${(therapist.user?.lastName || "")[0] || ""}`.toUpperCase();
-  const specializations = therapist.specializations || [];
-  const languages = therapist.languages || [];
-
-  const locationParts = [therapist.city, therapist.state, therapist.country].filter(Boolean);
-  const addressParts = [
-    therapist.addressLine1,
-    therapist.addressLine2,
-    therapist.city,
-    therapist.state,
-    therapist.zipCode,
-    therapist.country,
-  ].filter(Boolean);
-
-  const hasLocation = therapist.latitude != null && therapist.longitude != null;
-  const showMap =
-    hasLocation && (therapist.practiceMode === "in_person" || therapist.practiceMode === "both");
-
-  const hasContact = therapist.phone || therapist.website || addressParts.length > 0;
-  const isSelf = user?.id === therapist.userId;
+  const displayName = [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") || "Mental Health Professional";
+  const initials = [therapist.user?.firstName?.[0], therapist.user?.lastName?.[0]].filter(Boolean).join("").toUpperCase() || "?";
+  const addressParts = [therapist.address, therapist.city, therapist.state, therapist.zipCode, therapist.country].filter(Boolean);
+  const hasContact = addressParts.length > 0 || therapist.phone || therapist.website;
+  const showMap = therapist.latitude && therapist.longitude;
 
   const socialLinks = [
-    { key: "instagram", handle: therapist.instagramHandle, url: `https://instagram.com/${therapist.instagramHandle}`, icon: SiInstagram, color: "text-pink-500", label: "Instagram" },
-    { key: "facebook", handle: therapist.facebookHandle, url: `https://facebook.com/${therapist.facebookHandle}`, icon: SiFacebook, color: "text-blue-600", label: "Facebook" },
-    { key: "twitter", handle: therapist.twitterHandle, url: `https://x.com/${therapist.twitterHandle}`, icon: SiX, color: "text-foreground", label: "X / Twitter" },
-    { key: "linkedin", handle: therapist.linkedinHandle, url: `https://linkedin.com/in/${therapist.linkedinHandle}`, icon: SiLinkedin, color: "text-blue-700", label: "LinkedIn" },
-    { key: "youtube", handle: therapist.youtubeHandle, url: `https://youtube.com/@${therapist.youtubeHandle}`, icon: SiYoutube, color: "text-red-600", label: "YouTube" },
-    { key: "tiktok", handle: therapist.tiktokHandle, url: `https://tiktok.com/@${therapist.tiktokHandle}`, icon: SiTiktok, color: "text-foreground", label: "TikTok" },
-  ].filter((s) => !!s.handle);
+    { key: "instagram", url: therapist.instagramUrl, icon: SiInstagram, color: "text-pink-600", label: "Instagram" },
+    { key: "facebook", url: therapist.facebookUrl, icon: SiFacebook, color: "text-blue-600", label: "Facebook" },
+    { key: "twitter", url: therapist.twitterUrl, icon: SiX, color: "text-foreground", label: "X (Twitter)" },
+    { key: "linkedin", url: therapist.linkedinUrl, icon: SiLinkedin, color: "text-blue-700", label: "LinkedIn" },
+    { key: "youtube", url: therapist.youtubeUrl, icon: SiYoutube, color: "text-red-600", label: "YouTube" },
+    { key: "tiktok", url: therapist.tiktokUrl, icon: SiTiktok, color: "text-foreground", label: "TikTok" },
+  ].filter((s) => s.url);
   const hasSocial = socialLinks.length > 0;
 
   return (
     <PageLayout>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
         <Link href="/directory">
-          <Button variant="ghost" className="mb-4" data-testid="link-back-directory">
+          <Button variant="ghost" className="mb-6 -ml-2" data-testid="link-back-directory-top">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Directory
           </Button>
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            <Card>
-              <CardHeader className="flex flex-col sm:flex-row items-center sm:items-start gap-4 space-y-0 text-center sm:text-left">
-                <Avatar className="h-20 w-20 sm:h-20 sm:w-20 flex-shrink-0">
-                  {therapist.user?.profileImageUrl && (
-                    <AvatarImage src={therapist.user.profileImageUrl} alt={fullName} />
-                  )}
-                  <AvatarFallback data-testid="avatar-therapist" className="text-xl">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col gap-1 min-w-0">
-                  <h1
-                    className="text-xl sm:text-2xl font-heading font-semibold break-words"
-                    data-testid="text-therapist-name"
-                  >
-                    {fullName}
-                  </h1>
-                  {therapist.title && (
-                    <p className="text-muted-foreground text-sm sm:text-base" data-testid="text-therapist-title">
-                      {therapist.title}
-                    </p>
-                  )}
-                  <div className="flex flex-wrap items-center gap-2 mt-1 justify-center sm:justify-start">
-                    <Badge variant="outline" data-testid="badge-practice-mode">
-                      {therapist.practiceMode === "in_person" || therapist.practiceMode === "both" ? (
-                        <Building2 className="h-3 w-3 mr-1" />
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8">
+          <div className="flex flex-col gap-6">
+            <Card data-testid="card-profile-header">
+              <CardContent className="pt-6">
+                <div className="flex flex-col sm:flex-row gap-5 items-start">
+                  <Avatar className="h-24 w-24 shrink-0 border">
+                    <AvatarImage src={therapist.user?.profileImageUrl ?? undefined} alt={displayName} />
+                    <AvatarFallback className="text-xl">{initials}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-2xl font-bold tracking-tight" data-testid="text-professional-name">
+                      {displayName}
+                    </h1>
+                    {therapist.title && (
+                      <p className="text-muted-foreground mt-1" data-testid="text-title">{therapist.title}</p>
+                    )}
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                      <Badge variant="secondary" data-testid="badge-session-format">
+                        {therapist.practiceMode === "virtual" ? (
+                          <Monitor className="h-3 w-3 mr-1" />
+                        ) : (
+                          <Building2 className="h-3 w-3 mr-1" />
+                        )}
+                        {getSessionFormatLabel(therapist.practiceMode)}
+                      </Badge>
+                      {therapist.acceptingClients ? (
+                        <Badge variant="outline" className="text-green-700 border-green-300" data-testid="badge-accepting">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Accepting Clients
+                        </Badge>
                       ) : (
-                        <Monitor className="h-3 w-3 mr-1" />
+                        <Badge variant="outline" className="text-red-700 border-red-300" data-testid="badge-not-accepting">
+                          <XCircle className="h-3 w-3 mr-1" />
+                          Not Accepting Clients
+                        </Badge>
                       )}
-                      {getSessionFormatLabel(therapist.practiceMode)}
-                    </Badge>
-                    {therapist.acceptingClients ? (
-                      <Badge variant="secondary" data-testid="badge-accepting">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Accepting Clients
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" data-testid="badge-not-accepting">
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Not Accepting
-                      </Badge>
-                    )}
-                    {therapist.willingToTravel && (
-                      <Badge variant="secondary" data-testid="badge-willing-to-travel">
-                        <Globe className="h-3 w-3 mr-1" />
-                        Willing to Travel
-                      </Badge>
-                    )}
-                    {locationParts.length > 0 && (
-                      <span className="text-sm text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3 flex-shrink-0" />
-                        <span className="break-words">{locationParts.join(", ")}</span>
-                      </span>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </CardHeader>
-
-              <CardContent className="flex flex-col gap-6">
-                {therapist.bio && (
-                  <section>
-                    <h2 className="text-lg font-semibold mb-2" data-testid="heading-bio">
-                      About
-                    </h2>
-                    <p className="text-sm leading-relaxed whitespace-pre-line" data-testid="text-bio">
-                      {therapist.bio}
-                    </p>
-                  </section>
-                )}
-
-                <Separator />
-
-                {specializations.length > 0 && (
-                  <section>
-                    <h2 className="text-lg font-semibold mb-2" data-testid="heading-specializations">
-                      Specializations
-                    </h2>
-                    <div className="flex flex-wrap gap-1.5" data-testid="list-specializations">
-                      {specializations.map((spec) => (
-                        <Badge key={spec} variant="secondary">
-                          {spec}
-                        </Badge>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                {languages.length > 0 && (
-                  <section>
-                    <h2 className="text-lg font-semibold mb-2" data-testid="heading-languages">
-                      Languages
-                    </h2>
-                    <div className="flex flex-wrap gap-1.5" data-testid="list-languages">
-                      {languages.map((lang) => (
-                        <Badge key={lang} variant="outline">
-                          {lang}
-                        </Badge>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                {therapist.credentials && (
-                  <section>
-                    <h2 className="text-lg font-semibold mb-2" data-testid="heading-credentials">
-                      Credentials
-                    </h2>
-                    <p className="text-sm" data-testid="text-credentials">
-                      {therapist.credentials}
-                    </p>
-                    {therapist.licenseNumber && (
-                      <p className="text-sm text-muted-foreground mt-1" data-testid="text-license">
-                        License #: {therapist.licenseNumber}
-                      </p>
-                    )}
-                  </section>
-                )}
               </CardContent>
             </Card>
+
+            {therapist.bio && (
+              <Card data-testid="card-bio">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">About</h2>
+                </CardHeader>
+                <CardContent>
+                  <p className="whitespace-pre-wrap text-muted-foreground leading-relaxed" data-testid="text-bio">
+                    {therapist.bio}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {(therapist.specializations as string[] | null)?.length ? (
+              <Card data-testid="card-specializations">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">Specializations</h2>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {(therapist.specializations as string[]).map((s) => (
+                      <Badge key={s} variant="secondary" data-testid={`badge-specialization-${s}`}>{s}</Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {(therapist.languages as string[] | null)?.length ? (
+              <Card data-testid="card-languages">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">Languages</h2>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {(therapist.languages as string[]).map((l) => (
+                      <Badge key={l} variant="outline" data-testid={`badge-language-${l}`}>{l}</Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {therapist.education && (
+              <Card data-testid="card-education">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">Education & Credentials</h2>
+                </CardHeader>
+                <CardContent>
+                  <p className="whitespace-pre-wrap text-muted-foreground" data-testid="text-education">
+                    {therapist.education}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            <Separator />
+
+            {(therapist.sessionFee || therapist.sessionLength || therapist.insuranceAccepted) && (
+              <Card data-testid="card-session-details">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold">Session Details</h2>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  {therapist.sessionFee && (
+                    <div className="flex justify-between" data-testid="text-fee">
+                      <span className="text-muted-foreground">Session Fee</span>
+                      <span className="font-medium">{therapist.sessionFee}</span>
+                    </div>
+                  )}
+                  {therapist.sessionLength && (
+                    <div className="flex justify-between" data-testid="text-session-length">
+                      <span className="text-muted-foreground">Session Length</span>
+                      <span className="font-medium">{therapist.sessionLength} min</span>
+                    </div>
+                  )}
+                  {therapist.insuranceAccepted && (
+                    <div className="flex justify-between" data-testid="text-insurance">
+                      <span className="text-muted-foreground">Insurance</span>
+                      <span className="font-medium">{therapist.insuranceAccepted}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           <div className="flex flex-col gap-6">
             {!isSelf && (
-              <Card data-testid="card-contact-button">
+              <Card data-testid="card-contact-form">
                 <CardContent className="pt-6">
-                  <Button
-                    className="w-full bg-accent text-accent-foreground border-accent-border"
-                    size="lg"
-                    onClick={handleContact}
-                    disabled={startConversationMutation.isPending}
-                    data-testid="button-contact-professional"
-                  >
-                    {startConversationMutation.isPending ? (
-                      <LoadingSpinner className="h-4 w-4 mr-2" />
-                    ) : (
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                    )}
-                    Contact This Mental Health Professional
-                  </Button>
-                  {!user && (
-                    <p className="text-xs text-muted-foreground text-center mt-2">
-                      Send a message — no account required
-                    </p>
+                  {!showContactForm ? (
+                    <>
+                      <Button
+                        className="w-full bg-accent text-accent-foreground border-accent-border"
+                        size="lg"
+                        onClick={() => setShowContactForm(true)}
+                        data-testid="button-contact-professional"
+                      >
+                        <Mail className="h-4 w-4 mr-2" />
+                        Contact This Mental Health Professional
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center mt-2">
+                        Send a message — no account required
+                      </p>
+                    </>
+                  ) : (
+                    <form onSubmit={handleSendEmail} className="flex flex-col gap-4">
+                      <h3 className="font-semibold text-base" data-testid="heading-contact-form">
+                        Send a Message
+                      </h3>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="sender-name">Your Name</Label>
+                        <Input
+                          id="sender-name"
+                          value={contactForm.name}
+                          onChange={(e) => setContactForm((f) => ({ ...f, name: e.target.value }))}
+                          required
+                          maxLength={100}
+                          placeholder="Your full name"
+                          data-testid="input-sender-name"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="sender-email">Your Email</Label>
+                        <Input
+                          id="sender-email"
+                          type="email"
+                          value={contactForm.email}
+                          onChange={(e) => setContactForm((f) => ({ ...f, email: e.target.value }))}
+                          required
+                          maxLength={255}
+                          placeholder="you@example.com"
+                          data-testid="input-sender-email"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="sender-message">Message</Label>
+                        <Textarea
+                          id="sender-message"
+                          value={contactForm.message}
+                          onChange={(e) => setContactForm((f) => ({ ...f, message: e.target.value }))}
+                          required
+                          minLength={10}
+                          maxLength={5000}
+                          rows={5}
+                          placeholder="Write your message here..."
+                          data-testid="input-sender-message"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          type="submit"
+                          className="flex-1 bg-accent text-accent-foreground border-accent-border"
+                          disabled={sendEmailMutation.isPending}
+                          data-testid="button-send-email"
+                        >
+                          {sendEmailMutation.isPending ? (
+                            <LoadingSpinner className="h-4 w-4 mr-2" />
+                          ) : (
+                            <Send className="h-4 w-4 mr-2" />
+                          )}
+                          Send Message
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowContactForm(false)}
+                          disabled={sendEmailMutation.isPending}
+                          data-testid="button-cancel-contact"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Your message will be emailed directly to this mental health professional. They will reply to you at the email address you provide.
+                      </p>
+                    </form>
                   )}
                 </CardContent>
               </Card>

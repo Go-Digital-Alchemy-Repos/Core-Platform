@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, MessageSquare, Search, X, ChevronDown, Bell, Moon, Sun } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, Search, X, ChevronDown, Bell, Moon, Sun } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { Button } from "@/components/ui/button";
@@ -53,13 +53,6 @@ export function Navbar() {
       searchInputRef.current.focus();
     }
   }, [searchOpen]);
-
-  const { data: unreadData } = useQuery<{ count: number }>({
-    queryKey: ["/api/messages/unread"],
-    enabled: !!user,
-    refetchInterval: 30000,
-  });
-  const unreadCount = unreadData?.count ?? 0;
 
   const { data: unreadNotifData } = useQuery<{ count: number }>({
     queryKey: ["/api/notifications/unread-count"],
@@ -173,9 +166,9 @@ export function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="icon" className="relative" data-testid="button-user-menu">
                     <User className="h-4 w-4" />
-                    {(unreadCount + unreadNotifCount) > 0 && (
+                    {unreadNotifCount > 0 && (
                       <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-[10px] font-bold rounded-full h-4 min-w-4 flex items-center justify-center px-1 leading-none">
-                        {(unreadCount + unreadNotifCount) > 99 ? "99+" : unreadCount + unreadNotifCount}
+                        {unreadNotifCount > 99 ? "99+" : unreadNotifCount}
                       </span>
                     )}
                   </Button>
@@ -209,17 +202,6 @@ export function Navbar() {
                         {unreadNotifCount}
                       </span>
                     )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/messages" data-testid="link-messages">
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      Messages
-                      {unreadCount > 0 && (
-                        <span className="ml-auto bg-accent text-accent-foreground text-xs font-semibold rounded-full h-5 min-w-5 flex items-center justify-center px-1.5">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -357,17 +339,6 @@ export function Navbar() {
                         </span>
                       )}
                     </Button>
-                    <Link href="/messages" onClick={() => setMobileOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-messages">
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Messages
-                        {unreadCount > 0 && (
-                          <span className="ml-auto bg-accent text-accent-foreground text-xs font-semibold rounded-full h-5 min-w-5 flex items-center justify-center px-1.5">
-                            {unreadCount}
-                          </span>
-                        )}
-                      </Button>
-                    </Link>
                     <Button
                       variant="ghost"
                       className="w-full justify-start"

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bell, Settings, MessageSquare, Check, CheckCheck } from "lucide-react";
+import { Bell, Settings, Check, CheckCheck } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -192,7 +192,7 @@ export function NotificationBell({
           <div className="mt-8 space-y-8">
             <div>
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
-                Messages
+                Notifications
               </h3>
               <div className="space-y-5">
                 <div className="flex items-center justify-between gap-4">
@@ -201,14 +201,14 @@ export function NotificationBell({
                       In-app notifications
                     </Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Show a bell badge when you receive a new message
+                      Show a bell badge for new notifications
                     </p>
                   </div>
                   <Switch
                     id="pref-inapp"
                     checked={prefs?.inAppNewMessage ?? true}
                     onCheckedChange={(v) => updatePrefs.mutate({ inAppNewMessage: v })}
-                    data-testid="toggle-inapp-messages"
+                    data-testid="toggle-inapp-notifications"
                   />
                 </div>
                 <div className="flex items-center justify-between gap-4">
@@ -217,25 +217,16 @@ export function NotificationBell({
                       Email notifications
                     </Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Receive an email when a new message arrives in your Message Center
+                      Receive email alerts for important updates
                     </p>
                   </div>
                   <Switch
                     id="pref-email"
                     checked={prefs?.emailNewMessage ?? true}
                     onCheckedChange={(v) => updatePrefs.mutate({ emailNewMessage: v })}
-                    data-testid="toggle-email-messages"
+                    data-testid="toggle-email-notifications"
                   />
                 </div>
-              </div>
-            </div>
-
-            <div className="rounded-lg border bg-muted/20 px-4 py-3">
-              <div className="flex items-start gap-3">
-                <MessageSquare className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  For your privacy, email notifications never include message content — only an alert that a new message is waiting for you in the Message Center.
-                </p>
               </div>
             </div>
           </div>

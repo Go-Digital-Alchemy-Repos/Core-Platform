@@ -28,15 +28,11 @@ const TherapistProfilePage = lazy(() => import("@/features/directory/therapist-p
 const TherapistDashboardPage = lazy(() => import("@/features/therapist/dashboard-page"));
 const ProfileEditPage = lazy(() => import("@/features/therapist/profile-edit-page"));
 const SubscriptionPage = lazy(() => import("@/features/therapist/subscription-page"));
-const GuestMessagesPage = lazy(() => import("@/features/therapist/guest-messages-page"));
-const MessagesPage = lazy(() => import("@/features/messages/messages-page"));
-
 const AdminDashboardPage = lazy(() => import("@/features/admin/dashboard-page"));
 const AdminTherapistsPage = lazy(() => import("@/features/admin/therapists-page"));
 const AdminUsersPage = lazy(() => import("@/features/admin/users-page"));
 const AdminMembershipTiersPage = lazy(() => import("@/features/admin/membership-tiers-page"));
 const AdminEventsPage = lazy(() => import("@/features/admin/events-page"));
-const AdminMessagesPage = lazy(() => import("@/features/admin/messages-page"));
 const DocsPage = lazy(() => import("@/features/admin/docs-page"));
 const AdminSettingsPage = lazy(() => import("@/features/admin/settings-page"));
 const AdminBlogPage = lazy(() => import("@/features/admin/blog-page"));
@@ -99,14 +95,6 @@ function Router() {
           </ProtectedRoute>
         </Route>
 
-        <Route path="/therapist/guest-messages">
-          <ProtectedRoute roles={["therapist"]}>
-            <GuestMessagesPage />
-          </ProtectedRoute>
-        </Route>
-
-        <Route path="/messages" component={MessagesPage} />
-
         <Route path="/admin">
           <ProtectedRoute roles={["admin"]}>
             <AdminDashboardPage />
@@ -130,11 +118,6 @@ function Router() {
         <Route path="/admin/events">
           <ProtectedRoute roles={["admin"]}>
             <AdminEventsPage />
-          </ProtectedRoute>
-        </Route>
-        <Route path="/admin/messages">
-          <ProtectedRoute roles={["admin"]}>
-            <AdminMessagesPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/blog">

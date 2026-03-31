@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { UserPen, CreditCard, CheckCircle, AlertCircle, Clock, XCircle, AlertTriangle, MessageSquare } from "lucide-react";
-import type { GuestMessage } from "@shared/schema";
+import { UserPen, CreditCard, CheckCircle, AlertCircle, Clock, XCircle, AlertTriangle } from "lucide-react";
+
 
 function computeProfileCompletion(profile: TherapistProfile | null): number {
   if (!profile) return 0;
@@ -189,24 +189,6 @@ export default function TherapistDashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      <Card data-testid="card-guest-messages">
-        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-          <div>
-            <CardTitle className="text-base">Guest Messages</CardTitle>
-            <CardDescription>Messages from visitors without accounts</CardDescription>
-          </div>
-          <MessageSquare className="h-5 w-5 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <Link href="/therapist/guest-messages">
-            <Button variant="outline" className="w-full" data-testid="button-view-guest-messages">
-              <MessageSquare className="w-4 h-4 mr-2" />
-              View Guest Messages
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
 
       {profile && (
         <Card data-testid="card-profile-summary">

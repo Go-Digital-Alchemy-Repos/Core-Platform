@@ -8,7 +8,6 @@ import { DocsStorage } from "./docs.storage";
 import { PasswordResetStorage } from "./password-reset.storage";
 import { SettingsStorage } from "./settings.storage";
 import { EmailTemplateStorage } from "./email-template.storage";
-import { MessageStorage } from "./message.storage";
 import { ActivityStorage } from "./activity.storage";
 import { NotificationStorage } from "./notification.storage";
 import { SpecializationStorage } from "./specialization.storage";
@@ -23,8 +22,6 @@ import { CmsSectionsStorage } from "./cms-sections.storage";
 import { SeoSettingsStorage } from "./seo-settings.storage";
 import { RedirectsStorage } from "./redirects.storage";
 import { RecordingPurchaseStorage } from "./recording-purchase.storage";
-import { GuestMessageStorage } from "./guest-message.storage";
-
 export const storage = {
   users: new UserStorage(),
   therapists: new TherapistStorage(),
@@ -36,7 +33,6 @@ export const storage = {
   passwordResets: new PasswordResetStorage(),
   settings: new SettingsStorage(),
   emailTemplates: new EmailTemplateStorage(),
-  messages: new MessageStorage(),
   activity: new ActivityStorage(),
   notifications: new NotificationStorage(),
   specializations: new SpecializationStorage(),
@@ -51,7 +47,6 @@ export const storage = {
   seoSettings: new SeoSettingsStorage(),
   redirects: new RedirectsStorage(),
   recordingPurchases: new RecordingPurchaseStorage(),
-  guestMessages: new GuestMessageStorage(),
 };
 
 export type { TherapistSearchParams, TherapistWithUser } from "./therapist.storage";
