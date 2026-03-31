@@ -1,9 +1,7 @@
-import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { PageLayout } from "@/components/layout/page-layout";
@@ -26,16 +24,6 @@ export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { login } = useAuth();
   const { toast } = useToast();
-
-  const { data: setupStatus } = useQuery<{ needsSetup: boolean }>({
-    queryKey: ["/api/setup/status"],
-  });
-
-  useEffect(() => {
-    if (setupStatus?.needsSetup) {
-      setLocation("/setup");
-    }
-  }, [setupStatus, setLocation]);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
