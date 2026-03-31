@@ -76,7 +76,7 @@ import {
   Rss,
   Users,
 } from "lucide-react";
-import { BLOCK_REGISTRY, getBlockDef, createBlock, isDynamicBlock, type BlockInstance, type BuilderContent } from "./block-registry";
+import { BLOCK_REGISTRY, getBlockDef, createBlock, isDynamicBlock, type BlockInstance, type BuilderContent, type BlockCategory, type BlockDef } from "./block-registry";
 import { BlockEditor } from "./block-editor";
 import { PageRenderer, BlockRenderer } from "./block-renderer";
 import { useToast } from "@/hooks/use-toast";
@@ -126,6 +126,31 @@ const ICON_MAP: Record<string, React.ElementType> = {
 };
 
 const SECTION_CATEGORIES = ["general", "hero", "cta", "testimonials", "faq", "features", "content", "team"];
+
+const BLOCK_CATEGORY_LABELS: Record<BlockCategory, string> = {
+  hero: "Hero",
+  layout: "Layout",
+  content: "Content",
+  media: "Media",
+  "social-proof": "Social Proof",
+  conversion: "Conversion",
+  data: "Data / Live",
+  dynamic: "Dynamic / Interactive",
+};
+
+const BLOCK_CATEGORY_ORDER: BlockCategory[] = ["hero", "layout", "content", "media", "social-proof", "conversion", "data", "dynamic"];
+
+function groupBlocksByCategory(blocks: BlockDef[]): { category: BlockCategory; label: string; items: BlockDef[] }[] {
+  const grouped = new Map<BlockCategory, BlockDef[]>();
+  for (const block of blocks) {
+    const cat = block.category;
+    if (!grouped.has(cat)) grouped.set(cat, []);
+    grouped.get(cat)!.push(block);
+  }
+  return BLOCK_CATEGORY_ORDER
+    .filter((cat) => grouped.has(cat))
+    .map((cat) => ({ category: cat, label: BLOCK_CATEGORY_LABELS[cat], items: grouped.get(cat)! }));
+}
 
 function BlockIcon({ name, className }: { name: string; className?: string }) {
   const Icon = ICON_MAP[name] ?? Layers;
@@ -407,22 +432,29 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           </TabsList>
         </div>
         <TabsContent value="blocks" className="flex-1 overflow-y-auto px-6 pb-6 pt-3 mt-0">
-          <div className="grid grid-cols-2 gap-2">
-            {BLOCK_REGISTRY.map((def) => (
-              <button
-                key={def.type}
-                onClick={() => addBlock(def.type)}
-                className="flex items-start gap-3 p-3 rounded-lg border hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30 text-left transition-colors group"
-                data-testid={`block-type-${def.type}`}
-              >
-                <div className="h-8 w-8 rounded-md bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-200 dark:group-hover:bg-violet-900/50 transition-colors">
-                  <BlockIcon name={def.iconName} className="h-4 w-4 text-violet-600" />
+          <div className="space-y-5">
+            {groupBlocksByCategory(BLOCK_REGISTRY).map(({ category, label, items }) => (
+              <div key={category}>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{label}</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {items.map((def) => (
+                    <button
+                      key={def.type}
+                      onClick={() => addBlock(def.type)}
+                      className="flex items-start gap-3 p-3 rounded-lg border hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30 text-left transition-colors group"
+                      data-testid={`block-type-${def.type}`}
+                    >
+                      <div className="h-8 w-8 rounded-md bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-200 dark:group-hover:bg-violet-900/50 transition-colors">
+                        <BlockIcon name={def.iconName} className="h-4 w-4 text-violet-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium leading-tight">{def.label}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{def.description}</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                <div>
-                  <p className="text-sm font-medium leading-tight">{def.label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{def.description}</p>
-                </div>
-              </button>
+              </div>
             ))}
           </div>
         </TabsContent>

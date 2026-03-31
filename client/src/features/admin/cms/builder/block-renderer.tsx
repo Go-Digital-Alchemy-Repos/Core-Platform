@@ -75,6 +75,7 @@ function getVimeoId(url: string): string | null {
 }
 
 const SPACING_MAP: Record<string, string> = {
+  xs: "h-4",
   sm: "h-8",
   md: "h-16",
   lg: "h-24",
@@ -364,11 +365,11 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
 }
 
 function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
-  const { data: posts } = useQuery<{ id: string; title: string; excerpt: string; slug: string }[]>({
+  const { data: posts } = useQuery<{ id: string; title: string; excerpt: string; slug: string; isPublished: boolean }[]>({
     queryKey: ["/api/blog"],
   });
   const limit = num(props.limit, 3);
-  const visible = (posts ?? []).filter((p) => (p as any).isPublished).slice(0, limit);
+  const visible = (posts ?? []).filter((p) => p.isPublished).slice(0, limit);
   return (
     <div className="py-4">
       {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
@@ -401,7 +402,7 @@ function ButtonGroupBlock({ props }: { props: Record<string, unknown> }) {
       {buttons.length === 0 ? (
         <p className="text-muted-foreground text-sm">Add buttons to display here</p>
       ) : buttons.map((btn, i) => (
-        <Button key={i} variant={(btn.variant as any) ?? "default"} size="lg">
+        <Button key={i} variant={(btn.variant === "outline" || btn.variant === "secondary" || btn.variant === "ghost" || btn.variant === "link" || btn.variant === "destructive") ? btn.variant : "default"} size="lg">
           {btn.text}
         </Button>
       ))}
@@ -868,7 +869,13 @@ function GuaranteeWarrantyBlock({ props }: { props: Record<string, unknown> }) {
           })}
         </ul>
         {str(props.ctaText) && (
-          <Button className="bg-accent text-accent-foreground">{str(props.ctaText)}</Button>
+          str(props.ctaLink) ? (
+            <Link href={str(props.ctaLink)}>
+              <Button className="bg-accent text-accent-foreground">{str(props.ctaText)}</Button>
+            </Link>
+          ) : (
+            <Button className="bg-accent text-accent-foreground">{str(props.ctaText)}</Button>
+          )
         )}
       </div>
     </div>
@@ -975,59 +982,144 @@ function ProtocolBuilderBlock({ props }: { props: Record<string, unknown> }) {
   );
 }
 
+interface BlogPost {
+  id: string;
+  title: string;
+  excerpt: string;
+  slug: string;
+  category?: string;
+  tags?: string[];
+  coverImageUrl?: string;
+  isPublished: boolean;
+}
+
 function BlogPostFeedBlock({ props }: { props: Record<string, unknown> }) {
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: posts } = useQuery<{ id: string; title: string; excerpt: string; slug: string; category?: string; coverImageUrl?: string; isPublished?: boolean }[]>({
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedTag, setSelectedTag] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const { data: posts } = useQuery<BlogPost[]>({
     queryKey: ["/api/blog"],
   });
   const postsPerPage = num(props.postsPerPage, 9);
-  const published = (posts ?? []).filter((p) => (p as any).isPublished);
-  const filtered = searchQuery
-    ? published.filter((p) => p.title.toLowerCase().includes(searchQuery.toLowerCase()) || (p.category ?? "").toLowerCase().includes(searchQuery.toLowerCase()))
-    : published;
-  const visible = filtered.slice(0, postsPerPage);
+  const published = (posts ?? []).filter((p) => p.isPublished);
+
+  const categories = Array.from(new Set(published.map((p) => p.category).filter(Boolean))) as string[];
+  const allTags = Array.from(new Set(published.flatMap((p) => p.tags ?? []).filter(Boolean)));
+
+  const filtered = published.filter((p) => {
+    if (searchQuery && !p.title.toLowerCase().includes(searchQuery.toLowerCase()) && !(p.excerpt ?? "").toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (selectedCategory && p.category !== selectedCategory) return false;
+    if (selectedTag && !(p.tags ?? []).includes(selectedTag)) return false;
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / postsPerPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const visible = filtered.slice((safePage - 1) * postsPerPage, safePage * postsPerPage);
+
+  const resetFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("");
+    setSelectedTag("");
+    setCurrentPage(1);
+  };
+
   return (
     <div className="py-4" data-testid="block-blog-post-feed">
       {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-6">{str(props.title)}</h2>}
-      <div className="flex justify-center mb-6">
+      <div className="flex flex-wrap justify-center gap-3 mb-6">
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search articles..." className="pl-9" data-testid="input-blog-search" />
+          <Input value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }} placeholder="Search articles..." className="pl-9" data-testid="input-blog-search" />
         </div>
+        {categories.length > 0 && (
+          <select
+            value={selectedCategory}
+            onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
+            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            data-testid="select-blog-category"
+          >
+            <option value="">All Categories</option>
+            {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        )}
+        {allTags.length > 0 && (
+          <select
+            value={selectedTag}
+            onChange={(e) => { setSelectedTag(e.target.value); setCurrentPage(1); }}
+            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            data-testid="select-blog-tag"
+          >
+            <option value="">All Tags</option>
+            {allTags.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        )}
+        {(searchQuery || selectedCategory || selectedTag) && (
+          <Button variant="ghost" size="sm" onClick={resetFilters} className="text-xs" data-testid="button-clear-filters">Clear filters</Button>
+        )}
       </div>
       {visible.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />
-          <p className="text-sm">{searchQuery ? "No articles match your search" : "No articles published yet"}</p>
+          <p className="text-sm">{searchQuery || selectedCategory || selectedTag ? "No articles match your filters" : "No articles published yet"}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {visible.map((p) => (
-            <Link key={p.id} href={`/insights/${p.slug}`}>
-              <Card className="h-full cursor-pointer hover:shadow-md transition-shadow" data-testid={`blog-feed-card-${p.id}`}>
-                {p.coverImageUrl && (
-                  <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
-                    <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" />
-                  </div>
-                )}
-                <CardContent className="p-4">
-                  <p className="font-semibold text-sm mb-1 line-clamp-2">{p.title}</p>
-                  <p className="text-xs text-muted-foreground line-clamp-3">{p.excerpt}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {visible.map((p) => (
+              <Link key={p.id} href={`/insights/${p.slug}`}>
+                <Card className="h-full cursor-pointer hover:shadow-md transition-shadow" data-testid={`blog-feed-card-${p.id}`}>
+                  {p.coverImageUrl && (
+                    <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
+                      <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <CardContent className="p-4">
+                    {p.category && <span className="text-xs text-accent font-medium">{p.category}</span>}
+                    <p className="font-semibold text-sm mb-1 line-clamp-2">{p.title}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-3">{p.excerpt}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-8" data-testid="blog-pagination">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={safePage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                data-testid="button-prev-page"
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground px-3">
+                Page {safePage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={safePage >= totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                data-testid="button-next-page"
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
 
 function BlogFeaturedPostBlock({ props }: { props: Record<string, unknown> }) {
-  const { data: posts } = useQuery<{ id: string; title: string; excerpt: string; slug: string; coverImageUrl?: string; isPublished?: boolean }[]>({
+  const { data: posts } = useQuery<BlogPost[]>({
     queryKey: ["/api/blog"],
   });
-  const featured = (posts ?? []).filter((p) => (p as any).isPublished)[0];
+  const featured = (posts ?? []).filter((p) => p.isPublished)[0];
   return (
     <div className="py-4" data-testid="block-blog-featured-post">
       {str(props.title) && <h2 className="text-2xl font-heading font-bold mb-6">{str(props.title)}</h2>}

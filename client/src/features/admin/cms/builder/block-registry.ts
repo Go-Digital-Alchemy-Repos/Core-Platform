@@ -20,11 +20,14 @@ export interface PropDef {
   itemSchema?: Omit<PropDef, "itemSchema">[];
 }
 
+export type BlockCategory = "layout" | "hero" | "content" | "media" | "social-proof" | "conversion" | "data" | "dynamic";
+
 export interface BlockDef {
   type: string;
   label: string;
   iconName: string;
   description: string;
+  category: BlockCategory;
   defaultProps: Record<string, unknown>;
   propDefs: PropDef[];
   isDynamic?: boolean;
@@ -64,6 +67,7 @@ const COLUMNS_OPTIONS = [
 ];
 
 const SPACING_OPTIONS = [
+  { label: "Extra Small (16px)", value: "xs" },
   { label: "Small (32px)", value: "sm" },
   { label: "Medium (64px)", value: "md" },
   { label: "Large (96px)", value: "lg" },
@@ -132,6 +136,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Hero",
     iconName: "Sparkles",
     description: "Full-width hero with heading, subheading, and CTA buttons",
+    category: "hero",
     defaultProps: {
       heading: "Welcome to TCK Wellness",
       subheading: "Connecting Third Culture Kids with mental health professionals who understand your world.",
@@ -166,6 +171,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Section Header",
     iconName: "Heading",
     description: "Title, optional eyebrow label, and subtitle",
+    category: "layout",
     defaultProps: {
       eyebrow: "Our Approach",
       title: "Why TCK-Informed Care Matters",
@@ -184,6 +190,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Rich Text",
     iconName: "FileText",
     description: "Free-form text content with alignment control",
+    category: "content",
     defaultProps: {
       content: "<p>Enter your content here.</p>",
       alignment: "left",
@@ -198,6 +205,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Text + Image",
     iconName: "LayoutTemplate",
     description: "Side-by-side text and image with configurable position",
+    category: "content",
     defaultProps: {
       heading: "About Our Mission",
       body: "We provide access to culturally informed mental health professionals who understand what it means to grow up between worlds.",
@@ -220,6 +228,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Call to Action",
     iconName: "Megaphone",
     description: "Bold call-to-action section with one or two buttons",
+    category: "conversion",
     defaultProps: {
       heading: "Ready to Get Started?",
       subheading: "Find a TCK-informed mental health professional and begin your journey today.",
@@ -244,6 +253,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Cards Grid",
     iconName: "LayoutGrid",
     description: "A configurable grid of icon + text cards",
+    category: "content",
     defaultProps: {
       title: "Why Choose TCK Wellness",
       subtitle: "",
@@ -275,6 +285,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "FAQ",
     iconName: "HelpCircle",
     description: "Collapsible frequently asked questions accordion",
+    category: "content",
     defaultProps: {
       title: "Frequently Asked Questions",
       items: [
@@ -300,6 +311,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Testimonials",
     iconName: "Quote",
     description: "Quote cards from clients or community members",
+    category: "social-proof",
     defaultProps: {
       title: "What Our Community Says",
       items: [
@@ -327,6 +339,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Featured Mental Health Professionals",
     iconName: "UserCheck",
     description: "Live grid of featured mental health professionals from the directory",
+    category: "data",
     defaultProps: {
       title: "Meet Our Mental Health Professionals",
       subtitle: "Browse our network of TCK-informed mental health professionals.",
@@ -343,6 +356,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Featured Mental Health Professionals",
     iconName: "UserCheck",
     description: "Live grid of featured mental health professionals from the directory",
+    category: "data",
     defaultProps: {
       title: "Meet Our Mental Health Professionals",
       subtitle: "Browse our network of TCK-informed mental health professionals.",
@@ -359,6 +373,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Events Preview",
     iconName: "CalendarDays",
     description: "Live upcoming events from the events system",
+    category: "data",
     defaultProps: {
       title: "Upcoming Events",
       subtitle: "Join our community events and webinars.",
@@ -375,6 +390,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Blog Preview",
     iconName: "BookOpen",
     description: "Live featured blog/insights articles",
+    category: "data",
     defaultProps: {
       title: "Latest Insights",
       subtitle: "Resources and perspectives for the TCK community.",
@@ -391,6 +407,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Button Group",
     iconName: "MousePointerClick",
     description: "One or more buttons in a row",
+    category: "conversion",
     defaultProps: {
       alignment: "center",
       buttons: [
@@ -417,6 +434,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Image Block",
     iconName: "Image",
     description: "A standalone image with optional caption",
+    category: "media",
     defaultProps: {
       imageUrl: "",
       alt: "",
@@ -435,6 +453,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Video Embed",
     iconName: "Play",
     description: "Embed a YouTube or Vimeo video",
+    category: "media",
     defaultProps: {
       url: "",
       title: "",
@@ -451,6 +470,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Contact Info",
     iconName: "Phone",
     description: "A list of contact details with icons",
+    category: "content",
     defaultProps: {
       title: "Get in Touch",
       items: [
@@ -477,6 +497,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Divider / Spacer",
     iconName: "Minus",
     description: "Visual divider or empty spacing between sections",
+    category: "layout",
     defaultProps: {
       style: "spacer",
       spacing: "md",
@@ -491,6 +512,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Feature List",
     iconName: "List",
     description: "Icon + title + description features in a configurable column layout",
+    category: "content",
     defaultProps: {
       title: "Key Features",
       subtitle: "",
@@ -522,6 +544,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Objection Busters",
     iconName: "ShieldCheck",
     description: "Address common concerns with reassuring responses",
+    category: "conversion",
     defaultProps: {
       title: "Common Questions & Concerns",
       subtitle: "",
@@ -549,6 +572,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Before & After",
     iconName: "ArrowRight",
     description: "Timeline-style milestones showing transformation or progress",
+    category: "social-proof",
     defaultProps: {
       title: "Your Journey",
       subtitle: "",
@@ -578,6 +602,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Trust Bar",
     iconName: "Shield",
     description: "Row of trust signals with icons and labels",
+    category: "social-proof",
     defaultProps: {
       items: [
         { icon: "ShieldCheck", label: "Verified Professionals" },
@@ -603,6 +628,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Press Mentions",
     iconName: "Newspaper",
     description: "Display media logos with optional links",
+    category: "social-proof",
     defaultProps: {
       title: "As Seen In",
       items: [
@@ -628,6 +654,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Social Proof Stats",
     iconName: "TrendingUp",
     description: "Key statistics with values, labels, and optional disclaimer",
+    category: "social-proof",
     defaultProps: {
       title: "",
       stats: [
@@ -656,6 +683,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Image Grid",
     iconName: "Grid3X3",
     description: "Multi-image grid with configurable columns",
+    category: "media",
     defaultProps: {
       title: "",
       columns: "3",
@@ -683,6 +711,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Content Slider",
     iconName: "GalleryHorizontal",
     description: "Image or content slider with navigation controls",
+    category: "media",
     defaultProps: {
       title: "",
       slides: [
@@ -709,6 +738,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Stats Bar",
     iconName: "BarChart3",
     description: "Horizontal row of stats with icons, values, and labels",
+    category: "data",
     defaultProps: {
       items: [
         { icon: "Users", value: "1,000+", label: "Active Members" },
@@ -734,6 +764,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Icon Grid",
     iconName: "Grid2X2",
     description: "Icon + title cards in a configurable grid",
+    category: "content",
     defaultProps: {
       title: "",
       subtitle: "",
@@ -765,6 +796,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Benefit Stack",
     iconName: "ListChecks",
     description: "Benefits list in a stack or timeline layout",
+    category: "content",
     defaultProps: {
       title: "Benefits",
       subtitle: "",
@@ -796,6 +828,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Science Explainer",
     iconName: "FlaskConical",
     description: "Evidence-based content with citations and sources",
+    category: "content",
     defaultProps: {
       title: "The Research Behind Our Approach",
       body: "",
@@ -822,6 +855,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Safety Checklist",
     iconName: "ClipboardCheck",
     description: "Required and optional items with disclaimer",
+    category: "content",
     defaultProps: {
       title: "Safety & Quality Standards",
       disclaimer: "",
@@ -851,6 +885,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Guarantee & Assurance",
     iconName: "BadgeCheck",
     description: "Guarantee points with a support CTA",
+    category: "conversion",
     defaultProps: {
       title: "Our Commitment to You",
       subtitle: "",
@@ -882,6 +917,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Process Steps",
     iconName: "Workflow",
     description: "Step-by-step process with optional included items list",
+    category: "content",
     defaultProps: {
       title: "How It Works",
       subtitle: "",
@@ -920,6 +956,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Use Cases",
     iconName: "Users",
     description: "Persona-based messaging showing who this is for",
+    category: "content",
     defaultProps: {
       title: "Who Is TCK Wellness For?",
       subtitle: "",
@@ -949,6 +986,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Protocol Builder",
     iconName: "ListOrdered",
     description: "Step-by-step protocols organized by experience level",
+    category: "content",
     defaultProps: {
       title: "Getting Started Guide",
       subtitle: "",
@@ -983,6 +1021,7 @@ export const DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     iconName: "Map",
     description: "Interactive map showing all mental health professionals — populated from live data",
     isDynamic: true,
+    category: "dynamic",
     defaultProps: {
       title: "Our Mental Health Professionals Around the World",
       subtitle: "Click a pin to learn more about a TCK-informed professional near you",
@@ -995,6 +1034,7 @@ export const DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     iconName: "Rss",
     description: "Paginated blog post grid with search and category filters",
     isDynamic: true,
+    category: "dynamic",
     defaultProps: {
       title: "All Articles",
       postsPerPage: 9,
@@ -1010,6 +1050,7 @@ export const DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     iconName: "FileText",
     description: "Large featured blog post card from latest published post",
     isDynamic: true,
+    category: "dynamic",
     defaultProps: {
       title: "Featured Article",
     },
@@ -1023,6 +1064,7 @@ export const DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     iconName: "Mail",
     description: "Contact form with validation and submission — managed automatically",
     isDynamic: true,
+    category: "dynamic",
     defaultProps: {},
     propDefs: [],
   },
@@ -1032,6 +1074,7 @@ export const DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     iconName: "UserPlus",
     description: "Registration and login forms for mental health professionals — managed automatically",
     isDynamic: true,
+    category: "dynamic",
     defaultProps: {},
     propDefs: [],
   },
