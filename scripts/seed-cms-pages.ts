@@ -13,69 +13,63 @@ const homeContent = {
       id: uid(),
       type: "hero",
       props: {
-        heading: "Mental Health Support for Those Who've Called Many Places Home",
-        subheading:
-          "TCK Wellness connects Third Culture Kids, expats, and globally-mobile families with mental health professionals who truly understand their experience.",
-        ctaText: "Find a Mental Health Professional",
+        heading: 'Care that understands where TCKs "come from".',
+        subheading: "",
+        ctaText: "Find a Mental Health Professional!",
         ctaLink: "/directory",
-        ctaSecondaryText: "Join as a Mental Health Professional",
-        ctaSecondaryLink: "/join",
-        backgroundImageUrl: "",
-        overlayOpacity: 50,
-        minHeight: "large",
-        textAlign: "center",
-      },
-    },
-    {
-      id: uid(),
-      type: "section-header",
-      props: {
-        eyebrow: "WHY TCK WELLNESS",
-        title: "Built for Those Who've Lived Between Worlds",
-        subtitle:
-          "We connect Third Culture Kids and globally-mobile individuals with mental health professionals who truly understand their unique challenges.",
-        alignment: "center",
+        ctaSecondaryText: "Join the Network!",
+        ctaSecondaryLink: "/auth/register",
+        backgroundImageUrl: "/images/hero-therapy-session.png",
+        overlayOpacity: 85,
       },
     },
     {
       id: uid(),
       type: "cards-grid",
       props: {
-        columns: 3,
-        items: [
+        title: "Why TCK Informed?",
+        subtitle: "We bridge the gap between Third Culture Kids and culturally competent mental health professionals.",
+        columns: "3",
+        cards: [
           {
             icon: "Globe",
             title: "Culturally Informed Care",
-            body: "Every mental health professional in our directory understands the unique challenges of growing up across cultures.",
+            description: "Every mental health professional in our directory understands the unique challenges of growing up across cultures.",
           },
           {
             icon: "Heart",
             title: "Specialized Support",
-            body: "Find professionals trained in identity, belonging, grief of place, and cross-cultural transitions.",
+            description: "Find professionals trained in identity, belonging, grief of place, and cross-cultural transitions.",
           },
           {
             icon: "Users",
             title: "Global Community",
-            body: "Join a community that celebrates the richness of a multicultural upbringing.",
+            description: "Join a community that celebrates the richness of a multicultural upbringing.",
           },
         ],
       },
     },
     {
       id: uid(),
-      type: "featured-professionals",
+      type: "section-header",
       props: {
-        heading: "Meet Our Mental Health Professionals",
-        subheading: "Browse our vetted network of culturally informed mental health professionals.",
-        limit: 6,
+        title: "Is Counseling What's Needed?",
+        alignment: "center",
+      },
+    },
+    {
+      id: uid(),
+      type: "rich-text",
+      props: {
+        content: "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>",
+        alignment: "center",
       },
     },
     {
       id: uid(),
       type: "testimonials",
       props: {
-        heading: "What People Are Saying",
-        subheading: "Hear from TCKs, expat families, and mental health professionals who have found their match.",
+        title: "What People Are Saying",
         items: [
           {
             quote:
@@ -136,24 +130,39 @@ const homeContent = {
     },
     {
       id: uid(),
+      type: "therapist-map",
+      props: {
+        title: "Our Mental Health Professionals Around the World",
+        subtitle: "Click a pin to learn more about a TCK-informed professional near you",
+      },
+    },
+    {
+      id: uid(),
       type: "events-preview",
       props: {
-        heading: "Upcoming Events",
-        subheading: "Join our community events for TCKs and mental health professionals.",
+        title: "Upcoming Events",
+        subtitle: "Join our community events for TCKs and mental health professionals.",
         limit: 3,
+      },
+    },
+    {
+      id: uid(),
+      type: "blog-preview",
+      props: {
+        title: "Featured Articles",
+        subtitle: "Latest insights on TCK mental health and cross-cultural wellness.",
+        limit: 6,
       },
     },
     {
       id: uid(),
       type: "cta",
       props: {
-        heading: "Ready to Find Your Mental Health Professional?",
+        heading: "Are You a TCK-Informed Mental Health Professional?",
         subheading:
-          "Browse our directory of vetted mental health professionals who specialize in cross-cultural mental health.",
-        primaryText: "Browse the Directory",
-        primaryLink: "/directory",
-        secondaryText: "Join as a Mental Health Professional",
-        secondaryLink: "/join",
+          "Join our growing directory and connect with clients who need your unique expertise. List your practice and reach the global TCK community.",
+        primaryText: "Join the Directory",
+        primaryLink: "/auth/register",
         variant: "accent",
       },
     },
@@ -164,19 +173,36 @@ const aboutContent = {
   blocks: [
     {
       id: uid(),
-      type: "hero",
+      type: "section-header",
       props: {
-        heading: "About TCK Wellness",
-        subheading:
-          "We exist to bridge the gap between Third Culture Kids and mental health professionals who truly understand what it means to grow up between worlds.",
-        ctaText: "Find a Mental Health Professional",
-        ctaLink: "/directory",
-        ctaSecondaryText: "Our Mission",
-        ctaSecondaryLink: "#mission",
-        backgroundImageUrl: "",
-        overlayOpacity: 50,
-        minHeight: "medium",
-        textAlign: "center",
+        eyebrow: "OUR STORY",
+        title: "History",
+        alignment: "left",
+      },
+    },
+    {
+      id: uid(),
+      type: "rich-text",
+      props: {
+        content: "<p>Founded in 2024 by Adult TCKs who experienced firsthand the challenge of finding culturally competent mental health support, TCK Wellness was born out of a simple yet powerful realization: the people best equipped to help Third Culture Kids are those who understand their experience. Our founders grew up across multiple countries and cultures, navigating the beautiful complexity and unique struggles that come with a globally-mobile childhood.</p>",
+        alignment: "left",
+      },
+    },
+    {
+      id: uid(),
+      type: "section-header",
+      props: {
+        eyebrow: "WHAT WE STAND FOR",
+        title: "Vision & Mission",
+        alignment: "left",
+      },
+    },
+    {
+      id: uid(),
+      type: "rich-text",
+      props: {
+        content: "<p>We envision a world where every Third Culture Kid, expat, and globally-mobile individual has access to mental health support that honors their multicultural identity. Our mission is to build the most trusted directory of TCK-informed mental health professionals worldwide — and to create a community that empowers both clients and mental health professionals to thrive.</p>",
+        alignment: "left",
       },
     },
     {
@@ -184,9 +210,9 @@ const aboutContent = {
       type: "section-header",
       props: {
         eyebrow: "THE RESEARCH",
-        title: "Why Mental Health Support Matters for TCKs",
+        title: "The Stats Speak for Themselves",
         subtitle:
-          "Research consistently shows that Third Culture Kids face elevated mental health challenges — and that culturally informed care makes a measurable difference.",
+          "According to TCK Training's 2024 research, survey of 1600+ adult TCKs:",
         alignment: "center",
       },
     },
@@ -194,22 +220,22 @@ const aboutContent = {
       id: uid(),
       type: "cards-grid",
       props: {
-        columns: 3,
-        items: [
+        columns: "3",
+        cards: [
           {
             icon: "AlertCircle",
             title: "60% of TCKs",
-            body: "experienced symptoms of anxiety related to their cross-cultural upbringing and transitions.",
+            description: "experienced symptoms of anxiety related to their cross-cultural upbringing and transitions.",
           },
           {
             icon: "AlertCircle",
             title: "59% of TCKs",
-            body: "experienced symptoms of depression, often connected to unresolved grief of place and identity.",
+            description: "experienced symptoms of depression, often connected to unresolved grief of place and identity.",
           },
           {
             icon: "AlertCircle",
             title: "47% of TCKs",
-            body: "experienced symptoms of suicidal ideation at some point in their lives.",
+            description: "experienced symptoms of suicidal ideation at some point in their lives.",
           },
         ],
       },
@@ -300,8 +326,7 @@ const aboutContent = {
       id: uid(),
       type: "testimonials",
       props: {
-        heading: "Stories from Our Community",
-        subheading: "Real experiences from TCKs and mental health professionals who found connection through our platform.",
+        title: "Stories from Our Community",
         items: [
           {
             quote:
@@ -363,30 +388,8 @@ const contactContent = {
     },
     {
       id: uid(),
-      type: "contact-info",
-      props: {
-        items: [
-          {
-            icon: "MapPin",
-            label: "Location",
-            value: "Global — serving TCKs worldwide",
-          },
-          {
-            icon: "Mail",
-            label: "Email",
-            value: "hello@tckwellness.com",
-          },
-        ],
-      },
-    },
-    {
-      id: uid(),
-      type: "rich-text",
-      props: {
-        content:
-          "<p>Use the contact form on this page to reach out. We typically respond within 1-2 business days. For urgent counseling needs, please browse our <a href='/directory'>mental health professional directory</a> directly.</p>",
-        alignment: "center",
-      },
+      type: "contact-form",
+      props: {},
     },
   ],
 };
@@ -395,27 +398,15 @@ const joinContent = {
   blocks: [
     {
       id: uid(),
-      type: "hero",
-      props: {
-        heading: "Join the TCK Wellness Network",
-        subheading:
-          "Connect with a community of TCKs, expats, and globally-mobile individuals who need your specialized expertise.",
-        ctaText: "Apply Now",
-        ctaLink: "#apply",
-        ctaSecondaryText: "See Pricing",
-        ctaSecondaryLink: "#pricing",
-        backgroundImageUrl: "",
-        overlayOpacity: 50,
-        minHeight: "medium",
-        textAlign: "center",
-      },
+      type: "join-registration-form",
+      props: {},
     },
     {
       id: uid(),
       type: "section-header",
       props: {
         eyebrow: "BENEFITS",
-        title: "Why Join TCK Wellness?",
+        title: "What Does Membership Include?",
         subtitle:
           "Reach the clients who need your unique cross-cultural expertise — and build a practice that reflects your values.",
         alignment: "center",
@@ -425,27 +416,27 @@ const joinContent = {
       id: uid(),
       type: "cards-grid",
       props: {
-        columns: 2,
-        items: [
+        columns: "4",
+        cards: [
           {
-            icon: "Globe",
+            icon: "ClipboardCheck",
             title: "Directory Listing",
-            body: "Be discoverable by TCKs, expats, and cross-cultural families searching for mental health professionals like you.",
+            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
           },
           {
             icon: "Users",
             title: "Client Connections",
-            body: "Receive connection requests from qualified clients who have already found your profile in the directory.",
+            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
           },
           {
             icon: "BarChart3",
             title: "Profile Analytics",
-            body: "See how many people view your profile and track your reach in the TCK community.",
+            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
           },
           {
-            icon: "Calendar",
+            icon: "Star",
             title: "Community Access",
-            body: "Access webinars, events, and resources designed to support mental health professionals working with cross-cultural populations.",
+            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
           },
         ],
       },
@@ -464,32 +455,32 @@ const joinContent = {
       id: uid(),
       type: "cards-grid",
       props: {
-        columns: 3,
-        items: [
+        columns: "3",
+        cards: [
           {
             icon: "ClipboardCheck",
             title: "1. Submit Your Application",
-            body: "Complete our detailed application with your credentials and cross-cultural experience.",
+            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
           },
           {
-            icon: "ShieldCheck",
+            icon: "CheckCircle",
             title: "2. Credential Verification",
-            body: "Our team verifies your licensure and professional qualifications.",
+            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
           },
           {
             icon: "Search",
             title: "3. TCK Competency Review",
-            body: "We review your training or lived experience with TCK and cross-cultural populations.",
+            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
           },
           {
             icon: "User",
             title: "4. Profile Setup",
-            body: "Create your public profile with specializations, session formats, and languages.",
+            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
           },
           {
             icon: "Star",
-            title: "5. Go Live",
-            body: "Once approved, your profile goes live and you start receiving discovery from the TCK community.",
+            title: "5. Go Live in the Directory",
+            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
           },
         ],
       },
@@ -565,7 +556,7 @@ const pages = [
     slug: "home",
     title: "Home",
     pageType: "home" as const,
-    status: "draft" as const,
+    status: "published" as const,
     content: homeContent,
     seoTitle: "TCK Wellness — Mental Health Support for Third Culture Kids",
     seoDescription:
@@ -575,7 +566,7 @@ const pages = [
     slug: "about",
     title: "About",
     pageType: "about" as const,
-    status: "draft" as const,
+    status: "published" as const,
     content: aboutContent,
     seoTitle: "About TCK Wellness",
     seoDescription:
@@ -585,7 +576,7 @@ const pages = [
     slug: "contact",
     title: "Contact",
     pageType: "contact" as const,
-    status: "draft" as const,
+    status: "published" as const,
     content: contactContent,
     seoTitle: "Contact TCK Wellness",
     seoDescription:
@@ -595,7 +586,7 @@ const pages = [
     slug: "join",
     title: "Join as a Mental Health Professional",
     pageType: "custom" as const,
-    status: "draft" as const,
+    status: "published" as const,
     content: joinContent,
     seoTitle: "Join the TCK Wellness Mental Health Professional Network",
     seoDescription:
@@ -613,7 +604,18 @@ async function seed() {
       .limit(1);
 
     if (existing.length > 0) {
-      console.log(`  [skip] ${page.slug} — already exists (id: ${existing[0].id})`);
+      await db
+        .update(cmsPages)
+        .set({
+          content: page.content as any,
+          status: page.status,
+          seoTitle: page.seoTitle,
+          seoDescription: page.seoDescription,
+          publishedAt: page.status === "published" ? new Date() : existing[0].publishedAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(cmsPages.slug, page.slug));
+      console.log(`  [updated] ${page.slug} — id: ${existing[0].id}, status: ${page.status}`);
     } else {
       const [inserted] = await db
         .insert(cmsPages)
@@ -627,6 +629,7 @@ async function seed() {
           seoDescription: page.seoDescription,
           seoKeywords: "",
           ogImageUrl: "",
+          publishedAt: page.status === "published" ? new Date() : null,
         })
         .returning();
       console.log(`  [created] ${page.slug} — id: ${inserted.id}, status: ${inserted.status}`);

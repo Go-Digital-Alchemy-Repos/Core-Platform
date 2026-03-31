@@ -27,6 +27,7 @@ export interface BlockDef {
   description: string;
   defaultProps: Record<string, unknown>;
   propDefs: PropDef[];
+  isDynamic?: boolean;
 }
 
 export interface BlockInstance {
@@ -448,8 +449,48 @@ export const BLOCK_REGISTRY: BlockDef[] = [
   },
 ];
 
+export const DYNAMIC_BLOCK_TYPES: BlockDef[] = [
+  {
+    type: "therapist-map",
+    label: "Global Therapist Map (Live Data)",
+    iconName: "Map",
+    description: "Interactive map showing all mental health professionals — populated from live data",
+    isDynamic: true,
+    defaultProps: {
+      title: "Our Mental Health Professionals Around the World",
+      subtitle: "Click a pin to learn more about a TCK-informed professional near you",
+    },
+    propDefs: [],
+  },
+  {
+    type: "contact-form",
+    label: "Contact Form (Live)",
+    iconName: "Mail",
+    description: "Contact form with validation and submission — managed automatically",
+    isDynamic: true,
+    defaultProps: {},
+    propDefs: [],
+  },
+  {
+    type: "join-registration-form",
+    label: "Join / Registration Form (Live)",
+    iconName: "UserPlus",
+    description: "Registration and login forms for mental health professionals — managed automatically",
+    isDynamic: true,
+    defaultProps: {},
+    propDefs: [],
+  },
+];
+
+export const ALL_BLOCKS: BlockDef[] = [...BLOCK_REGISTRY, ...DYNAMIC_BLOCK_TYPES];
+
 export function getBlockDef(type: string): BlockDef | undefined {
-  return BLOCK_REGISTRY.find((b) => b.type === type);
+  return ALL_BLOCKS.find((b) => b.type === type);
+}
+
+export function isDynamicBlock(type: string): boolean {
+  const def = getBlockDef(type);
+  return def?.isDynamic === true;
 }
 
 export function createBlock(type: string): BlockInstance {

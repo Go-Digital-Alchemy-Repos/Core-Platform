@@ -1,21 +1,45 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   Globe, Heart, Users, MapPin, Mail, Phone, Star, CheckCircle,
   Sparkles, FileText, LayoutTemplate, Megaphone, LayoutGrid,
   HelpCircle, Quote, UserCheck, CalendarDays, BookOpen,
   MousePointerClick, Image, Play, Minus, Heading,
+  Map, Lock, UserPlus, Send, Loader2, ArrowRight,
+  AlertCircle, ClipboardCheck, BarChart3, Search, User, ShieldCheck,
 } from "lucide-react";
+import { ProfessionalRegisterDialog } from "@/components/auth/professional-register-dialog";
+import { LoginDialog } from "@/components/auth/login-dialog";
+import { MapView } from "@/components/directory/map-view";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { BlockInstance } from "./block-registry";
+import { isDynamicBlock, getBlockDef } from "./block-registry";
 
 const LUCIDE_MAP: Record<string, React.ElementType> = {
   Globe, Heart, Users, MapPin, Mail, Phone, Star, CheckCircle,
   Sparkles, FileText, LayoutTemplate, Megaphone, LayoutGrid,
   HelpCircle, Quote, UserCheck, CalendarDays, BookOpen,
   MousePointerClick, Image, Play, Minus, Heading,
+  Map, Lock, UserPlus, Send, ArrowRight,
+  AlertCircle, ClipboardCheck, BarChart3, Search, User, ShieldCheck,
 };
 
 function LucideIcon({ name, className }: { name: string; className?: string }) {
@@ -460,6 +484,244 @@ function DividerBlock({ props }: { props: Record<string, unknown> }) {
   return <hr className={`border-border ${heightClass} border-0 border-t-[1px] my-auto`} />;
 }
 
+const contactFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Please enter a valid email"),
+  subject: z.string().min(1, "Subject is required"),
+  message: z.string().min(10, "Message must be at least 10 characters"),
+});
+
+type ContactFormValues = z.infer<typeof contactFormSchema>;
+
+function TherapistMapBlock({ props }: { props: Record<string, unknown> }) {
+  const { data: allTherapistsData, isLoading } = useQuery<any>({
+    queryKey: ["/api/therapists", "pageSize=500"],
+    queryFn: async () => {
+      const res = await fetch("/api/therapists?pageSize=500");
+      if (!res.ok) throw new Error("Failed to fetch therapists");
+      return res.json();
+    },
+  });
+
+  const mapTherapists = useMemo(
+    () =>
+      (allTherapistsData?.items ?? []).map((t: any) => ({
+        profile: t,
+        user: {
+          firstName: t.user?.firstName ?? null,
+          lastName: t.user?.lastName ?? null,
+          profileImageUrl: t.user?.profileImageUrl ?? null,
+        },
+      })),
+    [allTherapistsData]
+  );
+
+  return (
+    <section className="relative bg-[#ffffff4d] overflow-hidden" data-testid="section-professional-map">
+      <div className="pointer-events-none absolute top-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.12) 0%, transparent 70%)" }} />
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
+        <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap mb-8 sm:mb-12">
+          <div>
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold" data-testid="text-map-heading">
+              {str(props.title) || "Our Mental Health Professionals Around the World"}
+            </h2>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
+              {str(props.subtitle) || "Click a pin to learn more about a TCK-informed professional near you"}
+            </p>
+          </div>
+          <Link href="/directory">
+            <Button variant="outline" data-testid="button-view-all-therapists">
+              Find a Mental Health Professional <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+        {isLoading ? (
+          <div className="flex justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <MapView
+            therapists={mapTherapists}
+            height="500px"
+            interactive
+            zoom={2}
+            center={[20, 0]}
+          />
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ContactFormBlock() {
+  const { toast } = useToast();
+
+  const form = useForm<ContactFormValues>({
+    resolver: zodResolver(contactFormSchema),
+    defaultValues: { name: "", email: "", subject: "", message: "" },
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (data: ContactFormValues) => {
+      await apiRequest("POST", "/api/contact", data);
+    },
+    onSuccess: () => {
+      toast({ title: "Message sent", description: "Thank you for reaching out. We'll get back to you soon." });
+      form.reset();
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to send message", description: error.message, variant: "destructive" });
+    },
+  });
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8" data-testid="dynamic-contact-form">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Send className="w-5 h-5" />
+                Send a Message
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Your name" {...field} data-testid="input-contact-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="you@example.com" {...field} data-testid="input-contact-email" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subject</FormLabel>
+                        <FormControl>
+                          <Input placeholder="What is this about?" {...field} data-testid="input-contact-subject" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="message"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Message</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Tell us more..." className="resize-none min-h-[120px]" {...field} data-testid="input-contact-message" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" disabled={mutation.isPending} data-testid="button-submit-contact">
+                    {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Send Message
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
+        <div className="space-y-4">
+          <Card data-testid="card-contact-location">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-accent mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-sm mb-1">Location</h3>
+                  <p className="text-sm text-muted-foreground">Global — serving TCKs worldwide</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function JoinRegistrationFormBlock() {
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+
+  return (
+    <section className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="dynamic-join-registration-form">
+      <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title">
+        Are you a TCK-Informed Mental Health Professional?{" "}
+        <span className="text-accent">Join the Network!</span>
+      </h1>
+      <Button
+        size="lg"
+        className="bg-accent text-accent-foreground border-accent-border text-base px-8 py-6"
+        onClick={() => setRegisterOpen(true)}
+        data-testid="button-apply-member"
+      >
+        <UserPlus className="mr-2 h-5 w-5" />
+        Apply to Become a Member
+      </Button>
+      <p className="text-sm sm:text-base text-muted-foreground mt-6" data-testid="text-login-prompt">
+        If you're already a member click here to{" "}
+        <button
+          onClick={() => setLoginOpen(true)}
+          className="text-accent underline underline-offset-2 hover:text-accent/80 font-medium"
+          data-testid="button-member-login"
+        >
+          Log in
+        </button>{" "}
+        to your profile!
+      </p>
+      <ProfessionalRegisterDialog open={registerOpen} onOpenChange={setRegisterOpen} />
+      <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
+    </section>
+  );
+}
+
+function DynamicPlaceholderAdmin({ block }: { block: BlockInstance }) {
+  const def = getBlockDef(block.type);
+  const label = def?.label ?? block.type;
+  const iconName = def?.iconName ?? "Lock";
+
+  return (
+    <div className="rounded-lg border-2 border-dashed border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20 p-8 text-center" data-testid={`dynamic-placeholder-${block.type}`}>
+      <div className="flex items-center justify-center gap-2 mb-3">
+        <Lock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+        <LucideIcon name={iconName} className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+      </div>
+      <p className="font-semibold text-sm text-amber-800 dark:text-amber-300">{label}</p>
+      <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+        This section is managed automatically and displays live data on the public site.
+      </p>
+    </div>
+  );
+}
+
 const RENDERERS: Record<string, React.ComponentType<{ props: Record<string, unknown> }>> = {
   hero: HeroBlock,
   "section-header": SectionHeaderBlock,
@@ -480,7 +742,16 @@ const RENDERERS: Record<string, React.ComponentType<{ props: Record<string, unkn
   divider: DividerBlock,
 };
 
-export function BlockRenderer({ block }: { block: BlockInstance }) {
+export function BlockRenderer({ block, isAdminPreview }: { block: BlockInstance; isAdminPreview?: boolean }) {
+  if (isDynamicBlock(block.type)) {
+    if (isAdminPreview) {
+      return <DynamicPlaceholderAdmin block={block} />;
+    }
+    if (block.type === "therapist-map") return <TherapistMapBlock props={block.props} />;
+    if (block.type === "contact-form") return <ContactFormBlock />;
+    if (block.type === "join-registration-form") return <JoinRegistrationFormBlock />;
+  }
+
   const Renderer = RENDERERS[block.type];
   if (!Renderer) {
     return (

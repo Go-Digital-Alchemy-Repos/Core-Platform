@@ -54,8 +54,11 @@ import {
   Bookmark,
   Search,
   Blocks,
+  Lock,
+  Map,
+  UserPlus,
 } from "lucide-react";
-import { BLOCK_REGISTRY, getBlockDef, createBlock, type BlockInstance, type BuilderContent } from "./block-registry";
+import { BLOCK_REGISTRY, getBlockDef, createBlock, isDynamicBlock, type BlockInstance, type BuilderContent } from "./block-registry";
 import { BlockEditor } from "./block-editor";
 import { PageRenderer, BlockRenderer } from "./block-renderer";
 import { useToast } from "@/hooks/use-toast";
@@ -80,6 +83,10 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Heading,
   Globe,
   Phone,
+  Map,
+  Mail: Globe,
+  UserPlus,
+  Lock,
 };
 
 const SECTION_CATEGORIES = ["general", "hero", "cta", "testimonials", "faq", "features", "content", "team"];
@@ -445,22 +452,33 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             {blocks.map((block, idx) => {
               const def = getBlockDef(block.type);
               const isSelected = block.id === selectedId;
+              const dynamic = isDynamicBlock(block.type);
               return (
                 <div
                   key={block.id}
                   className={`border rounded-lg overflow-hidden transition-all ${
-                    isSelected ? "border-violet-400 shadow-sm" : "border-border hover:border-muted-foreground/30"
+                    dynamic
+                      ? "border-amber-300 dark:border-amber-700 bg-amber-50/30 dark:bg-amber-950/10"
+                      : isSelected
+                      ? "border-violet-400 shadow-sm"
+                      : "border-border hover:border-muted-foreground/30"
                   }`}
                   data-testid={`block-item-${block.id}`}
                 >
-                  <div className="flex items-center gap-2 px-3 py-2 bg-muted/20">
+                  <div className={`flex items-center gap-2 px-3 py-2 ${dynamic ? "bg-amber-50/50 dark:bg-amber-950/20" : "bg-muted/20"}`}>
                     <GripVertical className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
-                    <div className="h-6 w-6 rounded flex items-center justify-center bg-violet-100 dark:bg-violet-900/30 flex-shrink-0">
-                      {def && <BlockIcon name={def.iconName} className="h-3.5 w-3.5 text-violet-600" />}
+                    <div className={`h-6 w-6 rounded flex items-center justify-center flex-shrink-0 ${dynamic ? "bg-amber-100 dark:bg-amber-900/30" : "bg-violet-100 dark:bg-violet-900/30"}`}>
+                      {def && <BlockIcon name={def.iconName} className={`h-3.5 w-3.5 ${dynamic ? "text-amber-600" : "text-violet-600"}`} />}
                     </div>
                     <span className="text-xs font-medium flex-1 truncate">
                       {def?.label ?? block.type}
-                      {(() => {
+                      {dynamic && (
+                        <Badge variant="outline" className="ml-1.5 text-[9px] px-1 py-0 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400">
+                          <Lock className="h-2.5 w-2.5 mr-0.5" />
+                          Dynamic
+                        </Badge>
+                      )}
+                      {!dynamic && (() => {
                         const subtitle = typeof block.props.title === "string" && block.props.title
                           ? block.props.title
                           : typeof block.props.heading === "string" && block.props.heading
@@ -472,62 +490,70 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                       })()}
                     </span>
                     <div className="flex items-center gap-0.5 flex-shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        disabled={idx === 0}
-                        onClick={() => moveBlock(block.id, "up")}
-                        data-testid={`button-move-up-${block.id}`}
-                        title="Move up"
-                      >
-                        <ChevronUp className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        disabled={idx === blocks.length - 1}
-                        onClick={() => moveBlock(block.id, "down")}
-                        data-testid={`button-move-down-${block.id}`}
-                        title="Move down"
-                      >
-                        <ChevronDown className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`h-6 w-6 ${isSelected ? "text-violet-600" : ""}`}
-                        onClick={() => setSelectedId(isSelected ? null : block.id)}
-                        data-testid={`button-edit-block-${block.id}`}
-                        title={isSelected ? "Close editor" : "Edit block"}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-amber-600"
-                        onClick={() => setSavingSectionBlockId(block.id)}
-                        data-testid={`button-save-section-${block.id}`}
-                        title="Save as reusable section"
-                      >
-                        <Bookmark className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-destructive hover:text-destructive"
-                        onClick={() => removeBlock(block.id)}
-                        data-testid={`button-delete-block-${block.id}`}
-                        title="Remove block"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      {!dynamic && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            disabled={idx === 0}
+                            onClick={() => moveBlock(block.id, "up")}
+                            data-testid={`button-move-up-${block.id}`}
+                            title="Move up"
+                          >
+                            <ChevronUp className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            disabled={idx === blocks.length - 1}
+                            onClick={() => moveBlock(block.id, "down")}
+                            data-testid={`button-move-down-${block.id}`}
+                            title="Move down"
+                          >
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      )}
+                      {!dynamic && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-6 w-6 ${isSelected ? "text-violet-600" : ""}`}
+                            onClick={() => setSelectedId(isSelected ? null : block.id)}
+                            data-testid={`button-edit-block-${block.id}`}
+                            title={isSelected ? "Close editor" : "Edit block"}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-muted-foreground hover:text-amber-600"
+                            onClick={() => setSavingSectionBlockId(block.id)}
+                            data-testid={`button-save-section-${block.id}`}
+                            title="Save as reusable section"
+                          >
+                            <Bookmark className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-destructive hover:text-destructive"
+                            onClick={() => removeBlock(block.id)}
+                            data-testid={`button-delete-block-${block.id}`}
+                            title="Remove block"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="p-3 pointer-events-none select-none opacity-80 max-h-48 overflow-hidden">
-                    <BlockRenderer block={block} />
+                    <BlockRenderer block={block} isAdminPreview={dynamic} />
                   </div>
                 </div>
               );
