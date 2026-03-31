@@ -30,6 +30,7 @@ const ProfileEditPage = lazy(() => import("@/features/therapist/profile-edit-pag
 const SubscriptionPage = lazy(() => import("@/features/therapist/subscription-page"));
 const ApplicationPage = lazy(() => import("@/features/therapist/application-page"));
 const ApplicationStatusPage = lazy(() => import("@/features/therapist/application-status-page"));
+const ReferenceFormPage = lazy(() => import("@/features/public/reference-form-page"));
 const AdminDashboardPage = lazy(() => import("@/features/admin/dashboard-page"));
 const AdminTherapistsPage = lazy(() => import("@/features/admin/therapists-page"));
 const AdminUsersPage = lazy(() => import("@/features/admin/users-page"));
@@ -78,6 +79,7 @@ function Router() {
         <Route path="/insights/:slug" component={InsightsPostPage} />
         <Route path="/directory" component={DirectoryPage} />
         <Route path="/directory/:id" component={TherapistProfilePage} />
+        <Route path="/reference/:token" component={ReferenceFormPage} />
         <Route path="/auth/login" component={LoginPage} />
         <Route path="/auth/register" component={RegisterPage} />
         <Route path="/auth/reset-password" component={ResetPasswordPage} />

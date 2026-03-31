@@ -70,11 +70,17 @@ export const providerApplicationReferences = pgTable("provider_application_refer
   refereePhone: text("referee_phone"),
   relationship: text("relationship"),
   status: text("status").notNull().default("pending"),
+  secureToken: varchar("secure_token", { length: 128 }),
+  applicantNameSnapshot: text("applicant_name_snapshot"),
+  emailSentAt: timestamp("email_sent_at"),
+  openedAt: timestamp("opened_at"),
   responseReceivedAt: timestamp("response_received_at"),
   responseData: jsonb("response_data"),
+  concernFlags: jsonb("concern_flags"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_par_app_id").on(table.applicationId),
+  index("idx_par_token").on(table.secureToken),
 ]);
 
 export const providerBackgroundChecks = pgTable("provider_background_checks", {

@@ -4,6 +4,7 @@ import { authenticateToken, requireRole } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
 import { getUncachableStripeClient } from "../config/stripe";
 import { logger } from "../utils/logger";
+import { sendReferenceRequestEmail } from "../services/email.service";
 
 const APPLICATION_FEE_CENTS = 15000;
 const REFUND_ELIGIBLE_CENTS = 10000;
@@ -31,11 +32,22 @@ router.get(
       storage.applications.getDecision(application.id),
     ]);
 
+    const sanitizedReferences = references.map((r) => ({
+      id: r.id,
+      refereeName: r.refereeName,
+      refereeEmail: r.refereeEmail,
+      refereePhone: r.refereePhone,
+      relationship: r.relationship,
+      status: r.status,
+      emailSentAt: r.emailSentAt,
+      createdAt: r.createdAt,
+    }));
+
     res.json({
       ...application,
       timeline,
       credentials,
-      references,
+      references: sanitizedReferences,
       backgroundCheck,
       interview,
       decision,
@@ -317,6 +329,53 @@ router.post(
     });
 
     await storage.activity.log(req.user!.id, "application_submitted", "Provider application submitted");
+
+    const applicantName = formData.fullName || "the applicant";
+    const baseUrl = process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "localhost:5000"}`;
+
+    for (const ref of references) {
+      try {
+        const token = ref.secureToken || (await import("crypto")).randomBytes(48).toString("hex");
+        if (!ref.secureToken) {
+          await storage.applications.updateReference(ref.id, {
+            secureToken: token,
+            applicantNameSnapshot: applicantName,
+          });
+        } else if (!ref.applicantNameSnapshot) {
+          await storage.applications.updateReference(ref.id, {
+            applicantNameSnapshot: applicantName,
+          });
+        }
+
+        const referenceUrl = `${baseUrl}/reference/${token}`;
+        const sent = await sendReferenceRequestEmail(
+          ref.refereeEmail,
+          ref.refereeName,
+          applicantName,
+          referenceUrl
+        );
+
+        if (sent) {
+          await storage.applications.updateReference(ref.id, {
+            emailSentAt: new Date(),
+            status: "email_sent",
+          });
+        }
+      } catch (err) {
+        logger.app.error("Failed to send reference request email", err, { referenceId: ref.id });
+      }
+    }
+
+    await storage.applications.update(application.id, {
+      referencesStatus: "in_progress",
+    } as any);
+
+    await storage.applications.addTimelineEntry({
+      applicationId: application.id,
+      action: "references_requested",
+      note: `Reference request emails sent to ${references.length} references`,
+      performedBy: req.user!.id,
+    });
 
     res.json(updated);
   })

@@ -1,4 +1,5 @@
-import { eq, desc, sql, and } from "drizzle-orm";
+import { eq, desc, sql, and, count } from "drizzle-orm";
+import { randomBytes } from "crypto";
 import { db } from "../db";
 import {
   providerApplications,
@@ -181,8 +182,14 @@ export class ApplicationStorage {
     refereeEmail: string;
     refereePhone?: string;
     relationship?: string;
+    secureToken?: string;
+    applicantNameSnapshot?: string;
   }): Promise<ProviderApplicationReference> {
-    const [ref] = await db.insert(providerApplicationReferences).values(data).returning();
+    const token = data.secureToken || randomBytes(48).toString("hex");
+    const [ref] = await db.insert(providerApplicationReferences).values({
+      ...data,
+      secureToken: token,
+    }).returning();
     return ref;
   }
 
@@ -193,13 +200,65 @@ export class ApplicationStorage {
       .where(eq(providerApplicationReferences.applicationId, applicationId));
   }
 
+  async getByToken(token: string): Promise<(ProviderApplicationReference & { applicationStatus?: string }) | undefined> {
+    const [ref] = await db
+      .select({
+        id: providerApplicationReferences.id,
+        applicationId: providerApplicationReferences.applicationId,
+        refereeName: providerApplicationReferences.refereeName,
+        refereeEmail: providerApplicationReferences.refereeEmail,
+        refereePhone: providerApplicationReferences.refereePhone,
+        relationship: providerApplicationReferences.relationship,
+        status: providerApplicationReferences.status,
+        secureToken: providerApplicationReferences.secureToken,
+        applicantNameSnapshot: providerApplicationReferences.applicantNameSnapshot,
+        emailSentAt: providerApplicationReferences.emailSentAt,
+        openedAt: providerApplicationReferences.openedAt,
+        responseReceivedAt: providerApplicationReferences.responseReceivedAt,
+        responseData: providerApplicationReferences.responseData,
+        concernFlags: providerApplicationReferences.concernFlags,
+        createdAt: providerApplicationReferences.createdAt,
+        applicationStatus: providerApplications.status,
+      })
+      .from(providerApplicationReferences)
+      .innerJoin(providerApplications, eq(providerApplicationReferences.applicationId, providerApplications.id))
+      .where(eq(providerApplicationReferences.secureToken, token));
+    return ref;
+  }
+
+  async updateReferenceByToken(token: string, data: Partial<{
+    status: string;
+    openedAt: Date;
+    responseReceivedAt: Date;
+    responseData: unknown;
+    concernFlags: unknown;
+  }>): Promise<ProviderApplicationReference | undefined> {
+    const [ref] = await db
+      .update(providerApplicationReferences)
+      .set(data)
+      .where(eq(providerApplicationReferences.secureToken, token))
+      .returning();
+    return ref;
+  }
+
+  async getCompletedReferenceCount(applicationId: string): Promise<number> {
+    const [result] = await db
+      .select({ count: count() })
+      .from(providerApplicationReferences)
+      .where(and(
+        eq(providerApplicationReferences.applicationId, applicationId),
+        eq(providerApplicationReferences.status, "completed")
+      ));
+    return result?.count ?? 0;
+  }
+
   async deleteReference(id: string, applicationId: string): Promise<void> {
     await db
       .delete(providerApplicationReferences)
       .where(and(eq(providerApplicationReferences.id, id), eq(providerApplicationReferences.applicationId, applicationId)));
   }
 
-  async updateReference(id: string, data: Partial<{ status: string; responseReceivedAt: Date; responseData: unknown }>): Promise<ProviderApplicationReference | undefined> {
+  async updateReference(id: string, data: Partial<{ status: string; responseReceivedAt: Date; responseData: unknown; openedAt: Date; concernFlags: unknown; emailSentAt: Date; secureToken: string; applicantNameSnapshot: string }>): Promise<ProviderApplicationReference | undefined> {
     const [ref] = await db
       .update(providerApplicationReferences)
       .set(data)

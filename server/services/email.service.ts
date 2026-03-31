@@ -487,4 +487,34 @@ export async function sendEventCanceledEmail(
   return sendEmail(to, subject, html);
 }
 
+export async function sendReferenceRequestEmail(
+  to: string,
+  refereeName: string,
+  applicantName: string,
+  referenceUrl: string
+): Promise<boolean> {
+  const vars = { refereeName, applicantName, referenceUrl };
+  const fallbackBody = `
+    <p>Dear ${refereeName},</p>
+    <p><strong>${applicantName}</strong> has applied to join the <strong>TCK Wellness Counselor Network</strong> and has listed you as a professional reference.</p>
+    <p>TCK Wellness connects Third Culture Kids (TCKs) with specialized mental health professionals who understand the unique experiences of growing up across cultures. As part of our vetting process, we ask references to complete a brief, confidential questionnaire.</p>
+    <p><strong>Your responses will remain confidential</strong> and will not be shared with the applicant.</p>
+    <p style="margin:24px 0;">
+      <a href="${referenceUrl}" style="display:inline-block;padding:12px 28px;background:#1e3a5f;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">Complete Reference Form</a>
+    </p>
+    <p>The form takes approximately 5–10 minutes to complete. We kindly ask that you respond within <strong>7 days</strong> of receiving this email.</p>
+    <p>If you have any questions about this request, please contact us at <a href="mailto:support@tckwellness.com">support@tckwellness.com</a>.</p>
+    <p>Thank you for your time and support.</p>
+    <p>Warm regards,<br>The TCK Wellness Team</p>
+  `;
+  const { subject, html, isActive } = await getTemplateHtml(
+    "reference-request",
+    vars,
+    `Reference Request for ${applicantName} — TCK Wellness`,
+    fallbackBody
+  );
+  if (!isActive) return false;
+  return sendEmail(to, subject, html);
+}
+
 export { baseTemplate, renderTemplate };

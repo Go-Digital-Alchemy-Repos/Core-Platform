@@ -77,7 +77,20 @@ function getProgressSteps(application: any): ProgressStep[] {
     return "upcoming";
   }
 
-  const refCount = application.references?.length ?? 0;
+  const refs = application.references ?? [];
+  const totalRefs = refs.length;
+  const completedRefs = refs.filter((r: any) => r.status === "completed").length;
+
+  let refStepStatus: ProgressStep["status"];
+  if (refStatus === "completed" || completedRefs >= totalRefs && totalRefs > 0) {
+    refStepStatus = "complete";
+  } else if (refStatus === "in_progress" || completedRefs > 0) {
+    refStepStatus = "current";
+  } else if (currentIdx >= 3) {
+    refStepStatus = "current";
+  } else {
+    refStepStatus = "upcoming";
+  }
 
   return [
     {
@@ -101,8 +114,8 @@ function getProgressSteps(application: any): ProgressStep[] {
     {
       label: "References",
       icon: Users,
-      status: stepState([refStatus], 3),
-      detail: `${refCount} reference${refCount !== 1 ? "s" : ""} on file`,
+      status: refStepStatus,
+      detail: totalRefs > 0 ? `${completedRefs}/${totalRefs} completed` : "Awaiting references",
     },
     {
       label: "Interview",
@@ -338,6 +351,38 @@ export default function ApplicationStatusPage() {
           <ProgressTracker steps={progressSteps} />
         </CardContent>
       </Card>
+
+      {application.references && application.references.length > 0 && !["draft", "withdrawn"].includes(status) && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Reference Progress
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {application.references.map((ref: any, idx: number) => {
+                const refStatus = ref.status || "pending";
+                const statusLabel = refStatus === "completed" ? "Completed" : refStatus === "opened" ? "Form opened" : refStatus === "email_sent" ? "Email sent" : "Pending";
+                const statusColor = refStatus === "completed" ? "text-green-600" : refStatus === "opened" ? "text-blue-600" : "text-muted-foreground";
+                return (
+                  <div key={ref.id || idx} className="flex items-center justify-between text-sm py-2 border-b last:border-0">
+                    <span className="font-medium">Reference {idx + 1}</span>
+                    <span className={`${statusColor} font-medium`} data-testid={`text-ref-status-${idx}`}>
+                      {refStatus === "completed" && <CheckCircle2 className="w-3.5 h-3.5 inline mr-1" />}
+                      {statusLabel}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Reference identities and responses are confidential and not shared with applicants.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {application.paymentStatus === "paid" && application.paidAt && (
         <Card className="mt-6">

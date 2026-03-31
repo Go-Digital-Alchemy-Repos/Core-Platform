@@ -1,0 +1,81 @@
+Continue NONDESTRUCTIVELY from the existing TCK Wellness codebase and preserve all working functionality.
+
+Now implement the automated REFERENCE workflow that begins immediately after a provider application is successfully submitted.
+
+Business rules:
+- provider submits 3 references in the application
+- immediately after application submission, all 3 references should receive an email
+- each reference receives a secure link to a brief confidential form
+- their responses are not shared with the applicant
+- admin must be able to review statuses and responses
+
+Build the following:
+
+A. Reference records and workflow
+For each submitted application:
+- create 3 application reference records
+- generate secure unique tokenized links
+- store:
+  - application_id
+  - applicant name snapshot
+  - reference name
+  - relationship
+  - email
+  - secure token
+  - email_sent_at
+  - opened_at
+  - submitted_at
+  - status
+  - answers payload
+  - concern flags / review metadata
+
+B. Email automation
+Immediately after successful application submission:
+- send all 3 reference request emails automatically
+- personalize with applicant name
+- use the provided tone/copy
+- structure the email layer so reminder/resend functionality can be added cleanly
+
+C. Public tokenized reference form
+Create a secure public route where a reference can submit the form without needing an account.
+
+Fields:
+- Your first name
+- Name of the Applicant
+- How do you know the applicant, and how long have you known them?
+- In what contexts have you had the opportunity to observe the applicant interacting with TCKs?
+- In your experience, how well does the applicant understand the unique experiences and challenges faced by TCKs?
+- How would you describe the applicant’s ability to connect with children, teens, or families from culturally diverse or internationally mobile backgrounds?
+- Are you aware of any situations in which the applicant’s interactions with children might have posed a concern for the child’s safety or well-being? (Yes/No/Optional comments)
+- Are you aware of any situations in which the applicant’s behavior toward colleagues, clients, or others may have been unprofessional, unethical, or otherwise concerning? (Yes/No/Optional comments)
+- Would you recommend the applicant as a TCK-informed provider? (Yes/No/Optional comments)
+
+Include the TCK-informed definition text in the form.
+
+D. Reference status updates
+As references open/submit:
+- update statuses
+- update application references summary
+- support counts like:
+  - 0/3 complete
+  - 1/3 complete
+  - 2/3 complete
+  - 3/3 complete
+
+E. Provider-facing status page update
+On the applicant dashboard/status page, show reference progress count clearly.
+
+Implementation rules:
+- do not require references to log in
+- tokenized links must be secure
+- keep public form isolated and safe
+- reuse existing email infrastructure
+- preserve all current app behavior
+- no destructive changes
+
+At the end, provide:
+1. What reference automation was added
+2. New routes, tables, services, and email templates
+3. How the public reference form works
+4. How statuses are updated
+5. Any follow-up still needed for admin review UI
