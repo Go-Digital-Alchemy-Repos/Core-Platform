@@ -16,6 +16,7 @@ import { logger, requestIdMiddleware } from "./utils/logger";
 enforceRequiredSecrets();
 
 const app = express();
+app.set("trust proxy", 1);
 const httpServer = createServer(app);
 
 app.use(securityHeaders());

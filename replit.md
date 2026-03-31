@@ -52,6 +52,14 @@ TCK Wellness is a platform designed to connect Third Culture Kids (TCKs) with sp
 - **CMS Publishing Workflow**: Admin control over publishing/unpublishing CMS pages and blog posts, with revision history and restore functionality.
 - **SEO Integration**: Dynamic setting of meta tags for public CMS pages and blog posts.
 
+### Deployment (Railway)
+- **railway.toml**: Configures build command (`npm run build`), start command (`npm start`), healthcheck (`/api/health`), and restart policy.
+- **Trust Proxy**: Express configured with `trust proxy: 1` for correct client IP detection behind Railway's reverse proxy (needed for rate limiting).
+- **Database SSL**: Production database connections automatically enable SSL unless the `DATABASE_URL` already includes `sslmode=`.
+- **Vite Plugins**: Replit-specific Vite plugins are conditionally loaded only when `REPL_ID` is present, so builds work cleanly on Railway.
+- **Server Bundle**: esbuild bundles all server dependencies into a single `dist/index.cjs` for a self-contained production artifact.
+- **Required Environment Variables on Railway**: `DATABASE_URL`, `SESSION_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, plus any other service-specific keys (Mailgun, R2, etc.). Optionally set `APP_URL` and `TRUSTED_ORIGINS` for origin checking.
+
 ## External Dependencies
 - **Stripe**: Subscription processing and paid event registrations.
 - **OpenStreetMap & Leaflet**: Geographical mapping.

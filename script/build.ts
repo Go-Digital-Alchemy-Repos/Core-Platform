@@ -1,42 +1,6 @@
 import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
-import { rm, readFile } from "fs/promises";
-
-// server deps to bundle to reduce openat(2) syscalls
-// which helps cold start times
-const allowlist = [
-  "@aws-sdk/client-s3",
-  "@aws-sdk/s3-request-presigner",
-  "@google/generative-ai",
-  "axios",
-  "bcryptjs",
-  "connect-pg-simple",
-  "cookie-parser",
-  "cors",
-  "date-fns",
-  "drizzle-orm",
-  "drizzle-zod",
-  "express",
-  "express-rate-limit",
-  "express-session",
-  "form-data",
-  "jsonwebtoken",
-  "mailgun.js",
-  "memorystore",
-  "multer",
-  "nanoid",
-  "nodemailer",
-  "openai",
-  "passport",
-  "passport-local",
-  "pg",
-  "stripe",
-  "uuid",
-  "ws",
-  "xlsx",
-  "zod",
-  "zod-validation-error",
-];
+import { rm } from "fs/promises";
 
 async function buildAll() {
   await rm("dist", { recursive: true, force: true });
@@ -45,13 +9,6 @@ async function buildAll() {
   await viteBuild();
 
   console.log("building server...");
-  const pkg = JSON.parse(await readFile("package.json", "utf-8"));
-  const allDeps = [
-    ...Object.keys(pkg.dependencies || {}),
-    ...Object.keys(pkg.devDependencies || {}),
-  ];
-  const externals = allDeps.filter((dep) => !allowlist.includes(dep));
-
   await esbuild({
     entryPoints: ["server/index.ts"],
     platform: "node",
@@ -62,7 +19,7 @@ async function buildAll() {
       "process.env.NODE_ENV": '"production"',
     },
     minify: true,
-    external: externals,
+    packages: "bundle",
     logLevel: "info",
   });
 }
