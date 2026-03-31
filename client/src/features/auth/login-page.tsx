@@ -177,6 +177,18 @@ export default function LoginPage() {
                   <span className="font-medium text-amber-800 dark:text-amber-300">Therapist</span>
                   <span className="ml-2 text-muted-foreground">therapist@test.com / Therapist123!</span>
                 </button>
+                <button
+                  type="button"
+                  className="w-full rounded-md border border-amber-200 dark:border-amber-800 bg-white dark:bg-amber-950/30 px-3 py-2 text-left text-sm hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                  data-testid="button-fill-admin"
+                  onClick={() => {
+                    form.setValue("email", "admin@tckwellness.com");
+                    form.setValue("password", "Admin123!");
+                  }}
+                >
+                  <span className="font-medium text-amber-800 dark:text-amber-300">Admin</span>
+                  <span className="ml-2 text-muted-foreground">admin@tckwellness.com / Admin123!</span>
+                </button>
               </CardContent>
             </Card>
           )}
