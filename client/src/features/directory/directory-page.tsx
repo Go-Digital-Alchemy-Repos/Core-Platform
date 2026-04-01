@@ -21,27 +21,11 @@ import {
 } from "@/components/ui/select";
 import { useSpecializations } from "@/hooks/use-specializations";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
-
-type TherapistWithUser = TherapistProfile & {
-  user?: {
-    firstName: string | null;
-    lastName: string | null;
-    email: string;
-    profileImageUrl: string | null;
-  };
-};
-
-interface PaginatedResponse {
-  items: TherapistWithUser[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
-
-interface FilterOptions {
-  languages: string[];
-  countries: string[];
-}
+import type {
+  TherapistWithUser,
+  PaginatedTherapists,
+  DirectoryFilterOptions,
+} from "@shared/types/directory";
 
 const vettedMeans = [
   "Every mental health professional completes a detailed application process",
@@ -280,11 +264,11 @@ export default function DirectoryPage() {
     if (acceptingClients) p.set("acceptingClients", "true");
     if (willingToTravel) p.set("willingToTravel", "true");
     p.set("page", String(page));
-    p.set("pageSize", "200");
+    p.set("pageSize", "20");
     return p.toString();
   }, [debouncedSearch, specializations, sessionFormat, language, country, acceptingClients, willingToTravel, page]);
 
-  const { data, isLoading } = useQuery<PaginatedResponse>({
+  const { data, isLoading } = useQuery<PaginatedTherapists>({
     queryKey: ["/api/therapists", queryParams],
     queryFn: async () => {
       const res = await fetch(`/api/therapists?${queryParams}`);
@@ -293,15 +277,16 @@ export default function DirectoryPage() {
     },
   });
 
-  const { data: filterOptions } = useQuery<FilterOptions>({
+  const { data: filterOptions } = useQuery<DirectoryFilterOptions>({
     queryKey: ["/api/therapists/filters"],
   });
 
   const therapists = data?.items ?? [];
   const total = data?.total ?? 0;
   const currentPage = data?.page ?? 1;
-  const pageSize = data?.pageSize ?? 200;
-  const totalPages = Math.ceil(total / pageSize);
+  const currentPageSize = data?.pageSize ?? 20;
+  const hasMore = data?.hasMore ?? false;
+  const totalPages = Math.ceil(total / currentPageSize);
 
   const mapTherapists = useMemo(
     () =>
@@ -678,8 +663,8 @@ export default function DirectoryPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={currentPage >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={!hasMore}
+                  onClick={() => setPage((p) => p + 1)}
                   data-testid="button-next-page"
                 >
                   Next

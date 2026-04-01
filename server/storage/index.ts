@@ -53,4 +53,4 @@ export const storage = {
   cmsMenus: new CmsMenusStorage(),
 };
 
-export type { TherapistSearchParams, TherapistWithUser } from "./therapist.storage";
+export type { TherapistWithUser, PaginatedTherapists, DirectoryFilterOptions, TherapistSearchParams } from "@shared/types/directory";

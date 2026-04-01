@@ -2,12 +2,20 @@ import { Router } from "express";
 import { storage } from "../storage/index";
 import { asyncHandler } from "../middleware/error-handler";
 import { paramString } from "../utils/params";
+import { therapistSearchSchema } from "@shared/types/directory";
 
 const router = Router();
 
 router.get(
   "/",
   asyncHandler(async (req, res) => {
+    const parsed = therapistSearchSchema.safeParse(req.query);
+
+    if (!parsed.success) {
+      res.status(400).json({ message: "Invalid query parameters", errors: parsed.error.flatten().fieldErrors });
+      return;
+    }
+
     const {
       search,
       specialization,
@@ -18,24 +26,26 @@ router.get(
       willingToTravel,
       page,
       pageSize,
-    } = req.query;
+      sort,
+      latitude,
+      longitude,
+    } = parsed.data;
 
-    const parsedPage = Math.max(1, parseInt(page as string) || 1);
-    const parsedPageSize = Math.min(200, Math.max(1, parseInt(pageSize as string) || 200));
-
-    const specValue = specialization as string | undefined;
-    const specArray = specValue ? specValue.split(",").filter(Boolean) : undefined;
+    const specArray = specialization ? specialization.split(",").filter(Boolean) : undefined;
 
     const result = await storage.therapists.listProfilesPaginated({
-      search: search as string,
+      search: search || undefined,
       specializations: specArray,
-      practiceMode: practiceMode as string,
-      language: language as string,
-      country: country as string,
-      acceptingClients: acceptingClients === "true" ? true : undefined,
-      willingToTravel: willingToTravel === "true" ? true : undefined,
-      page: parsedPage,
-      pageSize: parsedPageSize,
+      practiceMode: practiceMode || undefined,
+      language: language || undefined,
+      country: country || undefined,
+      acceptingClients,
+      willingToTravel,
+      page,
+      pageSize,
+      sort,
+      latitude,
+      longitude,
     });
 
     res.json(result);

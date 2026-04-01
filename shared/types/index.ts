@@ -1,3 +1,12 @@
+export type {
+  TherapistWithUser,
+  PaginatedTherapists,
+  DirectoryFilterOptions,
+  TherapistSearchParams,
+} from "./directory";
+export { therapistSearchSchema, SortOption } from "./directory";
+export type { SortOption as SortOptionType } from "./directory";
+
 export const UserRole = {
   ADMIN: "admin",
   THERAPIST: "therapist",
