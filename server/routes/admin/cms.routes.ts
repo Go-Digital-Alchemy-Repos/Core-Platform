@@ -43,6 +43,9 @@ router.post("/pages", async (req, res) => {
     }
 
     const data = parsed.data;
+    if (data.status === "scheduled") {
+      return res.status(400).json({ error: "Use the /schedule endpoint to schedule a page" });
+    }
     const slug = normalizeSlug(data.slug);
 
     const existing = await storage.cmsPages.getPageBySlug(slug);

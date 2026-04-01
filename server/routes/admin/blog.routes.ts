@@ -45,6 +45,9 @@ router.put(
   asyncHandler(async (req, res) => {
     const id = paramString(req.params.id);
     const data = blogPostSchemaWithCoercedDate.partial().parse(req.body);
+    if (data.scheduledAt && data.scheduledAt <= new Date()) {
+      return res.status(400).json({ message: "scheduledAt must be a future date" });
+    }
     const post = await storage.blog.updatePost(id, data);
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
