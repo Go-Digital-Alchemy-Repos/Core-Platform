@@ -67,7 +67,7 @@ export function TemplatePicker({ open, onClose, onSelect, onOpenWizard }: Templa
           {PAGE_TEMPLATES.map((tmpl) => {
             const Icon = ICON_MAP[tmpl.icon] ?? FileText;
             const isSelected = selected === tmpl.id;
-            const blockCount = tmpl.id === "blank" ? 0 : tmpl.blocks().length;
+            const blockCount = tmpl.blockCount;
             return (
               <button
                 key={tmpl.id}

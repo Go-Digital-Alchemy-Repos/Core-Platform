@@ -6,6 +6,7 @@ export interface PageTemplate {
   description: string;
   icon: string;
   category: "starter" | "marketing" | "content";
+  blockCount: number;
   blocks: () => BlockInstance[];
 }
 
@@ -24,6 +25,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     description: "Start from scratch with an empty canvas",
     icon: "FileText",
     category: "starter",
+    blockCount: 0,
     blocks: () => [],
   },
   {
@@ -32,6 +34,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     description: "High-conversion landing page with hero, social proof, features, and CTA",
     icon: "Sparkles",
     category: "marketing",
+    blockCount: 8,
     blocks: () => [
       block("hero", {
         heading: "Find a Counselor Who Understands Your World",
@@ -99,6 +102,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     description: "Long-form storytelling page with rich text, images, and supporting sections",
     icon: "BookOpen",
     category: "content",
+    blockCount: 6,
     blocks: () => [
       block("section-header", {
         eyebrow: "Our Story",
@@ -149,6 +153,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     description: "Persuasion-focused page with objection handling, before/after, and strong CTAs",
     icon: "TrendingUp",
     category: "marketing",
+    blockCount: 7,
     blocks: () => [
       block("hero", {
         heading: "Stop Explaining Your Background — Start Being Understood",
@@ -220,6 +225,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     description: "Blog listing page with featured post, post feed, and newsletter CTA",
     icon: "Newspaper",
     category: "content",
+    blockCount: 4,
     blocks: () => [
       block("section-header", {
         eyebrow: "TCK Wellness Blog",
