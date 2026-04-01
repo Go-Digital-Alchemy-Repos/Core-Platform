@@ -77,6 +77,38 @@ router.delete(
   })
 );
 
+const VALID_PRESET_IDS = [
+  "tck-default", "ocean-blue", "midnight", "minimal-light", "contrast-pro",
+  "warm-neutral", "slate-blue", "frost", "charcoal-gold", "clean-clinical",
+  "energetic-blue-pop",
+] as const;
+
+const setThemeSchema = z.object({
+  presetId: z.enum(VALID_PRESET_IDS),
+  customOverrides: z.record(z.string()).nullable().optional(),
+});
+
+router.put(
+  "/theme",
+  asyncHandler(async (req, res) => {
+    const data = setThemeSchema.parse(req.body);
+    await storage.settings.upsertSetting("theme_preset_id", data.presetId, "theme", false);
+    if (data.customOverrides) {
+      await storage.settings.upsertSetting(
+        "theme_custom_overrides",
+        JSON.stringify(data.customOverrides),
+        "theme",
+        false
+      );
+    } else {
+      try {
+        await storage.settings.deleteSetting("theme_custom_overrides");
+      } catch {}
+    }
+    res.json({ presetId: data.presetId, customOverrides: data.customOverrides || null });
+  })
+);
+
 const testConnectionSchema = z.object({
   integration: z.enum(["stripe", "mailgun", "cloudflare_r2"]),
 });

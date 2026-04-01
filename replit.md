@@ -49,6 +49,7 @@ TCK Wellness is a platform designed to connect Third Culture Kids (TCKs) with sp
     - **Structured Data / JSON-LD**: Modular JSON-LD generation engine supporting various schema types (Organization, WebSite, BreadcrumbList, Article, Event, VideoObject, FAQPage), injected client-side.
     - **Technical SEO Tools**: Admin tabs for SEO Audit, Redirects Manager (301/302 redirects applied server-side), and Sitemap (`/sitemap.xml`) with a generated `robots.txt` endpoint.
     - **SEO Polish / Editorial UX**: Enhanced `SeoPreview` with live character counters (`TitleMeter`, `DescMeter`) and a `StructuredDataStatus` component showing schema checklist and completeness.
+    - **CMS Theme System**: 11 selectable theme presets (TCK Default, Ocean Blue, Midnight, Minimal Light, Contrast Pro, Warm Neutral, Slate & Blue, Frost, Charcoal Gold, Clean Clinical, Energetic Blue Pop) covering colors, typography, radius, and fonts. Stored in DB via system settings (`theme_preset_id` key in `theme` category). Applied site-wide via CSS custom properties on `:root`. Admin UI at `/admin/cms/themes` with live preview and one-click activation. Public endpoint `GET /api/theme/active` (unauthenticated), admin save via `PUT /api/admin/theme` (server-side preset ID whitelist). ThemeProvider auto-fetches on mount and reapplies on light/dark toggle.
 
 ### System Design Choices
 - **Modular File Structure**: Backend organized by concern, frontend by feature.

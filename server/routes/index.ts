@@ -50,6 +50,23 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/therapist/application", applicationRoutes);
   app.use("/api/reference", referenceRoutes);
 
+  app.get("/api/theme/active", async (_req, res) => {
+    try {
+      const presetId = await storage.settings.getSetting("theme_preset_id");
+      let customOverrides: Record<string, string> | null = null;
+      try {
+        const raw = await storage.settings.getSetting("theme_custom_overrides");
+        if (raw) customOverrides = JSON.parse(raw);
+      } catch {}
+      res.json({
+        presetId: presetId || "tck-default",
+        customOverrides,
+      });
+    } catch {
+      res.json({ presetId: "tck-default", customOverrides: null });
+    }
+  });
+
   app.get("/api/membership-tiers", async (_req, res) => {
     const tiers = await storage.tiers.getActiveTiers();
     res.json(tiers);
