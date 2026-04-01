@@ -58,7 +58,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const preset = getPresetById(activePresetId);
-    if (!preset || activePresetId === "tck-default") {
+    if (!preset) {
+      clearThemeTokens();
+      return;
+    }
+    if (activePresetId === "tck-default" && !customOverrides) {
       clearThemeTokens();
       return;
     }
