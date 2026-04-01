@@ -50,6 +50,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Link } from "wouter";
+import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import { CmsImageUpload } from "./components/cms-image-upload";
 import { SeoPreview } from "@/components/shared/seo-preview";
@@ -181,6 +182,7 @@ export default function CmsBlogEditorPage() {
       tags: tagsArray.length > 0 ? tagsArray : null,
       isPublished: data.isPublished,
       publishedAt: data.isPublished ? new Date() : null,
+      scheduledAt: data.isPublished ? null : undefined,
       seoTitle: data.seoTitle || null,
       seoDescription: data.seoDescription || null,
       ogImageUrl: data.ogImageUrl || null,
