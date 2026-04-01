@@ -31,8 +31,28 @@ const allResourceLinks = [
   { label: "Insights & Articles", href: "/insights" },
 ];
 
+function flattenItems(items: MenuItem[], depth = 0): { item: MenuItem; depth: number }[] {
+  const result: { item: MenuItem; depth: number }[] = [];
+  for (const item of items) {
+    result.push({ item, depth });
+    if (item.children?.length > 0) {
+      result.push(...flattenItems(item.children, depth + 1));
+    }
+  }
+  return result;
+}
+
+function isActiveRecursive(items: MenuItem[], currentPath: string): boolean {
+  for (const item of items) {
+    if (currentPath === item.url) return true;
+    if (item.children?.length > 0 && isActiveRecursive(item.children, currentPath)) return true;
+  }
+  return false;
+}
+
 function DynamicDropdown({ item, location: currentPath }: { item: MenuItem; location: string }) {
-  const isActive = item.children?.some((c) => currentPath === c.url);
+  const isActive = isActiveRecursive(item.children || [], currentPath);
+  const flatChildren = flattenItems(item.children || []);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -46,14 +66,24 @@ function DynamicDropdown({ item, location: currentPath }: { item: MenuItem; loca
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="z-[1000]">
-        {item.children.map((child) => (
-          <DropdownMenuItem key={child.id} asChild>
+        {flatChildren.map(({ item: child, depth }) => (
+          <DropdownMenuItem key={child.id} asChild className={depth > 0 ? `pl-${4 + depth * 4}` : ""}>
             {child.openInNewTab ? (
-              <a href={child.url} target="_blank" rel="noopener noreferrer" data-testid={`link-nav-child-${child.id}`}>
+              <a
+                href={child.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid={`link-nav-child-${child.id}`}
+                style={depth > 0 ? { paddingLeft: `${12 + depth * 16}px` } : undefined}
+              >
                 {child.label}
               </a>
             ) : (
-              <Link href={child.url} data-testid={`link-nav-child-${child.id}`}>
+              <Link
+                href={child.url}
+                data-testid={`link-nav-child-${child.id}`}
+                style={depth > 0 ? { paddingLeft: `${12 + depth * 16}px` } : undefined}
+              >
                 {child.label}
               </Link>
             )}
@@ -343,47 +373,31 @@ export function Navbar() {
               </SheetHeader>
               <div className="flex flex-col gap-1 mt-6">
                 {dynamicItems ? (
-                  dynamicItems.map((item) => (
-                    <div key={item.id}>
-                      {item.openInNewTab ? (
-                        <a href={item.url} target="_blank" rel="noopener noreferrer" onClick={() => setMobileOpen(false)}>
-                          <Button variant="ghost" className="w-full justify-start" data-testid={`link-mobile-${item.id}`}>
-                            {item.label}
-                          </Button>
-                        </a>
-                      ) : (
-                        <Link href={item.url} onClick={() => setMobileOpen(false)}>
-                          <Button
-                            variant="ghost"
-                            className={`w-full justify-start ${location === item.url ? "toggle-elevate toggle-elevated" : ""}`}
-                            data-testid={`link-mobile-${item.id}`}
-                            aria-current={location === item.url ? "page" : undefined}
-                          >
-                            {item.label}
-                          </Button>
-                        </Link>
-                      )}
-                      {item.children?.length > 0 && item.children.map((child) => (
-                        child.openInNewTab ? (
-                          <a key={child.id} href={child.url} target="_blank" rel="noopener noreferrer" onClick={() => setMobileOpen(false)}>
-                            <Button variant="ghost" className="w-full justify-start pl-6" data-testid={`link-mobile-child-${child.id}`}>
-                              {child.label}
-                            </Button>
-                          </a>
-                        ) : (
-                          <Link key={child.id} href={child.url} onClick={() => setMobileOpen(false)}>
-                            <Button
-                              variant="ghost"
-                              className={`w-full justify-start pl-6 ${location === child.url ? "toggle-elevate toggle-elevated" : ""}`}
-                              data-testid={`link-mobile-child-${child.id}`}
-                              aria-current={location === child.url ? "page" : undefined}
-                            >
-                              {child.label}
-                            </Button>
-                          </Link>
-                        )
-                      ))}
-                    </div>
+                  flattenItems(dynamicItems).map(({ item, depth }) => (
+                    item.openInNewTab ? (
+                      <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer" onClick={() => setMobileOpen(false)}>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                          style={depth > 0 ? { paddingLeft: `${16 + depth * 16}px` } : undefined}
+                          data-testid={`link-mobile-${item.id}`}
+                        >
+                          {item.label}
+                        </Button>
+                      </a>
+                    ) : (
+                      <Link key={item.id} href={item.url} onClick={() => setMobileOpen(false)}>
+                        <Button
+                          variant="ghost"
+                          className={`w-full justify-start ${location === item.url ? "toggle-elevate toggle-elevated" : ""}`}
+                          style={depth > 0 ? { paddingLeft: `${16 + depth * 16}px` } : undefined}
+                          data-testid={`link-mobile-${item.id}`}
+                          aria-current={location === item.url ? "page" : undefined}
+                        >
+                          {item.label}
+                        </Button>
+                      </Link>
+                    )
                   ))
                 ) : (
                   <>

@@ -49,13 +49,25 @@ function FooterColumn({ title, links }: { title: string; links: { href: string; 
   );
 }
 
+function flattenFooterItems(items: MenuItem[], depth = 0): { item: MenuItem; depth: number }[] {
+  const result: { item: MenuItem; depth: number }[] = [];
+  for (const item of items) {
+    result.push({ item, depth });
+    if (item.children?.length > 0) {
+      result.push(...flattenFooterItems(item.children, depth + 1));
+    }
+  }
+  return result;
+}
+
 function DynamicFooterColumn({ item }: { item: MenuItem }) {
+  const allLinks = flattenFooterItems(item.children || []);
   return (
     <div>
       <h4 className="font-semibold text-sm mb-3 sm:mb-4 text-foreground">{item.label}</h4>
       <ul className="space-y-2.5 sm:space-y-3 text-sm">
-        {item.children.map((child) => (
-          <li key={child.id}>
+        {allLinks.map(({ item: child, depth }) => (
+          <li key={child.id} style={depth > 0 ? { paddingLeft: `${depth * 12}px` } : undefined}>
             {child.openInNewTab ? (
               <a
                 href={child.url}
