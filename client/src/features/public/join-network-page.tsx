@@ -82,7 +82,7 @@ export default function JoinNetworkPage() {
           data-testid="button-apply-member"
         >
           <UserPlus className="mr-2 h-5 w-5" />
-          Apply to Become a Member
+          Register to Become a Member
         </Button>
 
         <p className="text-sm sm:text-base text-muted-foreground mt-6" data-testid="text-login-prompt">
