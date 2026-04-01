@@ -45,6 +45,7 @@ import {
   Layers,
   RotateCcw,
   Loader2,
+  LayoutTemplate,
 } from "lucide-react";
 import type { CmsPage, CmsPageRevision } from "@shared/schema";
 import { format } from "date-fns";
@@ -287,6 +288,17 @@ export default function CmsPageEditorPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {isNew && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setTemplatePickerOpen(true)}
+                data-testid="button-reopen-templates"
+              >
+                <LayoutTemplate className="h-4 w-4 mr-1.5" />
+                Templates
+              </Button>
+            )}
             {!isNew && page?.status === "published" && (
               <>
                 <Badge className="bg-green-600 text-white" data-testid="badge-published">

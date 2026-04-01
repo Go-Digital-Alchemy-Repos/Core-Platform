@@ -92,6 +92,18 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
     ctaLink
   );
 
+  const resetState = () => {
+    setStep(0);
+    setGoalId("");
+    setHeadline("");
+    setSubheadline("");
+    setSelectedAudiences([]);
+    setSelectedBlocks([]);
+    setBlocksInitialized(false);
+    setCtaText("Get Started");
+    setCtaLink("/directory");
+  };
+
   const handleCreate = () => {
     const blocks = generateLandingPageBlocks(
       goalId,
@@ -102,7 +114,9 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
       ctaText,
       ctaLink
     );
-    onCreate({ blocks }, headline || "Landing Page");
+    const title = headline || "Landing Page";
+    resetState();
+    onCreate({ blocks }, title);
   };
 
   const canProceed = () => {
@@ -116,15 +130,7 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
   };
 
   const handleClose = () => {
-    setStep(0);
-    setGoalId("");
-    setHeadline("");
-    setSubheadline("");
-    setSelectedAudiences([]);
-    setSelectedBlocks([]);
-    setBlocksInitialized(false);
-    setCtaText("Get Started");
-    setCtaLink("/directory");
+    resetState();
     onClose();
   };
 
