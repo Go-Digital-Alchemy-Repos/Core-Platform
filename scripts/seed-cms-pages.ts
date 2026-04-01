@@ -61,7 +61,7 @@ const homeContent = {
       id: uid(),
       type: "rich-text",
       props: {
-        content: "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>",
+        content: "<p>Not every challenge requires a clinical diagnosis or therapy. Sometimes what TCKs need most is validation, community, or practical guidance for navigating transitions. Our directory includes a range of professionals — from licensed therapists to certified coaches and peer support specialists — so you can find the right kind of support for wherever you are in your journey.</p>",
         alignment: "center",
       },
     },
@@ -475,22 +475,22 @@ const joinContent = {
           {
             icon: "ClipboardCheck",
             title: "Directory Listing",
-            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            description: "Get a professional profile in our searchable directory, visible to TCKs and cross-cultural families seeking specialized support worldwide.",
           },
           {
             icon: "Users",
             title: "Client Connections",
-            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            description: "Receive referrals from individuals actively searching for TCK-informed mental health professionals who understand their experience.",
           },
           {
             icon: "BarChart3",
             title: "Profile Analytics",
-            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            description: "Track how many people view your profile, where they're located, and which specializations attract the most interest.",
           },
           {
             icon: "Star",
             title: "Community Access",
-            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            description: "Join a network of TCK-informed professionals for peer consultation, shared resources, and community events.",
           },
         ],
       },
@@ -512,27 +512,27 @@ const joinContent = {
           {
             icon: "ClipboardCheck",
             title: "1. Submit Your Application",
-            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
+            description: "Complete our online application with your credentials, areas of specialization, and experience working with TCK or cross-cultural populations.",
           },
           {
             icon: "CheckCircle",
             title: "2. Credential Verification",
-            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
+            description: "Our team verifies your licensure, certifications, and professional standing to ensure quality and trust for our community.",
           },
           {
             icon: "Search",
             title: "3. TCK Competency Review",
-            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
+            description: "We assess your training and lived experience with TCK, expat, and cross-cultural clients to confirm a strong fit for our directory.",
           },
           {
             icon: "User",
             title: "4. Profile Setup",
-            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
+            description: "Build your professional profile with your bio, specializations, languages, session formats, and availability for prospective clients.",
           },
           {
             icon: "Star",
             title: "5. Go Live in the Directory",
-            description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
+            description: "Once approved, your profile goes live and you begin receiving visibility from TCKs and families searching for support.",
           },
         ],
       },
@@ -543,7 +543,7 @@ const joinContent = {
       props: {
         heading: "Interested in Training but Not a Member?",
         subheading:
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+          "We offer TCK-informed training programs for mental health professionals who want to deepen their cross-cultural competency. Whether you're just beginning to explore the TCK space or want to sharpen your skills, our training equips you with the frameworks and lived-experience insights to better serve globally-mobile clients.",
         primaryText: "Learn More",
         primaryLink: "/training",
         variant: "light",

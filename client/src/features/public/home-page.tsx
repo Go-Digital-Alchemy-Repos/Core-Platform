@@ -392,7 +392,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-counseling-needed-heading">Is Counseling What's Needed?</h2>
           <p className="text-sm sm:text-base text-muted-foreground text-center max-w-3xl mx-auto leading-relaxed">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+            Not every challenge requires a clinical diagnosis or therapy. Sometimes what TCKs need most is validation, community, or practical guidance for navigating transitions. Our directory includes a range of professionals — from licensed therapists to certified coaches and peer support specialists — so you can find the right kind of support for wherever you are in your journey.
           </p>
         </div>
       </section>
@@ -434,7 +434,7 @@ export default function HomePage() {
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold mb-3 sm:mb-4" data-testid="text-events-heading">
             Upcoming Events
           </h2>
-          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto mb-6">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto mb-6">Join our community events for TCKs and mental health professionals.</p>
           <Link href="/events">
             <Button variant="outline" data-testid="button-view-all-events">
               View All <ArrowRight className="ml-2 h-4 w-4" />
