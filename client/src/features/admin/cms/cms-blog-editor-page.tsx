@@ -42,7 +42,13 @@ import {
   Headphones,
   Link2,
   FileText,
+  CalendarClock,
 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { CmsImageUpload } from "./components/cms-image-upload";
@@ -153,6 +159,9 @@ export default function CmsBlogEditorPage() {
     }
   }, [watchTitle, isNew, form]);
 
+  const [blogScheduleDate, setBlogScheduleDate] = useState("");
+  const [blogScheduleOpen, setBlogScheduleOpen] = useState(false);
+
   const buildPayload = (data: PostForm) => {
     const tagsArray = (data.tags ?? "")
       .split(",")
@@ -261,6 +270,11 @@ export default function CmsBlogEditorPage() {
                   <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" data-testid="badge-post-published">
                     <Eye className="h-3 w-3 mr-1" />
                     Published
+                  </Badge>
+                ) : post?.scheduledAt ? (
+                  <Badge className="bg-blue-600 text-white" data-testid="badge-post-scheduled-header">
+                    <CalendarClock className="h-3 w-3 mr-1" />
+                    Scheduled — {format(new Date(post.scheduledAt), "MMM d, h:mm a")}
                   </Badge>
                 ) : (
                   <Badge variant="outline" data-testid="badge-post-draft">
@@ -592,7 +606,7 @@ export default function CmsBlogEditorPage() {
                 </Card>
 
                 <Card>
-                  <CardContent className="pt-5">
+                  <CardContent className="pt-5 space-y-4">
                     <FormField
                       control={form.control}
                       name="isPublished"
@@ -602,7 +616,12 @@ export default function CmsBlogEditorPage() {
                             <FormControl>
                               <Switch
                                 checked={field.value}
-                                onCheckedChange={field.onChange}
+                                onCheckedChange={(checked) => {
+                                  field.onChange(checked);
+                                  if (checked) {
+                                    setBlogScheduleDate("");
+                                  }
+                                }}
                                 data-testid="switch-post-published"
                               />
                             </FormControl>
@@ -618,6 +637,102 @@ export default function CmsBlogEditorPage() {
                         </FormItem>
                       )}
                     />
+                    {!isPublished && (
+                      <div className="border-t pt-4">
+                        {post?.scheduledAt ? (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-blue-600 text-white" data-testid="badge-post-scheduled">
+                                <CalendarClock className="h-3 w-3 mr-1" />
+                                Scheduled
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(post.scheduledAt), "MMM d, yyyy 'at' h:mm a")}
+                              </span>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await apiRequest("PUT", `/api/admin/blog/${id}`, { scheduledAt: null });
+                                  queryClient.invalidateQueries({ queryKey: ["/api/admin/blog", id] });
+                                  toast({ title: "Schedule cancelled" });
+                                } catch {
+                                  toast({ title: "Failed to cancel schedule", variant: "destructive" });
+                                }
+                              }}
+                              data-testid="button-cancel-blog-schedule"
+                            >
+                              Cancel Schedule
+                            </Button>
+                          </div>
+                        ) : (
+                          <Popover open={blogScheduleOpen} onOpenChange={setBlogScheduleOpen}>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" size="sm" data-testid="button-open-blog-schedule">
+                                <CalendarClock className="h-4 w-4 mr-1.5" />
+                                Schedule Publishing
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-72" align="start">
+                              <div className="space-y-3">
+                                <p className="text-sm font-medium">Schedule Publishing</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Choose a future date and time for this post to go live automatically.
+                                </p>
+                                <input
+                                  type="datetime-local"
+                                  value={blogScheduleDate}
+                                  onChange={(e) => setBlogScheduleDate(e.target.value)}
+                                  min={new Date().toISOString().slice(0, 16)}
+                                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                  data-testid="input-blog-schedule-date"
+                                />
+                                <Button
+                                  className="w-full"
+                                  size="sm"
+                                  disabled={!blogScheduleDate || updateMutation.isPending || createMutation.isPending}
+                                  onClick={async () => {
+                                    const scheduledIso = new Date(blogScheduleDate).toISOString();
+                                    if (isNew) {
+                                      form.handleSubmit(async (data) => {
+                                        try {
+                                          const res = await apiRequest("POST", "/api/admin/blog", buildPayload(data));
+                                          const created: BlogPost = await res.json();
+                                          await apiRequest("PUT", `/api/admin/blog/${created.id}`, { scheduledAt: scheduledIso });
+                                          queryClient.invalidateQueries({ queryKey: ["/api/admin/blog"] });
+                                          setBlogScheduleOpen(false);
+                                          setBlogScheduleDate("");
+                                          toast({ title: "Post created and scheduled" });
+                                          navigate(`/admin/cms/blog/${created.id}`);
+                                        } catch {
+                                          toast({ title: "Failed to schedule post", variant: "destructive" });
+                                        }
+                                      })();
+                                    } else {
+                                      try {
+                                        await apiRequest("PUT", `/api/admin/blog/${id}`, { scheduledAt: scheduledIso });
+                                        queryClient.invalidateQueries({ queryKey: ["/api/admin/blog", id] });
+                                        setBlogScheduleOpen(false);
+                                        setBlogScheduleDate("");
+                                        toast({ title: "Post scheduled for publishing" });
+                                      } catch {
+                                        toast({ title: "Failed to schedule post", variant: "destructive" });
+                                      }
+                                    }
+                                  }}
+                                  data-testid="button-confirm-blog-schedule"
+                                >
+                                  <CalendarClock className="h-4 w-4 mr-1.5" />
+                                  Confirm Schedule
+                                </Button>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

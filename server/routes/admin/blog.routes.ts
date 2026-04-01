@@ -9,6 +9,7 @@ const router = Router();
 
 const blogPostSchemaWithCoercedDate = insertBlogPostSchema.extend({
   publishedAt: z.coerce.date().optional().nullable(),
+  scheduledAt: z.coerce.date().optional().nullable(),
 });
 
 router.get(

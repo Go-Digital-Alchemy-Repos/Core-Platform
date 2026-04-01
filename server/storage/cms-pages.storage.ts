@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { cmsPages, type CmsPage, type InsertCmsPage } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, lte } from "drizzle-orm";
 
 export class CmsPagesStorage {
   async getAllPages(): Promise<CmsPage[]> {
@@ -48,9 +48,28 @@ export class CmsPagesStorage {
   async unpublishPage(id: string, adminId: string): Promise<CmsPage | undefined> {
     const [page] = await db
       .update(cmsPages)
-      .set({ status: "draft", publishedAt: null, updatedBy: adminId, updatedAt: new Date() })
+      .set({ status: "draft", publishedAt: null, scheduledAt: null, updatedBy: adminId, updatedAt: new Date() })
       .where(eq(cmsPages.id, id))
       .returning();
     return page;
+  }
+
+  async schedulePage(id: string, scheduledAt: Date, adminId: string): Promise<CmsPage | undefined> {
+    const [page] = await db
+      .update(cmsPages)
+      .set({ status: "scheduled", scheduledAt, publishedAt: null, updatedBy: adminId, updatedAt: new Date() })
+      .where(eq(cmsPages.id, id))
+      .returning();
+    return page;
+  }
+
+  async publishScheduledPages(): Promise<number> {
+    const now = new Date();
+    const result = await db
+      .update(cmsPages)
+      .set({ status: "published", publishedAt: now, scheduledAt: null, updatedAt: now })
+      .where(and(eq(cmsPages.status, "scheduled"), lte(cmsPages.scheduledAt, now)))
+      .returning();
+    return result.length;
   }
 }

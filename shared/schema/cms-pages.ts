@@ -19,6 +19,7 @@ export const cmsPages = pgTable("cms_pages", {
   noindex: boolean("noindex").default(false),
   createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
   updatedBy: varchar("updated_by").references(() => users.id, { onDelete: "set null" }),
+  scheduledAt: timestamp("scheduled_at"),
   publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Eye, EyeOff, Globe, FileCode } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, Globe, FileCode, CalendarClock } from "lucide-react";
 import type { CmsPage } from "@shared/schema";
 import { format } from "date-fns";
 import { useState } from "react";
@@ -129,13 +129,21 @@ export default function CmsPagesPage() {
                         </span>
                       </td>
                       <td className="py-3 px-2">
-                        <Badge
-                          variant={page.status === "published" ? "default" : "outline"}
-                          className={`text-xs ${page.status === "published" ? "bg-green-600 hover:bg-green-700" : ""}`}
-                          data-testid={`badge-status-${page.id}`}
-                        >
-                          {page.status}
-                        </Badge>
+                        <div className="flex flex-col gap-0.5">
+                          <Badge
+                            variant={page.status === "published" ? "default" : "outline"}
+                            className={`text-xs ${page.status === "published" ? "bg-green-600 hover:bg-green-700" : page.status === "scheduled" ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600" : ""}`}
+                            data-testid={`badge-status-${page.id}`}
+                          >
+                            {page.status === "scheduled" && <CalendarClock className="h-3 w-3 mr-1" />}
+                            {page.status}
+                          </Badge>
+                          {page.status === "scheduled" && page.scheduledAt && (
+                            <span className="text-[10px] text-muted-foreground" data-testid={`text-scheduled-date-${page.id}`}>
+                              {format(new Date(page.scheduledAt), "MMM d, h:mm a")}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-2 text-muted-foreground text-xs hidden md:table-cell">
                         {page.updatedAt ? format(new Date(page.updatedAt), "MMM d, yyyy") : "—"}
@@ -151,7 +159,7 @@ export default function CmsPagesPage() {
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          {page.status === "published" ? (
+                          {page.status === "published" || page.status === "scheduled" ? (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -159,7 +167,7 @@ export default function CmsPagesPage() {
                               onClick={() => unpublishMutation.mutate(page.id)}
                               disabled={unpublishMutation.isPending}
                               data-testid={`button-unpublish-${page.id}`}
-                              title="Move to draft"
+                              title={page.status === "scheduled" ? "Cancel schedule" : "Move to draft"}
                             >
                               <EyeOff className="h-4 w-4" />
                             </Button>

@@ -39,6 +39,7 @@ import {
   Save,
   Globe,
   Clock,
+  CalendarClock,
   Info,
   Eye,
   EyeOff,
@@ -47,6 +48,11 @@ import {
   Loader2,
   LayoutTemplate,
 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import type { CmsPage, CmsPageRevision } from "@shared/schema";
 import { format } from "date-fns";
 import { PageBuilder } from "./builder/page-builder";
@@ -58,7 +64,7 @@ const editorSchema = z.object({
   title: z.string().min(1, "Title is required"),
   slug: z.string().min(1, "Slug is required").regex(/^[a-z0-9-/]+$/, "Lowercase letters, numbers, hyphens and slashes only"),
   pageType: z.enum(["home", "about", "contact", "landing", "custom"]),
-  status: z.enum(["draft", "published", "archived"]),
+  status: z.enum(["draft", "published", "scheduled", "archived"]),
   seoTitle: z.string().optional(),
   seoDescription: z.string().max(160, "Max 160 characters").optional(),
   seoKeywords: z.string().optional(),
@@ -218,6 +224,22 @@ export default function CmsPageEditorPage() {
     onError: () => toast({ title: "Failed to unpublish page", variant: "destructive" }),
   });
 
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [schedulePopoverOpen, setSchedulePopoverOpen] = useState(false);
+
+  const scheduleMutation = useMutation({
+    mutationFn: (scheduledAt: string) =>
+      apiRequest("POST", `/api/admin/cms/pages/${id}/schedule`, { scheduledAt }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id] });
+      setSchedulePopoverOpen(false);
+      setScheduleDate("");
+      toast({ title: "Page scheduled for publishing" });
+    },
+    onError: () => toast({ title: "Failed to schedule page", variant: "destructive" }),
+  });
+
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const restoreMutation = useMutation({
     mutationFn: (revisionId: string) =>
@@ -321,20 +343,87 @@ export default function CmsPageEditorPage() {
                 </Button>
               </>
             )}
-            {!isNew && page?.status !== "published" && (
-              <Button
-                variant="outline"
-                onClick={() => publishMutation.mutate()}
-                disabled={publishMutation.isPending}
-                data-testid="button-publish"
-              >
-                {publishMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Eye className="h-4 w-4 mr-2" />
-                )}
-                Publish
-              </Button>
+            {!isNew && page?.status === "scheduled" && (
+              <>
+                <Badge className="bg-blue-600 text-white" data-testid="badge-scheduled">
+                  <CalendarClock className="h-3 w-3 mr-1" />
+                  Scheduled
+                  {page.scheduledAt && (
+                    <span className="ml-1 font-normal">
+                      {format(new Date(page.scheduledAt), "MMM d, h:mm a")}
+                    </span>
+                  )}
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => unpublishMutation.mutate()}
+                  disabled={unpublishMutation.isPending}
+                  data-testid="button-cancel-schedule"
+                >
+                  {unpublishMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  ) : (
+                    <EyeOff className="h-4 w-4 mr-1.5" />
+                  )}
+                  Cancel Schedule
+                </Button>
+              </>
+            )}
+            {!isNew && page?.status !== "published" && page?.status !== "scheduled" && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => publishMutation.mutate()}
+                  disabled={publishMutation.isPending}
+                  data-testid="button-publish"
+                >
+                  {publishMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Eye className="h-4 w-4 mr-2" />
+                  )}
+                  Publish
+                </Button>
+                <Popover open={schedulePopoverOpen} onOpenChange={setSchedulePopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" data-testid="button-open-schedule">
+                      <CalendarClock className="h-4 w-4 mr-1.5" />
+                      Schedule
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72" align="end">
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium">Schedule Publishing</p>
+                      <p className="text-xs text-muted-foreground">
+                        Choose a future date and time for this page to go live automatically.
+                      </p>
+                      <input
+                        type="datetime-local"
+                        value={scheduleDate}
+                        onChange={(e) => setScheduleDate(e.target.value)}
+                        min={new Date().toISOString().slice(0, 16)}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        data-testid="input-schedule-date"
+                      />
+                      <Button
+                        className="w-full"
+                        size="sm"
+                        disabled={!scheduleDate || scheduleMutation.isPending}
+                        onClick={() => scheduleMutation.mutate(new Date(scheduleDate).toISOString())}
+                        data-testid="button-confirm-schedule"
+                      >
+                        {scheduleMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                        ) : (
+                          <CalendarClock className="h-4 w-4 mr-1.5" />
+                        )}
+                        Confirm Schedule
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </>
             )}
             <Button
               onClick={onSave}
@@ -454,6 +543,7 @@ export default function CmsPageEditorPage() {
                                   <SelectContent>
                                     <SelectItem value="draft">Draft</SelectItem>
                                     <SelectItem value="published">Published</SelectItem>
+                                    <SelectItem value="scheduled">Scheduled</SelectItem>
                                     <SelectItem value="archived">Archived</SelectItem>
                                   </SelectContent>
                                 </Select>

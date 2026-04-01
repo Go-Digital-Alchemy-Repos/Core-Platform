@@ -7,7 +7,7 @@ import { insertCmsPageSchema } from "@shared/schema";
 const router = Router();
 
 const PAGE_TYPES = ["home", "about", "contact", "landing", "custom"] as const;
-const STATUSES = ["draft", "published", "archived"] as const;
+const STATUSES = ["draft", "published", "scheduled", "archived"] as const;
 
 const createPageSchema = insertCmsPageSchema.extend({
   title: z.string().min(1, "Title is required"),
@@ -154,6 +154,27 @@ router.post("/pages/:id/publish", async (req, res) => {
   } catch (error) {
     console.error("[cms] Failed to publish page:", error);
     res.status(500).json({ error: "Failed to publish CMS page" });
+  }
+});
+
+router.post("/pages/:id/schedule", async (req, res) => {
+  try {
+    const id = paramString(req.params.id);
+    const adminId = (req as any).user?.id;
+    const { scheduledAt } = req.body;
+    if (!scheduledAt) {
+      return res.status(400).json({ error: "scheduledAt is required" });
+    }
+    const date = new Date(scheduledAt);
+    if (isNaN(date.getTime()) || date <= new Date()) {
+      return res.status(400).json({ error: "scheduledAt must be a valid future date" });
+    }
+    const page = await storage.cmsPages.schedulePage(id, date, adminId);
+    if (!page) return res.status(404).json({ error: "Page not found" });
+    res.json(page);
+  } catch (error) {
+    console.error("[cms] Failed to schedule page:", error);
+    res.status(500).json({ error: "Failed to schedule CMS page" });
   }
 });
 

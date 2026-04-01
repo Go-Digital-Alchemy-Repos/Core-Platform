@@ -17,6 +17,7 @@ export const blogPosts = pgTable("blog_posts", {
   podcastUrl: text("podcast_url"),
   externalUrl: text("external_url"),
   isPublished: boolean("is_published").default(false),
+  scheduledAt: timestamp("scheduled_at"),
   publishedAt: timestamp("published_at"),
   seoTitle: text("seo_title"),
   seoDescription: text("seo_description"),

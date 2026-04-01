@@ -12,6 +12,7 @@ import {
   originCheck,
 } from "./middleware/security";
 import { logger, requestIdMiddleware } from "./utils/logger";
+import { startScheduledPublishService } from "./services/scheduled-publish.service";
 
 enforceRequiredSecrets();
 
@@ -174,6 +175,8 @@ app.use((req, res, next) => {
     const { setupVite } = await import("./vite");
     await setupVite(httpServer, app);
   }
+
+  startScheduledPublishService();
 
   const port = parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(

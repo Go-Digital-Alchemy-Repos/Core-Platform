@@ -58,4 +58,20 @@ export class BlogStorage {
       .where(eq(blogPosts.isPublished, true));
     return Number(result[0].count);
   }
+
+  async publishScheduledPosts(): Promise<number> {
+    const now = new Date();
+    const result = await db
+      .update(blogPosts)
+      .set({ isPublished: true, publishedAt: now, scheduledAt: null, updatedAt: now })
+      .where(
+        and(
+          eq(blogPosts.isPublished, false),
+          sql`${blogPosts.scheduledAt} IS NOT NULL`,
+          sql`${blogPosts.scheduledAt} <= ${now}`
+        )
+      )
+      .returning();
+    return result.length;
+  }
 }
