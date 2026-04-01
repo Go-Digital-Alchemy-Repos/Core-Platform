@@ -1,0 +1,66 @@
+We are beginning a structured stabilization and improvement sprint for the TCK Wellness application.
+
+This is a NON-DESTRUCTIVE refactor and hardening pass. Do not remove existing features, do not break current flows, and do not redesign the UI unless required for performance or correctness. Preserve all existing business logic unless explicitly improved below.
+
+Project context:
+- Full-stack TypeScript application
+- React frontend
+- Express backend
+- Drizzle ORM
+- PostgreSQL
+- Shared schema/types across client/server
+- Existing route/storage modularity should be preserved and improved
+- Goal: improve performance, maintainability, security hardening, observability, and DevOps maturity
+
+Your first task in this prompt is to perform a full codebase audit and create a concrete implementation plan before making broad changes.
+
+Tasks:
+1. Inspect the current codebase and identify:
+   - TypeScript build errors
+   - Missing dependencies/types (including sanitize-html typing issue if present)
+   - Existing package.json scripts
+   - Existing tsconfig configuration
+   - Existing test setup, if any
+   - Existing lint setup, if any
+   - Existing auth/session secret handling
+   - Existing therapist directory search/filter flow on both client and server
+   - Existing schema definitions and missing indexes/FKs
+   - Existing logging approach
+   - Existing admin route structure and file sizes
+   - Existing query caching strategy in React Query
+   - Existing route/page loading strategy in App.tsx
+
+2. Produce a written implementation plan grouped into these phases:
+   - Phase A: Build stabilization and quality gates
+   - Phase B: Directory search scalability improvements
+   - Phase C: DB indexing and relational integrity
+   - Phase D: Security hardening
+   - Phase E: Frontend loading and cache strategy
+   - Phase F: Observability and operations
+   - Phase G: Service/support layer refinement
+   - Phase H: Route decomposition and documentation
+
+3. Then begin implementing only the safest foundational fixes required to get the app into a more stable state:
+   - Fix TypeScript errors
+   - Install missing typings/dependencies
+   - Add any missing scripts needed for lint/test/check if they do not exist
+   - Do not yet introduce large behavioral changes to search, security, or caching in this prompt unless needed for build health
+
+4. Output a concise changelog at the end:
+   - files changed
+   - what was fixed
+   - what remains for later prompts
+   - any risks or follow-up items
+
+Rules:
+- Keep changes modular and production-safe
+- Prefer small focused edits over sweeping rewrites
+- Preserve current APIs unless a later prompt explicitly changes response shape
+- If you discover route files that are too large, note them but do not split them yet unless necessary to fix errors
+- If tests do not exist yet, scaffold carefully without breaking current builds
+- Do not silently suppress errors to make build pass; fix root causes where possible
+
+Definition of done:
+- npm run check passes, or if not fully possible, remaining blockers are documented precisely
+- package.json has a clear path toward check/lint/test
+- foundational audit and implementation plan are documented in-app under /docs or a similarly appropriate docs location

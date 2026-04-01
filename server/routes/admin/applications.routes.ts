@@ -2,6 +2,10 @@ import { Router } from "express";
 import { storage } from "../../storage/index";
 import { asyncHandler } from "../../middleware/error-handler";
 import { APPLICATION_STATUS } from "@shared/types";
+
+function paramStr(val: string | string[] | undefined): string {
+  return Array.isArray(val) ? val[0] : (val ?? "");
+}
 import {
   initiateBackgroundCheck,
   syncBackgroundCheckStatus,
@@ -52,7 +56,7 @@ router.get(
 router.get(
   "/:id",
   asyncHandler(async (req, res) => {
-    const application = await storage.applications.getById(req.params.id);
+    const application = await storage.applications.getById(paramStr(req.params.id));
     if (!application) {
       res.status(404).json({ message: "Application not found" });
       return;
@@ -89,7 +93,7 @@ router.patch(
       return;
     }
 
-    const application = await storage.applications.getById(req.params.id);
+    const application = await storage.applications.getById(paramStr(req.params.id));
     if (!application) {
       res.status(404).json({ message: "Application not found" });
       return;
@@ -128,9 +132,9 @@ router.patch(
         decidedBy: req.user!.id,
       });
 
-      const user = await storage.users.getUser(application.userId);
-      if (user) {
-        await storage.users.updateUser(application.userId, { isApproved: true });
+      const profile = await storage.therapists.getProfileByUserId(application.userId);
+      if (profile) {
+        await storage.therapists.updateProfile(profile.id, { isApproved: true });
       }
     }
 
@@ -142,7 +146,10 @@ router.patch(
         decidedBy: req.user!.id,
       });
 
-      await storage.users.updateUser(application.userId, { isApproved: false });
+      const deniedProfile = await storage.therapists.getProfileByUserId(application.userId);
+      if (deniedProfile) {
+        await storage.therapists.updateProfile(deniedProfile.id, { isApproved: false });
+      }
 
       if (application.paymentStatus === "paid" && application.refundEligibleAmount && application.refundStatus !== "refunded") {
         await storage.applications.update(application.id, {
@@ -167,7 +174,7 @@ router.patch(
 router.post(
   "/:id/background-check/initiate",
   asyncHandler(async (req, res) => {
-    const application = await storage.applications.getById(req.params.id);
+    const application = await storage.applications.getById(paramStr(req.params.id));
     if (!application) {
       res.status(404).json({ message: "Application not found" });
       return;
@@ -206,7 +213,7 @@ router.post(
 router.post(
   "/:id/background-check/sync",
   asyncHandler(async (req, res) => {
-    const check = await syncBackgroundCheckStatus(req.params.id);
+    const check = await syncBackgroundCheckStatus(paramStr(req.params.id));
     if (!check) {
       res.status(404).json({ message: "Background check not found" });
       return;
@@ -218,14 +225,14 @@ router.post(
 router.post(
   "/:id/background-check/resend",
   asyncHandler(async (req, res) => {
-    const success = await resendBackgroundCheckInvite(req.params.id);
+    const success = await resendBackgroundCheckInvite(paramStr(req.params.id));
     if (!success) {
       res.status(400).json({ message: "Unable to resend invite" });
       return;
     }
 
     await storage.applications.addTimelineEntry({
-      applicationId: req.params.id,
+      applicationId: paramStr(req.params.id),
       action: "background_check_invite_resent",
       note: "Background check invite resent",
       performedBy: req.user!.id,
@@ -260,7 +267,7 @@ router.patch(
       return;
     }
 
-    const updated = await adminUpdateBackgroundCheck(req.params.id, {
+    const updated = await adminUpdateBackgroundCheck(paramStr(req.params.id), {
       status: status as BackgroundCheckStatus,
       notes,
       result,
@@ -275,7 +282,7 @@ router.patch(
     }
 
     await storage.applications.addTimelineEntry({
-      applicationId: req.params.id,
+      applicationId: paramStr(req.params.id),
       action: "background_check_updated",
       note: `Background check ${status ? `status changed to ${status}` : "updated"}${notes ? ` — ${notes}` : ""}`,
       performedBy: req.user!.id,
@@ -288,13 +295,13 @@ router.patch(
 router.post(
   "/:id/references/:refId/resend",
   asyncHandler(async (req, res) => {
-    const application = await storage.applications.getById(req.params.id);
+    const application = await storage.applications.getById(paramStr(req.params.id));
     if (!application) {
       res.status(404).json({ message: "Application not found" });
       return;
     }
 
-    const refs = await storage.applications.getReferences(req.params.id);
+    const refs = await storage.applications.getReferences(paramStr(req.params.id));
     const ref = refs.find((r: any) => r.id === req.params.refId);
     if (!ref) {
       res.status(404).json({ message: "Reference not found" });
@@ -354,7 +361,7 @@ router.post(
 router.post(
   "/:id/interview",
   asyncHandler(async (req, res) => {
-    const application = await storage.applications.getById(req.params.id);
+    const application = await storage.applications.getById(paramStr(req.params.id));
     if (!application) {
       res.status(404).json({ message: "Application not found" });
       return;
@@ -397,14 +404,14 @@ router.post(
 router.patch(
   "/:id/interview",
   asyncHandler(async (req, res) => {
-    const interview = await storage.applications.getInterview(req.params.id);
+    const interview = await storage.applications.getInterview(paramStr(req.params.id));
     if (!interview) {
       res.status(404).json({ message: "Interview not found" });
       return;
     }
 
     if (req.body.outcome) {
-      const application = await storage.applications.getById(req.params.id);
+      const application = await storage.applications.getById(paramStr(req.params.id));
       if (!application) {
         res.status(404).json({ message: "Application not found" });
         return;
@@ -427,13 +434,13 @@ router.patch(
     });
 
     if (req.body.outcome) {
-      await storage.applications.update(req.params.id, {
+      await storage.applications.update(paramStr(req.params.id), {
         interviewStatus: "completed",
         status: "interview_completed",
       });
 
       await storage.applications.addTimelineEntry({
-        applicationId: req.params.id,
+        applicationId: paramStr(req.params.id),
         action: "interview_completed",
         toStatus: "interview_completed",
         note: `Outcome: ${req.body.outcome}`,
@@ -448,7 +455,7 @@ router.patch(
 router.post(
   "/:id/timeline",
   asyncHandler(async (req, res) => {
-    const application = await storage.applications.getById(req.params.id);
+    const application = await storage.applications.getById(paramStr(req.params.id));
     if (!application) {
       res.status(404).json({ message: "Application not found" });
       return;

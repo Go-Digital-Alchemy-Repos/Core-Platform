@@ -163,7 +163,7 @@ export default function ProfileEditPage() {
         .filter(Boolean);
       predefined.push(...customEntries);
     }
-    const unique = [...new Set(predefined)];
+    const unique = Array.from(new Set(predefined));
     updateMutation.mutate({ ...data, specializations: unique });
   }
 

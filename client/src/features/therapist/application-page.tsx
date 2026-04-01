@@ -209,7 +209,7 @@ function BeforeYouBeginStep({ formData, onChange }: { formData: FormData; onChan
             <div>
               <p className="font-medium">Vetting Criteria</p>
               <p className="text-sm text-muted-foreground">Review our vetting criteria to understand what we look for in TCK Wellness providers.</p>
-              <Button variant="link" size="sm" className="p-0 h-auto mt-1 text-primary" data-testid="link-vetting-criteria" disabled>
+              <Button variant="ghost" size="sm" className="p-0 h-auto mt-1 text-primary" data-testid="link-vetting-criteria" disabled>
                 <ExternalLink className="w-3 h-3 mr-1" />
                 Preview vetting criteria (PDF coming soon)
               </Button>

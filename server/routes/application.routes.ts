@@ -7,6 +7,10 @@ import { logger } from "../utils/logger";
 import { sendReferenceRequestEmail } from "../services/email.service";
 import { createBackgroundCheckRecord } from "../services/background-check.service";
 
+function paramStr(val: string | string[] | undefined): string {
+  return Array.isArray(val) ? val[0] : (val ?? "");
+}
+
 const APPLICATION_FEE_CENTS = 15000;
 const REFUND_ELIGIBLE_CENTS = 10000;
 
@@ -485,7 +489,7 @@ router.delete(
       return;
     }
 
-    await storage.applications.deleteCredential(req.params.credentialId, application.id);
+    await storage.applications.deleteCredential(paramStr(req.params.credentialId), application.id);
     res.json({ success: true });
   })
 );
@@ -543,7 +547,7 @@ router.delete(
       return;
     }
 
-    await storage.applications.deleteReference(req.params.referenceId, application.id);
+    await storage.applications.deleteReference(paramStr(req.params.referenceId), application.id);
     res.json({ success: true });
   })
 );

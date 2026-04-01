@@ -131,17 +131,32 @@ export default function TherapistProfilePage() {
 
   const displayName = [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") || "Mental Health Professional";
   const initials = [therapist.user?.firstName?.[0], therapist.user?.lastName?.[0]].filter(Boolean).join("").toUpperCase() || "?";
-  const addressParts = [therapist.address, therapist.city, therapist.state, therapist.zipCode, therapist.country].filter(Boolean);
+  const addressParts = [therapist.addressLine1, therapist.addressLine2, therapist.city, therapist.state, therapist.zipCode, therapist.country].filter(Boolean);
   const hasContact = addressParts.length > 0 || therapist.phone || therapist.website;
   const showMap = therapist.latitude && therapist.longitude;
 
+  function socialUrl(platform: string, handle: string | null): string | null {
+    if (!handle) return null;
+    if (/^https?:\/\//i.test(handle)) return handle;
+    const clean = handle.replace(/^@/, "");
+    const bases: Record<string, string> = {
+      instagram: "https://instagram.com/",
+      facebook: "https://facebook.com/",
+      twitter: "https://x.com/",
+      linkedin: "https://linkedin.com/in/",
+      youtube: "https://youtube.com/@",
+      tiktok: "https://tiktok.com/@",
+    };
+    return bases[platform] ? `${bases[platform]}${clean}` : null;
+  }
+
   const socialLinks = [
-    { key: "instagram", url: therapist.instagramUrl, icon: SiInstagram, color: "text-pink-600", label: "Instagram" },
-    { key: "facebook", url: therapist.facebookUrl, icon: SiFacebook, color: "text-blue-600", label: "Facebook" },
-    { key: "twitter", url: therapist.twitterUrl, icon: SiX, color: "text-foreground", label: "X (Twitter)" },
-    { key: "linkedin", url: therapist.linkedinUrl, icon: SiLinkedin, color: "text-blue-700", label: "LinkedIn" },
-    { key: "youtube", url: therapist.youtubeUrl, icon: SiYoutube, color: "text-red-600", label: "YouTube" },
-    { key: "tiktok", url: therapist.tiktokUrl, icon: SiTiktok, color: "text-foreground", label: "TikTok" },
+    { key: "instagram", url: socialUrl("instagram", therapist.instagramHandle), icon: SiInstagram, color: "text-pink-600", label: "Instagram" },
+    { key: "facebook", url: socialUrl("facebook", therapist.facebookHandle), icon: SiFacebook, color: "text-blue-600", label: "Facebook" },
+    { key: "twitter", url: socialUrl("twitter", therapist.twitterHandle), icon: SiX, color: "text-foreground", label: "X (Twitter)" },
+    { key: "linkedin", url: socialUrl("linkedin", therapist.linkedinHandle), icon: SiLinkedin, color: "text-blue-700", label: "LinkedIn" },
+    { key: "youtube", url: socialUrl("youtube", therapist.youtubeHandle), icon: SiYoutube, color: "text-red-600", label: "YouTube" },
+    { key: "tiktok", url: socialUrl("tiktok", therapist.tiktokHandle), icon: SiTiktok, color: "text-foreground", label: "TikTok" },
   ].filter((s) => s.url);
   const hasSocial = socialLinks.length > 0;
 
@@ -240,45 +255,15 @@ export default function TherapistProfilePage() {
               </Card>
             ) : null}
 
-            {therapist.education && (
+            {therapist.credentials && (
               <Card data-testid="card-education">
                 <CardHeader>
-                  <h2 className="text-lg font-semibold">Education & Credentials</h2>
+                  <h2 className="text-lg font-semibold">Credentials</h2>
                 </CardHeader>
                 <CardContent>
-                  <p className="whitespace-pre-wrap text-muted-foreground" data-testid="text-education">
-                    {therapist.education}
+                  <p className="whitespace-pre-wrap text-muted-foreground" data-testid="text-credentials">
+                    {therapist.credentials}
                   </p>
-                </CardContent>
-              </Card>
-            )}
-
-            <Separator />
-
-            {(therapist.sessionFee || therapist.sessionLength || therapist.insuranceAccepted) && (
-              <Card data-testid="card-session-details">
-                <CardHeader>
-                  <h2 className="text-lg font-semibold">Session Details</h2>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  {therapist.sessionFee && (
-                    <div className="flex justify-between" data-testid="text-fee">
-                      <span className="text-muted-foreground">Session Fee</span>
-                      <span className="font-medium">{therapist.sessionFee}</span>
-                    </div>
-                  )}
-                  {therapist.sessionLength && (
-                    <div className="flex justify-between" data-testid="text-session-length">
-                      <span className="text-muted-foreground">Session Length</span>
-                      <span className="font-medium">{therapist.sessionLength} min</span>
-                    </div>
-                  )}
-                  {therapist.insuranceAccepted && (
-                    <div className="flex justify-between" data-testid="text-insurance">
-                      <span className="text-muted-foreground">Insurance</span>
-                      <span className="font-medium">{therapist.insuranceAccepted}</span>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             )}
@@ -504,7 +489,7 @@ export default function TherapistProfilePage() {
                     {socialLinks.map(({ key, url, icon: Icon, color, label }) => (
                       <a
                         key={key}
-                        href={url}
+                        href={url ?? undefined}
                         target="_blank"
                         rel="noopener noreferrer"
                         title={label}

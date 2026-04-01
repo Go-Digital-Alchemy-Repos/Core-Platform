@@ -6,16 +6,6 @@ import { z } from "zod";
 export const MENU_LOCATIONS = ["header", "footer", "unassigned"] as const;
 export type MenuLocation = (typeof MENU_LOCATIONS)[number];
 
-export const menuItemSchema: z.ZodType<MenuItem> = z.lazy(() =>
-  z.object({
-    id: z.string(),
-    label: z.string().min(1),
-    url: z.string().min(1),
-    openInNewTab: z.boolean().default(false),
-    children: z.array(menuItemSchema).default([]),
-  })
-);
-
 export interface MenuItem {
   id: string;
   label: string;
@@ -23,6 +13,16 @@ export interface MenuItem {
   openInNewTab: boolean;
   children: MenuItem[];
 }
+
+export const menuItemSchema: z.ZodType<MenuItem> = z.lazy(() =>
+  z.object({
+    id: z.string(),
+    label: z.string().min(1),
+    url: z.string().min(1),
+    openInNewTab: z.preprocess((v) => v ?? false, z.boolean()),
+    children: z.preprocess((v) => v ?? [], z.array(menuItemSchema)),
+  })
+) as z.ZodType<MenuItem>;
 
 export const cmsMenus = pgTable("cms_menus", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

@@ -53,6 +53,11 @@ TCK Wellness is a platform designed to connect Third Culture Kids (TCKs) with sp
     - **Navigation Menu Builder**: Dynamic menu management for header and footer navigation. Admin UI at `/admin/cms/menus` for creating, editing, and reordering menu items with nesting up to 3 levels deep. Each menu has a name, location binding (Header, Footer, Unassigned), and JSONB items. Schema: `cms_menus` table. Admin CRUD at `/api/admin/cms/menus`, public endpoint `GET /api/cms/menus/:location`. Navbar and footer fall back to hardcoded defaults when no menu is configured for that location. Items support label, URL, open-in-new-tab, and nested children with move-up/down/indent/outdent controls.
     - **CMS Theme System**: 11 selectable theme presets (TCK Default, Ocean Blue, Midnight, Minimal Light, Contrast Pro, Warm Neutral, Slate & Blue, Frost, Charcoal Gold, Clean Clinical, Energetic Blue Pop) covering colors, typography, radius, and fonts. Stored in DB via system settings (`theme_preset_id` key in `theme` category). Applied site-wide via CSS custom properties on `:root`. Admin UI at `/admin/cms/themes` with live preview and one-click activation. Public endpoint `GET /api/theme/active` (unauthenticated), admin save via `PUT /api/admin/theme` (server-side preset ID whitelist). ThemeProvider auto-fetches on mount and reapplies on light/dark toggle.
 
+### Build Health & Quality
+- **TypeScript Check**: `npm run check` (alias `tsc`) passes with zero errors.
+- **Express v5 Params**: Route handlers use `paramStr()` helper to safely cast `req.params` values from `string | string[]` to `string`.
+- **Stabilization Plan**: Full audit and phased improvement plan at `docs/stabilization-plan.md`.
+
 ### System Design Choices
 - **Modular File Structure**: Backend organized by concern, frontend by feature.
 - **Separation of Concerns**: Clear distinction between frontend and backend via API endpoints.

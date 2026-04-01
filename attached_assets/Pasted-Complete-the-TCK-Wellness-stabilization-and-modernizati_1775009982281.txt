@@ -1,0 +1,60 @@
+Complete the TCK Wellness stabilization and modernization sprint.
+
+This is the final prompt in the series and should consolidate the work performed so far.
+
+Goal:
+Create internal technical documentation, verify the completed improvements, and perform a final hardening and validation sweep.
+
+Tasks:
+1. Add or update documentation folders such as:
+   - /docs/architecture
+   - /docs/runbooks
+   - /docs/adr
+2. Include documents covering:
+   - overall application architecture
+   - backend route organization
+   - therapist directory filtering/pagination design
+   - DB indexing and FK strategy
+   - security hardening and environment requirements
+   - frontend code splitting and query freshness strategy
+   - logging/health check operational guidance
+   - service layer/caching strategy
+   - CI/quality gate workflow
+3. Perform a final audit and validation pass:
+   - npm run check
+   - npm run lint
+   - npm test
+   - validate main therapist directory flows
+   - validate admin flows still work
+   - validate auth/session flows still work
+4. Identify any remaining technical debt and group it into:
+   - immediate follow-up
+   - near-term
+   - long-term
+5. Create a recommended roadmap for the next wave of improvements, including:
+   - full-text search/faceted search
+   - geo-distance ranking for therapists
+   - real-time messaging/read receipts
+   - admin analytics for therapist onboarding and subscriptions
+   - background job queue for emails/notifications
+   - dashboards/alerting for latency and failures
+
+Output requirements:
+At the end, provide:
+- a full changelog
+- list of new docs created
+- migration notes
+- any production rollout cautions
+- any features that should be monitored closely after deploy
+
+Rules:
+- NON-DESTRUCTIVE
+- Preserve existing product direction
+- Keep documentation clean, useful, and developer-facing
+- Do not introduce speculative features in this final prompt unless needed to support completed work
+
+Definition of done:
+- docs are in place
+- quality gates run
+- completed improvements are summarized
+- next-phase roadmap is documented
