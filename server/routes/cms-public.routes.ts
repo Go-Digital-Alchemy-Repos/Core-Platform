@@ -17,4 +17,19 @@ router.get(
   })
 );
 
+router.get(
+  "/menus/:location",
+  asyncHandler(async (req, res) => {
+    const location = paramString(req.params.location);
+    if (!["header", "footer"].includes(location)) {
+      return res.status(400).json({ error: "Invalid menu location" });
+    }
+    const menu = await storage.cmsMenus.getByLocation(location);
+    if (!menu) {
+      return res.status(404).json({ error: "No menu configured for this location" });
+    }
+    res.json(menu);
+  })
+);
+
 export default router;

@@ -24,6 +24,7 @@ export { seoSettings, insertSeoSettingsSchema, type InsertSeoSettings, type SeoS
 export { redirects, insertRedirectSchema, type InsertRedirect, type Redirect } from "./redirects";
 export { recordingPurchases, insertRecordingPurchaseSchema, type InsertRecordingPurchase, type RecordingPurchase } from "./recording-purchases";
 export { guestMessages, insertGuestMessageSchema, type InsertGuestMessage, type GuestMessage } from "./guest-messages";
+export { cmsMenus, insertCmsMenuSchema, menuItemSchema, MENU_LOCATIONS, type InsertCmsMenu, type CmsMenu, type MenuItem, type MenuLocation } from "./cms-menus";
 export {
   providerApplications,
   providerApplicationTimeline,

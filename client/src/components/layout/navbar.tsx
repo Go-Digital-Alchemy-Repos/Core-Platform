@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, Search, X, ChevronDown, Bell, Moon, Sun } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -17,8 +17,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { RegisterDialog } from "@/components/shared/register-dialog";
+import type { CmsMenu, MenuItem } from "@shared/schema";
 
-const navLinks = [
+const defaultNavLinks = [
   { label: "About", href: "/about" },
   { label: "Find a Mental Health Professional", href: "/directory" },
   { label: "Join the Network", href: "/join" },
@@ -29,6 +30,39 @@ const allResourceLinks = [
   { label: "Recording Archives", href: "/recordings", hideFromClients: true },
   { label: "Insights & Articles", href: "/insights" },
 ];
+
+function DynamicDropdown({ item, location: currentPath }: { item: MenuItem; location: string }) {
+  const isActive = item.children?.some((c) => currentPath === c.url);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className={isActive ? "toggle-elevate toggle-elevated" : ""}
+          data-testid={`link-nav-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+        >
+          {item.label}
+          <ChevronDown className="ml-1 h-3.5 w-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="z-[1000]">
+        {item.children.map((child) => (
+          <DropdownMenuItem key={child.id} asChild>
+            {child.openInNewTab ? (
+              <a href={child.url} target="_blank" rel="noopener noreferrer" data-testid={`link-nav-child-${child.id}`}>
+                {child.label}
+              </a>
+            ) : (
+              <Link href={child.url} data-testid={`link-nav-child-${child.id}`}>
+                {child.label}
+              </Link>
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function Navbar() {
   const [location] = useLocation();
@@ -42,6 +76,22 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [, navigate] = useLocation();
+
+  const { data: headerMenu } = useQuery<CmsMenu>({
+    queryKey: ["/api/cms/menus", "header"],
+    queryFn: async () => {
+      const res = await fetch("/api/cms/menus/header");
+      if (!res.ok) return null;
+      return res.json();
+    },
+    staleTime: 60000,
+  });
+
+  const dynamicItems = useMemo(() => {
+    if (!headerMenu?.items) return null;
+    const items = headerMenu.items as MenuItem[];
+    return items.length > 0 ? items : null;
+  }, [headerMenu]);
 
   const isClient = user && user.role === "client";
   const resourceLinks = allResourceLinks.filter(
@@ -69,49 +119,79 @@ export function Navbar() {
         </Link>
 
         <div className="hidden md:flex items-center gap-2 flex-wrap">
-          {navLinks.map((link) => (
-            <Link key={link.href} href={link.href}>
-              <Button
-                variant="ghost"
-                className={location === link.href ? "toggle-elevate toggle-elevated" : ""}
-                data-testid={`link-nav-${link.label.toLowerCase()}`}
-                aria-current={location === link.href ? "page" : undefined}
-              >
-                {link.label}
-              </Button>
-            </Link>
-          ))}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className={resourceLinks.some((r) => location === r.href) ? "toggle-elevate toggle-elevated" : ""}
-                data-testid="link-nav-resources"
-              >
-                Resources
-                <ChevronDown className="ml-1 h-3.5 w-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="z-[1000]">
-              {resourceLinks.map((link) => (
-                <DropdownMenuItem key={link.href} asChild>
-                  <Link href={link.href} data-testid={`link-nav-resource-${link.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
+          {dynamicItems ? (
+            dynamicItems.map((item) =>
+              item.children && item.children.length > 0 ? (
+                <DynamicDropdown key={item.id} item={item} location={location} />
+              ) : item.openInNewTab ? (
+                <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer">
+                  <Button
+                    variant="ghost"
+                    data-testid={`link-nav-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+                  >
+                    {item.label}
+                  </Button>
+                </a>
+              ) : (
+                <Link key={item.id} href={item.url}>
+                  <Button
+                    variant="ghost"
+                    className={location === item.url ? "toggle-elevate toggle-elevated" : ""}
+                    data-testid={`link-nav-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+                    aria-current={location === item.url ? "page" : undefined}
+                  >
+                    {item.label}
+                  </Button>
+                </Link>
+              )
+            )
+          ) : (
+            <>
+              {defaultNavLinks.map((link) => (
+                <Link key={link.href} href={link.href}>
+                  <Button
+                    variant="ghost"
+                    className={location === link.href ? "toggle-elevate toggle-elevated" : ""}
+                    data-testid={`link-nav-${link.label.toLowerCase()}`}
+                    aria-current={location === link.href ? "page" : undefined}
+                  >
                     {link.label}
-                  </Link>
-                </DropdownMenuItem>
+                  </Button>
+                </Link>
               ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Link href="/contact">
-            <Button
-              variant="ghost"
-              className={location === "/contact" ? "toggle-elevate toggle-elevated" : ""}
-              data-testid="link-nav-contact"
-              aria-current={location === "/contact" ? "page" : undefined}
-            >
-              Contact
-            </Button>
-          </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className={resourceLinks.some((r) => location === r.href) ? "toggle-elevate toggle-elevated" : ""}
+                    data-testid="link-nav-resources"
+                  >
+                    Resources
+                    <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="z-[1000]">
+                  {resourceLinks.map((link) => (
+                    <DropdownMenuItem key={link.href} asChild>
+                      <Link href={link.href} data-testid={`link-nav-resource-${link.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
+                        {link.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Link href="/contact">
+                <Button
+                  variant="ghost"
+                  className={location === "/contact" ? "toggle-elevate toggle-elevated" : ""}
+                  data-testid="link-nav-contact"
+                  aria-current={location === "/contact" ? "page" : undefined}
+                >
+                  Contact
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         <div className="hidden md:flex items-center gap-3 flex-wrap">
@@ -262,42 +342,88 @@ export function Navbar() {
                 </SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-1 mt-6">
-                {navLinks.map((link) => (
-                  <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}>
-                    <Button
-                      variant="ghost"
-                      className={`w-full justify-start ${location === link.href ? "toggle-elevate toggle-elevated" : ""}`}
-                      data-testid={`link-mobile-${link.label.toLowerCase()}`}
-                      aria-current={location === link.href ? "page" : undefined}
-                    >
-                      {link.label}
-                    </Button>
-                  </Link>
-                ))}
-
-                <p className="px-4 pt-3 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resources</p>
-                {resourceLinks.map((link) => (
-                  <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}>
-                    <Button
-                      variant="ghost"
-                      className={`w-full justify-start pl-6 ${location === link.href ? "toggle-elevate toggle-elevated" : ""}`}
-                      data-testid={`link-mobile-resource-${link.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
-                      aria-current={location === link.href ? "page" : undefined}
-                    >
-                      {link.label}
-                    </Button>
-                  </Link>
-                ))}
-                <Link href="/contact" onClick={() => setMobileOpen(false)}>
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start ${location === "/contact" ? "toggle-elevate toggle-elevated" : ""}`}
-                    data-testid="link-mobile-contact"
-                    aria-current={location === "/contact" ? "page" : undefined}
-                  >
-                    Contact
-                  </Button>
-                </Link>
+                {dynamicItems ? (
+                  dynamicItems.map((item) => (
+                    <div key={item.id}>
+                      {item.openInNewTab ? (
+                        <a href={item.url} target="_blank" rel="noopener noreferrer" onClick={() => setMobileOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start" data-testid={`link-mobile-${item.id}`}>
+                            {item.label}
+                          </Button>
+                        </a>
+                      ) : (
+                        <Link href={item.url} onClick={() => setMobileOpen(false)}>
+                          <Button
+                            variant="ghost"
+                            className={`w-full justify-start ${location === item.url ? "toggle-elevate toggle-elevated" : ""}`}
+                            data-testid={`link-mobile-${item.id}`}
+                            aria-current={location === item.url ? "page" : undefined}
+                          >
+                            {item.label}
+                          </Button>
+                        </Link>
+                      )}
+                      {item.children?.length > 0 && item.children.map((child) => (
+                        child.openInNewTab ? (
+                          <a key={child.id} href={child.url} target="_blank" rel="noopener noreferrer" onClick={() => setMobileOpen(false)}>
+                            <Button variant="ghost" className="w-full justify-start pl-6" data-testid={`link-mobile-child-${child.id}`}>
+                              {child.label}
+                            </Button>
+                          </a>
+                        ) : (
+                          <Link key={child.id} href={child.url} onClick={() => setMobileOpen(false)}>
+                            <Button
+                              variant="ghost"
+                              className={`w-full justify-start pl-6 ${location === child.url ? "toggle-elevate toggle-elevated" : ""}`}
+                              data-testid={`link-mobile-child-${child.id}`}
+                              aria-current={location === child.url ? "page" : undefined}
+                            >
+                              {child.label}
+                            </Button>
+                          </Link>
+                        )
+                      ))}
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    {defaultNavLinks.map((link) => (
+                      <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}>
+                        <Button
+                          variant="ghost"
+                          className={`w-full justify-start ${location === link.href ? "toggle-elevate toggle-elevated" : ""}`}
+                          data-testid={`link-mobile-${link.label.toLowerCase()}`}
+                          aria-current={location === link.href ? "page" : undefined}
+                        >
+                          {link.label}
+                        </Button>
+                      </Link>
+                    ))}
+                    <p className="px-4 pt-3 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resources</p>
+                    {resourceLinks.map((link) => (
+                      <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}>
+                        <Button
+                          variant="ghost"
+                          className={`w-full justify-start pl-6 ${location === link.href ? "toggle-elevate toggle-elevated" : ""}`}
+                          data-testid={`link-mobile-resource-${link.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+                          aria-current={location === link.href ? "page" : undefined}
+                        >
+                          {link.label}
+                        </Button>
+                      </Link>
+                    ))}
+                    <Link href="/contact" onClick={() => setMobileOpen(false)}>
+                      <Button
+                        variant="ghost"
+                        className={`w-full justify-start ${location === "/contact" ? "toggle-elevate toggle-elevated" : ""}`}
+                        data-testid="link-mobile-contact"
+                        aria-current={location === "/contact" ? "page" : undefined}
+                      >
+                        Contact
+                      </Button>
+                    </Link>
+                  </>
+                )}
 
                 <div className="my-3 border-t" />
 
