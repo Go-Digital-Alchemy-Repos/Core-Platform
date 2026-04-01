@@ -111,7 +111,8 @@ export default function CmsThemesPage() {
   };
 
   const handleActivate = (presetId: string) => {
-    saveMutation.mutate({ presetId });
+    const existingOverrides = Object.keys(overrideDraft).length > 0 ? overrideDraft : activeTheme?.customOverrides || null;
+    saveMutation.mutate({ presetId, customOverrides: existingOverrides });
   };
 
   const handleOverrideChange = (key: string, value: string) => {
