@@ -55,6 +55,11 @@ TCK Wellness is a platform designed to connect Third Culture Kids (TCKs) with sp
 
 ### Build Health & Quality
 - **TypeScript Check**: `npm run check` (alias `tsc`) passes with zero errors.
+- **Lint**: `npm run lint` runs ESLint (flat config, TypeScript-aware) across `client/src`, `server`, and `shared`.
+- **Format**: `npm run format` runs Prettier in check-only mode (no auto-rewrite).
+- **Test**: `npm test` runs Vitest unit tests. Test files co-located with source (`*.test.ts`). Config in `vitest.config.ts`, type validation via `tsconfig.test.json`.
+- **CI**: GitHub Actions workflow (`.github/workflows/ci.yml`) runs type-check, lint, and tests on push/PR to `main`.
+- **Quality Gates Docs**: See `docs/quality-gates.md` for local workflow and conventions.
 - **Express v5 Params**: Route handlers use `paramStr()` helper to safely cast `req.params` values from `string | string[]` to `string`.
 - **Stabilization Plan**: Full audit and phased improvement plan at `docs/stabilization-plan.md`.
 

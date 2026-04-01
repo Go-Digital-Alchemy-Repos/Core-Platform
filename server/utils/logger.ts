@@ -10,7 +10,7 @@ interface LogEntry {
   [key: string]: unknown;
 }
 
-function formatEntry(entry: LogEntry): string {
+export function formatEntry(entry: LogEntry): string {
   const ts = new Date().toISOString();
   const { level, source, msg, ...ctx } = entry;
   const ctxStr = Object.keys(ctx).length > 0
