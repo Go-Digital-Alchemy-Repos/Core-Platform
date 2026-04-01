@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getPresetById, applyThemeTokens, clearThemeTokens, type ThemePreset } from "@/lib/theme-presets";
+import { getPresetById, applyThemeTokens, clearThemeTokens } from "@/lib/theme-presets";
 
 type Theme = "light" | "dark";
 
@@ -10,6 +10,8 @@ interface ThemeContextValue {
   toggleTheme: () => void;
   activePresetId: string;
   setActivePresetId: (id: string) => void;
+  customOverrides: Record<string, string> | null;
+  setCustomOverrides: (overrides: Record<string, string> | null) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
@@ -17,6 +19,8 @@ const ThemeContext = createContext<ThemeContextValue>({
   toggleTheme: () => {},
   activePresetId: "tck-default",
   setActivePresetId: () => {},
+  customOverrides: null,
+  setCustomOverrides: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -27,6 +31,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return "light";
   });
   const [activePresetId, setActivePresetId] = useState("tck-default");
+  const [customOverrides, setCustomOverrides] = useState<Record<string, string> | null>(null);
   const fetched = useRef(false);
 
   useEffect(() => {
@@ -36,6 +41,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       .then((r) => r.json())
       .then((data) => {
         if (data?.presetId) setActivePresetId(data.presetId);
+        if (data?.customOverrides) setCustomOverrides(data.customOverrides);
       })
       .catch(() => {});
   }, []);
@@ -56,15 +62,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       clearThemeTokens();
       return;
     }
-    applyThemeTokens(preset[theme], theme);
-  }, [activePresetId, theme]);
+    applyThemeTokens(preset[theme], theme, customOverrides);
+  }, [activePresetId, theme, customOverrides]);
 
   const toggleTheme = useCallback(() => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, activePresetId, setActivePresetId }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, activePresetId, setActivePresetId, customOverrides, setCustomOverrides }}>
       {children}
     </ThemeContext.Provider>
   );

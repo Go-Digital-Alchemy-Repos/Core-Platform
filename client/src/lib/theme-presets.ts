@@ -28,6 +28,22 @@ export interface ThemeTokens {
   radius: string;
   "font-sans": string;
   "font-serif": string;
+  "shadow-sm": string;
+  "shadow-md": string;
+  "shadow-lg": string;
+  "spacing-xs": string;
+  "spacing-sm": string;
+  "spacing-md": string;
+  "spacing-lg": string;
+  "spacing-xl": string;
+  "btn-radius": string;
+  "btn-padding-x": string;
+  "btn-padding-y": string;
+  "btn-font-weight": string;
+  "btn-text-transform": string;
+  "heading-weight": string;
+  "heading-tracking": string;
+  "body-leading": string;
 }
 
 export interface ThemePreset {
@@ -38,6 +54,65 @@ export interface ThemePreset {
   light: ThemeTokens;
   dark: ThemeTokens;
 }
+
+const EXTENDED_STANDARD = {
+  "shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+      ...EXTENDED_STANDARD,
+  "shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+  "shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+  "spacing-xs": "0.25rem",
+  "spacing-sm": "0.5rem",
+  "spacing-md": "1rem",
+  "spacing-lg": "1.5rem",
+  "spacing-xl": "2.5rem",
+  "btn-radius": ".5rem",
+  "btn-padding-x": "1rem",
+  "btn-padding-y": "0.5rem",
+  "btn-font-weight": "600",
+  "btn-text-transform": "none",
+  "heading-weight": "700",
+  "heading-tracking": "-0.025em",
+  "body-leading": "1.625",
+};
+
+const EXTENDED_MINIMAL = {
+  ...EXTENDED_STANDARD,
+  "shadow-sm": "0 1px 1px rgb(0 0 0 / 0.03)",
+  "shadow-md": "0 2px 4px rgb(0 0 0 / 0.06)",
+  "shadow-lg": "0 4px 8px rgb(0 0 0 / 0.08)",
+  "btn-radius": ".25rem",
+  "btn-font-weight": "500",
+  "heading-tracking": "-0.02em",
+};
+
+const EXTENDED_ROUNDED = {
+  ...EXTENDED_STANDARD,
+  "btn-radius": ".75rem",
+  "spacing-lg": "1.75rem",
+  "spacing-xl": "3rem",
+};
+
+const EXTENDED_BOLD = {
+  ...EXTENDED_STANDARD,
+  "shadow-md": "0 6px 12px -2px rgb(0 0 0 / 0.15), 0 3px 5px -3px rgb(0 0 0 / 0.1)",
+  "shadow-lg": "0 15px 25px -5px rgb(0 0 0 / 0.15), 0 6px 10px -6px rgb(0 0 0 / 0.1)",
+  "btn-font-weight": "700",
+  "btn-text-transform": "uppercase",
+  "heading-weight": "800",
+  "heading-tracking": "-0.03em",
+};
+
+const EXTENDED_LUXURY = {
+  ...EXTENDED_STANDARD,
+  "shadow-sm": "0 1px 3px rgb(0 0 0 / 0.08)",
+  "shadow-md": "0 4px 12px rgb(0 0 0 / 0.12)",
+  "shadow-lg": "0 12px 24px rgb(0 0 0 / 0.15)",
+  "btn-padding-x": "1.25rem",
+  "btn-padding-y": "0.625rem",
+  "btn-font-weight": "500",
+  "heading-tracking": "-0.03em",
+  "body-leading": "1.7",
+};
 
 export const THEME_PRESETS: ThemePreset[] = [
   {
@@ -75,6 +150,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".5rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_STANDARD,
     },
     dark: {
       background: "222 30% 10%",
@@ -106,6 +182,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".5rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_STANDARD,
     },
   },
   {
@@ -143,6 +220,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".5rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_STANDARD,
     },
     dark: {
       background: "210 35% 9%",
@@ -174,6 +252,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".5rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_STANDARD,
     },
   },
   {
@@ -211,6 +290,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".625rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_BOLD,
     },
     dark: {
       background: "250 40% 7%",
@@ -242,6 +322,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".625rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_BOLD,
     },
   },
   {
@@ -279,6 +360,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".25rem",
       "font-sans": "'Inter', sans-serif",
       "font-serif": "'Inter', sans-serif",
+      ...EXTENDED_MINIMAL,
     },
     dark: {
       background: "0 0% 5%",
@@ -310,6 +392,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".25rem",
       "font-sans": "'Inter', sans-serif",
       "font-serif": "'Inter', sans-serif",
+      ...EXTENDED_MINIMAL,
     },
   },
   {
@@ -347,6 +430,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".375rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_BOLD,
     },
     dark: {
       background: "0 0% 4%",
@@ -378,6 +462,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".375rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_BOLD,
     },
   },
   {
@@ -415,6 +500,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".5rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_LUXURY,
     },
     dark: {
       background: "25 25% 8%",
@@ -446,6 +532,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".5rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_LUXURY,
     },
   },
   {
@@ -483,6 +570,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".375rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_STANDARD,
     },
     dark: {
       background: "215 28% 8%",
@@ -514,6 +602,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".375rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_STANDARD,
     },
   },
   {
@@ -551,6 +640,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".625rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_ROUNDED,
     },
     dark: {
       background: "224 35% 7%",
@@ -582,6 +672,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".625rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_ROUNDED,
     },
   },
   {
@@ -619,6 +710,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".375rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_LUXURY,
     },
     dark: {
       background: "20 12% 6%",
@@ -650,6 +742,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".375rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_LUXURY,
     },
   },
   {
@@ -687,6 +780,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".5rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_STANDARD,
     },
     dark: {
       background: "175 30% 6%",
@@ -718,6 +812,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".5rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_STANDARD,
     },
   },
   {
@@ -755,6 +850,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".75rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_ROUNDED,
     },
     dark: {
       background: "230 30% 6%",
@@ -786,6 +882,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       radius: ".75rem",
       "font-sans": "'Nunito Sans', sans-serif",
       "font-serif": "'EB Garamond', serif",
+      ...EXTENDED_ROUNDED,
     },
   },
 ];
@@ -794,34 +891,43 @@ export function getPresetById(id: string): ThemePreset | undefined {
   return THEME_PRESETS.find((p) => p.id === id);
 }
 
-export function applyThemeTokens(tokens: ThemeTokens, mode: "light" | "dark") {
-  const root = document.documentElement;
-  const tokenKeys: (keyof ThemeTokens)[] = [
-    "background", "foreground", "border", "card", "card-foreground", "card-border",
-    "popover", "popover-foreground", "popover-border", "primary", "primary-foreground",
-    "secondary", "secondary-foreground", "muted", "muted-foreground", "accent",
-    "accent-foreground", "destructive", "destructive-foreground", "input", "ring",
-    "chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "radius",
-    "font-sans", "font-serif",
-  ];
+export const ALL_TOKEN_KEYS: (keyof ThemeTokens)[] = [
+  "background", "foreground", "border", "card", "card-foreground", "card-border",
+  "popover", "popover-foreground", "popover-border", "primary", "primary-foreground",
+  "secondary", "secondary-foreground", "muted", "muted-foreground", "accent",
+  "accent-foreground", "destructive", "destructive-foreground", "input", "ring",
+  "chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "radius",
+  "font-sans", "font-serif",
+  "shadow-sm", "shadow-md", "shadow-lg",
+  "spacing-xs", "spacing-sm", "spacing-md", "spacing-lg", "spacing-xl",
+  "btn-radius", "btn-padding-x", "btn-padding-y", "btn-font-weight", "btn-text-transform",
+  "heading-weight", "heading-tracking", "body-leading",
+];
 
-  for (const key of tokenKeys) {
-    root.style.setProperty(`--${key}`, tokens[key]);
+export function applyThemeTokens(
+  tokens: ThemeTokens,
+  _mode: "light" | "dark",
+  overrides?: Record<string, string> | null
+) {
+  const root = document.documentElement;
+  for (const key of ALL_TOKEN_KEYS) {
+    const val = overrides?.[key] ?? tokens[key];
+    root.style.setProperty(`--${key}`, val);
   }
 }
 
 export function clearThemeTokens() {
   const root = document.documentElement;
-  const tokenKeys = [
-    "background", "foreground", "border", "card", "card-foreground", "card-border",
-    "popover", "popover-foreground", "popover-border", "primary", "primary-foreground",
-    "secondary", "secondary-foreground", "muted", "muted-foreground", "accent",
-    "accent-foreground", "destructive", "destructive-foreground", "input", "ring",
-    "chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "radius",
-    "font-sans", "font-serif",
-  ];
-
-  for (const key of tokenKeys) {
+  for (const key of ALL_TOKEN_KEYS) {
     root.style.removeProperty(`--${key}`);
   }
+}
+
+export function getPresetListForApi() {
+  return THEME_PRESETS.map((p) => ({
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    preview: p.preview,
+  }));
 }
