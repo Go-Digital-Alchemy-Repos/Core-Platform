@@ -184,7 +184,7 @@ const aboutContent = {
       id: uid(),
       type: "rich-text",
       props: {
-        content: "<p>Founded in 2024 by Adult TCKs who experienced firsthand the challenge of finding culturally competent mental health support, TCK Wellness was born out of a simple yet powerful realization: the people best equipped to help Third Culture Kids are those who understand their experience. Our founders grew up across multiple countries and cultures, navigating the beautiful complexity and unique struggles that come with a globally-mobile childhood.</p>",
+        content: "<p>TCK Wellness was born from the lived experience of growing up between cultures. Our founders — Adult TCKs and mental health advocates — experienced firsthand how difficult it is to find a mental health professional who truly understands what it means to call multiple countries \"home.\" In 2024, they set out to build a bridge between Third Culture Kids and the culturally competent professionals who serve them.</p>",
         alignment: "left",
       },
     },
@@ -201,7 +201,7 @@ const aboutContent = {
       id: uid(),
       type: "rich-text",
       props: {
-        content: "<p>We envision a world where every Third Culture Kid, expat, and globally-mobile individual has access to mental health support that honors their multicultural identity. Our mission is to build the most trusted directory of TCK-informed mental health professionals worldwide — and to create a community that empowers both clients and mental health professionals to thrive.</p>",
+        content: "<p>Our vision is a world where every Third Culture Kid has access to mental health support that honors their multicultural identity. Our mission is to build the most trusted directory of TCK-informed mental health professionals — vetted, accessible, and global — so that no one has to navigate the complexities of cross-cultural life alone.</p>",
         alignment: "left",
       },
     },
@@ -242,6 +242,31 @@ const aboutContent = {
     },
     {
       id: uid(),
+      type: "rich-text",
+      props: {
+        content: "<p>However, significantly smaller numbers get diagnosed. While we can only speculate on why, due to our decades of observations and expertise in the field, we think a large reason is due to lack of accessibility to proper mental health services. <strong>Which is a major driver in why we do what we do!</strong></p>",
+        alignment: "center",
+      },
+    },
+    {
+      id: uid(),
+      type: "section-header",
+      props: {
+        eyebrow: "WHY IT MATTERS",
+        title: "Why TCK Informed?",
+        alignment: "left",
+      },
+    },
+    {
+      id: uid(),
+      type: "rich-text",
+      props: {
+        content: "<p>Traditional therapy models were developed within a single cultural framework. When TCKs bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A TCK-informed mental health professional understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.</p>",
+        alignment: "left",
+      },
+    },
+    {
+      id: uid(),
       type: "section-header",
       props: {
         eyebrow: "OUR VETTING",
@@ -272,6 +297,78 @@ const aboutContent = {
 </ul>
 </div>`,
         alignment: "left",
+      },
+    },
+    {
+      id: uid(),
+      type: "testimonials",
+      props: {
+        title: "Stories from Our Community",
+        items: [
+          {
+            quote:
+              "For the first time, I didn't have to explain what it means to grow up between cultures. My mental health professional just understood.",
+            name: "Sarah M.",
+            role: "Adult TCK",
+            location: "Singapore",
+            avatarUrl:
+              "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces",
+          },
+          {
+            quote:
+              "TCK Wellness connected me with a mental health professional who speaks my language — literally and figuratively. It's been life-changing.",
+            name: "James K.",
+            role: "Expat Parent",
+            location: "Dubai",
+            avatarUrl:
+              "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces",
+          },
+          {
+            quote:
+              "As a mental health professional, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
+            name: "Dr. Amara O.",
+            role: "Licensed Mental Health Professional",
+            location: "Nairobi",
+            avatarUrl:
+              "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&h=100&fit=crop&crop=faces",
+          },
+          {
+            quote:
+              "I struggled for years to find someone who understood repatriation grief. TCK Wellness made it possible in minutes.",
+            name: "Lena T.",
+            role: "TCK & College Student",
+            location: "Germany",
+            avatarUrl:
+              "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=faces",
+          },
+          {
+            quote:
+              "The specialization filters helped me find a mental health professional experienced with military kid transitions. Highly recommend.",
+            name: "Marcus W.",
+            role: "Military TCK",
+            location: "Virginia, USA",
+            avatarUrl:
+              "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces",
+          },
+          {
+            quote:
+              "Finally, a platform that recognizes our unique needs. I feel seen and supported for the first time in therapy.",
+            name: "Priya D.",
+            role: "Cross-Cultural Professional",
+            location: "London",
+            avatarUrl:
+              "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=faces",
+          },
+        ],
+      },
+    },
+    {
+      id: uid(),
+      type: "blog-preview",
+      props: {
+        title: "Featured On",
+        subtitle: "",
+        limit: 3,
       },
     },
     {
@@ -324,38 +421,13 @@ const aboutContent = {
     },
     {
       id: uid(),
-      type: "testimonials",
+      type: "cta",
       props: {
-        title: "Stories from Our Community",
-        items: [
-          {
-            quote:
-              "For the first time, I didn't have to explain what it means to grow up between cultures. My mental health professional just understood.",
-            name: "Sarah M.",
-            role: "Adult TCK",
-            location: "Singapore",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces",
-          },
-          {
-            quote:
-              "As a mental health professional, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
-            name: "Dr. Amara O.",
-            role: "Licensed Mental Health Professional",
-            location: "Nairobi",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&h=100&fit=crop&crop=faces",
-          },
-          {
-            quote:
-              "Finally, a platform that recognizes our unique needs. I feel seen and supported for the first time in therapy.",
-            name: "Priya D.",
-            role: "Cross-Cultural Professional",
-            location: "London",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=faces",
-          },
-        ],
+        heading: "Donate to TCK Wellness",
+        subheading: "Your support helps us maintain this platform, expand our directory, and provide resources to the global TCK community. Every contribution — large or small — makes a difference in connecting TCKs with the care they deserve.",
+        primaryText: "Donate",
+        primaryLink: "/donate",
+        variant: "accent",
       },
     },
     {
@@ -546,6 +618,18 @@ const joinContent = {
         secondaryText: "Learn More",
         secondaryLink: "/about",
         variant: "accent",
+      },
+    },
+    {
+      id: uid(),
+      type: "cta",
+      props: {
+        heading: "Interested in Training but Not a Member?",
+        subheading:
+          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+        primaryText: "Learn More",
+        primaryLink: "/training",
+        variant: "light",
       },
     },
   ],

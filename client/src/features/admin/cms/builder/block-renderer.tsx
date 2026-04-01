@@ -126,14 +126,18 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
         )}
         <div className={`flex flex-wrap gap-3 ${isSplit ? "justify-start" : "justify-center"}`}>
           {str(props.ctaText) && (
-            <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
-              {str(props.ctaText)}
-            </Button>
+            <Link href={str(props.ctaLink) || "#"}>
+              <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90" data-testid="hero-cta-primary">
+                {str(props.ctaText)}
+              </Button>
+            </Link>
           )}
           {str(props.ctaSecondaryText) && (
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
-              {str(props.ctaSecondaryText)}
-            </Button>
+            <Link href={str(props.ctaSecondaryLink) || "#"}>
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10" data-testid="hero-cta-secondary">
+                {str(props.ctaSecondaryText)}
+              </Button>
+            </Link>
           )}
         </div>
       </div>
@@ -212,14 +216,18 @@ function CtaBlock({ props }: { props: Record<string, unknown> }) {
       {str(props.subheading) && <p className={`mb-8 max-w-xl mx-auto ${variant === "light" ? "text-muted-foreground" : "opacity-80"}`}>{str(props.subheading)}</p>}
       <div className="flex flex-wrap gap-3 justify-center">
         {str(props.primaryText) && (
-          <Button size="lg" variant={variant === "dark" ? "secondary" : "default"}>
-            {str(props.primaryText)}
-          </Button>
+          <Link href={str(props.primaryLink) || "#"}>
+            <Button size="lg" variant={variant === "dark" ? "secondary" : "default"} data-testid="cta-primary">
+              {str(props.primaryText)}
+            </Button>
+          </Link>
         )}
         {str(props.secondaryText) && (
-          <Button size="lg" variant="outline">
-            {str(props.secondaryText)}
-          </Button>
+          <Link href={str(props.secondaryLink) || "#"}>
+            <Button size="lg" variant="outline" data-testid="cta-secondary">
+              {str(props.secondaryText)}
+            </Button>
+          </Link>
         )}
       </div>
     </div>
@@ -351,13 +359,15 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
             <p className="text-sm">Upcoming events will appear here</p>
           </div>
         ) : visible.map((e) => (
-          <Card key={e.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-4">
-              <p className="text-xs text-accent font-medium mb-1">{new Date(e.date).toLocaleDateString()}</p>
-              <p className="font-semibold text-sm line-clamp-2">{e.title}</p>
-              <p className="text-xs text-muted-foreground mt-1">{e.isVirtual ? "Virtual" : "In Person"}</p>
-            </CardContent>
-          </Card>
+          <Link key={e.id} href={`/events/${e.id}`}>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" data-testid={`event-preview-${e.id}`}>
+              <CardContent className="pt-4">
+                <p className="text-xs text-accent font-medium mb-1">{new Date(e.date).toLocaleDateString()}</p>
+                <p className="font-semibold text-sm line-clamp-2">{e.title}</p>
+                <p className="text-xs text-muted-foreground mt-1">{e.isVirtual ? "Virtual" : "In Person"}</p>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
     </div>
@@ -381,12 +391,14 @@ function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
             <p className="text-sm">Blog articles will appear here</p>
           </div>
         ) : visible.map((p) => (
-          <Card key={p.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-4">
-              <p className="font-semibold text-sm mb-1 line-clamp-2">{p.title}</p>
-              <p className="text-xs text-muted-foreground line-clamp-3">{p.excerpt}</p>
-            </CardContent>
-          </Card>
+          <Link key={p.id} href={`/insights/${p.slug}`}>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" data-testid={`blog-preview-${p.id}`}>
+              <CardContent className="pt-4">
+                <p className="font-semibold text-sm mb-1 line-clamp-2">{p.title}</p>
+                <p className="text-xs text-muted-foreground line-clamp-3">{p.excerpt}</p>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
     </div>
@@ -402,9 +414,11 @@ function ButtonGroupBlock({ props }: { props: Record<string, unknown> }) {
       {buttons.length === 0 ? (
         <p className="text-muted-foreground text-sm">Add buttons to display here</p>
       ) : buttons.map((btn, i) => (
-        <Button key={i} variant={(btn.variant === "outline" || btn.variant === "secondary" || btn.variant === "ghost" || btn.variant === "destructive") ? btn.variant : "default"} size="lg">
-          {btn.text}
-        </Button>
+        <Link key={i} href={btn.link || "#"}>
+          <Button variant={(btn.variant === "outline" || btn.variant === "secondary" || btn.variant === "ghost" || btn.variant === "destructive") ? btn.variant : "default"} size="lg" data-testid={`button-group-${i}`}>
+            {btn.text}
+          </Button>
+        </Link>
       ))}
     </div>
   );
