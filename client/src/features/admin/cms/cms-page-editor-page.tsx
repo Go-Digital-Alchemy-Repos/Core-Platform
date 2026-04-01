@@ -543,7 +543,6 @@ export default function CmsPageEditorPage() {
                                   <SelectContent>
                                     <SelectItem value="draft">Draft</SelectItem>
                                     <SelectItem value="published">Published</SelectItem>
-                                    <SelectItem value="scheduled">Scheduled</SelectItem>
                                     <SelectItem value="archived">Archived</SelectItem>
                                   </SelectContent>
                                 </Select>
