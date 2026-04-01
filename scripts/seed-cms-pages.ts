@@ -303,7 +303,7 @@ const aboutContent = {
       id: uid(),
       type: "testimonials",
       props: {
-        title: "Stories from Our Community",
+        title: "What Are People Saying?",
         items: [
           {
             quote:
@@ -375,9 +375,7 @@ const aboutContent = {
       id: uid(),
       type: "section-header",
       props: {
-        eyebrow: "FAQ",
-        title: "Frequently Asked Questions",
-        subtitle: "Common questions about TCK Wellness, our directory, and our approach to counseling.",
+        title: "FAQs",
         alignment: "center",
       },
     },
@@ -430,19 +428,6 @@ const aboutContent = {
         variant: "accent",
       },
     },
-    {
-      id: uid(),
-      type: "cta",
-      props: {
-        heading: "Find a Mental Health Professional Who Gets It",
-        subheading: "Browse our directory of vetted mental health professionals with lived cross-cultural experience.",
-        primaryText: "Browse the Directory",
-        primaryLink: "/directory",
-        secondaryText: "Join Our Network",
-        secondaryLink: "/join",
-        variant: "accent",
-      },
-    },
   ],
 };
 
@@ -477,10 +462,7 @@ const joinContent = {
       id: uid(),
       type: "section-header",
       props: {
-        eyebrow: "BENEFITS",
         title: "What Does Membership Include?",
-        subtitle:
-          "Reach the clients who need your unique cross-cultural expertise — and build a practice that reflects your values.",
         alignment: "center",
       },
     },
@@ -517,9 +499,7 @@ const joinContent = {
       id: uid(),
       type: "section-header",
       props: {
-        eyebrow: "THE PROCESS",
-        title: "How Joining Works",
-        subtitle: "Our vetting process ensures quality and trust for clients and mental health professionals alike.",
+        title: "The Application Process",
         alignment: "center",
       },
     },
@@ -555,69 +535,6 @@ const joinContent = {
             description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
           },
         ],
-      },
-    },
-    {
-      id: uid(),
-      type: "section-header",
-      props: {
-        eyebrow: "PRICING",
-        title: "Membership Plans",
-        subtitle:
-          "Choose the plan that fits your practice. Cancel or upgrade at any time.",
-        alignment: "center",
-      },
-    },
-    {
-      id: uid(),
-      type: "rich-text",
-      props: {
-        content: `<div class="grid-cols-3 grid gap-4">
-  <div class="border rounded-lg p-6">
-    <h3 class="text-lg font-semibold mb-1">Basic</h3>
-    <p class="text-3xl font-bold mb-3">$29<span class="text-base font-normal text-muted-foreground">/mo</span></p>
-    <ul class="space-y-1 text-sm text-muted-foreground">
-      <li>✓ Directory listing</li>
-      <li>✓ Basic profile</li>
-      <li>✓ Client connections</li>
-    </ul>
-  </div>
-  <div class="border-2 border-primary rounded-lg p-6 bg-primary/5">
-    <h3 class="text-lg font-semibold mb-1">Professional</h3>
-    <p class="text-3xl font-bold mb-3">$49<span class="text-base font-normal text-muted-foreground">/mo</span></p>
-    <ul class="space-y-1 text-sm text-muted-foreground">
-      <li>✓ Everything in Basic</li>
-      <li>✓ Featured placement</li>
-      <li>✓ Profile analytics</li>
-      <li>✓ Community events</li>
-    </ul>
-  </div>
-  <div class="border rounded-lg p-6">
-    <h3 class="text-lg font-semibold mb-1">Premium</h3>
-    <p class="text-3xl font-bold mb-3">$79<span class="text-base font-normal text-muted-foreground">/mo</span></p>
-    <ul class="space-y-1 text-sm text-muted-foreground">
-      <li>✓ Everything in Professional</li>
-      <li>✓ Priority placement</li>
-      <li>✓ Recording access</li>
-      <li>✓ Dedicated support</li>
-    </ul>
-  </div>
-</div>`,
-        alignment: "left",
-      },
-    },
-    {
-      id: uid(),
-      type: "cta",
-      props: {
-        heading: "Ready to Join?",
-        subheading:
-          "Create your account and start reaching TCKs and cross-cultural families who need your expertise.",
-        primaryText: "Apply Now",
-        primaryLink: "/join#apply",
-        secondaryText: "Learn More",
-        secondaryLink: "/about",
-        variant: "accent",
       },
     },
     {
