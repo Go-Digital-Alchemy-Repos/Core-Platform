@@ -34,6 +34,7 @@ import {
   BookOpen,
   Search,
   ExternalLink,
+  CalendarClock,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { BlogPost } from "@shared/schema";
@@ -70,10 +71,12 @@ export default function CmsBlogPage() {
       p.title.toLowerCase().includes(search.toLowerCase()) ||
       (p.authorName ?? "").toLowerCase().includes(search.toLowerCase()) ||
       (p.category ?? "").toLowerCase().includes(search.toLowerCase());
+    const isScheduled = !p.isPublished && !!p.scheduledAt;
     const matchStatus =
       statusFilter === "all" ||
       (statusFilter === "published" && p.isPublished) ||
-      (statusFilter === "draft" && !p.isPublished);
+      (statusFilter === "scheduled" && isScheduled) ||
+      (statusFilter === "draft" && !p.isPublished && !isScheduled);
     return matchSearch && matchStatus;
   });
 
@@ -115,6 +118,7 @@ export default function CmsBlogPage() {
             <SelectContent>
               <SelectItem value="all">All posts</SelectItem>
               <SelectItem value="published">Published</SelectItem>
+              <SelectItem value="scheduled">Scheduled</SelectItem>
               <SelectItem value="draft">Drafts</SelectItem>
             </SelectContent>
           </Select>
@@ -167,6 +171,11 @@ export default function CmsBlogPage() {
                         <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-xs" data-testid={`badge-published-${post.id}`}>
                           <Eye className="h-3 w-3 mr-1" />
                           Published
+                        </Badge>
+                      ) : post.scheduledAt ? (
+                        <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs" data-testid={`badge-scheduled-${post.id}`}>
+                          <CalendarClock className="h-3 w-3 mr-1" />
+                          Scheduled · {format(new Date(post.scheduledAt), "MMM d, yyyy h:mm a")}
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="text-xs" data-testid={`badge-draft-${post.id}`}>

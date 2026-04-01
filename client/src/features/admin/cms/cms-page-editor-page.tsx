@@ -543,6 +543,9 @@ export default function CmsPageEditorPage() {
                                   <SelectContent>
                                     <SelectItem value="draft">Draft</SelectItem>
                                     <SelectItem value="published">Published</SelectItem>
+                                    {field.value === "scheduled" && (
+                                      <SelectItem value="scheduled" disabled>Scheduled</SelectItem>
+                                    )}
                                     <SelectItem value="archived">Archived</SelectItem>
                                   </SelectContent>
                                 </Select>
