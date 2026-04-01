@@ -35,6 +35,16 @@ router.post(
   "/",
   asyncHandler(async (req, res) => {
     const data = blogPostSchemaWithCoercedDate.parse(req.body);
+    if (data.scheduledAt && data.scheduledAt <= new Date()) {
+      return res.status(400).json({ message: "scheduledAt must be a future date" });
+    }
+    if (data.scheduledAt) {
+      data.isPublished = false;
+      data.publishedAt = null;
+    }
+    if (data.isPublished) {
+      data.scheduledAt = null;
+    }
     const post = await storage.blog.createPost(data);
     res.status(201).json(post);
   })
