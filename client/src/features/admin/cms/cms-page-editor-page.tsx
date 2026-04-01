@@ -50,6 +50,8 @@ import type { CmsPage, CmsPageRevision } from "@shared/schema";
 import { format } from "date-fns";
 import { PageBuilder } from "./builder/page-builder";
 import type { BuilderContent } from "./builder/block-registry";
+import { TemplatePicker } from "./components/template-picker";
+import { LandingPageWizard } from "./components/landing-page-wizard";
 
 const editorSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -96,6 +98,8 @@ export default function CmsPageEditorPage() {
   const slugManuallyEdited = useRef(false);
   const [builderContent, setBuilderContent] = useState<BuilderContent>(EMPTY_CONTENT);
   const [activeTab, setActiveTab] = useState("builder");
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(isNew);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   const { data: page, isLoading: pageLoading } = useQuery<CmsPage>({
     queryKey: ["/api/admin/cms/pages", id],
@@ -688,6 +692,37 @@ export default function CmsPageEditorPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {isNew && (
+        <>
+          <TemplatePicker
+            open={templatePickerOpen}
+            onClose={() => setTemplatePickerOpen(false)}
+            onSelect={(content, templateName) => {
+              setBuilderContent(content);
+              setTemplatePickerOpen(false);
+              if (templateName !== "Blank Page") {
+                toast({ title: `Template "${templateName}" applied` });
+              }
+            }}
+            onOpenWizard={() => setWizardOpen(true)}
+          />
+          <LandingPageWizard
+            open={wizardOpen}
+            onClose={() => setWizardOpen(false)}
+            onCreate={(content, title) => {
+              setBuilderContent(content);
+              form.setValue("title", title);
+              form.setValue("pageType", "landing");
+              if (!slugManuallyEdited.current) {
+                form.setValue("slug", slugify(title));
+              }
+              setWizardOpen(false);
+              toast({ title: "Landing page generated — customize it below" });
+            }}
+          />
+        </>
+      )}
     </AdminSidebar>
   );
 }
