@@ -36,6 +36,13 @@
       "when": 1775005429948,
       "tag": "0004_aromatic_rocket_racer",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1775074383003,
+      "tag": "0005_lazy_stone_men",
+      "breakpoints": true
     }
   ]
 }

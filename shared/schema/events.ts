@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, integer, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer, index, foreignKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -54,6 +54,12 @@ export const events = pgTable("events", {
   parentEventId: varchar("parent_event_id"),
 }, (table) => [
   index("idx_events_date").on(table.date),
+  index("idx_events_status_visibility").on(table.status, table.visibility),
+  foreignKey({
+    columns: [table.parentEventId],
+    foreignColumns: [table.id],
+    name: "events_parent_event_id_events_id_fk",
+  }),
 ]);
 
 export const insertEventSchema = createInsertSchema(events).omit({

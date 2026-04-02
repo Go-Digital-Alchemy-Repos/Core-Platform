@@ -33,6 +33,7 @@ export const directMessages = pgTable("direct_messages", {
 }, (table) => [
   index("idx_dm_conv_date").on(table.conversationId, table.createdAt),
   index("idx_dm_conv_read_sender").on(table.conversationId, table.isRead, table.senderId),
+  index("idx_dm_sender_date").on(table.senderId, table.createdAt),
 ]);
 
 export const insertDirectMessageSchema = createInsertSchema(directMessages).omit({

@@ -45,6 +45,9 @@ export const therapistProfiles = pgTable("therapist_profiles", {
   index("idx_tp_country").on(table.country),
   index("idx_tp_practice_mode").on(table.practiceMode),
   index("idx_tp_featured").on(table.isFeatured),
+  index("idx_tp_specializations_gin").using("gin", table.specializations),
+  index("idx_tp_languages_gin").using("gin", table.languages),
+  index("idx_tp_directory_filter").on(table.isApproved, table.isActive, table.practiceMode, table.acceptingClients),
 ]);
 
 export const insertTherapistProfileSchema = createInsertSchema(therapistProfiles).omit({
