@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import { logger } from "../utils/logger";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -17,12 +18,12 @@ export function enforceRequiredSecrets() {
     .map(([k]) => k);
 
   if (missing.length > 0) {
-    console.error(`FATAL: Missing required secrets in production: ${missing.join(", ")}`);
+    logger.app.error(`FATAL: Missing required secrets in production: ${missing.join(", ")}`);
     process.exit(1);
   }
 
   if (process.env.SESSION_SECRET === "dev-secret-change-me") {
-    console.error("FATAL: SESSION_SECRET must not use the dev default in production");
+    logger.app.error("FATAL: SESSION_SECRET must not use the dev default in production");
     process.exit(1);
   }
 }

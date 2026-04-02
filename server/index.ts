@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 import path from "path";
+import { createRequire } from "module";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -12,7 +13,11 @@ import {
   originCheck,
 } from "./middleware/security";
 import { logger, requestIdMiddleware } from "./utils/logger";
+import { recordRequest, getMetricsSnapshot } from "./utils/metrics";
 import { startScheduledPublishService } from "./services/scheduled-publish.service";
+
+const require = createRequire(import.meta.url);
+const pkgVersion: string = (require("../package.json") as { version: string }).version;
 
 enforceRequiredSecrets();
 
@@ -35,7 +40,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
     await WebhookHandlers.processWebhook(req.body, signature);
     res.json({ received: true });
   } catch (err) {
-    logger.stripe.error("Webhook endpoint error", err, { reqId: req.requestId });
+    logger.stripe.error("Webhook endpoint error", err, { requestId: req.requestId });
     res.status(400).json({ error: "Webhook processing failed" });
   }
 });
@@ -53,9 +58,18 @@ app.use(express.urlencoded({ extended: false, limit: "1mb" }));
 app.use(cookieParser());
 
 app.get("/api/health", (_req, res) => {
+  const mem = process.memoryUsage();
   res.json({
     status: "ok",
+    version: pkgVersion,
+    nodeVersion: process.version,
     uptime: Math.floor(process.uptime()),
+    memory: {
+      rss: Math.round(mem.rss / 1024 / 1024),
+      heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
+      heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
+      external: Math.round(mem.external / 1024 / 1024),
+    },
     timestamp: new Date().toISOString(),
   });
 });
@@ -81,18 +95,30 @@ app.get("/api/health/ready", async (_req, res) => {
   }
 });
 
+app.get("/api/health/metrics", (req, res) => {
+  if (process.env.NODE_ENV === "production" && process.env.METRICS_ENABLED !== "true") {
+    return res.status(404).json({ message: "Not found" });
+  }
+  res.json(getMetricsSnapshot());
+});
+
 app.use("/api", apiLimiter);
 app.use(originCheck);
 
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
-const SENSITIVE_PATHS = ["/api/auth/login", "/api/auth/register", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/change-password"];
-const REDACTED_KEYS = ["password", "currentPassword", "newPassword", "token", "resetToken", "secret", "authorization"];
+const REDACTED_KEYS = [
+  "password", "currentPassword", "newPassword",
+  "token", "resetToken", "secret", "authorization",
+  "email", "phone", "address", "addressLine1", "addressLine2",
+  "refereeEmail", "refereePhone", "ssn", "dateOfBirth",
+  "secureToken",
+];
 const MAX_LOG_BODY_LENGTH = 500;
 
 function redactSensitive(obj: any): any {
   if (!obj || typeof obj !== "object") return obj;
-  if (Array.isArray(obj)) return "[Array]";
+  if (Array.isArray(obj)) return obj.map((item) => redactSensitive(item));
   const redacted: Record<string, any> = {};
   for (const key of Object.keys(obj)) {
     if (REDACTED_KEYS.some((rk) => key.toLowerCase().includes(rk.toLowerCase()))) {
@@ -100,6 +126,8 @@ function redactSensitive(obj: any): any {
     } else if (key === "bio" || key === "content" || key === "body" || key === "description") {
       const val = obj[key];
       redacted[key] = typeof val === "string" && val.length > 100 ? val.substring(0, 100) + "..." : val;
+    } else if (typeof obj[key] === "object" && obj[key] !== null) {
+      redacted[key] = redactSensitive(obj[key]);
     } else {
       redacted[key] = obj[key];
     }
@@ -128,18 +156,19 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (reqPath.startsWith("/api")) {
-      let bodyStr = "";
+      recordRequest(req.method, reqPath, duration, res.statusCode);
 
+      let bodyStr = "";
       if (capturedJsonResponse) {
-        if (SENSITIVE_PATHS.some((sp) => reqPath.startsWith(sp))) {
-          bodyStr = truncateBody(JSON.stringify(redactSensitive(capturedJsonResponse)));
-        } else {
-          bodyStr = truncateBody(JSON.stringify(capturedJsonResponse));
-        }
+        bodyStr = truncateBody(JSON.stringify(redactSensitive(capturedJsonResponse)));
       }
 
       logger.http.info(`${req.method} ${reqPath} ${res.statusCode} ${duration}ms`, {
-        reqId: req.requestId,
+        requestId: req.requestId,
+        method: req.method,
+        path: reqPath,
+        statusCode: res.statusCode,
+        durationMs: duration,
         ...(bodyStr ? { body: bodyStr } : {}),
       });
     }
@@ -159,7 +188,12 @@ app.use((req, res, next) => {
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
 
-    logger.app.error(`${req.method} ${req.path} ${status}`, err, { reqId: req.requestId });
+    logger.app.error(`${req.method} ${req.path} ${status}`, err, {
+      requestId: req.requestId,
+      method: req.method,
+      path: req.path,
+      statusCode: status,
+    });
 
     if (res.headersSent) {
       return next(err);

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { storage } from "../../storage";
 import { paramString } from "../../utils/params";
 import { MENU_LOCATIONS, menuItemSchema } from "@shared/schema";
+import { logger } from "../../utils/logger";
 
 const router = Router();
 
@@ -22,12 +23,12 @@ function validateDepth(items: z.infer<typeof menuItemSchema>[], depth = 1): bool
   return true;
 }
 
-router.get("/menus", async (_req, res) => {
+router.get("/menus", async (req, res) => {
   try {
     const menus = await storage.cmsMenus.getAll();
     res.json(menus);
   } catch (error) {
-    console.error("[cms-menus] Failed to fetch menus:", error);
+    logger.cms.error("Failed to fetch menus", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to fetch menus" });
   }
 });
@@ -39,7 +40,7 @@ router.get("/menus/:id", async (req, res) => {
     if (!menu) return res.status(404).json({ error: "Menu not found" });
     res.json(menu);
   } catch (error) {
-    console.error("[cms-menus] Failed to fetch menu:", error);
+    logger.cms.error("Failed to fetch menu", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to fetch menu" });
   }
 });
@@ -63,7 +64,7 @@ router.post("/menus", async (req, res) => {
     const menu = await storage.cmsMenus.create(data);
     res.status(201).json(menu);
   } catch (error) {
-    console.error("[cms-menus] Failed to create menu:", error);
+    logger.cms.error("Failed to create menu", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to create menu" });
   }
 });
@@ -91,7 +92,7 @@ router.put("/menus/:id", async (req, res) => {
     const updated = await storage.cmsMenus.update(id, data);
     res.json(updated);
   } catch (error) {
-    console.error("[cms-menus] Failed to update menu:", error);
+    logger.cms.error("Failed to update menu", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to update menu" });
   }
 });
@@ -104,7 +105,7 @@ router.delete("/menus/:id", async (req, res) => {
     await storage.cmsMenus.delete(id);
     res.json({ success: true });
   } catch (error) {
-    console.error("[cms-menus] Failed to delete menu:", error);
+    logger.cms.error("Failed to delete menu", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to delete menu" });
   }
 });

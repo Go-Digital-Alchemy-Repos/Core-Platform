@@ -66,7 +66,8 @@ TCK Wellness is a platform designed to connect Third Culture Kids (TCKs) with sp
 ### System Design Choices
 - **Modular File Structure**: Backend organized by concern, frontend by feature.
 - **Separation of Concerns**: Clear distinction between frontend and backend via API endpoints.
-- **Structured Logging**: Implements a structured logger with named sources and request IDs.
+- **Structured Logging**: Pino-based structured JSON logger with named child loggers (http, email, r2, stripe, auth, app, db, cms, metrics). Pretty-printed in dev, raw JSON in production. PII fields (email, phone, address, SSN, dateOfBirth, refereeEmail, refereePhone) are automatically redacted from all logged response bodies. Full UUID request IDs propagated via `X-Request-Id` header. Production 5xx errors return generic messages without leaking internals.
+- **Operational Metrics**: In-memory request count/latency by route, error counts by status, DB query timing, and email send outcomes exposed at `GET /api/health/metrics`. Health endpoint enhanced with app version, Node version, and memory stats.
 - **Performance Optimization**: Frontend route-level lazy loading and strategic React Query cache configuration.
 - **Database Indexing & FK Constraints**: Extensive B-tree and GIN indexes, and foreign key constraints.
 - **CMS Content Structure**: Block content stored as JSON, supporting typed block definitions.

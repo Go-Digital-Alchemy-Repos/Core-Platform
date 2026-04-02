@@ -3,6 +3,7 @@ import { z } from "zod";
 import { storage } from "../../storage";
 import { paramString } from "../../utils/params";
 import { insertCmsPageSchema } from "@shared/schema";
+import { logger } from "../../utils/logger";
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.get("/pages", async (req, res) => {
     const pages = await storage.cmsPages.getAllPages();
     res.json(pages);
   } catch (error) {
-    console.error("[cms] Failed to fetch pages:", error);
+    logger.cms.error("Failed to fetch pages", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to fetch CMS pages" });
   }
 });
@@ -72,7 +73,7 @@ router.post("/pages", async (req, res) => {
 
     res.status(201).json(page);
   } catch (error) {
-    console.error("[cms] Failed to create page:", error);
+    logger.cms.error("Failed to create page", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to create CMS page" });
   }
 });
@@ -84,7 +85,7 @@ router.get("/pages/:id", async (req, res) => {
     if (!page) return res.status(404).json({ error: "Page not found" });
     res.json(page);
   } catch (error) {
-    console.error("[cms] Failed to fetch page:", error);
+    logger.cms.error("Failed to fetch page", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to fetch CMS page" });
   }
 });
@@ -126,7 +127,7 @@ router.put("/pages/:id", async (req, res) => {
     const updated = await storage.cmsPages.updatePage(id, { ...data, updatedBy: adminId });
     res.json(updated);
   } catch (error) {
-    console.error("[cms] Failed to update page:", error);
+    logger.cms.error("Failed to update page", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to update CMS page" });
   }
 });
@@ -145,7 +146,7 @@ router.delete("/pages/:id", async (req, res) => {
     await storage.cmsPages.deletePage(id);
     res.json({ success: true });
   } catch (error) {
-    console.error("[cms] Failed to delete page:", error);
+    logger.cms.error("Failed to delete page", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to delete CMS page" });
   }
 });
@@ -158,7 +159,7 @@ router.post("/pages/:id/publish", async (req, res) => {
     if (!page) return res.status(404).json({ error: "Page not found" });
     res.json(page);
   } catch (error) {
-    console.error("[cms] Failed to publish page:", error);
+    logger.cms.error("Failed to publish page", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to publish CMS page" });
   }
 });
@@ -179,7 +180,7 @@ router.post("/pages/:id/schedule", async (req, res) => {
     if (!page) return res.status(404).json({ error: "Page not found" });
     res.json(page);
   } catch (error) {
-    console.error("[cms] Failed to schedule page:", error);
+    logger.cms.error("Failed to schedule page", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to schedule CMS page" });
   }
 });
@@ -192,7 +193,7 @@ router.post("/pages/:id/unpublish", async (req, res) => {
     if (!page) return res.status(404).json({ error: "Page not found" });
     res.json(page);
   } catch (error) {
-    console.error("[cms] Failed to unpublish page:", error);
+    logger.cms.error("Failed to unpublish page", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to unpublish CMS page" });
   }
 });
@@ -205,7 +206,7 @@ router.get("/pages/:id/revisions", async (req, res) => {
     const revisions = await storage.cmsPageRevisions.getRevisions(id);
     res.json(revisions);
   } catch (error) {
-    console.error("[cms] Failed to fetch revisions:", error);
+    logger.cms.error("Failed to fetch revisions", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to fetch revisions" });
   }
 });
@@ -250,7 +251,7 @@ router.post("/pages/:pageId/revisions/:revisionId/restore", async (req, res) => 
 
     res.json(restored);
   } catch (error) {
-    console.error("[cms] Failed to restore revision:", error);
+    logger.cms.error("Failed to restore revision", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to restore revision" });
   }
 });

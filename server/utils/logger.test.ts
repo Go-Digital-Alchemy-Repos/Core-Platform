@@ -1,29 +1,86 @@
-import { describe, it, expect } from "vitest";
-import { formatEntry } from "./logger";
+import { describe, it, expect, vi } from "vitest";
+import { logger, requestIdMiddleware, requestContext } from "./logger";
 
-describe("formatEntry", () => {
-  it("includes timestamp, level, source, and message", () => {
-    const output = formatEntry({ level: "info", source: "test", msg: "hello world" });
-    expect(output).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(output).toContain("[INFO]");
-    expect(output).toContain("[test]");
-    expect(output).toContain("hello world");
+describe("logger", () => {
+  it("exposes named child loggers with info/warn/error methods", () => {
+    const sources = ["http", "email", "r2", "stripe", "auth", "app", "db", "cms", "metrics"] as const;
+    for (const src of sources) {
+      expect(logger[src]).toBeDefined();
+      expect(typeof logger[src].info).toBe("function");
+      expect(typeof logger[src].warn).toBe("function");
+      expect(typeof logger[src].error).toBe("function");
+    }
   });
 
-  it("uppercases the level", () => {
-    const output = formatEntry({ level: "error", source: "app", msg: "fail" });
-    expect(output).toContain("[ERROR]");
+  it("info does not throw", () => {
+    expect(() => logger.app.info("test message")).not.toThrow();
   });
 
-  it("appends extra context as JSON", () => {
-    const output = formatEntry({ level: "warn", source: "db", msg: "slow", duration: 1500 });
-    expect(output).toContain("[WARN]");
-    expect(output).toContain('"duration":1500');
+  it("error handles Error objects without throwing", () => {
+    expect(() => logger.app.error("fail", new Error("boom"))).not.toThrow();
   });
 
-  it("omits context string when no extra fields exist", () => {
-    const output = formatEntry({ level: "info", source: "http", msg: "ok" });
-    const afterMsg = output.split("ok")[1];
-    expect(afterMsg?.trim()).toBe("");
+  it("error handles non-Error values without throwing", () => {
+    expect(() => logger.app.error("fail", "string error")).not.toThrow();
+  });
+});
+
+describe("requestIdMiddleware", () => {
+  it("assigns a UUID requestId and sets X-Request-Id header", () => {
+    const req: any = { headers: {} };
+    const setHeader = vi.fn();
+    const res: any = { setHeader };
+    const next = vi.fn();
+
+    requestIdMiddleware(req, res, next);
+
+    expect(req.requestId).toBeDefined();
+    expect(req.requestId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(setHeader).toHaveBeenCalledWith("X-Request-Id", req.requestId);
+    expect(next).toHaveBeenCalled();
+  });
+
+  it("accepts an incoming X-Request-Id header", () => {
+    const incomingId = "custom-request-id-123";
+    const req: any = { headers: { "x-request-id": incomingId } };
+    const setHeader = vi.fn();
+    const res: any = { setHeader };
+    const next = vi.fn();
+
+    requestIdMiddleware(req, res, next);
+
+    expect(req.requestId).toBe(incomingId);
+    expect(setHeader).toHaveBeenCalledWith("X-Request-Id", incomingId);
+  });
+});
+
+describe("requestContext (AsyncLocalStorage)", () => {
+  it("propagates requestId to logger calls within context", () => {
+    const testId = "test-request-id-abc";
+    let capturedId: string | undefined;
+
+    requestContext.run({ requestId: testId }, () => {
+      capturedId = requestContext.getStore()?.requestId;
+    });
+
+    expect(capturedId).toBe(testId);
+  });
+
+  it("returns undefined outside of request context", () => {
+    expect(requestContext.getStore()).toBeUndefined();
+  });
+
+  it("middleware sets up AsyncLocalStorage context for downstream code", () => {
+    const req: any = { headers: {} };
+    const setHeader = vi.fn();
+    const res: any = { setHeader };
+    let contextId: string | undefined;
+
+    requestIdMiddleware(req, res, () => {
+      contextId = requestContext.getStore()?.requestId;
+    });
+
+    expect(contextId).toBe(req.requestId);
+    expect(contextId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
 });

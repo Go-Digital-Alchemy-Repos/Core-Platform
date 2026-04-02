@@ -1,53 +1,74 @@
+import pino from "pino";
+import { AsyncLocalStorage } from "async_hooks";
 import { randomUUID } from "crypto";
 import type { Request, Response, NextFunction } from "express";
 
-export type LogLevel = "info" | "warn" | "error";
+const isProduction = process.env.NODE_ENV === "production";
 
-interface LogEntry {
-  level: LogLevel;
-  source: string;
-  msg: string;
-  [key: string]: unknown;
+const baseLogger = pino({
+  level: process.env.LOG_LEVEL || "info",
+  ...(isProduction
+    ? {}
+    : {
+        transport: {
+          target: "pino-pretty",
+          options: {
+            colorize: true,
+            translateTime: "SYS:yyyy-mm-dd HH:MM:ss.l",
+            ignore: "pid,hostname",
+          },
+        },
+      }),
+});
+
+interface RequestContext {
+  requestId: string;
 }
 
-export function formatEntry(entry: LogEntry): string {
-  const ts = new Date().toISOString();
-  const { level, source, msg, ...ctx } = entry;
-  const ctxStr = Object.keys(ctx).length > 0
-    ? " " + JSON.stringify(ctx)
-    : "";
-  return `${ts} [${level.toUpperCase()}] [${source}] ${msg}${ctxStr}`;
+export const requestContext = new AsyncLocalStorage<RequestContext>();
+
+function getRequestId(): string | undefined {
+  return requestContext.getStore()?.requestId;
 }
 
-function createLogger(source: string) {
+function createChildLogger(source: string) {
+  const child = baseLogger.child({ source });
   return {
     info(msg: string, ctx?: Record<string, unknown>) {
-      console.log(formatEntry({ level: "info", source, msg, ...ctx }));
+      const requestId = getRequestId();
+      child.info({ ...(requestId ? { requestId } : {}), ...ctx }, msg);
     },
     warn(msg: string, ctx?: Record<string, unknown>) {
-      console.warn(formatEntry({ level: "warn", source, msg, ...ctx }));
+      const requestId = getRequestId();
+      child.warn({ ...(requestId ? { requestId } : {}), ...ctx }, msg);
     },
     error(msg: string, err?: unknown, ctx?: Record<string, unknown>) {
-      const errorInfo: Record<string, unknown> = { ...ctx };
+      const requestId = getRequestId();
+      const errorInfo: Record<string, unknown> = {
+        ...(requestId ? { requestId } : {}),
+        ...ctx,
+      };
       if (err instanceof Error) {
         errorInfo.error = err.message;
-        if (err.stack) errorInfo.stack = err.stack.split("\n").slice(0, 3).join(" | ");
+        if (err.stack) errorInfo.stack = err.stack.split("\n").slice(0, 5).join(" | ");
       } else if (err) {
         errorInfo.error = String(err);
       }
-      console.error(formatEntry({ level: "error", source, msg, ...errorInfo }));
+      child.error(errorInfo, msg);
     },
   };
 }
 
 export const logger = {
-  http: createLogger("http"),
-  email: createLogger("email"),
-  r2: createLogger("r2"),
-  stripe: createLogger("stripe"),
-  auth: createLogger("auth"),
-  app: createLogger("app"),
-  db: createLogger("db"),
+  http: createChildLogger("http"),
+  email: createChildLogger("email"),
+  r2: createChildLogger("r2"),
+  stripe: createChildLogger("stripe"),
+  auth: createChildLogger("auth"),
+  app: createChildLogger("app"),
+  db: createChildLogger("db"),
+  cms: createChildLogger("cms"),
+  metrics: createChildLogger("metrics"),
 };
 
 declare global {
@@ -58,7 +79,11 @@ declare global {
   }
 }
 
-export function requestIdMiddleware(req: Request, _res: Response, next: NextFunction) {
-  req.requestId = randomUUID().slice(0, 8);
-  next();
+export function requestIdMiddleware(req: Request, res: Response, next: NextFunction) {
+  const id = req.headers["x-request-id"] as string || randomUUID();
+  req.requestId = id;
+  res.setHeader("X-Request-Id", id);
+  requestContext.run({ requestId: id }, () => {
+    next();
+  });
 }

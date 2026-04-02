@@ -157,12 +157,21 @@ export async function sendEmail(
   subject: string,
   html: string
 ): Promise<boolean> {
+  const { recordEmailOutcome } = await import("../utils/metrics");
+
   const mailgunSent = await sendViaMailgun(to, subject, html);
-  if (mailgunSent) return true;
+  if (mailgunSent) {
+    recordEmailOutcome(true);
+    return true;
+  }
 
   const smtpSent = await sendViaSmtp(to, subject, html);
-  if (smtpSent) return true;
+  if (smtpSent) {
+    recordEmailOutcome(true);
+    return true;
+  }
 
+  recordEmailOutcome(false);
   logger.email.warn("No email provider configured", { to, subject });
   return false;
 }
