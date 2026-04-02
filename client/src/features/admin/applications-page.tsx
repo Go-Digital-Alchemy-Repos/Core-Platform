@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { STALE_TIMES } from "@/lib/queryClient";
 import { Link } from "wouter";
 import { ClipboardList, Eye, Loader2, Search, Filter } from "lucide-react";
 import { AdminSidebar } from "./admin-sidebar";
@@ -51,10 +52,14 @@ export default function AdminApplicationsPage() {
 
   const { data: applications, isLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/applications"],
+    staleTime: STALE_TIMES.LIVE,
+    refetchOnWindowFocus: true,
   });
 
   const { data: stats } = useQuery<Record<string, number>>({
     queryKey: ["/api/admin/applications/stats"],
+    staleTime: STALE_TIMES.LIVE,
+    refetchOnWindowFocus: true,
   });
 
   const totalApps = applications?.length ?? 0;

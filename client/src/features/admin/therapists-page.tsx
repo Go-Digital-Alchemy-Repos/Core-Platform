@@ -9,7 +9,7 @@ import { z } from "zod";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import { AdminSidebar } from "./admin-sidebar";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, STALE_TIMES } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { LANGUAGES, ALL_LANGUAGES, PracticeMode } from "@shared/types";
 import { useSpecializations } from "@/hooks/use-specializations";
@@ -188,6 +188,8 @@ function TherapistsContent() {
 
   const { data: therapists, isLoading } = useQuery<TherapistWithUser[]>({
     queryKey: ["/api/admin/therapists"],
+    staleTime: STALE_TIMES.OPERATIONAL,
+    refetchOnWindowFocus: true,
   });
 
   const invalidateAll = () => {

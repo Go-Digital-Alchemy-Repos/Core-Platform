@@ -123,11 +123,15 @@ function DashboardContent() {
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/admin/dashboard-stats"],
     staleTime: STALE_TIMES.LIVE,
+    refetchOnWindowFocus: true,
+    refetchInterval: 60_000,
   });
 
   const { data: analytics, isLoading: analyticsLoading } = useQuery<AnalyticsData>({
     queryKey: ["/api/admin/dashboard-analytics"],
     staleTime: STALE_TIMES.LIVE,
+    refetchOnWindowFocus: true,
+    refetchInterval: 60_000,
   });
 
   if (statsLoading || analyticsLoading) {

@@ -72,7 +72,8 @@ function BlogContent() {
 
   const { data: posts, isLoading } = useQuery<BlogPost[]>({
     queryKey: ["/api/admin/blog"],
-    staleTime: STALE_TIMES.LIVE,
+    staleTime: STALE_TIMES.OPERATIONAL,
+    refetchOnWindowFocus: true,
   });
 
   const createMutation = useMutation({

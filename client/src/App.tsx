@@ -9,17 +9,17 @@ import { ProtectedRoute } from "@/components/shared/protected-route";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
 
-import HomePage from "@/features/public/home-page";
-import AboutPage from "@/features/public/about-page";
-import ContactPage from "@/features/public/contact-page";
-import EventsPage from "@/features/public/events-page";
+const HomePage = lazy(() => import("@/features/public/home-page"));
+const AboutPage = lazy(() => import("@/features/public/about-page"));
+const ContactPage = lazy(() => import("@/features/public/contact-page"));
+const EventsPage = lazy(() => import("@/features/public/events-page"));
 const EventDetailPage = lazy(() => import("@/features/public/event-detail-page"));
-import JoinNetworkPage from "@/features/public/join-network-page";
+const JoinNetworkPage = lazy(() => import("@/features/public/join-network-page"));
 import { CmsHybridPage } from "@/features/public/cms-hybrid-page";
 
-import LoginPage from "@/features/auth/login-page";
-import RegisterPage from "@/features/auth/register-page";
-import ResetPasswordPage from "@/features/auth/reset-password-page";
+const LoginPage = lazy(() => import("@/features/auth/login-page"));
+const RegisterPage = lazy(() => import("@/features/auth/register-page"));
+const ResetPasswordPage = lazy(() => import("@/features/auth/reset-password-page"));
 const AdminSetupPage = lazy(() => import("@/features/auth/admin-setup-page"));
 
 const DirectoryPage = lazy(() => import("@/features/directory/directory-page"));

@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import { AdminSidebar } from "./admin-sidebar";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, STALE_TIMES } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
   Table,
@@ -94,6 +94,8 @@ function UsersContent() {
 
   const { data: users, isLoading } = useQuery<SafeUser[]>({
     queryKey: ["/api/admin/users"],
+    staleTime: STALE_TIMES.OPERATIONAL,
+    refetchOnWindowFocus: true,
   });
 
   const filtered = users?.filter((u) => {
