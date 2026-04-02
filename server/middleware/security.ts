@@ -29,7 +29,41 @@ export function enforceRequiredSecrets() {
 
 export function securityHeaders(): RequestHandler {
   return helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "https://js.stripe.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        imgSrc: [
+          "'self'",
+          "data:",
+          "blob:",
+          "https://*.r2.cloudflarestorage.com",
+          "https://*.r2.dev",
+          "https://*.tile.openstreetmap.org",
+          "https://unpkg.com",
+        ],
+        connectSrc: [
+          "'self'",
+          "https://api.stripe.com",
+          "https://*.r2.cloudflarestorage.com",
+          "https://*.r2.dev",
+          "https://*.tile.openstreetmap.org",
+        ],
+        frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        mediaSrc: [
+          "'self'",
+          "blob:",
+          "https://*.r2.cloudflarestorage.com",
+          "https://*.r2.dev",
+        ],
+        workerSrc: ["'self'", "blob:"],
+      },
+    },
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: { policy: "cross-origin" },
   }) as unknown as RequestHandler;

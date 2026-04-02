@@ -44,7 +44,7 @@ router.post(
 
     const existing = await storage.users.getUserByEmail(email);
     if (existing) {
-      res.status(409).json({ message: "Email already registered" });
+      res.status(409).json({ message: "Unable to complete registration. Please try a different email or log in to your existing account." });
       return;
     }
 
