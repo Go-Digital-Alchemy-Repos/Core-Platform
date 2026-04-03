@@ -2,17 +2,22 @@ import { Router } from "express";
 import { storage } from "../storage/index";
 import { authenticateToken, requireRole } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
-import { getUncachableStripeClient } from "../config/stripe";
-import { logger } from "../utils/logger";
-import { sendReferenceRequestEmail } from "../services/email.service";
-import { createBackgroundCheckRecord } from "../services/background-check.service";
+import {
+  getFullApplication,
+  sanitizeReferencesForApplicant,
+  sanitizeBackgroundCheckForApplicant,
+  createApplication,
+  autosaveApplication,
+  createPaymentSession,
+  confirmPayment,
+  submitApplication,
+  withdrawApplication,
+  ServiceError,
+} from "../services/application.service";
 
 function paramStr(val: string | string[] | undefined): string {
   return Array.isArray(val) ? val[0] : (val ?? "");
 }
-
-const APPLICATION_FEE_CENTS = 15000;
-const REFUND_ELIGIBLE_CENTS = 10000;
 
 const router = Router();
 
@@ -28,41 +33,15 @@ router.get(
       return;
     }
 
-    const [timeline, credentials, references, backgroundCheck, interview, decision] = await Promise.all([
-      storage.applications.getTimeline(application.id),
-      storage.applications.getCredentials(application.id),
-      storage.applications.getReferences(application.id),
-      storage.applications.getBackgroundCheck(application.id),
-      storage.applications.getInterview(application.id),
-      storage.applications.getDecision(application.id),
-    ]);
-
-    const sanitizedReferences = references.map((r) => ({
-      id: r.id,
-      refereeName: r.refereeName,
-      refereeEmail: r.refereeEmail,
-      refereePhone: r.refereePhone,
-      relationship: r.relationship,
-      status: r.status,
-      emailSentAt: r.emailSentAt,
-      createdAt: r.createdAt,
-    }));
-
-    const sanitizedBgCheck = backgroundCheck ? {
-      id: backgroundCheck.id,
-      status: backgroundCheck.status,
-      providerFacingLabel: backgroundCheck.providerFacingLabel,
-      requestedAt: backgroundCheck.requestedAt,
-      completedAt: backgroundCheck.completedAt,
-      createdAt: backgroundCheck.createdAt,
-    } : null;
+    const { timeline, credentials, references, backgroundCheck, interview, decision } =
+      await getFullApplication(application.id);
 
     res.json({
       ...application,
       timeline,
       credentials,
-      references: sanitizedReferences,
-      backgroundCheck: sanitizedBgCheck,
+      references: sanitizeReferencesForApplicant(references),
+      backgroundCheck: sanitizeBackgroundCheckForApplicant(backgroundCheck),
       interview,
       decision,
     });
@@ -72,368 +51,77 @@ router.get(
 router.post(
   "/",
   asyncHandler(async (req, res) => {
-    const existing = await storage.applications.getByUserId(req.user!.id);
-    if (existing && !["denied", "withdrawn"].includes(existing.status)) {
-      res.status(400).json({ message: "You already have an active application" });
+    const result = await createApplication(req.user!.id);
+    if (!result.success) {
+      res.status(400).json({ message: result.error });
       return;
     }
-
-    const application = await storage.applications.create({
-      userId: req.user!.id,
-      status: "draft",
-    });
-
-    await storage.applications.addTimelineEntry({
-      applicationId: application.id,
-      action: "application_created",
-      toStatus: "draft",
-      performedBy: req.user!.id,
-    });
-
-    res.status(201).json(application);
+    res.status(201).json(result.application);
   })
 );
 
 router.patch(
   "/autosave",
   asyncHandler(async (req, res) => {
-    const application = await storage.applications.getByUserId(req.user!.id);
-    if (!application) {
-      res.status(404).json({ message: "Application not found" });
-      return;
-    }
-
-    if (application.status !== "draft") {
-      res.status(400).json({ message: "Cannot edit a submitted application" });
-      return;
-    }
-
     const { formData, currentStep } = req.body;
-    const updateData: Record<string, unknown> = {};
-    if (formData !== undefined && typeof formData === "object" && formData !== null) {
-      updateData.formData = formData;
-    }
-    if (currentStep !== undefined && typeof currentStep === "number" && currentStep >= 0 && currentStep <= 6) {
-      updateData.currentStep = currentStep;
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      res.status(400).json({ message: "No valid fields to update" });
+    const result = await autosaveApplication(req.user!.id, formData, currentStep);
+    if (!result.success) {
+      res.status(result.status!).json({ message: result.error });
       return;
     }
-
-    const updated = await storage.applications.update(application.id, updateData as any);
-    res.json(updated);
+    res.json(result.application);
   })
 );
 
 router.post(
   "/create-payment-session",
   asyncHandler(async (req, res) => {
-    const application = await storage.applications.getByUserId(req.user!.id);
-    if (!application) {
-      res.status(404).json({ message: "Application not found" });
+    const result = await createPaymentSession(req.user!.id, req.user!.email, req.hostname);
+    if ("error" in result && result.error) {
+      res.status((result as { status: number }).status).json({ message: result.error });
       return;
     }
-
-    if (application.status !== "draft") {
-      res.status(400).json({ message: "Application has already been submitted" });
-      return;
-    }
-
-    if (application.paymentStatus === "paid") {
-      res.status(400).json({ message: "Application fee has already been paid" });
-      return;
-    }
-
-    const credentials = await storage.applications.getCredentials(application.id);
-    if (credentials.length === 0) {
-      res.status(400).json({ message: "At least one credential is required" });
-      return;
-    }
-
-    const references = await storage.applications.getReferences(application.id);
-    if (references.length < 3) {
-      res.status(400).json({ message: "Three professional references are required" });
-      return;
-    }
-
-    const formData = (application as any).formData as Record<string, any> || {};
-    if (!formData.termsAccepted || !formData.termsSignature) {
-      res.status(400).json({ message: "Terms and conditions must be accepted and signed" });
-      return;
-    }
-
-    if (application.stripeCheckoutSessionId) {
-      try {
-        const stripe = await getUncachableStripeClient();
-        const existingSession = await stripe.checkout.sessions.retrieve(application.stripeCheckoutSessionId);
-        if (existingSession.status === "open") {
-          res.json({ url: existingSession.url });
-          return;
-        }
-      } catch (err) {
-        logger.stripe.warn("Previous checkout session not found, creating new one");
-      }
-    }
-
-    const stripe = await getUncachableStripeClient();
-    const user = req.user!;
-    const host = process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || req.hostname}`;
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "TCK Wellness — Counselor Application Fee",
-              description: "$50 non-refundable processing fee + $100 refundable deposit",
-            },
-            unit_amount: APPLICATION_FEE_CENTS,
-          },
-          quantity: 1,
-        },
-      ],
-      success_url: `${host}/therapist/apply?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${host}/therapist/apply?payment=canceled`,
-      metadata: {
-        applicationId: application.id,
-        userId: user.id,
-        type: "application_fee",
-      },
-      customer_email: user.email,
-    });
-
-    await storage.applications.update(application.id, {
-      stripeCheckoutSessionId: session.id,
-      paymentStatus: "pending",
-    } as any);
-
-    await storage.applications.addTimelineEntry({
-      applicationId: application.id,
-      action: "payment_initiated",
-      note: "Application fee payment initiated via Stripe",
-      performedBy: req.user!.id,
-    });
-
-    res.json({ url: session.url });
+    res.json({ url: result.url });
   })
 );
 
 router.post(
   "/confirm-payment",
   asyncHandler(async (req, res) => {
-    const application = await storage.applications.getByUserId(req.user!.id);
-    if (!application) {
-      res.status(404).json({ message: "Application not found" });
-      return;
-    }
-
-    if (application.paymentStatus === "paid") {
-      res.json({ paid: true, application });
-      return;
-    }
-
-    if (!application.stripeCheckoutSessionId) {
-      res.status(400).json({ message: "No payment session found" });
-      return;
-    }
-
     try {
-      const stripe = await getUncachableStripeClient();
-      const session = await stripe.checkout.sessions.retrieve(application.stripeCheckoutSessionId);
-
-      if (session.payment_status === "paid") {
-        const updated = await storage.applications.update(application.id, {
-          paymentStatus: "paid",
-          paidAt: new Date(),
-          amountPaid: APPLICATION_FEE_CENTS,
-          refundEligibleAmount: REFUND_ELIGIBLE_CENTS,
-          stripePaymentIntentId: session.payment_intent as string,
-        } as any);
-
-        await storage.applications.addTimelineEntry({
-          applicationId: application.id,
-          action: "payment_completed",
-          note: `Application fee of $${(APPLICATION_FEE_CENTS / 100).toFixed(2)} paid`,
-          performedBy: req.user!.id,
-        });
-
-        res.json({ paid: true, application: updated });
+      const result = await confirmPayment(req.user!.id);
+      res.json(result);
+    } catch (err) {
+      if (err instanceof ServiceError) {
+        res.status(err.statusCode).json({ message: err.message });
         return;
       }
-    } catch (err) {
-      logger.stripe.error("Error confirming application payment", err);
+      throw err;
     }
-
-    res.json({ paid: false });
   })
 );
 
 router.post(
   "/submit",
   asyncHandler(async (req, res) => {
-    const application = await storage.applications.getByUserId(req.user!.id);
-    if (!application) {
-      res.status(404).json({ message: "Application not found" });
+    const result = await submitApplication(req.user!.id);
+    if (!result.success) {
+      res.status(result.statusCode || 400).json({ message: result.error });
       return;
     }
-
-    if (application.status !== "draft") {
-      res.status(400).json({ message: "Application has already been submitted" });
-      return;
-    }
-
-    if (application.paymentStatus !== "paid") {
-      res.status(400).json({ message: "Application fee must be paid before submitting" });
-      return;
-    }
-
-    const credentials = await storage.applications.getCredentials(application.id);
-    if (credentials.length === 0) {
-      res.status(400).json({ message: "At least one credential is required before submitting" });
-      return;
-    }
-
-    const references = await storage.applications.getReferences(application.id);
-    if (references.length < 3) {
-      res.status(400).json({ message: "Exactly three professional references are required before submitting" });
-      return;
-    }
-
-    const formData = (application as any).formData as Record<string, any> || {};
-    if (!formData.termsAccepted || !formData.termsSignature) {
-      res.status(400).json({ message: "Terms and conditions must be accepted and signed" });
-      return;
-    }
-
-    const snapshot = {
-      formData,
-      credentials: credentials.map(c => ({
-        credentialType: c.credentialType,
-        issuer: c.issuer,
-        licenseNumber: c.licenseNumber,
-        stateOrCountry: c.stateOrCountry,
-        middleName: c.middleName,
-        verificationUrl: c.verificationUrl,
-      })),
-      references: references.map(r => ({
-        refereeName: r.refereeName,
-        refereeEmail: r.refereeEmail,
-        relationship: r.relationship,
-      })),
-      submittedAt: new Date().toISOString(),
-    };
-
-    const updated = await storage.applications.update(application.id, {
-      status: "submitted",
-      submittedAt: new Date(),
-      submittedSnapshot: snapshot,
-    } as any);
-
-    await storage.applications.addTimelineEntry({
-      applicationId: application.id,
-      action: "application_submitted",
-      fromStatus: "draft",
-      toStatus: "submitted",
-      performedBy: req.user!.id,
-    });
-
-    await storage.activity.log(req.user!.id, "application_submitted", "Provider application submitted");
-
-    const applicantName = formData.fullName || "the applicant";
-    const baseUrl = process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "localhost:5000"}`;
-
-    for (const ref of references) {
-      try {
-        const token = ref.secureToken || (await import("crypto")).randomBytes(48).toString("hex");
-        if (!ref.secureToken) {
-          await storage.applications.updateReference(ref.id, {
-            secureToken: token,
-            applicantNameSnapshot: applicantName,
-          });
-        } else if (!ref.applicantNameSnapshot) {
-          await storage.applications.updateReference(ref.id, {
-            applicantNameSnapshot: applicantName,
-          });
-        }
-
-        const referenceUrl = `${baseUrl}/reference/${token}`;
-        const sent = await sendReferenceRequestEmail(
-          ref.refereeEmail,
-          ref.refereeName,
-          applicantName,
-          referenceUrl
-        );
-
-        if (sent) {
-          await storage.applications.updateReference(ref.id, {
-            emailSentAt: new Date(),
-            status: "email_sent",
-          });
-        }
-      } catch (err) {
-        logger.app.error("Failed to send reference request email", err, { referenceId: ref.id });
-      }
-    }
-
-    await storage.applications.update(application.id, {
-      referencesStatus: "in_progress",
-    } as any);
-
-    await storage.applications.addTimelineEntry({
-      applicationId: application.id,
-      action: "references_requested",
-      note: `Reference request emails sent to ${references.length} references`,
-      performedBy: req.user!.id,
-    });
-
-    try {
-      await createBackgroundCheckRecord(application.id);
-      await storage.applications.addTimelineEntry({
-        applicationId: application.id,
-        action: "background_check_record_created",
-        note: "Background check record created — awaiting initiation",
-        performedBy: req.user!.id,
-      });
-    } catch (err) {
-      logger.app.error("Failed to create background check record on submit", err, { applicationId: application.id });
-    }
-
-    res.json(updated);
+    res.json(result.application);
   })
 );
 
 router.post(
   "/withdraw",
   asyncHandler(async (req, res) => {
-    const application = await storage.applications.getByUserId(req.user!.id);
-    if (!application) {
-      res.status(404).json({ message: "Application not found" });
+    const result = await withdrawApplication(req.user!.id);
+    if (!result.success) {
+      res.status(result.status).json({ message: result.error });
       return;
     }
-
-    if (["active_member", "denied", "withdrawn"].includes(application.status)) {
-      res.status(400).json({ message: "Cannot withdraw this application" });
-      return;
-    }
-
-    const updated = await storage.applications.update(application.id, {
-      status: "withdrawn",
-    });
-
-    await storage.applications.addTimelineEntry({
-      applicationId: application.id,
-      action: "application_withdrawn",
-      fromStatus: application.status,
-      toStatus: "withdrawn",
-      performedBy: req.user!.id,
-    });
-
-    res.json(updated);
+    res.json(result.application);
   })
 );
 

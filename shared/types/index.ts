@@ -148,3 +148,28 @@ export const SUB_STATUS_VALUES = [
   "waived",
 ] as const;
 export type SubStatus = (typeof SUB_STATUS_VALUES)[number];
+
+export interface StatusTransitionResult {
+  success: boolean;
+  application?: unknown;
+  error?: string;
+  statusCode?: number;
+  allowedTransitions?: string[];
+}
+
+export interface SubmitApplicationResult {
+  success: boolean;
+  application?: unknown;
+  error?: string;
+  statusCode?: number;
+}
+
+export interface PaymentSessionResult {
+  url: string | null;
+  error?: string;
+}
+
+export interface PaymentConfirmationResult {
+  paid: boolean;
+  application?: unknown;
+}

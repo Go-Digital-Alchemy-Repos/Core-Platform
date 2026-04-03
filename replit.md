@@ -64,6 +64,8 @@ TCK Wellness is a platform designed to connect Third Culture Kids (TCKs) with sp
 - **Stabilization Plan**: Full audit and phased improvement plan at `docs/stabilization-plan.md`.
 
 ### System Design Choices
+- **Route → Service → Storage Layering**: Route handlers are thin (validate, call service, return response). Domain services in `server/services/` own business logic, state machines, and side-effect orchestration. Storage classes in `server/storage/` are pure data-access wrappers. See `docs/backend-architecture.md` for details.
+- **Application Service**: `server/services/application.service.ts` owns the application lifecycle — state machine (`ALLOWED_TRANSITIONS`), submission workflow, payment orchestration, approval/denial side-effects, withdrawal, interview scheduling, and reference email dispatch.
 - **Modular File Structure**: Backend organized by concern, frontend by feature.
 - **Separation of Concerns**: Clear distinction between frontend and backend via API endpoints.
 - **Structured Logging**: Pino-based structured JSON logger with named child loggers (http, email, r2, stripe, auth, app, db, cms, metrics). Pretty-printed in dev, raw JSON in production. PII fields (email, phone, address, SSN, dateOfBirth, refereeEmail, refereePhone) are automatically redacted from all logged response bodies. Full UUID request IDs propagated via `X-Request-Id` header. Production 5xx errors return generic messages without leaking internals.
