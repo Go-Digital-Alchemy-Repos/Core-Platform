@@ -1,4 +1,5 @@
 import type { Express, Request, Response, NextFunction } from "express";
+import { logger } from "../utils/logger";
 import authRoutes from "./auth.routes";
 import directoryRoutes from "./directory.routes";
 import therapistRoutes from "./therapist.routes";
@@ -62,12 +63,15 @@ export function registerApiRoutes(app: Express) {
       try {
         const raw = await storage.settings.getSetting("theme_custom_overrides");
         if (raw) customOverrides = JSON.parse(raw);
-      } catch {}
+      } catch (err) {
+        logger.app.warn("Failed to parse theme custom overrides JSON", { error: err instanceof Error ? err.message : String(err) });
+      }
       res.json({
         presetId: presetId || "tck-default",
         customOverrides,
       });
-    } catch {
+    } catch (err) {
+      logger.app.warn("Failed to retrieve active theme, returning defaults", { error: err instanceof Error ? err.message : String(err) });
       res.json({ presetId: "tck-default", customOverrides: null });
     }
   });
@@ -197,7 +201,8 @@ export function registerApiRoutes(app: Express) {
       if (redirect) {
         return res.redirect(redirect.statusCode, redirect.toPath);
       }
-    } catch {
+    } catch (err) {
+      logger.app.warn("Failed to look up redirect", { path: req.path, error: err instanceof Error ? err.message : String(err) });
     }
     next();
   });

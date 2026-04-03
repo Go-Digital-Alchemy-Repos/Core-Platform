@@ -5,16 +5,20 @@ import {
   HeadBucketCommand,
 } from "@aws-sdk/client-s3";
 import { logger } from "../utils/logger";
+import { retryOnce } from "../utils/retry";
 
-let cachedClient: S3Client | null = null;
-
-async function getR2Config(): Promise<{
+interface R2Config {
   accountId: string;
   accessKeyId: string;
   secretAccessKey: string;
   bucketName: string;
   publicUrl: string;
-} | null> {
+}
+
+let cachedClient: S3Client | null = null;
+let cachedConfig: R2Config | null = null;
+
+async function getR2Config(): Promise<R2Config | null> {
   try {
     const { storage } = await import("../storage/index");
     const settings = await storage.settings.getDecryptedCategory("cloudflare_r2");
@@ -34,19 +38,26 @@ async function getR2Config(): Promise<{
 }
 
 async function getClient(): Promise<{ client: S3Client; bucketName: string; publicUrl: string } | null> {
+  if (cachedClient && cachedConfig) {
+    return {
+      client: cachedClient,
+      bucketName: cachedConfig.bucketName,
+      publicUrl: cachedConfig.publicUrl,
+    };
+  }
+
   const config = await getR2Config();
   if (!config) return null;
 
-  if (!cachedClient) {
-    cachedClient = new S3Client({
-      region: "auto",
-      endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: config.secretAccessKey,
-      },
-    });
-  }
+  cachedConfig = config;
+  cachedClient = new S3Client({
+    region: "auto",
+    endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+    },
+  });
 
   return {
     client: cachedClient,
@@ -56,6 +67,7 @@ async function getClient(): Promise<{ client: S3Client; bucketName: string; publ
 }
 
 export async function isConfigured(): Promise<boolean> {
+  if (cachedClient && cachedConfig) return true;
   const config = await getR2Config();
   return config !== null;
 }
@@ -72,13 +84,17 @@ export async function uploadFile(
   }
 
   try {
-    await r2.client.send(
-      new PutObjectCommand({
-        Bucket: r2.bucketName,
-        Key: key,
-        Body: buffer,
-        ContentType: contentType,
-      })
+    await retryOnce(
+      () =>
+        r2.client.send(
+          new PutObjectCommand({
+            Bucket: r2.bucketName,
+            Key: key,
+            Body: buffer,
+            ContentType: contentType,
+          })
+        ),
+      "R2 upload"
     );
 
     const publicUrl = r2.publicUrl
@@ -98,11 +114,15 @@ export async function deleteFile(key: string): Promise<boolean> {
   if (!r2) return false;
 
   try {
-    await r2.client.send(
-      new DeleteObjectCommand({
-        Bucket: r2.bucketName,
-        Key: key,
-      })
+    await retryOnce(
+      () =>
+        r2.client.send(
+          new DeleteObjectCommand({
+            Bucket: r2.bucketName,
+            Key: key,
+          })
+        ),
+      "R2 delete"
     );
     logger.r2.info("File deleted", { key });
     return true;
@@ -133,4 +153,5 @@ export async function testConnection(): Promise<{
 
 export function resetClient(): void {
   cachedClient = null;
+  cachedConfig = null;
 }

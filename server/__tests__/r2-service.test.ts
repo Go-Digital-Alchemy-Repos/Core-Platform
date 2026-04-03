@@ -1,0 +1,99 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+const mockSend = vi.fn();
+const MockS3Client = vi.fn(() => ({ send: mockSend }));
+
+vi.mock("@aws-sdk/client-s3", () => ({
+  S3Client: MockS3Client,
+  PutObjectCommand: vi.fn((params: unknown) => ({ type: "PutObject", ...params as object })),
+  DeleteObjectCommand: vi.fn((params: unknown) => ({ type: "DeleteObject", ...params as object })),
+  HeadBucketCommand: vi.fn((params: unknown) => ({ type: "HeadBucket", ...params as object })),
+}));
+
+vi.mock("../utils/logger", () => ({
+  logger: {
+    r2: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    app: { warn: vi.fn() },
+  },
+}));
+
+vi.mock("../utils/retry", () => ({
+  retryOnce: vi.fn((fn: () => Promise<unknown>) => fn()),
+}));
+
+const mockGetDecryptedCategory = vi.fn();
+vi.mock("../storage/index", () => ({
+  storage: {
+    settings: {
+      getDecryptedCategory: mockGetDecryptedCategory,
+    },
+  },
+}));
+
+describe("R2 service", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    MockS3Client.mockClear();
+    const mod = await import("../services/r2.service");
+    mod.resetClient();
+  });
+
+  it("skips DB config fetch when client is already cached", async () => {
+    mockGetDecryptedCategory.mockResolvedValue({
+      r2_account_id: "acct",
+      r2_access_key_id: "key",
+      r2_secret_access_key: "secret",
+      r2_bucket_name: "bucket",
+      r2_public_url: "https://cdn.example.com",
+    });
+    mockSend.mockResolvedValue({});
+
+    const mod = await import("../services/r2.service");
+    await mod.uploadFile("test.png", Buffer.from("data"), "image/png");
+    expect(mockGetDecryptedCategory).toHaveBeenCalledTimes(1);
+
+    await mod.uploadFile("test2.png", Buffer.from("data2"), "image/png");
+    expect(mockGetDecryptedCategory).toHaveBeenCalledTimes(1);
+  });
+
+  it("re-fetches config after resetClient is called", async () => {
+    mockGetDecryptedCategory.mockResolvedValue({
+      r2_account_id: "acct",
+      r2_access_key_id: "key",
+      r2_secret_access_key: "secret",
+      r2_bucket_name: "bucket",
+      r2_public_url: "",
+    });
+    mockSend.mockResolvedValue({});
+
+    const mod = await import("../services/r2.service");
+    await mod.uploadFile("a.png", Buffer.from("a"), "image/png");
+    mod.resetClient();
+    await mod.uploadFile("b.png", Buffer.from("b"), "image/png");
+
+    expect(mockGetDecryptedCategory).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns null when R2 is not configured", async () => {
+    mockGetDecryptedCategory.mockResolvedValue({});
+
+    const mod = await import("../services/r2.service");
+    const result = await mod.uploadFile("test.png", Buffer.from("data"), "image/png");
+    expect(result).toBeNull();
+  });
+
+  it("returns correct public URL on upload", async () => {
+    mockGetDecryptedCategory.mockResolvedValue({
+      r2_account_id: "acct",
+      r2_access_key_id: "key",
+      r2_secret_access_key: "secret",
+      r2_bucket_name: "bucket",
+      r2_public_url: "https://cdn.example.com/",
+    });
+    mockSend.mockResolvedValue({});
+
+    const mod = await import("../services/r2.service");
+    const url = await mod.uploadFile("images/photo.jpg", Buffer.from("data"), "image/jpeg");
+    expect(url).toBe("https://cdn.example.com/images/photo.jpg");
+  });
+});

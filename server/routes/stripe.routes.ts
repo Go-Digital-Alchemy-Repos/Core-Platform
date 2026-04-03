@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getUncachableStripeClient } from "../config/stripe";
 import { storage } from "../storage/index";
+import { logger } from "../utils/logger";
 import { authenticateToken, requireRole } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
 import type { Event } from "@shared/schema/events";
@@ -77,7 +78,7 @@ router.post(
           return;
         }
       } catch (err) {
-        // Session might be expired or not found, proceed to create a new one
+        logger.stripe.warn("Previous checkout session not found or expired, creating new one", { sessionId: existing.stripeCheckoutSessionId, error: err instanceof Error ? err.message : String(err) });
       }
     }
 
@@ -286,7 +287,9 @@ router.post(
           res.json({ url: session.url });
           return;
         }
-      } catch (err) {}
+      } catch (err) {
+        logger.stripe.warn("Previous checkout session not found or expired, creating new one", { sessionId: existing.stripeCheckoutSessionId, error: err instanceof Error ? err.message : String(err) });
+      }
     }
 
     let purchase;

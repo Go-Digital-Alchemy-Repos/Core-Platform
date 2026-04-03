@@ -90,7 +90,7 @@ export const optionalAuth: RequestHandler = async (req: Request, _res: Response,
       req.user = user;
     }
   } catch {
-    // ignore invalid tokens
+    // Intentionally silent: optionalAuth should not reject requests with invalid/expired tokens — the user simply remains unauthenticated
   }
   next();
 };

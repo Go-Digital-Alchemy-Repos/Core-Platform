@@ -1,11 +1,13 @@
 import Stripe from "stripe";
 import { storage } from "../storage/index";
+import { logger } from "../utils/logger";
 
 async function fetchStripeCredentials(): Promise<{ stripeSecretKey: string; stripePublishableKey: string }> {
   let settings: Record<string, string> = {};
   try {
     settings = await storage.settings.getDecryptedCategory("stripe");
-  } catch (_e) {
+  } catch (err) {
+    logger.stripe.warn("Failed to load Stripe credentials from DB, falling back to env vars", { error: err instanceof Error ? err.message : String(err) });
   }
 
   const stripeSecretKey = settings.stripe_secret_key || process.env.STRIPE_SECRET_KEY;
@@ -48,7 +50,8 @@ export async function getStripeWebhookSecret(): Promise<string | null> {
     if (settings.stripe_webhook_secret) {
       return settings.stripe_webhook_secret;
     }
-  } catch (_e) {
+  } catch (err) {
+    logger.stripe.warn("Failed to load Stripe webhook secret from DB, falling back to env var", { error: err instanceof Error ? err.message : String(err) });
   }
   return process.env.STRIPE_WEBHOOK_SECRET || null;
 }

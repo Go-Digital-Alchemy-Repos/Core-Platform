@@ -128,6 +128,7 @@ function normalizeOrigin(raw: string): string | null {
   try {
     return new URL(raw).origin;
   } catch {
+    // Intentionally silent: malformed origin strings are expected from some clients and should be treated as null
     return null;
   }
 }

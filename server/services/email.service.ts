@@ -19,11 +19,23 @@ if (isSmtpConfigured) {
   });
 }
 
-async function getMailgunConfig(): Promise<{
+interface MailgunConfig {
   apiKey: string;
   domain: string;
   fromAddress: string;
-} | null> {
+}
+
+let cachedMailgunConfig: MailgunConfig | null = null;
+let mailgunConfigFetched = false;
+
+export function resetMailgunConfig(): void {
+  cachedMailgunConfig = null;
+  mailgunConfigFetched = false;
+}
+
+async function getMailgunConfig(): Promise<MailgunConfig | null> {
+  if (mailgunConfigFetched) return cachedMailgunConfig;
+
   try {
     const { storage } = await import("../storage/index");
     const settings = await storage.settings.getDecryptedCategory("mailgun");
@@ -31,12 +43,13 @@ async function getMailgunConfig(): Promise<{
     const domain = settings["mailgun_domain"];
     const fromAddress = settings["mailgun_from_address"] || SMTP_FROM;
     if (apiKey && domain) {
-      return { apiKey, domain, fromAddress };
+      cachedMailgunConfig = { apiKey, domain, fromAddress };
     }
+    mailgunConfigFetched = true;
   } catch (err) {
     logger.email.warn("Failed to load Mailgun configuration", { error: err instanceof Error ? err.message : String(err) });
   }
-  return null;
+  return cachedMailgunConfig;
 }
 
 async function sendViaMailgun(

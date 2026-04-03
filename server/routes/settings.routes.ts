@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { storage } from "../storage/index";
+import { logger } from "../utils/logger";
 import { authenticateToken, requireRole } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
 import { paramString } from "../utils/params";
@@ -62,6 +63,13 @@ router.put(
       r2Service.resetClient();
     }
 
+    if (data.category === "mailgun") {
+      const { resetMailgunConfig } = await import("../services/email.service");
+      resetMailgunConfig();
+    }
+
+    storage.settings.invalidateCategory(data.category);
+
     res.json({
       ...setting,
       value: setting.isSecret ? "••••••••" : setting.value,
@@ -103,7 +111,9 @@ router.put(
     } else {
       try {
         await storage.settings.deleteSetting("theme_custom_overrides");
-      } catch {}
+      } catch (err) {
+        logger.app.warn("Failed to delete theme custom overrides setting", { error: err instanceof Error ? err.message : String(err) });
+      }
     }
     res.json({ presetId: data.presetId, customOverrides: data.customOverrides || null });
   })
