@@ -68,7 +68,7 @@ export class SettingsStorage {
     this.categoryCache.delete(category);
     const keysToRemove = this.categoryKeyIndex.get(category);
     if (keysToRemove) {
-      for (const key of keysToRemove) {
+      for (const key of Array.from(keysToRemove)) {
         this.settingCache.delete(key);
       }
       this.categoryKeyIndex.delete(category);

@@ -1,12 +1,28 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
 const isReplit = process.env.REPL_ID !== undefined;
 
+function preambleFixPlugin(): Plugin {
+  return {
+    name: "preamble-fix",
+    enforce: "post",
+    apply: "serve",
+    transform(code, id) {
+      if (id.includes("node_modules") || !code.includes("can't detect preamble")) return;
+      return code.replace(
+        /if\s*\(!window\.\$RefreshReg\$\)\s*\{[^}]*can't detect preamble[^}]*\}/s,
+        `if (!window.$RefreshReg$) { window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (t) => t; }`
+      );
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [
     react(),
+    preambleFixPlugin(),
     ...(isReplit && process.env.NODE_ENV !== "production"
       ? [
           await import("@replit/vite-plugin-runtime-error-modal").then((m) =>

@@ -83,7 +83,7 @@ TCK Wellness is a platform designed to connect Third Culture Kids (TCKs) with sp
 - **railway.toml**: Configures build command (`npm run build`), start command (`npm start`), healthcheck (`/api/health`), and restart policy.
 - **Trust Proxy**: Express configured with `trust proxy: 1` for correct client IP detection behind Railway's reverse proxy (needed for rate limiting).
 - **Database SSL**: Production database connections automatically enable SSL unless the `DATABASE_URL` already includes `sslmode=`.
-- **Vite Plugins**: Replit-specific Vite plugins are conditionally loaded only when `REPL_ID` is present, so builds work cleanly on Railway.
+- **Vite Plugins**: Replit-specific Vite plugins are conditionally loaded only when `REPL_ID` is present, so builds work cleanly on Railway. A custom `preambleFixPlugin` in `vite.config.ts` replaces the hard `throw` in `@vitejs/plugin-react`'s preamble detection with a graceful no-op fallback, preventing the "can't detect preamble" crash that occurs when the Replit preview pane reconnects HMR without a full page reload.
 - **Server Bundle**: esbuild bundles all server dependencies into a single `dist/index.cjs` for a self-contained production artifact.
 - **Auto-Migrations**: On production startup, the server automatically runs Drizzle ORM migrations from `dist/migrations/` before accepting requests. The build script copies the `migrations/` folder into `dist/`. Use `npx drizzle-kit generate` locally after schema changes to create new migration files.
 - **First-Visit Admin Setup**: When no admin user exists (fresh database), all routes redirect to `/setup` where the initial admin account can be created. Optionally secured with a `SETUP_TOKEN` env var.
