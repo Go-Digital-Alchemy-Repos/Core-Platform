@@ -1467,12 +1467,31 @@ export function BlockRenderer({ block, isAdminPreview }: { block: BlockInstance;
   return <Renderer props={block.props} />;
 }
 
+/** Block types that render edge-to-edge without a max-width container.
+ *  Update this set when adding new full-width block types. */
+const FULL_WIDTH_BLOCKS = new Set([
+  "hero",
+  "cta",
+  "trust-bar",
+  "divider",
+  "slider",
+  "stats-bar",
+]);
+
 export function PageRenderer({ blocks }: { blocks: BlockInstance[] }) {
   return (
-    <div className="space-y-6">
-      {blocks.map((block) => (
-        <BlockRenderer key={block.id} block={block} />
-      ))}
+    <div>
+      {blocks.map((block) => {
+        const isFullWidth = FULL_WIDTH_BLOCKS.has(block.type);
+        if (isFullWidth) {
+          return <BlockRenderer key={block.id} block={block} />;
+        }
+        return (
+          <div key={block.id} className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
+            <BlockRenderer block={block} />
+          </div>
+        );
+      })}
     </div>
   );
 }
