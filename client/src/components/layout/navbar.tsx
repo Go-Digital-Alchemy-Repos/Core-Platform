@@ -268,18 +268,22 @@ export function Navbar() {
             <>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="relative" data-testid="button-user-menu">
+                  <button
+                    type="button"
+                    className="relative h-8 w-8 rounded-full border border-border bg-background flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-ring hover:ring-offset-1 transition-shadow"
+                    data-testid="button-user-menu"
+                  >
                     {user.profileImageUrl ? (
-                      <img src={user.profileImageUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
+                      <img src={user.profileImageUrl} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <User className="h-4 w-4" />
+                      <User className="h-4 w-4 text-muted-foreground" />
                     )}
                     {unreadNotifCount > 0 && (
                       <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-[10px] font-bold rounded-full h-4 min-w-4 flex items-center justify-center px-1 leading-none">
                         {unreadNotifCount > 99 ? "99+" : unreadNotifCount}
                       </span>
                     )}
-                  </Button>
+                  </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="z-[1000]">
                   {isTherapist && (

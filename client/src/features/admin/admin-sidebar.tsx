@@ -194,19 +194,18 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                     <>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full justify-center text-muted-foreground"
+                          <button
+                            type="button"
+                            className="mx-auto h-7 w-7 rounded-full border border-border bg-background flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-ring hover:ring-offset-1 transition-shadow"
                             onClick={() => setProfileOpen(true)}
                             data-testid="button-sidebar-profile"
                           >
                             {user?.profileImageUrl ? (
-                              <img src={user.profileImageUrl} alt="" className="h-5 w-5 rounded-full object-cover" />
+                              <img src={user.profileImageUrl} alt="" className="h-full w-full object-cover" />
                             ) : (
-                              <User className="h-4 w-4 text-blue-600" />
+                              <User className="h-4 w-4 text-muted-foreground" />
                             )}
-                          </Button>
+                          </button>
                         </TooltipTrigger>
                         <TooltipContent side="right" sideOffset={8}>My Profile</TooltipContent>
                       </Tooltip>
@@ -227,20 +226,21 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                     </>
                   ) : (
                     <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start text-muted-foreground"
+                      <button
+                        type="button"
+                        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                         onClick={() => setProfileOpen(true)}
                         data-testid="button-sidebar-profile"
                       >
-                        {user?.profileImageUrl ? (
-                          <img src={user.profileImageUrl} alt="" className="h-5 w-5 rounded-full object-cover mr-2" />
-                        ) : (
-                          <User className="h-4 w-4 mr-2 text-blue-600" />
-                        )}
+                        <span className="h-6 w-6 rounded-full border border-border bg-background flex items-center justify-center overflow-hidden shrink-0">
+                          {user?.profileImageUrl ? (
+                            <img src={user.profileImageUrl} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <User className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </span>
                         My Profile
-                      </Button>
+                      </button>
                       <Button
                         variant="ghost"
                         size="sm"
