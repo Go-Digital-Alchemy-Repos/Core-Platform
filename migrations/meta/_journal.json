@@ -43,6 +43,13 @@
       "when": 1775074383003,
       "tag": "0005_lazy_stone_men",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1775775000000,
+      "tag": "0006_search_vector",
+      "breakpoints": true
     }
   ]
 }

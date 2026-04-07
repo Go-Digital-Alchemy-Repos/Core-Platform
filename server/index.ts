@@ -182,6 +182,9 @@ app.use((req, res, next) => {
     await runMigrations();
   }
 
+  const { initSearchIndex } = await import("./lib/search-index");
+  await initSearchIndex();
+
   await registerRoutes(httpServer, app);
 
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {

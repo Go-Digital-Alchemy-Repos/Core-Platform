@@ -3,9 +3,14 @@ import { sql } from "drizzle-orm";
 import { db } from "../../db";
 import { storage } from "../../storage/index";
 import { asyncHandler } from "../../middleware/error-handler";
+import { MemoryCache } from "../../lib/cache";
 import { users, therapistProfiles, therapistSubscriptions, activityLogs, contactMessages, events } from "@shared/schema";
 
 const router = Router();
+
+const ANALYTICS_CACHE_TTL = parseInt(process.env.DASHBOARD_ANALYTICS_CACHE_TTL || "300", 10);
+const analyticsCache = new MemoryCache<Record<string, unknown>>(ANALYTICS_CACHE_TTL);
+const ANALYTICS_CACHE_KEY = "dashboard_analytics";
 
 router.get(
   "/dashboard-stats",
@@ -32,6 +37,11 @@ router.get(
 router.get(
   "/dashboard-analytics",
   asyncHandler(async (_req, res) => {
+    const cached = analyticsCache.get(ANALYTICS_CACHE_KEY);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const [
       usersByRole,
       therapistsByStatus,
@@ -142,7 +152,7 @@ router.get(
         .where(sql`${events.date} >= now()`),
     ]);
 
-    res.json({
+    const result = {
       usersByRole: usersByRole.map((r) => ({ role: r.role, count: Number(r.count) })),
       therapistsByStatus: therapistsByStatus.map((r) => ({ status: r.status, count: Number(r.count) })),
       subscriptionsByStatus: subscriptionsByStatus.map((r) => ({ status: r.status, count: Number(r.count) })),
@@ -160,7 +170,10 @@ router.get(
       totalUsers: Number(totalUsers[0].count),
       totalEvents: Number(totalEvents[0].count),
       upcomingEvents: Number(upcomingEvents[0].count),
-    });
+    };
+
+    analyticsCache.set(ANALYTICS_CACHE_KEY, result);
+    res.json(result);
   })
 );
 

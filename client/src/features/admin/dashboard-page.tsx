@@ -129,9 +129,9 @@ function DashboardContent() {
 
   const { data: analytics, isLoading: analyticsLoading } = useQuery<AnalyticsData>({
     queryKey: ["/api/admin/dashboard-analytics"],
-    staleTime: STALE_TIMES.LIVE,
+    staleTime: STALE_TIMES.OPERATIONAL,
     refetchOnWindowFocus: true,
-    refetchInterval: 60_000,
+    refetchInterval: 5 * 60_000,
   });
 
   if (statsLoading || analyticsLoading) {

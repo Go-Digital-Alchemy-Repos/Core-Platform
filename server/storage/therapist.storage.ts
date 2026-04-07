@@ -1,7 +1,9 @@
-import { eq, and, ilike, or, sql, SQL, desc } from "drizzle-orm";
+import { eq, and, ilike, or, sql, type SQL, desc } from "drizzle-orm";
 import { db } from "../db";
 import { therapistProfiles, type TherapistProfile, type InsertTherapistProfile } from "@shared/schema";
 import { users } from "@shared/schema";
+import { MemoryCache } from "../lib/cache";
+import { isSearchIndexReady } from "../lib/search-index";
 import type {
   TherapistWithUser,
   PaginatedTherapists,
@@ -24,6 +26,10 @@ interface InternalSearchParams {
   latitude?: number;
   longitude?: number;
 }
+
+const FILTER_CACHE_TTL = parseInt(process.env.FILTER_OPTIONS_CACHE_TTL || "300", 10);
+const filterOptionsCache = new MemoryCache<DirectoryFilterOptions>(FILTER_CACHE_TTL);
+const FILTER_OPTIONS_KEY = "filter_options";
 
 function buildFilterConditions(params: InternalSearchParams): SQL[] {
   const conditions: SQL[] = [
@@ -62,28 +68,40 @@ function buildFilterConditions(params: InternalSearchParams): SQL[] {
   }
 
   if (params.search) {
-    const term = `%${params.search}%`;
-    conditions.push(
-      or(
-        sql`concat(${users.firstName}, ' ', ${users.lastName}) ILIKE ${term}`,
-        ilike(therapistProfiles.title, term),
-        ilike(therapistProfiles.city, term),
-        ilike(therapistProfiles.country, term),
-        sql`EXISTS (SELECT 1 FROM unnest(${therapistProfiles.specializations}) s WHERE s ILIKE ${term})`,
-        sql`EXISTS (SELECT 1 FROM unnest(${therapistProfiles.languages}) l WHERE l ILIKE ${term})`,
-      )!
-    );
+    const trimmed = params.search.trim();
+    if (trimmed.length > 0) {
+      const sanitized = trimmed.replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
+      if (sanitized.length > 0) {
+        if (isSearchIndexReady()) {
+          const searchTerms = sanitized.split(" ");
+          const tsQuery = searchTerms.map((t) => t + ":*").join(" & ");
+          conditions.push(
+            sql`${therapistProfiles.id} IN (
+              SELECT id FROM therapist_profiles
+              WHERE search_vector @@ to_tsquery('simple', ${tsQuery})
+            )`
+          );
+        } else {
+          const term = `%${sanitized}%`;
+          conditions.push(
+            or(
+              sql`concat(${users.firstName}, ' ', ${users.lastName}) ILIKE ${term}`,
+              ilike(therapistProfiles.title, term),
+              ilike(therapistProfiles.city, term),
+              ilike(therapistProfiles.country, term),
+              sql`EXISTS (SELECT 1 FROM unnest(${therapistProfiles.specializations}) s WHERE s ILIKE ${term})`,
+              sql`EXISTS (SELECT 1 FROM unnest(${therapistProfiles.languages}) l WHERE l ILIKE ${term})`,
+            )!
+          );
+        }
+      }
+    }
   }
 
   return conditions;
 }
 
 function buildOrderBy(sort: SortOption = "name", _latitude?: number, _longitude?: number) {
-  // Geo-ranking stub: when latitude/longitude are provided and a geo sort is
-  // implemented, the ORDER BY can use something like:
-  //   sql`(${therapistProfiles.latitude}::float - ${lat})^2 + (${therapistProfiles.longitude}::float - ${lng})^2 ASC`
-  // For now we fall through to the standard sort options.
-
   switch (sort) {
     case "newest":
       return [desc(therapistProfiles.createdAt), users.firstName, users.lastName];
@@ -106,6 +124,7 @@ export class TherapistStorage {
 
   async createProfile(data: InsertTherapistProfile): Promise<TherapistProfile> {
     const [profile] = await db.insert(therapistProfiles).values(data).returning();
+    filterOptionsCache.invalidate();
     return profile;
   }
 
@@ -115,6 +134,7 @@ export class TherapistStorage {
       .set({ ...data, updatedAt: new Date() })
       .where(eq(therapistProfiles.id, id))
       .returning();
+    filterOptionsCache.invalidate();
     return profile;
   }
 
@@ -162,6 +182,9 @@ export class TherapistStorage {
   }
 
   async getFilterOptions(): Promise<DirectoryFilterOptions> {
+    const cached = filterOptionsCache.get(FILTER_OPTIONS_KEY);
+    if (cached) return cached;
+
     const langResult = await db.execute(
       sql`SELECT DISTINCT unnest(${therapistProfiles.languages}) AS lang
           FROM ${therapistProfiles}
@@ -178,10 +201,13 @@ export class TherapistStorage {
           ORDER BY country`
     );
 
-    return {
+    const result: DirectoryFilterOptions = {
       languages: (langResult.rows as Array<{ lang: string }>).map((r) => r.lang),
       countries: (countryResult.rows as Array<{ country: string }>).map((r) => r.country),
     };
+
+    filterOptionsCache.set(FILTER_OPTIONS_KEY, result);
+    return result;
   }
 
   async getProfileWithUser(id: string): Promise<TherapistWithUser | undefined> {
