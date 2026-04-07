@@ -201,7 +201,11 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                             onClick={() => setProfileOpen(true)}
                             data-testid="button-sidebar-profile"
                           >
-                            <User className="h-4 w-4 text-blue-600" />
+                            {user?.profileImageUrl ? (
+                              <img src={user.profileImageUrl} alt="" className="h-5 w-5 rounded-full object-cover" />
+                            ) : (
+                              <User className="h-4 w-4 text-blue-600" />
+                            )}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="right" sideOffset={8}>My Profile</TooltipContent>
@@ -230,7 +234,11 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                         onClick={() => setProfileOpen(true)}
                         data-testid="button-sidebar-profile"
                       >
-                        <User className="h-4 w-4 mr-2 text-blue-600" />
+                        {user?.profileImageUrl ? (
+                          <img src={user.profileImageUrl} alt="" className="h-5 w-5 rounded-full object-cover mr-2" />
+                        ) : (
+                          <User className="h-4 w-4 mr-2 text-blue-600" />
+                        )}
                         My Profile
                       </Button>
                       <Button

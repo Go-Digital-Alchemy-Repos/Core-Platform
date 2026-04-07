@@ -269,7 +269,11 @@ export function Navbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="icon" className="relative" data-testid="button-user-menu">
-                    <User className="h-4 w-4" />
+                    {user.profileImageUrl ? (
+                      <img src={user.profileImageUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
+                    ) : (
+                      <User className="h-4 w-4" />
+                    )}
                     {unreadNotifCount > 0 && (
                       <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-[10px] font-bold rounded-full h-4 min-w-4 flex items-center justify-center px-1 leading-none">
                         {unreadNotifCount > 99 ? "99+" : unreadNotifCount}
