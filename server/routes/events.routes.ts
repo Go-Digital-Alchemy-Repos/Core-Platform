@@ -4,6 +4,7 @@ import { asyncHandler } from "../middleware/error-handler";
 import { paramString } from "../utils/params";
 import { optionalAuth, authenticateToken } from "../middleware/auth";
 import type { Event } from "@shared/schema/events";
+import * as r2Service from "../services/r2.service";
 
 const router = Router();
 
@@ -31,11 +32,18 @@ function redactSensitiveFields(event: Event): Event {
   return redacted;
 }
 
+async function normalizeEventImage(event: Event): Promise<Event> {
+  return {
+    ...event,
+    imageUrl: (await r2Service.normalizePublicUrl(event.imageUrl)) ?? null,
+  };
+}
+
 router.get(
   "/",
   asyncHandler(async (_req, res) => {
     const eventsList = await storage.events.getUpcomingEvents();
-    res.json(eventsList);
+    res.json(await Promise.all(eventsList.map(normalizeEventImage)));
   })
 );
 
@@ -43,7 +51,7 @@ router.get(
   "/all",
   asyncHandler(async (_req, res) => {
     const eventsList = await storage.events.getPublishedEvents();
-    res.json(eventsList);
+    res.json(await Promise.all(eventsList.map(normalizeEventImage)));
   })
 );
 
@@ -74,7 +82,7 @@ router.get(
         }
         return event;
       });
-    res.json(filtered);
+    res.json(await Promise.all(filtered.map(normalizeEventImage)));
   })
 );
 
@@ -114,9 +122,9 @@ router.get(
     }
     const userRole = req.user?.role ?? null;
     if (canAccessEvent(event, userRole)) {
-      res.json(event);
+      res.json(await normalizeEventImage(event));
     } else {
-      res.json(redactSensitiveFields(event));
+      res.json(await normalizeEventImage(redactSensitiveFields(event)));
     }
   })
 );

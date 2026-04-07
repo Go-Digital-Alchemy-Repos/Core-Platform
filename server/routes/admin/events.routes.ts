@@ -9,6 +9,7 @@ import {
   sendEventReminderEmail,
   sendRecordingAvailableEmail,
 } from "../../services/email.service";
+import * as r2Service from "../../services/r2.service";
 
 const router = Router();
 
@@ -21,6 +22,13 @@ function isValidDate(d: Date): boolean {
 }
 
 const DATE_FIELDS = ["date", "endDate", "registrationOpensAt", "registrationClosesAt"] as const;
+
+async function normalizeEventImage<T extends { imageUrl?: string | null }>(event: T): Promise<T> {
+  return {
+    ...event,
+    imageUrl: (await r2Service.normalizePublicUrl(event.imageUrl)) ?? null,
+  };
+}
 
 function coerceDates(data: Record<string, unknown>): Record<string, unknown> {
   const result = { ...data };
@@ -89,7 +97,7 @@ router.get(
   "/",
   asyncHandler(async (_req, res) => {
     const eventsList = await storage.events.getAllEvents();
-    res.json(eventsList);
+    res.json(await Promise.all(eventsList.map(normalizeEventImage)));
   })
 );
 
@@ -101,7 +109,7 @@ router.post(
       return res.status(400).json({ message: error });
     }
     const event = await storage.events.createEvent(coerceDates(req.body) as any);
-    res.status(201).json(event);
+    res.status(201).json(await normalizeEventImage(event));
   })
 );
 
@@ -145,7 +153,7 @@ router.put(
       }
     }
 
-    res.json(event);
+    res.json(await normalizeEventImage(event));
   })
 );
 
@@ -179,7 +187,7 @@ router.post(
       recordingUrl: null,
     } as any);
 
-    res.status(201).json(newEvent);
+    res.status(201).json(await normalizeEventImage(newEvent));
   })
 );
 

@@ -18,6 +18,38 @@ interface R2Config {
 let cachedClient: S3Client | null = null;
 let cachedConfig: R2Config | null = null;
 
+function getFallbackPublicBaseUrl(bucketName: string): string {
+  return `https://${bucketName}.r2.dev`;
+}
+
+function getPublicBaseUrl(bucketName: string, configuredPublicUrl: string): string {
+  const trimmed = configuredPublicUrl.trim();
+  if (!trimmed) {
+    return getFallbackPublicBaseUrl(bucketName);
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.hostname.endsWith(".r2.cloudflarestorage.com")) {
+      logger.r2.warn("Configured public URL uses the private R2 API host; falling back to the public bucket URL", {
+        configuredPublicUrl: trimmed,
+      });
+      return getFallbackPublicBaseUrl(bucketName);
+    }
+    return parsed.toString().replace(/\/$/, "");
+  } catch {
+    logger.r2.warn("Configured public URL is invalid; falling back to the public bucket URL", {
+      configuredPublicUrl: trimmed,
+    });
+    return getFallbackPublicBaseUrl(bucketName);
+  }
+}
+
+function buildPublicObjectUrl(baseUrl: string, key: string): string {
+  const normalizedKey = key.replace(/^\/+/, "");
+  return `${baseUrl.replace(/\/$/, "")}/${normalizedKey}`;
+}
+
 async function getR2Config(): Promise<R2Config | null> {
   try {
     const { storage } = await import("../storage/index");
@@ -97,9 +129,10 @@ export async function uploadFile(
       "R2 upload"
     );
 
-    const publicUrl = r2.publicUrl
-      ? `${r2.publicUrl.replace(/\/$/, "")}/${key}`
-      : `https://${r2.bucketName}.r2.dev/${key}`;
+    const publicUrl = buildPublicObjectUrl(
+      getPublicBaseUrl(r2.bucketName, r2.publicUrl),
+      key
+    );
 
     logger.r2.info("File uploaded", { key });
     return publicUrl;
@@ -154,4 +187,28 @@ export async function testConnection(): Promise<{
 export function resetClient(): void {
   cachedClient = null;
   cachedConfig = null;
+}
+
+export async function normalizePublicUrl(url: string | null | undefined): Promise<string | null | undefined> {
+  if (!url) return url;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+
+  if (
+    !parsed.hostname.endsWith(".r2.cloudflarestorage.com") &&
+    !parsed.hostname.endsWith(".r2.dev")
+  ) {
+    return url;
+  }
+
+  const r2 = await getClient();
+  if (!r2) return url;
+
+  const publicBaseUrl = getPublicBaseUrl(r2.bucketName, r2.publicUrl);
+  return buildPublicObjectUrl(publicBaseUrl, parsed.pathname);
 }

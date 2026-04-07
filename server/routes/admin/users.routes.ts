@@ -10,6 +10,7 @@ import { sendPasswordResetEmail, sendWelcomeEmail } from "../../services/email.s
 import { paramString } from "../../utils/params";
 import { getBaseUrl, notFound, conflict } from "../../utils/route-helpers";
 import { logger } from "../../utils/logger";
+import * as r2Service from "../../services/r2.service";
 
 const router = Router();
 
@@ -32,7 +33,14 @@ router.get(
       })
       .from(users)
       .leftJoin(therapistProfiles, eq(therapistProfiles.userId, users.id));
-    res.json(rows);
+    res.json(
+      await Promise.all(
+        rows.map(async (row) => ({
+          ...row,
+          profileImageUrl: (await r2Service.normalizePublicUrl(row.profileImageUrl)) ?? null,
+        }))
+      )
+    );
   })
 );
 
@@ -103,7 +111,10 @@ router.put(
       return;
     }
     const { password, ...safeUser } = user;
-    res.json(safeUser);
+    res.json({
+      ...safeUser,
+      profileImageUrl: (await r2Service.normalizePublicUrl(safeUser.profileImageUrl)) ?? null,
+    });
   })
 );
 
@@ -140,7 +151,10 @@ router.patch(
     }
     const updated = await storage.users.updateUser(userId, { isSuspended: !user.isSuspended } as any);
     const { password, ...safeUser } = updated!;
-    res.json(safeUser);
+    res.json({
+      ...safeUser,
+      profileImageUrl: (await r2Service.normalizePublicUrl(safeUser.profileImageUrl)) ?? null,
+    });
   })
 );
 

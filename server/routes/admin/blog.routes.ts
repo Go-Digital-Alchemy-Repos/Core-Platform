@@ -2,8 +2,9 @@ import { Router } from "express";
 import { z } from "zod";
 import { storage } from "../../storage/index";
 import { asyncHandler } from "../../middleware/error-handler";
-import { insertBlogPostSchema } from "@shared/schema";
+import { insertBlogPostSchema, type BlogPost } from "@shared/schema";
 import { paramString } from "../../utils/params";
+import * as r2Service from "../../services/r2.service";
 
 const router = Router();
 
@@ -12,11 +13,19 @@ const blogPostSchemaWithCoercedDate = insertBlogPostSchema.extend({
   scheduledAt: z.coerce.date().optional().nullable(),
 });
 
+async function normalizePostImages(post: BlogPost): Promise<BlogPost> {
+  return {
+    ...post,
+    coverImageUrl: (await r2Service.normalizePublicUrl(post.coverImageUrl)) ?? null,
+    ogImageUrl: (await r2Service.normalizePublicUrl(post.ogImageUrl)) ?? null,
+  };
+}
+
 router.get(
   "/",
   asyncHandler(async (_req, res) => {
     const posts = await storage.blog.getAllPosts();
-    res.json(posts);
+    res.json(await Promise.all(posts.map(normalizePostImages)));
   })
 );
 
@@ -27,7 +36,7 @@ router.get(
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
     }
-    res.json(post);
+    res.json(await normalizePostImages(post));
   })
 );
 
@@ -46,7 +55,7 @@ router.post(
       data.scheduledAt = null;
     }
     const post = await storage.blog.createPost(data);
-    res.status(201).json(post);
+    res.status(201).json(await normalizePostImages(post));
   })
 );
 
@@ -69,7 +78,7 @@ router.put(
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
     }
-    res.json(post);
+    res.json(await normalizePostImages(post));
   })
 );
 

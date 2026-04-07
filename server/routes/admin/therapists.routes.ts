@@ -7,14 +7,26 @@ import { sendApprovalEmail, sendRejectionEmail } from "../../services/email.serv
 import { paramString } from "../../utils/params";
 import { getBaseUrl, notFound, conflict } from "../../utils/route-helpers";
 import { logger } from "../../utils/logger";
+import * as r2Service from "../../services/r2.service";
 
 const router = Router();
+
+async function normalizeTherapistResult<T extends { user?: { profileImageUrl?: string | null } | null }>(item: T): Promise<T> {
+  if (!item.user) return item;
+  return {
+    ...item,
+    user: {
+      ...item.user,
+      profileImageUrl: (await r2Service.normalizePublicUrl(item.user.profileImageUrl)) ?? null,
+    },
+  };
+}
 
 router.get(
   "/",
   asyncHandler(async (_req, res) => {
     const profiles = await storage.therapists.getAllProfiles();
-    res.json(profiles);
+    res.json(await Promise.all(profiles.map(normalizeTherapistResult)));
   })
 );
 
@@ -85,7 +97,7 @@ router.post(
       ).catch((err) => logger.email.warn("Failed to send approval email on create", { error: err.message }));
     }
 
-    res.status(201).json(profileWithUser);
+    res.status(201).json(profileWithUser ? await normalizeTherapistResult(profileWithUser) : profileWithUser);
   })
 );
 
@@ -111,7 +123,7 @@ router.put(
       ).catch((err) => logger.email.warn("Failed to send approval email", { error: err.message }));
     }
 
-    res.json(profileWithUser ?? profile);
+    res.json(profileWithUser ? await normalizeTherapistResult(profileWithUser) : profile);
   })
 );
 
@@ -141,7 +153,7 @@ router.put(
       ).catch((err) => logger.email.warn("Failed to send rejection email", { error: err.message }));
     }
 
-    res.json(profileWithUser ?? profile);
+    res.json(profileWithUser ? await normalizeTherapistResult(profileWithUser) : profile);
   })
 );
 
@@ -200,7 +212,7 @@ router.put(
     }
     await storage.activity.log(profile.userId, "profile_update", "Profile updated by admin");
     const profileWithUser = await storage.therapists.getProfileWithUser(profile.id);
-    res.json(profileWithUser ?? profile);
+    res.json(profileWithUser ? await normalizeTherapistResult(profileWithUser) : profile);
   })
 );
 

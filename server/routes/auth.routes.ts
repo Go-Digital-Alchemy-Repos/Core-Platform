@@ -18,6 +18,7 @@ import {
   registerLimiter,
 } from "../middleware/security";
 import { logger } from "../utils/logger";
+import * as r2Service from "../services/r2.service";
 
 const router = Router();
 
@@ -34,6 +35,13 @@ const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
+
+async function normalizeUserImage<T extends { profileImageUrl?: string | null }>(user: T): Promise<T> {
+  return {
+    ...user,
+    profileImageUrl: (await r2Service.normalizePublicUrl(user.profileImageUrl)) ?? null,
+  };
+}
 
 router.post(
   "/register",
@@ -96,7 +104,7 @@ router.post(
     setTokenCookie(res, token);
 
     const { password: _, ...safeUser } = user;
-    res.status(201).json(safeUser);
+    res.status(201).json(await normalizeUserImage(safeUser));
   })
 );
 
@@ -131,7 +139,7 @@ router.post(
     setTokenCookie(res, token);
 
     const { password: _, ...safeUser } = user;
-    res.json(safeUser);
+    res.json(await normalizeUserImage(safeUser));
   })
 );
 
@@ -145,7 +153,7 @@ router.get(
   authenticateToken,
   asyncHandler(async (req, res) => {
     const { password: _, ...safeUser } = req.user!;
-    res.json(safeUser);
+    res.json(await normalizeUserImage(safeUser));
   })
 );
 
@@ -230,7 +238,7 @@ router.put(
     }
 
     const { password: _, ...safeUser } = updated;
-    res.json(safeUser);
+    res.json(await normalizeUserImage(safeUser));
   })
 );
 

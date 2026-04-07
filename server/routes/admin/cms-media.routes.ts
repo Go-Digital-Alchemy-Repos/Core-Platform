@@ -82,7 +82,14 @@ router.get(
   "/media",
   asyncHandler(async (_req, res) => {
     const assets = await storage.cmsMedia.getAllMedia();
-    res.json(assets);
+    res.json(
+      await Promise.all(
+        assets.map(async (asset) => ({
+          ...asset,
+          url: (await r2Service.normalizePublicUrl(asset.url)) ?? asset.url,
+        }))
+      )
+    );
   })
 );
 
