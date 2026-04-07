@@ -337,10 +337,17 @@ export default function HomePage() {
   return (
     <PageLayout>
       <section className="relative overflow-hidden" data-testid="section-hero">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/images/hero-therapy-session.png')" }}
-        />
+        <picture className="absolute inset-0">
+          <source media="(max-width: 768px)" srcSet="/images/hero-therapy-session-768w.webp" />
+          <source media="(max-width: 1280px)" srcSet="/images/hero-therapy-session-1280w.webp" />
+          <source srcSet="/images/hero-therapy-session-1920w.webp" />
+          <img
+            src="/images/hero-therapy-session-1280w.webp"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover object-center"
+            data-testid="img-hero-background"
+          />
+        </picture>
         <div className="absolute inset-0 bg-background/85 dark:bg-background/90" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-14 pb-18 sm:pt-20 sm:pb-24 md:pt-28 md:pb-32">
           <div className="max-w-3xl mx-auto text-center">

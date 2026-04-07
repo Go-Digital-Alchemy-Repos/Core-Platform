@@ -1,7 +1,7 @@
 # TCK Wellness — Counselor Directory & Subscription Platform
 
 ## Overview
-TCK Wellness is a platform dedicated to supporting Third Culture Kids (TCKs) by connecting them with specialized mental health counselors. The project aims to deliver comprehensive mental health resources to the TCK community through a searchable counselor directory, secure authentication, integrated mapping, subscription management, and a robust admin dashboard.
+TCK Wellness is a platform dedicated to supporting Third Culture Kids (TCKs) by connecting them with specialized mental health counselors. It offers a searchable counselor directory, secure authentication, integrated mapping, subscription management, and a robust admin dashboard to provide essential mental health support to the TCK community.
 
 ## User Preferences
 - All visible text uses "Counselor"/"Counselors" throughout the UI (navbar, footer, home, directory, admin, auth pages).
@@ -10,12 +10,12 @@ TCK Wellness is a platform dedicated to supporting Third Culture Kids (TCKs) by 
 ## System Architecture
 
 ### UI/UX Decisions
-- **Terminology**: Consistent use of "Counselor" across the UI.
+- **Terminology**: Consistent use of "Counselor"/"Counselors" across all UI.
 - **Component Library**: `shadcn/ui` with Tailwind CSS for a responsive and modern interface.
-- **Responsive Design**: Custom breakpoints for optimal viewing across devices.
+- **Responsive Design**: Custom breakpoints (xs=480px, sm=640px, md=768px, lg=1024px, xl=1280px).
 - **Interactive Components**: `Sheet` components for forms and details; `AlertDialog` for confirmations.
-- **Branding**: Defined color palette (Navy, Sage, Copper, Teal).
-- **Typography**: EB Garamond for headings and Nunito for body text.
+- **Branding**: Defined color palette (Navy, Sage, Copper, Teal) and specific fonts (EB Garamond for headings, Nunito for body text).
+- **CMS Theme System**: 11 selectable theme presets covering colors, typography, radius, and fonts, applied site-wide via CSS custom properties.
 
 ### Technical Implementations
 - **Frontend**: React 18, TypeScript, Tailwind CSS, shadcn/ui, Wouter, TanStack Query v5.
@@ -23,37 +23,37 @@ TCK Wellness is a platform dedicated to supporting Third Culture Kids (TCKs) by 
 - **Database**: PostgreSQL with Drizzle ORM.
 - **Authentication**: Custom JWT with `bcryptjs` and HTTP-only cookies, supporting admin, therapist, and client roles.
 - **Core Features**:
-    - **Counselor Directory**: Searchable profiles with multi-select filtering, map integration, and availability toggles.
+    - **Counselor Directory**: Searchable profiles with multi-select specialization filtering, map integration, availability toggles, and filters.
     - **Subscription Management**: Stripe integration for counselor memberships.
-    - **Event Management**: Creation and management of virtual, in-person, and hybrid events with registration and notifications. Includes recurring event functionality and a full-page admin editor.
-    - **Recording Archives**: Role-aware video archives of past events, with options for free or paid access via Stripe.
+    - **Event Management**: Creation and management of virtual, in-person, and hybrid events with registration, notifications, recurring event functionality, and a full-page admin editor.
+    - **Recording Archives**: Role-aware video archives of past events, with options for free or paid access via Stripe controlled by admins.
     - **Admin Dashboard**: Comprehensive management of users, memberships, events, content, and system settings.
-    - **Contact Professional**: Direct email functionality from counselor profiles without requiring user accounts.
-    - **Registration Consent**: Required age verification and PHI/HIPAA disclaimer checkboxes.
+    - **Contact Professional**: Direct email functionality from counselor profiles without requiring user accounts (inline form).
+    - **Registration Consent**: Required age verification (18+) and PHI/HIPAA disclaimer checkboxes.
     - **Notifications**: In-app notification system with user preferences.
-    - **CMS**: Nondestructive, block-based page builder with revision history, SEO fields, and scheduled publishing for pages and blog posts. Supports numerous block types and dynamic blocks (e.g., therapist-map).
+    - **CMS**: Nondestructive, block-based page builder with revision history, SEO fields, and scheduled publishing for pages and blog posts. Supports ~37 block types and dynamic blocks (e.g., therapist-map). Media managed via Cloudflare R2.
     - **Reusable CMS Sections**: Library for saving and reusing block groups.
-    - **Blog Integration**: Integrated blog management within the CMS, supporting Article, Podcast, and External Article post types.
-    - **Provider Application System**: A 7-step wizard for counselor applications with autosave, credential management, reference collection, and a $150 application fee (via Stripe).
+    - **Blog Integration**: Integrated blog management within the CMS, supporting Article, Podcast, and External Article post types with enhanced editor and SEO fields.
+    - **Provider Application System**: A 7-step wizard for counselor applications with autosave, resume capability, credential management, reference collection, and a $150 application fee (via Stripe).
     - **Automated Reference Workflow**: Automated email dispatch with tokenized links for references, public form for submission, and status tracking.
-    - **Application Gating & Workflow**: Multi-status application process (`draft` to `active_member`) with admin approval/denial, background check scaffolding, interview scheduling, and subscription gating.
+    - **Provider Application Workflow & Gating**: Multi-status application process (`draft` to `active_member`) with admin approval/denial, background check scaffolding, interview scheduling, and subscription gating. Gates public directory visibility and subscription access based on approval and active status.
     - **Hybrid Page Rendering**: Public routes can render dynamic CMS content or static React components.
-    - **SEO Foundation**: Global and per-page/post SEO settings with structured data (JSON-LD) generation, redirects manager, and sitemap.
+    - **SEO Foundation**: Global and per-page/post SEO settings with structured data (JSON-LD) generation, redirects manager, and dynamic sitemap.
     - **Page Templates & Landing Page Generator**: Pre-built templates and a wizard for creating high-conversion landing pages.
-    - **Navigation Menu Builder**: Dynamic management of header and footer navigation with multi-level nesting.
+    - **Navigation Menu Builder**: Dynamic management of header and footer navigation with multi-level nesting (up to 3 levels deep).
     - **CMS Theme System**: 11 selectable theme presets controlling site-wide colors, typography, and radius, applied via CSS custom properties.
 
 ### System Design Choices
-- **Layered Architecture**: Route → Service → Storage pattern for clear separation of concerns.
+- **Layered Architecture**: Route → Service → Storage pattern for clear separation of concerns, with thin route handlers and domain services owning business logic.
 - **Application Service**: Manages the full application lifecycle, including state machine, payment orchestration, and approval workflows.
 - **Modular Structure**: Backend organized by concern, frontend by feature.
-- **Structured Logging**: Pino-based JSON logger with PII redaction and request ID propagation.
+- **Structured Logging**: Pino-based JSON logger with PII redaction and full UUID request ID propagation.
 - **Settings & Service Client Caching**: TTL-based in-memory caching for settings and singleton service clients (R2, Mailgun, Stripe).
-- **Operational Metrics**: Endpoint exposing request counts, latency, and error rates.
-- **Performance Optimization**: Frontend lazy loading and React Query caching.
+- **Operational Metrics**: Endpoint exposing request counts, latency, error rates, DB query timing, and email send outcomes via a health endpoint.
+- **Performance Optimization**: Frontend route-level lazy loading and React Query caching.
 - **Database Indexing & FK Constraints**: Extensive use of B-tree/GIN indexes and foreign key constraints.
-- **CMS Content Structure**: Block content stored as JSON with typed definitions.
-- **CMS Publishing Workflow**: Admin control over publishing, unpublishing, and revision history.
+- **CMS Content Structure**: Block content stored as JSON with typed definitions, supporting a full publishing workflow with revision history.
+- **Deployment (Railway)**: Configured for Railway with specific build/start commands, healthcheck, trust proxy, database SSL, conditional Vite plugin loading, esbuild server bundling, auto-migrations on startup, and a first-visit admin setup flow.
 
 ## External Dependencies
 - **Stripe**: Subscription and payment processing.

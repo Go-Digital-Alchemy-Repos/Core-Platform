@@ -19,7 +19,7 @@ const homeContent = {
         ctaLink: "/directory",
         ctaSecondaryText: "Join the Network!",
         ctaSecondaryLink: "/auth/register",
-        backgroundImageUrl: "/images/hero-therapy-session.png",
+        backgroundImageUrl: "/images/hero-therapy-session-1280w.webp",
         overlayOpacity: 85,
       },
     },

@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-import logoIcon from "@assets/TCK-Wellness_Icon_1773155859136.png";
+import logoIcon from "@assets/TCK-Wellness_Icon.webp";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
