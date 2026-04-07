@@ -161,6 +161,20 @@ function RegistrationSection({
     },
   });
 
+  const payMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/stripe/create-event-checkout-session", { eventId: event.id });
+      const { url } = await res.json();
+      return url;
+    },
+    onSuccess: (url) => {
+      window.location.href = url;
+    },
+    onError: (error: Error) => {
+      toast({ title: "Checkout failed", description: error.message, variant: "destructive" });
+    },
+  });
+
   if (!event.registrationEnabled) return null;
   if (isPast || isCanceled) return null;
 
@@ -255,20 +269,6 @@ function RegistrationSection({
       </Card>
     );
   }
-
-  const payMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/stripe/create-event-checkout-session", { eventId: event.id });
-      const { url } = await res.json();
-      return url;
-    },
-    onSuccess: (url) => {
-      window.location.href = url;
-    },
-    onError: (error: Error) => {
-      toast({ title: "Checkout failed", description: error.message, variant: "destructive" });
-    },
-  });
 
   if (registration && registration.status === "confirmed" && (registration.paymentStatus === "paid" || registration.paymentStatus === "not_required")) {
     return (
