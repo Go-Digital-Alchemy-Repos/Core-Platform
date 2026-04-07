@@ -515,8 +515,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           </Dialog>
         </div>
       ) : (
-        <div className={`grid gap-4 ${selectedBlock ? "lg:grid-cols-[1fr_340px]" : "grid-cols-1"}`}>
-          <div className="space-y-2" data-testid="builder-block-list">
+        <div className={`grid gap-4 ${selectedBlock ? "lg:grid-cols-[1fr_340px]" : "grid-cols-1"} ${selectedBlock ? "lg:h-[calc(100vh-220px)]" : ""}`}>
+          <div className={`space-y-2 ${selectedBlock ? "lg:overflow-y-auto lg:pr-1" : ""}`} data-testid="builder-block-list">
             {blocks.map((block, idx) => {
               const def = getBlockDef(block.type);
               const isSelected = block.id === selectedId;
@@ -631,7 +631,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
           {selectedBlock && selectedDef && (
             <div
-              className="border rounded-xl bg-background lg:sticky lg:top-6 lg:self-start"
+              className="border rounded-xl bg-background lg:overflow-y-auto"
               data-testid="block-editor-panel"
             >
               <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/20">
@@ -649,7 +649,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                   <EyeOff className="h-3.5 w-3.5" />
                 </Button>
               </div>
-              <ScrollArea className="h-[calc(100vh-200px)]">
+              <ScrollArea className="lg:h-auto h-[calc(100vh-300px)] max-h-[600px] lg:max-h-none">
                 <div className="p-4">
                   <BlockEditor
                     blockDef={selectedDef}
