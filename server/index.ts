@@ -1,7 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 import path from "path";
-import { createRequire } from "module";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -16,8 +15,8 @@ import { logger, requestIdMiddleware } from "./utils/logger";
 import { recordRequest, getMetricsSnapshot } from "./utils/metrics";
 import { startScheduledPublishService } from "./services/scheduled-publish.service";
 
-const require = createRequire(import.meta.url);
-const pkgVersion: string = (require("../package.json") as { version: string }).version;
+declare const __APP_VERSION__: string;
+const pkgVersion = typeof __APP_VERSION__ === "string" ? __APP_VERSION__ : "unknown";
 
 enforceRequiredSecrets();
 
