@@ -631,7 +631,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
           {selectedBlock && selectedDef && (
             <div
-              className="border rounded-xl bg-background"
+              className="border rounded-xl bg-background lg:sticky lg:top-6 lg:self-start"
               data-testid="block-editor-panel"
             >
               <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/20">
@@ -649,7 +649,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                   <EyeOff className="h-3.5 w-3.5" />
                 </Button>
               </div>
-              <ScrollArea className="h-[calc(100vh-300px)] max-h-[600px]">
+              <ScrollArea className="h-[calc(100vh-200px)]">
                 <div className="p-4">
                   <BlockEditor
                     blockDef={selectedDef}
