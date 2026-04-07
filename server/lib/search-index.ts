@@ -10,19 +10,31 @@ export function isSearchIndexReady(): boolean {
 
 export async function initSearchIndex() {
   try {
-    const columnCheck = await db.execute(sql`
-      SELECT 1 FROM information_schema.columns
-      WHERE table_name = 'therapist_profiles' AND column_name = 'search_vector'
+    await db.execute(sql`
+      ALTER TABLE therapist_profiles
+      ADD COLUMN IF NOT EXISTS search_vector tsvector
     `);
 
-    if (columnCheck.rows.length > 0) {
-      searchIndexReady = true;
-      logger.app.info("Full-text search index is available");
-      return;
-    }
-
     await db.execute(sql`
-      ALTER TABLE therapist_profiles ADD COLUMN search_vector tsvector
+      CREATE OR REPLACE FUNCTION compute_therapist_search_vector(
+        first_name text,
+        last_name text,
+        therapist_title text,
+        therapist_city text,
+        therapist_country text,
+        therapist_specializations text[],
+        therapist_languages text[]
+      ) RETURNS tsvector AS $$
+        SELECT to_tsvector(
+          'simple',
+          coalesce(first_name || ' ' || last_name, '') || ' ' ||
+          coalesce(therapist_title, '') || ' ' ||
+          coalesce(therapist_city, '') || ' ' ||
+          coalesce(therapist_country, '') || ' ' ||
+          coalesce(array_to_string(therapist_specializations, ' '), '') || ' ' ||
+          coalesce(array_to_string(therapist_languages, ' '), '')
+        )
+      $$ LANGUAGE sql IMMUTABLE
     `);
 
     await db.execute(sql`
@@ -34,13 +46,14 @@ export async function initSearchIndex() {
         SELECT first_name, last_name INTO u_first, u_last
         FROM users WHERE id = NEW.user_id;
 
-        NEW.search_vector := to_tsvector('simple',
-          coalesce(u_first || ' ' || u_last, '') || ' ' ||
-          coalesce(NEW.title, '') || ' ' ||
-          coalesce(NEW.city, '') || ' ' ||
-          coalesce(NEW.country, '') || ' ' ||
-          coalesce(array_to_string(NEW.specializations, ' '), '') || ' ' ||
-          coalesce(array_to_string(NEW.languages, ' '), '')
+        NEW.search_vector := compute_therapist_search_vector(
+          u_first,
+          u_last,
+          NEW.title,
+          NEW.city,
+          NEW.country,
+          NEW.specializations,
+          NEW.languages
         );
         RETURN NEW;
       END
@@ -58,20 +71,76 @@ export async function initSearchIndex() {
     `);
 
     await db.execute(sql`
+      CREATE OR REPLACE FUNCTION sync_therapist_search_vector_from_user() RETURNS trigger AS $$
+      BEGIN
+        UPDATE therapist_profiles
+        SET search_vector = compute_therapist_search_vector(
+          NEW.first_name,
+          NEW.last_name,
+          title,
+          city,
+          country,
+          specializations,
+          languages
+        )
+        WHERE user_id = NEW.id
+          AND search_vector IS DISTINCT FROM compute_therapist_search_vector(
+            NEW.first_name,
+            NEW.last_name,
+            title,
+            city,
+            country,
+            specializations,
+            languages
+          );
+
+        RETURN NEW;
+      END
+      $$ LANGUAGE plpgsql
+    `);
+
+    await db.execute(sql`
+      DROP TRIGGER IF EXISTS trg_users_therapist_search_vector ON users
+    `);
+
+    await db.execute(sql`
+      CREATE TRIGGER trg_users_therapist_search_vector
+      AFTER UPDATE OF first_name, last_name ON users
+      FOR EACH ROW
+      WHEN (
+        OLD.first_name IS DISTINCT FROM NEW.first_name
+        OR OLD.last_name IS DISTINCT FROM NEW.last_name
+      )
+      EXECUTE FUNCTION sync_therapist_search_vector_from_user()
+    `);
+
+    await db.execute(sql`
       CREATE INDEX IF NOT EXISTS idx_tp_search_vector_gin
       ON therapist_profiles USING gin(search_vector)
     `);
 
     await db.execute(sql`
-      UPDATE therapist_profiles SET search_vector = to_tsvector('simple',
-        coalesce((SELECT first_name || ' ' || last_name FROM users WHERE id = therapist_profiles.user_id), '') || ' ' ||
-        coalesce(title, '') || ' ' ||
-        coalesce(city, '') || ' ' ||
-        coalesce(country, '') || ' ' ||
-        coalesce(array_to_string(specializations, ' '), '') || ' ' ||
-        coalesce(array_to_string(languages, ' '), '')
+      UPDATE therapist_profiles AS tp
+      SET search_vector = compute_therapist_search_vector(
+        u.first_name,
+        u.last_name,
+        tp.title,
+        tp.city,
+        tp.country,
+        tp.specializations,
+        tp.languages
       )
-      WHERE search_vector IS NULL
+      FROM users AS u
+      WHERE u.id = tp.user_id
+        AND tp.search_vector IS DISTINCT FROM compute_therapist_search_vector(
+          u.first_name,
+          u.last_name,
+          tp.title,
+          tp.city,
+          tp.country,
+          tp.specializations,
+          tp.languages
+        )
     `);
 
     searchIndexReady = true;
