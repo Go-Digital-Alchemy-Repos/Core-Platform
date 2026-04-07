@@ -82,7 +82,7 @@ function Router() {
         <Route path="/directory/:id" component={TherapistProfilePage} />
         <Route path="/reference/:token" component={ReferenceFormPage} />
         <Route path="/auth/login" component={LoginPage} />
-        <Route path="/auth/register">{() => { window.location.replace("/join"); return null; }}</Route>
+        <Route path="/auth/register" component={() => { const [, setLocation] = useLocation(); setLocation("/join", { replace: true }); return null; }} />
         <Route path="/auth/reset-password" component={ResetPasswordPage} />
         <Route path="/setup" component={AdminSetupPage} />
 
