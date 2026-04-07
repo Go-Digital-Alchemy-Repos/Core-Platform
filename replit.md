@@ -1,7 +1,7 @@
 # TCK Wellness — Counselor Directory & Subscription Platform
 
 ## Overview
-TCK Wellness is a platform dedicated to supporting Third Culture Kids (TCKs) by connecting them with specialized mental health counselors. It offers a searchable counselor directory, secure authentication, integrated mapping, subscription management, and a robust admin dashboard to provide essential mental health support to the TCK community.
+TCK Wellness is a platform dedicated to supporting Third Culture Kids (TCKs) by connecting them with specialized mental health counselors. It offers a searchable counselor directory, secure authentication, integrated mapping, subscription management, and a robust admin dashboard to provide essential mental health support to the TCK community. The project aims to become the leading platform for TCKs seeking mental health professionals.
 
 ## User Preferences
 - All visible text uses "Counselor"/"Counselors" throughout the UI (navbar, footer, home, directory, admin, auth pages).
@@ -28,7 +28,7 @@ TCK Wellness is a platform dedicated to supporting Third Culture Kids (TCKs) by 
     - **Event Management**: Creation and management of virtual, in-person, and hybrid events with registration, notifications, recurring event functionality, and a full-page admin editor.
     - **Recording Archives**: Role-aware video archives of past events, with options for free or paid access via Stripe controlled by admins.
     - **Admin Dashboard**: Comprehensive management of users, memberships, events, content, and system settings.
-    - **Contact Professional**: Direct email functionality from counselor profiles without requiring user accounts (inline form).
+    - **Contact Professional**: Direct email functionality from counselor profiles to counselors' registered email addresses without requiring user accounts (inline form).
     - **Registration Consent**: Required age verification (18+) and PHI/HIPAA disclaimer checkboxes.
     - **Notifications**: In-app notification system with user preferences.
     - **CMS**: Nondestructive, block-based page builder with revision history, SEO fields, and scheduled publishing for pages and blog posts. Supports ~37 block types and dynamic blocks (e.g., therapist-map). Media managed via Cloudflare R2.
@@ -37,6 +37,7 @@ TCK Wellness is a platform dedicated to supporting Third Culture Kids (TCKs) by 
     - **Provider Application System**: A 7-step wizard for counselor applications with autosave, resume capability, credential management, reference collection, and a $150 application fee (via Stripe).
     - **Automated Reference Workflow**: Automated email dispatch with tokenized links for references, public form for submission, and status tracking.
     - **Provider Application Workflow & Gating**: Multi-status application process (`draft` to `active_member`) with admin approval/denial, background check scaffolding, interview scheduling, and subscription gating. Gates public directory visibility and subscription access based on approval and active status.
+    - **Background Check Scaffolding**: Modular system for managing and tracking background checks, with provider and admin interfaces.
     - **Hybrid Page Rendering**: Public routes can render dynamic CMS content or static React components.
     - **SEO Foundation**: Global and per-page/post SEO settings with structured data (JSON-LD) generation, redirects manager, and dynamic sitemap.
     - **Page Templates & Landing Page Generator**: Pre-built templates and a wizard for creating high-conversion landing pages.
@@ -49,6 +50,7 @@ TCK Wellness is a platform dedicated to supporting Third Culture Kids (TCKs) by 
 - **Modular Structure**: Backend organized by concern, frontend by feature.
 - **Structured Logging**: Pino-based JSON logger with PII redaction and full UUID request ID propagation.
 - **Settings & Service Client Caching**: TTL-based in-memory caching for settings and singleton service clients (R2, Mailgun, Stripe).
+- **Retry Utility**: `retryOnce` helper for idempotent outbound operations.
 - **Operational Metrics**: Endpoint exposing request counts, latency, error rates, DB query timing, and email send outcomes via a health endpoint.
 - **Performance Optimization**: Frontend route-level lazy loading and React Query caching.
 - **Database Indexing & FK Constraints**: Extensive use of B-tree/GIN indexes and foreign key constraints.
@@ -56,8 +58,8 @@ TCK Wellness is a platform dedicated to supporting Third Culture Kids (TCKs) by 
 - **Deployment (Railway)**: Configured for Railway with specific build/start commands, healthcheck, trust proxy, database SSL, conditional Vite plugin loading, esbuild server bundling, auto-migrations on startup, and a first-visit admin setup flow.
 
 ## External Dependencies
-- **Stripe**: Subscription and payment processing.
-- **OpenStreetMap & Leaflet**: Map integration.
+- **Stripe**: Subscription and payment processing, event registrations, and application fees.
+- **OpenStreetMap & Leaflet**: Map integration for counselor locations.
 - **Mailgun / Nodemailer**: Transactional email delivery.
 - **Cloudflare R2**: Object storage for media assets.
 - **Zod**: Schema validation.

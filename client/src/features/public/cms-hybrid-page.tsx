@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { PageRenderer } from "@/features/admin/cms/builder/block-renderer";
+import { PublicPageRenderer } from "@/features/public/public-block-renderer";
 import type { BlockInstance, BuilderContent } from "@/features/admin/cms/builder/block-registry";
 import type { CmsPage, SeoSettings } from "@shared/schema";
 import { JsonLd } from "@/components/shared/json-ld";
@@ -158,7 +158,7 @@ export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
       <Navbar />
       <main className="flex-1">
         {blocks.length > 0 ? (
-          <PageRenderer blocks={blocks} />
+          <PublicPageRenderer blocks={blocks} />
         ) : (
           <div className="max-w-4xl mx-auto px-4 py-16">
             <h1 className="text-3xl font-heading font-semibold">{page.title}</h1>
