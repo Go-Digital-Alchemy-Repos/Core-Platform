@@ -22,14 +22,13 @@ import {
   Sparkles, FileText, LayoutTemplate, Megaphone, LayoutGrid,
   HelpCircle, Quote, UserCheck, CalendarDays, BookOpen,
   MousePointerClick, Image, Play, Minus, Heading,
-  Map, Lock, UserPlus, Send, Loader2, ArrowRight,
+  Map, Lock, UserPlus, Send, Loader2, ArrowRight, Clock,
   AlertCircle, ClipboardCheck, BarChart3, Search, User, ShieldCheck,
   List, Shield, Newspaper, TrendingUp, Grid3X3, Rss,
   ListChecks, FlaskConical, BadgeCheck, Workflow, ListOrdered,
   ChevronLeft, ChevronRight, GalleryHorizontal, Grid2X2, Building2,
   ExternalLink, XCircle,
 } from "lucide-react";
-import { ProfessionalRegisterDialog } from "@/components/auth/professional-register-dialog";
 import { LoginDialog } from "@/components/auth/login-dialog";
 import { MapView } from "@/components/directory/map-view";
 import { apiRequest } from "@/lib/queryClient";
@@ -1356,7 +1355,6 @@ function ContactFormBlock() {
 }
 
 function JoinRegistrationFormBlock() {
-  const [registerOpen, setRegisterOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
 
   return (
@@ -1367,12 +1365,12 @@ function JoinRegistrationFormBlock() {
       </h1>
       <Button
         size="lg"
-        className="bg-accent text-accent-foreground border-accent-border text-base px-8 py-6"
-        onClick={() => setRegisterOpen(true)}
+        className="bg-accent text-accent-foreground border-accent-border text-base px-8 py-6 opacity-60 cursor-not-allowed"
+        disabled
         data-testid="button-apply-member"
       >
-        <UserPlus className="mr-2 h-5 w-5" />
-        Register to Become a Member
+        <Clock className="mr-2 h-5 w-5" />
+        Applications open in June.
       </Button>
       <p className="text-sm sm:text-base text-muted-foreground mt-6" data-testid="text-login-prompt">
         If you're already a member click here to{" "}
@@ -1385,7 +1383,6 @@ function JoinRegistrationFormBlock() {
         </button>{" "}
         to your profile!
       </p>
-      <ProfessionalRegisterDialog open={registerOpen} onOpenChange={setRegisterOpen} />
       <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
     </section>
   );

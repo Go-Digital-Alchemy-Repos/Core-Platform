@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { PageLayout } from "@/components/layout/page-layout";
-import { ProfessionalRegisterDialog } from "@/components/auth/professional-register-dialog";
 import { LoginDialog } from "@/components/auth/login-dialog";
 import { Button } from "@/components/ui/button";
 import {
-  UserPlus,
+  Clock,
   ClipboardCheck,
   Users,
   BarChart3,
@@ -64,7 +63,6 @@ const applicationSteps = [
 ];
 
 export default function JoinNetworkPage() {
-  const [registerOpen, setRegisterOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
 
   return (
@@ -77,12 +75,12 @@ export default function JoinNetworkPage() {
 
         <Button
           size="lg"
-          className="bg-accent text-accent-foreground border-accent-border text-base px-8 py-6"
-          onClick={() => setRegisterOpen(true)}
+          className="bg-accent text-accent-foreground border-accent-border text-base px-8 py-6 opacity-60 cursor-not-allowed"
+          disabled
           data-testid="button-apply-member"
         >
-          <UserPlus className="mr-2 h-5 w-5" />
-          Register to Become a Member
+          <Clock className="mr-2 h-5 w-5" />
+          Applications open in June.
         </Button>
 
         <p className="text-sm sm:text-base text-muted-foreground mt-6" data-testid="text-login-prompt">
@@ -156,7 +154,6 @@ export default function JoinNetworkPage() {
         </div>
       </section>
 
-      <ProfessionalRegisterDialog open={registerOpen} onOpenChange={setRegisterOpen} />
       <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
     </PageLayout>
   );

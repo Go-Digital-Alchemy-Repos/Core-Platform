@@ -11,7 +11,7 @@ const defaultPlatformLinks = [
 ];
 
 const defaultTherapistLinks = [
-  { href: "/auth/register", label: "Join the Directory", testId: "link-footer-join" },
+  { href: "/join", label: "Applications open in June", testId: "link-footer-join" },
   { href: "/auth/login", label: "Mental Health Professional Login", testId: "link-footer-login" },
   { href: "/therapist/subscription", label: "Membership Plans", testId: "link-footer-membership" },
 ];

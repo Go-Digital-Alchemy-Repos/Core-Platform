@@ -136,11 +136,8 @@ export default function LoginPage() {
                 </form>
               </Form>
 
-              <div className="mt-4 text-center text-sm text-muted-foreground">
-                Don't have an account?{" "}
-                <Link href="/auth/register" className="text-accent underline" data-testid="link-register">
-                  Register here
-                </Link>
+              <div className="mt-4 text-center text-sm text-muted-foreground" data-testid="text-applications-notice">
+                Applications open in June.
               </div>
             </CardContent>
           </Card>

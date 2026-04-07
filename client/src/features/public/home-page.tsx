@@ -358,11 +358,9 @@ export default function HomePage() {
               </div>
               <div className="text-center">
                 <p className="text-base sm:text-lg font-medium mb-4" data-testid="text-hero-professional-label">Are you a mental health professional?</p>
-                <Link href="/auth/register">
-                  <Button size="lg" className="bg-accent text-accent-foreground border-accent-border" data-testid="button-join-therapist">
-                    Join the Network!
-                  </Button>
-                </Link>
+                <Button size="lg" className="bg-accent text-accent-foreground border-accent-border opacity-60 cursor-not-allowed" disabled data-testid="button-join-therapist">
+                  Applications open in June.
+                </Button>
               </div>
             </div>
           </div>
@@ -486,12 +484,9 @@ export default function HomePage() {
           <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto mb-8 sm:mb-10 leading-relaxed">
             Join our growing directory and connect with clients who need your unique expertise. List your practice and reach the global TCK community.
           </p>
-          <Link href="/auth/register">
-            <Button size="lg" className="bg-accent text-accent-foreground border-accent-border" data-testid="button-cta-join">
-              Join the Directory
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
+          <Button size="lg" className="bg-accent text-accent-foreground border-accent-border opacity-60 cursor-not-allowed" disabled data-testid="button-cta-join">
+            Applications open in June.
+          </Button>
         </div>
       </section>
     </PageLayout>

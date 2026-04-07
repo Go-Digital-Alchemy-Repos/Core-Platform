@@ -18,7 +18,6 @@ const JoinNetworkPage = lazy(() => import("@/features/public/join-network-page")
 import { CmsHybridPage } from "@/features/public/cms-hybrid-page";
 
 const LoginPage = lazy(() => import("@/features/auth/login-page"));
-const RegisterPage = lazy(() => import("@/features/auth/register-page"));
 const ResetPasswordPage = lazy(() => import("@/features/auth/reset-password-page"));
 const AdminSetupPage = lazy(() => import("@/features/auth/admin-setup-page"));
 
@@ -83,7 +82,7 @@ function Router() {
         <Route path="/directory/:id" component={TherapistProfilePage} />
         <Route path="/reference/:token" component={ReferenceFormPage} />
         <Route path="/auth/login" component={LoginPage} />
-        <Route path="/auth/register" component={RegisterPage} />
+        <Route path="/auth/register">{() => { window.location.replace("/join"); return null; }}</Route>
         <Route path="/auth/reset-password" component={ResetPasswordPage} />
         <Route path="/setup" component={AdminSetupPage} />
 

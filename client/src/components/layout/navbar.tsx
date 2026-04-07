@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, Search, X, ChevronDown, Bell, Moon, Sun } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, Search, X, ChevronDown, Bell, Moon, Sun, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,6 @@ import { ThemeToggle, useTheme } from "@/components/shared/theme-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { NotificationBell } from "@/components/shared/notification-bell";
-import { RegisterDialog } from "@/components/shared/register-dialog";
 import type { CmsMenu, MenuItem } from "@shared/schema";
 
 const defaultNavLinks = [
@@ -100,7 +99,6 @@ export function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [registerOpen, setRegisterOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -349,10 +347,12 @@ export function Navbar() {
               </Link>
               <Button
                 variant="outline"
-                onClick={() => setRegisterOpen(true)}
+                disabled
+                className="opacity-60 cursor-not-allowed text-xs gap-1.5"
                 data-testid="button-register"
               >
-                Register
+                <Clock className="h-3.5 w-3.5" />
+                Applications open in June
               </Button>
             </>
           )}
@@ -537,14 +537,12 @@ export function Navbar() {
                     </Link>
                     <Button
                       variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => {
-                        setRegisterOpen(true);
-                        setMobileOpen(false);
-                      }}
+                      className="w-full justify-start opacity-60 cursor-not-allowed text-xs gap-1.5"
+                      disabled
                       data-testid="button-mobile-register"
                     >
-                      Register
+                      <Clock className="h-3.5 w-3.5" />
+                      Applications open in June
                     </Button>
                   </>
                 )}
@@ -556,7 +554,6 @@ export function Navbar() {
 
       {user && <NotificationBell open={notifOpen} onOpenChange={setNotifOpen} showTrigger={false} />}
       <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
-      <RegisterDialog open={registerOpen} onOpenChange={setRegisterOpen} />
     </nav>
   );
 }
