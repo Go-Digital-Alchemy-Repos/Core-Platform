@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect } from "react";
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -82,7 +82,7 @@ function Router() {
         <Route path="/directory/:id" component={TherapistProfilePage} />
         <Route path="/reference/:token" component={ReferenceFormPage} />
         <Route path="/auth/login" component={LoginPage} />
-        <Route path="/auth/register" component={() => { const [, setLocation] = useLocation(); setLocation("/join", { replace: true }); return null; }} />
+        <Route path="/auth/register"><Redirect to="/join" replace /></Route>
         <Route path="/auth/reset-password" component={ResetPasswordPage} />
         <Route path="/setup" component={AdminSetupPage} />
 
