@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
+import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count";
 
 type Notification = {
   id: number;
@@ -41,11 +42,7 @@ export function NotificationBell({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const qc = useQueryClient();
 
-  const { data: unreadData } = useQuery<{ count: number }>({
-    queryKey: ["/api/notifications/unread-count"],
-    refetchInterval: 30000,
-  });
-  const unreadCount = unreadData?.count ?? 0;
+  const unreadCount = useUnreadNotificationCount();
 
   const { data: notifications } = useQuery<Notification[]>({
     queryKey: ["/api/notifications"],

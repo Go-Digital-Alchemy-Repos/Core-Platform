@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { cmsPages, type CmsPage, type InsertCmsPage } from "@shared/schema";
-import { eq, desc, and, lte } from "drizzle-orm";
+import { eq, desc, and, lte, asc, sql } from "drizzle-orm";
 
 export class CmsPagesStorage {
   async getAllPages(): Promise<CmsPage[]> {
@@ -71,5 +71,15 @@ export class CmsPagesStorage {
       .where(and(eq(cmsPages.status, "scheduled"), lte(cmsPages.scheduledAt, now)))
       .returning();
     return result.length;
+  }
+
+  async getNextScheduledTime(): Promise<Date | null> {
+    const [row] = await db
+      .select({ scheduledAt: cmsPages.scheduledAt })
+      .from(cmsPages)
+      .where(and(eq(cmsPages.status, "scheduled"), sql`${cmsPages.scheduledAt} IS NOT NULL`))
+      .orderBy(asc(cmsPages.scheduledAt))
+      .limit(1);
+    return row?.scheduledAt ?? null;
   }
 }

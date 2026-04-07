@@ -74,4 +74,19 @@ export class BlogStorage {
       .returning();
     return result.length;
   }
+
+  async getNextScheduledTime(): Promise<Date | null> {
+    const [row] = await db
+      .select({ scheduledAt: blogPosts.scheduledAt })
+      .from(blogPosts)
+      .where(
+        and(
+          eq(blogPosts.isPublished, false),
+          sql`${blogPosts.scheduledAt} IS NOT NULL`
+        )
+      )
+      .orderBy(sql`${blogPosts.scheduledAt} ASC`)
+      .limit(1);
+    return row?.scheduledAt ?? null;
+  }
 }

@@ -1,10 +1,24 @@
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
 
-const INTERVAL_MS = 60_000;
+const HEARTBEAT_MS = 5 * 60_000;
 
 export function startScheduledPublishService() {
-  async function check() {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  async function getNextScheduledTime(): Promise<Date | null> {
+    const [pageTime, postTime] = await Promise.all([
+      storage.cmsPages.getNextScheduledTime(),
+      storage.blog.getNextScheduledTime(),
+    ]);
+    if (!pageTime && !postTime) return null;
+    if (!pageTime) return postTime;
+    if (!postTime) return pageTime;
+    return pageTime < postTime ? pageTime : postTime;
+  }
+
+  async function run() {
+    timer = null;
     try {
       const pages = await storage.cmsPages.publishScheduledPages();
       const posts = await storage.blog.publishScheduledPosts();
@@ -14,9 +28,31 @@ export function startScheduledPublishService() {
     } catch (err) {
       logger.app.error("[scheduler] Failed to check scheduled content:", err);
     }
+    await scheduleNext();
   }
 
-  check();
-  setInterval(check, INTERVAL_MS);
-  logger.app.info("[scheduler] Scheduled publishing service started (checking every 60s)");
+  async function scheduleNext() {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    try {
+      const next = await getNextScheduledTime();
+      if (next) {
+        const delay = Math.max(next.getTime() - Date.now(), 1000);
+        const capped = Math.min(delay, HEARTBEAT_MS);
+        timer = setTimeout(run, capped);
+        logger.app.info(`[scheduler] Next check in ${Math.round(capped / 1000)}s`);
+      } else {
+        timer = setTimeout(run, HEARTBEAT_MS);
+        logger.app.info(`[scheduler] No scheduled content; heartbeat in ${HEARTBEAT_MS / 1000}s`);
+      }
+    } catch (err) {
+      logger.app.error("[scheduler] Failed to determine next schedule:", err);
+      timer = setTimeout(run, HEARTBEAT_MS);
+    }
+  }
+
+  run();
+  logger.app.info("[scheduler] Scheduled publishing service started");
 }

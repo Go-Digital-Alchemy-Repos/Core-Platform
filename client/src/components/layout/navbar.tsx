@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, Search, X, ChevronDown, Bell, Moon, Sun, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -132,12 +133,7 @@ export function Navbar() {
     }
   }, [searchOpen]);
 
-  const { data: unreadNotifData } = useQuery<{ count: number }>({
-    queryKey: ["/api/notifications/unread-count"],
-    enabled: !!user,
-    refetchInterval: 30000,
-  });
-  const unreadNotifCount = unreadNotifData?.count ?? 0;
+  const unreadNotifCount = useUnreadNotificationCount();
 
   return (
     <nav className="sticky top-0 z-[999] bg-background/95 backdrop-blur-sm border-b" data-testid="navbar">
