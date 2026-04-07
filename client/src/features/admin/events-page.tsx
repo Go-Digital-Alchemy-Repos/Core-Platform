@@ -1326,8 +1326,13 @@ function EventsContent() {
                                               )}
                                             </Button>
                                             <div className="min-w-0">
-                                              <p className="font-medium text-sm truncate" data-testid={`text-registrant-name-${reg.id}`}>
+                                              <p className="font-medium text-sm truncate flex items-center gap-1.5" data-testid={`text-registrant-name-${reg.id}`}>
                                                 {reg.fullName}
+                                                {!reg.userId && (
+                                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0" data-testid={`badge-guest-${reg.id}`}>
+                                                    Guest
+                                                  </Badge>
+                                                )}
                                               </p>
                                               <p className="text-xs text-muted-foreground truncate" data-testid={`text-registrant-email-${reg.id}`}>
                                                 {reg.email}

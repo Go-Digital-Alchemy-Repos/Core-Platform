@@ -1,4 +1,4 @@
-import { eq, gte, lt, asc, desc, and, sql } from "drizzle-orm";
+import { eq, gte, lt, lte, asc, desc, and, sql } from "drizzle-orm";
 import { db } from "../db";
 import { events, type Event, type InsertEvent } from "@shared/schema";
 
@@ -71,5 +71,18 @@ export class EventStorage {
   async deleteEvent(id: string): Promise<boolean> {
     const result = await db.delete(events).where(eq(events.id, id));
     return true;
+  }
+
+  async getEventsInDateRange(from: Date, to: Date): Promise<Event[]> {
+    return db
+      .select()
+      .from(events)
+      .where(
+        and(
+          gte(events.date, from),
+          lte(events.date, to),
+          eq(events.status, "published")
+        )
+      );
   }
 }

@@ -360,18 +360,55 @@ export async function sendNewMessageEmail(
   return sendEmail(to, `New message from ${senderName} — TCK Wellness`, html);
 }
 
+function formatIcsDate(d: Date): string {
+  return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+}
+
+function buildCalendarUrls(event: { title: string; description?: string | null; date: Date | string; endDate?: Date | string | null; locationName?: string | null; location?: string | null; isVirtual?: boolean | null; virtualJoinUrl?: string | null; zoomLink?: string | null }) {
+  const start = new Date(event.date);
+  const end = event.endDate ? new Date(event.endDate) : new Date(start.getTime() + 60 * 60 * 1000);
+  const title = encodeURIComponent(event.title);
+  const desc = encodeURIComponent(event.description || "");
+  const loc = encodeURIComponent(event.locationName || event.location || (event.isVirtual ? "Virtual" : ""));
+
+  const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatIcsDate(start)}/${formatIcsDate(end)}&details=${desc}&location=${loc}`;
+
+  const outlookUrl = `https://outlook.office.com/calendar/action/compose?subject=${title}&startdt=${start.toISOString()}&enddt=${end.toISOString()}&body=${desc}&location=${loc}`;
+
+  const icsContent = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "BEGIN:VEVENT",
+    `DTSTART:${formatIcsDate(start)}`,
+    `DTEND:${formatIcsDate(end)}`,
+    `SUMMARY:${event.title}`,
+    `DESCRIPTION:${(event.description || "").replace(/\n/g, "\\n")}`,
+    `LOCATION:${event.locationName || event.location || ""}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+  const icsDataUri = `data:text/calendar;charset=utf-8,${encodeURIComponent(icsContent)}`;
+
+  return { googleUrl, outlookUrl, icsDataUri };
+}
+
 export async function sendRegistrationConfirmationEmail(
   email: string,
   firstName: string | null,
   eventTitle: string,
   eventDate: string,
-  eventLocation: string | null
+  eventLocation: string | null,
+  event?: { title: string; description?: string | null; date: Date | string; endDate?: Date | string | null; locationName?: string | null; location?: string | null; isVirtual?: boolean | null; virtualJoinUrl?: string | null; zoomLink?: string | null } | null
 ): Promise<boolean> {
-  const vars = {
+  const calendarLinks = event ? buildCalendarUrls(event) : null;
+  const vars: Record<string, string> = {
     firstName: firstName || "there",
     eventTitle,
     eventDate,
     eventLocation: eventLocation || "See event details",
+    googleCalendarUrl: calendarLinks?.googleUrl || "",
+    outlookCalendarUrl: calendarLinks?.outlookUrl || "",
+    icsCalendarUrl: calendarLinks?.icsDataUri || "",
   };
   const { subject, html, isActive } = await getTemplateHtml(
     "event-registration-confirmation",
@@ -424,9 +461,18 @@ export async function sendWaitlistEmail(
   email: string,
   firstName: string | null,
   eventTitle: string,
-  eventDate: string
+  eventDate: string,
+  event?: { title: string; description?: string | null; date: Date | string; endDate?: Date | string | null; locationName?: string | null; location?: string | null; isVirtual?: boolean | null; virtualJoinUrl?: string | null; zoomLink?: string | null } | null
 ): Promise<boolean> {
-  const vars = { firstName: firstName || "there", eventTitle, eventDate };
+  const calendarLinks = event ? buildCalendarUrls(event) : null;
+  const vars: Record<string, string> = {
+    firstName: firstName || "there",
+    eventTitle,
+    eventDate,
+    googleCalendarUrl: calendarLinks?.googleUrl || "",
+    outlookCalendarUrl: calendarLinks?.outlookUrl || "",
+    icsCalendarUrl: calendarLinks?.icsDataUri || "",
+  };
   const { subject, html, isActive } = await getTemplateHtml(
     "event-registration-waitlisted",
     vars,
@@ -458,13 +504,22 @@ export async function sendEventReminderEmail(
   firstName: string | null,
   eventTitle: string,
   eventDate: string,
-  eventLocation: string | null
+  eventLocation: string | null,
+  event?: { title: string; description?: string | null; date: Date | string; endDate?: Date | string | null; locationName?: string | null; location?: string | null; locationAddress?: string | null; isVirtual?: boolean | null; virtualJoinUrl?: string | null; zoomLink?: string | null } | null
 ): Promise<boolean> {
-  const vars = {
+  const calendarLinks = event ? buildCalendarUrls(event) : null;
+  const joinUrl = event?.virtualJoinUrl || event?.zoomLink || "";
+  const vars: Record<string, string> = {
     firstName: firstName || "there",
     eventTitle,
     eventDate,
     eventLocation: eventLocation || "See event details",
+    eventDescription: event?.description || "",
+    virtualJoinUrl: joinUrl,
+    locationAddress: event?.locationAddress || "",
+    googleCalendarUrl: calendarLinks?.googleUrl || "",
+    outlookCalendarUrl: calendarLinks?.outlookUrl || "",
+    icsCalendarUrl: calendarLinks?.icsDataUri || "",
   };
   const { subject, html, isActive } = await getTemplateHtml(
     "event-reminder",

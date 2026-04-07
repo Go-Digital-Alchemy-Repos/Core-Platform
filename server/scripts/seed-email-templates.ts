@@ -143,7 +143,7 @@ const templates = [
     name: "Event Registration Confirmation",
     subject: "Registration Confirmed: {{eventTitle}}",
     description: "Sent when a user successfully registers for an event.",
-    variables: ["firstName", "eventTitle", "eventDate", "eventLocation"],
+    variables: ["firstName", "eventTitle", "eventDate", "eventLocation", "googleCalendarUrl", "outlookCalendarUrl", "icsCalendarUrl"],
     htmlBody: baseWrap("Registration Confirmed", `
     <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
     <p style="color:#374151;font-size:15px;line-height:1.6;">You're registered for <strong>{{eventTitle}}</strong>!</p>
@@ -151,6 +151,15 @@ const templates = [
       <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Date:</strong> {{eventDate}}</p>
       <p style="margin:0;color:#374151;font-size:14px;"><strong>Location:</strong> {{eventLocation}}</p>
     </div>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">You'll receive a reminder email the day before the event with all the details you need.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;"><strong>Add to your calendar:</strong></p>
+    <table cellpadding="0" cellspacing="0" style="margin:8px 0 16px;">
+      <tr>
+        <td style="padding-right:8px;"><a href="{{googleCalendarUrl}}" style="display:inline-block;background:#4285f4;color:#ffffff;padding:8px 16px;border-radius:4px;text-decoration:none;font-size:13px;font-weight:600;" target="_blank">Google Calendar</a></td>
+        <td style="padding-right:8px;"><a href="{{icsCalendarUrl}}" style="display:inline-block;background:#333333;color:#ffffff;padding:8px 16px;border-radius:4px;text-decoration:none;font-size:13px;font-weight:600;" download="event.ics">Apple / iCloud</a></td>
+        <td><a href="{{outlookCalendarUrl}}" style="display:inline-block;background:#0078d4;color:#ffffff;padding:8px 16px;border-radius:4px;text-decoration:none;font-size:13px;font-weight:600;" target="_blank">Office 365</a></td>
+      </tr>
+    </table>
     <p style="color:#374151;font-size:15px;line-height:1.6;">We look forward to seeing you there. If you need to cancel your registration, you can do so from the event page.</p>`),
   },
   {
@@ -158,11 +167,19 @@ const templates = [
     name: "Event Registration Waitlisted",
     subject: "Waitlisted: {{eventTitle}}",
     description: "Sent when a user is added to the waitlist for a full event.",
-    variables: ["firstName", "eventTitle", "eventDate"],
+    variables: ["firstName", "eventTitle", "eventDate", "googleCalendarUrl", "outlookCalendarUrl", "icsCalendarUrl"],
     htmlBody: baseWrap("You're on the Waitlist", `
     <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
     <p style="color:#374151;font-size:15px;line-height:1.6;">The event <strong>{{eventTitle}}</strong> on {{eventDate}} is currently at capacity. You've been added to the waitlist.</p>
-    <p style="color:#374151;font-size:15px;line-height:1.6;">If a spot becomes available, you'll be automatically moved to confirmed status and we'll let you know.</p>`),
+    <p style="color:#374151;font-size:15px;line-height:1.6;">If a spot becomes available, you'll be automatically moved to confirmed status and we'll let you know. Once confirmed, you'll receive a reminder email the day before the event.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;"><strong>Add to your calendar (just in case!):</strong></p>
+    <table cellpadding="0" cellspacing="0" style="margin:8px 0 16px;">
+      <tr>
+        <td style="padding-right:8px;"><a href="{{googleCalendarUrl}}" style="display:inline-block;background:#4285f4;color:#ffffff;padding:8px 16px;border-radius:4px;text-decoration:none;font-size:13px;font-weight:600;" target="_blank">Google Calendar</a></td>
+        <td style="padding-right:8px;"><a href="{{icsCalendarUrl}}" style="display:inline-block;background:#333333;color:#ffffff;padding:8px 16px;border-radius:4px;text-decoration:none;font-size:13px;font-weight:600;" download="event.ics">Apple / iCloud</a></td>
+        <td><a href="{{outlookCalendarUrl}}" style="display:inline-block;background:#0078d4;color:#ffffff;padding:8px 16px;border-radius:4px;text-decoration:none;font-size:13px;font-weight:600;" target="_blank">Office 365</a></td>
+      </tr>
+    </table>`),
   },
   {
     slug: "event-registration-canceled",
@@ -196,14 +213,25 @@ const templates = [
     name: "Event Reminder",
     subject: "Reminder: {{eventTitle}} is coming up",
     description: "Sent as a reminder before an event starts.",
-    variables: ["firstName", "eventTitle", "eventDate", "eventLocation"],
+    variables: ["firstName", "eventTitle", "eventDate", "eventLocation", "eventDescription", "virtualJoinUrl", "locationAddress", "googleCalendarUrl", "outlookCalendarUrl", "icsCalendarUrl"],
     htmlBody: baseWrap("Event Reminder", `
     <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
-    <p style="color:#374151;font-size:15px;line-height:1.6;">This is a reminder that <strong>{{eventTitle}}</strong> is coming up soon.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">This is a reminder that <strong>{{eventTitle}}</strong> is coming up tomorrow!</p>
     <div style="background:#f3f4f6;border-radius:6px;padding:16px;margin:16px 0;">
       <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Date:</strong> {{eventDate}}</p>
-      <p style="margin:0;color:#374151;font-size:14px;"><strong>Location:</strong> {{eventLocation}}</p>
+      <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Location:</strong> {{eventLocation}}</p>
+      {{#locationAddress}}<p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Address:</strong> {{locationAddress}}</p>{{/locationAddress}}
+      {{#virtualJoinUrl}}<p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Join Online:</strong> <a href="{{virtualJoinUrl}}" style="color:#2d8a7e;">{{virtualJoinUrl}}</a></p>{{/virtualJoinUrl}}
+      {{#eventDescription}}<p style="margin:8px 0 0;color:#6b7280;font-size:13px;">{{eventDescription}}</p>{{/eventDescription}}
     </div>
+    <p style="color:#374151;font-size:15px;line-height:1.6;"><strong>Add to your calendar:</strong></p>
+    <table cellpadding="0" cellspacing="0" style="margin:8px 0 16px;">
+      <tr>
+        <td style="padding-right:8px;"><a href="{{googleCalendarUrl}}" style="display:inline-block;background:#4285f4;color:#ffffff;padding:8px 16px;border-radius:4px;text-decoration:none;font-size:13px;font-weight:600;" target="_blank">Google Calendar</a></td>
+        <td style="padding-right:8px;"><a href="{{icsCalendarUrl}}" style="display:inline-block;background:#333333;color:#ffffff;padding:8px 16px;border-radius:4px;text-decoration:none;font-size:13px;font-weight:600;" download="event.ics">Apple / iCloud</a></td>
+        <td><a href="{{outlookCalendarUrl}}" style="display:inline-block;background:#0078d4;color:#ffffff;padding:8px 16px;border-radius:4px;text-decoration:none;font-size:13px;font-weight:600;" target="_blank">Office 365</a></td>
+      </tr>
+    </table>
     <p style="color:#374151;font-size:15px;line-height:1.6;">We look forward to seeing you there!</p>`),
   },
   {

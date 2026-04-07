@@ -112,11 +112,11 @@ router.post(
     const eventDate = formatEventDate(event.date);
 
     if (status === "confirmed") {
-      sendRegistrationConfirmationEmail(user.email, user.firstName, event.title, eventDate, eventLocation).catch((err) => {
+      sendRegistrationConfirmationEmail(user.email, user.firstName, event.title, eventDate, eventLocation, event).catch((err) => {
         logger.email.warn("Failed to send registration confirmation", { error: err instanceof Error ? err.message : String(err) });
       });
     } else if (status === "waitlisted") {
-      sendWaitlistEmail(user.email, user.firstName, event.title, eventDate).catch((err) => {
+      sendWaitlistEmail(user.email, user.firstName, event.title, eventDate, event).catch((err) => {
         logger.email.warn("Failed to send waitlist email", { error: err instanceof Error ? err.message : String(err) });
       });
     }
@@ -170,7 +170,8 @@ router.delete(
           nextWaitlisted.fullName.split(" ")[0],
           event.title,
           formatEventDate(event.date),
-          event.locationName || event.location || (event.isVirtual ? "Virtual" : null)
+          event.locationName || event.location || (event.isVirtual ? "Virtual" : null),
+          event
         ).catch((err) => {
           logger.email.warn("Failed to send waitlist promotion email", { error: err instanceof Error ? err.message : String(err) });
         });

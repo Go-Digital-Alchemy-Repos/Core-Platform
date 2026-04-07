@@ -8,7 +8,7 @@ import { users } from "./users";
 export const eventRegistrations = pgTable("event_registrations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   eventId: varchar("event_id").notNull().references(() => events.id),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").references(() => users.id),
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),
@@ -22,15 +22,18 @@ export const eventRegistrations = pgTable("event_registrations", {
   checkedInAt: timestamp("checked_in_at"),
   registeredAt: timestamp("registered_at").defaultNow(),
   canceledAt: timestamp("canceled_at"),
+  reminderSentAt: timestamp("reminder_sent_at"),
 }, (table) => [
   index("idx_er_event_id").on(table.eventId),
   index("idx_er_user_id").on(table.userId),
   uniqueIndex("idx_er_event_user").on(table.eventId, table.userId),
+  uniqueIndex("idx_er_event_email").on(table.eventId, table.email),
 ]);
 
 export const insertEventRegistrationSchema = createInsertSchema(eventRegistrations).omit({
   id: true,
   registeredAt: true,
+  reminderSentAt: true,
 });
 
 export type InsertEventRegistration = z.infer<typeof insertEventRegistrationSchema>;

@@ -1,4 +1,4 @@
-import { eq, and, count, asc, sum, sql, inArray } from "drizzle-orm";
+import { eq, and, count, asc, sum, sql, inArray, isNull, gte, lte, ne } from "drizzle-orm";
 import { db } from "../db";
 import { eventRegistrations, type EventRegistration, type InsertEventRegistration } from "@shared/schema";
 
@@ -13,6 +13,14 @@ export class EventRegistrationStorage {
       .select()
       .from(eventRegistrations)
       .where(and(eq(eventRegistrations.eventId, eventId), eq(eventRegistrations.userId, userId)));
+    return reg;
+  }
+
+  async getRegistrationByEventAndEmail(eventId: string, email: string): Promise<EventRegistration | undefined> {
+    const [reg] = await db
+      .select()
+      .from(eventRegistrations)
+      .where(and(eq(eventRegistrations.eventId, eventId), eq(eventRegistrations.email, email)));
     return reg;
   }
 
@@ -169,6 +177,15 @@ export class EventRegistrationStorage {
     return reg;
   }
 
+  async updateRegistration(id: string, data: Partial<Pick<EventRegistration, "status" | "fullName" | "email" | "canceledAt">>): Promise<EventRegistration | undefined> {
+    const [reg] = await db
+      .update(eventRegistrations)
+      .set(data)
+      .where(eq(eventRegistrations.id, id))
+      .returning();
+    return reg;
+  }
+
   async updatePaymentDetails(
     id: string,
     data: {
@@ -190,5 +207,27 @@ export class EventRegistrationStorage {
   async deleteRegistration(id: string): Promise<boolean> {
     await db.delete(eventRegistrations).where(eq(eventRegistrations.id, id));
     return true;
+  }
+
+  async getConfirmedRegistrationsNeedingReminder(eventIds: string[]): Promise<EventRegistration[]> {
+    if (eventIds.length === 0) return [];
+    return db
+      .select()
+      .from(eventRegistrations)
+      .where(
+        and(
+          inArray(eventRegistrations.eventId, eventIds),
+          eq(eventRegistrations.status, "confirmed"),
+          isNull(eventRegistrations.reminderSentAt)
+        )
+      );
+  }
+
+  async markReminderSent(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    await db
+      .update(eventRegistrations)
+      .set({ reminderSentAt: new Date() })
+      .where(inArray(eventRegistrations.id, ids));
   }
 }

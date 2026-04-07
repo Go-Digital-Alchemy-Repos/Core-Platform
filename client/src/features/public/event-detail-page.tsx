@@ -7,13 +7,15 @@ import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { EventLocationMap } from "@/components/shared/event-location-map";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
 import {
@@ -44,6 +46,7 @@ import {
   ClockIcon,
   Loader2,
   LogIn,
+  Mail,
 } from "lucide-react";
 
 function formatFullDate(date: string | Date) {
@@ -181,25 +184,145 @@ function RegistrationSection({
   const isFree = event.registrationType === "free";
   const isPaid = event.registrationType === "paid";
 
+  const [guestFirstName, setGuestFirstName] = useState("");
+  const [guestLastName, setGuestLastName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestRegistered, setGuestRegistered] = useState(false);
+
+  const guestRegisterMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/events/${event.id}/register-guest`, {
+        firstName: guestFirstName,
+        lastName: guestLastName,
+        email: guestEmail,
+      });
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      setGuestRegistered(true);
+      const statusMsg = data.status === "waitlisted" 
+        ? "You've been added to the waitlist. We'll notify you if a spot opens up."
+        : "You have been registered for this event. Check your email for confirmation.";
+      toast({ title: data.status === "waitlisted" ? "Added to waitlist" : "Registered successfully", description: statusMsg });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Registration failed", description: error.message, variant: "destructive" });
+    },
+  });
+
   if (!user) {
+    if (guestRegistered) {
+      return (
+        <Card className="border-green-600/30" data-testid="card-guest-registration-success">
+          <CardContent className="p-5 sm:p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <h3 className="font-heading text-lg font-semibold">You're Registered</h3>
+            </div>
+            <p className="text-sm text-muted-foreground" data-testid="text-guest-success-message">
+              A confirmation email has been sent to your email address.
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (isPaid || (event.visibility && event.visibility !== "public")) {
+      return (
+        <Card data-testid="card-registration-login">
+          <CardContent className="p-5 sm:p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <LogIn className="h-5 w-5 text-accent" />
+              <h3 className="font-heading text-lg font-semibold">Register for This Event</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              {isPaid 
+                ? `This is a paid event (${formatCurrency(event.registrationFee || 0, event.registrationCurrency || "usd")}). Log in to register and pay.` 
+                : "Log in to your account to register for this event."}
+            </p>
+            <Link href="/login">
+              <Button data-testid="button-login-to-register">
+                <LogIn className="mr-2 h-4 w-4" />
+                Log in to Register
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      );
+    }
+
     return (
-      <Card data-testid="card-registration-login">
+      <Card data-testid="card-guest-registration">
         <CardContent className="p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-3">
-            <LogIn className="h-5 w-5 text-accent" />
+            <Ticket className="h-5 w-5 text-accent" />
             <h3 className="font-heading text-lg font-semibold">Register for This Event</h3>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            {isPaid 
-              ? `This is a paid event (${formatCurrency(event.registrationFee || 0, event.registrationCurrency || "usd")}). Log in to register and pay.` 
-              : "Log in to your account to register for this event."}
+            Fill in your details below to register for this free event.
           </p>
-          <Link href="/login">
-            <Button data-testid="button-login-to-register">
-              <LogIn className="mr-2 h-4 w-4" />
-              Log in to Register
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              guestRegisterMutation.mutate();
+            }}
+            className="space-y-3"
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="guest-first-name" className="text-sm">First Name</Label>
+                <Input
+                  id="guest-first-name"
+                  value={guestFirstName}
+                  onChange={(e) => setGuestFirstName(e.target.value)}
+                  required
+                  data-testid="input-guest-first-name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="guest-last-name" className="text-sm">Last Name</Label>
+                <Input
+                  id="guest-last-name"
+                  value={guestLastName}
+                  onChange={(e) => setGuestLastName(e.target.value)}
+                  required
+                  data-testid="input-guest-last-name"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="guest-email" className="text-sm">Email</Label>
+              <Input
+                id="guest-email"
+                type="email"
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+                required
+                data-testid="input-guest-email"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={guestRegisterMutation.isPending || !guestFirstName || !guestLastName || !guestEmail}
+              className="w-full"
+              data-testid="button-guest-register"
+            >
+              {guestRegisterMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Ticket className="mr-2 h-4 w-4" />
+              )}
+              Register
             </Button>
-          </Link>
+          </form>
+          <div className="mt-3 text-center">
+            <p className="text-xs text-muted-foreground">
+              Already have an account?{" "}
+              <Link href="/login" className="text-accent hover:underline" data-testid="link-login-instead">
+                Log in
+              </Link>
+            </p>
+          </div>
         </CardContent>
       </Card>
     );

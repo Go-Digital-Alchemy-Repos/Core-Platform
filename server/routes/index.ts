@@ -14,6 +14,7 @@ import notificationsRoutes from "./notifications.routes";
 import specializationsRoutes from "./specializations.routes";
 import blogRoutes from "./blog.routes";
 import registrationRoutes from "./registration.routes";
+import guestRegistrationRoutes from "./guest-registration.routes";
 import cmsPublicRoutes from "./cms-public.routes";
 import contactProfessionalRoutes from "./contact-professional.routes";
 import setupRoutes from "./setup.routes";
@@ -44,6 +45,7 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/notifications", notificationsRoutes);
   app.use("/api/specializations", specializationsRoutes);
   app.use("/api/blog", blogRoutes);
+  app.use("/api/events", guestRegistrationRoutes);
   app.use("/api/events", registrationRoutes);
   app.use("/api/cms", cmsPublicRoutes);
   app.use("/api/contact-professional", contactProfessionalRoutes);

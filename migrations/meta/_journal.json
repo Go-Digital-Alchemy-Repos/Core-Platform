@@ -57,6 +57,13 @@
       "when": 1775780400000,
       "tag": "0007_search_vector_user_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1775605633210,
+      "tag": "0008_guest_registration",
+      "breakpoints": true
     }
   ]
 }
