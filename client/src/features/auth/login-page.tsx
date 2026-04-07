@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { LogIn } from "lucide-react";
-import { Link } from "wouter";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
