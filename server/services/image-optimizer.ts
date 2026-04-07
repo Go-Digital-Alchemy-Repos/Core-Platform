@@ -67,20 +67,7 @@ export async function optimizeImage(
       .webp({ quality })
       .toBuffer();
 
-    if (outputBuffer.length >= originalSize) {
-      logger.info(
-        `Image WebP conversion not beneficial (${(originalSize / 1024).toFixed(0)}KB → ${(outputBuffer.length / 1024).toFixed(0)}KB), keeping original`
-      );
-      return {
-        buffer: inputBuffer,
-        mimeType: inputMime,
-        extension: mimeToExtension(inputMime),
-        originalSize,
-        optimizedSize: originalSize,
-      };
-    }
-
-    logger.info(
+    logger.app.info(
       `Image optimized: ${(originalSize / 1024).toFixed(0)}KB → ${(outputBuffer.length / 1024).toFixed(0)}KB (${Math.round((1 - outputBuffer.length / originalSize) * 100)}% reduction)`
     );
 
@@ -92,7 +79,7 @@ export async function optimizeImage(
       optimizedSize: outputBuffer.length,
     };
   } catch (err) {
-    logger.warn("Image optimization failed, using original", {
+    logger.app.warn("Image optimization failed, using original", {
       error: err instanceof Error ? err.message : String(err),
     });
     return {
