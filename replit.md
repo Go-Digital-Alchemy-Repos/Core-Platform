@@ -49,6 +49,7 @@ TCK Wellness is a platform dedicated to supporting Third Culture Kids (TCKs) by 
 - **Application Service**: Manages the full application lifecycle, including state machine, payment orchestration, and approval workflows.
 - **Modular Structure**: Backend organized by concern, frontend by feature.
 - **Structured Logging**: Pino-based JSON logger with PII redaction and full UUID request ID propagation.
+- **Server-side Image Compression**: All uploaded images (avatars, CMS media, image attachments) are automatically optimized via `sharp` — converted to WebP with quality 80, resized to sensible max dimensions (avatars 400px, CMS 1920px, attachments 1600px). Falls back to the original file if conversion fails or produces a larger result.
 - **Settings & Service Client Caching**: TTL-based in-memory caching for settings and singleton service clients (R2, Mailgun, Stripe).
 - **Retry Utility**: `retryOnce` helper for idempotent outbound operations.
 - **Operational Metrics**: Endpoint exposing request counts, latency, error rates, DB query timing, and email send outcomes via a health endpoint (`/api/health/metrics`).
@@ -62,6 +63,7 @@ TCK Wellness is a platform dedicated to supporting Third Culture Kids (TCKs) by 
 - **OpenStreetMap & Leaflet**: Map integration for counselor locations and geographical mapping functionalities.
 - **Mailgun / Nodemailer**: Transactional email delivery.
 - **Cloudflare R2**: S3-compatible object storage for media assets.
+- **Sharp**: High-performance image processing (WebP conversion, resizing).
 - **Zod**: Schema validation.
 - **bcryptjs**: Password hashing.
 - **JWT (JSON Web Tokens)**: Custom authentication.

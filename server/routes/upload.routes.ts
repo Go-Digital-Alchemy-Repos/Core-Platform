@@ -6,6 +6,7 @@ import { authenticateToken } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
 import { storage } from "../storage/index";
 import * as r2Service from "../services/r2.service";
+import { optimizeImage, isImageMime, AVATAR_OPTIONS, ATTACHMENT_OPTIONS } from "../services/image-optimizer";
 
 const router = Router();
 const upload = multer({
@@ -41,8 +42,9 @@ router.post(
     }
 
     const targetUserId = (req.user!.role === "admin" && req.body.userId) ? req.body.userId : req.user!.id;
-    const ext = req.file.mimetype.split("/")[1] === "jpeg" ? "jpg" : req.file.mimetype.split("/")[1];
-    const filename = `${targetUserId}-${Date.now()}.${ext}`;
+
+    const optimized = await optimizeImage(req.file.buffer, req.file.mimetype, AVATAR_OPTIONS);
+    const filename = `${targetUserId}-${Date.now()}${optimized.extension}`;
 
     const r2Configured = await r2Service.isConfigured();
 
@@ -50,13 +52,13 @@ router.post(
 
     if (r2Configured) {
       const key = `avatars/${filename}`;
-      publicUrl = await r2Service.uploadFile(key, req.file.buffer, req.file.mimetype);
+      publicUrl = await r2Service.uploadFile(key, optimized.buffer, optimized.mimeType);
     }
 
     if (!publicUrl) {
       ensureUploadDir();
       const localPath = path.join(LOCAL_UPLOAD_DIR, filename);
-      fs.writeFileSync(localPath, req.file.buffer);
+      fs.writeFileSync(localPath, optimized.buffer);
       publicUrl = `/uploads/avatars/${filename}`;
     }
 
@@ -117,28 +119,41 @@ router.post(
 
     const originalName = req.file.originalname;
     const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const filename = `${Date.now()}-${safeName}`;
+
+    let fileBuffer = req.file.buffer;
+    let fileMime = req.file.mimetype;
+    let fileSize = req.file.size;
+    let filename = `${Date.now()}-${safeName}`;
+
+    if (isImageMime(req.file.mimetype)) {
+      const optimized = await optimizeImage(req.file.buffer, req.file.mimetype, ATTACHMENT_OPTIONS);
+      fileBuffer = optimized.buffer;
+      fileMime = optimized.mimeType;
+      fileSize = optimized.optimizedSize;
+      const baseName = safeName.replace(/\.[^.]+$/, "");
+      filename = `${Date.now()}-${baseName}${optimized.extension}`;
+    }
 
     const r2Configured = await r2Service.isConfigured();
     let publicUrl: string | null = null;
 
     if (r2Configured) {
       const key = `attachments/${filename}`;
-      publicUrl = await r2Service.uploadFile(key, req.file.buffer, req.file.mimetype);
+      publicUrl = await r2Service.uploadFile(key, fileBuffer, fileMime);
     }
 
     if (!publicUrl) {
       ensureAttachmentDir();
       const localPath = path.join(LOCAL_ATTACHMENT_DIR, filename);
-      fs.writeFileSync(localPath, req.file.buffer);
+      fs.writeFileSync(localPath, fileBuffer);
       publicUrl = `/uploads/attachments/${filename}`;
     }
 
     res.json({
       url: publicUrl,
       name: originalName,
-      type: req.file.mimetype,
-      size: req.file.size,
+      type: fileMime,
+      size: fileSize,
     });
   })
 );

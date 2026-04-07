@@ -6,6 +6,7 @@ import { asyncHandler } from "../../middleware/error-handler";
 import { storage } from "../../storage";
 import * as r2Service from "../../services/r2.service";
 import { paramString } from "../../utils/params";
+import { optimizeImage, CMS_OPTIONS } from "../../services/image-optimizer";
 
 const router = Router();
 
@@ -40,23 +41,25 @@ router.post(
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const ext = path.extname(req.file.originalname).toLowerCase() || `.${req.file.mimetype.split("/")[1]}`;
     const safeName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const filename = `${Date.now()}-${safeName}`;
-    const r2Key = `cms/media/${filename}`;
     const adminId = (req as any).user?.id;
+
+    const optimized = await optimizeImage(req.file.buffer, req.file.mimetype, CMS_OPTIONS);
+    const baseName = safeName.replace(/\.[^.]+$/, "");
+    const filename = `${Date.now()}-${baseName}${optimized.extension}`;
+    const r2Key = `cms/media/${filename}`;
 
     const r2Configured = await r2Service.isConfigured();
     let publicUrl: string | null = null;
 
     if (r2Configured) {
-      publicUrl = await r2Service.uploadFile(r2Key, req.file.buffer, req.file.mimetype);
+      publicUrl = await r2Service.uploadFile(r2Key, optimized.buffer, optimized.mimeType);
     }
 
     if (!publicUrl) {
       ensureCmsDir();
       const localPath = path.join(LOCAL_CMS_DIR, filename);
-      fs.writeFileSync(localPath, req.file.buffer);
+      fs.writeFileSync(localPath, optimized.buffer);
       publicUrl = `/uploads/cms/${filename}`;
     }
 
@@ -64,8 +67,8 @@ router.post(
       filename,
       originalName: req.file.originalname,
       url: publicUrl,
-      mimeType: req.file.mimetype,
-      fileSize: req.file.size,
+      mimeType: optimized.mimeType,
+      fileSize: optimized.optimizedSize,
       r2Key: r2Configured ? r2Key : null,
       alt: "",
       uploadedBy: adminId,
