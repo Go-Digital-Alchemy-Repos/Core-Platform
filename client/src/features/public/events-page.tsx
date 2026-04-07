@@ -8,6 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import {
   CalendarDays,
   MapPin,
   Monitor,
@@ -70,103 +76,116 @@ function EventCard({ event }: { event: Event }) {
     <Link href={`/events/${event.id}`}>
       <Card
         data-testid={`card-event-${event.id}`}
-        className={`cursor-pointer hover-elevate ${isPast ? "opacity-60" : ""}`}
+        className={`cursor-pointer hover-elevate ${isPast ? "opacity-60" : ""} overflow-hidden`}
         onClick={() => navigate(`/events/${event.id}`)}
       >
-        <CardHeader className="flex flex-col sm:flex-row items-start justify-between gap-2 space-y-0 pb-3">
-          <div className="space-y-1 min-w-0">
-            <CardTitle className="text-base sm:text-lg break-words" data-testid={`text-event-title-${event.id}`}>
-              {event.title}
-            </CardTitle>
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-              <span data-testid={`text-event-date-${event.id}`}>
-                {formatDate(event.date)}
-                {event.endDate && ` — ${formatDate(event.endDate)}`}
-                {" at "}
-                {formatTime(event.date)}
-              </span>
+        <div className={event.imageUrl ? "flex flex-col sm:flex-row" : ""}>
+          {event.imageUrl && (
+            <div className="sm:w-48 sm:min-w-[12rem] shrink-0" data-testid={`img-event-thumbnail-${event.id}`}>
+              <img
+                src={event.imageUrl}
+                alt={event.title}
+                className="h-48 sm:h-full w-full object-cover"
+              />
             </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <CardHeader className="flex flex-col sm:flex-row items-start justify-between gap-2 space-y-0 pb-3">
+              <div className="space-y-1 min-w-0">
+                <CardTitle className="text-base sm:text-lg break-words" data-testid={`text-event-title-${event.id}`}>
+                  {event.title}
+                </CardTitle>
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                  <span data-testid={`text-event-date-${event.id}`}>
+                    {formatDate(event.date)}
+                    {event.endDate && ` — ${formatDate(event.endDate)}`}
+                    {" at "}
+                    {formatTime(event.date)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {isHybrid ? (
+                  <Badge variant="secondary" data-testid={`badge-hybrid-${event.id}`}>
+                    <Monitor className="mr-1 h-3 w-3" />
+                    Hybrid
+                  </Badge>
+                ) : event.isVirtual ? (
+                  <Badge variant="secondary" data-testid={`badge-virtual-${event.id}`}>
+                    <Monitor className="mr-1 h-3 w-3" />
+                    Virtual
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" data-testid={`badge-in-person-${event.id}`}>
+                    <Building className="mr-1 h-3 w-3" />
+                    In-Person
+                  </Badge>
+                )}
+                {event.registrationEnabled && event.registrationType === "paid" && event.registrationFee ? (
+                  <Badge variant="outline" data-testid={`badge-paid-${event.id}`}>
+                    <DollarSign className="mr-1 h-3 w-3" />
+                    {formatPrice(event.registrationFee, event.registrationCurrency || "usd")}
+                  </Badge>
+                ) : event.registrationEnabled && event.registrationType === "free" ? (
+                  <Badge variant="outline" data-testid={`badge-free-${event.id}`}>
+                    Free
+                  </Badge>
+                ) : null}
+                {registrationStatus && (
+                  <Badge
+                    variant={registrationStatus.open ? "default" : "outline"}
+                    data-testid={`badge-registration-${event.id}`}
+                  >
+                    {registrationStatus.label}
+                  </Badge>
+                )}
+                {isPast && event.recordingUrl && (
+                  <Badge variant="secondary" data-testid={`badge-recording-${event.id}`}>
+                    <Video className="mr-1 h-3 w-3" />
+                    Recording Available
+                  </Badge>
+                )}
+                {event.memberOnly && (
+                  <Badge variant="outline" data-testid={`badge-member-only-${event.id}`}>
+                    Members Only
+                  </Badge>
+                )}
+                {isPast && (
+                  <Badge variant="outline" data-testid={`badge-past-${event.id}`}>
+                    Past
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {event.description && (
+                <p
+                  className="text-sm text-muted-foreground line-clamp-2"
+                  data-testid={`text-event-description-${event.id}`}
+                >
+                  {event.description}
+                </p>
+              )}
+              {event.speakerName && (
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <User className="h-3.5 w-3.5 shrink-0" />
+                  <span data-testid={`text-event-speaker-${event.id}`}>
+                    {event.speakerName}
+                  </span>
+                </div>
+              )}
+              {displayLocation && (
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  <span data-testid={`text-event-location-${event.id}`}>
+                    {displayLocation}
+                  </span>
+                </div>
+              )}
+            </CardContent>
           </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {isHybrid ? (
-              <Badge variant="secondary" data-testid={`badge-hybrid-${event.id}`}>
-                <Monitor className="mr-1 h-3 w-3" />
-                Hybrid
-              </Badge>
-            ) : event.isVirtual ? (
-              <Badge variant="secondary" data-testid={`badge-virtual-${event.id}`}>
-                <Monitor className="mr-1 h-3 w-3" />
-                Virtual
-              </Badge>
-            ) : (
-              <Badge variant="secondary" data-testid={`badge-in-person-${event.id}`}>
-                <Building className="mr-1 h-3 w-3" />
-                In-Person
-              </Badge>
-            )}
-            {event.registrationEnabled && event.registrationType === "paid" && event.registrationFee ? (
-              <Badge variant="outline" data-testid={`badge-paid-${event.id}`}>
-                <DollarSign className="mr-1 h-3 w-3" />
-                {formatPrice(event.registrationFee, event.registrationCurrency || "usd")}
-              </Badge>
-            ) : event.registrationEnabled && event.registrationType === "free" ? (
-              <Badge variant="outline" data-testid={`badge-free-${event.id}`}>
-                Free
-              </Badge>
-            ) : null}
-            {registrationStatus && (
-              <Badge
-                variant={registrationStatus.open ? "default" : "outline"}
-                data-testid={`badge-registration-${event.id}`}
-              >
-                {registrationStatus.label}
-              </Badge>
-            )}
-            {isPast && event.recordingUrl && (
-              <Badge variant="secondary" data-testid={`badge-recording-${event.id}`}>
-                <Video className="mr-1 h-3 w-3" />
-                Recording Available
-              </Badge>
-            )}
-            {event.memberOnly && (
-              <Badge variant="outline" data-testid={`badge-member-only-${event.id}`}>
-                Members Only
-              </Badge>
-            )}
-            {isPast && (
-              <Badge variant="outline" data-testid={`badge-past-${event.id}`}>
-                Past
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {event.description && (
-            <p
-              className="text-sm text-muted-foreground line-clamp-2"
-              data-testid={`text-event-description-${event.id}`}
-            >
-              {event.description}
-            </p>
-          )}
-          {event.speakerName && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <User className="h-3.5 w-3.5 shrink-0" />
-              <span data-testid={`text-event-speaker-${event.id}`}>
-                {event.speakerName}
-              </span>
-            </div>
-          )}
-          {displayLocation && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 shrink-0" />
-              <span data-testid={`text-event-location-${event.id}`}>
-                {displayLocation}
-              </span>
-            </div>
-          )}
-        </CardContent>
+        </div>
       </Card>
     </Link>
   );
@@ -250,6 +269,7 @@ function CalendarView({ events }: { events: Event[] }) {
   const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div data-testid="calendar-view">
       <div className="mb-4 flex items-center justify-between gap-4">
         <Button
@@ -309,15 +329,52 @@ function CalendarView({ events }: { events: Event[] }) {
                   {dayEvents.length > 0 && (
                     <div className="mt-0.5 space-y-0.5">
                       {dayEvents.map((event) => (
-                        <Link key={event.id} href={`/events/${event.id}`}>
-                          <div
-                            className="truncate rounded bg-primary/10 px-1 py-0.5 text-[10px] leading-tight text-primary cursor-pointer hover:bg-primary/20 transition-colors"
-                            title={`${event.title} — ${formatTime(event.date)}`}
-                            data-testid={`calendar-event-${event.id}`}
+                        <Tooltip key={event.id}>
+                          <TooltipTrigger asChild>
+                            <Link href={`/events/${event.id}`}>
+                              <div
+                                className="truncate rounded bg-primary/10 px-1 py-0.5 text-[10px] leading-tight text-primary cursor-pointer hover:bg-primary/20 transition-colors"
+                                data-testid={`calendar-event-${event.id}`}
+                              >
+                                {event.title}
+                              </div>
+                            </Link>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="right"
+                            align="start"
+                            className="w-[min(90vw,16rem)] p-0 overflow-hidden"
+                            data-testid={`tooltip-event-${event.id}`}
                           >
-                            {event.title}
-                          </div>
-                        </Link>
+                            <Link href={`/events/${event.id}`}>
+                              <div className="cursor-pointer">
+                                {event.imageUrl && (
+                                  <img
+                                    src={event.imageUrl}
+                                    alt={event.title}
+                                    className="h-32 w-full object-cover"
+                                  />
+                                )}
+                                <div className="p-3 space-y-2">
+                                  <p className="font-semibold text-sm leading-tight" data-testid={`tooltip-event-title-${event.id}`}>
+                                    {event.title}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {formatDate(event.date)} at {formatTime(event.date)}
+                                  </p>
+                                  {event.description && (
+                                    <p className="text-xs text-muted-foreground line-clamp-2">
+                                      {event.description}
+                                    </p>
+                                  )}
+                                  <span className="inline-flex items-center justify-center rounded-md bg-primary px-3 h-7 text-xs font-medium text-primary-foreground" data-testid={`button-learn-more-${event.id}`}>
+                                    Learn More
+                                  </span>
+                                </div>
+                              </div>
+                            </Link>
+                          </TooltipContent>
+                        </Tooltip>
                       ))}
                     </div>
                   )}
@@ -328,6 +385,7 @@ function CalendarView({ events }: { events: Event[] }) {
         })}
       </div>
     </div>
+    </TooltipProvider>
   );
 }
 

@@ -532,7 +532,18 @@ function EventsContent() {
 
       <div className="space-y-4">
         {events?.map((event) => (
-          <Card key={event.id} data-testid={`card-event-${event.id}`} className="cursor-pointer hover:border-primary/40 transition-colors" onClick={() => openEdit(event)}>
+          <Card key={event.id} data-testid={`card-event-${event.id}`} className="cursor-pointer hover:border-primary/40 transition-colors overflow-hidden" onClick={() => openEdit(event)}>
+            <div className={event.imageUrl ? "flex flex-col sm:flex-row" : ""}>
+            {event.imageUrl && (
+              <div className="sm:w-32 sm:min-w-[8rem] shrink-0" data-testid={`img-event-thumbnail-${event.id}`}>
+                <img
+                  src={event.imageUrl}
+                  alt={event.title}
+                  className="h-32 sm:h-full w-full object-cover"
+                />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
             <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
               <div>
                 <CardTitle className="text-lg flex items-center gap-2" data-testid={`text-event-title-${event.id}`}>
@@ -661,6 +672,8 @@ function EventsContent() {
                 )}
               </div>
             </CardContent>
+            </div>
+            </div>
           </Card>
         ))}
         {(!events || events.length === 0) && (
