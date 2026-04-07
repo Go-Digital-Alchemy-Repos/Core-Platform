@@ -1,0 +1,15 @@
+Top Opportunities
+
+Public CMS rendering is pulling in a lot of admin/editor-era code into the public path. cms-hybrid-page.tsx (line 5) imports block-renderer.tsx (line 1), and that renderer brings in react-hook-form, zod, MapView, LoginDialog, and a very large Lucide icon map on load. That is likely a major contributor to your large shared JS chunk. Biggest win: split a lean public renderer from the admin builder/editor runtime so homepage/public CMS pages don’t pay for authoring features.
+
+Image payloads are heavier than they need to be on key surfaces. admin-sidebar.tsx (line 27) imports a 1.1 MB PNG logo, and home-page.tsx (line 342) uses a 1.3 MB hero image as a background. Converting those to optimized WebP/AVIF and serving smaller responsive variants would improve first paint more than most code tweaks.
+
+The admin dashboard is expensive by design and then polled every minute. dashboard.routes.ts (line 33) fires 10 aggregate queries per request, including unnest()/grouping work, and dashboard-page.tsx (line 112) plus dashboard-page.tsx (line 119) refetch both datasets every 60 seconds. Strong next step: cache or materialize the analytics payload for a short TTL server-side, and keep only truly live counters on fast polling.
+
+Directory search will get slower as therapist volume grows because the text search still relies on %term% matching plus unnest() existence checks. therapist.storage.ts (line 64) is functionally correct, but it won’t scale like a dedicated tsvector or search document approach. If directory growth matters, moving free-text search to Postgres full-text search would be a high-value backend optimization.
+
+Filter option generation is recomputed from the database each time. therapist.storage.ts (line 164) runs distinct/unnest queries for languages and countries on demand. That’s fine now, but it’s a good candidate for a short in-memory cache or precomputed lookup since the data changes relatively rarely.
+
+Background schedulers are always-on polling loops. scheduled-publish.service.ts (line 20) checks every 60 seconds forever, even when nothing is scheduled. It’s simple and reliable, but if you want better efficiency later, switching to DB-driven next-run scheduling or a hosted cron/job runner would cut idle work.
+
+Notification polling is spread across multiple UI surfaces. navbar.tsx (line 138) and notification-bell.tsx (line 39) both observe unread counts on intervals, and the bell loads full notifications when opened. React Query helps here, but consolidating unread-count ownership into one place would make this cleaner and easier to reason about.
