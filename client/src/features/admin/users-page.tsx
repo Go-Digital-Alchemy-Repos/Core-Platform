@@ -83,7 +83,7 @@ export default function AdminUsersPage() {
 const ROLE_COLORS: Record<string, string> = {
   admin: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
   therapist: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  client: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  client: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300",
 };
 
 function UsersContent() {
@@ -119,7 +119,6 @@ function UsersContent() {
     all: users?.length ?? 0,
     admin: users?.filter((u) => u.role === "admin").length ?? 0,
     therapist: users?.filter((u) => u.role === "therapist").length ?? 0,
-    client: users?.filter((u) => u.role === "client").length ?? 0,
   };
 
   return (
@@ -148,9 +147,6 @@ function UsersContent() {
             </TabsTrigger>
             <TabsTrigger value="therapist" data-testid="tab-therapist">
               Mental Health Professionals ({counts.therapist})
-            </TabsTrigger>
-            <TabsTrigger value="client" data-testid="tab-client">
-              Clients ({counts.client})
             </TabsTrigger>
           </TabsList>
           <div className="relative w-full sm:w-72">
@@ -257,7 +253,7 @@ function CreateUserSheet({
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState("client");
+  const [role, setRole] = useState("therapist");
   const [sendWelcome, setSendWelcome] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -280,7 +276,7 @@ function CreateUserSheet({
       setPassword("");
       setFirstName("");
       setLastName("");
-      setRole("client");
+      setRole("therapist");
       setSendWelcome(true);
       setShowPassword(false);
       onOpenChange(false);
@@ -372,7 +368,6 @@ function CreateUserSheet({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="client">Client</SelectItem>
                   <SelectItem value="therapist">Mental Health Professional</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
@@ -430,7 +425,7 @@ function UserDetailSheet({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("client");
+  const [role, setRole] = useState("therapist");
 
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -440,7 +435,7 @@ function UserDetailSheet({
       setFirstName(user.firstName ?? "");
       setLastName(user.lastName ?? "");
       setEmail(user.email);
-      setRole(user.role);
+      setRole(user.role === "admin" || user.role === "therapist" ? user.role : "therapist");
       setNewPassword("");
       setShowPassword(false);
       setActiveTab("profile");
@@ -625,7 +620,6 @@ function UserDetailSheet({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="client">Client</SelectItem>
                           <SelectItem value="therapist">Mental Health Professional</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>

@@ -33,7 +33,7 @@ async function ensureUsersTable(): Promise<void> {
         password TEXT NOT NULL,
         first_name TEXT,
         last_name TEXT,
-        role TEXT NOT NULL DEFAULT 'client',
+        role TEXT NOT NULL DEFAULT 'therapist',
         profile_image_url TEXT,
         is_suspended BOOLEAN NOT NULL DEFAULT false,
         last_login_at TIMESTAMP,

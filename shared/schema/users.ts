@@ -9,7 +9,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   firstName: text("first_name"),
   lastName: text("last_name"),
-  role: text("role").notNull().default("client"),
+  role: text("role").notNull().default("therapist"),
   profileImageUrl: text("profile_image_url"),
   isSuspended: boolean("is_suspended").notNull().default(false),
   lastLoginAt: timestamp("last_login_at"),

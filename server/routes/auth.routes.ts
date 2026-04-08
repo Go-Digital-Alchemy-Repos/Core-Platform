@@ -27,7 +27,7 @@ const registerSchema = z.object({
   password: z.string().min(6),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  role: z.enum(["therapist", "client"]),
+  role: z.enum(["therapist"]),
   specializations: z.array(z.string()).optional(),
 });
 
@@ -89,14 +89,6 @@ router.post(
           email,
           `${baseUrl}/admin/therapists`
         ).catch((err) => logger.email.warn("Failed to send therapist registration notification", { error: err.message }));
-      } else {
-        const { sendNewClientRegistrationEmail } = await import("../services/email.service");
-        sendNewClientRegistrationEmail(
-          adminEmails,
-          `${firstName} ${lastName}`,
-          email,
-          `${baseUrl}/admin/users`
-        ).catch((err) => logger.email.warn("Failed to send client registration notification", { error: err.message }));
       }
     }
 

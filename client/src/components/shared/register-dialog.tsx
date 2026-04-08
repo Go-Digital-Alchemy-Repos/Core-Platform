@@ -69,7 +69,7 @@ export function RegisterDialog({
   async function onSubmit(values: RegisterForm) {
     const { confirmPassword, ageAcknowledged, ...rest } = values;
     register.mutate(
-      { ...rest, role: "client" },
+      { ...rest, role: "therapist" },
       {
         onSuccess: () => {
           toast({ title: "Account created!", description: "Welcome to TCK Wellness." });

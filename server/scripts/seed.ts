@@ -61,8 +61,6 @@ async function seed() {
 
   const adminPassword = await bcrypt.hash("Admin123!", 12);
   const therapistPassword = await bcrypt.hash("Therapist123!", 12);
-  const clientPassword = await bcrypt.hash("Client123!", 12);
-
   const [admin] = await db.insert(users).values({
     email: "admin@tckwellness.com",
     password: adminPassword,
@@ -71,15 +69,7 @@ async function seed() {
     role: "admin",
   }).returning();
 
-  await db.insert(users).values({
-    email: "client@test.com",
-    password: clientPassword,
-    firstName: "Test",
-    lastName: "Client",
-    role: "client",
-  });
-
-  console.log("Created admin and client accounts.");
+  console.log("Created admin account.");
 
   for (let i = 0; i < therapistData.length; i++) {
     const t = therapistData[i];

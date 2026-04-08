@@ -49,7 +49,7 @@ const createUserSchema = z.object({
   password: z.string().min(6),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  role: z.enum(["admin", "therapist", "client"]),
+  role: z.enum(["admin", "therapist"]),
   sendWelcomeEmail: z.boolean().optional(),
 });
 
@@ -91,7 +91,7 @@ const updateUserSchema = z.object({
   firstName: z.string().optional().nullable(),
   lastName: z.string().optional().nullable(),
   email: z.string().email().optional(),
-  role: z.enum(["admin", "therapist", "client"]).optional(),
+  role: z.enum(["admin", "therapist"]).optional(),
 });
 
 router.put(
