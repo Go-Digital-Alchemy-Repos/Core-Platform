@@ -35,6 +35,7 @@ function buildFilterConditions(params: InternalSearchParams): SQL[] {
   const conditions: SQL[] = [
     eq(therapistProfiles.isApproved, true),
     eq(therapistProfiles.isActive, true),
+    eq(users.isSuspended, false),
   ];
 
   if (params.practiceMode) {
@@ -188,15 +189,19 @@ export class TherapistStorage {
     const langResult = await db.execute(
       sql`SELECT DISTINCT unnest(${therapistProfiles.languages}) AS lang
           FROM ${therapistProfiles}
+          INNER JOIN ${users} ON ${therapistProfiles.userId} = ${users.id}
           WHERE ${therapistProfiles.isApproved} = true AND ${therapistProfiles.isActive} = true
+            AND ${users.isSuspended} = false
           ORDER BY lang`
     );
 
     const countryResult = await db.execute(
       sql`SELECT DISTINCT ${therapistProfiles.country} AS country
           FROM ${therapistProfiles}
+          INNER JOIN ${users} ON ${therapistProfiles.userId} = ${users.id}
           WHERE ${therapistProfiles.isApproved} = true
             AND ${therapistProfiles.isActive} = true
+            AND ${users.isSuspended} = false
             AND ${therapistProfiles.country} IS NOT NULL
           ORDER BY country`
     );
@@ -223,7 +228,7 @@ export class TherapistStorage {
       })
       .from(therapistProfiles)
       .innerJoin(users, eq(therapistProfiles.userId, users.id))
-      .where(eq(therapistProfiles.id, id));
+      .where(and(eq(therapistProfiles.id, id), eq(users.isSuspended, false)));
 
     if (results.length === 0) return undefined;
     return { ...results[0].profile, user: results[0].user };
@@ -276,7 +281,8 @@ export class TherapistStorage {
         and(
           eq(therapistProfiles.isFeatured, true),
           eq(therapistProfiles.isApproved, true),
-          eq(therapistProfiles.isActive, true)
+          eq(therapistProfiles.isActive, true),
+          eq(users.isSuspended, false)
         )
       )
       .limit(6);
