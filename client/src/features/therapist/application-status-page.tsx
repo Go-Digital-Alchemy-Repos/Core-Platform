@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
+import { TherapistSidebar } from "./therapist-sidebar";
 import {
   ArrowLeft, Clock, CheckCircle2, XCircle, AlertCircle, FileSearch, Loader2,
   Shield, Users, Video, FileCheck, Mail, CreditCard, AlertTriangle
@@ -261,23 +262,18 @@ export default function ApplicationStatusPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <TherapistSidebar>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </TherapistSidebar>
     );
   }
 
   if (!application) {
     return (
+      <TherapistSidebar>
       <div className="container max-w-2xl mx-auto py-8 px-4">
-        <div className="mb-4">
-          <Link href="/therapist">
-            <Button variant="ghost" size="sm" data-testid="button-back-dashboard">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </Link>
-        </div>
         <Card>
           <CardContent className="p-8 text-center">
             <FileSearch className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -289,6 +285,7 @@ export default function ApplicationStatusPage() {
           </CardContent>
         </Card>
       </div>
+      </TherapistSidebar>
     );
   }
 
@@ -303,16 +300,8 @@ export default function ApplicationStatusPage() {
   const progressSteps = getProgressSteps(application);
 
   return (
+    <TherapistSidebar>
     <div className="container max-w-2xl mx-auto py-8 px-4">
-      <div className="mb-4">
-        <Link href="/therapist">
-          <Button variant="ghost" size="sm" data-testid="button-back-dashboard">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
-        </Link>
-      </div>
-
       <h1 className="text-2xl font-heading font-bold mb-6" data-testid="text-page-title">Application Status</h1>
 
       <Alert className={statusColor(status)} data-testid="banner-application-status">
@@ -507,5 +496,6 @@ export default function ApplicationStatusPage() {
         </div>
       )}
     </div>
+    </TherapistSidebar>
   );
 }

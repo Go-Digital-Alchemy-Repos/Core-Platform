@@ -6,6 +6,7 @@ import { z } from "zod";
 import { apiRequest, getQueryFn, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { TherapistProfile } from "@shared/schema";
+import { TherapistSidebar } from "./therapist-sidebar";
 import { LANGUAGES, PracticeMode } from "@shared/types";
 import { useSpecializations } from "@/hooks/use-specializations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -169,14 +170,17 @@ export default function ProfileEditPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6 max-w-3xl mx-auto" data-testid="profile-edit-loading">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-[600px]" />
-      </div>
+      <TherapistSidebar>
+        <div className="p-6 space-y-6 max-w-3xl mx-auto" data-testid="profile-edit-loading">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-[600px]" />
+        </div>
+      </TherapistSidebar>
     );
   }
 
   return (
+    <TherapistSidebar>
     <div className="p-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-heading font-semibold mb-6" data-testid="text-profile-edit-title">
         Edit Profile
@@ -696,5 +700,6 @@ export default function ProfileEditPage() {
         </form>
       </Form>
     </div>
+    </TherapistSidebar>
   );
 }
