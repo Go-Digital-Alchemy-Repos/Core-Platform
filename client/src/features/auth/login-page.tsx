@@ -1,4 +1,4 @@
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -118,6 +118,12 @@ export default function LoginPage() {
                       </FormItem>
                     )}
                   />
+
+                  <div className="flex justify-end">
+                    <Link href="/auth/forgot-password" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-forgot-password">
+                      Forgot your password?
+                    </Link>
+                  </div>
 
                   <Button
                     type="submit"
