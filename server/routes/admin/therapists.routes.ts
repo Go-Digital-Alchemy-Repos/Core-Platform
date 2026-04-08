@@ -8,6 +8,7 @@ import { paramString } from "../../utils/params";
 import { getBaseUrl, notFound, conflict } from "../../utils/route-helpers";
 import { logger } from "../../utils/logger";
 import * as r2Service from "../../services/r2.service";
+import { enrichTherapistLocationFields } from "../../services/therapist-location.service";
 
 const router = Router();
 
@@ -80,10 +81,11 @@ router.post(
     });
 
     const { email, password, firstName, lastName, ...profileData } = data;
+    const profilePayload = await enrichTherapistLocationFields(profileData);
     const profile = await storage.therapists.createProfile({
       userId: user.id,
       isApproved: data.isApproved ?? true,
-      ...profileData,
+      ...profilePayload,
     });
 
     const profileWithUser = await storage.therapists.getProfileWithUser(profile.id);
@@ -199,7 +201,13 @@ router.put(
   asyncHandler(async (req, res) => {
     const data = updateTherapistSchema.parse(req.body);
     const { firstName, lastName, ...profileData } = data;
-    const profile = await storage.therapists.updateProfile(paramString(req.params.id), profileData);
+    const existing = await storage.therapists.getProfile(paramString(req.params.id));
+    if (!existing) {
+      notFound(res, "Profile");
+      return;
+    }
+    const enrichedProfileData = await enrichTherapistLocationFields(profileData, existing);
+    const profile = await storage.therapists.updateProfile(existing.id, enrichedProfileData);
     if (!profile) {
       notFound(res, "Profile");
       return;

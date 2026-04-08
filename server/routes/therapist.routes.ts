@@ -3,8 +3,10 @@ import { storage } from "../storage/index";
 import { authenticateToken, requireRole } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
 import { insertTherapistProfileSchema } from "@shared/schema";
+import { enrichTherapistLocationFields } from "../services/therapist-location.service";
 
 const router = Router();
+const updateTherapistProfileSchema = insertTherapistProfileSchema.partial().omit({ userId: true });
 
 router.use(authenticateToken);
 router.use(requireRole("therapist"));
@@ -30,7 +32,9 @@ router.put(
       return;
     }
 
-    const updated = await storage.therapists.updateProfile(profile.id, req.body);
+    const data = updateTherapistProfileSchema.parse(req.body);
+    const enrichedData = await enrichTherapistLocationFields(data, profile);
+    const updated = await storage.therapists.updateProfile(profile.id, enrichedData);
     await storage.activity.log(req.user!.id, "profile_update", "Profile updated by mental health professional");
     res.json(updated);
   })

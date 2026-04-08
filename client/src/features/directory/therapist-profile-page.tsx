@@ -133,7 +133,7 @@ export default function TherapistProfilePage() {
   const initials = [therapist.user?.firstName?.[0], therapist.user?.lastName?.[0]].filter(Boolean).join("").toUpperCase() || "?";
   const addressParts = [therapist.addressLine1, therapist.addressLine2, therapist.city, therapist.state, therapist.zipCode, therapist.country].filter(Boolean);
   const hasContact = addressParts.length > 0 || therapist.phone || therapist.website;
-  const showMap = therapist.latitude && therapist.longitude;
+  const showMap = therapist.latitude != null && therapist.longitude != null;
 
   function socialUrl(platform: string, handle: string | null): string | null {
     if (!handle) return null;

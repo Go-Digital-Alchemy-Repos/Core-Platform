@@ -50,7 +50,7 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
   const markered = useMemo(
     () =>
       therapists.filter(
-        (t) => t.profile.latitude != null && t.profile.longitude != null
+        (t) => Number.isFinite(Number(t.profile.latitude)) && Number.isFinite(Number(t.profile.longitude))
       ),
     [therapists]
   );
