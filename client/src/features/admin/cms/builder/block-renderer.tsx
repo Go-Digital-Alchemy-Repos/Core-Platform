@@ -96,6 +96,14 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const minH = str(props.minHeight) || "420";
   const minHeightStyle = minH === "100vh" ? "100vh" : `${minH}px`;
   const isSplit = layout === "split";
+  const hasMediaBackground = !!(bg || videoBg);
+  const overlayStrength = Math.max(0, Math.min(opacity, 100)) / 100;
+  const effectiveOverlayStrength = hasMediaBackground ? Math.min(overlayStrength, 0.45) : overlayStrength;
+  const overlayStyle = hasMediaBackground
+    ? {
+        background: `linear-gradient(180deg, rgba(15, 23, 42, ${effectiveOverlayStrength * 0.55}) 0%, rgba(15, 23, 42, ${effectiveOverlayStrength}) 100%)`,
+      }
+    : { backgroundColor: `rgba(0, 0, 0, ${overlayStrength})` };
 
   return (
     <section
@@ -110,7 +118,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
           <source src={videoBg} type="video/mp4" />
         </video>
       )}
-      <div className="absolute inset-0 bg-black rounded-lg" style={{ opacity: opacity / 100 }} />
+      <div className="absolute inset-0 rounded-lg" style={overlayStyle} />
       <div className={`relative z-10 px-8 py-16 ${isSplit ? "max-w-2xl" : "max-w-3xl mx-auto"}`}>
         {badge && (
           <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-semibold mb-4 border border-accent/30">
