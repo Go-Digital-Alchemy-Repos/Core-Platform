@@ -356,6 +356,7 @@ function CreateUserSheet({
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
       setAvatarFile(file);
       setAvatarPreview(URL.createObjectURL(file));
     }
@@ -370,6 +371,7 @@ function CreateUserSheet({
     setSendWelcome(true);
     setShowPassword(false);
     setAvatarFile(null);
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
     setAvatarPreview(null);
     setProfileTitle("");
     setCredentials("");
@@ -404,11 +406,14 @@ function CreateUserSheet({
         const formData = new FormData();
         formData.append("avatar", avatarFile);
         formData.append("userId", newUser.id);
-        await fetch("/api/uploads/avatar", {
+        const uploadRes = await fetch("/api/uploads/avatar", {
           method: "POST",
           body: formData,
           credentials: "include",
         });
+        if (!uploadRes.ok) {
+          throw new Error("User created but profile photo upload failed. You can upload it later from the user's profile.");
+        }
       }
     },
     onSuccess: () => {
