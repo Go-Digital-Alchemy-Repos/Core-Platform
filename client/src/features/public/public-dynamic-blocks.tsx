@@ -209,14 +209,20 @@ export function ContactFormBlock() {
   );
 }
 
-export function JoinRegistrationFormBlock() {
+export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<string, unknown> }) {
   const [loginOpen, setLoginOpen] = useState(false);
+  const heading = str(props.heading) || "Are you a TCK-Informed Mental Health Professional?";
+  const accentHeading = str(props.accentHeading) || "Join the Network!";
+  const applicationStatusText = str(props.applicationStatusText) || "Applications open in June.";
+  const loginPromptPrefix = str(props.loginPromptPrefix) || "If you're already a member click here to";
+  const loginLinkText = str(props.loginLinkText) || "Log in";
+  const loginPromptSuffix = str(props.loginPromptSuffix) || "to your profile!";
 
   return (
     <section className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="dynamic-join-registration-form">
       <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title">
-        Are you a TCK-Informed Mental Health Professional?{" "}
-        <span className="text-accent">Join the Network!</span>
+        {heading}{" "}
+        <span className="text-accent">{accentHeading}</span>
       </h1>
       <Button
         size="lg"
@@ -225,18 +231,18 @@ export function JoinRegistrationFormBlock() {
         data-testid="button-apply-member"
       >
         <Clock className="mr-2 h-5 w-5" />
-        Applications open in June.
+        {applicationStatusText}
       </Button>
       <p className="text-sm sm:text-base text-muted-foreground mt-6" data-testid="text-login-prompt">
-        If you're already a member click here to{" "}
+        {loginPromptPrefix}{" "}
         <button
           onClick={() => setLoginOpen(true)}
           className="text-accent underline underline-offset-2 hover:text-accent/80 font-medium"
           data-testid="button-member-login"
         >
-          Log in
+          {loginLinkText}
         </button>{" "}
-        to your profile!
+        {loginPromptSuffix}
       </p>
       <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
     </section>

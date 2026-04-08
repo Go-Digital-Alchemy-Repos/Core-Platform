@@ -22,6 +22,41 @@ interface BlockEditorProps {
   onChange: (props: Record<string, unknown>) => void;
 }
 
+const DEFAULT_COLOR_VALUE = "#7c3aed";
+const POSITION_PICKER_KEYS = new Set([
+  "backgroundPositionX",
+  "backgroundPositionY",
+  "sectionBackgroundPositionX",
+  "sectionBackgroundPositionY",
+]);
+
+const SECTION_STYLE_KEYS = new Set([
+  "sectionBackgroundColor",
+  "sectionBackgroundImageUrl",
+  "sectionBackgroundPositionX",
+  "sectionBackgroundPositionY",
+  "sectionShowRadialGradient",
+  "sectionRadialGradientColor",
+]);
+
+const IMAGE_POSITION_FIELD_GROUPS = [
+  {
+    imageKey: "backgroundImageUrl",
+    positionXKey: "backgroundPositionX",
+    positionYKey: "backgroundPositionY",
+  },
+  {
+    imageKey: "sectionBackgroundImageUrl",
+    positionXKey: "sectionBackgroundPositionX",
+    positionYKey: "sectionBackgroundPositionY",
+  },
+];
+
+function normalizeColorValue(value: string) {
+  const trimmed = value.trim();
+  return /^#([0-9a-f]{6}|[0-9a-f]{3})$/i.test(trimmed) ? trimmed : DEFAULT_COLOR_VALUE;
+}
+
 function ArrayItemsField({
   propDef,
   value,
@@ -221,6 +256,34 @@ function PropField({
           data-testid={`prop-number-${propDef.key}`}
         />
       );
+    case "color":
+      return (
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            value={normalizeColorValue(strVal)}
+            onChange={(e) => onChange(e.target.value)}
+            className="h-10 w-12 rounded-md border border-input bg-background p-1 cursor-pointer"
+            data-testid={`prop-color-swatch-${propDef.key}`}
+          />
+          <Input
+            value={strVal}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={propDef.placeholder ?? "#7c3aed"}
+            className="text-sm font-mono"
+            data-testid={`prop-color-${propDef.key}`}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onChange("")}
+            data-testid={`prop-color-clear-${propDef.key}`}
+          >
+            Clear
+          </Button>
+        </div>
+      );
     case "array-items":
       return (
         <ArrayItemsField
@@ -234,15 +297,10 @@ function PropField({
   }
 }
 
-const POSITION_PICKER_KEYS = new Set(["backgroundPositionX", "backgroundPositionY"]);
-
 export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
   const setProp = (key: string, val: unknown) => {
     onChange({ ...props, [key]: val });
   };
-
-  const hasPositionProps = blockDef.propDefs.some((p) => p.key === "backgroundPositionX");
-  const bgImageUrl = String(props.backgroundImageUrl ?? "");
 
   return (
     <div className="space-y-5">
@@ -253,9 +311,33 @@ export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
       <Separator />
       {blockDef.propDefs.map((propDef, idx) => {
         if (POSITION_PICKER_KEYS.has(propDef.key)) return null;
+        const showSectionStyleHeading =
+          SECTION_STYLE_KEYS.has(propDef.key) &&
+          !blockDef.propDefs.slice(0, idx).some((previous) => SECTION_STYLE_KEYS.has(previous.key));
+
+        const imagePositionFieldGroup = IMAGE_POSITION_FIELD_GROUPS.find(
+          (group) => group.imageKey === propDef.key
+        );
+        const backgroundImageUrl = imagePositionFieldGroup
+          ? String(props[imagePositionFieldGroup.imageKey] ?? "")
+          : "";
+        const hasPositionProps = imagePositionFieldGroup
+          ? blockDef.propDefs.some((p) => p.key === imagePositionFieldGroup.positionXKey)
+          : false;
 
         return (
           <div key={propDef.key}>
+            {showSectionStyleHeading && (
+              <>
+                <Separator className="mb-4" />
+                <div className="space-y-1 mb-4">
+                  <p className="text-sm font-semibold">Section Background</p>
+                  <p className="text-xs text-muted-foreground">
+                    Add a background color or image and optionally layer in a radial gradient overlay.
+                  </p>
+                </div>
+              </>
+            )}
             {idx > 0 && propDef.type === "array-items" && <Separator className="mb-4" />}
             <div className="space-y-1.5">
               <Label className="text-xs font-medium">{propDef.label}</Label>
@@ -265,14 +347,18 @@ export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
                 onChange={(val) => setProp(propDef.key, val)}
               />
             </div>
-            {propDef.key === "backgroundImageUrl" && hasPositionProps && bgImageUrl && (
+            {imagePositionFieldGroup && hasPositionProps && backgroundImageUrl && (
               <div className="mt-3">
                 <ImagePositionPicker
-                  imageUrl={bgImageUrl}
-                  positionX={Number(props.backgroundPositionX ?? 50)}
-                  positionY={Number(props.backgroundPositionY ?? 50)}
+                  imageUrl={backgroundImageUrl}
+                  positionX={Number(props[imagePositionFieldGroup.positionXKey] ?? 50)}
+                  positionY={Number(props[imagePositionFieldGroup.positionYKey] ?? 50)}
                   onPositionChange={(x, y) => {
-                    onChange({ ...props, backgroundPositionX: x, backgroundPositionY: y });
+                    onChange({
+                      ...props,
+                      [imagePositionFieldGroup.positionXKey]: x,
+                      [imagePositionFieldGroup.positionYKey]: y,
+                    });
                   }}
                 />
               </div>

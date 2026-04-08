@@ -7,6 +7,7 @@ export type PropType =
   | "select"
   | "boolean"
   | "number"
+  | "color"
   | "array-items";
 
 export interface PropDef {
@@ -136,7 +137,57 @@ const EXPERIENCE_LEVEL_OPTIONS = [
   { label: "Advanced", value: "advanced" },
 ];
 
-export const BLOCK_REGISTRY: BlockDef[] = [
+const SHARED_SECTION_STYLE_DEFAULTS = {
+  sectionBackgroundColor: "",
+  sectionBackgroundImageUrl: "",
+  sectionBackgroundPositionX: 50,
+  sectionBackgroundPositionY: 50,
+  sectionShowRadialGradient: false,
+  sectionRadialGradientColor: "#7c3aed",
+};
+
+const SHARED_SECTION_STYLE_PROP_DEFS: PropDef[] = [
+  { key: "sectionBackgroundColor", label: "Background Color", type: "color", placeholder: "#ffffff" },
+  { key: "sectionBackgroundImageUrl", label: "Background Image", type: "image-url", placeholder: "Upload or select image" },
+  { key: "sectionBackgroundPositionX", label: "Image Position X (%)", type: "number", min: 0, max: 100 },
+  { key: "sectionBackgroundPositionY", label: "Image Position Y (%)", type: "number", min: 0, max: 100 },
+  { key: "sectionShowRadialGradient", label: "Show Radial Gradient Overlay", type: "boolean" },
+  { key: "sectionRadialGradientColor", label: "Radial Gradient Color", type: "color", placeholder: "#7c3aed" },
+];
+
+const SHARED_SECTION_ACCENT_PROP_DEFS: PropDef[] = [
+  { key: "sectionBackgroundColor", label: "Background Color", type: "color", placeholder: "#ffffff" },
+  { key: "sectionShowRadialGradient", label: "Show Radial Gradient Overlay", type: "boolean" },
+  { key: "sectionRadialGradientColor", label: "Radial Gradient Color", type: "color", placeholder: "#7c3aed" },
+];
+
+function mergePropDefs(existing: PropDef[], additions: PropDef[]) {
+  const seen = new Set(existing.map((prop) => prop.key));
+  return [...existing, ...additions.filter((prop) => !seen.has(prop.key))];
+}
+
+function withSharedSectionStyles(block: BlockDef, options?: { includeImageControls?: boolean }): BlockDef {
+  const includeImageControls = options?.includeImageControls ?? true;
+  const sharedPropDefs = includeImageControls ? SHARED_SECTION_STYLE_PROP_DEFS : SHARED_SECTION_ACCENT_PROP_DEFS;
+  const sharedDefaults = includeImageControls
+    ? SHARED_SECTION_STYLE_DEFAULTS
+    : {
+        sectionBackgroundColor: SHARED_SECTION_STYLE_DEFAULTS.sectionBackgroundColor,
+        sectionShowRadialGradient: SHARED_SECTION_STYLE_DEFAULTS.sectionShowRadialGradient,
+        sectionRadialGradientColor: SHARED_SECTION_STYLE_DEFAULTS.sectionRadialGradientColor,
+      };
+
+  return {
+    ...block,
+    defaultProps: {
+      ...sharedDefaults,
+      ...block.defaultProps,
+    },
+    propDefs: mergePropDefs(block.propDefs, sharedPropDefs),
+  };
+}
+
+const BASE_BLOCK_REGISTRY: BlockDef[] = [
   {
     type: "hero",
     label: "Hero",
@@ -1024,7 +1075,11 @@ export const BLOCK_REGISTRY: BlockDef[] = [
   },
 ];
 
-export const DYNAMIC_BLOCK_TYPES: BlockDef[] = [
+export const BLOCK_REGISTRY: BlockDef[] = BASE_BLOCK_REGISTRY.map((block) =>
+  withSharedSectionStyles(block, { includeImageControls: block.type !== "hero" })
+);
+
+const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
   {
     type: "therapist-map",
     label: "Global Therapist Map (Live Data)",
@@ -1085,10 +1140,28 @@ export const DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     description: "Registration and login forms for mental health professionals — managed automatically",
     isDynamic: true,
     category: "dynamic",
-    defaultProps: {},
-    propDefs: [],
+    defaultProps: {
+      heading: "Are you a TCK-Informed Mental Health Professional?",
+      accentHeading: "Join the Network!",
+      applicationStatusText: "Applications open in June.",
+      loginPromptPrefix: "If you're already a member click here to",
+      loginLinkText: "Log in",
+      loginPromptSuffix: "to your profile!",
+    },
+    propDefs: [
+      { key: "heading", label: "Heading", type: "text", placeholder: "Main heading" },
+      { key: "accentHeading", label: "Accent Heading", type: "text", placeholder: "Highlighted heading text" },
+      { key: "applicationStatusText", label: "Button Status Text", type: "text", placeholder: "Applications open in June." },
+      { key: "loginPromptPrefix", label: "Login Prompt Prefix", type: "text", placeholder: "If you're already a member click here to" },
+      { key: "loginLinkText", label: "Login Link Text", type: "text", placeholder: "Log in" },
+      { key: "loginPromptSuffix", label: "Login Prompt Suffix", type: "text", placeholder: "to your profile!" },
+    ],
   },
 ];
+
+export const DYNAMIC_BLOCK_TYPES: BlockDef[] = BASE_DYNAMIC_BLOCK_TYPES.map((block) =>
+  withSharedSectionStyles(block)
+);
 
 export const ALL_BLOCKS: BlockDef[] = [...BLOCK_REGISTRY, ...DYNAMIC_BLOCK_TYPES];
 

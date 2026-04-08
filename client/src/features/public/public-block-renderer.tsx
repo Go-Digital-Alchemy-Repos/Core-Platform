@@ -1,9 +1,16 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense, type ReactElement } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  SectionStyleWrapper,
+  DEFAULT_SECTION_LINEAR_GRADIENT,
+  getSectionStyleConfig,
+  hasSectionStyleConfig,
+  getRadialGradientStyle,
+} from "@/features/admin/cms/builder/section-style";
 import {
   Globe, Heart, Users, MapPin, Mail, Phone, Star, CheckCircle,
   Quote, UserCheck, CalendarDays, BookOpen, Image, Play, Minus,
@@ -96,6 +103,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const hasMediaBackground = !!(bg || videoBg);
   const overlayStrength = Math.max(0, Math.min(opacity, 100)) / 100;
   const effectiveOverlayStrength = hasMediaBackground ? Math.min(overlayStrength, 0.45) : overlayStrength;
+  const sectionStyleConfig = getSectionStyleConfig(props, { resolveAssetUrl: resolveCmsAssetUrl });
   const overlayStyle = hasMediaBackground
     ? {
         background: `linear-gradient(180deg, rgba(15, 23, 42, ${effectiveOverlayStrength * 0.55}) 0%, rgba(15, 23, 42, ${effectiveOverlayStrength}) 100%)`,
@@ -107,7 +115,12 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
       className={`relative flex items-center overflow-hidden rounded-lg ${isSplit ? "justify-start text-left" : "justify-center text-center"}`}
       style={{
         minHeight: minHeightStyle,
-        ...(bg && !videoBg ? { backgroundImage: `url(${bg})`, backgroundSize: "cover", backgroundPosition: `${bgPosX}% ${bgPosY}%` } : !videoBg ? { background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)" } : {}),
+        ...(sectionStyleConfig.backgroundColor ? { backgroundColor: sectionStyleConfig.backgroundColor } : {}),
+        ...(bg && !videoBg
+          ? { backgroundImage: `url(${bg})`, backgroundSize: "cover", backgroundPosition: `${bgPosX}% ${bgPosY}%` }
+          : !videoBg && !sectionStyleConfig.backgroundColor
+          ? { background: DEFAULT_SECTION_LINEAR_GRADIENT }
+          : {}),
       }}
     >
       {videoBg && (
@@ -116,6 +129,9 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
         </video>
       )}
       <div className="absolute inset-0 rounded-lg" style={overlayStyle} />
+      {sectionStyleConfig.showRadialGradient && (
+        <div className="absolute inset-0 rounded-lg" style={getRadialGradientStyle(sectionStyleConfig.radialGradientColor)} />
+      )}
       <div className={`relative z-10 px-8 py-16 ${isSplit ? "max-w-2xl" : "max-w-3xl mx-auto"}`}>
         {badge && (
           <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-semibold mb-4 border border-accent/30">
@@ -1049,54 +1065,78 @@ const DYNAMIC_BLOCK_TYPES = new Set([
   "blog-featured-post",
 ]);
 
-export function PublicBlockRenderer({ block }: { block: BlockInstance }) {
+export function PublicBlockRenderer({
+  block,
+  disableSectionStyleWrap = false,
+}: {
+  block: BlockInstance;
+  disableSectionStyleWrap?: boolean;
+}) {
+  let renderedBlock: ReactElement | null = null;
+
   if (DYNAMIC_BLOCK_TYPES.has(block.type)) {
     if (block.type === "blog-post-feed") {
-      return (
+      renderedBlock = (
         <Suspense fallback={<DynamicFallback />}>
           <LazyBlogPostFeedBlock props={block.props} />
         </Suspense>
       );
     }
     if (block.type === "blog-featured-post") {
-      return (
+      renderedBlock = (
         <Suspense fallback={<DynamicFallback />}>
           <LazyBlogFeaturedPostBlock props={block.props} />
         </Suspense>
       );
     }
     if (block.type === "therapist-map") {
-      return (
+      renderedBlock = (
         <Suspense fallback={<DynamicFallback />}>
           <LazyTherapistMapBlock props={block.props} />
         </Suspense>
       );
     }
     if (block.type === "contact-form") {
-      return (
+      renderedBlock = (
         <Suspense fallback={<DynamicFallback />}>
           <LazyContactFormBlock />
         </Suspense>
       );
     }
     if (block.type === "join-registration-form") {
-      return (
+      renderedBlock = (
         <Suspense fallback={<DynamicFallback />}>
-          <LazyJoinRegistrationFormBlock />
+          <LazyJoinRegistrationFormBlock props={block.props} />
         </Suspense>
       );
     }
   }
 
-  const Renderer = RENDERERS[block.type];
-  if (!Renderer) {
-    return (
-      <div className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
-        Unknown block type: <code>{block.type}</code>
-      </div>
-    );
+  if (!renderedBlock) {
+    const Renderer = RENDERERS[block.type];
+    if (!Renderer) {
+      return (
+        <div className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
+          Unknown block type: <code>{block.type}</code>
+        </div>
+      );
+    }
+    renderedBlock = <Renderer props={block.props} />;
   }
-  return <Renderer props={block.props} />;
+
+  if (block.type === "hero") {
+    return renderedBlock;
+  }
+
+  if (disableSectionStyleWrap) {
+    return renderedBlock;
+  }
+
+  return (
+    <SectionStyleWrapper props={block.props} resolveAssetUrl={resolveCmsAssetUrl}>
+      {renderedBlock}
+    </SectionStyleWrapper>
+  );
 }
 
 const FULL_WIDTH_BLOCKS = new Set([
@@ -1117,8 +1157,26 @@ export function PublicPageRenderer({ blocks }: { blocks: BlockInstance[] }) {
         if (isFullWidth) {
           return <PublicBlockRenderer key={block.id} block={block} />;
         }
+        const sectionStyleConfig = getSectionStyleConfig(block.props, { resolveAssetUrl: resolveCmsAssetUrl });
+        const hasCustomSectionStyle = hasSectionStyleConfig(sectionStyleConfig);
         const idx = nonFullWidthIndex++;
-        const isAlternate = idx % 2 === 1;
+        const isAlternate = idx % 2 === 1 && !hasCustomSectionStyle;
+
+        if (hasCustomSectionStyle) {
+          return (
+            <SectionStyleWrapper
+              key={block.id}
+              props={block.props}
+              resolveAssetUrl={resolveCmsAssetUrl}
+              className="rounded-none"
+            >
+              <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
+                <PublicBlockRenderer block={block} disableSectionStyleWrap />
+              </div>
+            </SectionStyleWrapper>
+          );
+        }
+
         return (
           <section
             key={block.id}
@@ -1131,7 +1189,7 @@ export function PublicPageRenderer({ blocks }: { blocks: BlockInstance[] }) {
               />
             )}
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
-              <PublicBlockRenderer block={block} />
+              <PublicBlockRenderer block={block} disableSectionStyleWrap />
             </div>
           </section>
         );

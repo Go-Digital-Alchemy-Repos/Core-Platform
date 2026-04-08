@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, type ReactElement } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useForm } from "react-hook-form";
@@ -35,6 +35,13 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { BlockInstance } from "./block-registry";
 import { isDynamicBlock, getBlockDef } from "./block-registry";
+import {
+  SectionStyleWrapper,
+  DEFAULT_SECTION_LINEAR_GRADIENT,
+  getSectionStyleConfig,
+  hasSectionStyleConfig,
+  getRadialGradientStyle,
+} from "./section-style";
 
 const LUCIDE_MAP: Record<string, React.ElementType> = {
   Globe, Heart, Users, MapPin, Mail, Phone, Star, CheckCircle,
@@ -109,6 +116,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const hasMediaBackground = !!(bg || videoBg);
   const overlayStrength = Math.max(0, Math.min(opacity, 100)) / 100;
   const effectiveOverlayStrength = hasMediaBackground ? Math.min(overlayStrength, 0.45) : overlayStrength;
+  const sectionStyleConfig = getSectionStyleConfig(props, { resolveAssetUrl: resolveCmsAssetUrl });
   const overlayStyle = hasMediaBackground
     ? {
         background: `linear-gradient(180deg, rgba(15, 23, 42, ${effectiveOverlayStrength * 0.55}) 0%, rgba(15, 23, 42, ${effectiveOverlayStrength}) 100%)`,
@@ -120,7 +128,12 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
       className={`relative flex items-center overflow-hidden rounded-lg ${isSplit ? "justify-start text-left" : "justify-center text-center"}`}
       style={{
         minHeight: minHeightStyle,
-        ...(bg && !videoBg ? { backgroundImage: `url(${bg})`, backgroundSize: "cover", backgroundPosition: `${bgPosX}% ${bgPosY}%` } : !videoBg ? { background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)" } : {}),
+        ...(sectionStyleConfig.backgroundColor ? { backgroundColor: sectionStyleConfig.backgroundColor } : {}),
+        ...(bg && !videoBg
+          ? { backgroundImage: `url(${bg})`, backgroundSize: "cover", backgroundPosition: `${bgPosX}% ${bgPosY}%` }
+          : !videoBg && !sectionStyleConfig.backgroundColor
+          ? { background: DEFAULT_SECTION_LINEAR_GRADIENT }
+          : {}),
       }}
     >
       {videoBg && (
@@ -129,6 +142,9 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
         </video>
       )}
       <div className="absolute inset-0 rounded-lg" style={overlayStyle} />
+      {sectionStyleConfig.showRadialGradient && (
+        <div className="absolute inset-0 rounded-lg" style={getRadialGradientStyle(sectionStyleConfig.radialGradientColor)} />
+      )}
       <div className={`relative z-10 px-8 py-16 ${isSplit ? "max-w-2xl" : "max-w-3xl mx-auto"}`}>
         {badge && (
           <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-semibold mb-4 border border-accent/30">
@@ -1372,14 +1388,20 @@ function ContactFormBlock() {
   );
 }
 
-function JoinRegistrationFormBlock() {
+function JoinRegistrationFormBlock({ props }: { props: Record<string, unknown> }) {
   const [loginOpen, setLoginOpen] = useState(false);
+  const heading = str(props.heading) || "Are you a TCK-Informed Mental Health Professional?";
+  const accentHeading = str(props.accentHeading) || "Join the Network!";
+  const applicationStatusText = str(props.applicationStatusText) || "Applications open in June.";
+  const loginPromptPrefix = str(props.loginPromptPrefix) || "If you're already a member click here to";
+  const loginLinkText = str(props.loginLinkText) || "Log in";
+  const loginPromptSuffix = str(props.loginPromptSuffix) || "to your profile!";
 
   return (
     <section className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="dynamic-join-registration-form">
       <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title">
-        Are you a TCK-Informed Mental Health Professional?{" "}
-        <span className="text-accent">Join the Network!</span>
+        {heading}{" "}
+        <span className="text-accent">{accentHeading}</span>
       </h1>
       <Button
         size="lg"
@@ -1388,18 +1410,18 @@ function JoinRegistrationFormBlock() {
         data-testid="button-apply-member"
       >
         <Clock className="mr-2 h-5 w-5" />
-        Applications open in June.
+        {applicationStatusText}
       </Button>
       <p className="text-sm sm:text-base text-muted-foreground mt-6" data-testid="text-login-prompt">
-        If you're already a member click here to{" "}
+        {loginPromptPrefix}{" "}
         <button
           onClick={() => setLoginOpen(true)}
           className="text-accent underline underline-offset-2 hover:text-accent/80 font-medium"
           data-testid="button-member-login"
         >
-          Log in
+          {loginLinkText}
         </button>{" "}
-        to your profile!
+        {loginPromptSuffix}
       </p>
       <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
     </section>
@@ -1462,27 +1484,53 @@ const RENDERERS: Record<string, React.ComponentType<{ props: Record<string, unkn
   "protocol-builder": ProtocolBuilderBlock,
 };
 
-export function BlockRenderer({ block, isAdminPreview }: { block: BlockInstance; isAdminPreview?: boolean }) {
+export function BlockRenderer({
+  block,
+  isAdminPreview,
+  disableSectionStyleWrap = false,
+}: {
+  block: BlockInstance;
+  isAdminPreview?: boolean;
+  disableSectionStyleWrap?: boolean;
+}) {
+  let renderedBlock: ReactElement | null = null;
+
   if (isDynamicBlock(block.type)) {
     if (isAdminPreview) {
-      return <DynamicPlaceholderAdmin block={block} />;
+      renderedBlock = <DynamicPlaceholderAdmin block={block} />;
     }
-    if (block.type === "therapist-map") return <TherapistMapBlock props={block.props} />;
-    if (block.type === "contact-form") return <ContactFormBlock />;
-    if (block.type === "join-registration-form") return <JoinRegistrationFormBlock />;
-    if (block.type === "blog-post-feed") return <BlogPostFeedBlock props={block.props} />;
-    if (block.type === "blog-featured-post") return <BlogFeaturedPostBlock props={block.props} />;
+    if (!renderedBlock && block.type === "therapist-map") renderedBlock = <TherapistMapBlock props={block.props} />;
+    if (!renderedBlock && block.type === "contact-form") renderedBlock = <ContactFormBlock />;
+    if (!renderedBlock && block.type === "join-registration-form") renderedBlock = <JoinRegistrationFormBlock props={block.props} />;
+    if (!renderedBlock && block.type === "blog-post-feed") renderedBlock = <BlogPostFeedBlock props={block.props} />;
+    if (!renderedBlock && block.type === "blog-featured-post") renderedBlock = <BlogFeaturedPostBlock props={block.props} />;
   }
 
-  const Renderer = RENDERERS[block.type];
-  if (!Renderer) {
-    return (
-      <div className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
-        Unknown block type: <code>{block.type}</code>
-      </div>
-    );
+  if (!renderedBlock) {
+    const Renderer = RENDERERS[block.type];
+    if (!Renderer) {
+      return (
+        <div className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
+          Unknown block type: <code>{block.type}</code>
+        </div>
+      );
+    }
+    renderedBlock = <Renderer props={block.props} />;
   }
-  return <Renderer props={block.props} />;
+
+  if (block.type === "hero") {
+    return renderedBlock;
+  }
+
+  if (disableSectionStyleWrap) {
+    return renderedBlock;
+  }
+
+  return (
+    <SectionStyleWrapper props={block.props} resolveAssetUrl={resolveCmsAssetUrl}>
+      {renderedBlock}
+    </SectionStyleWrapper>
+  );
 }
 
 /** Block types that render edge-to-edge without a max-width container.
@@ -1504,9 +1552,27 @@ export function PageRenderer({ blocks }: { blocks: BlockInstance[] }) {
         if (isFullWidth) {
           return <BlockRenderer key={block.id} block={block} />;
         }
+        const sectionStyleConfig = getSectionStyleConfig(block.props, { resolveAssetUrl: resolveCmsAssetUrl });
+        const hasCustomSectionStyle = hasSectionStyleConfig(sectionStyleConfig);
+
+        if (hasCustomSectionStyle) {
+          return (
+            <SectionStyleWrapper
+              key={block.id}
+              props={block.props}
+              resolveAssetUrl={resolveCmsAssetUrl}
+              className="rounded-none"
+            >
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
+                <BlockRenderer block={block} disableSectionStyleWrap />
+              </div>
+            </SectionStyleWrapper>
+          );
+        }
+
         return (
           <div key={block.id} className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
-            <BlockRenderer block={block} />
+            <BlockRenderer block={block} disableSectionStyleWrap />
           </div>
         );
       })}
