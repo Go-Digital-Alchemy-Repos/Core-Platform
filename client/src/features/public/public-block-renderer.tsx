@@ -90,6 +90,8 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const badge = str(props.badge);
   const minH = str(props.minHeight) || "420";
   const minHeightStyle = minH === "100vh" ? "100vh" : `${minH}px`;
+  const bgPosX = Math.max(0, Math.min(100, num(props.backgroundPositionX as number, 50)));
+  const bgPosY = Math.max(0, Math.min(100, num(props.backgroundPositionY as number, 50)));
   const isSplit = layout === "split";
   const hasMediaBackground = !!(bg || videoBg);
   const overlayStrength = Math.max(0, Math.min(opacity, 100)) / 100;
@@ -105,7 +107,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
       className={`relative flex items-center overflow-hidden rounded-lg ${isSplit ? "justify-start text-left" : "justify-center text-center"}`}
       style={{
         minHeight: minHeightStyle,
-        ...(bg && !videoBg ? { backgroundImage: `url(${bg})`, backgroundSize: "cover", backgroundPosition: "center" } : !videoBg ? { background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)" } : {}),
+        ...(bg && !videoBg ? { backgroundImage: `url(${bg})`, backgroundSize: "cover", backgroundPosition: `${bgPosX}% ${bgPosY}%` } : !videoBg ? { background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)" } : {}),
       }}
     >
       {videoBg && (

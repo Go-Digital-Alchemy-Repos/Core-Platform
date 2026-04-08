@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2 } from "lucide-react";
 import type { BlockDef, PropDef } from "./block-registry";
 import { CmsImageUpload } from "../components/cms-image-upload";
+import { ImagePositionPicker } from "../components/image-position-picker";
 
 interface BlockEditorProps {
   blockDef: BlockDef;
@@ -233,10 +234,15 @@ function PropField({
   }
 }
 
+const POSITION_PICKER_KEYS = new Set(["backgroundPositionX", "backgroundPositionY"]);
+
 export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
   const setProp = (key: string, val: unknown) => {
     onChange({ ...props, [key]: val });
   };
+
+  const hasPositionProps = blockDef.propDefs.some((p) => p.key === "backgroundPositionX");
+  const bgImageUrl = String(props.backgroundImageUrl ?? "");
 
   return (
     <div className="space-y-5">
@@ -245,19 +251,35 @@ export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
         <p className="text-xs text-muted-foreground">{blockDef.description}</p>
       </div>
       <Separator />
-      {blockDef.propDefs.map((propDef, idx) => (
-        <div key={propDef.key}>
-          {idx > 0 && propDef.type === "array-items" && <Separator className="mb-4" />}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium">{propDef.label}</Label>
-            <PropField
-              propDef={propDef}
-              value={props[propDef.key]}
-              onChange={(val) => setProp(propDef.key, val)}
-            />
+      {blockDef.propDefs.map((propDef, idx) => {
+        if (POSITION_PICKER_KEYS.has(propDef.key)) return null;
+
+        return (
+          <div key={propDef.key}>
+            {idx > 0 && propDef.type === "array-items" && <Separator className="mb-4" />}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">{propDef.label}</Label>
+              <PropField
+                propDef={propDef}
+                value={props[propDef.key]}
+                onChange={(val) => setProp(propDef.key, val)}
+              />
+            </div>
+            {propDef.key === "backgroundImageUrl" && hasPositionProps && bgImageUrl && (
+              <div className="mt-3">
+                <ImagePositionPicker
+                  imageUrl={bgImageUrl}
+                  positionX={Number(props.backgroundPositionX ?? 50)}
+                  positionY={Number(props.backgroundPositionY ?? 50)}
+                  onPositionChange={(x, y) => {
+                    onChange({ ...props, backgroundPositionX: x, backgroundPositionY: y });
+                  }}
+                />
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
