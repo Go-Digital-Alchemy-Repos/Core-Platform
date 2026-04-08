@@ -47,6 +47,7 @@ import {
   RotateCcw,
   Loader2,
   LayoutTemplate,
+  Check,
 } from "lucide-react";
 import {
   Popover,
@@ -102,6 +103,7 @@ export default function CmsPageEditorPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const titleRef = useRef<string>("");
+  const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slugManuallyEdited = useRef(false);
   const [builderContent, setBuilderContent] = useState<BuilderContent>(EMPTY_CONTENT);
   const [activeTab, setActiveTab] = useState("builder");
@@ -181,11 +183,13 @@ export default function CmsPageEditorPage() {
       const created: CmsPage = await res.json();
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages"] });
       toast({ title: "Page created successfully" });
-      navigate(`/admin/cms/pages/${created.id}`);
+      setSaveStatus("success");
+      navTimerRef.current = setTimeout(() => navigate(`/admin/cms/pages/${created.id}`), 1500);
     },
     onError: async (err: any) => {
       const msg = await err?.response?.json?.().catch(() => null);
       toast({ title: msg?.error || "Failed to create page", variant: "destructive" });
+      setSaveStatus("error");
     },
   });
 
@@ -197,10 +201,12 @@ export default function CmsPageEditorPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id, "revisions"] });
       toast({ title: "Page saved" });
+      setSaveStatus("success");
     },
     onError: async (err: any) => {
       const msg = await err?.response?.json?.().catch(() => null);
       toast({ title: msg?.error || "Failed to save page", variant: "destructive" });
+      setSaveStatus("error");
     },
   });
 
@@ -272,6 +278,21 @@ export default function CmsPageEditorPage() {
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
+
+  useEffect(() => {
+    if (saveStatus !== "idle") {
+      const timer = setTimeout(() => setSaveStatus("idle"), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [saveStatus]);
+
+  useEffect(() => {
+    return () => {
+      if (navTimerRef.current) clearTimeout(navTimerRef.current);
+    };
+  }, []);
 
   if (!isNew && pageLoading) {
     return (
@@ -429,9 +450,35 @@ export default function CmsPageEditorPage() {
               onClick={onSave}
               disabled={isPending}
               data-testid="button-save"
+              className={
+                saveStatus === "success"
+                  ? "bg-green-600 hover:bg-green-600 text-white"
+                  : saveStatus === "error"
+                  ? "bg-red-600 hover:bg-red-600 text-white"
+                  : ""
+              }
             >
-              <Save className="h-4 w-4 mr-2" />
-              {isPending ? "Saving…" : "Save"}
+              {isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving…
+                </>
+              ) : saveStatus === "success" ? (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Saved!
+                </>
+              ) : saveStatus === "error" ? (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save failed
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </>
+              )}
             </Button>
           </div>
         </div>
