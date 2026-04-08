@@ -402,24 +402,32 @@ function CreateUserSheet({
       const res = await apiRequest("POST", "/api/admin/users", body);
       const newUser = await res.json();
 
-      if (avatarFile && newUser.id) {
-        const formData = new FormData();
-        formData.append("avatar", avatarFile);
-        formData.append("userId", newUser.id);
-        const uploadRes = await fetch("/api/uploads/avatar", {
-          method: "POST",
-          body: formData,
-          credentials: "include",
-        });
-        if (!uploadRes.ok) {
-          throw new Error("User created but profile photo upload failed. You can upload it later from the user's profile.");
+      let avatarFailed = false;
+      if (role === "therapist" && avatarFile && newUser.id) {
+        try {
+          const formData = new FormData();
+          formData.append("avatar", avatarFile);
+          formData.append("userId", newUser.id);
+          const uploadRes = await fetch("/api/uploads/avatar", {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          });
+          if (!uploadRes.ok) avatarFailed = true;
+        } catch {
+          avatarFailed = true;
         }
       }
+      return { avatarFailed };
     },
-    onSuccess: () => {
+    onSuccess: ({ avatarFailed }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard-stats"] });
-      toast({ title: "User created successfully" });
+      if (avatarFailed) {
+        toast({ title: "User created", description: "Profile photo upload failed. You can upload it later from the user's profile.", variant: "destructive" });
+      } else {
+        toast({ title: "User created successfully" });
+      }
       resetForm();
       onOpenChange(false);
     },
@@ -452,7 +460,19 @@ function CreateUserSheet({
             }}
             className="space-y-4"
           >
-            <RoleSelector value={role} onChange={setRole} prefix="create" />
+            <RoleSelector value={role} onChange={(r) => {
+              setRole(r);
+              if (r === "admin") {
+                if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+                setAvatarFile(null);
+                setAvatarPreview(null);
+                setProfileTitle("");
+                setCredentials("");
+                setBio("");
+                setSpecializations([]);
+                setLanguages([]);
+              }
+            }} prefix="create" />
 
             <Separator />
 
