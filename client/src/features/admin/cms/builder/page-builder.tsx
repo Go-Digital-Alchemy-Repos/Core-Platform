@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, type DragEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -339,6 +339,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [previewMode, setPreviewMode] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [savingSectionBlockId, setSavingSectionBlockId] = useState<string | null>(null);
+  const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ id: string; position: "before" | "after" } | null>(null);
 
   const blocks = content.blocks ?? [];
 
@@ -378,6 +380,68 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     }
     setBlocks(next);
   };
+
+  const reorderBlocks = useCallback(
+    (sourceId: string, targetId: string, position: "before" | "after") => {
+      if (sourceId === targetId) return;
+
+      const sourceIndex = blocks.findIndex((b) => b.id === sourceId);
+      const targetIndex = blocks.findIndex((b) => b.id === targetId);
+
+      if (sourceIndex < 0 || targetIndex < 0) return;
+
+      const next = [...blocks];
+      const [movedBlock] = next.splice(sourceIndex, 1);
+      const adjustedTargetIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      const insertIndex = position === "before" ? adjustedTargetIndex : adjustedTargetIndex + 1;
+
+      next.splice(insertIndex, 0, movedBlock);
+      setBlocks(next);
+    },
+    [blocks, setBlocks]
+  );
+
+  const clearDragState = useCallback(() => {
+    setDraggedBlockId(null);
+    setDropTarget(null);
+  }, []);
+
+  const handleDragStart = useCallback((event: DragEvent, blockId: string) => {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", blockId);
+    setDraggedBlockId(blockId);
+    setDropTarget(null);
+  }, []);
+
+  const handleDragOver = useCallback((event: DragEvent, targetId: string) => {
+    if (!draggedBlockId || draggedBlockId === targetId) return;
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const offsetY = event.clientY - bounds.top;
+    const position = offsetY < bounds.height / 2 ? "before" : "after";
+
+    setDropTarget((current) => (
+      current?.id === targetId && current.position === position
+        ? current
+        : { id: targetId, position }
+    ));
+  }, [draggedBlockId]);
+
+  const handleDrop = useCallback((event: DragEvent, targetId: string) => {
+    event.preventDefault();
+
+    const sourceId = draggedBlockId ?? event.dataTransfer.getData("text/plain");
+    const position = dropTarget?.id === targetId ? dropTarget.position : "after";
+
+    if (sourceId && sourceId !== targetId) {
+      reorderBlocks(sourceId, targetId, position);
+    }
+
+    clearDragState();
+  }, [clearDragState, draggedBlockId, dropTarget, reorderBlocks]);
 
   const updateBlockProps = (id: string, props: Record<string, unknown>) => {
     setBlocks(blocks.map((b) => (b.id === id ? { ...b, props } : b)));
@@ -522,6 +586,9 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
               const isSelected = block.id === selectedId;
               const dynamic = isDynamicBlock(block.type);
               const dynamicEditable = dynamic && def && def.propDefs.length > 0;
+              const isDraggable = !dynamic || dynamicEditable;
+              const showDropBefore = dropTarget?.id === block.id && dropTarget.position === "before";
+              const showDropAfter = dropTarget?.id === block.id && dropTarget.position === "after";
               return (
                 <div
                   key={block.id}
@@ -531,11 +598,30 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                       : isSelected
                       ? "border-violet-400 shadow-sm"
                       : "border-border hover:border-muted-foreground/30"
+                  } ${draggedBlockId === block.id ? "opacity-60" : ""} ${
+                    showDropBefore ? "ring-2 ring-inset ring-violet-400 ring-offset-1" : ""
+                  } ${
+                    showDropAfter ? "shadow-[inset_0_-2px_0_0_rgb(167_139_250)]" : ""
                   }`}
                   data-testid={`block-item-${block.id}`}
+                  onDragOver={isDraggable ? (event) => handleDragOver(event, block.id) : undefined}
+                  onDrop={isDraggable ? (event) => handleDrop(event, block.id) : undefined}
                 >
                   <div className={`flex items-center gap-2 px-3 py-2 ${dynamic ? "bg-amber-50/50 dark:bg-amber-950/20" : "bg-muted/20"}`}>
-                    <GripVertical className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
+                    <button
+                      type="button"
+                      draggable={isDraggable}
+                      onDragStart={isDraggable ? (event) => handleDragStart(event, block.id) : undefined}
+                      onDragEnd={isDraggable ? clearDragState : undefined}
+                      className={`flex h-6 w-6 items-center justify-center rounded-sm flex-shrink-0 ${
+                        isDraggable ? "cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground/70" : "cursor-not-allowed text-muted-foreground/30"
+                      }`}
+                      aria-label={isDraggable ? `Drag ${def?.label ?? block.type} block` : "Block position locked"}
+                      title={isDraggable ? "Drag to reorder" : "This block position is locked"}
+                      data-testid={`drag-handle-${block.id}`}
+                    >
+                      <GripVertical className="h-4 w-4" />
+                    </button>
                     <div className={`h-6 w-6 rounded flex items-center justify-center flex-shrink-0 ${dynamic ? "bg-amber-100 dark:bg-amber-900/30" : "bg-violet-100 dark:bg-violet-900/30"}`}>
                       {def && <BlockIcon name={def.iconName} className={`h-3.5 w-3.5 ${dynamic ? "text-amber-600" : "text-violet-600"}`} />}
                     </div>
