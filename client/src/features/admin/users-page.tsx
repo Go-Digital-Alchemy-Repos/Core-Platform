@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import { AdminSidebar } from "./admin-sidebar";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { apiRequest, queryClient, STALE_TIMES } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useSpecializations } from "@/hooks/use-specializations";
 import {
   Table,
   TableBody,
@@ -58,6 +59,7 @@ import {
   Shield,
   Heart,
   X,
+  Camera,
 } from "lucide-react";
 
 type SafeUser = Omit<User, "password"> & { country?: string | null };
@@ -333,6 +335,8 @@ function CreateUserSheet({
   onOpenChange: (v: boolean) => void;
 }) {
   const { toast } = useToast();
+  const { specializations: specList } = useSpecializations();
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -341,11 +345,40 @@ function CreateUserSheet({
   const [sendWelcome, setSendWelcome] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [profileTitle, setProfileTitle] = useState("");
   const [credentials, setCredentials] = useState("");
   const [bio, setBio] = useState("");
   const [specializations, setSpecializations] = useState<string[]>([]);
   const [languages, setLanguages] = useState<string[]>([]);
+
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  }
+
+  function resetForm() {
+    setEmail("");
+    setPassword("");
+    setFirstName("");
+    setLastName("");
+    setRole("therapist");
+    setSendWelcome(true);
+    setShowPassword(false);
+    setAvatarFile(null);
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarPreview(null);
+    setProfileTitle("");
+    setCredentials("");
+    setBio("");
+    setSpecializations([]);
+    setLanguages([]);
+  }
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -366,30 +399,40 @@ function CreateUserSheet({
           languages: languages.length ? languages : undefined,
         };
       }
-      await apiRequest("POST", "/api/admin/users", body);
+      const res = await apiRequest("POST", "/api/admin/users", body);
+      const newUser = await res.json();
+
+      if (avatarFile && newUser.id) {
+        const formData = new FormData();
+        formData.append("avatar", avatarFile);
+        formData.append("userId", newUser.id);
+        const uploadRes = await fetch("/api/uploads/avatar", {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        });
+        if (!uploadRes.ok) {
+          throw new Error("User created but profile photo upload failed. You can upload it later from the user's profile.");
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard-stats"] });
       toast({ title: "User created successfully" });
-      setEmail("");
-      setPassword("");
-      setFirstName("");
-      setLastName("");
-      setRole("therapist");
-      setSendWelcome(true);
-      setShowPassword(false);
-      setProfileTitle("");
-      setCredentials("");
-      setBio("");
-      setSpecializations([]);
-      setLanguages([]);
+      resetForm();
       onOpenChange(false);
     },
     onError: (err: Error) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     },
   });
+
+  function toggleSpec(name: string) {
+    setSpecializations((prev) =>
+      prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name]
+    );
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -476,6 +519,49 @@ function CreateUserSheet({
                 <Separator />
                 <p className="text-sm font-medium text-muted-foreground">Professional Profile (optional)</p>
 
+                <div className="space-y-2">
+                  <Label>Profile Photo</Label>
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => avatarInputRef.current?.click()}
+                      className="relative flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors overflow-hidden"
+                      data-testid="button-create-avatar"
+                    >
+                      {avatarPreview ? (
+                        <img src={avatarPreview} alt="Preview" className="h-full w-full object-cover" />
+                      ) : (
+                        <Camera className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </button>
+                    <div className="text-sm text-muted-foreground">
+                      {avatarFile ? (
+                        <span className="flex items-center gap-2">
+                          {avatarFile.name}
+                          <button
+                            type="button"
+                            onClick={() => { setAvatarFile(null); setAvatarPreview(null); }}
+                            className="text-destructive hover:text-destructive/80"
+                            data-testid="button-remove-avatar"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ) : (
+                        "Click to upload a photo"
+                      )}
+                    </div>
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      className="hidden"
+                      onChange={handleAvatarChange}
+                      data-testid="input-create-avatar"
+                    />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="create-title">Title</Label>
@@ -513,12 +599,26 @@ function CreateUserSheet({
 
                 <div className="space-y-2">
                   <Label>Specializations</Label>
-                  <TagInput
-                    value={specializations}
-                    onChange={setSpecializations}
-                    placeholder="e.g. Anxiety, TCK Issues"
-                    testId="create-specializations"
-                  />
+                  {specList.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto rounded-md border p-2" data-testid="create-specializations-list">
+                      {specList.map((spec) => (
+                        <Badge
+                          key={spec.id}
+                          variant={specializations.includes(spec.name) ? "default" : "outline"}
+                          className="cursor-pointer select-none"
+                          onClick={() => toggleSpec(spec.name)}
+                          data-testid={`create-spec-${spec.id}`}
+                        >
+                          {spec.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No specializations configured yet.</p>
+                  )}
+                  {specializations.length > 0 && (
+                    <p className="text-xs text-muted-foreground">{specializations.length} selected</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
