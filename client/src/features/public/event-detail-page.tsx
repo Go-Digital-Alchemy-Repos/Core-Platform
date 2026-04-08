@@ -651,14 +651,19 @@ export default function EventDetailPage() {
 
   return (
     <PageLayout>
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8 sm:py-12">
-        <Link href="/events">
-          <Button variant="ghost" className="mb-6 -ml-2" data-testid="button-back-events">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Events
-          </Button>
-        </Link>
+      <section className="relative bg-muted/30 overflow-hidden" data-testid="section-event-detail-hero">
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
+        <div className="relative mx-auto max-w-3xl px-4 sm:px-6 pt-10 pb-6 sm:pt-14 sm:pb-8">
+          <Link href="/events">
+            <Button variant="ghost" className="mb-4 -ml-2" data-testid="button-back-events">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Events
+            </Button>
+          </Link>
+        </div>
+      </section>
 
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8 sm:py-12" data-testid="section-event-info">
         {isLoading && <EventDetailSkeleton />}
 
         {error && (
@@ -861,7 +866,57 @@ export default function EventDetailPage() {
               </div>
             )}
 
-            {event.registrationEnabled && (
+          </article>
+        )}
+      </div>
+
+      {event && (event.description || event.speakerName) && (
+        <section className="relative bg-muted/30 overflow-hidden" data-testid="section-event-description">
+          <div className="pointer-events-none absolute top-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.10) 0%, transparent 70%)" }} />
+          <div className="relative mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-14">
+            {event.description && (
+              <>
+                <h2 className="font-heading text-xl font-semibold mb-3">About This Event</h2>
+                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed whitespace-pre-wrap" data-testid="text-event-detail-description">
+                  {event.description}
+                </p>
+              </>
+            )}
+
+            {event.speakerName && (
+              <Card className={event.description ? "mt-8" : ""} data-testid="section-speaker">
+                <CardContent className="p-5 sm:p-6">
+                  <h2 className="font-heading text-lg font-semibold mb-4">Speaker / Host</h2>
+                  <div className="flex items-start gap-4">
+                    <Avatar className="h-16 w-16 flex-shrink-0">
+                      {event.speakerImageUrl && (
+                        <AvatarImage src={event.speakerImageUrl} alt={event.speakerName} />
+                      )}
+                      <AvatarFallback>
+                        <User className="h-6 w-6" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold text-lg" data-testid="text-speaker-name">
+                        {event.speakerName}
+                      </p>
+                      {event.speakerBio && (
+                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap" data-testid="text-speaker-bio">
+                          {event.speakerBio}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </section>
+      )}
+
+      {event && (
+        <section className="mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-14" data-testid="section-event-registration">
+          {event.registrationEnabled && (
               <Card className="mb-8" data-testid="section-registration-info">
                 <CardContent className="p-5 sm:p-6">
                   <h2 className="font-heading text-lg font-semibold mb-3">Registration</h2>
@@ -904,43 +959,6 @@ export default function EventDetailPage() {
               </Card>
             )}
 
-            {event.description && (
-              <div className="mb-8" data-testid="text-event-detail-description">
-                <h2 className="font-heading text-xl font-semibold mb-3">About This Event</h2>
-                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                  {event.description}
-                </p>
-              </div>
-            )}
-
-            {event.speakerName && (
-              <Card className="mb-8" data-testid="section-speaker">
-                <CardContent className="p-5 sm:p-6">
-                  <h2 className="font-heading text-lg font-semibold mb-4">Speaker / Host</h2>
-                  <div className="flex items-start gap-4">
-                    <Avatar className="h-16 w-16 flex-shrink-0">
-                      {event.speakerImageUrl && (
-                        <AvatarImage src={event.speakerImageUrl} alt={event.speakerName} />
-                      )}
-                      <AvatarFallback>
-                        <User className="h-6 w-6" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold text-lg" data-testid="text-speaker-name">
-                        {event.speakerName}
-                      </p>
-                      {event.speakerBio && (
-                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap" data-testid="text-speaker-bio">
-                          {event.speakerBio}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
             {isPast && event.recordingUrl && (
               <Card className="mb-8 border-blue-200 dark:border-blue-800" data-testid="section-recording">
                 <CardContent className="p-5 sm:p-6">
@@ -973,7 +991,7 @@ export default function EventDetailPage() {
             )}
 
             {!isPast && !isCanceled && !isCompleted && (
-              <div className="border-t pt-8 space-y-6" data-testid="section-event-join">
+              <div className="space-y-6" data-testid="section-event-join">
                 <h2 className="font-heading text-xl font-semibold">
                   {event.isVirtual ? "Join This Event" : "Attend This Event"}
                 </h2>
@@ -1067,7 +1085,7 @@ export default function EventDetailPage() {
             )}
 
             {isPast && !event.recordingUrl && (
-              <div className="border-t pt-8" data-testid="section-event-past-notice">
+              <div className="pt-4" data-testid="section-event-past-notice">
                 <p className="text-sm text-muted-foreground">
                   This event has already taken place. Check our{" "}
                   <Link href="/events" className="text-accent underline underline-offset-2">
@@ -1079,7 +1097,7 @@ export default function EventDetailPage() {
             )}
 
             {isCanceled && !isPast && (
-              <div className="border-t pt-8" data-testid="section-event-canceled-notice">
+              <div className="pt-4" data-testid="section-event-canceled-notice">
                 <p className="text-sm text-muted-foreground">
                   This event has been canceled. Check our{" "}
                   <Link href="/events" className="text-accent underline underline-offset-2">
@@ -1089,9 +1107,8 @@ export default function EventDetailPage() {
                 </p>
               </div>
             )}
-          </article>
-        )}
-      </div>
+        </section>
+      )}
     </PageLayout>
   );
 }

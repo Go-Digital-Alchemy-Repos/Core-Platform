@@ -1091,6 +1091,7 @@ const FULL_WIDTH_BLOCKS = new Set([
 ]);
 
 export function PublicPageRenderer({ blocks }: { blocks: BlockInstance[] }) {
+  let nonFullWidthIndex = 0;
   return (
     <div>
       {blocks.map((block) => {
@@ -1098,10 +1099,23 @@ export function PublicPageRenderer({ blocks }: { blocks: BlockInstance[] }) {
         if (isFullWidth) {
           return <PublicBlockRenderer key={block.id} block={block} />;
         }
+        const idx = nonFullWidthIndex++;
+        const isAlternate = idx % 2 === 1;
         return (
-          <div key={block.id} className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
-            <PublicBlockRenderer block={block} />
-          </div>
+          <section
+            key={block.id}
+            className={`relative overflow-hidden ${isAlternate ? "bg-muted/30" : ""}`}
+          >
+            {isAlternate && (
+              <div
+                className="pointer-events-none absolute top-0 left-0 right-0 h-32"
+                style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.10) 0%, transparent 70%)" }}
+              />
+            )}
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
+              <PublicBlockRenderer block={block} />
+            </div>
+          </section>
         );
       })}
     </div>

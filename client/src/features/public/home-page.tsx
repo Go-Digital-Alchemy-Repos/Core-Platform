@@ -393,7 +393,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      <section className="bg-[#ffffff4d]" data-testid="section-counseling-needed">
+      <section className="bg-muted/20 dark:bg-muted/10" data-testid="section-counseling-needed">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-counseling-needed-heading">Is Counseling What's Needed?</h2>
           <p className="text-sm sm:text-base text-muted-foreground text-center max-w-3xl mx-auto leading-relaxed">
@@ -402,7 +402,7 @@ export default function HomePage() {
         </div>
       </section>
       <TestimonialsCarousel />
-      <section className="relative bg-[#ffffff4d] overflow-hidden" data-testid="section-professional-map">
+      <section className="relative bg-muted/20 dark:bg-muted/10 overflow-hidden" data-testid="section-professional-map">
         <div className="pointer-events-none absolute top-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.12) 0%, transparent 70%)" }} />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap mb-8 sm:mb-12">

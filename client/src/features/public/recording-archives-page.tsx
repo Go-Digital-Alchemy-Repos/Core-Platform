@@ -292,15 +292,18 @@ export default function RecordingArchivesPage() {
 
   return (
     <PageLayout>
+      <section className="relative bg-muted/30 overflow-hidden" data-testid="section-archives-hero">
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center">
+          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4" data-testid="text-archives-heading">
+            Video Archives
+          </h1>
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed" data-testid="text-archives-subtitle">Browse our collection of past trainings and webinars.</p>
+        </div>
+      </section>
+
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
         <div className="mb-8 space-y-4">
-          <div className="space-y-2">
-            <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight" data-testid="text-archives-heading">
-              Video Archives
-            </h1>
-            <p className="text-muted-foreground text-lg max-w-3xl" data-testid="text-archives-subtitle">Browse our collection of past trainings and webinars.</p>
-          </div>
-
           {checkoutStatus === "success" && (
             <div className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800 p-4 flex items-center gap-3" data-testid="alert-purchase-success">
               <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />

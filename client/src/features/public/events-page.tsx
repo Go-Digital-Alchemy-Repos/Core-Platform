@@ -397,39 +397,44 @@ export default function EventsPage() {
 
   return (
     <PageLayout>
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 sm:py-12">
-        <div className="mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-1.5 sm:space-y-2">
+      <section className="relative bg-muted/30 overflow-hidden" data-testid="section-events-hero">
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
+        <div className="relative mx-auto max-w-4xl px-4 sm:px-6 py-14 sm:py-20 md:py-24">
+          <div className="text-center mb-6 sm:mb-8">
             <h1
-              className="font-heading text-2xl sm:text-3xl font-bold tracking-tight"
+              className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4"
               data-testid="text-events-heading"
             >
               Upcoming Events
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground font-normal" data-testid="text-events-subtitle">We offer quarterly TCK-informed trainings for professional providers! All of our members get free registration to the events below. Log into your profile to get access to the free registration links. If you’re not a member you can still register through the links below.</p>
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed" data-testid="text-events-subtitle">We offer quarterly TCK-informed trainings for professional providers! All of our members get free registration to the events below.</p>
           </div>
-          <div className="flex gap-1 rounded-lg border p-1" data-testid="toggle-view">
-            <Button
-              variant={view === "list" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setView("list")}
-              data-testid="button-list-view"
-            >
-              <List className="mr-1.5 h-4 w-4" />
-              List
-            </Button>
-            <Button
-              variant={view === "calendar" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setView("calendar")}
-              data-testid="button-calendar-view"
-            >
-              <CalendarIcon className="mr-1.5 h-4 w-4" />
-              Calendar
-            </Button>
+          <div className="flex justify-center">
+            <div className="flex gap-1 rounded-lg border p-1 bg-background/80 backdrop-blur-sm" data-testid="toggle-view">
+              <Button
+                variant={view === "list" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setView("list")}
+                data-testid="button-list-view"
+              >
+                <List className="mr-1.5 h-4 w-4" />
+                List
+              </Button>
+              <Button
+                variant={view === "calendar" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setView("calendar")}
+                data-testid="button-calendar-view"
+              >
+                <CalendarIcon className="mr-1.5 h-4 w-4" />
+                Calendar
+              </Button>
+            </div>
           </div>
         </div>
+      </section>
 
+      <section className="mx-auto max-w-4xl px-4 sm:px-6 py-10 sm:py-14" data-testid="section-events-content">
         {isLoading && <EventsSkeleton />}
 
         {error && (
@@ -462,7 +467,7 @@ export default function EventsPage() {
         {events && events.length > 0 && view === "calendar" && (
           <CalendarView events={events} />
         )}
-      </div>
+      </section>
     </PageLayout>
   );
 }

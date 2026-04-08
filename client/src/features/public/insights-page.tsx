@@ -17,16 +17,21 @@ export default function InsightsPage() {
 
   return (
     <PageLayout>
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
-        <div className="text-center mb-10 sm:mb-14">
-          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4" data-testid="text-insights-heading">
-            Insights & Articles
-          </h1>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Explore articles, research, and insights on Third Culture Kid mental health and cross-cultural counseling.
-          </p>
+      <section className="relative bg-muted/30 overflow-hidden" data-testid="section-insights-hero">
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
+          <div className="text-center">
+            <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4" data-testid="text-insights-heading">
+              Insights & Articles
+            </h1>
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Explore articles, research, and insights on Third Culture Kid mental health and cross-cultural counseling.
+            </p>
+          </div>
         </div>
+      </section>
 
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14" data-testid="section-insights-content">
         {isLoading ? (
           <div className="flex justify-center py-16">
             <LoadingSpinner />
@@ -90,67 +95,70 @@ export default function InsightsPage() {
             )}
 
             {gridPosts.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {gridPosts.map((post) => {
-                  const isExternal = post.postType === "external" && post.externalUrl;
-                  const isPodcast = post.postType === "podcast";
-                  const cardInner = (
-                    <Card className="h-full cursor-pointer hover-elevate" data-testid={`card-blog-${post.id}`}>
-                      {post.coverImageUrl && (
-                        <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
-                          <img src={post.coverImageUrl} alt={post.title} className="w-full h-full object-cover" data-testid={`img-blog-cover-${post.id}`} />
-                        </div>
-                      )}
-                      <CardContent className={post.coverImageUrl ? "p-5" : "p-6"}>
-                        <div className="flex items-center gap-2 mb-3 flex-wrap">
-                          {isPodcast && (
-                            <Badge variant="secondary" className="text-xs" data-testid={`badge-type-${post.id}`}>
-                              <Headphones className="h-3 w-3 mr-1" />Podcast
-                            </Badge>
-                          )}
-                          {isExternal && (
-                            <Badge variant="outline" className="text-xs" data-testid={`badge-type-${post.id}`}>
-                              <ExternalLink className="h-3 w-3 mr-1" />External
-                            </Badge>
-                          )}
-                          {post.category && (
-                            <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${post.id}`}>
-                              {post.category}
-                            </Badge>
-                          )}
-                        </div>
-                        <h2 className="font-semibold text-lg mb-2 line-clamp-2" data-testid={`text-blog-title-${post.id}`}>
-                          {post.title}
-                        </h2>
-                        {post.excerpt && (
-                          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed mb-3">
-                            {post.excerpt}
-                          </p>
+              <section className="relative bg-muted/30 overflow-hidden -mx-4 sm:-mx-6 px-4 sm:px-6 py-10 sm:py-14 rounded-xl" data-testid="section-insights-grid">
+                <div className="pointer-events-none absolute top-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.12) 0%, transparent 70%)" }} />
+                <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {gridPosts.map((post) => {
+                    const isExternal = post.postType === "external" && post.externalUrl;
+                    const isPodcast = post.postType === "podcast";
+                    const cardInner = (
+                      <Card className="h-full cursor-pointer hover-elevate" data-testid={`card-blog-${post.id}`}>
+                        {post.coverImageUrl && (
+                          <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
+                            <img src={post.coverImageUrl} alt={post.title} className="w-full h-full object-cover" data-testid={`img-blog-cover-${post.id}`} />
+                          </div>
                         )}
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">By {post.authorName}</span>
-                          <span className="text-xs text-accent font-medium flex items-center gap-1">
-                            {isExternal ? <>Visit Article <ExternalLink className="h-3 w-3" /></> : isPodcast ? <>Listen Now <ArrowRight className="h-3 w-3" /></> : <>Read More <ArrowRight className="h-3 w-3" /></>}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-
-                  if (isExternal) {
-                    return (
-                      <a key={post.id} href={post.externalUrl!} target="_blank" rel="noopener noreferrer">
-                        {cardInner}
-                      </a>
+                        <CardContent className={post.coverImageUrl ? "p-5" : "p-6"}>
+                          <div className="flex items-center gap-2 mb-3 flex-wrap">
+                            {isPodcast && (
+                              <Badge variant="secondary" className="text-xs" data-testid={`badge-type-${post.id}`}>
+                                <Headphones className="h-3 w-3 mr-1" />Podcast
+                              </Badge>
+                            )}
+                            {isExternal && (
+                              <Badge variant="outline" className="text-xs" data-testid={`badge-type-${post.id}`}>
+                                <ExternalLink className="h-3 w-3 mr-1" />External
+                              </Badge>
+                            )}
+                            {post.category && (
+                              <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${post.id}`}>
+                                {post.category}
+                              </Badge>
+                            )}
+                          </div>
+                          <h2 className="font-semibold text-lg mb-2 line-clamp-2" data-testid={`text-blog-title-${post.id}`}>
+                            {post.title}
+                          </h2>
+                          {post.excerpt && (
+                            <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed mb-3">
+                              {post.excerpt}
+                            </p>
+                          )}
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">By {post.authorName}</span>
+                            <span className="text-xs text-accent font-medium flex items-center gap-1">
+                              {isExternal ? <>Visit Article <ExternalLink className="h-3 w-3" /></> : isPodcast ? <>Listen Now <ArrowRight className="h-3 w-3" /></> : <>Read More <ArrowRight className="h-3 w-3" /></>}
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
                     );
-                  }
-                  return (
-                    <Link key={post.id} href={`/insights/${post.slug}`}>
-                      {cardInner}
-                    </Link>
-                  );
-                })}
-              </div>
+
+                    if (isExternal) {
+                      return (
+                        <a key={post.id} href={post.externalUrl!} target="_blank" rel="noopener noreferrer">
+                          {cardInner}
+                        </a>
+                      );
+                    }
+                    return (
+                      <Link key={post.id} href={`/insights/${post.slug}`}>
+                        {cardInner}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
             )}
           </div>
         ) : (

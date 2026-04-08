@@ -18,6 +18,24 @@ interface CmsHybridPageProps {
   fallback: React.ReactNode;
 }
 
+class CmsNotFoundError extends Error {
+  constructor(slug: string) {
+    super(`CMS page not found: ${slug}`);
+    this.name = "CmsNotFoundError";
+  }
+}
+
+function isValidCmsPage(data: unknown): data is CmsPage {
+  if (!data || typeof data !== "object") return false;
+  const obj = data as Record<string, unknown>;
+  return (
+    (typeof obj.id === "string" || typeof obj.id === "number") &&
+    typeof obj.slug === "string" &&
+    typeof obj.title === "string" &&
+    typeof obj.status === "string"
+  );
+}
+
 function parseCmsContent(content: unknown): BlockInstance[] {
   if (!content || typeof content !== "object") return [];
   const c = content as BuilderContent;
@@ -126,14 +144,29 @@ function CmsPageSeo({ page, globalSeo }: { page: CmsPage; globalSeo?: SeoSetting
 }
 
 export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
-  const { data: page, isLoading } = useQuery<CmsPage>({
+  const { data: page, isLoading, error } = useQuery<CmsPage>({
     queryKey: ["/api/cms/pages/by-slug", slug],
     queryFn: async () => {
       const res = await fetch(`/api/cms/pages/by-slug/${slug}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Not found");
-      return res.json();
+      if (res.status === 404) {
+        throw new CmsNotFoundError(slug);
+      }
+      if (!res.ok) {
+        throw new Error(`CMS fetch failed: ${res.status} ${res.statusText}`);
+      }
+      const data: unknown = await res.json();
+      if (!isValidCmsPage(data)) {
+        if (import.meta.env.DEV) {
+          console.error(`[CmsHybridPage] Invalid response shape for slug "${slug}"`, data);
+        }
+        throw new Error("Invalid CMS page response shape");
+      }
+      return data;
     },
-    retry: false,
+    retry: (failureCount, err) => {
+      if (err instanceof CmsNotFoundError) return false;
+      return failureCount < 2;
+    },
     staleTime: 5 * 60 * 1000,
   });
 
@@ -143,6 +176,13 @@ export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
   });
 
   if (isLoading) {
+    return <>{fallback}</>;
+  }
+
+  if (error) {
+    if (import.meta.env.DEV && !(error instanceof CmsNotFoundError)) {
+      console.warn(`[CmsHybridPage] Transient error for slug "${slug}", showing fallback:`, error.message);
+    }
     return <>{fallback}</>;
   }
 
