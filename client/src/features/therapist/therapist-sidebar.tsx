@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+
+interface ApplicationData {
+  status?: string;
+}
 import {
   LayoutDashboard,
   UserPen,
@@ -43,7 +47,7 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const { data: application } = useQuery<any>({
+  const { data: application } = useQuery<ApplicationData | null>({
     queryKey: ["/api/therapist/application"],
   });
 

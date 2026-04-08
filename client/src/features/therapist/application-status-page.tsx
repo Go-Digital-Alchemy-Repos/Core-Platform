@@ -1,8 +1,8 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { TherapistSidebar } from "./therapist-sidebar";
+import { TherapistLayout } from "./therapist-layout";
 import {
-  ArrowLeft, Clock, CheckCircle2, XCircle, AlertCircle, FileSearch, Loader2,
+  Clock, CheckCircle2, XCircle, AlertCircle, FileSearch, Loader2,
   Shield, Users, Video, FileCheck, Mail, CreditCard, AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -262,17 +262,17 @@ export default function ApplicationStatusPage() {
 
   if (isLoading) {
     return (
-      <TherapistSidebar>
+      <TherapistLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      </TherapistSidebar>
+      </TherapistLayout>
     );
   }
 
   if (!application) {
     return (
-      <TherapistSidebar>
+      <TherapistLayout>
       <div className="container max-w-2xl mx-auto py-8 px-4">
         <Card>
           <CardContent className="p-8 text-center">
@@ -285,7 +285,7 @@ export default function ApplicationStatusPage() {
           </CardContent>
         </Card>
       </div>
-      </TherapistSidebar>
+      </TherapistLayout>
     );
   }
 
@@ -300,7 +300,7 @@ export default function ApplicationStatusPage() {
   const progressSteps = getProgressSteps(application);
 
   return (
-    <TherapistSidebar>
+    <TherapistLayout>
     <div className="container max-w-2xl mx-auto py-8 px-4">
       <h1 className="text-2xl font-heading font-bold mb-6" data-testid="text-page-title">Application Status</h1>
 
@@ -496,6 +496,6 @@ export default function ApplicationStatusPage() {
         </div>
       )}
     </div>
-    </TherapistSidebar>
+    </TherapistLayout>
   );
 }

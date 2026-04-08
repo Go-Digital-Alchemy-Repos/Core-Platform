@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { getQueryFn } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import type { TherapistProfile, TherapistSubscription } from "@shared/schema";
-import { TherapistSidebar } from "./therapist-sidebar";
+import { TherapistLayout } from "./therapist-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -242,7 +242,7 @@ export default function TherapistDashboardPage() {
 
   if (profileLoading || subLoading) {
     return (
-      <TherapistSidebar>
+      <TherapistLayout>
         <div className="p-6 space-y-6 max-w-4xl mx-auto" data-testid="dashboard-loading">
           <Skeleton className="h-8 w-64" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -251,12 +251,12 @@ export default function TherapistDashboardPage() {
           </div>
           <Skeleton className="h-32" />
         </div>
-      </TherapistSidebar>
+      </TherapistLayout>
     );
   }
 
   return (
-    <TherapistSidebar>
+    <TherapistLayout>
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div>
         <h1 className="text-2xl font-heading font-semibold" data-testid="text-dashboard-title">
@@ -374,6 +374,6 @@ export default function TherapistDashboardPage() {
         </Card>
       )}
     </div>
-    </TherapistSidebar>
+    </TherapistLayout>
   );
 }

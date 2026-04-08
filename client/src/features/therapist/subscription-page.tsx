@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { apiRequest, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { TherapistSubscription, MembershipTier } from "@shared/schema";
-import { TherapistSidebar } from "./therapist-sidebar";
+import { TherapistLayout } from "./therapist-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,7 +75,7 @@ export default function SubscriptionPage() {
 
   if (subLoading || tiersLoading) {
     return (
-      <TherapistSidebar>
+      <TherapistLayout>
       <div className="p-6 space-y-6 max-w-4xl mx-auto" data-testid="subscription-loading">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-40" />
@@ -85,7 +85,7 @@ export default function SubscriptionPage() {
           <Skeleton className="h-64" />
         </div>
       </div>
-      </TherapistSidebar>
+      </TherapistLayout>
     );
   }
 
@@ -95,7 +95,7 @@ export default function SubscriptionPage() {
   const activeTiers = (tiers ?? []).filter((t) => t.isActive).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
   return (
-    <TherapistSidebar>
+    <TherapistLayout>
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <h1 className="text-2xl font-heading font-semibold" data-testid="text-subscription-title">
         Subscription
@@ -239,6 +239,6 @@ export default function SubscriptionPage() {
         </div>
       )}
     </div>
-    </TherapistSidebar>
+    </TherapistLayout>
   );
 }

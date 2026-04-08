@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useSearch } from "wouter";
-import { TherapistSidebar } from "./therapist-sidebar";
+import { TherapistLayout } from "./therapist-layout";
 import {
   ArrowLeft, ArrowRight, Send, CheckCircle2, Loader2, Clock,
   FileText, User, Briefcase, MessageSquare, Users, DollarSign, Shield,
@@ -1114,11 +1114,11 @@ export default function ApplicationPage() {
 
   if (isLoading) {
     return (
-      <TherapistSidebar>
+      <TherapistLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      </TherapistSidebar>
+      </TherapistLayout>
     );
   }
 
@@ -1128,7 +1128,7 @@ export default function ApplicationPage() {
 
   if (!application) {
     return (
-      <TherapistSidebar>
+      <TherapistLayout>
       <div className="container max-w-2xl mx-auto py-8 px-4">
         <Card>
           <CardHeader className="text-center">
@@ -1150,7 +1150,7 @@ export default function ApplicationPage() {
           </CardContent>
         </Card>
       </div>
-      </TherapistSidebar>
+      </TherapistLayout>
     );
   }
 
@@ -1158,7 +1158,7 @@ export default function ApplicationPage() {
   const allComplete = Array.from({ length: WIZARD_STEPS.length }, (_, i) => i).every((i) => completedSteps.has(i));
 
   return (
-    <TherapistSidebar>
+    <TherapistLayout>
     <div className="container max-w-2xl mx-auto py-8 px-4">
       <div className="flex items-center justify-between mb-4">
         <div />
@@ -1291,6 +1291,6 @@ export default function ApplicationPage() {
         </div>
       )}
     </div>
-    </TherapistSidebar>
+    </TherapistLayout>
   );
 }
