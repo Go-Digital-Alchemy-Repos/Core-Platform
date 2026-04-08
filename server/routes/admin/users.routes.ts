@@ -44,6 +44,14 @@ router.get(
   })
 );
 
+const profileSchema = z.object({
+  title: z.string().optional(),
+  credentials: z.string().optional(),
+  bio: z.string().optional(),
+  specializations: z.array(z.string()).optional(),
+  languages: z.array(z.string()).optional(),
+}).optional();
+
 const createUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
@@ -51,6 +59,7 @@ const createUserSchema = z.object({
   lastName: z.string().min(1),
   role: z.enum(["admin", "therapist"]),
   sendWelcomeEmail: z.boolean().optional(),
+  profile: profileSchema,
 });
 
 router.post(
@@ -74,7 +83,15 @@ router.post(
     });
 
     if (data.role === "therapist") {
-      await storage.therapists.createProfile({ userId: user.id, isApproved: true });
+      await storage.therapists.createProfile({
+        userId: user.id,
+        isApproved: true,
+        ...(data.profile?.title && { title: data.profile.title }),
+        ...(data.profile?.credentials && { credentials: data.profile.credentials }),
+        ...(data.profile?.bio && { bio: data.profile.bio }),
+        ...(data.profile?.specializations && { specializations: data.profile.specializations }),
+        ...(data.profile?.languages && { languages: data.profile.languages }),
+      });
     }
 
     if (data.sendWelcomeEmail) {

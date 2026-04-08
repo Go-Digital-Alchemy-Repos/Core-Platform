@@ -13,13 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Sheet,
   SheetContent,
@@ -61,6 +55,9 @@ import {
   ShieldAlert,
   ShieldCheck,
   AlertTriangle,
+  Shield,
+  Heart,
+  X,
 } from "lucide-react";
 
 type SafeUser = Omit<User, "password"> & { country?: string | null };
@@ -241,6 +238,93 @@ function UsersContent() {
   );
 }
 
+function RoleSelector({ value, onChange, prefix }: { value: string; onChange: (v: string) => void; prefix: string }) {
+  return (
+    <div className="space-y-2">
+      <Label>Role</Label>
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => onChange("therapist")}
+          className={`flex items-center gap-2 rounded-lg border-2 p-3 text-left text-sm transition-colors ${
+            value === "therapist"
+              ? "border-primary bg-primary/5"
+              : "border-muted hover:border-muted-foreground/30"
+          }`}
+          data-testid={`${prefix}-role-therapist`}
+        >
+          <Heart className={`h-4 w-4 ${value === "therapist" ? "text-primary" : "text-muted-foreground"}`} />
+          <span className={value === "therapist" ? "font-medium" : ""}>Mental Health Professional</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange("admin")}
+          className={`flex items-center gap-2 rounded-lg border-2 p-3 text-left text-sm transition-colors ${
+            value === "admin"
+              ? "border-primary bg-primary/5"
+              : "border-muted hover:border-muted-foreground/30"
+          }`}
+          data-testid={`${prefix}-role-admin`}
+        >
+          <Shield className={`h-4 w-4 ${value === "admin" ? "text-primary" : "text-muted-foreground"}`} />
+          <span className={value === "admin" ? "font-medium" : ""}>Admin</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TagInput({ value, onChange, placeholder, testId }: { value: string[]; onChange: (v: string[]) => void; placeholder: string; testId: string }) {
+  const [input, setInput] = useState("");
+
+  function addTag() {
+    const trimmed = input.trim();
+    if (trimmed && !value.includes(trimmed)) {
+      onChange([...value, trimmed]);
+    }
+    setInput("");
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={placeholder}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addTag();
+            }
+          }}
+          data-testid={`${testId}-input`}
+        />
+        <Button type="button" variant="outline" size="sm" onClick={addTag} disabled={!input.trim()} data-testid={`${testId}-add`}>
+          Add
+        </Button>
+      </div>
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {value.map((tag) => (
+            <Badge key={tag} variant="secondary" className="gap-1 pr-1">
+              {tag}
+              <button
+                type="button"
+                onClick={() => onChange(value.filter((t) => t !== tag))}
+                className="ml-0.5 rounded-full hover:bg-muted-foreground/20 p-0.5"
+                data-testid={`${testId}-remove-${tag}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CreateUserSheet({
   open,
   onOpenChange,
@@ -257,16 +341,32 @@ function CreateUserSheet({
   const [sendWelcome, setSendWelcome] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
+  const [profileTitle, setProfileTitle] = useState("");
+  const [credentials, setCredentials] = useState("");
+  const [bio, setBio] = useState("");
+  const [specializations, setSpecializations] = useState<string[]>([]);
+  const [languages, setLanguages] = useState<string[]>([]);
+
   const createMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/admin/users", {
+      const body: Record<string, unknown> = {
         email,
         password,
         firstName,
         lastName,
         role,
         sendWelcomeEmail: sendWelcome,
-      });
+      };
+      if (role === "therapist") {
+        body.profile = {
+          title: profileTitle || undefined,
+          credentials: credentials || undefined,
+          bio: bio || undefined,
+          specializations: specializations.length ? specializations : undefined,
+          languages: languages.length ? languages : undefined,
+        };
+      }
+      await apiRequest("POST", "/api/admin/users", body);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -279,6 +379,11 @@ function CreateUserSheet({
       setRole("therapist");
       setSendWelcome(true);
       setShowPassword(false);
+      setProfileTitle("");
+      setCredentials("");
+      setBio("");
+      setSpecializations([]);
+      setLanguages([]);
       onOpenChange(false);
     },
     onError: (err: Error) => {
@@ -288,7 +393,7 @@ function CreateUserSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" size="default">
+      <SheetContent side="right" size="md">
         <SheetHeader>
           <SheetTitle className="font-heading">Create New User</SheetTitle>
           <SheetDescription>
@@ -304,6 +409,10 @@ function CreateUserSheet({
             }}
             className="space-y-4"
           >
+            <RoleSelector value={role} onChange={setRole} prefix="create" />
+
+            <Separator />
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="create-first">First Name</Label>
@@ -361,18 +470,69 @@ function CreateUserSheet({
                 </Button>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="create-role">Role</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger data-testid="select-create-role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="therapist">Mental Health Professional</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
+            {role === "therapist" && (
+              <>
+                <Separator />
+                <p className="text-sm font-medium text-muted-foreground">Professional Profile (optional)</p>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="create-title">Title</Label>
+                    <Input
+                      id="create-title"
+                      value={profileTitle}
+                      onChange={(e) => setProfileTitle(e.target.value)}
+                      placeholder="e.g. Licensed Clinical Psychologist"
+                      data-testid="input-create-title"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-credentials">Credentials</Label>
+                    <Input
+                      id="create-credentials"
+                      value={credentials}
+                      onChange={(e) => setCredentials(e.target.value)}
+                      placeholder="e.g. Ph.D., LMFT"
+                      data-testid="input-create-credentials"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="create-bio">Bio</Label>
+                  <Textarea
+                    id="create-bio"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Brief professional background..."
+                    rows={3}
+                    data-testid="input-create-bio"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Specializations</Label>
+                  <TagInput
+                    value={specializations}
+                    onChange={setSpecializations}
+                    placeholder="e.g. Anxiety, TCK Issues"
+                    testId="create-specializations"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Languages</Label>
+                  <TagInput
+                    value={languages}
+                    onChange={setLanguages}
+                    placeholder="e.g. English, French"
+                    testId="create-languages"
+                  />
+                </div>
+              </>
+            )}
+
             <div className="flex items-center gap-2">
               <Checkbox
                 id="send-welcome"
@@ -613,18 +773,7 @@ function UserDetailSheet({
                         data-testid="input-detail-email"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="detail-role">Role</Label>
-                      <Select value={role} onValueChange={setRole}>
-                        <SelectTrigger data-testid="select-detail-role">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="therapist">Mental Health Professional</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <RoleSelector value={role} onChange={setRole} prefix="detail" />
                   </form>
                 )}
               </TabsContent>
