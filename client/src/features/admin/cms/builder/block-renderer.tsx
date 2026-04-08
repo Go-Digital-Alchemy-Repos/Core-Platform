@@ -87,8 +87,16 @@ const IMAGE_WIDTH_MAP: Record<string, string> = {
   narrow: "max-w-2xl mx-auto",
 };
 
+const LEGACY_CMS_ASSET_MAP: Record<string, string> = {
+  "/images/hero-therapy-session.png": "/images/hero-therapy-session-1920w.webp",
+};
+
+function resolveCmsAssetUrl(url: string): string {
+  return LEGACY_CMS_ASSET_MAP[url] ?? url;
+}
+
 function HeroBlock({ props }: { props: Record<string, unknown> }) {
-  const bg = str(props.backgroundImageUrl);
+  const bg = resolveCmsAssetUrl(str(props.backgroundImageUrl));
   const videoBg = str(props.videoBackgroundUrl);
   const opacity = num(props.overlayOpacity as number, 50);
   const layout = str(props.layout) || "stacked";
