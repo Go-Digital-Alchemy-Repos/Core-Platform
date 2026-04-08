@@ -16,7 +16,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu as MenuIcon,
-  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
