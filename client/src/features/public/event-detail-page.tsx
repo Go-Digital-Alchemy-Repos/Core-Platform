@@ -211,6 +211,44 @@ function RegistrationSection({
   });
 
   if (!user) {
+    if (registrationState === "upcoming") {
+      return (
+        <Card data-testid="card-registration-upcoming">
+          <CardContent className="p-5 sm:p-6">
+            <div className="flex items-center gap-3">
+              <ClockIcon className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <h3 className="font-heading text-lg font-semibold">Registration Opens Soon</h3>
+                {event.registrationOpensAt && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Registration opens on {formatFullDate(event.registrationOpensAt)} at {formatTime(event.registrationOpensAt)}.
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (registrationState === "closed") {
+      return (
+        <Card data-testid="card-registration-closed">
+          <CardContent className="p-5 sm:p-6">
+            <div className="flex items-center gap-3">
+              <XCircle className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <h3 className="font-heading text-lg font-semibold">Registration Closed</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Registration for this event has closed.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
     if (guestRegistered) {
       return (
         <Card className="border-green-600/30" data-testid="card-guest-registration-success">
