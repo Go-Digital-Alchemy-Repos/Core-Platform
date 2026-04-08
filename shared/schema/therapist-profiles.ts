@@ -1,8 +1,14 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, numeric, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, numeric, index, customType } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users } from "./users";
+
+const tsvector = customType<{ data: string }>({
+  dataType() {
+    return "tsvector";
+  },
+});
 
 export const therapistProfiles = pgTable("therapist_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -37,6 +43,7 @@ export const therapistProfiles = pgTable("therapist_profiles", {
   isApproved: boolean("is_approved").default(false),
   isActive: boolean("is_active").default(true),
   rejectionReason: text("rejection_reason"),
+  searchVector: tsvector("search_vector"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -52,6 +59,7 @@ export const therapistProfiles = pgTable("therapist_profiles", {
 
 export const insertTherapistProfileSchema = createInsertSchema(therapistProfiles).omit({
   id: true,
+  searchVector: true,
   createdAt: true,
   updatedAt: true,
 });
