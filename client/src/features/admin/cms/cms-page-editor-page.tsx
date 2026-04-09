@@ -54,7 +54,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import type { CmsPage, CmsPageRevision } from "@shared/schema";
+import type { CmsPage, CmsPageRevision, CmsSidebar } from "@shared/schema";
 import { format } from "date-fns";
 import { PageBuilder } from "./builder/page-builder";
 import type { BuilderContent } from "./builder/block-registry";
@@ -65,6 +65,8 @@ const editorSchema = z.object({
   title: z.string().min(1, "Title is required"),
   slug: z.string().min(1, "Slug is required").regex(/^[a-z0-9-/]+$/, "Lowercase letters, numbers, hyphens and slashes only"),
   pageType: z.enum(["home", "about", "contact", "landing", "custom"]),
+  template: z.enum(["full-width", "with-sidebar"]).default("full-width"),
+  sidebarId: z.string().default(""),
   status: z.enum(["draft", "published", "scheduled", "archived"]),
   seoTitle: z.string().optional(),
   seoDescription: z.string().max(160, "Max 160 characters").optional(),
@@ -122,12 +124,18 @@ export default function CmsPageEditorPage() {
     enabled: !isNew,
   });
 
+  const { data: sidebars = [] } = useQuery<CmsSidebar[]>({
+    queryKey: ["/api/admin/cms/sidebars"],
+  });
+
   const form = useForm<EditorForm>({
     resolver: zodResolver(editorSchema),
     defaultValues: {
       title: "",
       slug: "",
       pageType: "custom",
+      template: "full-width",
+      sidebarId: "",
       status: "draft",
       seoTitle: "",
       seoDescription: "",
@@ -144,6 +152,8 @@ export default function CmsPageEditorPage() {
         title: page.title,
         slug: page.slug,
         pageType: (page.pageType as EditorForm["pageType"]) ?? "custom",
+        template: (page.template as EditorForm["template"]) ?? "full-width",
+        sidebarId: page.sidebarId ?? "",
         status: (page.status as EditorForm["status"]) ?? "draft",
         seoTitle: page.seoTitle ?? "",
         seoDescription: page.seoDescription ?? "",
@@ -163,6 +173,7 @@ export default function CmsPageEditorPage() {
   const watchOgImageUrl = form.watch("ogImageUrl");
   const watchNoindex = form.watch("noindex");
   const watchStatus = form.watch("status");
+  const watchTemplate = form.watch("template");
   const hasFaqBlocks = (builderContent?.blocks ?? []).some((b: any) => b.type === "faq");
 
   useEffect(() => {
@@ -268,7 +279,11 @@ export default function CmsPageEditorPage() {
 
   const onSave = () => {
     form.handleSubmit((formData) => {
-      const payload = { ...formData, content: builderContent };
+      const payload = {
+        ...formData,
+        sidebarId: formData.template === "with-sidebar" ? (formData.sidebarId || null) : null,
+        content: builderContent,
+      };
       if (isNew) {
         createMutation.mutate(payload);
       } else {
@@ -575,6 +590,63 @@ export default function CmsPageEditorPage() {
                               </FormItem>
                             )}
                           />
+                          <FormField
+                            control={form.control}
+                            name="template"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Layout Template</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger data-testid="select-page-template">
+                                      <SelectValue placeholder="Select layout" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="full-width">Full Width</SelectItem>
+                                    <SelectItem value="with-sidebar">Right Sidebar</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormDescription className="text-xs">
+                                  The sidebar appears on the right below the hero section.
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        {watchTemplate === "with-sidebar" && (
+                          <FormField
+                            control={form.control}
+                            name="sidebarId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Assigned Sidebar</FormLabel>
+                                <Select onValueChange={(value) => field.onChange(value === "none" ? "" : value)} value={field.value || "none"}>
+                                  <FormControl>
+                                    <SelectTrigger data-testid="select-page-sidebar">
+                                      <SelectValue placeholder="Select sidebar" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="none">No sidebar selected</SelectItem>
+                                    {sidebars.map((sidebar) => (
+                                      <SelectItem key={sidebar.id} value={sidebar.id}>
+                                        {sidebar.name}
+                                        {sidebar.isDefault ? " (Default Blog)" : ""}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormDescription className="text-xs">
+                                  Manage reusable sidebars in Sidebars & Widgets.
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                        <div className="grid grid-cols-2 gap-4">
                           <FormField
                             control={form.control}
                             name="status"

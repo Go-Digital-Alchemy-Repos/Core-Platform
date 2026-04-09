@@ -18,6 +18,29 @@ router.get(
 );
 
 router.get(
+  "/sidebars/default",
+  asyncHandler(async (_req, res) => {
+    const sidebar = await storage.cmsSidebars.getDefault();
+    if (!sidebar) {
+      return res.status(404).json({ error: "No default sidebar configured" });
+    }
+    res.json(sidebar);
+  })
+);
+
+router.get(
+  "/sidebars/:id",
+  asyncHandler(async (req, res) => {
+    const id = paramString(req.params.id);
+    const sidebar = await storage.cmsSidebars.getById(id);
+    if (!sidebar) {
+      return res.status(404).json({ error: "Sidebar not found" });
+    }
+    res.json(sidebar);
+  })
+);
+
+router.get(
   "/menus/:location",
   asyncHandler(async (req, res) => {
     const location = paramString(req.params.location);

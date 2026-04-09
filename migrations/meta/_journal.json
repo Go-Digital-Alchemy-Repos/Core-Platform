@@ -64,6 +64,13 @@
       "when": 1775605633210,
       "tag": "0008_guest_registration",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1775755200000,
+      "tag": "0009_cms_sidebars",
+      "breakpoints": true
     }
   ]
 }

@@ -55,7 +55,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { CmsImageUpload } from "./components/cms-image-upload";
 import { SeoPreview } from "@/components/shared/seo-preview";
 import { StructuredDataStatus } from "@/components/shared/structured-data-status";
-import type { BlogPost } from "@shared/schema";
+import type { BlogPost, CmsSidebar } from "@shared/schema";
 
 function generateSlug(title: string): string {
   return title
@@ -78,6 +78,7 @@ const postFormSchema = z.object({
   postType: z.enum(["article", "podcast", "external"]).default("article"),
   podcastUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   externalUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  sidebarId: z.string().default(""),
   isPublished: z.boolean().default(false),
   seoTitle: z.string().optional(),
   seoDescription: z.string().max(160, "Max 160 characters").optional(),
@@ -106,6 +107,10 @@ export default function CmsBlogEditorPage() {
     enabled: !isNew,
   });
 
+  const { data: sidebars = [] } = useQuery<CmsSidebar[]>({
+    queryKey: ["/api/admin/cms/sidebars"],
+  });
+
   const form = useForm<PostForm>({
     resolver: zodResolver(postFormSchema),
     defaultValues: {
@@ -120,6 +125,7 @@ export default function CmsBlogEditorPage() {
       postType: "article",
       podcastUrl: "",
       externalUrl: "",
+      sidebarId: "",
       isPublished: false,
       seoTitle: "",
       seoDescription: "",
@@ -142,6 +148,7 @@ export default function CmsBlogEditorPage() {
         postType: (post.postType as "article" | "podcast" | "external") ?? "article",
         podcastUrl: post.podcastUrl ?? "",
         externalUrl: post.externalUrl ?? "",
+        sidebarId: post.sidebarId ?? "",
         isPublished: post.isPublished ?? false,
         seoTitle: post.seoTitle ?? "",
         seoDescription: post.seoDescription ?? "",
@@ -178,6 +185,7 @@ export default function CmsBlogEditorPage() {
       postType: data.postType || "article",
       podcastUrl: data.podcastUrl || null,
       externalUrl: data.externalUrl || null,
+      sidebarId: data.sidebarId || null,
       category: data.category || null,
       tags: tagsArray.length > 0 ? tagsArray : null,
       isPublished: data.isPublished,
@@ -318,6 +326,7 @@ export default function CmsBlogEditorPage() {
               <div className="flex items-center gap-4 flex-wrap">
                 <TabsList>
                   <TabsTrigger value="content" data-testid="tab-content">Content</TabsTrigger>
+                  <TabsTrigger value="layout" data-testid="tab-layout">Layout</TabsTrigger>
                   <TabsTrigger value="seo" data-testid="tab-seo">
                     <Globe className="h-3.5 w-3.5 mr-1.5" />
                     SEO
@@ -735,6 +744,51 @@ export default function CmsBlogEditorPage() {
                         )}
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="layout" className="mt-0 space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Sidebar Layout</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="rounded-lg border px-4 py-3 bg-muted/20">
+                      <p className="text-sm font-medium">Blog posts always include a right sidebar.</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Leave this on the default option to use the system-wide default blog sidebar, or choose a specific sidebar for this post.
+                      </p>
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="sidebarId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sidebar Selection</FormLabel>
+                          <Select onValueChange={(value) => field.onChange(value === "default" ? "" : value)} value={field.value || "default"}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-blog-sidebar">
+                                <SelectValue placeholder="Select sidebar" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="default">Use Default Blog Sidebar</SelectItem>
+                              {sidebars.map((sidebar) => (
+                                <SelectItem key={sidebar.id} value={sidebar.id}>
+                                  {sidebar.name}
+                                  {sidebar.isDefault ? " (Default Blog)" : ""}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription className="text-xs">
+                            Build reusable sidebars in Admin &gt; CMS &gt; Sidebars & Widgets.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </CardContent>
                 </Card>
               </TabsContent>

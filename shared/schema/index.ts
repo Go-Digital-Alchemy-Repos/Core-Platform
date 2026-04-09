@@ -25,6 +25,7 @@ export { redirects, insertRedirectSchema, type InsertRedirect, type Redirect } f
 export { recordingPurchases, insertRecordingPurchaseSchema, type InsertRecordingPurchase, type RecordingPurchase } from "./recording-purchases";
 export { guestMessages, insertGuestMessageSchema, type InsertGuestMessage, type GuestMessage } from "./guest-messages";
 export { cmsMenus, insertCmsMenuSchema, menuItemSchema, MENU_LOCATIONS, type InsertCmsMenu, type CmsMenu, type MenuItem, type MenuLocation } from "./cms-menus";
+export { cmsSidebars, insertCmsSidebarSchema, sidebarWidgetSchema, SIDEBAR_WIDGET_TYPES, type InsertCmsSidebar, type CmsSidebar, type SidebarWidget, type SidebarWidgetType } from "./cms-sidebars";
 export {
   providerApplications,
   providerApplicationTimeline,

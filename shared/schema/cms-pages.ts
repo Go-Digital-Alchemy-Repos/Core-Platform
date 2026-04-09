@@ -10,6 +10,8 @@ export const cmsPages = pgTable("cms_pages", {
   slug: text("slug").notNull(),
   status: text("status").notNull().default("draft"),
   pageType: text("page_type").notNull().default("custom"),
+  template: text("template").notNull().default("full-width"),
+  sidebarId: varchar("sidebar_id"),
   content: jsonb("content").default({}),
   seoTitle: text("seo_title"),
   seoDescription: text("seo_description"),

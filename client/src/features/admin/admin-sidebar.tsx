@@ -21,6 +21,7 @@ import {
   ClipboardList,
   Palette,
   Menu as MenuIcon,
+  PanelRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -64,6 +65,7 @@ const navGroups: NavGroup[] = [
       { title: "Sections", href: "/admin/cms/sections", icon: Blocks, iconColor: "text-violet-400" },
       { title: "SEO", href: "/admin/cms/seo", icon: SearchIcon, iconColor: "text-violet-400" },
       { title: "Menus", href: "/admin/cms/menus", icon: MenuIcon, iconColor: "text-violet-500" },
+      { title: "Sidebars & Widgets", href: "/admin/cms/sidebars", icon: PanelRight, iconColor: "text-emerald-500" },
       { title: "Themes", href: "/admin/cms/themes", icon: Palette, iconColor: "text-fuchsia-500" },
     ],
   },

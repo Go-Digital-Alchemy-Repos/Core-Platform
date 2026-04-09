@@ -16,6 +16,7 @@ export const blogPosts = pgTable("blog_posts", {
   postType: text("post_type").default("article"),
   podcastUrl: text("podcast_url"),
   externalUrl: text("external_url"),
+  sidebarId: varchar("sidebar_id"),
   isPublished: boolean("is_published").default(false),
   scheduledAt: timestamp("scheduled_at"),
   publishedAt: timestamp("published_at"),

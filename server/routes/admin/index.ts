@@ -15,6 +15,7 @@ import cmsRedirectsRoutes from "./cms-redirects.routes";
 import cmsAuditRoutes from "./cms-audit.routes";
 import applicationsRoutes from "./applications.routes";
 import cmsMenusRoutes from "./cms-menus.routes";
+import cmsSidebarsRoutes from "./cms-sidebars.routes";
 
 const router = Router();
 
@@ -35,6 +36,7 @@ router.use("/cms", cmsSeoRoutes);
 router.use("/cms", cmsRedirectsRoutes);
 router.use("/cms", cmsAuditRoutes);
 router.use("/cms", cmsMenusRoutes);
+router.use("/cms", cmsSidebarsRoutes);
 router.use("/applications", applicationsRoutes);
 
 export default router;
