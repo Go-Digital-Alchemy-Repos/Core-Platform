@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, BookOpen, Headphones, ExternalLink } from "lucide-react";
 import type { BlogPost } from "@shared/schema";
+import { PublicSidebar } from "@/features/public/public-sidebar";
 
 export default function InsightsPage() {
   const { data: posts, isLoading } = useQuery<BlogPost[]>({
@@ -32,12 +33,14 @@ export default function InsightsPage() {
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14" data-testid="section-insights-content">
-        {isLoading ? (
-          <div className="flex justify-center py-16">
-            <LoadingSpinner />
-          </div>
-        ) : posts && posts.length > 0 ? (
-          <div className="space-y-10">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
+          <div>
+            {isLoading ? (
+              <div className="flex justify-center py-16">
+                <LoadingSpinner />
+              </div>
+            ) : posts && posts.length > 0 ? (
+              <div className="space-y-10">
             {featuredPost && (
               featuredPost.postType === "external" && featuredPost.externalUrl ? (
                 <a href={featuredPost.externalUrl} target="_blank" rel="noopener noreferrer">
@@ -160,14 +163,17 @@ export default function InsightsPage() {
                 </div>
               </section>
             )}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No articles yet</h3>
+                <p className="text-sm text-muted-foreground">Check back soon for insights on TCK mental health and cross-cultural counseling.</p>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="text-center py-16">
-            <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No articles yet</h3>
-            <p className="text-sm text-muted-foreground">Check back soon for insights on TCK mental health and cross-cultural counseling.</p>
-          </div>
-        )}
+          <PublicSidebar useDefault />
+        </div>
       </section>
     </PageLayout>
   );
