@@ -60,6 +60,12 @@ import { Plus, Pencil, Trash2, CalendarDays, MapPin, Users, Download, MoreHorizo
 import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { StructuredDataStatus } from "@/components/shared/structured-data-status";
+import {
+  formatEventDate,
+  fromDateTimeLocalValue,
+  getDefaultEventTimeZone,
+  toDateTimeLocalValue,
+} from "@/lib/event-datetime";
 import type { Event, EventRegistration } from "@shared/schema";
 
 const eventFormSchema = z.object({
@@ -118,7 +124,7 @@ const defaultFormValues: EventFormValues = {
   imageUrl: "",
   status: "published",
   visibility: "public",
-  timezone: "",
+  timezone: getDefaultEventTimeZone(),
   locationName: "",
   locationAddress: "",
   latitude: "",
@@ -436,13 +442,14 @@ function EventsContent() {
   function buildPayload(data: EventFormValues) {
     return {
       ...data,
-      date: new Date(data.date).toISOString(),
-      endDate: data.endDate ? new Date(data.endDate).toISOString() : null,
-      registrationOpensAt: data.registrationOpensAt ? new Date(data.registrationOpensAt).toISOString() : null,
-      registrationClosesAt: data.registrationClosesAt ? new Date(data.registrationClosesAt).toISOString() : null,
+      timezone: data.timezone?.trim() || "",
+      date: fromDateTimeLocalValue(data.date, data.timezone),
+      endDate: fromDateTimeLocalValue(data.endDate, data.timezone),
+      registrationOpensAt: fromDateTimeLocalValue(data.registrationOpensAt, data.timezone),
+      registrationClosesAt: fromDateTimeLocalValue(data.registrationClosesAt, data.timezone),
       registrationFee: data.registrationFee || null,
       capacity: data.capacity || null,
-      recurrenceEndDate: data.recurrenceEndDate ? new Date(data.recurrenceEndDate).toISOString() : null,
+      recurrenceEndDate: fromDateTimeLocalValue(data.recurrenceEndDate, data.timezone),
       recurrenceCount: data.recurrenceCount || null,
       recurrenceInterval: data.recurrenceInterval || null,
     };
@@ -450,18 +457,22 @@ function EventsContent() {
 
   function openCreate() {
     setEditingEvent(null);
-    form.reset(defaultFormValues);
+    form.reset({
+      ...defaultFormValues,
+      timezone: getDefaultEventTimeZone(),
+    });
     setActiveTab("details");
     setDialogOpen(true);
   }
 
   function openEdit(event: Event) {
     setEditingEvent(event);
+    const eventTimeZone = event.timezone ?? "";
     form.reset({
       title: event.title,
       description: event.description ?? "",
-      date: event.date ? new Date(event.date).toISOString().slice(0, 16) : "",
-      endDate: event.endDate ? new Date(event.endDate).toISOString().slice(0, 16) : "",
+      date: toDateTimeLocalValue(event.date, eventTimeZone),
+      endDate: toDateTimeLocalValue(event.endDate, eventTimeZone),
       location: event.location ?? "",
       isVirtual: event.isVirtual ?? false,
       zoomLink: event.zoomLink ?? "",
@@ -469,7 +480,7 @@ function EventsContent() {
       imageUrl: event.imageUrl ?? "",
       status: event.status ?? "published",
       visibility: event.visibility ?? "public",
-      timezone: event.timezone ?? "",
+      timezone: eventTimeZone,
       locationName: event.locationName ?? "",
       locationAddress: event.locationAddress ?? "",
       latitude: event.latitude ?? "",
@@ -480,8 +491,8 @@ function EventsContent() {
       registrationType: event.registrationType ?? "free",
       registrationFee: event.registrationFee ?? undefined,
       registrationCurrency: event.registrationCurrency ?? "usd",
-      registrationOpensAt: event.registrationOpensAt ? new Date(event.registrationOpensAt).toISOString().slice(0, 16) : "",
-      registrationClosesAt: event.registrationClosesAt ? new Date(event.registrationClosesAt).toISOString().slice(0, 16) : "",
+      registrationOpensAt: toDateTimeLocalValue(event.registrationOpensAt, eventTimeZone),
+      registrationClosesAt: toDateTimeLocalValue(event.registrationClosesAt, eventTimeZone),
       capacity: event.capacity ?? undefined,
       waitlistEnabled: event.waitlistEnabled ?? false,
       recordingUrl: event.recordingUrl ?? "",
@@ -495,7 +506,7 @@ function EventsContent() {
       recurrencePattern: event.recurrencePattern ?? "",
       recurrenceInterval: event.recurrenceInterval ?? 1,
       recurrenceDaysOfWeek: event.recurrenceDaysOfWeek ?? "",
-      recurrenceEndDate: event.recurrenceEndDate ? new Date(event.recurrenceEndDate).toISOString().slice(0, 16) : "",
+      recurrenceEndDate: toDateTimeLocalValue(event.recurrenceEndDate, eventTimeZone),
       recurrenceCount: event.recurrenceCount ?? undefined,
     });
     setActiveTab("details");
@@ -544,120 +555,120 @@ function EventsContent() {
               </div>
             )}
             <div className="flex-1 min-w-0">
-            <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
-              <div>
-                <CardTitle className="text-lg flex items-center gap-2" data-testid={`text-event-title-${event.id}`}>
-                  {event.title}
-                  {event.registrationEnabled && event.capacity && (
-                    <CapacityBadge eventId={event.id} capacity={event.capacity} />
-                  )}
-                </CardTitle>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <CalendarDays className="h-3 w-3" />
-                    {event.date ? new Date(event.date).toLocaleDateString() : "—"}
-                  </span>
-                  {event.location && (
+              <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2" data-testid={`text-event-title-${event.id}`}>
+                    {event.title}
+                    {event.registrationEnabled && event.capacity && (
+                      <CapacityBadge eventId={event.id} capacity={event.capacity} />
+                    )}
+                  </CardTitle>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      {event.location}
+                      <CalendarDays className="h-3 w-3" />
+                      {event.date ? formatEventDate(event.date, event.timezone, { month: "short", day: "numeric", year: "numeric" }) : "—"}
                     </span>
-                  )}
+                    {event.location && (
+                      <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        {event.location}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                {event.registrationEnabled && (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        data-testid={`button-analytics-${event.id}`}
-                      >
-                        <BarChart3 className="h-4 w-4" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent align="end">
-                      <EventAnalytics eventId={event.id} registrationEnabled={event.registrationEnabled} />
-                    </PopoverContent>
-                  </Popover>
-                )}
-                {new Date(event.date) > new Date() && (
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  {event.registrationEnabled && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          data-testid={`button-analytics-${event.id}`}
+                        >
+                          <BarChart3 className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end">
+                        <EventAnalytics eventId={event.id} registrationEnabled={event.registrationEnabled} />
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                  {new Date(event.date) > new Date() && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => notifyMutation.mutate({ id: event.id, type: "reminder" })}
+                      disabled={notifyMutation.isPending}
+                      data-testid={`button-notify-reminder-${event.id}`}
+                      title="Send Reminder"
+                    >
+                      <Bell className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {event.recordingUrl && new Date(event.date) < new Date() && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => notifyMutation.mutate({ id: event.id, type: "recording" })}
+                      disabled={notifyMutation.isPending}
+                      data-testid={`button-notify-recording-${event.id}`}
+                      title="Notify Recording"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => notifyMutation.mutate({ id: event.id, type: "reminder" })}
-                    disabled={notifyMutation.isPending}
-                    data-testid={`button-notify-reminder-${event.id}`}
-                    title="Send Reminder"
-                  >
-                    <Bell className="h-4 w-4" />
-                  </Button>
-                )}
-                {event.recordingUrl && new Date(event.date) < new Date() && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => notifyMutation.mutate({ id: event.id, type: "recording" })}
-                    disabled={notifyMutation.isPending}
-                    data-testid={`button-notify-recording-${event.id}`}
-                    title="Notify Recording"
+                    onClick={() => duplicateMutation.mutate(event.id)}
+                    disabled={duplicateMutation.isPending}
+                    data-testid={`button-duplicate-event-${event.id}`}
+                    title="Duplicate Event"
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => openEdit(event)}
+                    data-testid={`button-edit-event-${event.id}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setDeleteTarget(event)}
+                    disabled={deleteMutation.isPending}
+                    data-testid={`button-delete-event-${event.id}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {event.description && (
+                  <p className="text-sm text-muted-foreground mb-2 line-clamp-2" data-testid={`text-event-desc-${event.id}`}>
+                    {event.description}
+                  </p>
                 )}
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => duplicateMutation.mutate(event.id)}
-                  disabled={duplicateMutation.isPending}
-                  data-testid={`button-duplicate-event-${event.id}`}
-                  title="Duplicate Event"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => openEdit(event)}
-                  data-testid={`button-edit-event-${event.id}`}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => setDeleteTarget(event)}
-                  disabled={deleteMutation.isPending}
-                  data-testid={`button-delete-event-${event.id}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {event.description && (
-                <p className="text-sm text-muted-foreground mb-2 line-clamp-2" data-testid={`text-event-desc-${event.id}`}>
-                  {event.description}
-                </p>
-              )}
-              <div className="flex gap-2 flex-wrap">
-                <Badge variant={statusVariant(event.status)} data-testid={`badge-status-${event.id}`}>
-                  {(event.status ?? "published").charAt(0).toUpperCase() + (event.status ?? "published").slice(1)}
-                </Badge>
-                <Badge variant="outline" data-testid={`badge-visibility-${event.id}`}>
-                  {visibilityLabel(event.visibility)}
-                </Badge>
-                {event.isVirtual && (
-                  <Badge variant="secondary" data-testid={`badge-virtual-${event.id}`}>
-                    Virtual
+                <div className="flex gap-2 flex-wrap">
+                  <Badge variant={statusVariant(event.status)} data-testid={`badge-status-${event.id}`}>
+                    {(event.status ?? "published").charAt(0).toUpperCase() + (event.status ?? "published").slice(1)}
                   </Badge>
-                )}
-                {event.memberOnly && (
-                  <Badge variant="secondary" data-testid={`badge-member-only-${event.id}`}>
-                    Members Only
+                  <Badge variant="outline" data-testid={`badge-visibility-${event.id}`}>
+                    {visibilityLabel(event.visibility)}
                   </Badge>
-                )}
+                  {event.isVirtual && (
+                    <Badge variant="secondary" data-testid={`badge-virtual-${event.id}`}>
+                      Virtual
+                    </Badge>
+                  )}
+                  {event.memberOnly && (
+                    <Badge variant="secondary" data-testid={`badge-member-only-${event.id}`}>
+                      Members Only
+                    </Badge>
+                  )}
                 {event.isRecurring && (
                   <Badge variant="secondary" data-testid={`badge-recurring-${event.id}`}>
                     <Repeat className="h-3 w-3 mr-1" />

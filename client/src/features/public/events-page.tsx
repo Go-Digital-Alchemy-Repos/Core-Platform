@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatEventDate, formatEventTime } from "@/lib/event-datetime";
 import {
   Tooltip,
   TooltipTrigger,
@@ -27,28 +28,12 @@ import {
   Building,
 } from "lucide-react";
 
-function formatDate(date: string | Date) {
-  return new Date(date).toLocaleDateString("en-US", {
-    weekday: "short",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
-function formatTime(date: string | Date) {
-  return new Date(date).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
 function getRegistrationStatus(event: Event): { label: string; open: boolean } | null {
   if (!event.registrationEnabled) return null;
   const now = new Date();
   if (event.registrationOpensAt && new Date(event.registrationOpensAt) > now) {
     return {
-      label: `Registration opens ${formatDate(event.registrationOpensAt)}`,
+      label: `Registration opens ${formatEventDate(event.registrationOpensAt, event.timezone)}`,
       open: false,
     };
   }
@@ -73,7 +58,7 @@ function EventCard({ event }: { event: Event }) {
   const displayLocation = event.locationName || event.locationAddress || event.location;
 
   return (
-    <Link href={`/events/${event.id}`}>
+    <Link href={`/events/${event.id}`} className="block">
       <Card
         data-testid={`card-event-${event.id}`}
         className={`cursor-pointer hover-elevate ${isPast ? "opacity-60" : ""} overflow-hidden`}
@@ -98,10 +83,10 @@ function EventCard({ event }: { event: Event }) {
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <CalendarDays className="h-3.5 w-3.5 shrink-0" />
                   <span data-testid={`text-event-date-${event.id}`}>
-                    {formatDate(event.date)}
-                    {event.endDate && ` — ${formatDate(event.endDate)}`}
+                    {formatEventDate(event.date, event.timezone)}
+                    {event.endDate && ` — ${formatEventDate(event.endDate, event.timezone)}`}
                     {" at "}
-                    {formatTime(event.date)}
+                    {formatEventTime(event.date, event.timezone)}
                   </span>
                 </div>
               </div>
@@ -360,7 +345,7 @@ function CalendarView({ events }: { events: Event[] }) {
                                     {event.title}
                                   </p>
                                   <p className="text-xs text-muted-foreground">
-                                    {formatDate(event.date)} at {formatTime(event.date)}
+                                    {formatEventDate(event.date, event.timezone)} at {formatEventTime(event.date, event.timezone)}
                                   </p>
                                   {event.description && (
                                     <p className="text-xs text-muted-foreground line-clamp-2">

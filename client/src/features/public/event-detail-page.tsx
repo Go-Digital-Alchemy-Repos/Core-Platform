@@ -18,6 +18,7 @@ import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
 import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
+import { formatEventDate, formatEventTime } from "@/lib/event-datetime";
 import {
   buildOrganizationLd,
   buildBreadcrumbLd,
@@ -48,23 +49,6 @@ import {
   LogIn,
   Mail,
 } from "lucide-react";
-
-function formatFullDate(date: string | Date) {
-  return new Date(date).toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
-function formatTime(date: string | Date) {
-  return new Date(date).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZoneName: "short",
-  });
-}
 
 function formatCurrency(amountCents: number, currency: string) {
   return new Intl.NumberFormat("en-US", {
@@ -221,7 +205,7 @@ function RegistrationSection({
                 <h3 className="font-heading text-lg font-semibold">Registration Opens Soon</h3>
                 {event.registrationOpensAt && (
                   <p className="text-sm text-muted-foreground mt-1">
-                    Registration opens on {formatFullDate(event.registrationOpensAt)} at {formatTime(event.registrationOpensAt)}.
+                    Registration opens on {formatEventDate(event.registrationOpensAt, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })} at {formatEventTime(event.registrationOpensAt, event.timezone, { timeZoneName: "short" })}.
                   </p>
                 )}
               </div>
@@ -410,7 +394,7 @@ function RegistrationSection({
               <h3 className="font-heading text-lg font-semibold">Registration Opens Soon</h3>
               {event.registrationOpensAt && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Registration opens on {formatFullDate(event.registrationOpensAt)} at {formatTime(event.registrationOpensAt)}.
+                  Registration opens on {formatEventDate(event.registrationOpensAt, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })} at {formatEventTime(event.registrationOpensAt, event.timezone, { timeZoneName: "short" })}.
                 </p>
               )}
             </div>
@@ -789,11 +773,11 @@ export default function EventDetailPage() {
                   <CalendarDays className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium" data-testid="text-event-detail-date">
-                      {formatFullDate(event.date)}
+                      {formatEventDate(event.date, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                     </p>
                     {event.endDate && new Date(event.endDate).toDateString() !== new Date(event.date).toDateString() && (
                       <p className="text-sm text-muted-foreground">
-                        to {formatFullDate(event.endDate)}
+                        to {formatEventDate(event.endDate, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                       </p>
                     )}
                   </div>
@@ -803,8 +787,8 @@ export default function EventDetailPage() {
                   <Clock className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium" data-testid="text-event-detail-time">
-                      {formatTime(event.date)}
-                      {event.endDate && ` — ${formatTime(event.endDate)}`}
+                      {formatEventTime(event.date, event.timezone, { timeZoneName: "short" })}
+                      {event.endDate && ` — ${formatEventTime(event.endDate, event.timezone, { timeZoneName: "short" })}`}
                     </p>
                     {event.timezone && (
                       <p className="text-sm text-muted-foreground" data-testid="text-event-timezone">
@@ -936,18 +920,20 @@ export default function EventDetailPage() {
                         <Badge variant="outline" className="opacity-60">Closed</Badge>
                       )}
                       {registrationState === "upcoming" && event.registrationOpensAt && (
-                        <Badge variant="outline">Opens {formatFullDate(event.registrationOpensAt)}</Badge>
+                        <Badge variant="outline">
+                          Opens {formatEventDate(event.registrationOpensAt, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                        </Badge>
                       )}
                     </div>
                     <div className="text-sm text-muted-foreground space-y-1">
                       {event.registrationOpensAt && registrationState !== "upcoming" && (
                         <p data-testid="text-registration-opens">
-                          Opened: {formatFullDate(event.registrationOpensAt)}
+                          Opened: {formatEventDate(event.registrationOpensAt, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                         </p>
                       )}
                       {event.registrationClosesAt && (
                         <p data-testid="text-registration-closes">
-                          {registrationState === "closed" ? "Closed" : "Closes"}: {formatFullDate(event.registrationClosesAt)} at {formatTime(event.registrationClosesAt)}
+                          {registrationState === "closed" ? "Closed" : "Closes"}: {formatEventDate(event.registrationClosesAt, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })} at {formatEventTime(event.registrationClosesAt, event.timezone, { timeZoneName: "short" })}
                         </p>
                       )}
                       {event.waitlistEnabled && (

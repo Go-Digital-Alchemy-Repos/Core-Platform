@@ -1154,12 +1154,9 @@ export function PublicPageRenderer({ blocks }: { blocks: BlockInstance[] }) {
     <div>
       {blocks.map((block) => {
         const isFullWidth = FULL_WIDTH_BLOCKS.has(block.type);
-        if (isFullWidth) {
-          return <PublicBlockRenderer key={block.id} block={block} />;
-        }
         const sectionStyleConfig = getSectionStyleConfig(block.props, { resolveAssetUrl: resolveCmsAssetUrl });
         const hasCustomSectionStyle = hasSectionStyleConfig(sectionStyleConfig);
-        const idx = nonFullWidthIndex++;
+        const idx = isFullWidth ? nonFullWidthIndex : nonFullWidthIndex++;
         const isAlternate = idx % 2 === 1 && !hasCustomSectionStyle;
 
         if (hasCustomSectionStyle) {
@@ -1170,11 +1167,19 @@ export function PublicPageRenderer({ blocks }: { blocks: BlockInstance[] }) {
               resolveAssetUrl={resolveCmsAssetUrl}
               className="rounded-none"
             >
-              <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
+              {isFullWidth ? (
                 <PublicBlockRenderer block={block} disableSectionStyleWrap />
-              </div>
+              ) : (
+                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
+                  <PublicBlockRenderer block={block} disableSectionStyleWrap />
+                </div>
+              )}
             </SectionStyleWrapper>
           );
+        }
+
+        if (isFullWidth) {
+          return <PublicBlockRenderer key={block.id} block={block} />;
         }
 
         return (

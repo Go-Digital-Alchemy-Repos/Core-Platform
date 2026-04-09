@@ -21,7 +21,16 @@ function isValidDate(d: Date): boolean {
   return d instanceof Date && !isNaN(d.getTime());
 }
 
-const DATE_FIELDS = ["date", "endDate", "registrationOpensAt", "registrationClosesAt"] as const;
+const DATE_FIELDS = ["date", "endDate", "registrationOpensAt", "registrationClosesAt", "recurrenceEndDate"] as const;
+
+function isValidTimeZone(timeZone: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone }).format(new Date());
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 async function normalizeEventImage<T extends { imageUrl?: string | null }>(event: T): Promise<T> {
   return {
@@ -60,6 +69,10 @@ function validateEventData(data: any): string | null {
     return "Registration fee must be greater than 0 for paid events";
   }
 
+  if (data.timezone && !isValidTimeZone(data.timezone)) {
+    return "Timezone must be a valid IANA timezone, such as America/New_York";
+  }
+
   if (data.registrationOpensAt && data.registrationClosesAt) {
     const opens = new Date(data.registrationOpensAt);
     const closes = new Date(data.registrationClosesAt);
@@ -79,6 +92,17 @@ function validateEventData(data: any): string | null {
     }
     if (end < start) {
       return "End date must not precede start date";
+    }
+  }
+
+  if (data.date && data.recurrenceEndDate) {
+    const start = new Date(data.date);
+    const recurrenceEnd = new Date(data.recurrenceEndDate);
+    if (!isValidDate(start) || !isValidDate(recurrenceEnd)) {
+      return "Invalid recurrence end date format";
+    }
+    if (recurrenceEnd < start) {
+      return "Recurrence end date must not precede the event start date";
     }
   }
 

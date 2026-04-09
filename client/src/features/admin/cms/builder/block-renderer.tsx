@@ -1549,9 +1549,6 @@ export function PageRenderer({ blocks }: { blocks: BlockInstance[] }) {
     <div>
       {blocks.map((block) => {
         const isFullWidth = FULL_WIDTH_BLOCKS.has(block.type);
-        if (isFullWidth) {
-          return <BlockRenderer key={block.id} block={block} />;
-        }
         const sectionStyleConfig = getSectionStyleConfig(block.props, { resolveAssetUrl: resolveCmsAssetUrl });
         const hasCustomSectionStyle = hasSectionStyleConfig(sectionStyleConfig);
 
@@ -1563,11 +1560,19 @@ export function PageRenderer({ blocks }: { blocks: BlockInstance[] }) {
               resolveAssetUrl={resolveCmsAssetUrl}
               className="rounded-none"
             >
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
+              {isFullWidth ? (
                 <BlockRenderer block={block} disableSectionStyleWrap />
-              </div>
+              ) : (
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
+                  <BlockRenderer block={block} disableSectionStyleWrap />
+                </div>
+              )}
             </SectionStyleWrapper>
           );
+        }
+
+        if (isFullWidth) {
+          return <BlockRenderer key={block.id} block={block} />;
         }
 
         return (
