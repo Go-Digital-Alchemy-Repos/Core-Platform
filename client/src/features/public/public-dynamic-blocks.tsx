@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -302,6 +302,7 @@ interface BlogPost {
 }
 
 export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> }) {
+  const [location] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
@@ -310,7 +311,20 @@ export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> })
     queryKey: ["/api/blog"],
   });
   const postsPerPage = num(props.postsPerPage, 9);
+  const gridColumns = String(props.gridColumns ?? "3");
+  const feedStyle = String(props.feedStyle ?? "pagination");
+  const showSearch = props.showSearch !== false;
+  const showCategoryFilter = props.showCategoryFilter !== false;
+  const showTagFilter = props.showTagFilter !== false;
   const published = (posts ?? []).filter((p) => p.isPublished);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.split("?")[1] ?? "");
+    setSearchQuery(searchParams.get("search") ?? "");
+    setSelectedCategory(searchParams.get("category") ?? "");
+    setSelectedTag(searchParams.get("tag") ?? "");
+    setCurrentPage(1);
+  }, [location]);
 
   const categories = Array.from(new Set(published.map((p) => p.category).filter(Boolean))) as string[];
   const allTags = Array.from(new Set(published.flatMap((p) => p.tags ?? []).filter(Boolean)));
@@ -324,7 +338,14 @@ export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> })
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / postsPerPage));
   const safePage = Math.min(currentPage, totalPages);
-  const visible = filtered.slice((safePage - 1) * postsPerPage, safePage * postsPerPage);
+  const visible = feedStyle === "load-more"
+    ? filtered.slice(0, safePage * postsPerPage)
+    : filtered.slice((safePage - 1) * postsPerPage, safePage * postsPerPage);
+  const gridColsClass = gridColumns === "2"
+    ? "grid-cols-1 md:grid-cols-2"
+    : gridColumns === "4"
+      ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-4"
+      : "grid-cols-1 md:grid-cols-3";
 
   const resetFilters = () => {
     setSearchQuery("");
@@ -337,11 +358,13 @@ export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> })
     <div className="py-4" data-testid="block-blog-post-feed">
       <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
       <div className="flex flex-wrap justify-center gap-3 mb-6">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }} placeholder="Search articles..." className="pl-9" data-testid="input-blog-search" />
-        </div>
-        {categories.length > 0 && (
+        {showSearch && (
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }} placeholder="Search articles..." className="pl-9" data-testid="input-blog-search" />
+          </div>
+        )}
+        {showCategoryFilter && categories.length > 0 && (
           <select
             value={selectedCategory}
             onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
@@ -352,7 +375,7 @@ export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> })
             {categories.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         )}
-        {allTags.length > 0 && (
+        {showTagFilter && allTags.length > 0 && (
           <select
             value={selectedTag}
             onChange={(e) => { setSelectedTag(e.target.value); setCurrentPage(1); }}
@@ -374,7 +397,7 @@ export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> })
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className={`grid gap-6 ${gridColsClass}`}>
             {visible.map((p) => (
               <Link key={p.id} href={`/insights/${p.slug}`}>
                 <Card className="h-full cursor-pointer hover:shadow-md transition-shadow" data-testid={`blog-feed-card-${p.id}`}>
@@ -392,7 +415,7 @@ export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> })
               </Link>
             ))}
           </div>
-          {totalPages > 1 && (
+          {feedStyle === "pagination" && totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 mt-8" data-testid="blog-pagination">
               <Button
                 variant="outline"
@@ -417,6 +440,13 @@ export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> })
               </Button>
             </div>
           )}
+          {feedStyle === "load-more" && visible.length < filtered.length && (
+            <div className="flex justify-center mt-8" data-testid="blog-load-more">
+              <Button variant="outline" onClick={() => setCurrentPage((page) => page + 1)}>
+                Load More Articles
+              </Button>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -428,6 +458,7 @@ export function BlogFeaturedPostBlock({ props }: { props: Record<string, unknown
     queryKey: ["/api/blog"],
   });
   const featured = (posts ?? []).filter((p) => p.isPublished)[0];
+  const layout = String(props.layout ?? "split");
   return (
     <div className="py-4" data-testid="block-blog-featured-post">
       <SectionHeading props={props} defaultAlignment="left" className="mb-6" />
@@ -439,7 +470,7 @@ export function BlogFeaturedPostBlock({ props }: { props: Record<string, unknown
       ) : (
         <Link href={`/insights/${featured.slug}`}>
           <Card className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden" data-testid="blog-featured-card">
-            <div className="grid grid-cols-1 md:grid-cols-2">
+            <div className={layout === "stacked" ? "grid grid-cols-1" : "grid grid-cols-1 md:grid-cols-2"}>
               {featured.coverImageUrl && (
                 <div className="aspect-[16/9] md:aspect-auto overflow-hidden">
                   <img src={featured.coverImageUrl} alt={featured.title} className="w-full h-full object-cover" />
