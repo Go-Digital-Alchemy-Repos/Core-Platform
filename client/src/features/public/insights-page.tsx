@@ -63,7 +63,7 @@ export default function InsightsPage() {
               <div className="flex justify-center py-16">
                 <LoadingSpinner />
               </div>
-            ) : posts && posts.length > 0 ? (
+            ) : filteredPosts.length > 0 ? (
               <div className="space-y-10">
             {featuredPost && (
               featuredPost.postType === "external" && featuredPost.externalUrl ? (
@@ -191,8 +191,12 @@ export default function InsightsPage() {
             ) : (
               <div className="text-center py-16">
                 <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No articles yet</h3>
-                <p className="text-sm text-muted-foreground">Check back soon for insights on TCK mental health and cross-cultural counseling.</p>
+                <h3 className="text-lg font-medium mb-2">{posts && posts.length > 0 ? "No matching articles" : "No articles yet"}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {posts && posts.length > 0
+                    ? "Try a different search, category, or tag."
+                    : "Check back soon for insights on TCK mental health and cross-cultural counseling."}
+                </p>
               </div>
             )}
           </div>
