@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { PublicPageRenderer } from "@/features/public/public-block-renderer";
+import { Loader2 } from "lucide-react";
 import type { BlockInstance, BuilderContent } from "@/features/admin/cms/builder/block-registry";
 import type { CmsPage, SeoSettings } from "@shared/schema";
 import { JsonLd } from "@/components/shared/json-ld";
@@ -143,6 +144,18 @@ function CmsPageSeo({ page, globalSeo }: { page: CmsPage; globalSeo?: SeoSetting
   );
 }
 
+function CmsLoadingPage() {
+  return (
+    <div className="min-h-screen flex flex-col" data-testid="cms-public-loading">
+      <Navbar />
+      <main className="flex-1 flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
 export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
   const { data: page, isLoading, error } = useQuery<CmsPage>({
     queryKey: ["/api/cms/pages/by-slug", slug],
@@ -176,7 +189,7 @@ export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
   });
 
   if (isLoading) {
-    return <>{fallback}</>;
+    return <CmsLoadingPage />;
   }
 
   if (error) {
