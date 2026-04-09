@@ -35,6 +35,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { BlockInstance } from "./block-registry";
 import { isDynamicBlock, getBlockDef } from "./block-registry";
+import { mergeJoinHeroBlocks } from "@shared/cms-blocks";
 import {
   SectionStyleWrapper,
   DEFAULT_SECTION_LINEAR_GRADIENT,
@@ -1413,6 +1414,7 @@ function JoinRegistrationFormBlock({ props }: { props: Record<string, unknown> }
   const [loginOpen, setLoginOpen] = useState(false);
   const heading = str(props.heading);
   const accentHeading = str(props.accentHeading);
+  const subheading = str(props.subheading);
   const applicationStatusText = str(props.applicationStatusText) || "Applications open in June.";
   const loginPromptPrefix = str(props.loginPromptPrefix) || "If you're already a member click here to";
   const loginLinkText = str(props.loginLinkText) || "Log in";
@@ -1425,15 +1427,22 @@ function JoinRegistrationFormBlock({ props }: { props: Record<string, unknown> }
       data-testid="dynamic-join-registration-form"
     >
       {hasHeroCopy && (
-        <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title">
-          {heading}
-          {accentHeading && (
-            <>
-              {" "}
-              <span className="text-accent">{accentHeading}</span>
-            </>
+        <>
+          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title">
+            {heading}
+            {accentHeading && (
+              <>
+                {" "}
+                <span className="text-accent">{accentHeading}</span>
+              </>
+            )}
+          </h1>
+          {subheading && (
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8" data-testid="text-join-subheading">
+              {subheading}
+            </p>
           )}
-        </h1>
+        </>
       )}
       <Button
         size="lg"
@@ -1596,6 +1605,7 @@ export function BlockRenderer({
 const FULL_WIDTH_BLOCKS = new Set([
   "hero",
   "join-hero",
+  "join-registration-form",
   "cta",
   "trust-bar",
   "divider",
@@ -1604,9 +1614,11 @@ const FULL_WIDTH_BLOCKS = new Set([
 ]);
 
 export function PageRenderer({ blocks }: { blocks: BlockInstance[] }) {
+  const normalizedBlocks = mergeJoinHeroBlocks(blocks);
+
   return (
     <div>
-      {blocks.map((block) => {
+      {normalizedBlocks.map((block) => {
         const isFullWidth = FULL_WIDTH_BLOCKS.has(block.type);
         const sectionStyleConfig = getSectionStyleConfig(block.props, { resolveAssetUrl: resolveCmsAssetUrl });
         const hasCustomSectionStyle = hasSectionStyleConfig(sectionStyleConfig);

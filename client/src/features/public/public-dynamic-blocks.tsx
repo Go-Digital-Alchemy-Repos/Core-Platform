@@ -214,6 +214,7 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
   const [loginOpen, setLoginOpen] = useState(false);
   const heading = str(props.heading);
   const accentHeading = str(props.accentHeading);
+  const subheading = str(props.subheading);
   const applicationStatusText = str(props.applicationStatusText) || "Applications open in June.";
   const loginPromptPrefix = str(props.loginPromptPrefix) || "If you're already a member click here to";
   const loginLinkText = str(props.loginLinkText) || "Log in";
@@ -226,15 +227,22 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
       data-testid="dynamic-join-registration-form"
     >
       {hasHeroCopy && (
-        <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title">
-          {heading}
-          {accentHeading && (
-            <>
-              {" "}
-              <span className="text-accent">{accentHeading}</span>
-            </>
+        <>
+          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title">
+            {heading}
+            {accentHeading && (
+              <>
+                {" "}
+                <span className="text-accent">{accentHeading}</span>
+              </>
+            )}
+          </h1>
+          {subheading && (
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8" data-testid="text-join-subheading">
+              {subheading}
+            </p>
           )}
-        </h1>
+        </>
       )}
       <Button
         size="lg"

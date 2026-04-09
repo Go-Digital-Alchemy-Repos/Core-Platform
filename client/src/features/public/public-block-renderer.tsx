@@ -20,6 +20,7 @@ import {
   Loader2,
 } from "lucide-react";
 import type { BlockInstance, BuilderContent } from "@/features/admin/cms/builder/block-registry";
+import { mergeJoinHeroBlocks } from "@shared/cms-blocks";
 
 export type { BlockInstance, BuilderContent };
 
@@ -1150,6 +1151,7 @@ export function PublicBlockRenderer({
 const FULL_WIDTH_BLOCKS = new Set([
   "hero",
   "join-hero",
+  "join-registration-form",
   "cta",
   "trust-bar",
   "divider",
@@ -1159,9 +1161,10 @@ const FULL_WIDTH_BLOCKS = new Set([
 
 export function PublicPageRenderer({ blocks }: { blocks: BlockInstance[] }) {
   let nonFullWidthIndex = 0;
+  const normalizedBlocks = mergeJoinHeroBlocks(blocks);
   return (
     <div>
-      {blocks.map((block) => {
+      {normalizedBlocks.map((block) => {
         const isFullWidth = FULL_WIDTH_BLOCKS.has(block.type);
         const sectionStyleConfig = getSectionStyleConfig(block.props, { resolveAssetUrl: resolveCmsAssetUrl });
         const hasCustomSectionStyle = hasSectionStyleConfig(sectionStyleConfig);

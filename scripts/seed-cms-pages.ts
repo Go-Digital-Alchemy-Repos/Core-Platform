@@ -456,7 +456,11 @@ const joinContent = {
     {
       id: uid(),
       type: "join-registration-form",
-      props: {},
+      props: {
+        heading: "Are you a TCK-Informed Mental Health Professional?",
+        accentHeading: "Join the Network!",
+        subheading: "",
+      },
     },
     {
       id: uid(),
