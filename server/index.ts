@@ -186,6 +186,9 @@ app.use((req, res, next) => {
   const { initSearchIndex } = await import("./lib/search-index");
   await initSearchIndex();
 
+  const { ensureSystemCmsPages } = await import("./services/system-cms-pages.service");
+  await ensureSystemCmsPages();
+
   await registerRoutes(httpServer, app);
 
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {

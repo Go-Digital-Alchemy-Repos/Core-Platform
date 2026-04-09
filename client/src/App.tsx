@@ -78,7 +78,7 @@ function Router() {
         <Route path="/events" component={EventsPage} />
         <Route path="/events/:id" component={EventDetailPage} />
         <Route path="/recordings" component={RecordingArchivesPage} />
-        <Route path="/insights" component={InsightsPage} />
+        <Route path="/insights" component={() => <CmsHybridPage slug="insights" fallback={<InsightsPage />} />} />
         <Route path="/insights/:slug" component={InsightsPostPage} />
         <Route path="/directory" component={DirectoryPage} />
         <Route path="/directory/:id" component={TherapistProfilePage} />

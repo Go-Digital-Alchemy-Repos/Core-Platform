@@ -552,6 +552,42 @@ const joinContent = {
   ],
 };
 
+const insightsContent = {
+  blocks: [
+    {
+      id: uid(),
+      type: "section-header",
+      props: {
+        eyebrow: "TCK Wellness Blog",
+        title: "Insights & Articles",
+        subtitle: "Explore articles, research, and insights on Third Culture Kid mental health and cross-cultural counseling.",
+        alignment: "center",
+      },
+    },
+    {
+      id: uid(),
+      type: "blog-featured-post",
+      props: {
+        title: "Featured Article",
+        layout: "split",
+      },
+    },
+    {
+      id: uid(),
+      type: "blog-post-feed",
+      props: {
+        title: "All Articles",
+        postsPerPage: 9,
+        gridColumns: "3",
+        feedStyle: "pagination",
+        showSearch: true,
+        showCategoryFilter: true,
+        showTagFilter: true,
+      },
+    },
+  ],
+};
+
 const pages = [
   {
     slug: "home",
@@ -592,6 +628,16 @@ const pages = [
     seoTitle: "Join the TCK Wellness Mental Health Professional Network",
     seoDescription:
       "Apply to join the TCK Wellness mental health professional network. Reach TCKs and cross-cultural families who need your specialized expertise.",
+  },
+  {
+    slug: "insights",
+    title: "Insights & Articles",
+    pageType: "custom" as const,
+    status: "published" as const,
+    content: insightsContent,
+    seoTitle: "Insights & Articles | TCK Wellness",
+    seoDescription:
+      "Explore articles, research, and insights on Third Culture Kid mental health and cross-cultural counseling.",
   },
 ];
 
