@@ -10,6 +10,7 @@ import { ArrowLeft, User, Headphones, Play, Share2 } from "lucide-react";
 import type { BlogPost, SeoSettings } from "@shared/schema";
 import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
+import { PublicSidebar } from "@/features/public/public-sidebar";
 import {
   buildOrganizationLd,
   buildBreadcrumbLd,
@@ -147,75 +148,80 @@ export default function InsightsPostPage() {
   return (
     <PageLayout>
       <PostSeo post={post} globalSeo={globalSeo} />
-      <article className="max-w-3xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
-        <Link href="/insights">
-          <Button variant="ghost" size="sm" className="mb-6" data-testid="button-back-insights">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Articles
-          </Button>
-        </Link>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
+          <article className="max-w-3xl">
+            <Link href="/insights">
+              <Button variant="ghost" size="sm" className="mb-6" data-testid="button-back-insights">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Articles
+              </Button>
+            </Link>
 
-        {post.coverImageUrl && (
-          <div className="aspect-[16/9] overflow-hidden rounded-lg mb-8">
-            <img
-              src={post.coverImageUrl}
-              alt={post.title}
-              className="w-full h-full object-cover"
-              data-testid="img-post-cover"
-            />
-          </div>
-        )}
+            {post.coverImageUrl && (
+              <div className="aspect-[16/9] overflow-hidden rounded-lg mb-8">
+                <img
+                  src={post.coverImageUrl}
+                  alt={post.title}
+                  className="w-full h-full object-cover"
+                  data-testid="img-post-cover"
+                />
+              </div>
+            )}
 
-        {post.postType === "podcast" && post.podcastUrl && (
-          <PodcastPlayer podcastUrl={post.podcastUrl} />
-        )}
+            {post.postType === "podcast" && post.podcastUrl && (
+              <PodcastPlayer podcastUrl={post.podcastUrl} />
+            )}
 
-        <div className="flex items-center gap-3 mb-4 flex-wrap">
-          {post.postType === "podcast" && (
-            <Badge variant="secondary" data-testid="badge-post-type">
-              <Headphones className="h-3 w-3 mr-1" />Podcast
-            </Badge>
-          )}
-          {post.category && (
-            <Badge variant="secondary" data-testid="badge-post-category">{post.category}</Badge>
-          )}
-          {post.tags?.map((tag) => (
-            <Badge key={tag} variant="outline" data-testid={`badge-post-tag-${tag}`}>{tag}</Badge>
-          ))}
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+              {post.postType === "podcast" && (
+                <Badge variant="secondary" data-testid="badge-post-type">
+                  <Headphones className="h-3 w-3 mr-1" />Podcast
+                </Badge>
+              )}
+              {post.category && (
+                <Badge variant="secondary" data-testid="badge-post-category">{post.category}</Badge>
+              )}
+              {post.tags?.map((tag) => (
+                <Badge key={tag} variant="outline" data-testid={`badge-post-tag-${tag}`}>{tag}</Badge>
+              ))}
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl font-heading font-semibold mb-4" data-testid="text-post-title">
+              {post.title}
+            </h1>
+
+            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8 flex-wrap">
+              <span className="flex items-center gap-1.5" data-testid="text-post-author">
+                <User className="h-3.5 w-3.5" />
+                {post.authorName}
+              </span>
+            </div>
+
+            {post.excerpt && (
+              <p className="text-lg text-muted-foreground mb-8 leading-relaxed" data-testid="text-post-excerpt">
+                {post.excerpt}
+              </p>
+            )}
+
+            {post.content && post.content.trim().startsWith("<") ? (
+              <div
+                className="prose prose-neutral dark:prose-invert max-w-none"
+                data-testid="div-post-content"
+                dangerouslySetInnerHTML={{ __html: post.content }}
+              />
+            ) : (
+              <div
+                className="prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap"
+                data-testid="div-post-content"
+              >
+                {post.content}
+              </div>
+            )}
+          </article>
+          <PublicSidebar sidebarId={post.sidebarId} useDefault />
         </div>
-
-        <h1 className="text-3xl sm:text-4xl font-heading font-semibold mb-4" data-testid="text-post-title">
-          {post.title}
-        </h1>
-
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8 flex-wrap">
-          <span className="flex items-center gap-1.5" data-testid="text-post-author">
-            <User className="h-3.5 w-3.5" />
-            {post.authorName}
-          </span>
-        </div>
-
-        {post.excerpt && (
-          <p className="text-lg text-muted-foreground mb-8 leading-relaxed" data-testid="text-post-excerpt">
-            {post.excerpt}
-          </p>
-        )}
-
-        {post.content && post.content.trim().startsWith("<") ? (
-          <div
-            className="prose prose-neutral dark:prose-invert max-w-none"
-            data-testid="div-post-content"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
-        ) : (
-          <div
-            className="prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap"
-            data-testid="div-post-content"
-          >
-            {post.content}
-          </div>
-        )}
-      </article>
+      </div>
     </PageLayout>
   );
 }
