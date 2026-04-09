@@ -138,12 +138,12 @@ const EXPERIENCE_LEVEL_OPTIONS = [
 ];
 
 const SHARED_SECTION_STYLE_DEFAULTS = {
-  sectionBackgroundColor: "",
+  sectionBackgroundColor: "#ffffff",
   sectionBackgroundImageUrl: "",
   sectionBackgroundPositionX: 50,
   sectionBackgroundPositionY: 50,
   sectionShowRadialGradient: false,
-  sectionRadialGradientColor: "#7c3aed",
+  sectionRadialGradientColor: "#89cda1",
 };
 
 const SHARED_SECTION_STYLE_PROP_DEFS: PropDef[] = [
@@ -152,13 +152,13 @@ const SHARED_SECTION_STYLE_PROP_DEFS: PropDef[] = [
   { key: "sectionBackgroundPositionX", label: "Image Position X (%)", type: "number", min: 0, max: 100 },
   { key: "sectionBackgroundPositionY", label: "Image Position Y (%)", type: "number", min: 0, max: 100 },
   { key: "sectionShowRadialGradient", label: "Show Radial Gradient Overlay", type: "boolean" },
-  { key: "sectionRadialGradientColor", label: "Radial Gradient Color", type: "color", placeholder: "#7c3aed" },
+  { key: "sectionRadialGradientColor", label: "Radial Gradient Color", type: "color", placeholder: "#89cda1" },
 ];
 
 const SHARED_SECTION_ACCENT_PROP_DEFS: PropDef[] = [
   { key: "sectionBackgroundColor", label: "Background Color", type: "color", placeholder: "#ffffff" },
   { key: "sectionShowRadialGradient", label: "Show Radial Gradient Overlay", type: "boolean" },
-  { key: "sectionRadialGradientColor", label: "Radial Gradient Color", type: "color", placeholder: "#7c3aed" },
+  { key: "sectionRadialGradientColor", label: "Radial Gradient Color", type: "color", placeholder: "#89cda1" },
 ];
 
 function mergePropDefs(existing: PropDef[], additions: PropDef[]) {
@@ -259,7 +259,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       alignment: "left",
     },
     propDefs: [
-      { key: "content", label: "Content (HTML)", type: "richtext", placeholder: "Enter content..." },
+      { key: "content", label: "Content", type: "richtext", placeholder: "Enter content..." },
       { key: "alignment", label: "Alignment", type: "select", options: ALIGN_OPTIONS },
     ],
   },

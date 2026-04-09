@@ -15,6 +15,7 @@ import { Plus, Trash2 } from "lucide-react";
 import type { BlockDef, PropDef } from "./block-registry";
 import { CmsImageUpload } from "../components/cms-image-upload";
 import { ImagePositionPicker } from "../components/image-position-picker";
+import { CmsRichTextEditor } from "./cms-rich-text-editor";
 
 interface BlockEditorProps {
   blockDef: BlockDef;
@@ -22,7 +23,8 @@ interface BlockEditorProps {
   onChange: (props: Record<string, unknown>) => void;
 }
 
-const DEFAULT_COLOR_VALUE = "#7c3aed";
+const DEFAULT_COLOR_VALUE = "#ffffff";
+const DEFAULT_RADIAL_GRADIENT_COLOR = "#89cda1";
 const POSITION_PICKER_KEYS = new Set([
   "backgroundPositionX",
   "backgroundPositionY",
@@ -52,9 +54,13 @@ const IMAGE_POSITION_FIELD_GROUPS = [
   },
 ];
 
-function normalizeColorValue(value: string) {
+function defaultColorValueForKey(key: string) {
+  return key === "sectionRadialGradientColor" ? DEFAULT_RADIAL_GRADIENT_COLOR : DEFAULT_COLOR_VALUE;
+}
+
+function normalizeColorValue(value: string, key: string) {
   const trimmed = value.trim();
-  return /^#([0-9a-f]{6}|[0-9a-f]{3})$/i.test(trimmed) ? trimmed : DEFAULT_COLOR_VALUE;
+  return /^#([0-9a-f]{6}|[0-9a-f]{3})$/i.test(trimmed) ? trimmed : defaultColorValueForKey(key);
 }
 
 function ArrayItemsField({
@@ -199,7 +205,6 @@ function PropField({
         />
       );
     case "textarea":
-    case "richtext":
       return (
         <Textarea
           value={strVal}
@@ -208,6 +213,15 @@ function PropField({
           rows={4}
           className="text-sm"
           data-testid={`prop-textarea-${propDef.key}`}
+        />
+      );
+    case "richtext":
+      return (
+        <CmsRichTextEditor
+          value={strVal}
+          onChange={onChange}
+          placeholder={propDef.placeholder}
+          data-testid={`prop-richtext-${propDef.key}`}
         />
       );
     case "image-url":
@@ -261,7 +275,7 @@ function PropField({
         <div className="flex items-center gap-2">
           <input
             type="color"
-            value={normalizeColorValue(strVal)}
+            value={normalizeColorValue(strVal, propDef.key)}
             onChange={(e) => onChange(e.target.value)}
             className="h-10 w-12 rounded-md border border-input bg-background p-1 cursor-pointer"
             data-testid={`prop-color-swatch-${propDef.key}`}
@@ -269,7 +283,7 @@ function PropField({
           <Input
             value={strVal}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={propDef.placeholder ?? "#7c3aed"}
+            placeholder={propDef.placeholder ?? defaultColorValueForKey(propDef.key)}
             className="text-sm font-mono"
             data-testid={`prop-color-${propDef.key}`}
           />

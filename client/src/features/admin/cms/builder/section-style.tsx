@@ -43,7 +43,7 @@ export function normalizeHexColor(value: string): string {
 
 export function hexToRgba(hex: string, alpha: number): string {
   const normalized = normalizeHexColor(hex);
-  if (!normalized) return `rgba(124, 58, 237, ${alpha})`;
+  if (!normalized) return `rgba(137, 205, 161, ${alpha})`;
   const r = parseInt(normalized.slice(1, 3), 16);
   const g = parseInt(normalized.slice(3, 5), 16);
   const b = parseInt(normalized.slice(5, 7), 16);
@@ -63,7 +63,7 @@ export function getSectionStyleConfig(
     backgroundPositionX: clampPercent(num(props.sectionBackgroundPositionX, 50)),
     backgroundPositionY: clampPercent(num(props.sectionBackgroundPositionY, 50)),
     showRadialGradient: Boolean(props.sectionShowRadialGradient),
-    radialGradientColor: normalizeHexColor(str(props.sectionRadialGradientColor)) || "#7c3aed",
+    radialGradientColor: normalizeHexColor(str(props.sectionRadialGradientColor)) || "#89cda1",
   };
 }
 
