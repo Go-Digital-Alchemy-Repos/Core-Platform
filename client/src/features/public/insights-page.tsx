@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { PageLayout } from "@/components/layout/page-layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,12 +9,27 @@ import type { BlogPost } from "@shared/schema";
 import { PublicSidebar } from "@/features/public/public-sidebar";
 
 export default function InsightsPage() {
+  const [location] = useLocation();
   const { data: posts, isLoading } = useQuery<BlogPost[]>({
     queryKey: ["/api/blog"],
   });
 
-  const featuredPost = posts?.[0];
-  const gridPosts = posts?.slice(1) ?? [];
+  const searchParams = new URLSearchParams(location.split("?")[1] ?? "");
+  const searchQuery = searchParams.get("search")?.trim().toLowerCase() ?? "";
+  const categoryFilter = searchParams.get("category") ?? "";
+  const tagFilter = searchParams.get("tag") ?? "";
+
+  const filteredPosts = (posts ?? []).filter((post) => {
+    const matchesSearch = !searchQuery || [post.title, post.excerpt, post.content, post.authorName]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(searchQuery));
+    const matchesCategory = !categoryFilter || post.category === categoryFilter;
+    const matchesTag = !tagFilter || Boolean(post.tags?.includes(tagFilter));
+    return matchesSearch && matchesCategory && matchesTag;
+  });
+
+  const featuredPost = filteredPosts[0];
+  const gridPosts = filteredPosts.slice(1);
 
   return (
     <PageLayout>
@@ -28,6 +43,15 @@ export default function InsightsPage() {
             <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Explore articles, research, and insights on Third Culture Kid mental health and cross-cultural counseling.
             </p>
+            {(searchQuery || categoryFilter || tagFilter) && (
+              <p className="text-sm text-muted-foreground mt-4" data-testid="text-insights-filters">
+                Filtering
+                {searchQuery ? ` by "${searchQuery}"` : ""}
+                {categoryFilter ? ` in ${categoryFilter}` : ""}
+                {tagFilter ? ` tagged ${tagFilter}` : ""}
+                .
+              </p>
+            )}
           </div>
         </div>
       </section>
