@@ -77,6 +77,7 @@ function resolveCmsAssetUrl(url: string): string {
 
 const LazyTherapistMapBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.TherapistMapBlock })));
 const LazyContactFormBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.ContactFormBlock })));
+const LazyJoinHeroBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.JoinHeroBlock })));
 const LazyJoinRegistrationFormBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.JoinRegistrationFormBlock })));
 const LazyBlogPostFeedBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.BlogPostFeedBlock })));
 const LazyBlogFeaturedPostBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.BlogFeaturedPostBlock })));
@@ -95,6 +96,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const opacity = num(props.overlayOpacity as number, 50);
   const layout = str(props.layout) || "stacked";
   const badge = str(props.badge);
+  const accentHeading = str(props.accentHeading);
   const minH = str(props.minHeight) || "420";
   const minHeightStyle = minH === "100vh" ? "100vh" : `${minH}px`;
   const bgPosX = Math.max(0, Math.min(100, num(props.backgroundPositionX as number, 50)));
@@ -140,6 +142,12 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
         )}
         <h1 className="text-4xl md:text-5xl font-heading font-bold text-white mb-4 leading-tight">
           {str(props.heading) || "Hero Heading"}
+          {accentHeading && (
+            <>
+              {" "}
+              <span className="text-accent">{accentHeading}</span>
+            </>
+          )}
         </h1>
         {str(props.subheading) && (
           <p className={`text-lg text-white/80 mb-8 ${isSplit ? "" : "max-w-xl mx-auto"}`}>{str(props.subheading)}</p>
@@ -1103,6 +1111,13 @@ export function PublicBlockRenderer({
         </Suspense>
       );
     }
+    if (block.type === "join-hero") {
+      renderedBlock = (
+        <Suspense fallback={<DynamicFallback />}>
+          <LazyJoinHeroBlock props={block.props} />
+        </Suspense>
+      );
+    }
     if (block.type === "join-registration-form") {
       renderedBlock = (
         <Suspense fallback={<DynamicFallback />}>
@@ -1141,6 +1156,7 @@ export function PublicBlockRenderer({
 
 const FULL_WIDTH_BLOCKS = new Set([
   "hero",
+  "join-hero",
   "cta",
   "trust-bar",
   "divider",

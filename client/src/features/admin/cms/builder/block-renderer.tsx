@@ -108,6 +108,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const opacity = num(props.overlayOpacity as number, 50);
   const layout = str(props.layout) || "stacked";
   const badge = str(props.badge);
+  const accentHeading = str(props.accentHeading);
   const minH = str(props.minHeight) || "420";
   const minHeightStyle = minH === "100vh" ? "100vh" : `${minH}px`;
   const bgPosX = Math.max(0, Math.min(100, num(props.backgroundPositionX as number, 50)));
@@ -153,6 +154,12 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
         )}
         <h1 className="text-4xl md:text-5xl font-heading font-bold text-white mb-4 leading-tight">
           {str(props.heading) || "Hero Heading"}
+          {accentHeading && (
+            <>
+              {" "}
+              <span className="text-accent">{accentHeading}</span>
+            </>
+          )}
         </h1>
         {str(props.subheading) && (
           <p className={`text-lg text-white/80 mb-8 ${isSplit ? "" : "max-w-xl mx-auto"}`}>{str(props.subheading)}</p>
@@ -1390,19 +1397,30 @@ function ContactFormBlock() {
 
 function JoinRegistrationFormBlock({ props }: { props: Record<string, unknown> }) {
   const [loginOpen, setLoginOpen] = useState(false);
-  const heading = str(props.heading) || "Are you a TCK-Informed Mental Health Professional?";
-  const accentHeading = str(props.accentHeading) || "Join the Network!";
+  const heading = str(props.heading);
+  const accentHeading = str(props.accentHeading);
   const applicationStatusText = str(props.applicationStatusText) || "Applications open in June.";
   const loginPromptPrefix = str(props.loginPromptPrefix) || "If you're already a member click here to";
   const loginLinkText = str(props.loginLinkText) || "Log in";
   const loginPromptSuffix = str(props.loginPromptSuffix) || "to your profile!";
+  const hasHeroCopy = !!(heading || accentHeading);
 
   return (
-    <section className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="dynamic-join-registration-form">
-      <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title">
-        {heading}{" "}
-        <span className="text-accent">{accentHeading}</span>
-      </h1>
+    <section
+      className={`max-w-4xl mx-auto px-4 sm:px-6 text-center ${hasHeroCopy ? "py-14 sm:py-20 md:py-24" : "py-8 sm:py-10 md:py-12"}`}
+      data-testid="dynamic-join-registration-form"
+    >
+      {hasHeroCopy && (
+        <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title">
+          {heading}
+          {accentHeading && (
+            <>
+              {" "}
+              <span className="text-accent">{accentHeading}</span>
+            </>
+          )}
+        </h1>
+      )}
       <Button
         size="lg"
         className="bg-accent text-accent-foreground border-accent-border text-base px-8 py-6 opacity-60 cursor-not-allowed"
@@ -1425,6 +1443,31 @@ function JoinRegistrationFormBlock({ props }: { props: Record<string, unknown> }
       </p>
       <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
     </section>
+  );
+}
+
+function JoinHeroBlock({ props }: { props: Record<string, unknown> }) {
+  const heading = str(props.heading) || "Are you a TCK-Informed Mental Health Professional?";
+  const accentHeading = str(props.accentHeading) || "Join the Network!";
+  const subheading = str(props.subheading);
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="dynamic-join-hero">
+      <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-hero-title">
+        {heading}
+        {accentHeading && (
+          <>
+            {" "}
+            <span className="text-accent">{accentHeading}</span>
+          </>
+        )}
+      </h1>
+      {subheading && (
+        <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-join-hero-subheading">
+          {subheading}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -1501,6 +1544,7 @@ export function BlockRenderer({
     }
     if (!renderedBlock && block.type === "therapist-map") renderedBlock = <TherapistMapBlock props={block.props} />;
     if (!renderedBlock && block.type === "contact-form") renderedBlock = <ContactFormBlock />;
+    if (!renderedBlock && block.type === "join-hero") renderedBlock = <JoinHeroBlock props={block.props} />;
     if (!renderedBlock && block.type === "join-registration-form") renderedBlock = <JoinRegistrationFormBlock props={block.props} />;
     if (!renderedBlock && block.type === "blog-post-feed") renderedBlock = <BlogPostFeedBlock props={block.props} />;
     if (!renderedBlock && block.type === "blog-featured-post") renderedBlock = <BlogFeaturedPostBlock props={block.props} />;
@@ -1537,6 +1581,7 @@ export function BlockRenderer({
  *  Update this set when adding new full-width block types. */
 const FULL_WIDTH_BLOCKS = new Set([
   "hero",
+  "join-hero",
   "cta",
   "trust-bar",
   "divider",
