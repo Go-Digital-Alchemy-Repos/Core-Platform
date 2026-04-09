@@ -42,6 +42,7 @@ import {
   hasSectionStyleConfig,
   getRadialGradientStyle,
 } from "./section-style";
+import { SectionHeading } from "./section-heading";
 
 const LUCIDE_MAP: Record<string, React.ElementType> = {
   Globe, Heart, Users, MapPin, Mail, Phone, Star, CheckCircle,
@@ -144,7 +145,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
       )}
       <div className="absolute inset-0 rounded-lg" style={overlayStyle} />
       {sectionStyleConfig.showRadialGradient && (
-        <div className="absolute inset-0 rounded-lg" style={getRadialGradientStyle(sectionStyleConfig.radialGradientColor)} />
+        <div className="absolute inset-0 rounded-lg" style={getRadialGradientStyle(sectionStyleConfig.radialGradientColor, sectionStyleConfig.radialGradientPosition)} />
       )}
       <div className={`relative z-10 px-8 py-16 ${isSplit ? "max-w-2xl" : "max-w-3xl mx-auto"}`}>
         {badge && (
@@ -191,19 +192,14 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
 }
 
 function SectionHeaderBlock({ props }: { props: Record<string, unknown> }) {
-  const align = str(props.alignment) || "center";
-  const textAlign = align === "left" ? "text-left" : align === "right" ? "text-right" : "text-center";
-  const itemsAlign = align === "left" ? "items-start" : align === "right" ? "items-end" : "items-center";
   return (
-    <div className={`flex flex-col ${itemsAlign} gap-2 py-4`}>
-      {str(props.eyebrow) && (
-        <span className="text-xs font-semibold uppercase tracking-widest text-accent">{str(props.eyebrow)}</span>
-      )}
-      <h2 className={`text-3xl font-heading font-bold ${textAlign}`}>{str(props.title) || "Section Title"}</h2>
-      {str(props.subtitle) && (
-        <p className={`text-muted-foreground max-w-2xl ${textAlign}`}>{str(props.subtitle)}</p>
-      )}
-    </div>
+    <SectionHeading
+      props={props}
+      defaultAlignment="center"
+      className="py-4"
+      titleClassName="text-3xl font-heading font-bold"
+      fallbackTitle="Section Title"
+    />
   );
 }
 
@@ -211,10 +207,13 @@ function RichTextBlock({ props }: { props: Record<string, unknown> }) {
   const align = str(props.alignment) || "left";
   const textAlign = align === "left" ? "text-left" : align === "right" ? "text-right" : "text-center";
   return (
-    <div
-      className={`prose prose-sm max-w-none ${textAlign} text-foreground`}
-      dangerouslySetInnerHTML={{ __html: str(props.content) || "<p>No content.</p>" }}
-    />
+    <div>
+      <SectionHeading props={props} defaultAlignment={align === "right" ? "right" : align === "center" ? "center" : "left"} className="mb-6" />
+      <div
+        className={`prose prose-sm max-w-none ${textAlign} text-foreground`}
+        dangerouslySetInnerHTML={{ __html: str(props.content) || "<p>No content.</p>" }}
+      />
+    </div>
   );
 }
 
@@ -280,8 +279,7 @@ function CardsGridBlock({ props }: { props: Record<string, unknown> }) {
   const cards = arr<{ title: string; description: string; icon: string }>(props.cards);
   return (
     <div className="py-4">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
-      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-8">{str(props.subtitle)}</p>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
       <div className={`grid grid-cols-1 ${colsClass} gap-6`}>
         {cards.length === 0 ? (
           <div className="col-span-full text-center text-muted-foreground py-8">Add cards to display here</div>
@@ -305,7 +303,7 @@ function FaqBlock({ props }: { props: Record<string, unknown> }) {
   const items = arr<{ question: string; answer: string }>(props.items);
   return (
     <div className="py-4">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold mb-8">{str(props.title)}</h2>}
+      <SectionHeading props={props} defaultAlignment="left" className="mb-8" />
       <Accordion type="single" collapsible className="space-y-2">
         {items.length === 0 ? (
           <p className="text-muted-foreground">Add FAQ items to display here.</p>
@@ -324,7 +322,7 @@ function TestimonialsBlock({ props }: { props: Record<string, unknown> }) {
   const items = arr<{ quote: string; name: string; role: string; location: string }>(props.items);
   return (
     <div className="py-4">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-8">{str(props.title)}</h2>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {items.length === 0 ? (
           <p className="text-muted-foreground">Add testimonials to display here.</p>
@@ -358,8 +356,7 @@ function FeaturedProfessionalsBlock({ props }: { props: Record<string, unknown> 
   const visible = (professionals ?? []).slice(0, limit);
   return (
     <div className="py-4">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
-      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-6">{str(props.subtitle)}</p>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {visible.length === 0 ? (
           <div className="col-span-3 text-center py-8 text-muted-foreground">
@@ -390,8 +387,7 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
   const visible = (events ?? []).filter((e) => new Date(e.date) > new Date()).slice(0, limit);
   return (
     <div className="py-4">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
-      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-6">{str(props.subtitle)}</p>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {visible.length === 0 ? (
           <div className="col-span-3 text-center py-8 text-muted-foreground">
@@ -422,8 +418,7 @@ function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
   const visible = (posts ?? []).filter((p) => p.isPublished).slice(0, limit);
   return (
     <div className="py-4">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
-      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-6">{str(props.subtitle)}</p>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {visible.length === 0 ? (
           <div className="col-span-3 text-center py-8 text-muted-foreground">
@@ -450,16 +445,19 @@ function ButtonGroupBlock({ props }: { props: Record<string, unknown> }) {
   const justifyClass = align === "left" ? "justify-start" : align === "right" ? "justify-end" : "justify-center";
   const buttons = arr<{ text: string; link: string; variant: string }>(props.buttons);
   return (
-    <div className={`flex flex-wrap gap-3 py-4 ${justifyClass}`}>
-      {buttons.length === 0 ? (
-        <p className="text-muted-foreground text-sm">Add buttons to display here</p>
-      ) : buttons.map((btn, i) => (
-        <Link key={i} href={btn.link || "#"}>
-          <Button variant={(btn.variant === "outline" || btn.variant === "secondary" || btn.variant === "ghost" || btn.variant === "destructive") ? btn.variant : "default"} size="lg" data-testid={`button-group-${i}`}>
-            {btn.text}
-          </Button>
-        </Link>
-      ))}
+    <div className="py-4">
+      <SectionHeading props={props} defaultAlignment={align === "right" ? "right" : align === "center" ? "center" : "left"} className="mb-6" />
+      <div className={`flex flex-wrap gap-3 ${justifyClass}`}>
+        {buttons.length === 0 ? (
+          <p className="text-muted-foreground text-sm">Add buttons to display here</p>
+        ) : buttons.map((btn, i) => (
+          <Link key={i} href={btn.link || "#"}>
+            <Button variant={(btn.variant === "outline" || btn.variant === "secondary" || btn.variant === "ghost" || btn.variant === "destructive") ? btn.variant : "default"} size="lg" data-testid={`button-group-${i}`}>
+              {btn.text}
+            </Button>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
@@ -469,6 +467,7 @@ function ImageBlockRenderer({ props }: { props: Record<string, unknown> }) {
   const hasImage = !!str(props.imageUrl);
   return (
     <div className={`py-4 ${widthClass}`}>
+      <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
       {hasImage ? (
         <div>
           <img src={str(props.imageUrl)} alt={str(props.alt)} className="w-full rounded-xl object-cover" />
@@ -495,7 +494,7 @@ function VideoEmbedBlock({ props }: { props: Record<string, unknown> }) {
   const paddingBottom = paddingMap[aspect] ?? "56.25%";
   return (
     <div className="py-4">
-      {str(props.title) && <p className="font-medium mb-3">{str(props.title)}</p>}
+      <SectionHeading props={props} defaultAlignment="left" className="mb-4" titleClassName="font-medium text-base" />
       {!url ? (
         <div className="rounded-xl bg-muted/40 border border-dashed h-48 flex items-center justify-center">
           <div className="text-center text-muted-foreground">
@@ -535,7 +534,7 @@ function ContactInfoBlock({ props }: { props: Record<string, unknown> }) {
   const items = arr<{ icon: string; label: string; value: string }>(props.items);
   return (
     <div className="py-4">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold mb-6">{str(props.title)}</h2>}
+      <SectionHeading props={props} defaultAlignment="left" className="mb-6" />
       <div className="space-y-4">
         {items.length === 0 ? (
           <p className="text-muted-foreground text-sm">Add contact items to display here.</p>
@@ -576,8 +575,7 @@ function FeatureListBlock({ props }: { props: Record<string, unknown> }) {
   const features = arr<{ icon: string; title: string; description: string }>(props.features);
   return (
     <div className="py-4" data-testid="block-feature-list">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
-      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-8">{str(props.subtitle)}</p>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
       <div className={`grid grid-cols-1 ${colsClass} gap-8`}>
         {features.map((f, i) => (
           <div key={i} className="flex items-start gap-4" data-testid={`feature-item-${i}`}>
@@ -599,8 +597,7 @@ function ObjectionBustersBlock({ props }: { props: Record<string, unknown> }) {
   const items = arr<{ concern: string; response: string }>(props.items);
   return (
     <div className="py-4" data-testid="block-objection-busters">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
-      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-8">{str(props.subtitle)}</p>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
       <div className="space-y-6 max-w-3xl mx-auto">
         {items.map((item, i) => (
           <div key={i} className="rounded-xl border p-6" data-testid={`objection-item-${i}`}>
@@ -623,8 +620,7 @@ function BeforeAfterBlock({ props }: { props: Record<string, unknown> }) {
   const items = arr<{ milestone: string; before: string; after: string }>(props.items);
   return (
     <div className="py-4" data-testid="block-before-after">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
-      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-8">{str(props.subtitle)}</p>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
       <div className="relative max-w-3xl mx-auto">
         <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border hidden sm:block" />
         <div className="space-y-8">
@@ -655,6 +651,7 @@ function TrustBarBlock({ props }: { props: Record<string, unknown> }) {
   const items = arr<{ icon: string; label: string }>(props.items);
   return (
     <div className="py-4 border-y bg-muted/20" data-testid="block-trust-bar">
+      <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
       <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
         {items.map((item, i) => (
           <div key={i} className="flex items-center gap-2 text-muted-foreground" data-testid={`trust-signal-${i}`}>
@@ -671,7 +668,7 @@ function PressMentionsBlock({ props }: { props: Record<string, unknown> }) {
   const items = arr<{ name: string; logoUrl: string; link: string }>(props.items);
   return (
     <div className="py-4" data-testid="block-press-mentions">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-8">{str(props.title)}</h2>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
       <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12">
         {items.map((item, i) => {
           const content = item.logoUrl ? (
@@ -697,7 +694,7 @@ function SocialProofStatsBlock({ props }: { props: Record<string, unknown> }) {
   const stats = arr<{ value: string; label: string }>(props.stats);
   return (
     <div className="py-4" data-testid="block-social-proof-stats">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-8">{str(props.title)}</h2>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
       <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
         {stats.map((stat, i) => (
           <div key={i} className="text-center" data-testid={`stat-item-${i}`}>
@@ -721,7 +718,7 @@ function ImageGridBlock({ props }: { props: Record<string, unknown> }) {
   const images = arr<{ url: string; alt: string; caption: string }>(props.images);
   return (
     <div className="py-4" data-testid="block-image-grid">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-8">{str(props.title)}</h2>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
       {images.length === 0 ? (
         <div className="rounded-xl bg-muted/40 border border-dashed h-48 flex items-center justify-center">
           <p className="text-sm text-muted-foreground">Add images to display here</p>
@@ -755,7 +752,7 @@ function SliderBlock({ props }: { props: Record<string, unknown> }) {
   const slide = slides[safeIdx];
   return (
     <div className="py-4" data-testid="block-slider">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-6">{str(props.title)}</h2>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
       <div className="relative rounded-xl overflow-hidden bg-muted/20 border">
         {slide.imageUrl && (
           <img src={slide.imageUrl} alt={slide.heading} className="w-full aspect-[16/9] object-cover" />
@@ -788,6 +785,7 @@ function StatsBarBlock({ props }: { props: Record<string, unknown> }) {
   const items = arr<{ icon: string; value: string; label: string }>(props.items);
   return (
     <div className="py-6 bg-muted/30 rounded-xl" data-testid="block-stats-bar">
+      <SectionHeading props={props} defaultAlignment="center" className="mb-6 px-4" />
       <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 px-4">
         {items.map((item, i) => (
           <div key={i} className="flex items-center gap-3" data-testid={`stats-bar-item-${i}`}>
@@ -811,8 +809,7 @@ function IconGridBlock({ props }: { props: Record<string, unknown> }) {
   const items = arr<{ icon: string; title: string }>(props.items);
   return (
     <div className="py-4" data-testid="block-icon-grid">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
-      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-8">{str(props.subtitle)}</p>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
       <div className={`grid grid-cols-2 ${colsClass} gap-4`}>
         {items.map((item, i) => (
           <div key={i} className="flex flex-col items-center gap-2 p-4 rounded-xl border hover:shadow-sm transition-shadow" data-testid={`icon-grid-item-${i}`}>
@@ -833,8 +830,7 @@ function BenefitStackBlock({ props }: { props: Record<string, unknown> }) {
   const isTimeline = layout === "timeline";
   return (
     <div className="py-4" data-testid="block-benefit-stack">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold mb-2">{str(props.title)}</h2>}
-      {str(props.subtitle) && <p className="text-muted-foreground mb-8">{str(props.subtitle)}</p>}
+      <SectionHeading props={props} defaultAlignment="left" className="mb-8" />
       <div className={`relative ${isTimeline ? "pl-8" : ""}`}>
         {isTimeline && <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-accent/20" />}
         <div className={isTimeline ? "space-y-6" : "space-y-4"}>
@@ -860,7 +856,7 @@ function ScienceExplainerBlock({ props }: { props: Record<string, unknown> }) {
   const citations = arr<{ text: string; url: string }>(props.citations);
   return (
     <div className="py-4" data-testid="block-science-explainer">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold mb-6">{str(props.title)}</h2>}
+      <SectionHeading props={props} defaultAlignment="left" className="mb-6" />
       {str(props.body) && (
         <div className="prose prose-sm max-w-none text-foreground mb-6" dangerouslySetInnerHTML={{ __html: str(props.body) }} />
       )}
@@ -888,7 +884,7 @@ function SafetyChecklistBlock({ props }: { props: Record<string, unknown> }) {
   const items = arr<{ text: string; required: boolean }>(props.items);
   return (
     <div className="py-4" data-testid="block-safety-checklist">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold mb-6">{str(props.title)}</h2>}
+      <SectionHeading props={props} defaultAlignment="left" className="mb-6" />
       <div className="space-y-3 max-w-2xl">
         {items.map((item, i) => (
           <div key={i} className="flex items-start gap-3" data-testid={`checklist-item-${i}`}>
@@ -913,8 +909,7 @@ function GuaranteeWarrantyBlock({ props }: { props: Record<string, unknown> }) {
     <div className="py-4" data-testid="block-guarantee-warranty">
       <div className="rounded-2xl bg-accent/5 border border-accent/20 p-8 text-center">
         <BadgeCheck className="h-10 w-10 text-accent mx-auto mb-4" />
-        {str(props.title) && <h2 className="text-2xl font-heading font-bold mb-2">{str(props.title)}</h2>}
-        {str(props.subtitle) && <p className="text-muted-foreground mb-6">{str(props.subtitle)}</p>}
+        <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
         <ul className="space-y-2 max-w-lg mx-auto text-left mb-6">
           {items.map((item, i) => {
             const text = typeof item === "string" ? item : (item as { text: string }).text;
@@ -945,8 +940,7 @@ function DeliverySetupBlock({ props }: { props: Record<string, unknown> }) {
   const includedItems = arr<{ text: string } | string>(props.includedItems);
   return (
     <div className="py-4" data-testid="block-delivery-setup">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
-      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-8">{str(props.subtitle)}</p>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
       <div className="relative max-w-3xl mx-auto mb-8">
         <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border hidden sm:block" />
         <div className="space-y-6">
@@ -987,8 +981,7 @@ function RecoveryUseCasesBlock({ props }: { props: Record<string, unknown> }) {
   const personas = arr<{ icon: string; title: string; description: string }>(props.personas);
   return (
     <div className="py-4" data-testid="block-recovery-use-cases">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-2">{str(props.title)}</h2>}
-      {str(props.subtitle) && <p className="text-muted-foreground text-center mb-8">{str(props.subtitle)}</p>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {personas.map((p, i) => (
           <Card key={i} className="text-center hover:shadow-md transition-shadow" data-testid={`persona-card-${i}`}>
@@ -1016,13 +1009,12 @@ function ProtocolBuilderBlock({ props }: { props: Record<string, unknown> }) {
   };
   return (
     <div className="py-4" data-testid="block-protocol-builder">
-      <div className="flex items-center gap-3 mb-6">
-        {str(props.title) && <h2 className="text-2xl font-heading font-bold">{str(props.title)}</h2>}
+      <div className="flex flex-wrap items-start gap-3 mb-6">
+        <SectionHeading props={props} defaultAlignment="left" className="flex-1 min-w-[220px]" />
         <span className={`text-xs font-semibold px-2 py-1 rounded-full capitalize ${levelColors[level] || levelColors.beginner}`}>
           {level}
         </span>
       </div>
-      {str(props.subtitle) && <p className="text-muted-foreground mb-6">{str(props.subtitle)}</p>}
       <div className="space-y-4">
         {steps.map((step, i) => (
           <div key={i} className="flex gap-4 items-start" data-testid={`protocol-step-${i}`}>
@@ -1085,7 +1077,7 @@ function BlogPostFeedBlock({ props }: { props: Record<string, unknown> }) {
 
   return (
     <div className="py-4" data-testid="block-blog-post-feed">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-6">{str(props.title)}</h2>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
       <div className="flex flex-wrap justify-center gap-3 mb-6">
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1180,7 +1172,7 @@ function BlogFeaturedPostBlock({ props }: { props: Record<string, unknown> }) {
   const featured = (posts ?? []).filter((p) => p.isPublished)[0];
   return (
     <div className="py-4" data-testid="block-blog-featured-post">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold mb-6">{str(props.title)}</h2>}
+      <SectionHeading props={props} defaultAlignment="left" className="mb-6" />
       {!featured ? (
         <div className="text-center py-12 text-muted-foreground">
           <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />

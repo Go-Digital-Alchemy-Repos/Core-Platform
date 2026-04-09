@@ -9,6 +9,7 @@ interface SectionStyleConfig {
   backgroundPositionY: number;
   showRadialGradient: boolean;
   radialGradientColor: string;
+  radialGradientPosition: "top" | "bottom";
 }
 
 interface SectionStyleWrapperProps {
@@ -64,6 +65,7 @@ export function getSectionStyleConfig(
     backgroundPositionY: clampPercent(num(props.sectionBackgroundPositionY, 50)),
     showRadialGradient: Boolean(props.sectionShowRadialGradient),
     radialGradientColor: normalizeHexColor(str(props.sectionRadialGradientColor)) || "#89cda1",
+    radialGradientPosition: str(props.sectionRadialGradientPosition) === "bottom" ? "bottom" : "top",
   };
 }
 
@@ -71,9 +73,10 @@ export function hasSectionStyleConfig(config: SectionStyleConfig) {
   return Boolean(config.backgroundColor || config.backgroundImageUrl || config.showRadialGradient);
 }
 
-export function getRadialGradientStyle(color: string): CSSProperties {
+export function getRadialGradientStyle(color: string, position: "top" | "bottom" = "top"): CSSProperties {
+  const anchor = position === "bottom" ? "50% 100%" : "50% 0%";
   return {
-    background: `radial-gradient(ellipse at 50% 0%, ${hexToRgba(color, 0.28)} 0%, ${hexToRgba(color, 0.16)} 36%, transparent 72%)`,
+    background: `radial-gradient(ellipse at ${anchor}, ${hexToRgba(color, 0.28)} 0%, ${hexToRgba(color, 0.16)} 36%, transparent 72%)`,
   };
 }
 
@@ -107,7 +110,7 @@ export function SectionStyleWrapper({
   return (
     <section className={`relative overflow-hidden rounded-2xl ${className ?? ""}`.trim()} style={wrapperStyle}>
       {config.showRadialGradient && (
-        <div className="pointer-events-none absolute inset-0" style={getRadialGradientStyle(config.radialGradientColor)} />
+        <div className="pointer-events-none absolute inset-0" style={getRadialGradientStyle(config.radialGradientColor, config.radialGradientPosition)} />
       )}
       <div className={`relative z-10 ${contentClassName ?? ""}`.trim()}>
         {children}

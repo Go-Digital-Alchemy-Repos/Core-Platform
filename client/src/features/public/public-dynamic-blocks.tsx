@@ -21,6 +21,7 @@ import { LoginDialog } from "@/components/auth/login-dialog";
 import { MapView } from "@/components/directory/map-view";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { SectionHeading } from "@/features/admin/cms/builder/section-heading";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -334,7 +335,7 @@ export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> })
 
   return (
     <div className="py-4" data-testid="block-blog-post-feed">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold text-center mb-6">{str(props.title)}</h2>}
+      <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
       <div className="flex flex-wrap justify-center gap-3 mb-6">
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -429,7 +430,7 @@ export function BlogFeaturedPostBlock({ props }: { props: Record<string, unknown
   const featured = (posts ?? []).filter((p) => p.isPublished)[0];
   return (
     <div className="py-4" data-testid="block-blog-featured-post">
-      {str(props.title) && <h2 className="text-2xl font-heading font-bold mb-6">{str(props.title)}</h2>}
+      <SectionHeading props={props} defaultAlignment="left" className="mb-6" />
       {!featured ? (
         <div className="text-center py-12 text-muted-foreground">
           <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />

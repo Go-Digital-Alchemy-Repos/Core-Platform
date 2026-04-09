@@ -39,6 +39,7 @@ const SECTION_STYLE_KEYS = new Set([
   "sectionBackgroundPositionY",
   "sectionShowRadialGradient",
   "sectionRadialGradientColor",
+  "sectionRadialGradientPosition",
 ]);
 
 const IMAGE_POSITION_FIELD_GROUPS = [

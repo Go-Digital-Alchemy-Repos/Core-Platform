@@ -137,6 +137,16 @@ const EXPERIENCE_LEVEL_OPTIONS = [
   { label: "Advanced", value: "advanced" },
 ];
 
+const HEADING_LEVEL_OPTIONS = [
+  { label: "H2 (Section Heading)", value: "h2" },
+  { label: "H1 (Main Page Heading)", value: "h1" },
+];
+
+const RADIAL_GRADIENT_POSITION_OPTIONS = [
+  { label: "Top of Section", value: "top" },
+  { label: "Bottom of Section", value: "bottom" },
+];
+
 const SHARED_SECTION_STYLE_DEFAULTS = {
   sectionBackgroundColor: "#ffffff",
   sectionBackgroundImageUrl: "",
@@ -144,6 +154,7 @@ const SHARED_SECTION_STYLE_DEFAULTS = {
   sectionBackgroundPositionY: 50,
   sectionShowRadialGradient: false,
   sectionRadialGradientColor: "#89cda1",
+  sectionRadialGradientPosition: "top",
 };
 
 const SHARED_SECTION_STYLE_PROP_DEFS: PropDef[] = [
@@ -153,13 +164,40 @@ const SHARED_SECTION_STYLE_PROP_DEFS: PropDef[] = [
   { key: "sectionBackgroundPositionY", label: "Image Position Y (%)", type: "number", min: 0, max: 100 },
   { key: "sectionShowRadialGradient", label: "Show Radial Gradient Overlay", type: "boolean" },
   { key: "sectionRadialGradientColor", label: "Radial Gradient Color", type: "color", placeholder: "#89cda1" },
+  { key: "sectionRadialGradientPosition", label: "Radial Gradient Position", type: "select", options: RADIAL_GRADIENT_POSITION_OPTIONS },
 ];
 
 const SHARED_SECTION_ACCENT_PROP_DEFS: PropDef[] = [
   { key: "sectionBackgroundColor", label: "Background Color", type: "color", placeholder: "#ffffff" },
   { key: "sectionShowRadialGradient", label: "Show Radial Gradient Overlay", type: "boolean" },
   { key: "sectionRadialGradientColor", label: "Radial Gradient Color", type: "color", placeholder: "#89cda1" },
+  { key: "sectionRadialGradientPosition", label: "Radial Gradient Position", type: "select", options: RADIAL_GRADIENT_POSITION_OPTIONS },
 ];
+
+const SHARED_SECTION_HEADING_DEFAULTS = {
+  sectionEyebrow: "",
+  sectionHeadingLevel: "h2",
+  sectionHeadingAlignment: "center",
+};
+
+const SHARED_SECTION_HEADING_PROP_DEFS: PropDef[] = [
+  { key: "sectionEyebrow", label: "Eyebrow Label", type: "text", placeholder: "Small label above title" },
+  { key: "sectionHeadingLevel", label: "Heading Level", type: "select", options: HEADING_LEVEL_OPTIONS },
+  { key: "sectionHeadingAlignment", label: "Heading Alignment", type: "select", options: ALIGN_OPTIONS },
+];
+
+const OPTIONAL_SECTION_HEADING_PROP_DEFS: PropDef[] = [
+  { key: "title", label: "Section Title", type: "text", placeholder: "Optional section heading" },
+  { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Optional supporting description" },
+];
+
+const OPTIONAL_SECTION_HEADING_BLOCKS = new Set([
+  "rich-text",
+  "button-group",
+  "image-block",
+  "trust-bar",
+  "stats-bar",
+]);
 
 function mergePropDefs(existing: PropDef[], additions: PropDef[]) {
   const seen = new Set(existing.map((prop) => prop.key));
@@ -175,6 +213,7 @@ function withSharedSectionStyles(block: BlockDef, options?: { includeImageContro
         sectionBackgroundColor: SHARED_SECTION_STYLE_DEFAULTS.sectionBackgroundColor,
         sectionShowRadialGradient: SHARED_SECTION_STYLE_DEFAULTS.sectionShowRadialGradient,
         sectionRadialGradientColor: SHARED_SECTION_STYLE_DEFAULTS.sectionRadialGradientColor,
+        sectionRadialGradientPosition: SHARED_SECTION_STYLE_DEFAULTS.sectionRadialGradientPosition,
       };
 
   return {
@@ -184,6 +223,26 @@ function withSharedSectionStyles(block: BlockDef, options?: { includeImageContro
       ...block.defaultProps,
     },
     propDefs: mergePropDefs(block.propDefs, sharedPropDefs),
+  };
+}
+
+function withSharedSectionHeading(block: BlockDef): BlockDef {
+  const hasTitle = block.propDefs.some((prop) => prop.key === "title");
+  const shouldAddHeading = hasTitle || OPTIONAL_SECTION_HEADING_BLOCKS.has(block.type);
+  if (!shouldAddHeading || block.type === "section-header") return block;
+
+  return {
+    ...block,
+    defaultProps: {
+      ...SHARED_SECTION_HEADING_DEFAULTS,
+      title: "",
+      subtitle: "",
+      ...block.defaultProps,
+    },
+    propDefs: mergePropDefs(block.propDefs, [
+      ...OPTIONAL_SECTION_HEADING_PROP_DEFS,
+      ...SHARED_SECTION_HEADING_PROP_DEFS,
+    ]),
   };
 }
 
@@ -240,12 +299,14 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       title: "Why TCK-Informed Care Matters",
       subtitle: "We match you with mental health professionals who understand the TCK experience.",
       alignment: "center",
+      headingLevel: "h2",
     },
     propDefs: [
       { key: "eyebrow", label: "Eyebrow Label", type: "text", placeholder: "Small label above title" },
       { key: "title", label: "Title", type: "text", placeholder: "Section title" },
       { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Supporting description" },
       { key: "alignment", label: "Alignment", type: "select", options: ALIGN_OPTIONS },
+      { key: "headingLevel", label: "Heading Level", type: "select", options: HEADING_LEVEL_OPTIONS },
     ],
   },
   {
@@ -1078,7 +1139,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
 ];
 
 export const BLOCK_REGISTRY: BlockDef[] = BASE_BLOCK_REGISTRY.map((block) =>
-  withSharedSectionStyles(block, { includeImageControls: block.type !== "hero" })
+  withSharedSectionStyles(withSharedSectionHeading(block), { includeImageControls: block.type !== "hero" })
 );
 
 const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
@@ -1176,7 +1237,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
 ];
 
 export const DYNAMIC_BLOCK_TYPES: BlockDef[] = BASE_DYNAMIC_BLOCK_TYPES.map((block) =>
-  withSharedSectionStyles(block)
+  withSharedSectionStyles(withSharedSectionHeading(block))
 );
 
 export const ALL_BLOCKS: BlockDef[] = [...BLOCK_REGISTRY, ...DYNAMIC_BLOCK_TYPES];
