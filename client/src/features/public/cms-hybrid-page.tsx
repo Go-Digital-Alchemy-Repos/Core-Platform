@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { PublicPageRenderer } from "@/features/public/public-block-renderer";
+import { PublicBlockRenderer, PublicPageRenderer } from "@/features/public/public-block-renderer";
+import { PublicSidebar } from "@/features/public/public-sidebar";
 import { Loader2 } from "lucide-react";
 import type { BlockInstance, BuilderContent } from "@/features/admin/cms/builder/block-registry";
 import type { CmsPage, SeoSettings } from "@shared/schema";
@@ -204,6 +205,9 @@ export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
   }
 
   const blocks = parseCmsContent(page.content);
+  const showSidebar = page.template === "with-sidebar" && !!page.sidebarId;
+  const heroBlocks = showSidebar && blocks[0] && /hero/i.test(blocks[0].type) ? [blocks[0]] : [];
+  const contentBlocks = heroBlocks.length > 0 ? blocks.slice(1) : blocks;
 
   return (
     <div className="min-h-screen flex flex-col" data-testid="cms-public-page">
@@ -211,7 +215,23 @@ export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
       <Navbar />
       <main className="flex-1">
         {blocks.length > 0 ? (
-          <PublicPageRenderer blocks={blocks} />
+          showSidebar ? (
+            <>
+              {heroBlocks.length > 0 && <PublicPageRenderer blocks={heroBlocks} />}
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+                <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
+                  <div className="space-y-8" data-testid="cms-page-main-with-sidebar">
+                    {contentBlocks.map((block) => (
+                      <PublicBlockRenderer key={block.id} block={block} />
+                    ))}
+                  </div>
+                  <PublicSidebar sidebarId={page.sidebarId} />
+                </div>
+              </div>
+            </>
+          ) : (
+            <PublicPageRenderer blocks={blocks} />
+          )
         ) : (
           <div className="max-w-4xl mx-auto px-4 py-16">
             <h1 className="text-3xl font-heading font-semibold">{page.title}</h1>
