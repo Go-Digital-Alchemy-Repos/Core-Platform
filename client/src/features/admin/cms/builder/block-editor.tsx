@@ -63,6 +63,20 @@ const SECTION_STYLE_KEYS = new Set([
   "sectionShowRadialGradient",
   "sectionRadialGradientColor",
   "sectionRadialGradientPosition",
+  "sectionPaddingTop",
+  "sectionPaddingBottom",
+]);
+
+const SECTION_SETTING_KEYS = new Set([
+  ...SECTION_STYLE_KEYS,
+  "backgroundImageUrl",
+  "backgroundPositionX",
+  "backgroundPositionY",
+  "videoBackgroundUrl",
+  "overlayColor",
+  "overlayOpacity",
+  "layout",
+  "minHeight",
 ]);
 
 const IMAGE_POSITION_FIELD_GROUPS = [
@@ -353,6 +367,53 @@ export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
     onChange({ ...props, [key]: val });
   };
   const orderedPropDefs = orderPropDefs(blockDef.propDefs);
+  const mainPropDefs = orderedPropDefs.filter((propDef) => !SECTION_SETTING_KEYS.has(propDef.key));
+  const sectionSettingPropDefs = orderedPropDefs.filter((propDef) => SECTION_SETTING_KEYS.has(propDef.key));
+
+  const renderPropList = (propDefs: PropDef[]) =>
+    propDefs.map((propDef, idx) => {
+      if (POSITION_PICKER_KEYS.has(propDef.key)) return null;
+
+      const imagePositionFieldGroup = IMAGE_POSITION_FIELD_GROUPS.find(
+        (group) => group.imageKey === propDef.key
+      );
+      const backgroundImageUrl = imagePositionFieldGroup
+        ? String(props[imagePositionFieldGroup.imageKey] ?? "")
+        : "";
+      const hasPositionProps = imagePositionFieldGroup
+        ? propDefs.some((p) => p.key === imagePositionFieldGroup.positionXKey)
+        : false;
+
+      return (
+        <div key={propDef.key}>
+          {idx > 0 && propDef.type === "array-items" && <Separator className="mb-4" />}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium">{propDef.label}</Label>
+            <PropField
+              propDef={propDef}
+              value={props[propDef.key]}
+              onChange={(val) => setProp(propDef.key, val)}
+            />
+          </div>
+          {imagePositionFieldGroup && hasPositionProps && backgroundImageUrl && (
+            <div className="mt-3">
+              <ImagePositionPicker
+                imageUrl={backgroundImageUrl}
+                positionX={Number(props[imagePositionFieldGroup.positionXKey] ?? 50)}
+                positionY={Number(props[imagePositionFieldGroup.positionYKey] ?? 50)}
+                onPositionChange={(x, y) => {
+                  onChange({
+                    ...props,
+                    [imagePositionFieldGroup.positionXKey]: x,
+                    [imagePositionFieldGroup.positionYKey]: y,
+                  });
+                }}
+              />
+            </div>
+          )}
+        </div>
+      );
+    });
 
   return (
     <div className="space-y-5">
@@ -361,63 +422,19 @@ export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
         <p className="text-xs text-muted-foreground">{blockDef.description}</p>
       </div>
       <Separator />
-      {orderedPropDefs.map((propDef, idx) => {
-        if (POSITION_PICKER_KEYS.has(propDef.key)) return null;
-        const showSectionStyleHeading =
-          SECTION_STYLE_KEYS.has(propDef.key) &&
-          !orderedPropDefs.slice(0, idx).some((previous) => SECTION_STYLE_KEYS.has(previous.key));
-
-        const imagePositionFieldGroup = IMAGE_POSITION_FIELD_GROUPS.find(
-          (group) => group.imageKey === propDef.key
-        );
-        const backgroundImageUrl = imagePositionFieldGroup
-          ? String(props[imagePositionFieldGroup.imageKey] ?? "")
-          : "";
-        const hasPositionProps = imagePositionFieldGroup
-          ? orderedPropDefs.some((p) => p.key === imagePositionFieldGroup.positionXKey)
-          : false;
-
-        return (
-          <div key={propDef.key}>
-            {showSectionStyleHeading && (
-              <>
-                <Separator className="mb-4" />
-                <div className="space-y-1 mb-4">
-                  <p className="text-sm font-semibold">Section Background</p>
-                  <p className="text-xs text-muted-foreground">
-                    Add a background color or image, then tune image overlay and radial gradient options.
-                  </p>
-                </div>
-              </>
-            )}
-            {idx > 0 && propDef.type === "array-items" && <Separator className="mb-4" />}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">{propDef.label}</Label>
-              <PropField
-                propDef={propDef}
-                value={props[propDef.key]}
-                onChange={(val) => setProp(propDef.key, val)}
-              />
-            </div>
-            {imagePositionFieldGroup && hasPositionProps && backgroundImageUrl && (
-              <div className="mt-3">
-                <ImagePositionPicker
-                  imageUrl={backgroundImageUrl}
-                  positionX={Number(props[imagePositionFieldGroup.positionXKey] ?? 50)}
-                  positionY={Number(props[imagePositionFieldGroup.positionYKey] ?? 50)}
-                  onPositionChange={(x, y) => {
-                    onChange({
-                      ...props,
-                      [imagePositionFieldGroup.positionXKey]: x,
-                      [imagePositionFieldGroup.positionYKey]: y,
-                    });
-                  }}
-                />
-              </div>
-            )}
+      {renderPropList(mainPropDefs)}
+      {sectionSettingPropDefs.length > 0 && (
+        <>
+          <Separator />
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">Section Settings</p>
+            <p className="text-xs text-muted-foreground">
+              Control the section container itself, including backgrounds, overlays, and vertical spacing.
+            </p>
           </div>
-        );
-      })}
+          {renderPropList(sectionSettingPropDefs)}
+        </>
+      )}
     </div>
   );
 }

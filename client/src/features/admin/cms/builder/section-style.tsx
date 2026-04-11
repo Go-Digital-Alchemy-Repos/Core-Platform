@@ -113,10 +113,13 @@ export function getSectionPaddingClasses(props: Record<string, unknown>) {
   const topValue = SECTION_PADDING_CLASS_MAP[normalizePaddingValue(props.sectionPaddingTop)];
   const bottomValue = SECTION_PADDING_CLASS_MAP[normalizePaddingValue(props.sectionPaddingBottom)];
 
-  return [
-    ...topValue.split(" ").map((token) => `pt-${token}`),
-    ...bottomValue.split(" ").map((token) => `pb-${token}`),
-  ].join(" ");
+  const expandPaddingTokens = (value: string, axis: "pt" | "pb") =>
+    value.split(" ").map((token) => {
+      const [breakpoint, size] = token.split(":");
+      return size ? `${breakpoint}:${axis}-${size}` : `${axis}-${breakpoint}`;
+    });
+
+  return [...expandPaddingTokens(topValue, "pt"), ...expandPaddingTokens(bottomValue, "pb")].join(" ");
 }
 
 export function SectionStyleWrapper({

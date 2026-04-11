@@ -1289,17 +1289,6 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
   },
 ];
 
-export const BLOCK_REGISTRY: BlockDef[] = BASE_BLOCK_REGISTRY.map((block) => {
-  const blockWithHeading = withSharedSectionHeading(block);
-  if (block.type === "hero") {
-    return blockWithHeading;
-  }
-  return withSharedSectionStyles(blockWithHeading, {
-    includeImageControls: true,
-    includePaddingControls: !FULL_WIDTH_BLOCK_TYPES.has(block.type),
-  });
-});
-
 const FULL_WIDTH_BLOCK_TYPES = new Set([
   "hero",
   "join-hero",
@@ -1313,6 +1302,17 @@ const FULL_WIDTH_BLOCK_TYPES = new Set([
   "slider",
   "stats-bar",
 ]);
+
+export const BLOCK_REGISTRY: BlockDef[] = BASE_BLOCK_REGISTRY.map((block) => {
+  const blockWithHeading = withSharedSectionHeading(block);
+  if (block.type === "hero") {
+    return blockWithHeading;
+  }
+  return withSharedSectionStyles(blockWithHeading, {
+    includeImageControls: true,
+    includePaddingControls: !FULL_WIDTH_BLOCK_TYPES.has(block.type),
+  });
+});
 
 const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
   {

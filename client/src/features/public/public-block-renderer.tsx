@@ -7,6 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import {
   SectionStyleWrapper,
   DEFAULT_SECTION_LINEAR_GRADIENT,
+  getSectionPaddingClasses,
   getSectionStyleConfig,
   hasSectionStyleConfig,
   hexToRgba,
@@ -1281,7 +1282,11 @@ export function PublicBlockRenderer({
   }
 
   return (
-    <SectionStyleWrapper props={block.props} resolveAssetUrl={resolveCmsAssetUrl}>
+    <SectionStyleWrapper
+      props={block.props}
+      resolveAssetUrl={resolveCmsAssetUrl}
+      contentClassName={getSectionPaddingClasses(block.props)}
+    >
       {renderedBlock}
     </SectionStyleWrapper>
   );
@@ -1320,11 +1325,12 @@ export function PublicPageRenderer({ blocks }: { blocks: BlockInstance[] }) {
               props={block.props}
               resolveAssetUrl={resolveCmsAssetUrl}
               className="rounded-none"
+              contentClassName={isFullWidth ? undefined : getSectionPaddingClasses(block.props)}
             >
               {isFullWidth ? (
                 <PublicBlockRenderer block={block} disableSectionStyleWrap />
               ) : (
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
+                <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
                   <PublicBlockRenderer block={block} disableSectionStyleWrap />
                 </div>
               )}
@@ -1347,7 +1353,7 @@ export function PublicPageRenderer({ blocks }: { blocks: BlockInstance[] }) {
                 style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.10) 0%, transparent 70%)" }}
               />
             )}
-            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
+            <div className={`relative max-w-7xl mx-auto px-4 sm:px-6 ${getSectionPaddingClasses(block.props)}`}>
               <PublicBlockRenderer block={block} disableSectionStyleWrap />
             </div>
           </section>

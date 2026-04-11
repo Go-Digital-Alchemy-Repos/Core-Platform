@@ -42,6 +42,7 @@ import { mergeJoinHeroBlocks } from "@shared/cms-blocks";
 import {
   SectionStyleWrapper,
   DEFAULT_SECTION_LINEAR_GRADIENT,
+  getSectionPaddingClasses,
   getSectionStyleConfig,
   hasSectionStyleConfig,
   hexToRgba,
@@ -1754,7 +1755,11 @@ export function BlockRenderer({
   }
 
   return (
-    <SectionStyleWrapper props={block.props} resolveAssetUrl={resolveCmsAssetUrl}>
+    <SectionStyleWrapper
+      props={block.props}
+      resolveAssetUrl={resolveCmsAssetUrl}
+      contentClassName={getSectionPaddingClasses(block.props)}
+    >
       {renderedBlock}
     </SectionStyleWrapper>
   );
@@ -1793,11 +1798,12 @@ export function PageRenderer({ blocks }: { blocks: BlockInstance[] }) {
               props={block.props}
               resolveAssetUrl={resolveCmsAssetUrl}
               className="rounded-none"
+              contentClassName={isFullWidth ? undefined : getSectionPaddingClasses(block.props)}
             >
               {isFullWidth ? (
                 <BlockRenderer block={block} disableSectionStyleWrap />
               ) : (
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6">
                   <BlockRenderer block={block} disableSectionStyleWrap />
                 </div>
               )}
@@ -1810,7 +1816,7 @@ export function PageRenderer({ blocks }: { blocks: BlockInstance[] }) {
         }
 
         return (
-          <div key={block.id} className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
+          <div key={block.id} className={`max-w-7xl mx-auto px-4 sm:px-6 ${getSectionPaddingClasses(block.props)}`}>
             <BlockRenderer block={block} disableSectionStyleWrap />
           </div>
         );
