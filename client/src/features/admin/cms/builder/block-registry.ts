@@ -1144,9 +1144,13 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
   },
 ];
 
-export const BLOCK_REGISTRY: BlockDef[] = BASE_BLOCK_REGISTRY.map((block) =>
-  withSharedSectionStyles(withSharedSectionHeading(block), { includeImageControls: block.type !== "hero" })
-);
+export const BLOCK_REGISTRY: BlockDef[] = BASE_BLOCK_REGISTRY.map((block) => {
+  const blockWithHeading = withSharedSectionHeading(block);
+  if (block.type === "hero") {
+    return blockWithHeading;
+  }
+  return withSharedSectionStyles(blockWithHeading, { includeImageControls: true });
+});
 
 const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
   {
@@ -1218,6 +1222,76 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
           { label: "Stacked Card", value: "stacked" },
         ],
       },
+    ],
+  },
+  {
+    type: "events-archive",
+    label: "Events Archive (Live)",
+    iconName: "CalendarDays",
+    description: "Upcoming events listing with list/calendar views powered by the live events system",
+    isDynamic: true,
+    category: "dynamic",
+    defaultProps: {
+      heading: "Upcoming Events",
+      subheading: "We offer quarterly TCK-informed trainings for professional providers. All of our members get free registration to the events below.",
+      defaultView: "list",
+      showViewToggle: true,
+    },
+    propDefs: [
+      { key: "heading", label: "Heading", type: "text", placeholder: "Section heading" },
+      { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Supporting text" },
+      {
+        key: "defaultView",
+        label: "Default View",
+        type: "select",
+        options: [
+          { label: "List", value: "list" },
+          { label: "Calendar", value: "calendar" },
+        ],
+      },
+      { key: "showViewToggle", label: "Show View Toggle", type: "boolean" },
+    ],
+  },
+  {
+    type: "video-archives",
+    label: "Video Archives (Live)",
+    iconName: "Video",
+    description: "On-demand recording archive with search and purchase/access controls powered by live event recordings",
+    isDynamic: true,
+    category: "dynamic",
+    defaultProps: {
+      heading: "Video Archives",
+      subheading: "Browse our collection of past trainings and webinars.",
+      showSearch: true,
+      showYearFilter: true,
+      showAccessFilter: true,
+    },
+    propDefs: [
+      { key: "heading", label: "Heading", type: "text", placeholder: "Section heading" },
+      { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Supporting text" },
+      { key: "showSearch", label: "Show Search", type: "boolean" },
+      { key: "showYearFilter", label: "Show Year Filter", type: "boolean" },
+      { key: "showAccessFilter", label: "Show Access Filter", type: "boolean" },
+    ],
+  },
+  {
+    type: "directory-browser",
+    label: "Professional Directory (Live)",
+    iconName: "Map",
+    description: "Interactive therapist directory with filters, results, and map powered by the live directory data",
+    isDynamic: true,
+    category: "dynamic",
+    defaultProps: {
+      heading: "Find a Mental Health Professional",
+      subheading: "",
+      showCategoryChips: true,
+      showMap: true,
+    },
+    propDefs: [
+      { key: "heading", label: "Heading", type: "text", placeholder: "Section heading" },
+      { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Optional supporting text" },
+      { key: "showCategoryChips", label: "Show Category Chips", type: "boolean" },
+      { key: "showMap", label: "Show Map", type: "boolean" },
     ],
   },
   {

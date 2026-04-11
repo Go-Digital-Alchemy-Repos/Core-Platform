@@ -134,6 +134,7 @@ export function registerApiRoutes(app: Express) {
         { path: "/about", changefreq: "monthly", priority: "0.7" },
         { path: "/insights", changefreq: "weekly", priority: "0.8" },
         { path: "/events", changefreq: "daily", priority: "0.8" },
+        { path: "/recordings", changefreq: "weekly", priority: "0.7" },
         { path: "/directory", changefreq: "daily", priority: "0.9" },
         { path: "/join", changefreq: "monthly", priority: "0.6" },
         { path: "/contact", changefreq: "monthly", priority: "0.5" },
@@ -144,7 +145,7 @@ export function registerApiRoutes(app: Express) {
 
       for (const page of pages) {
         if (page.status !== "published" || page.noindex) continue;
-        if (["home", "about", "contact", "join", "insights"].includes(page.slug)) continue;
+        if (["home", "about", "contact", "join", "insights", "events", "recordings", "directory"].includes(page.slug)) continue;
         urls.push({
           loc: `${base}/${page.slug}`,
           lastmod: page.updatedAt ? new Date(page.updatedAt).toISOString().split("T")[0] : undefined,

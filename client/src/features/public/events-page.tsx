@@ -28,6 +28,14 @@ import {
   Building,
 } from "lucide-react";
 
+function str(v: unknown): string {
+  return typeof v === "string" ? v : "";
+}
+
+function bool(v: unknown, fallback = false): boolean {
+  return typeof v === "boolean" ? v : fallback;
+}
+
 function getRegistrationStatus(event: Event): { label: string; open: boolean } | null {
   if (!event.registrationEnabled) return null;
   const now = new Date();
@@ -374,14 +382,24 @@ function CalendarView({ events }: { events: Event[] }) {
   );
 }
 
-export default function EventsPage() {
-  const [view, setView] = useState<"list" | "calendar">("list");
+export function EventsArchiveSection({
+  props = {},
+}: {
+  props?: Record<string, unknown>;
+}) {
+  const initialView = str(props.defaultView) === "calendar" ? "calendar" : "list";
+  const [view, setView] = useState<"list" | "calendar">(initialView);
+  const heading = str(props.heading) || "Upcoming Events";
+  const subheading =
+    str(props.subheading) ||
+    "We offer quarterly TCK-informed trainings for professional providers! All of our members get free registration to the events below.";
+  const showViewToggle = bool(props.showViewToggle, true);
   const { data: events, isLoading, error } = useQuery<Event[]>({
     queryKey: ["/api/events"],
   });
 
   return (
-    <PageLayout>
+    <>
       <section className="relative bg-muted/30 overflow-hidden" data-testid="section-events-hero">
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 py-14 sm:py-20 md:py-24">
@@ -390,32 +408,38 @@ export default function EventsPage() {
               className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4"
               data-testid="text-events-heading"
             >
-              Upcoming Events
+              {heading}
             </h1>
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed" data-testid="text-events-subtitle">We offer quarterly TCK-informed trainings for professional providers! All of our members get free registration to the events below.</p>
+            {subheading && (
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed" data-testid="text-events-subtitle">
+                {subheading}
+              </p>
+            )}
           </div>
-          <div className="flex justify-center">
-            <div className="flex gap-1 rounded-lg border p-1 bg-background/80 backdrop-blur-sm" data-testid="toggle-view">
-              <Button
-                variant={view === "list" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setView("list")}
-                data-testid="button-list-view"
-              >
-                <List className="mr-1.5 h-4 w-4" />
-                List
-              </Button>
-              <Button
-                variant={view === "calendar" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setView("calendar")}
-                data-testid="button-calendar-view"
-              >
-                <CalendarIcon className="mr-1.5 h-4 w-4" />
-                Calendar
-              </Button>
+          {showViewToggle && (
+            <div className="flex justify-center">
+              <div className="flex gap-1 rounded-lg border p-1 bg-background/80 backdrop-blur-sm" data-testid="toggle-view">
+                <Button
+                  variant={view === "list" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setView("list")}
+                  data-testid="button-list-view"
+                >
+                  <List className="mr-1.5 h-4 w-4" />
+                  List
+                </Button>
+                <Button
+                  variant={view === "calendar" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setView("calendar")}
+                  data-testid="button-calendar-view"
+                >
+                  <CalendarIcon className="mr-1.5 h-4 w-4" />
+                  Calendar
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
@@ -453,6 +477,14 @@ export default function EventsPage() {
           <CalendarView events={events} />
         )}
       </section>
+    </>
+  );
+}
+
+export default function EventsPage() {
+  return (
+    <PageLayout>
+      <EventsArchiveSection />
     </PageLayout>
   );
 }

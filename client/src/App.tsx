@@ -75,12 +75,12 @@ function Router() {
         <Route path="/about" component={() => <CmsHybridPage slug="about" fallback={<AboutPage />} />} />
         <Route path="/contact" component={() => <CmsHybridPage slug="contact" fallback={<ContactPage />} />} />
         <Route path="/join" component={() => <CmsHybridPage slug="join" fallback={<JoinNetworkPage />} />} />
-        <Route path="/events" component={EventsPage} />
+        <Route path="/events" component={() => <CmsHybridPage slug="events" fallback={<EventsPage />} />} />
         <Route path="/events/:id" component={EventDetailPage} />
-        <Route path="/recordings" component={RecordingArchivesPage} />
+        <Route path="/recordings" component={() => <CmsHybridPage slug="recordings" fallback={<RecordingArchivesPage />} />} />
         <Route path="/insights" component={() => <CmsHybridPage slug="insights" fallback={<InsightsPage />} />} />
         <Route path="/insights/:slug" component={InsightsPostPage} />
-        <Route path="/directory" component={DirectoryPage} />
+        <Route path="/directory" component={() => <CmsHybridPage slug="directory" fallback={<DirectoryPage />} />} />
         <Route path="/directory/:id" component={TherapistProfilePage} />
         <Route path="/reference/:token" component={ReferenceFormPage} />
         <Route path="/auth/login" component={LoginPage} />
