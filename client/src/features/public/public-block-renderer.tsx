@@ -47,6 +47,11 @@ function arr<T>(v: unknown): T[] {
   return Array.isArray(v) ? (v as T[]) : [];
 }
 
+function colorStyle(value: unknown, fallback?: string) {
+  const normalized = normalizeHexColor(str(value)) || fallback || "";
+  return normalized ? { color: normalized } : undefined;
+}
+
 function getYouTubeId(url: string): string | null {
   const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
   return m ? m[1] : null;
@@ -112,6 +117,9 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const overlayStrength = Math.max(0, Math.min(opacity, 100)) / 100;
   const sectionStyleConfig = getSectionStyleConfig(props, { resolveAssetUrl: resolveCmsAssetUrl });
   const overlayStyle = { backgroundColor: hexToRgba(overlayColor, overlayStrength) };
+  const headingTextStyle = colorStyle(props.headingColor);
+  const accentHeadingTextStyle = colorStyle(props.accentHeadingColor);
+  const subheadingTextStyle = colorStyle(props.subheadingColor);
 
   return (
     <section
@@ -138,17 +146,17 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
             {badge}
           </span>
         )}
-        <h1 className="text-4xl md:text-5xl font-heading font-bold text-white mb-4 leading-tight">
+        <h1 className="text-4xl md:text-5xl font-heading font-bold text-white mb-4 leading-tight" style={headingTextStyle}>
           {str(props.heading) || "Hero Heading"}
           {accentHeading && (
             <>
               {" "}
-              <span className="text-accent">{accentHeading}</span>
+              <span className="text-accent" style={accentHeadingTextStyle}>{accentHeading}</span>
             </>
           )}
         </h1>
         {str(props.subheading) && (
-          <p className={`text-lg text-white/80 mb-8 ${isSplit ? "" : "max-w-xl mx-auto"}`}>{str(props.subheading)}</p>
+          <p className={`text-lg text-white/80 mb-8 ${isSplit ? "" : "max-w-xl mx-auto"}`} style={subheadingTextStyle}>{str(props.subheading)}</p>
         )}
         <div className={`flex flex-wrap gap-3 ${isSplit ? "justify-start" : "justify-center"}`}>
           {str(props.ctaText) && (
@@ -173,6 +181,109 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
         </div>
       )}
     </section>
+  );
+}
+
+function TwoColumnTextBlock({ props }: { props: Record<string, unknown> }) {
+  const leftItems = arr<{ text: string }>(props.leftItems);
+  const rightItems = arr<{ text: string }>(props.rightItems);
+  const columns = [
+    {
+      heading: str(props.leftHeading),
+      body: str(props.leftBody),
+      items: leftItems,
+    },
+    {
+      heading: str(props.rightHeading),
+      body: str(props.rightBody),
+      items: rightItems,
+    },
+  ];
+
+  return (
+    <div className="py-4">
+      <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
+      <div className="grid gap-8 md:grid-cols-2">
+        {columns.map((column, index) => (
+          <div key={index} className="space-y-4">
+            {column.heading && <h3 className="text-xl font-heading font-semibold">{column.heading}</h3>}
+            {column.body && <p className="text-muted-foreground leading-relaxed">{column.body}</p>}
+            {column.items.length > 0 && (
+              <ul className="space-y-2 pl-5 list-disc text-sm text-muted-foreground">
+                {column.items.map((item, itemIndex) => (
+                  <li key={itemIndex}>{item.text}</li>
+                ))}
+              </ul>
+            )}
+            {!column.heading && !column.body && column.items.length === 0 && (
+              <p className="text-sm text-muted-foreground">Add content for this column.</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CalloutBoxBlock({ props }: { props: Record<string, unknown> }) {
+  const variant = str(props.variant) || "accent";
+  const variantClass =
+    variant === "neutral"
+      ? "bg-muted/40 border"
+      : variant === "outline"
+        ? "bg-background border-2"
+        : "bg-accent/10 border border-accent/20";
+
+  return (
+    <div className="py-4">
+      <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
+      <div className={`rounded-2xl p-6 sm:p-8 ${variantClass}`}>
+        <div
+          className="prose prose-sm max-w-none text-foreground"
+          dangerouslySetInnerHTML={{ __html: str(props.content) || "<p>Add callout content.</p>" }}
+        />
+        {str(props.ctaText) && (
+          <div className="mt-6">
+            <Link href={str(props.ctaLink) || "#"}>
+              <Button>{str(props.ctaText)}</Button>
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LinkListBlock({ props }: { props: Record<string, unknown> }) {
+  const links = arr<{ label: string; description: string; url: string }>(props.links);
+  const gridClass = str(props.columns) === "2" ? "md:grid-cols-2" : "md:grid-cols-1";
+
+  return (
+    <div className="py-4">
+      <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
+      <div className={`grid grid-cols-1 gap-4 ${gridClass}`}>
+        {links.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Add links to display here.</div>
+        ) : (
+          links.map((link, index) => (
+            <a
+              key={index}
+              href={link.url || "#"}
+              className="rounded-xl border p-5 hover:shadow-md transition-shadow group"
+              data-testid={`link-list-item-${index}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-semibold group-hover:text-accent transition-colors">{link.label || "Untitled link"}</h3>
+                  {link.description && <p className="mt-2 text-sm text-muted-foreground">{link.description}</p>}
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors flex-shrink-0 mt-1" />
+              </div>
+            </a>
+          ))
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -1027,6 +1138,9 @@ const RENDERERS: Record<string, React.ComponentType<{ props: Record<string, unkn
   "section-header": SectionHeaderBlock,
   "rich-text": RichTextBlock,
   "text-image": TextImageBlock,
+  "two-column-text": TwoColumnTextBlock,
+  "callout-box": CalloutBoxBlock,
+  "link-list": LinkListBlock,
   cta: CtaBlock,
   "cards-grid": CardsGridBlock,
   faq: FaqBlock,

@@ -119,6 +119,17 @@ const HERO_MIN_HEIGHT_OPTIONS = [
   { label: "Full Screen", value: "100vh" },
 ];
 
+const LINK_LIST_COLUMNS_OPTIONS = [
+  { label: "1 column", value: "1" },
+  { label: "2 columns", value: "2" },
+];
+
+const CALLOUT_VARIANT_OPTIONS = [
+  { label: "Accent", value: "accent" },
+  { label: "Neutral", value: "neutral" },
+  { label: "Outline", value: "outline" },
+];
+
 const COLUMNS_EXTENDED_OPTIONS = [
   { label: "2 columns", value: "2" },
   { label: "3 columns", value: "3" },
@@ -260,7 +271,10 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       heading: "Welcome to TCK Wellness",
       accentHeading: "",
+      headingColor: "",
+      accentHeadingColor: "",
       subheading: "Connecting Third Culture Kids with mental health professionals who understand your world.",
+      subheadingColor: "",
       ctaText: "Find a Mental Health Professional",
       ctaLink: "/directory",
       ctaSecondaryText: "Learn More",
@@ -279,7 +293,10 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       { key: "badge", label: "Badge Text", type: "text", placeholder: "e.g. New, Coming Soon" },
       { key: "heading", label: "Heading", type: "text", placeholder: "Main heading" },
       { key: "accentHeading", label: "Accent Heading", type: "text", placeholder: "Optional highlighted heading text" },
+      { key: "headingColor", label: "Heading Color", type: "color", placeholder: "#ffffff" },
+      { key: "accentHeadingColor", label: "Accent Heading Color", type: "color", placeholder: "#89cda1" },
       { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Supporting text beneath the heading" },
+      { key: "subheadingColor", label: "Subheading Color", type: "color", placeholder: "#ffffff" },
       { key: "ctaText", label: "Primary Button Text", type: "text", placeholder: "e.g. Find a Mental Health Professional" },
       { key: "ctaLink", label: "Primary Button Link", type: "url", placeholder: "/directory" },
       { key: "ctaSecondaryText", label: "Secondary Button Text", type: "text", placeholder: "e.g. Learn More" },
@@ -351,6 +368,103 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       { key: "imageAlt", label: "Image Alt Text", type: "text", placeholder: "Descriptive alt text" },
       { key: "imageCaption", label: "Image Caption", type: "text", placeholder: "Optional caption" },
       { key: "imagePosition", label: "Image Position", type: "select", options: IMAGE_POSITION_OPTIONS },
+    ],
+  },
+  {
+    type: "two-column-text",
+    label: "Two Column Text",
+    iconName: "LayoutTemplate",
+    description: "Two side-by-side content columns with optional bullet lists",
+    category: "content",
+    defaultProps: {
+      title: "Compare Your Options",
+      subtitle: "",
+      leftHeading: "Column One",
+      leftBody: "Use this space for supporting copy before the list.",
+      leftItems: [
+        { text: "Bullet point one" },
+        { text: "Bullet point two" },
+      ],
+      rightHeading: "Column Two",
+      rightBody: "Use this column for a second list or additional detail.",
+      rightItems: [
+        { text: "Bullet point one" },
+        { text: "Bullet point two" },
+      ],
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Optional section heading" },
+      { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Optional supporting description" },
+      { key: "leftHeading", label: "Left Column Heading", type: "text", placeholder: "Left column title" },
+      { key: "leftBody", label: "Left Column Body", type: "textarea", placeholder: "Optional supporting text" },
+      {
+        key: "leftItems",
+        label: "Left Column Items",
+        type: "array-items",
+        itemSchema: [{ key: "text", label: "Item Text", type: "text", placeholder: "Bullet point" }],
+      },
+      { key: "rightHeading", label: "Right Column Heading", type: "text", placeholder: "Right column title" },
+      { key: "rightBody", label: "Right Column Body", type: "textarea", placeholder: "Optional supporting text" },
+      {
+        key: "rightItems",
+        label: "Right Column Items",
+        type: "array-items",
+        itemSchema: [{ key: "text", label: "Item Text", type: "text", placeholder: "Bullet point" }],
+      },
+    ],
+  },
+  {
+    type: "callout-box",
+    label: "Callout Box",
+    iconName: "Quote",
+    description: "Highlighted callout content with optional button",
+    category: "content",
+    defaultProps: {
+      title: "Important Takeaway",
+      subtitle: "",
+      content: "<p>Use this callout to highlight a key message, important note, or short supporting explanation.</p>",
+      variant: "accent",
+      ctaText: "",
+      ctaLink: "",
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Optional section heading" },
+      { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Optional supporting description" },
+      { key: "content", label: "Content", type: "richtext", placeholder: "Add highlighted content..." },
+      { key: "variant", label: "Style Variant", type: "select", options: CALLOUT_VARIANT_OPTIONS },
+      { key: "ctaText", label: "Button Text", type: "text", placeholder: "Optional button label" },
+      { key: "ctaLink", label: "Button Link", type: "url", placeholder: "/page or https://..." },
+    ],
+  },
+  {
+    type: "link-list",
+    label: "Link List",
+    iconName: "List",
+    description: "Editorial list of resource links with optional descriptions",
+    category: "content",
+    defaultProps: {
+      title: "Helpful Resources",
+      subtitle: "",
+      columns: "1",
+      links: [
+        { label: "Resource title", description: "Short supporting description", url: "#" },
+        { label: "Another resource", description: "Optional summary text", url: "#" },
+      ],
+    },
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Optional section heading" },
+      { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Optional supporting description" },
+      { key: "columns", label: "Columns", type: "select", options: LINK_LIST_COLUMNS_OPTIONS },
+      {
+        key: "links",
+        label: "Links",
+        type: "array-items",
+        itemSchema: [
+          { key: "label", label: "Label", type: "text", placeholder: "Link title" },
+          { key: "description", label: "Description", type: "textarea", placeholder: "Optional supporting text" },
+          { key: "url", label: "URL", type: "url", placeholder: "/page or https://..." },
+        ],
+      },
     ],
   },
   {
@@ -1314,12 +1428,18 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     defaultProps: {
       heading: "Are you a TCK-Informed Mental Health Professional?",
       accentHeading: "Join the Network!",
+      headingColor: "",
+      accentHeadingColor: "",
       subheading: "",
+      subheadingColor: "",
     },
     propDefs: [
       { key: "heading", label: "Heading", type: "text", placeholder: "Main heading" },
       { key: "accentHeading", label: "Accent Heading", type: "text", placeholder: "Highlighted heading text" },
+      { key: "headingColor", label: "Heading Color", type: "color", placeholder: "#ffffff" },
+      { key: "accentHeadingColor", label: "Accent Heading Color", type: "color", placeholder: "#89cda1" },
       { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Optional supporting text" },
+      { key: "subheadingColor", label: "Subheading Color", type: "color", placeholder: "#ffffff" },
     ],
   },
   {
@@ -1332,7 +1452,10 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     defaultProps: {
       heading: "Are you a TCK-Informed Mental Health Professional?",
       accentHeading: "Join the Network!",
+      headingColor: "",
+      accentHeadingColor: "",
       subheading: "",
+      subheadingColor: "",
       applicationStatusText: "Applications open in June.",
       loginPromptPrefix: "If you're already a member click here to",
       loginLinkText: "Log in",
@@ -1341,7 +1464,10 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     propDefs: [
       { key: "heading", label: "Heading", type: "text", placeholder: "Main heading" },
       { key: "accentHeading", label: "Accent Heading", type: "text", placeholder: "Highlighted heading text" },
+      { key: "headingColor", label: "Heading Color", type: "color", placeholder: "#ffffff" },
+      { key: "accentHeadingColor", label: "Accent Heading Color", type: "color", placeholder: "#89cda1" },
       { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Optional supporting text" },
+      { key: "subheadingColor", label: "Subheading Color", type: "color", placeholder: "#ffffff" },
       { key: "applicationStatusText", label: "Button Status Text", type: "text", placeholder: "Applications open in June." },
       { key: "loginPromptPrefix", label: "Login Prompt Prefix", type: "text", placeholder: "If you're already a member click here to" },
       { key: "loginLinkText", label: "Login Link Text", type: "text", placeholder: "Log in" },

@@ -22,9 +22,15 @@ import { MapView } from "@/components/directory/map-view";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { SectionHeading } from "@/features/admin/cms/builder/section-heading";
+import { normalizeHexColor } from "@/features/admin/cms/builder/section-style";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
+}
+
+function colorStyle(value: unknown, fallback?: string) {
+  const normalized = normalizeHexColor(str(value)) || fallback || "";
+  return normalized ? { color: normalized } : undefined;
 }
 
 export function TherapistMapBlock({ props }: { props: Record<string, unknown> }) {
@@ -215,6 +221,10 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
   const heading = str(props.heading);
   const accentHeading = str(props.accentHeading);
   const subheading = str(props.subheading);
+  const hasImageBackground = !!str(props.sectionBackgroundImageUrl);
+  const headingTextStyle = colorStyle(props.headingColor, hasImageBackground ? "#ffffff" : undefined);
+  const accentHeadingTextStyle = colorStyle(props.accentHeadingColor, hasImageBackground ? "#ffffff" : undefined);
+  const subheadingTextStyle = colorStyle(props.subheadingColor, hasImageBackground ? "#ffffff" : undefined);
   const applicationStatusText = str(props.applicationStatusText) || "Applications open in June.";
   const loginPromptPrefix = str(props.loginPromptPrefix) || "If you're already a member click here to";
   const loginLinkText = str(props.loginLinkText) || "Log in";
@@ -228,17 +238,17 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
     >
       {hasHeroCopy && (
         <>
-          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title">
+          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title" style={headingTextStyle}>
             {heading}
             {accentHeading && (
               <>
                 {" "}
-                <span className="text-accent">{accentHeading}</span>
+                <span className="text-accent" style={accentHeadingTextStyle}>{accentHeading}</span>
               </>
             )}
           </h1>
           {subheading && (
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8" data-testid="text-join-subheading">
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8" data-testid="text-join-subheading" style={subheadingTextStyle}>
               {subheading}
             </p>
           )}
@@ -253,7 +263,7 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
         <Clock className="mr-2 h-5 w-5" />
         {applicationStatusText}
       </Button>
-      <p className="text-sm sm:text-base text-muted-foreground mt-6" data-testid="text-login-prompt">
+      <p className="text-sm sm:text-base text-muted-foreground mt-6" data-testid="text-login-prompt" style={subheadingTextStyle}>
         {loginPromptPrefix}{" "}
         <button
           onClick={() => setLoginOpen(true)}
@@ -273,20 +283,24 @@ export function JoinHeroBlock({ props = {} }: { props?: Record<string, unknown> 
   const heading = str(props.heading) || "Are you a TCK-Informed Mental Health Professional?";
   const accentHeading = str(props.accentHeading) || "Join the Network!";
   const subheading = str(props.subheading);
+  const hasImageBackground = !!str(props.sectionBackgroundImageUrl);
+  const headingTextStyle = colorStyle(props.headingColor, hasImageBackground ? "#ffffff" : undefined);
+  const accentHeadingTextStyle = colorStyle(props.accentHeadingColor, hasImageBackground ? "#ffffff" : undefined);
+  const subheadingTextStyle = colorStyle(props.subheadingColor, hasImageBackground ? "#ffffff" : undefined);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="dynamic-join-hero">
-      <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-hero-title">
+      <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-hero-title" style={headingTextStyle}>
         {heading}
         {accentHeading && (
           <>
             {" "}
-            <span className="text-accent">{accentHeading}</span>
+            <span className="text-accent" style={accentHeadingTextStyle}>{accentHeading}</span>
           </>
         )}
       </h1>
       {subheading && (
-        <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-join-hero-subheading">
+        <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-join-hero-subheading" style={subheadingTextStyle}>
           {subheading}
         </p>
       )}
