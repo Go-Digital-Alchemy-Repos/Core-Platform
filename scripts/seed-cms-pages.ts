@@ -637,6 +637,7 @@ const pages = [
     slug: "insights",
     title: "Insights & Articles",
     pageType: "custom" as const,
+    template: "with-sidebar" as const,
     status: "published" as const,
     content: insightsContent,
     seoTitle: "Insights & Articles | TCK Wellness",

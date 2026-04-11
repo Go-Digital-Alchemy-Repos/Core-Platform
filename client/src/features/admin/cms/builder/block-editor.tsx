@@ -37,6 +37,8 @@ const SECTION_STYLE_KEYS = new Set([
   "sectionBackgroundImageUrl",
   "sectionBackgroundPositionX",
   "sectionBackgroundPositionY",
+  "sectionBackgroundOverlayColor",
+  "sectionBackgroundOverlayOpacity",
   "sectionShowRadialGradient",
   "sectionRadialGradientColor",
   "sectionRadialGradientPosition",
@@ -56,6 +58,7 @@ const IMAGE_POSITION_FIELD_GROUPS = [
 ];
 
 function defaultColorValueForKey(key: string) {
+  if (key === "overlayColor" || key === "sectionBackgroundOverlayColor") return "#000000";
   return key === "sectionRadialGradientColor" ? DEFAULT_RADIAL_GRADIENT_COLOR : DEFAULT_COLOR_VALUE;
 }
 
@@ -348,7 +351,7 @@ export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
                 <div className="space-y-1 mb-4">
                   <p className="text-sm font-semibold">Section Background</p>
                   <p className="text-xs text-muted-foreground">
-                    Add a background color or image and optionally layer in a radial gradient overlay.
+                    Add a background color or image, then tune image overlay and radial gradient options.
                   </p>
                 </div>
               </>

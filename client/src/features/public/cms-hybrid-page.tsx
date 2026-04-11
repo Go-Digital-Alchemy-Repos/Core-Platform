@@ -205,7 +205,8 @@ export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
   }
 
   const blocks = parseCmsContent(page.content);
-  const showSidebar = page.template === "with-sidebar" && !!page.sidebarId;
+  const showSidebar = page.template === "with-sidebar" && Boolean(page.sidebarId || page.slug === "insights");
+  const useDefaultSidebar = !page.sidebarId && page.slug === "insights";
   const heroBlocks = showSidebar && blocks[0] && /hero/i.test(blocks[0].type) ? [blocks[0]] : [];
   const contentBlocks = heroBlocks.length > 0 ? blocks.slice(1) : blocks;
 
@@ -225,7 +226,7 @@ export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
                       <PublicBlockRenderer key={block.id} block={block} />
                     ))}
                   </div>
-                  <PublicSidebar sidebarId={page.sidebarId} />
+                  <PublicSidebar sidebarId={page.sidebarId} useDefault={useDefaultSidebar} />
                 </div>
               </div>
             </>

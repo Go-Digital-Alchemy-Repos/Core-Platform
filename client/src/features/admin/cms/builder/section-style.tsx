@@ -7,6 +7,8 @@ interface SectionStyleConfig {
   backgroundImageUrl: string;
   backgroundPositionX: number;
   backgroundPositionY: number;
+  backgroundOverlayColor: string;
+  backgroundOverlayOpacity: number;
   showRadialGradient: boolean;
   radialGradientColor: string;
   radialGradientPosition: "top" | "bottom";
@@ -63,6 +65,8 @@ export function getSectionStyleConfig(
     backgroundImageUrl,
     backgroundPositionX: clampPercent(num(props.sectionBackgroundPositionX, 50)),
     backgroundPositionY: clampPercent(num(props.sectionBackgroundPositionY, 50)),
+    backgroundOverlayColor: normalizeHexColor(str(props.sectionBackgroundOverlayColor)) || "#000000",
+    backgroundOverlayOpacity: clampPercent(num(props.sectionBackgroundOverlayOpacity, 0)),
     showRadialGradient: Boolean(props.sectionShowRadialGradient),
     radialGradientColor: normalizeHexColor(str(props.sectionRadialGradientColor)) || "#89cda1",
     radialGradientPosition: str(props.sectionRadialGradientPosition) === "bottom" ? "bottom" : "top",
@@ -106,9 +110,16 @@ export function SectionStyleWrapper({
       ? { background: DEFAULT_SECTION_LINEAR_GRADIENT }
       : {}),
   };
+  const overlayOpacity = config.backgroundImageUrl ? config.backgroundOverlayOpacity / 100 : 0;
 
   return (
     <section className={`relative overflow-hidden rounded-2xl ${className ?? ""}`.trim()} style={wrapperStyle}>
+      {overlayOpacity > 0 && (
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ backgroundColor: hexToRgba(config.backgroundOverlayColor, overlayOpacity) }}
+        />
+      )}
       {config.showRadialGradient && (
         <div className="pointer-events-none absolute inset-0" style={getRadialGradientStyle(config.radialGradientColor, config.radialGradientPosition)} />
       )}

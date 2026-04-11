@@ -22,7 +22,7 @@ export function mergeJoinHeroBlocks<T extends CmsBuilderBlock>(blocks: T[]): T[]
           ...propsOf(block),
           ...propsOf(nextBlock),
         },
-      });
+      } as T);
       index += 1;
       continue;
     }

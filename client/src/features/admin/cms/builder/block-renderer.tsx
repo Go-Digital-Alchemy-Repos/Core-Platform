@@ -42,6 +42,8 @@ import {
   getSectionStyleConfig,
   hasSectionStyleConfig,
   getRadialGradientStyle,
+  hexToRgba,
+  normalizeHexColor,
 } from "./section-style";
 import { SectionHeading } from "./section-heading";
 
@@ -108,6 +110,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const bg = resolveCmsAssetUrl(str(props.backgroundImageUrl));
   const videoBg = str(props.videoBackgroundUrl);
   const opacity = num(props.overlayOpacity as number, 50);
+  const overlayColor = normalizeHexColor(str(props.overlayColor)) || "#000000";
   const layout = str(props.layout) || "stacked";
   const badge = str(props.badge);
   const accentHeading = str(props.accentHeading);
@@ -122,9 +125,9 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const sectionStyleConfig = getSectionStyleConfig(props, { resolveAssetUrl: resolveCmsAssetUrl });
   const overlayStyle = hasMediaBackground
     ? {
-        background: `linear-gradient(180deg, rgba(15, 23, 42, ${effectiveOverlayStrength * 0.55}) 0%, rgba(15, 23, 42, ${effectiveOverlayStrength}) 100%)`,
+        background: `linear-gradient(180deg, ${hexToRgba(overlayColor, effectiveOverlayStrength * 0.55)} 0%, ${hexToRgba(overlayColor, effectiveOverlayStrength)} 100%)`,
       }
-    : { backgroundColor: `rgba(0, 0, 0, ${overlayStrength})` };
+    : { backgroundColor: hexToRgba(overlayColor, overlayStrength) };
 
   return (
     <section
@@ -1041,6 +1044,8 @@ interface BlogPost {
   category?: string;
   tags?: string[];
   coverImageUrl?: string;
+  postType?: string | null;
+  externalUrl?: string | null;
   isPublished: boolean;
 }
 
@@ -1132,8 +1137,11 @@ function BlogPostFeedBlock({ props }: { props: Record<string, unknown> }) {
       ) : (
         <>
           <div className={`grid gap-6 ${gridColsClass}`}>
-            {visible.map((p) => (
-              <Link key={p.id} href={`/insights/${p.slug}`}>
+            {visible.map((p) => {
+              const isExternal = p.postType === "external" && p.externalUrl;
+              const isPodcast = p.postType === "podcast";
+              const actionText = isExternal ? "Visit Article" : isPodcast ? "Listen Now" : "Read More";
+              const card = (
                 <Card className="h-full cursor-pointer hover:shadow-md transition-shadow" data-testid={`blog-feed-card-${p.id}`}>
                   {p.coverImageUrl && (
                     <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
@@ -1144,10 +1152,27 @@ function BlogPostFeedBlock({ props }: { props: Record<string, unknown> }) {
                     {p.category && <span className="text-xs text-accent font-medium">{p.category}</span>}
                     <p className="font-semibold text-sm mb-1 line-clamp-2">{p.title}</p>
                     <p className="text-xs text-muted-foreground line-clamp-3">{p.excerpt}</p>
+                    <span className="mt-3 text-xs text-accent font-medium inline-flex items-center gap-1">
+                      {actionText} {isExternal ? <ExternalLink className="h-3 w-3" /> : <ArrowRight className="h-3 w-3" />}
+                    </span>
                   </CardContent>
                 </Card>
-              </Link>
-            ))}
+              );
+
+              if (isExternal) {
+                return (
+                  <a key={p.id} href={p.externalUrl!} target="_blank" rel="noopener noreferrer">
+                    {card}
+                  </a>
+                );
+              }
+
+              return (
+                <Link key={p.id} href={`/insights/${p.slug}`}>
+                  {card}
+                </Link>
+              );
+            })}
           </div>
           {feedStyle === "pagination" && totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 mt-8" data-testid="blog-pagination">
@@ -1193,6 +1218,30 @@ function BlogFeaturedPostBlock({ props }: { props: Record<string, unknown> }) {
   });
   const featured = (posts ?? []).filter((p) => p.isPublished)[0];
   const layout = String(props.layout ?? "split");
+  const isExternal = featured?.postType === "external" && featured.externalUrl;
+  const isPodcast = featured?.postType === "podcast";
+  const actionText = isExternal ? "Visit Article" : isPodcast ? "Listen Now" : "Read Article";
+  const featuredCard = featured ? (
+    <Card className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden" data-testid="blog-featured-card">
+      <div className={layout === "stacked" ? "grid grid-cols-1" : "grid grid-cols-1 md:grid-cols-2"}>
+        {featured.coverImageUrl && (
+          <div className="aspect-[16/9] md:aspect-auto overflow-hidden">
+            <img src={featured.coverImageUrl} alt={featured.title} className="w-full h-full object-cover" />
+          </div>
+        )}
+        <CardContent className="p-6 flex flex-col justify-center">
+          <h3 className="text-xl font-heading font-bold mb-3">{featured.title}</h3>
+          <p className="text-sm text-muted-foreground line-clamp-4">{featured.excerpt}</p>
+          <div className="mt-4">
+            <span className="text-sm text-accent font-medium inline-flex items-center gap-1">
+              {actionText} {isExternal ? <ExternalLink className="h-3.5 w-3.5" /> : <ArrowRight className="h-3.5 w-3.5" />}
+            </span>
+          </div>
+        </CardContent>
+      </div>
+    </Card>
+  ) : null;
+
   return (
     <div className="py-4" data-testid="block-blog-featured-post">
       <SectionHeading props={props} defaultAlignment="left" className="mb-6" />
@@ -1202,26 +1251,15 @@ function BlogFeaturedPostBlock({ props }: { props: Record<string, unknown> }) {
           <p className="text-sm">Featured article will appear here</p>
         </div>
       ) : (
-        <Link href={`/insights/${featured.slug}`}>
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden" data-testid="blog-featured-card">
-            <div className={layout === "stacked" ? "grid grid-cols-1" : "grid grid-cols-1 md:grid-cols-2"}>
-              {featured.coverImageUrl && (
-                <div className="aspect-[16/9] md:aspect-auto overflow-hidden">
-                  <img src={featured.coverImageUrl} alt={featured.title} className="w-full h-full object-cover" />
-                </div>
-              )}
-              <CardContent className="p-6 flex flex-col justify-center">
-                <h3 className="text-xl font-heading font-bold mb-3">{featured.title}</h3>
-                <p className="text-sm text-muted-foreground line-clamp-4">{featured.excerpt}</p>
-                <div className="mt-4">
-                  <span className="text-sm text-accent font-medium inline-flex items-center gap-1">
-                    Read Article <ArrowRight className="h-3.5 w-3.5" />
-                  </span>
-                </div>
-              </CardContent>
-            </div>
-          </Card>
-        </Link>
+        isExternal ? (
+          <a href={featured.externalUrl!} target="_blank" rel="noopener noreferrer">
+            {featuredCard}
+          </a>
+        ) : (
+          <Link href={`/insights/${featured.slug}`}>
+            {featuredCard}
+          </Link>
+        )
       )}
     </div>
   );

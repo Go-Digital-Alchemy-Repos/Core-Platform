@@ -10,6 +10,8 @@ import {
   getSectionStyleConfig,
   hasSectionStyleConfig,
   getRadialGradientStyle,
+  hexToRgba,
+  normalizeHexColor,
 } from "@/features/admin/cms/builder/section-style";
 import { SectionHeading } from "@/features/admin/cms/builder/section-heading";
 import {
@@ -96,6 +98,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const bg = resolveCmsAssetUrl(str(props.backgroundImageUrl));
   const videoBg = str(props.videoBackgroundUrl);
   const opacity = num(props.overlayOpacity as number, 50);
+  const overlayColor = normalizeHexColor(str(props.overlayColor)) || "#000000";
   const layout = str(props.layout) || "stacked";
   const badge = str(props.badge);
   const accentHeading = str(props.accentHeading);
@@ -110,9 +113,9 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const sectionStyleConfig = getSectionStyleConfig(props, { resolveAssetUrl: resolveCmsAssetUrl });
   const overlayStyle = hasMediaBackground
     ? {
-        background: `linear-gradient(180deg, rgba(15, 23, 42, ${effectiveOverlayStrength * 0.55}) 0%, rgba(15, 23, 42, ${effectiveOverlayStrength}) 100%)`,
+        background: `linear-gradient(180deg, ${hexToRgba(overlayColor, effectiveOverlayStrength * 0.55)} 0%, ${hexToRgba(overlayColor, effectiveOverlayStrength)} 100%)`,
       }
-    : { backgroundColor: `rgba(0, 0, 0, ${overlayStrength})` };
+    : { backgroundColor: hexToRgba(overlayColor, overlayStrength) };
 
   return (
     <section
