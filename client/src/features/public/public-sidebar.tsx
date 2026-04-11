@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Mail, Search, Tag, FolderOpen, ArrowRight } from "lucide-react";
+import { Mail, Search, Tag, FolderOpen, ArrowRight } from "lucide-react";
 import type { BlogPost, CmsSidebar, SidebarWidget } from "@shared/schema";
 
 function text(value: unknown, fallback = "") {
@@ -261,10 +261,6 @@ export function PublicSidebar({
 
   return (
     <aside className="space-y-5 lg:sticky lg:top-24" data-testid="public-sidebar">
-      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-        <BookOpen className="h-4 w-4" />
-        {sidebar.name}
-      </div>
       {widgets.map((widget) => (
         <SidebarWidgetRenderer key={widget.id} widget={widget} />
       ))}

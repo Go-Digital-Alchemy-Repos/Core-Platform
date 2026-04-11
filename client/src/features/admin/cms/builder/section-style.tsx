@@ -97,8 +97,13 @@ export function SectionStyleWrapper({
     return <>{children}</>;
   }
 
+  const defaultBackgroundColor =
+    !config.backgroundColor && !config.backgroundImageUrl && config.showRadialGradient ? "#ffffff" : "";
+
   const wrapperStyle: CSSProperties = {
-    ...(config.backgroundColor ? { backgroundColor: config.backgroundColor } : {}),
+    ...((config.backgroundColor || defaultBackgroundColor)
+      ? { backgroundColor: config.backgroundColor || defaultBackgroundColor }
+      : {}),
     ...(config.backgroundImageUrl
       ? {
           backgroundImage: `url(${config.backgroundImageUrl})`,
@@ -106,7 +111,7 @@ export function SectionStyleWrapper({
           backgroundPosition: `${config.backgroundPositionX}% ${config.backgroundPositionY}%`,
           backgroundRepeat: "no-repeat",
         }
-      : !config.backgroundColor
+      : !config.backgroundColor && !defaultBackgroundColor
       ? { background: DEFAULT_SECTION_LINEAR_GRADIENT }
       : {}),
   };
