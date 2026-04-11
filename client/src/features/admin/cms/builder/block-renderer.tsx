@@ -31,6 +31,9 @@ import {
 } from "lucide-react";
 import { LoginDialog } from "@/components/auth/login-dialog";
 import { MapView } from "@/components/directory/map-view";
+import { EventsArchiveSection } from "@/features/public/events-page";
+import { RecordingArchivesSection } from "@/features/public/recording-archives-page";
+import { DirectoryBrowserSection } from "@/features/directory/directory-page";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { BlockInstance } from "./block-registry";
@@ -41,7 +44,6 @@ import {
   DEFAULT_SECTION_LINEAR_GRADIENT,
   getSectionStyleConfig,
   hasSectionStyleConfig,
-  getRadialGradientStyle,
   hexToRgba,
   normalizeHexColor,
 } from "./section-style";
@@ -119,15 +121,9 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const bgPosX = Math.max(0, Math.min(100, num(props.backgroundPositionX as number, 50)));
   const bgPosY = Math.max(0, Math.min(100, num(props.backgroundPositionY as number, 50)));
   const isSplit = layout === "split";
-  const hasMediaBackground = !!(bg || videoBg);
   const overlayStrength = Math.max(0, Math.min(opacity, 100)) / 100;
-  const effectiveOverlayStrength = hasMediaBackground ? Math.min(overlayStrength, 0.45) : overlayStrength;
   const sectionStyleConfig = getSectionStyleConfig(props, { resolveAssetUrl: resolveCmsAssetUrl });
-  const overlayStyle = hasMediaBackground
-    ? {
-        background: `linear-gradient(180deg, ${hexToRgba(overlayColor, effectiveOverlayStrength * 0.55)} 0%, ${hexToRgba(overlayColor, effectiveOverlayStrength)} 100%)`,
-      }
-    : { backgroundColor: hexToRgba(overlayColor, overlayStrength) };
+  const overlayStyle = { backgroundColor: hexToRgba(overlayColor, overlayStrength) };
 
   return (
     <section
@@ -148,9 +144,6 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
         </video>
       )}
       <div className="absolute inset-0 rounded-lg" style={overlayStyle} />
-      {sectionStyleConfig.showRadialGradient && (
-        <div className="absolute inset-0 rounded-lg" style={getRadialGradientStyle(sectionStyleConfig.radialGradientColor, sectionStyleConfig.radialGradientPosition)} />
-      )}
       <div className={`relative z-10 px-8 py-16 ${isSplit ? "max-w-2xl" : "max-w-3xl mx-auto"}`}>
         {badge && (
           <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-semibold mb-4 border border-accent/30">
@@ -1614,6 +1607,9 @@ export function BlockRenderer({
     if (!renderedBlock && block.type === "join-registration-form") renderedBlock = <JoinRegistrationFormBlock props={block.props} />;
     if (!renderedBlock && block.type === "blog-post-feed") renderedBlock = <BlogPostFeedBlock props={block.props} />;
     if (!renderedBlock && block.type === "blog-featured-post") renderedBlock = <BlogFeaturedPostBlock props={block.props} />;
+    if (!renderedBlock && block.type === "events-archive") renderedBlock = <EventsArchiveSection props={block.props} />;
+    if (!renderedBlock && block.type === "video-archives") renderedBlock = <RecordingArchivesSection props={block.props} />;
+    if (!renderedBlock && block.type === "directory-browser") renderedBlock = <DirectoryBrowserSection props={block.props} />;
   }
 
   if (!renderedBlock) {
@@ -1649,6 +1645,9 @@ const FULL_WIDTH_BLOCKS = new Set([
   "hero",
   "join-hero",
   "join-registration-form",
+  "events-archive",
+  "video-archives",
+  "directory-browser",
   "cta",
   "trust-bar",
   "divider",
@@ -1664,7 +1663,7 @@ export function PageRenderer({ blocks }: { blocks: BlockInstance[] }) {
       {normalizedBlocks.map((block) => {
         const isFullWidth = FULL_WIDTH_BLOCKS.has(block.type);
         const sectionStyleConfig = getSectionStyleConfig(block.props, { resolveAssetUrl: resolveCmsAssetUrl });
-        const hasCustomSectionStyle = hasSectionStyleConfig(sectionStyleConfig);
+        const hasCustomSectionStyle = block.type !== "hero" && hasSectionStyleConfig(sectionStyleConfig);
 
         if (hasCustomSectionStyle) {
           return (

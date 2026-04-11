@@ -54,6 +54,14 @@ const categories = [
   { icon: Leaf, label: "Mindfulness", slug: "Mindfulness & Meditation" },
 ];
 
+function str(v: unknown): string {
+  return typeof v === "string" ? v : "";
+}
+
+function bool(v: unknown, fallback = false): boolean {
+  return typeof v === "boolean" ? v : fallback;
+}
+
 function getSessionFormatLabel(mode: string | null) {
   switch (mode) {
     case "in_person": return "In-Person";
@@ -190,9 +198,17 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
-export default function DirectoryPage() {
+export function DirectoryBrowserSection({
+  props = {},
+}: {
+  props?: Record<string, unknown>;
+}) {
   const queryString = useSearch();
   const [, navigate] = useLocation();
+  const heading = str(props.heading) || "Find a Mental Health Professional";
+  const subheading = str(props.subheading);
+  const showCategoryChips = bool(props.showCategoryChips, true);
+  const showMap = bool(props.showMap, true);
   const initParams = useMemo(() => new URLSearchParams(queryString), []);
 
   const [search, setSearch] = useState(initParams.get("search") || "");
@@ -325,48 +341,54 @@ export default function DirectoryPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-[100dvh]">
-      <Navbar />
-      <div className="border-b bg-muted/30 overflow-x-auto" data-testid="section-categories">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2">
-          <div className="flex items-center gap-1 min-w-max">
-            {categories.map((cat) => {
-              const isActive = specializations.includes(cat.slug);
-              return (
-                <button
-                  key={cat.slug}
-                  onClick={() =>
-                    setSpecializations((prev) =>
-                      isActive ? prev.filter((s) => s !== cat.slug) : [...prev, cat.slug]
-                    )
-                  }
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
-                    isActive
-                      ? "bg-accent text-accent-foreground"
-                      : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                  }`}
-                  data-testid={`button-category-${cat.label.toLowerCase().replace(/\s+/g, "-")}`}
-                >
-                  <cat.icon className="w-3.5 h-3.5" />
-                  {cat.label}
-                </button>
-              );
-            })}
+    <>
+      {showCategoryChips && (
+        <div className="border-b bg-muted/30 overflow-x-auto" data-testid="section-categories">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2">
+            <div className="flex items-center gap-1 min-w-max">
+              {categories.map((cat) => {
+                const isActive = specializations.includes(cat.slug);
+                return (
+                  <button
+                    key={cat.slug}
+                    onClick={() =>
+                      setSpecializations((prev) =>
+                        isActive ? prev.filter((s) => s !== cat.slug) : [...prev, cat.slug]
+                      )
+                    }
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+                      isActive
+                        ? "bg-accent text-accent-foreground"
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                    data-testid={`button-category-${cat.label.toLowerCase().replace(/\s+/g, "-")}`}
+                  >
+                    <cat.icon className="w-3.5 h-3.5" />
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      )}
       <div className="flex-1 flex overflow-hidden">
         <div
           className={`${
-            mobileView === "list" ? "flex" : "hidden"
-          } md:flex flex-col w-full md:w-[340px] lg:w-[380px] xl:w-[420px] border-r bg-background flex-shrink-0`}
+            mobileView === "list" || !showMap ? "flex" : "hidden"
+          } md:flex flex-col w-full ${showMap ? "md:w-[340px] lg:w-[380px] xl:w-[420px] border-r flex-shrink-0" : ""} bg-background`}
         >
           <div className="px-3 sm:px-4 py-3 border-b space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <h1 className="sm:text-lg font-heading font-semibold text-[30px]" data-testid="text-directory-heading">
-                  Find a Mental Health Professional
+                  {heading}
                 </h1>
+                {subheading && (
+                  <p className="text-sm text-muted-foreground mt-2 max-w-sm" data-testid="text-directory-subheading">
+                    {subheading}
+                  </p>
+                )}
                 {!isLoading && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1 mt-[10px] mb-[10px]" data-testid="text-results-count">
                     <Users className="h-3 w-3 flex-shrink-0" />
@@ -401,16 +423,18 @@ export default function DirectoryPage() {
                   >
                     <List className="h-4 w-4" />
                   </Button>
-                  <Button
-                    size="icon"
-                    variant={mobileView === "map" ? "default" : "ghost"}
-                    onClick={() => setMobileView("map")}
-                    data-testid="button-view-map"
-                    aria-label="Map view"
-                    className="h-9 w-9"
-                  >
-                    <Map className="h-4 w-4" />
-                  </Button>
+                  {showMap && (
+                    <Button
+                      size="icon"
+                      variant={mobileView === "map" ? "default" : "ghost"}
+                      onClick={() => setMobileView("map")}
+                      data-testid="button-view-map"
+                      aria-label="Map view"
+                      className="h-9 w-9"
+                    >
+                      <Map className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -675,31 +699,42 @@ export default function DirectoryPage() {
           </div>
         </div>
 
-        <div
-          className={`${
-            mobileView === "map" ? "flex" : "hidden"
-          } md:flex flex-1 flex-col relative`}
-        >
-          <div className="flex md:hidden items-center gap-2 p-2 border-b bg-background">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setMobileView("list")}
-              data-testid="button-back-to-list"
-              className="h-9"
-            >
-              <List className="h-4 w-4 mr-1" />
-              List
-            </Button>
-            <span className="text-xs text-muted-foreground">
-              {total} result{total !== 1 ? "s" : ""}
-            </span>
+        {showMap && (
+          <div
+            className={`${
+              mobileView === "map" ? "flex" : "hidden"
+            } md:flex flex-1 flex-col relative`}
+          >
+            <div className="flex md:hidden items-center gap-2 p-2 border-b bg-background">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setMobileView("list")}
+                data-testid="button-back-to-list"
+                className="h-9"
+              >
+                <List className="h-4 w-4 mr-1" />
+                List
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                {total} result{total !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="flex-1">
+              <MapView therapists={mapTherapists} height="100%" highlightedId={hoveredId} zoom={2} center={[20, 0]} />
+            </div>
           </div>
-          <div className="flex-1">
-            <MapView therapists={mapTherapists} height="100%" highlightedId={hoveredId} zoom={2} center={[20, 0]} />
-          </div>
-        </div>
+        )}
       </div>
+    </>
+  );
+}
+
+export default function DirectoryPage() {
+  return (
+    <div className="flex flex-col min-h-[100dvh]">
+      <Navbar />
+      <DirectoryBrowserSection />
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-directory-why-tck-informed">
         <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 md:gap-12 items-center">

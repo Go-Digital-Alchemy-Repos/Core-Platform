@@ -9,7 +9,6 @@ import {
   DEFAULT_SECTION_LINEAR_GRADIENT,
   getSectionStyleConfig,
   hasSectionStyleConfig,
-  getRadialGradientStyle,
   hexToRgba,
   normalizeHexColor,
 } from "@/features/admin/cms/builder/section-style";
@@ -85,6 +84,9 @@ const LazyJoinHeroBlock = lazy(() => import("./public-dynamic-blocks").then(m =>
 const LazyJoinRegistrationFormBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.JoinRegistrationFormBlock })));
 const LazyBlogPostFeedBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.BlogPostFeedBlock })));
 const LazyBlogFeaturedPostBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.BlogFeaturedPostBlock })));
+const LazyEventsArchiveSection = lazy(() => import("@/features/public/events-page").then(m => ({ default: m.EventsArchiveSection })));
+const LazyRecordingArchivesSection = lazy(() => import("@/features/public/recording-archives-page").then(m => ({ default: m.RecordingArchivesSection })));
+const LazyDirectoryBrowserSection = lazy(() => import("@/features/directory/directory-page").then(m => ({ default: m.DirectoryBrowserSection })));
 
 function DynamicFallback() {
   return (
@@ -107,15 +109,9 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const bgPosX = Math.max(0, Math.min(100, num(props.backgroundPositionX as number, 50)));
   const bgPosY = Math.max(0, Math.min(100, num(props.backgroundPositionY as number, 50)));
   const isSplit = layout === "split";
-  const hasMediaBackground = !!(bg || videoBg);
   const overlayStrength = Math.max(0, Math.min(opacity, 100)) / 100;
-  const effectiveOverlayStrength = hasMediaBackground ? Math.min(overlayStrength, 0.45) : overlayStrength;
   const sectionStyleConfig = getSectionStyleConfig(props, { resolveAssetUrl: resolveCmsAssetUrl });
-  const overlayStyle = hasMediaBackground
-    ? {
-        background: `linear-gradient(180deg, ${hexToRgba(overlayColor, effectiveOverlayStrength * 0.55)} 0%, ${hexToRgba(overlayColor, effectiveOverlayStrength)} 100%)`,
-      }
-    : { backgroundColor: hexToRgba(overlayColor, overlayStrength) };
+  const overlayStyle = { backgroundColor: hexToRgba(overlayColor, overlayStrength) };
 
   return (
     <section
@@ -136,9 +132,6 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
         </video>
       )}
       <div className="absolute inset-0 rounded-lg" style={overlayStyle} />
-      {sectionStyleConfig.showRadialGradient && (
-        <div className="absolute inset-0 rounded-lg" style={getRadialGradientStyle(sectionStyleConfig.radialGradientColor, sectionStyleConfig.radialGradientPosition)} />
-      )}
       <div className={`relative z-10 px-8 py-16 ${isSplit ? "max-w-2xl" : "max-w-3xl mx-auto"}`}>
         {badge && (
           <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-semibold mb-4 border border-accent/30">
@@ -1073,6 +1066,9 @@ const DYNAMIC_BLOCK_TYPES = new Set([
   "join-registration-form",
   "blog-post-feed",
   "blog-featured-post",
+  "events-archive",
+  "video-archives",
+  "directory-browser",
 ]);
 
 export function PublicBlockRenderer({
@@ -1127,6 +1123,27 @@ export function PublicBlockRenderer({
         </Suspense>
       );
     }
+    if (block.type === "events-archive") {
+      renderedBlock = (
+        <Suspense fallback={<DynamicFallback />}>
+          <LazyEventsArchiveSection props={block.props} />
+        </Suspense>
+      );
+    }
+    if (block.type === "video-archives") {
+      renderedBlock = (
+        <Suspense fallback={<DynamicFallback />}>
+          <LazyRecordingArchivesSection props={block.props} />
+        </Suspense>
+      );
+    }
+    if (block.type === "directory-browser") {
+      renderedBlock = (
+        <Suspense fallback={<DynamicFallback />}>
+          <LazyDirectoryBrowserSection props={block.props} />
+        </Suspense>
+      );
+    }
   }
 
   if (!renderedBlock) {
@@ -1160,6 +1177,9 @@ const FULL_WIDTH_BLOCKS = new Set([
   "hero",
   "join-hero",
   "join-registration-form",
+  "events-archive",
+  "video-archives",
+  "directory-browser",
   "cta",
   "trust-bar",
   "divider",
@@ -1175,7 +1195,7 @@ export function PublicPageRenderer({ blocks }: { blocks: BlockInstance[] }) {
       {normalizedBlocks.map((block) => {
         const isFullWidth = FULL_WIDTH_BLOCKS.has(block.type);
         const sectionStyleConfig = getSectionStyleConfig(block.props, { resolveAssetUrl: resolveCmsAssetUrl });
-        const hasCustomSectionStyle = hasSectionStyleConfig(sectionStyleConfig);
+        const hasCustomSectionStyle = block.type !== "hero" && hasSectionStyleConfig(sectionStyleConfig);
         const idx = isFullWidth ? nonFullWidthIndex : nonFullWidthIndex++;
         const isAlternate = idx % 2 === 1 && !hasCustomSectionStyle;
 

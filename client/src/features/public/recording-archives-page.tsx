@@ -37,6 +37,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+function str(v: unknown): string {
+  return typeof v === "string" ? v : "";
+}
+
+function bool(v: unknown, fallback = false): boolean {
+  return typeof v === "boolean" ? v : fallback;
+}
+
 function formatDate(date: string | Date) {
   return new Date(date).toLocaleDateString("en-US", {
     year: "numeric",
@@ -212,10 +220,19 @@ function RecordingSkeleton() {
   );
 }
 
-export default function RecordingArchivesPage() {
+export function RecordingArchivesSection({
+  props = {},
+}: {
+  props?: Record<string, unknown>;
+}) {
   const { user } = useAuth();
   const { toast } = useToast();
   const searchParams = useSearch();
+  const heading = str(props.heading) || "Video Archives";
+  const subheading = str(props.subheading) || "Browse our collection of past trainings and webinars.";
+  const showSearch = bool(props.showSearch, true);
+  const showYearFilter = bool(props.showYearFilter, true);
+  const showAccessFilter = bool(props.showAccessFilter, true);
   const [search, setSearch] = useState("");
   const [yearFilter, setYearFilter] = useState("all");
   const [accessFilter, setAccessFilter] = useState("all");
@@ -291,14 +308,18 @@ export default function RecordingArchivesPage() {
   }
 
   return (
-    <PageLayout>
+    <>
       <section className="relative bg-muted/30 overflow-hidden" data-testid="section-archives-hero">
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center">
           <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4" data-testid="text-archives-heading">
-            Video Archives
+            {heading}
           </h1>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed" data-testid="text-archives-subtitle">Browse our collection of past trainings and webinars.</p>
+          {subheading && (
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed" data-testid="text-archives-subtitle">
+              {subheading}
+            </p>
+          )}
         </div>
       </section>
 
@@ -315,43 +336,51 @@ export default function RecordingArchivesPage() {
           )}
 
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center pt-4">
-            <div className="relative flex-1 w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by title or speaker..."
-                className="pl-9"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                data-testid="input-search-archives"
-              />
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={yearFilter} onValueChange={setYearFilter}>
-                <SelectTrigger className="w-[140px]" data-testid="select-year-filter">
-                  <SelectValue placeholder="All Years" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Years</SelectItem>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={accessFilter} onValueChange={setAccessFilter}>
-                <SelectTrigger className="w-[140px]" data-testid="select-access-filter">
-                  <SelectValue placeholder="All Access" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Videos</SelectItem>
-                  <SelectItem value="free">Free</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  {user && <SelectItem value="purchased">My Purchases</SelectItem>}
-                </SelectContent>
-              </Select>
-            </div>
+            {showSearch && (
+              <div className="relative flex-1 w-full max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by title or speaker..."
+                  className="pl-9"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  data-testid="input-search-archives"
+                />
+              </div>
+            )}
+            {(showYearFilter || showAccessFilter) && (
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                {showYearFilter && (
+                  <Select value={yearFilter} onValueChange={setYearFilter}>
+                    <SelectTrigger className="w-[140px]" data-testid="select-year-filter">
+                      <SelectValue placeholder="All Years" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Years</SelectItem>
+                      {years.map((year) => (
+                        <SelectItem key={year} value={year}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {showAccessFilter && (
+                  <Select value={accessFilter} onValueChange={setAccessFilter}>
+                    <SelectTrigger className="w-[140px]" data-testid="select-access-filter">
+                      <SelectValue placeholder="All Access" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Videos</SelectItem>
+                      <SelectItem value="free">Free</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      {user && <SelectItem value="purchased">My Purchases</SelectItem>}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -410,6 +439,14 @@ export default function RecordingArchivesPage() {
           </DialogContent>
         </Dialog>
       </div>
+    </>
+  );
+}
+
+export default function RecordingArchivesPage() {
+  return (
+    <PageLayout>
+      <RecordingArchivesSection />
     </PageLayout>
   );
 }
