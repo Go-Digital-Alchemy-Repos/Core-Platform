@@ -403,7 +403,7 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
 }
 
 function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
-  const { data: posts } = useQuery<{ id: string; title: string; excerpt: string; slug: string; isPublished: boolean }[]>({
+  const { data: posts } = useQuery<{ id: string; title: string; excerpt: string; slug: string; coverImageUrl?: string | null; isPublished: boolean }[]>({
     queryKey: ["/api/blog"],
   });
   const limit = num(props.limit, 3);
@@ -419,8 +419,13 @@ function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
           </div>
         ) : visible.map((p) => (
           <Link key={p.id} href={`/insights/${p.slug}`}>
-            <Card className="hover:shadow-md transition-shadow cursor-pointer" data-testid={`blog-preview-${p.id}`}>
-              <CardContent className="pt-4">
+            <Card className="h-full overflow-hidden hover:shadow-md transition-shadow cursor-pointer" data-testid={`blog-preview-${p.id}`}>
+              {p.coverImageUrl && (
+                <div className="aspect-[16/9] overflow-hidden">
+                  <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" data-testid={`img-blog-preview-${p.id}`} />
+                </div>
+              )}
+              <CardContent className={p.coverImageUrl ? "p-5" : "pt-4"}>
                 <p className="font-semibold text-sm mb-1 line-clamp-2">{p.title}</p>
                 <p className="text-xs text-muted-foreground line-clamp-3">{p.excerpt}</p>
               </CardContent>
