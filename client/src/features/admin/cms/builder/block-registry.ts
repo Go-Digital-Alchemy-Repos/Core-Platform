@@ -158,6 +158,15 @@ const RADIAL_GRADIENT_POSITION_OPTIONS = [
   { label: "Bottom of Section", value: "bottom" },
 ];
 
+const SECTION_PADDING_OPTIONS = [
+  { label: "None", value: "none" },
+  { label: "Extra Small", value: "xs" },
+  { label: "Small", value: "sm" },
+  { label: "Default", value: "md" },
+  { label: "Large", value: "lg" },
+  { label: "Extra Large", value: "xl" },
+];
+
 const SHARED_SECTION_STYLE_DEFAULTS = {
   sectionBackgroundColor: "#ffffff",
   sectionBackgroundImageUrl: "",
@@ -168,6 +177,8 @@ const SHARED_SECTION_STYLE_DEFAULTS = {
   sectionShowRadialGradient: false,
   sectionRadialGradientColor: "#89cda1",
   sectionRadialGradientPosition: "top",
+  sectionPaddingTop: "md",
+  sectionPaddingBottom: "md",
 };
 
 const SHARED_SECTION_STYLE_PROP_DEFS: PropDef[] = [
@@ -187,6 +198,11 @@ const SHARED_SECTION_ACCENT_PROP_DEFS: PropDef[] = [
   { key: "sectionShowRadialGradient", label: "Show Radial Gradient Overlay", type: "boolean" },
   { key: "sectionRadialGradientColor", label: "Radial Gradient Color", type: "color", placeholder: "#89cda1" },
   { key: "sectionRadialGradientPosition", label: "Radial Gradient Position", type: "select", options: RADIAL_GRADIENT_POSITION_OPTIONS },
+];
+
+const SHARED_SECTION_PADDING_PROP_DEFS: PropDef[] = [
+  { key: "sectionPaddingTop", label: "Top Padding", type: "select", options: SECTION_PADDING_OPTIONS },
+  { key: "sectionPaddingBottom", label: "Bottom Padding", type: "select", options: SECTION_PADDING_OPTIONS },
 ];
 
 const SHARED_SECTION_HEADING_DEFAULTS = {
@@ -219,8 +235,12 @@ function mergePropDefs(existing: PropDef[], additions: PropDef[]) {
   return [...existing, ...additions.filter((prop) => !seen.has(prop.key))];
 }
 
-function withSharedSectionStyles(block: BlockDef, options?: { includeImageControls?: boolean }): BlockDef {
+function withSharedSectionStyles(
+  block: BlockDef,
+  options?: { includeImageControls?: boolean; includePaddingControls?: boolean }
+): BlockDef {
   const includeImageControls = options?.includeImageControls ?? true;
+  const includePaddingControls = options?.includePaddingControls ?? true;
   const sharedPropDefs = includeImageControls ? SHARED_SECTION_STYLE_PROP_DEFS : SHARED_SECTION_ACCENT_PROP_DEFS;
   const sharedDefaults = includeImageControls
     ? SHARED_SECTION_STYLE_DEFAULTS
@@ -231,13 +251,24 @@ function withSharedSectionStyles(block: BlockDef, options?: { includeImageContro
         sectionRadialGradientPosition: SHARED_SECTION_STYLE_DEFAULTS.sectionRadialGradientPosition,
       };
 
+  const paddingDefaults = includePaddingControls
+    ? {
+        sectionPaddingTop: SHARED_SECTION_STYLE_DEFAULTS.sectionPaddingTop,
+        sectionPaddingBottom: SHARED_SECTION_STYLE_DEFAULTS.sectionPaddingBottom,
+      }
+    : {};
+
   return {
     ...block,
     defaultProps: {
       ...sharedDefaults,
+      ...paddingDefaults,
       ...block.defaultProps,
     },
-    propDefs: mergePropDefs(block.propDefs, sharedPropDefs),
+    propDefs: mergePropDefs(
+      block.propDefs,
+      includePaddingControls ? [...sharedPropDefs, ...SHARED_SECTION_PADDING_PROP_DEFS] : sharedPropDefs
+    ),
   };
 }
 
@@ -1263,8 +1294,25 @@ export const BLOCK_REGISTRY: BlockDef[] = BASE_BLOCK_REGISTRY.map((block) => {
   if (block.type === "hero") {
     return blockWithHeading;
   }
-  return withSharedSectionStyles(blockWithHeading, { includeImageControls: true });
+  return withSharedSectionStyles(blockWithHeading, {
+    includeImageControls: true,
+    includePaddingControls: !FULL_WIDTH_BLOCK_TYPES.has(block.type),
+  });
 });
+
+const FULL_WIDTH_BLOCK_TYPES = new Set([
+  "hero",
+  "join-hero",
+  "join-registration-form",
+  "events-archive",
+  "video-archives",
+  "directory-browser",
+  "cta",
+  "trust-bar",
+  "divider",
+  "slider",
+  "stats-bar",
+]);
 
 const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
   {
@@ -1477,7 +1525,9 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
 ];
 
 export const DYNAMIC_BLOCK_TYPES: BlockDef[] = BASE_DYNAMIC_BLOCK_TYPES.map((block) =>
-  withSharedSectionStyles(withSharedSectionHeading(block))
+  withSharedSectionStyles(withSharedSectionHeading(block), {
+    includePaddingControls: !FULL_WIDTH_BLOCK_TYPES.has(block.type),
+  })
 );
 
 export const ALL_BLOCKS: BlockDef[] = [...BLOCK_REGISTRY, ...DYNAMIC_BLOCK_TYPES];

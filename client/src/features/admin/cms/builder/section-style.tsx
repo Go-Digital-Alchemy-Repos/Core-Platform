@@ -1,6 +1,16 @@
 import type { CSSProperties, ReactNode } from "react";
 
 export const DEFAULT_SECTION_LINEAR_GRADIENT = "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)";
+export const DEFAULT_SECTION_PADDING = "md";
+
+const SECTION_PADDING_CLASS_MAP: Record<string, string> = {
+  none: "0",
+  xs: "4 sm:6",
+  sm: "6 sm:8",
+  md: "8 sm:14",
+  lg: "10 sm:16",
+  xl: "14 sm:20",
+};
 
 interface SectionStyleConfig {
   backgroundColor: string;
@@ -12,6 +22,8 @@ interface SectionStyleConfig {
   showRadialGradient: boolean;
   radialGradientColor: string;
   radialGradientPosition: "top" | "bottom";
+  paddingTop: string;
+  paddingBottom: string;
 }
 
 interface SectionStyleWrapperProps {
@@ -32,6 +44,11 @@ function num(v: unknown, fallback = 50): number {
 
 function clampPercent(value: number) {
   return Math.max(0, Math.min(100, value));
+}
+
+function normalizePaddingValue(value: unknown): string {
+  const normalized = str(value).trim().toLowerCase();
+  return SECTION_PADDING_CLASS_MAP[normalized] ? normalized : DEFAULT_SECTION_PADDING;
 }
 
 export function normalizeHexColor(value: string): string {
@@ -70,11 +87,19 @@ export function getSectionStyleConfig(
     showRadialGradient: Boolean(props.sectionShowRadialGradient),
     radialGradientColor: normalizeHexColor(str(props.sectionRadialGradientColor)) || "#89cda1",
     radialGradientPosition: str(props.sectionRadialGradientPosition) === "bottom" ? "bottom" : "top",
+    paddingTop: normalizePaddingValue(props.sectionPaddingTop),
+    paddingBottom: normalizePaddingValue(props.sectionPaddingBottom),
   };
 }
 
 export function hasSectionStyleConfig(config: SectionStyleConfig) {
-  return Boolean(config.backgroundColor || config.backgroundImageUrl || config.showRadialGradient);
+  return Boolean(
+    config.backgroundColor ||
+      config.backgroundImageUrl ||
+      config.showRadialGradient ||
+      config.paddingTop !== DEFAULT_SECTION_PADDING ||
+      config.paddingBottom !== DEFAULT_SECTION_PADDING
+  );
 }
 
 export function getRadialGradientStyle(color: string, position: "top" | "bottom" = "top"): CSSProperties {
@@ -82,6 +107,16 @@ export function getRadialGradientStyle(color: string, position: "top" | "bottom"
   return {
     background: `radial-gradient(ellipse at ${anchor}, ${hexToRgba(color, 0.28)} 0%, ${hexToRgba(color, 0.16)} 36%, transparent 72%)`,
   };
+}
+
+export function getSectionPaddingClasses(props: Record<string, unknown>) {
+  const topValue = SECTION_PADDING_CLASS_MAP[normalizePaddingValue(props.sectionPaddingTop)];
+  const bottomValue = SECTION_PADDING_CLASS_MAP[normalizePaddingValue(props.sectionPaddingBottom)];
+
+  return [
+    ...topValue.split(" ").map((token) => `pt-${token}`),
+    ...bottomValue.split(" ").map((token) => `pb-${token}`),
+  ].join(" ");
 }
 
 export function SectionStyleWrapper({
