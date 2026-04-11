@@ -23,6 +23,24 @@ interface BlockEditorProps {
   onChange: (props: Record<string, unknown>) => void;
 }
 
+const PROP_DISPLAY_PRIORITY: Record<string, number> = {
+  badge: 5,
+  eyebrow: 10,
+  sectionEyebrow: 11,
+  title: 20,
+  heading: 21,
+  accentHeading: 22,
+  subtitle: 30,
+  subheading: 31,
+  headingLevel: 35,
+  sectionHeadingLevel: 36,
+  alignment: 40,
+  textAlign: 41,
+  sectionHeadingAlignment: 42,
+  content: 50,
+  body: 51,
+};
+
 const DEFAULT_COLOR_VALUE = "#ffffff";
 const DEFAULT_RADIAL_GRADIENT_COLOR = "#89cda1";
 const POSITION_PICKER_KEYS = new Set([
@@ -65,6 +83,18 @@ function defaultColorValueForKey(key: string) {
 function normalizeColorValue(value: string, key: string) {
   const trimmed = value.trim();
   return /^#([0-9a-f]{6}|[0-9a-f]{3})$/i.test(trimmed) ? trimmed : defaultColorValueForKey(key);
+}
+
+function orderPropDefs(propDefs: PropDef[]) {
+  return propDefs
+    .map((propDef, index) => ({ propDef, index }))
+    .sort((a, b) => {
+      const aPriority = PROP_DISPLAY_PRIORITY[a.propDef.key] ?? 1000;
+      const bPriority = PROP_DISPLAY_PRIORITY[b.propDef.key] ?? 1000;
+      if (aPriority !== bPriority) return aPriority - bPriority;
+      return a.index - b.index;
+    })
+    .map(({ propDef }) => propDef);
 }
 
 function ArrayItemsField({
@@ -319,6 +349,7 @@ export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
   const setProp = (key: string, val: unknown) => {
     onChange({ ...props, [key]: val });
   };
+  const orderedPropDefs = orderPropDefs(blockDef.propDefs);
 
   return (
     <div className="space-y-5">
@@ -327,11 +358,11 @@ export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
         <p className="text-xs text-muted-foreground">{blockDef.description}</p>
       </div>
       <Separator />
-      {blockDef.propDefs.map((propDef, idx) => {
+      {orderedPropDefs.map((propDef, idx) => {
         if (POSITION_PICKER_KEYS.has(propDef.key)) return null;
         const showSectionStyleHeading =
           SECTION_STYLE_KEYS.has(propDef.key) &&
-          !blockDef.propDefs.slice(0, idx).some((previous) => SECTION_STYLE_KEYS.has(previous.key));
+          !orderedPropDefs.slice(0, idx).some((previous) => SECTION_STYLE_KEYS.has(previous.key));
 
         const imagePositionFieldGroup = IMAGE_POSITION_FIELD_GROUPS.find(
           (group) => group.imageKey === propDef.key
@@ -340,7 +371,7 @@ export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
           ? String(props[imagePositionFieldGroup.imageKey] ?? "")
           : "";
         const hasPositionProps = imagePositionFieldGroup
-          ? blockDef.propDefs.some((p) => p.key === imagePositionFieldGroup.positionXKey)
+          ? orderedPropDefs.some((p) => p.key === imagePositionFieldGroup.positionXKey)
           : false;
 
         return (
