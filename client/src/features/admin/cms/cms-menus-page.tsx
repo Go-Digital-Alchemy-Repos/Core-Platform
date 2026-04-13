@@ -36,19 +36,31 @@ import {
   Menu as MenuIcon,
   Loader2,
   MapPin,
+  LayoutTemplate,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { CmsMenu, MenuItem, MenuLocation } from "@shared/schema";
-
-const LOCATION_LABELS: Record<MenuLocation, string> = {
-  header: "Header",
-  footer: "Footer",
-  unassigned: "Unassigned",
-};
+import {
+  MENU_LOCATION_LABELS,
+  STANDARD_MENU_LOCATIONS,
+  LEGACY_MENU_LOCATIONS,
+  type CmsMenu,
+  type MenuItem,
+  type MenuLocation,
+} from "@shared/schema";
 
 function generateId() {
   return Math.random().toString(36).substring(2, 10);
 }
+
+const STANDARD_LOCATION_OPTIONS = STANDARD_MENU_LOCATIONS.map((location) => ({
+  value: location,
+  label: MENU_LOCATION_LABELS[location],
+}));
+
+const LEGACY_LOCATION_OPTIONS = LEGACY_MENU_LOCATIONS.map((location) => ({
+  value: location,
+  label: MENU_LOCATION_LABELS[location],
+}));
 
 function MenuItemEditor({
   item,
@@ -247,11 +259,19 @@ function MenuItemEditor({
   );
 }
 
-function MenuEditor({ menu, onClose }: { menu: CmsMenu | null; onClose: () => void }) {
+function MenuEditor({
+  menu,
+  draft,
+  onClose,
+}: {
+  menu: CmsMenu | null;
+  draft?: Partial<Pick<CmsMenu, "name" | "location">>;
+  onClose: () => void;
+}) {
   const { toast } = useToast();
   const isNew = !menu;
-  const [name, setName] = useState(menu?.name || "");
-  const [location, setLocation] = useState<MenuLocation>((menu?.location as MenuLocation) || "unassigned");
+  const [name, setName] = useState(menu?.name || draft?.name || "");
+  const [location, setLocation] = useState<MenuLocation>((menu?.location as MenuLocation) || (draft?.location as MenuLocation) || "unassigned");
   const [items, setItems] = useState<MenuItem[]>((menu?.items as MenuItem[]) || []);
 
   const saveMutation = useMutation({
@@ -264,6 +284,7 @@ function MenuEditor({ menu, onClose }: { menu: CmsMenu | null; onClose: () => vo
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/menus"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cms/menus"] });
       toast({ title: isNew ? "Menu created" : "Menu saved" });
       onClose();
     },
@@ -414,8 +435,20 @@ function MenuEditor({ menu, onClose }: { menu: CmsMenu | null; onClose: () => vo
             data-testid="select-menu-location"
           >
             <option value="unassigned">Unassigned</option>
-            <option value="header">Header</option>
-            <option value="footer">Footer</option>
+            <optgroup label="Theme Locations">
+              {STANDARD_LOCATION_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Legacy Locations">
+              {LEGACY_LOCATION_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </optgroup>
           </select>
         </div>
       </div>
@@ -460,6 +493,7 @@ function MenuEditor({ menu, onClose }: { menu: CmsMenu | null; onClose: () => vo
 export default function CmsMenusPage() {
   const { toast } = useToast();
   const [editingMenu, setEditingMenu] = useState<CmsMenu | null | "new">(null);
+  const [draftMenuDefaults, setDraftMenuDefaults] = useState<Partial<Pick<CmsMenu, "name" | "location">> | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<CmsMenu | null>(null);
 
   const { data: menus, isLoading } = useQuery<CmsMenu[]>({
@@ -472,6 +506,7 @@ export default function CmsMenusPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/menus"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cms/menus"] });
       toast({ title: "Menu deleted" });
       setDeleteConfirm(null);
     },
@@ -489,13 +524,25 @@ export default function CmsMenusPage() {
     return count;
   };
 
+  const menusByLocation = new Map<MenuLocation, CmsMenu>();
+  for (const menu of menus || []) {
+    const location = menu.location as MenuLocation;
+    if (!menusByLocation.has(location)) {
+      menusByLocation.set(location, menu);
+    }
+  }
+
   if (editingMenu !== null) {
     return (
       <AdminSidebar>
         <div className="p-6 max-w-4xl mx-auto">
           <MenuEditor
             menu={editingMenu === "new" ? null : editingMenu}
-            onClose={() => setEditingMenu(null)}
+            draft={draftMenuDefaults || undefined}
+            onClose={() => {
+              setEditingMenu(null);
+              setDraftMenuDefaults(null);
+            }}
           />
         </div>
       </AdminSidebar>
@@ -509,13 +556,81 @@ export default function CmsMenusPage() {
           <div>
             <h1 className="text-2xl font-bold" data-testid="text-menus-title">Navigation Menus</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Create and manage navigation menus for the header and footer.
+              Create reusable menus and assign them to theme locations like the main navigation and footer areas.
             </p>
           </div>
-          <Button onClick={() => setEditingMenu("new")} data-testid="button-create-menu">
+          <Button
+            onClick={() => {
+              setDraftMenuDefaults(null);
+              setEditingMenu("new");
+            }}
+            data-testid="button-create-menu"
+          >
             <Plus className="mr-2 h-4 w-4" /> Create Menu
           </Button>
         </div>
+
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <LayoutTemplate className="h-5 w-5 text-violet-500" />
+              Theme Locations
+            </CardTitle>
+            <CardDescription>
+              Each location can have one assigned menu, similar to a WordPress theme menu location.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2">
+            {STANDARD_MENU_LOCATIONS.map((location) => {
+              const legacyFallback =
+                location === "main_navigation"
+                  ? menusByLocation.get("header")
+                  : menusByLocation.get("footer");
+              const assignedMenu = menusByLocation.get(location);
+              const displayMenu = assignedMenu || legacyFallback;
+              const isLegacyFallback = !assignedMenu && Boolean(legacyFallback);
+              const locationStatus = assignedMenu
+                ? assignedMenu.name
+                : isLegacyFallback && displayMenu
+                  ? `${displayMenu.name} (${location === "main_navigation" ? "legacy header menu" : "legacy footer menu"})`
+                  : "No menu assigned yet";
+              return (
+                <div key={location} className="rounded-lg border p-4" data-testid={`card-menu-location-${location}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold">{MENU_LOCATION_LABELS[location]}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{locationStatus}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (assignedMenu) {
+                          setEditingMenu(assignedMenu);
+                          setDraftMenuDefaults(null);
+                          return;
+                        }
+                        if (isLegacyFallback && legacyFallback) {
+                          setEditingMenu(legacyFallback);
+                          setDraftMenuDefaults(null);
+                          return;
+                        }
+                        setDraftMenuDefaults({
+                          name: MENU_LOCATION_LABELS[location],
+                          location,
+                        });
+                        setEditingMenu("new");
+                      }}
+                      data-testid={`button-manage-location-${location}`}
+                    >
+                      {assignedMenu ? "Edit" : isLegacyFallback ? "Edit Legacy" : "Assign"}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -527,9 +642,15 @@ export default function CmsMenusPage() {
               <MenuIcon className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
               <h3 className="text-lg font-medium mb-1" data-testid="text-no-menus">No Menus Yet</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Create a menu and assign it to the header or footer to replace the default navigation.
+                Create a menu and assign it to a theme location to replace the default navigation.
               </p>
-              <Button onClick={() => setEditingMenu("new")} data-testid="button-create-menu-empty">
+              <Button
+                onClick={() => {
+                  setDraftMenuDefaults(null);
+                  setEditingMenu("new");
+                }}
+                data-testid="button-create-menu-empty"
+              >
                 <Plus className="mr-2 h-4 w-4" /> Create Your First Menu
               </Button>
             </CardContent>
@@ -547,7 +668,7 @@ export default function CmsMenusPage() {
                         <CardTitle className="text-base">{menu.name}</CardTitle>
                         <CardDescription className="flex items-center gap-2 mt-1">
                           <MapPin className="h-3 w-3" />
-                          {LOCATION_LABELS[(menu.location as MenuLocation) || "unassigned"]}
+                          {MENU_LOCATION_LABELS[(menu.location as MenuLocation) || "unassigned"]}
                           <span className="text-muted-foreground">·</span>
                           {itemCount} item{itemCount !== 1 ? "s" : ""}
                         </CardDescription>
@@ -609,7 +730,7 @@ export default function CmsMenusPage() {
               Are you sure you want to delete "{deleteConfirm?.name}"? This action cannot be undone.
               {deleteConfirm?.location !== "unassigned" && (
                 <span className="block mt-1 font-medium text-destructive">
-                  This menu is currently assigned to the {LOCATION_LABELS[(deleteConfirm?.location as MenuLocation) || "unassigned"]}.
+                  This menu is currently assigned to the {MENU_LOCATION_LABELS[(deleteConfirm?.location as MenuLocation) || "unassigned"]}.
                   Deleting it will revert that area to the default navigation.
                 </span>
               )}

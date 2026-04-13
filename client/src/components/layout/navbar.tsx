@@ -17,7 +17,7 @@ import { ThemeToggle, useTheme } from "@/components/shared/theme-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { NotificationBell } from "@/components/shared/notification-bell";
-import type { CmsMenu, MenuItem } from "@shared/schema";
+import type { CmsMenu, MenuItem, PublicMenuLocation } from "@shared/schema";
 
 const defaultNavLinks = [
   { label: "About", href: "/about" },
@@ -106,10 +106,10 @@ export function Navbar() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [, navigate] = useLocation();
 
-  const { data: headerMenu } = useQuery<CmsMenu>({
-    queryKey: ["/api/cms/menus", "header"],
+  const { data: publicMenus } = useQuery<Partial<Record<PublicMenuLocation, CmsMenu>>>({
+    queryKey: ["/api/cms/menus"],
     queryFn: async () => {
-      const res = await fetch("/api/cms/menus/header");
+      const res = await fetch("/api/cms/menus");
       if (!res.ok) return null;
       return res.json();
     },
@@ -117,10 +117,11 @@ export function Navbar() {
   });
 
   const dynamicItems = useMemo(() => {
+    const headerMenu = publicMenus?.main_navigation ?? publicMenus?.header;
     if (!headerMenu?.items) return null;
     const items = headerMenu.items as MenuItem[];
     return items.length > 0 ? items : null;
-  }, [headerMenu]);
+  }, [publicMenus]);
 
   const isClient = user && user.role === "client";
   const resourceLinks = allResourceLinks.filter(
@@ -378,7 +379,16 @@ export function Navbar() {
               <div className="flex flex-col gap-1 mt-6">
                 {dynamicItems ? (
                   flattenItems(dynamicItems).map(({ item, depth }) => (
-                    item.openInNewTab ? (
+                    item.children && item.children.length > 0 ? (
+                      <p
+                        key={item.id}
+                        className="px-4 pt-3 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                        style={depth > 0 ? { paddingLeft: `${16 + depth * 16}px` } : undefined}
+                        data-testid={`text-mobile-group-${item.id}`}
+                      >
+                        {item.label}
+                      </p>
+                    ) : item.openInNewTab ? (
                       <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer" onClick={() => setMobileOpen(false)}>
                         <Button
                           variant="ghost"

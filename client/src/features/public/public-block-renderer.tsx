@@ -454,7 +454,7 @@ function TestimonialsBlock({ props }: { props: Record<string, unknown> }) {
       {items.length === 0 ? (
         <p className="text-muted-foreground">Add testimonials to display here.</p>
       ) : shouldCarousel ? (
-        <div className="px-10 md:px-12">
+        <div>
           <Carousel
             opts={{
               align: "start",
@@ -469,8 +469,10 @@ function TestimonialsBlock({ props }: { props: Record<string, unknown> }) {
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="left-0 h-9 w-9 border-border/70 bg-background/95" />
-            <CarouselNext className="right-0 h-9 w-9 border-border/70 bg-background/95" />
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <CarouselPrevious className="static h-9 w-9 translate-x-0 translate-y-0 border-border/70 bg-background/95" />
+              <CarouselNext className="static h-9 w-9 translate-x-0 translate-y-0 border-border/70 bg-background/95" />
+            </div>
           </Carousel>
         </div>
       ) : (

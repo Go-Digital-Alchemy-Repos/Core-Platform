@@ -13,7 +13,12 @@ export class CmsMenusStorage {
   }
 
   async getByLocation(location: string): Promise<CmsMenu | undefined> {
-    const [menu] = await db.select().from(cmsMenus).where(eq(cmsMenus.location, location));
+    const [menu] = await db
+      .select()
+      .from(cmsMenus)
+      .where(eq(cmsMenus.location, location))
+      .orderBy(desc(cmsMenus.updatedAt))
+      .limit(1);
     return menu;
   }
 

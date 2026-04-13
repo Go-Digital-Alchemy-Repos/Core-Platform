@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
-import type { CmsMenu, MenuItem } from "@shared/schema";
+import type { CmsMenu, MenuItem, PublicMenuLocation } from "@shared/schema";
 
 const defaultPlatformLinks = [
   { href: "/directory", label: "Find a Mental Health Professional", testId: "link-footer-directory" },
@@ -27,6 +27,18 @@ const defaultCompanyLinks = [
   { href: "/contact", label: "Contact", testId: "link-footer-contact" },
   { href: "/contact", label: "Support", testId: "link-footer-support" },
 ];
+
+const defaultLegalLinks = [
+  { href: "/contact", label: "Privacy Policy", testId: "link-footer-privacy" },
+  { href: "/contact", label: "Terms of Service", testId: "link-footer-terms" },
+];
+
+type FooterLegalLink = {
+  href: string;
+  label: string;
+  testId: string;
+  openInNewTab?: boolean;
+};
 
 function FooterColumn({ title, links }: { title: string; links: { href: string; label: string; testId: string }[] }) {
   return (
@@ -94,27 +106,95 @@ function DynamicFooterColumn({ item }: { item: MenuItem }) {
   );
 }
 
+function flattenMenuLinks(items: MenuItem[]): MenuItem[] {
+  return flattenFooterItems(items).map(({ item }) => item);
+}
+
+function StandardFooterColumn({ menu }: { menu: CmsMenu }) {
+  const links = flattenMenuLinks((menu.items as MenuItem[]) || []);
+  if (links.length === 0) return null;
+
+  return (
+    <div>
+      <h4 className="font-semibold text-sm mb-3 sm:mb-4 text-foreground">{menu.name}</h4>
+      <ul className="space-y-2.5 sm:space-y-3 text-sm">
+        {links.map((item) => (
+          <li key={item.id}>
+            {item.openInNewTab ? (
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                data-testid={`link-footer-${item.id}`}
+              >
+                {item.label}
+              </a>
+            ) : (
+              <Link
+                href={item.url}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                data-testid={`link-footer-${item.id}`}
+              >
+                {item.label}
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function Footer() {
-  const { data: footerMenu } = useQuery<CmsMenu>({
-    queryKey: ["/api/cms/menus", "footer"],
+  const { data: publicMenus } = useQuery<Partial<Record<PublicMenuLocation, CmsMenu>>>({
+    queryKey: ["/api/cms/menus"],
     queryFn: async () => {
-      const res = await fetch("/api/cms/menus/footer");
+      const res = await fetch("/api/cms/menus");
       if (!res.ok) return null;
       return res.json();
     },
     staleTime: 60000,
   });
 
-  const dynamicItems = useMemo(() => {
+  const legacyFooterItems = useMemo(() => {
+    const footerMenu = publicMenus?.footer;
     if (!footerMenu?.items) return null;
     const items = footerMenu.items as MenuItem[];
     return items.length > 0 ? items : null;
-  }, [footerMenu]);
+  }, [publicMenus]);
+
+  const standardFooterMenus = useMemo(
+    () => [
+      publicMenus?.footer_platform,
+      publicMenus?.footer_professionals,
+      publicMenus?.footer_resources,
+      publicMenus?.footer_company,
+    ].filter((menu): menu is CmsMenu => Boolean(menu && Array.isArray(menu.items) && menu.items.length > 0)),
+    [publicMenus]
+  );
+
+  const legalLinks = useMemo(() => {
+    const legalMenu = publicMenus?.footer_legal;
+    if (!legalMenu?.items) return defaultLegalLinks;
+
+    const items = flattenMenuLinks((legalMenu.items as MenuItem[]) || []);
+    if (items.length === 0) return defaultLegalLinks;
+
+    return items.map((item) => ({
+      href: item.url,
+      label: item.label,
+      openInNewTab: item.openInNewTab,
+      testId: `link-footer-${item.id}`,
+    }));
+  }, [publicMenus]) as FooterLegalLink[];
+
+  const useStandardFooterMenus = standardFooterMenus.length > 0;
 
   return (
     <footer className="border-t bg-muted/30" data-testid="footer">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-12 lg:py-16">
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-10 lg:gap-12">
+        <div className={`grid grid-cols-2 sm:grid-cols-2 ${useStandardFooterMenus ? "lg:grid-cols-6" : "lg:grid-cols-5"} gap-8 sm:gap-10 lg:gap-12`}>
           <div className="col-span-2">
             <img
               src={logoImg}
@@ -126,8 +206,10 @@ export function Footer() {
             </p>
           </div>
 
-          {dynamicItems ? (
-            dynamicItems.map((item) =>
+          {useStandardFooterMenus ? (
+            standardFooterMenus.map((menu) => <StandardFooterColumn key={menu.id} menu={menu} />)
+          ) : legacyFooterItems ? (
+            legacyFooterItems.map((item) =>
               item.children && item.children.length > 0 ? (
                 <DynamicFooterColumn key={item.id} item={item} />
               ) : (
@@ -175,12 +257,29 @@ export function Footer() {
         <div className="mt-8 sm:mt-10 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-sm text-muted-foreground" data-testid="text-copyright">
           <span className="text-center sm:text-left">&copy; {new Date().getFullYear()} Interaction International. All rights reserved.</span>
           <div className="flex items-center gap-4 sm:gap-6">
-            <Link href="/contact" className="hover:text-foreground transition-colors" data-testid="link-footer-privacy">
-              Privacy Policy
-            </Link>
-            <Link href="/contact" className="hover:text-foreground transition-colors" data-testid="link-footer-terms">
-              Terms of Service
-            </Link>
+            {legalLinks.map((link) =>
+              link.openInNewTab ? (
+                <a
+                  key={link.testId}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-foreground transition-colors"
+                  data-testid={link.testId}
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link
+                  key={link.testId}
+                  href={link.href}
+                  className="hover:text-foreground transition-colors"
+                  data-testid={link.testId}
+                >
+                  {link.label}
+                </Link>
+              )
+            )}
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { asyncHandler } from "../middleware/error-handler";
 import { storage } from "../storage";
 import { paramString } from "../utils/params";
+import { PUBLIC_MENU_LOCATIONS, type CmsMenu, type PublicMenuLocation } from "@shared/schema";
 
 const router = Router();
 
@@ -41,10 +42,26 @@ router.get(
 );
 
 router.get(
+  "/menus",
+  asyncHandler(async (_req, res) => {
+    const menus = await storage.cmsMenus.getAll();
+    const menuMap: Partial<Record<PublicMenuLocation, CmsMenu>> = {};
+    for (const menu of menus) {
+      const location = menu.location as PublicMenuLocation;
+      if (!PUBLIC_MENU_LOCATIONS.includes(location) || menuMap[location]) {
+        continue;
+      }
+      menuMap[location] = menu;
+    }
+    res.json(menuMap);
+  })
+);
+
+router.get(
   "/menus/:location",
   asyncHandler(async (req, res) => {
     const location = paramString(req.params.location);
-    if (!["header", "footer"].includes(location)) {
+    if (!PUBLIC_MENU_LOCATIONS.includes(location as PublicMenuLocation)) {
       return res.status(400).json({ error: "Invalid menu location" });
     }
     const menu = await storage.cmsMenus.getByLocation(location);

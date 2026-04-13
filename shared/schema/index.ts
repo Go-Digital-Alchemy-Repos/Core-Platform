@@ -25,7 +25,23 @@ export { seoSettings, insertSeoSettingsSchema, type InsertSeoSettings, type SeoS
 export { redirects, insertRedirectSchema, type InsertRedirect, type Redirect } from "./redirects";
 export { recordingPurchases, insertRecordingPurchaseSchema, type InsertRecordingPurchase, type RecordingPurchase } from "./recording-purchases";
 export { guestMessages, insertGuestMessageSchema, type InsertGuestMessage, type GuestMessage } from "./guest-messages";
-export { cmsMenus, insertCmsMenuSchema, menuItemSchema, MENU_LOCATIONS, type InsertCmsMenu, type CmsMenu, type MenuItem, type MenuLocation } from "./cms-menus";
+export {
+  cmsMenus,
+  insertCmsMenuSchema,
+  menuItemSchema,
+  MENU_LOCATIONS,
+  STANDARD_MENU_LOCATIONS,
+  LEGACY_MENU_LOCATIONS,
+  MENU_LOCATION_LABELS,
+  PUBLIC_MENU_LOCATIONS,
+  type InsertCmsMenu,
+  type CmsMenu,
+  type MenuItem,
+  type MenuLocation,
+  type StandardMenuLocation,
+  type LegacyMenuLocation,
+  type PublicMenuLocation,
+} from "./cms-menus";
 export { cmsSidebars, insertCmsSidebarSchema, sidebarWidgetSchema, SIDEBAR_WIDGET_TYPES, type InsertCmsSidebar, type CmsSidebar, type SidebarWidget, type SidebarWidgetType } from "./cms-sidebars";
 export {
   providerApplications,
