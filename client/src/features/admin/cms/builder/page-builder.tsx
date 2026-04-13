@@ -74,12 +74,14 @@ import {
   Sparkles,
   TrendingUp,
   Trash2,
+  Tablet,
   UserCheck,
   Users,
   Workflow,
   ArrowRight,
   BadgeCheck,
   BarChart3,
+  Smartphone,
   UserPlus2,
 } from "lucide-react";
 import {
@@ -181,7 +183,21 @@ interface VisualCanvasProps {
   onMove: (id: string, direction: "up" | "down") => void;
   onAddBelow: (id: string) => void;
   registerBlockRef: (id: string, node: HTMLDivElement | null) => void;
+  previewDevice: "desktop" | "tablet" | "mobile";
+  onPreviewDeviceChange: (device: "desktop" | "tablet" | "mobile") => void;
 }
+
+const PREVIEW_DEVICE_LABELS = {
+  desktop: "Desktop",
+  tablet: "Tablet",
+  mobile: "Mobile",
+} as const;
+
+const PREVIEW_DEVICE_FRAME_CLASSES = {
+  desktop: "w-full max-w-[1280px]",
+  tablet: "w-full max-w-[834px]",
+  mobile: "w-full max-w-[430px]",
+} as const;
 
 function groupBlocksByCategory(blocks: BlockDef[]): { category: BlockCategory; label: string; items: BlockDef[] }[] {
   const grouped = new Map<BlockCategory, BlockDef[]>();
@@ -577,12 +593,14 @@ function VisualCanvas({
   onMove,
   onAddBelow,
   registerBlockRef,
+  previewDevice,
+  onPreviewDeviceChange,
 }: VisualCanvasProps) {
   let nonFullWidthIndex = 0;
 
   return (
     <div className="h-full bg-[radial-gradient(circle_at_top,_rgba(137,205,161,0.12),_transparent_45%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,250,252,0.98))] p-5">
-      <div className="mx-auto flex min-h-full max-w-[1280px] flex-col overflow-hidden rounded-[28px] border border-border/60 bg-background shadow-[0_20px_70px_rgba(15,23,42,0.08)]">
+      <div className={cn("mx-auto flex min-h-full flex-col overflow-hidden rounded-[28px] border border-border/60 bg-background shadow-[0_20px_70px_rgba(15,23,42,0.08)] transition-[max-width] duration-200", PREVIEW_DEVICE_FRAME_CLASSES[previewDevice])}>
         <div className="flex items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-3">
           <div>
             <p className="text-sm font-semibold">Visual Canvas</p>
@@ -590,10 +608,47 @@ function VisualCanvas({
               This editing surface uses the published page renderer, then layers selection and editing tools on top.
             </p>
           </div>
-          <Badge variant="outline" className="gap-1">
-            <Monitor className="h-3 w-3" />
-            Live layout preview
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="gap-1">
+              <Monitor className="h-3 w-3" />
+              {PREVIEW_DEVICE_LABELS[previewDevice]} preview
+            </Badge>
+            <div className="flex items-center rounded-lg border border-border/70 bg-background p-1">
+              <Button
+                type="button"
+                variant={previewDevice === "desktop" ? "secondary" : "ghost"}
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => onPreviewDeviceChange("desktop")}
+                data-testid="button-preview-desktop"
+                title="Desktop preview"
+              >
+                <Monitor className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant={previewDevice === "tablet" ? "secondary" : "ghost"}
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => onPreviewDeviceChange("tablet")}
+                data-testid="button-preview-tablet"
+                title="Tablet preview"
+              >
+                <Tablet className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant={previewDevice === "mobile" ? "secondary" : "ghost"}
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => onPreviewDeviceChange("mobile")}
+                data-testid="button-preview-mobile"
+                title="Mobile preview"
+              >
+                <Smartphone className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
         </div>
 
         <ScrollArea className="min-h-0 flex-1">
@@ -681,6 +736,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [dropTarget, setDropTarget] = useState<{ id: string; position: "before" | "after" } | null>(null);
   const [structurePanelOpen, setStructurePanelOpen] = useState(true);
   const [advancedInspectorOpen, setAdvancedInspectorOpen] = useState(true);
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
   const blockRefs = useRef(new Map<string, HTMLDivElement | null>());
 
@@ -1271,6 +1327,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             onMove={moveBlock}
             onAddBelow={openAddBelow}
             registerBlockRef={registerBlockRef}
+            previewDevice={previewDevice}
+            onPreviewDeviceChange={setPreviewDevice}
           />
         </div>
         {advancedInspectorOpen ? inspectorPanel : (
@@ -1302,6 +1360,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     onMove={moveBlock}
                     onAddBelow={openAddBelow}
                     registerBlockRef={registerBlockRef}
+                    previewDevice={previewDevice}
+                    onPreviewDeviceChange={setPreviewDevice}
                   />
                 </div>
               </div>
@@ -1335,6 +1395,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     onMove={moveBlock}
                     onAddBelow={openAddBelow}
                     registerBlockRef={registerBlockRef}
+                    previewDevice={previewDevice}
+                    onPreviewDeviceChange={setPreviewDevice}
                   />
                 </div>
               </div>
@@ -1360,6 +1422,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     onMove={moveBlock}
                     onAddBelow={openAddBelow}
                     registerBlockRef={registerBlockRef}
+                    previewDevice={previewDevice}
+                    onPreviewDeviceChange={setPreviewDevice}
                   />
                 </div>
               </div>
@@ -1387,6 +1451,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                 onMove={moveBlock}
                 onAddBelow={openAddBelow}
                 registerBlockRef={registerBlockRef}
+                previewDevice={previewDevice}
+                onPreviewDeviceChange={setPreviewDevice}
               />
             </div>
           </div>

@@ -369,15 +369,17 @@ function TextImageBlock({ props }: { props: Record<string, unknown> }) {
           />
         )}
       </div>
-      <div className="flex-1 self-stretch">
+      <div className="flex flex-1 self-stretch flex-col">
         {hasImage ? (
           <div className="flex h-full flex-col">
+            <div className="relative min-h-72 md:h-full md:min-h-0 md:flex-1">
             <img
               src={str(props.imageUrl)}
               alt={str(props.imageAlt)}
               style={mobileImageStyles}
-              className="min-h-72 w-full flex-1 rounded-xl [height:var(--mobile-image-height)] [object-fit:var(--mobile-image-fit)] [object-position:var(--mobile-image-position)] md:h-full md:object-cover md:object-center"
+              className="w-full rounded-xl [height:var(--mobile-image-height)] [object-fit:var(--mobile-image-fit)] [object-position:var(--mobile-image-position)] md:absolute md:inset-0 md:h-full md:w-full md:object-cover md:object-center"
             />
+            </div>
             {str(props.imageCaption) && <p className="text-xs text-muted-foreground mt-2 text-center">{str(props.imageCaption)}</p>}
           </div>
         ) : (
