@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
+import { useState } from "react";
 import {
   AlertCircle,
   CheckCircle2,
@@ -8,6 +9,7 @@ import {
   HardDrive,
   Loader2,
   RefreshCw,
+  RotateCcw,
   ShieldAlert,
 } from "lucide-react";
 import { AdminSidebar } from "./admin-sidebar";
@@ -25,6 +27,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, STALE_TIMES } from "@/lib/queryClient";
 
@@ -76,6 +88,7 @@ function reasonLabel(reason: BackupManifest["reason"]) {
 
 export default function SystemBackupsPage() {
   const { toast } = useToast();
+  const [restoreTarget, setRestoreTarget] = useState<BackupManifest | null>(null);
 
   const { data, isLoading, refetch, isFetching } = useQuery<BackupStatusResponse>({
     queryKey: ["/api/admin/system/backups/status"],
@@ -106,6 +119,32 @@ export default function SystemBackupsPage() {
     },
   });
 
+  const restoreBackupMutation = useMutation({
+    mutationFn: async (key: string) => {
+      const response = await apiRequest("POST", "/api/admin/system/backups/restore", { key });
+      return response.json() as Promise<{
+        restored: true;
+        message: string;
+        manifest: BackupManifest;
+      }>;
+    },
+    onSuccess: async (result) => {
+      setRestoreTarget(null);
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/system/backups/status"] });
+      toast({
+        title: "Restore completed",
+        description: `The database was restored from the backup created ${formatDateTime(result.manifest.createdAt)}.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Restore failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const latest = data?.latest ?? null;
   const recent = data?.recent ?? [];
 
@@ -126,7 +165,7 @@ export default function SystemBackupsPage() {
               type="button"
               variant="outline"
               onClick={() => refetch()}
-              disabled={isFetching || runBackupMutation.isPending}
+              disabled={isFetching || runBackupMutation.isPending || restoreBackupMutation.isPending}
               data-testid="button-refresh-backup-status"
             >
               {isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
@@ -135,7 +174,7 @@ export default function SystemBackupsPage() {
             <Button
               type="button"
               onClick={() => runBackupMutation.mutate()}
-              disabled={!data?.configured || runBackupMutation.isPending}
+              disabled={!data?.configured || runBackupMutation.isPending || restoreBackupMutation.isPending}
               data-testid="button-run-backup-now"
             >
               {runBackupMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
@@ -346,10 +385,10 @@ export default function SystemBackupsPage() {
                   </div>
                   <Alert>
                     <ShieldAlert className="h-4 w-4" />
-                    <AlertTitle>Restore remains a controlled operation</AlertTitle>
+                    <AlertTitle>Restore is available with confirmation</AlertTitle>
                     <AlertDescription>
-                      Viewing status and triggering backups is available here. Restores still require a
-                      deliberate CLI/script workflow because they replace live database contents.
+                      Restoring replaces the live database with the selected snapshot. Use it carefully,
+                      ideally after creating a fresh manual backup first.
                     </AlertDescription>
                   </Alert>
                 </>
@@ -382,6 +421,7 @@ export default function SystemBackupsPage() {
                       <TableHead>Rows</TableHead>
                       <TableHead>Version</TableHead>
                       <TableHead>Key</TableHead>
+                      <TableHead className="w-[120px] text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -405,6 +445,19 @@ export default function SystemBackupsPage() {
                             {backup.key}
                           </span>
                         </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setRestoreTarget(backup)}
+                            disabled={restoreBackupMutation.isPending || runBackupMutation.isPending}
+                            data-testid={`button-restore-backup-${backup.createdAt}`}
+                          >
+                            <RotateCcw className="mr-2 h-3.5 w-3.5" />
+                            Restore
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -419,6 +472,59 @@ export default function SystemBackupsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog
+        open={!!restoreTarget}
+        onOpenChange={(open) => {
+          if (!open && !restoreBackupMutation.isPending) {
+            setRestoreTarget(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restore this backup?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will replace the live database with the snapshot from{" "}
+              <strong>{restoreTarget ? formatDateTime(restoreTarget.createdAt) : "the selected backup"}</strong>.
+              Any content changes made after that point will be lost. Creating a fresh manual backup first
+              is strongly recommended.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {restoreTarget && (
+            <div className="rounded-lg bg-muted/40 px-3 py-3 text-sm">
+              <p>
+                <span className="font-medium">Reason:</span> {reasonLabel(restoreTarget.reason)}
+              </p>
+              <p className="mt-1">
+                <span className="font-medium">Rows:</span> {restoreTarget.totalRowCount.toLocaleString()}
+              </p>
+              <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{restoreTarget.key}</p>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={restoreBackupMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                if (restoreTarget) {
+                  restoreBackupMutation.mutate(restoreTarget.key);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={restoreBackupMutation.isPending}
+              data-testid="button-confirm-restore-backup"
+            >
+              {restoreBackupMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RotateCcw className="mr-2 h-4 w-4" />
+              )}
+              Restore Backup
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminSidebar>
   );
 }

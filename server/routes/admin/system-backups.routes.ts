@@ -1,6 +1,10 @@
 import { Router } from "express";
 import { asyncHandler } from "../../middleware/error-handler";
-import { getBackupStatus, runSystemBackup } from "../../services/system-backup.service";
+import {
+  getBackupStatus,
+  restoreSystemBackupFromKey,
+  runSystemBackup,
+} from "../../services/system-backup.service";
 
 const router = Router();
 
@@ -17,6 +21,25 @@ router.post(
     const requestedReason = req.body?.reason === "manual" ? "manual" : "manual";
     const manifest = await runSystemBackup(requestedReason);
     res.status(201).json(manifest);
+  })
+);
+
+router.post(
+  "/system/backups/restore",
+  asyncHandler(async (req, res) => {
+    const key = typeof req.body?.key === "string" ? req.body.key.trim() : "";
+
+    if (!key) {
+      res.status(400).json({ message: "A backup key is required to run a restore." });
+      return;
+    }
+
+    const manifest = await restoreSystemBackupFromKey(key);
+    res.status(200).json({
+      restored: true,
+      manifest,
+      message: `Restore completed from backup created ${manifest.createdAt}.`,
+    });
   })
 );
 

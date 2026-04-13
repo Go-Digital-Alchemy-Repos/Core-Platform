@@ -454,6 +454,21 @@ export async function restoreBackupSnapshot(snapshot: DatabaseBackupSnapshot) {
   }
 }
 
+export async function restoreSystemBackupFromKey(key: string) {
+  const lockAcquired = await acquireBackupLock();
+  if (!lockAcquired) {
+    throw new Error("Another backup or restore is already running");
+  }
+
+  try {
+    const snapshot = await loadBackupSnapshotFromKey(key);
+    await restoreBackupSnapshot(snapshot);
+    return snapshot.manifest;
+  } finally {
+    await releaseBackupLock();
+  }
+}
+
 export function startSystemBackupService() {
   if (backupTimer) return;
 
