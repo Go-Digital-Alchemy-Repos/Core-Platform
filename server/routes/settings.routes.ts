@@ -78,7 +78,7 @@ const upsertSettingSchema = z.object({
 });
 
 const brandingUploadSchema = z.object({
-  settingKey: z.enum(["frontend_logo_url", "admin_icon_url"]),
+  settingKey: z.enum(["frontend_logo_url", "admin_icon_url", "favicon_url"]),
 });
 
 router.put(

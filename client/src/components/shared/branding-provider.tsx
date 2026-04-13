@@ -23,6 +23,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
       return {
         frontendLogoUrl: payload?.frontendLogoUrl ?? null,
         adminIconUrl: payload?.adminIconUrl ?? null,
+        faviconUrl: payload?.faviconUrl ?? null,
         bodyFont: payload?.bodyFont ?? null,
         headingFont: payload?.headingFont ?? null,
         primaryColor: payload?.primaryColor ?? null,
@@ -139,6 +140,26 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     themeState.activePresetId,
     themeState.customOverrides,
   ]);
+
+  useEffect(() => {
+    const faviconHref = branding.faviconUrl || "/favicon.png";
+    let faviconEl = document.head.querySelector<HTMLLinkElement>('link[rel="icon"]');
+
+    if (!faviconEl) {
+      faviconEl = document.createElement("link");
+      faviconEl.setAttribute("rel", "icon");
+      document.head.appendChild(faviconEl);
+    }
+
+    faviconEl.setAttribute("href", faviconHref);
+    if (faviconHref.endsWith(".svg")) {
+      faviconEl.setAttribute("type", "image/svg+xml");
+    } else if (faviconHref.endsWith(".ico")) {
+      faviconEl.setAttribute("type", "image/x-icon");
+    } else {
+      faviconEl.setAttribute("type", "image/png");
+    }
+  }, [branding.faviconUrl]);
 
   return <BrandingContext.Provider value={branding}>{children}</BrandingContext.Provider>;
 }

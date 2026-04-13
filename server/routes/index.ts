@@ -84,6 +84,7 @@ export function registerApiRoutes(app: Express) {
       res.json({
         frontendLogoUrl: branding.frontend_logo_url || null,
         adminIconUrl: branding.admin_icon_url || null,
+        faviconUrl: branding.favicon_url || null,
         bodyFont: branding.frontend_body_font || null,
         headingFont: branding.frontend_heading_font || null,
         primaryColor: branding.brand_primary_color || null,
@@ -102,6 +103,7 @@ export function registerApiRoutes(app: Express) {
       res.json({
         frontendLogoUrl: null,
         adminIconUrl: null,
+        faviconUrl: null,
         bodyFont: null,
         headingFont: null,
         primaryColor: null,

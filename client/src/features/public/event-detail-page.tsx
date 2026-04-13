@@ -635,9 +635,8 @@ export default function EventDetailPage() {
 
   return (
     <PageLayout>
-      <section className="relative bg-muted/30 overflow-hidden" data-testid="section-event-detail-hero">
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
-        <div className="relative mx-auto max-w-3xl px-4 sm:px-6 pt-10 pb-6 sm:pt-14 sm:pb-8">
+      <section className="relative" data-testid="section-event-detail-hero">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-10 pb-6 sm:pt-14 sm:pb-8">
           <Link href="/events">
             <Button variant="ghost" className="mb-4 -ml-2" data-testid="button-back-events">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -855,9 +854,8 @@ export default function EventDetailPage() {
       </div>
 
       {event && (event.description || event.speakerName) && (
-        <section className="relative bg-muted/30 overflow-hidden" data-testid="section-event-description">
-          <div className="pointer-events-none absolute top-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent) / 0.10) 0%, transparent 70%)" }} />
-          <div className="relative mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-14">
+        <section className="mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-14" data-testid="section-event-description">
+          <div>
             {event.description && (
               <>
                 <h2 className="font-heading text-xl font-semibold mb-3">About This Event</h2>
@@ -892,8 +890,8 @@ export default function EventDetailPage() {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-            )}
+                </Card>
+              )}
           </div>
         </section>
       )}

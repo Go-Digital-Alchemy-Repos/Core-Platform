@@ -1268,7 +1268,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   );
 
   const inspectorPanel = selectedBlock && selectedDef ? (
-    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-border/70 bg-background shadow-sm" data-testid="block-editor-panel">
+    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-border/70 bg-background shadow-sm lg:max-h-[calc(100vh-220px)]" data-testid="block-editor-panel">
       <div className="space-y-3 border-b border-border/70 px-4 py-4">
         <div className="space-y-3">
           <div className="min-w-0">
@@ -1338,7 +1338,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       </ScrollArea>
     </div>
   ) : (
-    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-dashed border-border/70 bg-background/70 p-6 text-center shadow-sm">
+    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-dashed border-border/70 bg-background/70 p-6 text-center shadow-sm lg:max-h-[calc(100vh-220px)]">
       <div className="m-auto max-w-sm">
         <Settings2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground/35" />
         <p className="text-base font-semibold">Select a block to inspect</p>
@@ -1346,6 +1346,12 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           Click any section directly on the canvas or from the structure panel. The docked inspector will open with the full editing form for that block.
         </p>
       </div>
+    </div>
+  );
+
+  const renderDesktopInspectorPanel = () => (
+    <div className="h-full min-h-0 overflow-visible p-3">
+      <div className="h-full lg:sticky lg:top-3">{inspectorPanel}</div>
     </div>
   );
 
@@ -1468,7 +1474,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={25} minSize={20}>
-              <div className="h-full min-h-0 p-3">{inspectorPanel}</div>
+              {renderDesktopInspectorPanel()}
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : structurePanelOpen ? (
@@ -1530,7 +1536,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={28} minSize={20}>
-              <div className="h-full min-h-0 p-3">{inspectorPanel}</div>
+              {renderDesktopInspectorPanel()}
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : (

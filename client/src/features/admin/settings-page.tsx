@@ -67,7 +67,7 @@ type SettingsData = Record<
   Record<string, { value: string; isSecret: boolean }>
 >;
 
-type BrandingSettingKey = "frontend_logo_url" | "admin_icon_url";
+type BrandingSettingKey = "frontend_logo_url" | "admin_icon_url" | "favicon_url";
 
 type BrandingColorSettingKey =
   | "brand_primary_color"
@@ -717,6 +717,12 @@ function BrandingTab({ settings }: { settings: SettingsData }) {
           title="Admin Icon"
           description="Shown in the admin sidebar and dashboard shell."
           currentUrl={brandingSettings.admin_icon_url?.value || ""}
+        />
+        <BrandingImageCard
+          settingKey="favicon_url"
+          title="Favicon"
+          description="Shown in the browser tab, bookmarks, and saved shortcuts."
+          currentUrl={brandingSettings.favicon_url?.value || ""}
         />
       </div>
 
