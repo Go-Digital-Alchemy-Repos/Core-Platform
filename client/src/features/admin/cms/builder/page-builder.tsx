@@ -826,6 +826,8 @@ function VisualCanvas({
 }
 
 export function PageBuilder({ content, onChange }: PageBuilderProps) {
+  const MIN_DESKTOP_INSPECTOR_HEIGHT = 480;
+  const DESKTOP_INSPECTOR_RAIL_PADDING = 12;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [savingSectionBlockId, setSavingSectionBlockId] = useState<string | null>(null);
@@ -949,9 +951,19 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     const inspectorHeight = inspectorCard.getBoundingClientRect().height;
 
     const idealTop = blockRect.top - canvasRect.top;
-    const maxTop = Math.max(railRect.height - inspectorHeight - 12, 0);
+    const minimumVisibleHeight = Math.min(
+      railRect.height - DESKTOP_INSPECTOR_RAIL_PADDING,
+      Math.max(MIN_DESKTOP_INSPECTOR_HEIGHT, Math.round(railRect.height * 0.68))
+    );
+    const maxTop = Math.max(
+      railRect.height - minimumVisibleHeight - DESKTOP_INSPECTOR_RAIL_PADDING,
+      0
+    );
     const nextOffset = Math.min(Math.max(idealTop, 0), maxTop);
-    const nextMaxHeight = Math.max(railRect.height - nextOffset - 12, 0);
+    const nextMaxHeight = Math.max(
+      railRect.height - nextOffset - DESKTOP_INSPECTOR_RAIL_PADDING,
+      minimumVisibleHeight
+    );
 
     setDesktopInspectorOffset((current) => (Math.abs(current - nextOffset) > 1 ? nextOffset : current));
     setDesktopInspectorMaxHeight((current) => (current === null || Math.abs(current - nextMaxHeight) > 1 ? nextMaxHeight : current));
@@ -1407,7 +1419,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
   const inspectorPanel = selectedBlock && selectedDef ? (
     <div
-      className="flex h-full min-h-0 flex-col rounded-2xl border border-border/70 bg-background shadow-sm lg:h-auto lg:max-h-[calc(100vh-220px)]"
+      className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm lg:h-auto lg:max-h-[calc(100vh-220px)]"
       style={desktopInspectorMaxHeight ? { maxHeight: `${desktopInspectorMaxHeight}px` } : undefined}
       data-testid="block-editor-panel"
     >
