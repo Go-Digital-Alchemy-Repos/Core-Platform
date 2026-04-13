@@ -597,15 +597,19 @@ export function BlockEditor({
       );
     });
 
+  const editorIntro = (
+    <div className="space-y-1 bg-background">
+      <p className="text-sm font-semibold">{blockDef.label}</p>
+      <p className="text-xs text-muted-foreground">{blockDef.description}</p>
+    </div>
+  );
+
   return (
     <div className="space-y-5">
-      <div>
-        <p className="text-sm font-semibold">{blockDef.label}</p>
-        <p className="text-xs text-muted-foreground">{blockDef.description}</p>
-      </div>
-      <Separator />
       {mode === "contextual" ? (
         <div className="space-y-4">
+          {editorIntro}
+          <Separator />
           {contextualGroups.length > 0 ? (
             contextualGroups.map(({ group, propDefs }) => (
               <div key={group} className="space-y-3">
@@ -637,24 +641,34 @@ export function BlockEditor({
           </div>
         </div>
       ) : availableGroups.length <= 1 ? (
-        renderPropList(groupedPropDefs[defaultGroup])
+        <div className="space-y-4">
+          <div className="sticky top-0 z-10 -mx-4 border-b border-border/70 bg-background/95 px-4 pb-3 pt-1 backdrop-blur">
+            {editorIntro}
+          </div>
+          <div className="px-0 pb-1">
+            {renderPropList(groupedPropDefs[defaultGroup])}
+          </div>
+        </div>
       ) : (
         <Tabs defaultValue={defaultGroup} className="space-y-4">
-          <TabsList
-            className={`grid w-full ${
-              availableGroups.length === 2
-                ? "grid-cols-2"
-                : availableGroups.length === 3
-                  ? "grid-cols-3"
-                  : "grid-cols-4"
-            }`}
-          >
-            {availableGroups.map((group) => (
-              <TabsTrigger key={group} value={group} className="text-xs">
-                {GROUP_METADATA[group].label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <div className="sticky top-0 z-10 -mx-4 space-y-3 border-b border-border/70 bg-background/95 px-4 pb-3 pt-1 backdrop-blur">
+            {editorIntro}
+            <TabsList
+              className={`grid w-full ${
+                availableGroups.length === 2
+                  ? "grid-cols-2"
+                  : availableGroups.length === 3
+                    ? "grid-cols-3"
+                    : "grid-cols-4"
+              }`}
+            >
+              {availableGroups.map((group) => (
+                <TabsTrigger key={group} value={group} className="text-xs">
+                  {GROUP_METADATA[group].label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
           {availableGroups.map((group) => (
             <TabsContent key={group} value={group} className="mt-0 space-y-4">
               <div className="space-y-1">
