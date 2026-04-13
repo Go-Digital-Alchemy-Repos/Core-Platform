@@ -85,6 +85,11 @@ const SECTION_SETTING_KEYS = new Set([
 
 const IMAGE_POSITION_FIELD_GROUPS = [
   {
+    imageKey: "imageUrl",
+    positionXKey: "mobileImagePositionX",
+    positionYKey: "mobileImagePositionY",
+  },
+  {
     imageKey: "backgroundImageUrl",
     positionXKey: "backgroundPositionX",
     positionYKey: "backgroundPositionY",

@@ -100,6 +100,19 @@ const IMAGE_WIDTH_OPTIONS = [
   { label: "Narrow (max-w-2xl)", value: "narrow" },
 ];
 
+const MOBILE_IMAGE_FIT_OPTIONS = [
+  { label: "Cover", value: "cover" },
+  { label: "Contain", value: "contain" },
+];
+
+const MOBILE_IMAGE_HEIGHT_OPTIONS = [
+  { label: "Auto", value: "auto" },
+  { label: "Short (240px)", value: "sm" },
+  { label: "Medium (320px)", value: "md" },
+  { label: "Tall (420px)", value: "lg" },
+  { label: "Extra Tall (520px)", value: "xl" },
+];
+
 const DIVIDER_STYLE_OPTIONS = [
   { label: "Horizontal line", value: "line" },
   { label: "Spacer (invisible)", value: "spacer" },
@@ -215,6 +228,20 @@ const SHARED_SECTION_HEADING_PROP_DEFS: PropDef[] = [
   { key: "sectionEyebrow", label: "Eyebrow Label", type: "text", placeholder: "Small label above title" },
   { key: "sectionHeadingLevel", label: "Heading Level", type: "select", options: HEADING_LEVEL_OPTIONS },
   { key: "sectionHeadingAlignment", label: "Heading Alignment", type: "select", options: ALIGN_OPTIONS },
+];
+
+const SHARED_MOBILE_IMAGE_DEFAULTS = {
+  mobileImageFit: "cover",
+  mobileImageHeight: "auto",
+  mobileImagePositionX: 50,
+  mobileImagePositionY: 50,
+};
+
+const SHARED_MOBILE_IMAGE_PROP_DEFS: PropDef[] = [
+  { key: "mobileImageFit", label: "Mobile Image Fit", type: "select", options: MOBILE_IMAGE_FIT_OPTIONS },
+  { key: "mobileImageHeight", label: "Mobile Image Height", type: "select", options: MOBILE_IMAGE_HEIGHT_OPTIONS },
+  { key: "mobileImagePositionX", label: "Mobile Image Position X (%)", type: "number", min: 0, max: 100 },
+  { key: "mobileImagePositionY", label: "Mobile Image Position Y (%)", type: "number", min: 0, max: 100 },
 ];
 
 const OPTIONAL_SECTION_HEADING_PROP_DEFS: PropDef[] = [
@@ -391,6 +418,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       imageAlt: "About TCK Wellness",
       imageCaption: "",
       imagePosition: "right",
+      ...SHARED_MOBILE_IMAGE_DEFAULTS,
     },
     propDefs: [
       { key: "heading", label: "Heading", type: "text", placeholder: "Section heading" },
@@ -399,6 +427,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       { key: "imageAlt", label: "Image Alt Text", type: "text", placeholder: "Descriptive alt text" },
       { key: "imageCaption", label: "Image Caption", type: "text", placeholder: "Optional caption" },
       { key: "imagePosition", label: "Image Position", type: "select", options: IMAGE_POSITION_OPTIONS },
+      ...SHARED_MOBILE_IMAGE_PROP_DEFS,
     ],
   },
   {
@@ -715,12 +744,14 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       alt: "",
       caption: "",
       width: "contained",
+      ...SHARED_MOBILE_IMAGE_DEFAULTS,
     },
     propDefs: [
       { key: "imageUrl", label: "Image", type: "image-url", placeholder: "Upload or select image" },
       { key: "alt", label: "Alt Text", type: "text", placeholder: "Descriptive alt text for accessibility" },
       { key: "caption", label: "Caption", type: "text", placeholder: "Optional image caption" },
       { key: "width", label: "Image Width", type: "select", options: IMAGE_WIDTH_OPTIONS },
+      ...SHARED_MOBILE_IMAGE_PROP_DEFS,
     ],
   },
   {

@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense, type ReactElement } from "react";
+import { useState, useEffect, lazy, Suspense, type CSSProperties, type ReactElement } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,28 @@ function arr<T>(v: unknown): T[] {
 function colorStyle(value: unknown, fallback?: string) {
   const normalized = normalizeHexColor(str(value)) || fallback || "";
   return normalized ? { color: normalized } : undefined;
+}
+
+const MOBILE_IMAGE_HEIGHT_MAP: Record<string, string> = {
+  auto: "auto",
+  sm: "240px",
+  md: "320px",
+  lg: "420px",
+  xl: "520px",
+};
+
+function getMobileImageStyles(props: Record<string, unknown>): CSSProperties {
+  const fit = str(props.mobileImageFit) || "cover";
+  const heightKey = str(props.mobileImageHeight) || "auto";
+  const height = MOBILE_IMAGE_HEIGHT_MAP[heightKey] ?? MOBILE_IMAGE_HEIGHT_MAP.auto;
+  const positionX = Math.max(0, Math.min(100, num(props.mobileImagePositionX, 50)));
+  const positionY = Math.max(0, Math.min(100, num(props.mobileImagePositionY, 50)));
+
+  return {
+    ["--mobile-image-fit" as string]: fit,
+    ["--mobile-image-height" as string]: height,
+    ["--mobile-image-position" as string]: `${positionX}% ${positionY}%`,
+  };
 }
 
 function getYouTubeId(url: string): string | null {
@@ -323,8 +345,9 @@ function RichTextBlock({ props }: { props: Record<string, unknown> }) {
 function TextImageBlock({ props }: { props: Record<string, unknown> }) {
   const imageRight = str(props.imagePosition) !== "left";
   const hasImage = !!str(props.imageUrl);
+  const mobileImageStyles = getMobileImageStyles(props);
   return (
-    <div className={`flex flex-col ${imageRight ? "md:flex-row" : "md:flex-row-reverse"} gap-8 items-center py-4`}>
+    <div className={`flex flex-col ${imageRight ? "md:flex-row" : "md:flex-row-reverse"} gap-8 py-4 md:items-stretch`}>
       <div className="flex-1 space-y-3">
         {str(props.heading) && <h2 className="text-2xl font-heading font-bold">{str(props.heading)}</h2>}
         {str(props.body) && (
@@ -334,14 +357,19 @@ function TextImageBlock({ props }: { props: Record<string, unknown> }) {
           />
         )}
       </div>
-      <div className="flex-1">
+      <div className="flex-1 self-stretch">
         {hasImage ? (
-          <div>
-            <img src={str(props.imageUrl)} alt={str(props.imageAlt)} className="rounded-xl w-full object-cover max-h-72" />
+          <div className="flex h-full flex-col">
+            <img
+              src={str(props.imageUrl)}
+              alt={str(props.imageAlt)}
+              style={mobileImageStyles}
+              className="min-h-72 w-full flex-1 rounded-xl [height:var(--mobile-image-height)] [object-fit:var(--mobile-image-fit)] [object-position:var(--mobile-image-position)] md:h-full md:object-cover md:object-center"
+            />
             {str(props.imageCaption) && <p className="text-xs text-muted-foreground mt-2 text-center">{str(props.imageCaption)}</p>}
           </div>
         ) : (
-          <div className="rounded-xl bg-muted/40 border border-dashed h-48 flex items-center justify-center">
+          <div className="flex h-full min-h-48 items-center justify-center rounded-xl border border-dashed bg-muted/40">
             <span className="text-muted-foreground text-sm">Image placeholder</span>
           </div>
         )}
@@ -613,12 +641,18 @@ function ButtonGroupBlock({ props }: { props: Record<string, unknown> }) {
 function ImageBlockRenderer({ props }: { props: Record<string, unknown> }) {
   const widthClass = IMAGE_WIDTH_MAP[str(props.width)] ?? IMAGE_WIDTH_MAP.contained;
   const hasImage = !!str(props.imageUrl);
+  const mobileImageStyles = getMobileImageStyles(props);
   return (
     <div className={`py-4 ${widthClass}`}>
       <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
       {hasImage ? (
         <div>
-          <img src={str(props.imageUrl)} alt={str(props.alt)} className="w-full rounded-xl object-cover" />
+          <img
+            src={str(props.imageUrl)}
+            alt={str(props.alt)}
+            style={mobileImageStyles}
+            className="w-full rounded-xl [height:var(--mobile-image-height)] [object-fit:var(--mobile-image-fit)] [object-position:var(--mobile-image-position)] md:h-auto md:object-cover md:object-center"
+          />
           {str(props.caption) && <p className="text-xs text-muted-foreground text-center mt-2">{str(props.caption)}</p>}
         </div>
       ) : (
