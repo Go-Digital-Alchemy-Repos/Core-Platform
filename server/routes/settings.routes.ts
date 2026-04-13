@@ -4,7 +4,6 @@ import path from "path";
 import multer from "multer";
 import { z } from "zod";
 import { storage } from "../storage/index";
-import { logger } from "../utils/logger";
 import { authenticateToken, requireRole } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
 import { paramString } from "../utils/params";
@@ -78,7 +77,7 @@ const upsertSettingSchema = z.object({
 });
 
 const brandingUploadSchema = z.object({
-  settingKey: z.enum(["frontend_logo_url", "admin_icon_url", "favicon_url"]),
+  settingKey: z.enum(["frontend_logo_url", "favicon_url"]),
 });
 
 router.put(
@@ -164,40 +163,6 @@ router.delete(
   asyncHandler(async (req, res) => {
     await storage.settings.deleteSetting(paramString(req.params.key));
     res.json({ message: "Setting deleted" });
-  })
-);
-
-const VALID_PRESET_IDS = [
-  "tck-default", "ocean-blue", "midnight", "minimal-light", "contrast-pro",
-  "warm-neutral", "slate-blue", "frost", "charcoal-gold", "clean-clinical",
-  "energetic-blue-pop",
-] as const;
-
-const setThemeSchema = z.object({
-  presetId: z.enum(VALID_PRESET_IDS),
-  customOverrides: z.record(z.string()).nullable().optional(),
-});
-
-router.put(
-  "/theme",
-  asyncHandler(async (req, res) => {
-    const data = setThemeSchema.parse(req.body);
-    await storage.settings.upsertSetting("theme_preset_id", data.presetId, "theme", false);
-    if (data.customOverrides) {
-      await storage.settings.upsertSetting(
-        "theme_custom_overrides",
-        JSON.stringify(data.customOverrides),
-        "theme",
-        false
-      );
-    } else {
-      try {
-        await storage.settings.deleteSetting("theme_custom_overrides");
-      } catch (err) {
-        logger.app.warn("Failed to delete theme custom overrides setting", { error: err instanceof Error ? err.message : String(err) });
-      }
-    }
-    res.json({ presetId: data.presetId, customOverrides: data.customOverrides || null });
   })
 );
 

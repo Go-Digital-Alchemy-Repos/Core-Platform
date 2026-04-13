@@ -67,7 +67,7 @@ type SettingsData = Record<
   Record<string, { value: string; isSecret: boolean }>
 >;
 
-type BrandingSettingKey = "frontend_logo_url" | "admin_icon_url" | "favicon_url";
+type BrandingSettingKey = "frontend_logo_url" | "favicon_url";
 
 type BrandingColorSettingKey =
   | "brand_primary_color"
@@ -496,7 +496,7 @@ function BrandingImageCard({
             <img
               src={currentUrl}
               alt={title}
-              className={settingKey === "admin_icon_url" ? "h-16 w-16 rounded-xl object-contain" : "max-h-16 w-auto object-contain"}
+              className="max-h-16 w-auto object-contain"
             />
           ) : (
             <div className="text-center text-sm text-muted-foreground">
@@ -711,9 +711,12 @@ function BrandingTab({ settings }: { settings: SettingsData }) {
       </div>
 
       <Tabs defaultValue="branding" className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2" data-testid="tabs-branding-subtabs">
+        <TabsList className="grid w-full max-w-lg grid-cols-3" data-testid="tabs-branding-subtabs">
           <TabsTrigger value="branding" data-testid="tab-branding-subtab-branding">
             Branding
+          </TabsTrigger>
+          <TabsTrigger value="colors" data-testid="tab-branding-subtab-colors">
+            Color Palette
           </TabsTrigger>
           <TabsTrigger value="typography" data-testid="tab-branding-subtab-typography">
             Typography
@@ -729,19 +732,15 @@ function BrandingTab({ settings }: { settings: SettingsData }) {
               currentUrl={brandingSettings.frontend_logo_url?.value || ""}
             />
             <BrandingImageCard
-              settingKey="admin_icon_url"
-              title="Admin Icon"
-              description="Shown in the admin sidebar and dashboard shell."
-              currentUrl={brandingSettings.admin_icon_url?.value || ""}
-            />
-            <BrandingImageCard
               settingKey="favicon_url"
               title="Favicon"
               description="Shown in the browser tab, bookmarks, and saved shortcuts."
               currentUrl={brandingSettings.favicon_url?.value || ""}
             />
           </div>
+        </TabsContent>
 
+        <TabsContent value="colors" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTheme } from "@/components/shared/theme-provider";
+import { useLocation } from "wouter";
 import {
   DEFAULT_BRANDING_SETTINGS,
   fontFamilyForBrandingOption,
@@ -11,7 +11,7 @@ import {
 const BrandingContext = createContext<BrandingSettings>(DEFAULT_BRANDING_SETTINGS);
 
 export function BrandingProvider({ children }: { children: React.ReactNode }) {
-  const themeState = useTheme();
+  const [location] = useLocation();
   const { data } = useQuery<BrandingSettings>({
     queryKey: ["/api/branding"],
     queryFn: async () => {
@@ -22,7 +22,6 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
       const payload = await response.json();
       return {
         frontendLogoUrl: payload?.frontendLogoUrl ?? null,
-        adminIconUrl: payload?.adminIconUrl ?? null,
         faviconUrl: payload?.faviconUrl ?? null,
         bodyFont: payload?.bodyFont ?? null,
         headingFont: payload?.headingFont ?? null,
@@ -43,6 +42,8 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     () => data ?? DEFAULT_BRANDING_SETTINGS,
     [data]
   );
+  const pathname = location.split(/[?#]/)[0] || "/";
+  const isAdminRoute = pathname.startsWith("/admin");
 
   useEffect(() => {
     const root = document.documentElement;
@@ -57,6 +58,23 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     const secondaryTextColor = hexToHslToken(branding.secondaryTextColor);
     const tertiaryTextColor = hexToHslToken(branding.tertiaryTextColor);
     const frame = window.requestAnimationFrame(() => {
+      if (isAdminRoute) {
+        root.style.removeProperty("--font-sans");
+        root.style.removeProperty("--font-serif");
+        root.style.removeProperty("--primary");
+        root.style.removeProperty("--secondary");
+        root.style.removeProperty("--accent");
+        root.style.removeProperty("--ring");
+        root.style.removeProperty("--foreground");
+        root.style.removeProperty("--card-foreground");
+        root.style.removeProperty("--popover-foreground");
+        root.style.removeProperty("--muted-foreground");
+        root.style.removeProperty("--primary-foreground");
+        root.style.removeProperty("--secondary-foreground");
+        root.style.removeProperty("--accent-foreground");
+        return;
+      }
+
       if (bodyFontFamily) {
         root.style.setProperty("--font-sans", bodyFontFamily);
       } else {
@@ -136,13 +154,11 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     branding.primaryTextColor,
     branding.secondaryTextColor,
     branding.tertiaryTextColor,
-    themeState.theme,
-    themeState.activePresetId,
-    themeState.customOverrides,
+    isAdminRoute,
   ]);
 
   useEffect(() => {
-    const faviconHref = branding.faviconUrl || "/favicon.png";
+    const faviconHref = isAdminRoute ? "/favicon.png" : branding.faviconUrl || "/favicon.png";
     let faviconEl = document.head.querySelector<HTMLLinkElement>('link[rel="icon"]');
 
     if (!faviconEl) {
@@ -159,7 +175,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     } else {
       faviconEl.setAttribute("type", "image/png");
     }
-  }, [branding.faviconUrl]);
+  }, [branding.faviconUrl, isAdminRoute]);
 
   return <BrandingContext.Provider value={branding}>{children}</BrandingContext.Provider>;
 }

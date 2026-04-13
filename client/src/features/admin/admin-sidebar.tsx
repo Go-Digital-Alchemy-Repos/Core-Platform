@@ -20,7 +20,6 @@ import {
   SearchIcon,
   Blocks,
   ClipboardList,
-  Palette,
   Menu as MenuIcon,
   PanelRight,
   Database,
@@ -28,7 +27,6 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import logoIcon from "@assets/TCK-Wellness_Icon.webp";
-import { useBranding } from "@/components/shared/branding-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -79,7 +77,6 @@ const navGroups: NavGroup[] = [
       { title: "SEO", href: "/admin/cms/seo", icon: SearchIcon, iconColor: "text-violet-400" },
       { title: "Menus", href: "/admin/cms/menus", icon: MenuIcon, iconColor: "text-violet-500" },
       { title: "Sidebars & Widgets", href: "/admin/cms/sidebars", icon: PanelRight, iconColor: "text-emerald-500" },
-      { title: "Themes", href: "/admin/cms/themes", icon: Palette, iconColor: "text-fuchsia-500" },
     ],
   },
   {
@@ -98,10 +95,9 @@ interface AdminSidebarProps {
 export function AdminSidebar({ children }: AdminSidebarProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
-  const { adminIconUrl } = useBranding();
   const [profileOpen, setProfileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const adminLogo = adminIconUrl || logoIcon;
+  const adminLogo = logoIcon;
 
   const renderNavItem = (item: NavItem) => {
     const exactOnlyRoutes = ["/admin", "/admin/cms"];

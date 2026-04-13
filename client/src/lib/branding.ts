@@ -1,6 +1,5 @@
 export interface BrandingSettings {
   frontendLogoUrl: string | null;
-  adminIconUrl: string | null;
   faviconUrl: string | null;
   bodyFont: string | null;
   headingFont: string | null;
@@ -50,7 +49,6 @@ export const BRANDING_SERIF_FONT_OPTIONS = BRANDING_FONT_OPTIONS.filter((option)
 
 export const DEFAULT_BRANDING_SETTINGS: BrandingSettings = {
   frontendLogoUrl: null,
-  adminIconUrl: null,
   faviconUrl: null,
   bodyFont: null,
   headingFont: null,

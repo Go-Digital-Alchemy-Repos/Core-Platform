@@ -54,7 +54,6 @@ const CmsMediaPage = lazy(() => import("@/features/admin/cms/cms-media-page"));
 const CmsSeoPage = lazy(() => import("@/features/admin/cms/cms-seo-page"));
 const CmsSectionsPage = lazy(() => import("@/features/admin/cms/cms-sections-page"));
 const CmsSectionEditorPage = lazy(() => import("@/features/admin/cms/cms-section-editor-page"));
-const CmsThemesPage = lazy(() => import("@/features/admin/cms/cms-themes-page"));
 const CmsMenusPage = lazy(() => import("@/features/admin/cms/cms-menus-page"));
 const CmsSidebarsPage = lazy(() => import("@/features/admin/cms/cms-sidebars-page"));
 const SystemBackupsPage = lazy(() => import("@/features/admin/system-backups-page"));
@@ -243,11 +242,6 @@ function Router() {
             <CmsSeoPage />
           </ProtectedRoute>
         </Route>
-        <Route path="/admin/cms/themes">
-          <ProtectedRoute roles={["admin"]}>
-            <CmsThemesPage />
-          </ProtectedRoute>
-        </Route>
         <Route path="/admin/cms/menus">
           <ProtectedRoute roles={["admin"]}>
             <CmsMenusPage />
@@ -337,6 +331,25 @@ function RouteScrollManager() {
   return null;
 }
 
+function RouteAdminModeManager() {
+  const [location] = useLocation();
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const pathname = location.split(/[?#]/)[0] || "/";
+    const isAdminRoute = pathname.startsWith("/admin");
+    const root = document.documentElement;
+
+    root.classList.toggle("admin-mode", isAdminRoute);
+
+    return () => {
+      root.classList.remove("admin-mode");
+    };
+  }, [location]);
+
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -345,6 +358,7 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <SetupGuard>
+              <RouteAdminModeManager />
               <RouteScrollManager />
               <Router />
             </SetupGuard>

@@ -53,37 +53,11 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/therapist/application", applicationRoutes);
   app.use("/api/reference", referenceRoutes);
 
-  app.get("/api/theme/presets", async (_req, res) => {
-    const { THEME_PRESET_META } = await import("@shared/theme-preset-meta");
-    res.json(THEME_PRESET_META);
-  });
-
-  app.get("/api/theme/active", async (_req, res) => {
-    try {
-      const presetId = await storage.settings.getSetting("theme_preset_id");
-      let customOverrides: Record<string, string> | null = null;
-      try {
-        const raw = await storage.settings.getSetting("theme_custom_overrides");
-        if (raw) customOverrides = JSON.parse(raw);
-      } catch (err) {
-        logger.app.warn("Failed to parse theme custom overrides JSON", { error: err instanceof Error ? err.message : String(err) });
-      }
-      res.json({
-        presetId: presetId || "tck-default",
-        customOverrides,
-      });
-    } catch (err) {
-      logger.app.warn("Failed to retrieve active theme, returning defaults", { error: err instanceof Error ? err.message : String(err) });
-      res.json({ presetId: "tck-default", customOverrides: null });
-    }
-  });
-
   app.get("/api/branding", async (_req, res) => {
     try {
       const branding = await storage.settings.getDecryptedCategory("branding");
       res.json({
         frontendLogoUrl: branding.frontend_logo_url || null,
-        adminIconUrl: branding.admin_icon_url || null,
         faviconUrl: branding.favicon_url || null,
         bodyFont: branding.frontend_body_font || null,
         headingFont: branding.frontend_heading_font || null,
@@ -102,7 +76,6 @@ export function registerApiRoutes(app: Express) {
       });
       res.json({
         frontendLogoUrl: null,
-        adminIconUrl: null,
         faviconUrl: null,
         bodyFont: null,
         headingFont: null,

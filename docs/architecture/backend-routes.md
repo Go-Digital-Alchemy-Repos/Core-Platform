@@ -56,8 +56,7 @@ All admin routes require `admin` role and are registered under `/api/admin/`:
 | `/api/health` | GET | Basic health check (memory, uptime, version) |
 | `/api/health/ready` | GET | Readiness probe (checks DB connectivity) |
 | `/api/health/metrics` | GET | Request metrics (dev or when METRICS_ENABLED) |
-| `/api/theme/presets` | GET | Available theme presets |
-| `/api/theme/active` | GET | Current active theme |
+| `/api/branding` | GET | Public branding settings for the frontend |
 | `/api/membership-tiers` | GET | Public tier listing |
 | `/api/seo/global` | GET | Global SEO settings |
 | `/robots.txt` | GET | Dynamic robots.txt |
