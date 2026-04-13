@@ -19,7 +19,16 @@ export { blogTaxonomies, BLOG_TAXONOMY_TYPES, insertBlogTaxonomySchema, type Ins
 export { eventRegistrations, insertEventRegistrationSchema, type InsertEventRegistration, type EventRegistration } from "./event-registrations";
 export { cmsPages, insertCmsPageSchema, type InsertCmsPage, type CmsPage } from "./cms-pages";
 export { cmsPageRevisions, insertCmsPageRevisionSchema, type InsertCmsPageRevision, type CmsPageRevision } from "./cms-page-revisions";
-export { cmsMedia, insertCmsMediaSchema, type InsertCmsMedia, type CmsMediaAsset } from "./cms-media";
+export {
+  cmsMedia,
+  insertCmsMediaSchema,
+  type InsertCmsMedia,
+  type CmsMediaAsset,
+  type CmsMediaUsageEntityType,
+  type CmsMediaAssetKind,
+  type CmsMediaUsageReference,
+  type CmsMediaLibraryAsset,
+} from "./cms-media";
 export { cmsSections, insertCmsSectionSchema, type InsertCmsSection, type CmsSection } from "./cms-sections";
 export { seoSettings, insertSeoSettingsSchema, type InsertSeoSettings, type SeoSettings } from "./seo-settings";
 export { redirects, insertRedirectSchema, type InsertRedirect, type Redirect } from "./redirects";

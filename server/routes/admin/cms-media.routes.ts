@@ -7,11 +7,37 @@ import { asyncHandler } from "../../middleware/error-handler";
 import { storage } from "../../storage";
 import * as r2Service from "../../services/r2.service";
 import { paramString } from "../../utils/params";
-import { optimizeImage, CMS_OPTIONS } from "../../services/image-optimizer";
+import { optimizeImage, CMS_OPTIONS, isImageMime } from "../../services/image-optimizer";
+import { buildCmsMediaLibraryAssets } from "../../services/cms-media-usage.service";
 
 const router = Router();
 
-const CMS_IMAGE_MIMES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const CMS_MEDIA_MIMES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.ms-word",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "text/csv",
+  "text/plain",
+  "application/rtf",
+  "text/rtf",
+  "application/vnd.oasis.opendocument.text",
+  "application/vnd.oasis.opendocument.spreadsheet",
+  "application/vnd.oasis.opendocument.presentation",
+];
+const CMS_MEDIA_EXTENSIONS = [
+  ".png", ".jpg", ".jpeg", ".webp", ".gif",
+  ".pdf", ".doc", ".docx", ".xls", ".xlsx",
+  ".ppt", ".pptx", ".csv", ".txt", ".rtf", ".odt", ".ods", ".odp",
+];
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const updateMediaSchema = z.object({
   originalName: z.string().trim().min(1).max(255).optional(),
@@ -29,10 +55,11 @@ const cmsUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_SIZE_BYTES },
   fileFilter: (_req, file, cb) => {
-    if (CMS_IMAGE_MIMES.includes(file.mimetype)) {
+    const extension = path.extname(file.originalname).toLowerCase();
+    if (CMS_MEDIA_MIMES.includes(file.mimetype) || CMS_MEDIA_EXTENSIONS.includes(extension)) {
       cb(null, true);
     } else {
-      cb(new Error("Only PNG, JPEG, WebP, and GIF images are allowed for CMS media"));
+      cb(new Error("Accepted file types: images, PDF, Word, Excel, PowerPoint, CSV, TXT, RTF, and OpenDocument files"));
     }
   },
 });
@@ -96,29 +123,37 @@ router.post(
 
     const safeName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
     const adminId = (req as any).user?.id;
-
-    const optimized = await optimizeImage(req.file.buffer, req.file.mimetype, CMS_OPTIONS);
     const baseName = safeName.replace(/\.[^.]+$/, "");
+    const extension = path.extname(safeName) || ".bin";
+    const isImage = isImageMime(req.file.mimetype);
+    const optimized = isImage
+      ? await optimizeImage(req.file.buffer, req.file.mimetype, CMS_OPTIONS)
+      : null;
+    const fileBuffer = optimized?.buffer ?? req.file.buffer;
+    const fileMimeType = optimized?.mimeType ?? req.file.mimetype;
+    const fileExtension = optimized?.extension ?? extension;
+    const fileSize = optimized?.optimizedSize ?? req.file.size;
+
     const existingAssets = await storage.cmsMedia.getAllMedia();
     const originalName = buildUniqueDisplayName(
       baseName,
-      optimized.extension,
+      fileExtension,
       existingAssets.map((asset) => asset.originalName)
     );
-    const filename = `${Date.now()}-${stripExtension(originalName)}${optimized.extension}`;
+    const filename = `${Date.now()}-${stripExtension(originalName)}${fileExtension}`;
     const r2Key = `cms/media/${filename}`;
 
     const r2Configured = await r2Service.isConfigured();
     let publicUrl: string | null = null;
 
     if (r2Configured) {
-      publicUrl = await r2Service.uploadFile(r2Key, optimized.buffer, optimized.mimeType);
+      publicUrl = await r2Service.uploadFile(r2Key, fileBuffer, fileMimeType);
     }
 
     if (!publicUrl) {
       ensureCmsDir();
       const localPath = path.join(LOCAL_CMS_DIR, filename);
-      fs.writeFileSync(localPath, optimized.buffer);
+      fs.writeFileSync(localPath, fileBuffer);
       publicUrl = `/uploads/cms/${filename}`;
     }
 
@@ -127,8 +162,8 @@ router.post(
       originalName,
       title: stripExtension(originalName),
       url: publicUrl,
-      mimeType: optimized.mimeType,
-      fileSize: optimized.optimizedSize,
+      mimeType: fileMimeType,
+      fileSize,
       r2Key: r2Configured ? r2Key : null,
       alt: "",
       uploadedBy: adminId,
@@ -142,14 +177,13 @@ router.get(
   "/media",
   asyncHandler(async (_req, res) => {
     const assets = await storage.cmsMedia.getAllMedia();
-    res.json(
-      await Promise.all(
-        assets.map(async (asset) => ({
-          ...asset,
-          url: (await r2Service.normalizePublicUrl(asset.url)) ?? asset.url,
-        }))
-      )
+    const normalizedAssets = await Promise.all(
+      assets.map(async (asset) => ({
+        ...asset,
+        url: (await r2Service.normalizePublicUrl(asset.url)) ?? asset.url,
+      }))
     );
+    res.json(await buildCmsMediaLibraryAssets(normalizedAssets));
   })
 );
 
@@ -208,6 +242,9 @@ router.post(
     if (!asset) return res.status(404).json({ error: "Media not found" });
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
+    }
+    if (!isImageMime(req.file.mimetype)) {
+      return res.status(400).json({ error: "Only images can be cropped and replaced in place" });
     }
 
     const optimized = await optimizeImage(req.file.buffer, req.file.mimetype, CMS_OPTIONS);

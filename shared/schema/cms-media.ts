@@ -33,3 +33,24 @@ export const insertCmsMediaSchema = createInsertSchema(cmsMedia).omit({
 
 export type InsertCmsMedia = z.infer<typeof insertCmsMediaSchema>;
 export type CmsMediaAsset = typeof cmsMedia.$inferSelect;
+
+export type CmsMediaUsageEntityType = "page" | "blog_post" | "event" | "global_seo";
+export type CmsMediaAssetKind = "image" | "document";
+
+export interface CmsMediaUsageReference {
+  entityType: CmsMediaUsageEntityType;
+  entityId: string;
+  entityName: string;
+  field: string;
+  path?: string;
+  statusLabel: string;
+  isLive: boolean;
+}
+
+export interface CmsMediaLibraryAsset extends CmsMediaAsset {
+  assetKind: CmsMediaAssetKind;
+  usageRefs: CmsMediaUsageReference[];
+  usageCount: number;
+  liveUsageCount: number;
+  isInUse: boolean;
+}

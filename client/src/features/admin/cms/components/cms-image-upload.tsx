@@ -3,13 +3,53 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { UploadCloud, X, RefreshCw, Image, Library } from "lucide-react";
+import { UploadCloud, X, RefreshCw, Image, Library, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MediaPickerDialog } from "./media-picker-dialog";
-import type { CmsMediaAsset } from "@shared/schema";
+import type { CmsMediaAsset, CmsMediaLibraryAsset } from "@shared/schema";
 
-const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const IMAGE_ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const IMAGE_ACCEPTED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif"];
+const MEDIA_ACCEPTED_TYPES = [
+  ...IMAGE_ACCEPTED_TYPES,
+  "application/pdf",
+  "application/msword",
+  "application/vnd.ms-word",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "text/csv",
+  "text/plain",
+  "application/rtf",
+  "text/rtf",
+  "application/vnd.oasis.opendocument.text",
+  "application/vnd.oasis.opendocument.spreadsheet",
+  "application/vnd.oasis.opendocument.presentation",
+];
+const MEDIA_ACCEPTED_EXTENSIONS = [
+  ...IMAGE_ACCEPTED_EXTENSIONS,
+  ".pdf", ".doc", ".docx", ".xls", ".xlsx",
+  ".ppt", ".pptx", ".csv", ".txt", ".rtf", ".odt", ".ods", ".odp",
+];
 const MAX_BYTES = 10 * 1024 * 1024;
+
+function inferAssetKind(mimeType?: string | null): "image" | "document" {
+  return mimeType?.startsWith("image/") ? "image" : "document";
+}
+
+function inferAssetKindFromValue(value: string): "image" | "document" {
+  return /\.(png|jpe?g|webp|gif|svg)(?:\?.*)?$/i.test(value) ? "image" : "document";
+}
+
+function isAcceptedFile(file: File, acceptedMode: "images" | "all") {
+  const extensionIndex = file.name.lastIndexOf(".");
+  const extension = extensionIndex >= 0 ? file.name.slice(extensionIndex).toLowerCase() : "";
+  const acceptedTypes = acceptedMode === "all" ? MEDIA_ACCEPTED_TYPES : IMAGE_ACCEPTED_TYPES;
+  const acceptedExtensions = acceptedMode === "all" ? MEDIA_ACCEPTED_EXTENSIONS : IMAGE_ACCEPTED_EXTENSIONS;
+  return acceptedTypes.includes(file.type) || acceptedExtensions.includes(extension);
+}
 
 export interface CmsImageUploadProps {
   value: string;
@@ -17,6 +57,7 @@ export interface CmsImageUploadProps {
   label?: string;
   helpText?: string;
   className?: string;
+  acceptedMode?: "images" | "all";
   "data-testid"?: string;
 }
 
@@ -26,6 +67,7 @@ export function CmsImageUpload({
   label,
   helpText,
   className,
+  acceptedMode = "images",
   "data-testid": testId,
 }: CmsImageUploadProps) {
   const { toast } = useToast();
@@ -34,11 +76,16 @@ export function CmsImageUpload({
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<CmsMediaLibraryAsset | null>(null);
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
-      if (!ACCEPTED_TYPES.includes(file.type)) {
-        throw new Error("Only PNG, JPEG, WebP, and GIF files are accepted");
+      if (!isAcceptedFile(file, acceptedMode)) {
+        throw new Error(
+          acceptedMode === "all"
+            ? "Accepted file types: images, PDF, Word, Excel, PowerPoint, CSV, TXT, RTF, and OpenDocument files"
+            : "Only PNG, JPEG, WebP, and GIF files are accepted"
+        );
       }
       if (file.size > MAX_BYTES) {
         throw new Error(`File must be under 10 MB (this file is ${(file.size / (1024 * 1024)).toFixed(1)} MB)`);
@@ -47,7 +94,7 @@ export function CmsImageUpload({
       const fd = new FormData();
       fd.append("file", file);
 
-      return new Promise<CmsMediaAsset>((resolve, reject) => {
+      return new Promise<CmsMediaLibraryAsset>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/admin/cms/upload");
         xhr.withCredentials = true;
@@ -62,7 +109,15 @@ export function CmsImageUpload({
           setUploadProgress(100);
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
-              resolve(JSON.parse(xhr.responseText));
+              const asset = JSON.parse(xhr.responseText) as CmsMediaAsset;
+              resolve({
+                ...asset,
+                assetKind: inferAssetKind(asset.mimeType),
+                usageRefs: [],
+                usageCount: 0,
+                liveUsageCount: 0,
+                isInUse: false,
+              });
             } catch {
               reject(new Error("Invalid server response"));
             }
@@ -82,8 +137,9 @@ export function CmsImageUpload({
     },
     onSuccess: (asset) => {
       onChange(asset.url);
+      setSelectedAsset(asset);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/media"] });
-      toast({ title: "Image uploaded successfully" });
+      toast({ title: acceptedMode === "all" ? "File uploaded successfully" : "Image uploaded successfully" });
       setTimeout(() => setUploadProgress(0), 800);
     },
     onError: (err: Error) => {
@@ -117,6 +173,15 @@ export function CmsImageUpload({
   const handleDragLeave = () => setIsDragging(false);
 
   const isUploading = uploadMutation.isPending;
+  const displayAssetKind = value
+    ? selectedAsset?.url === value
+      ? selectedAsset.assetKind
+      : inferAssetKindFromValue(value)
+    : "image";
+  const acceptAttr =
+    acceptedMode === "all"
+      ? "image/png,image/jpeg,image/webp,image/gif,application/pdf,application/msword,application/vnd.ms-word,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/csv,text/plain,application/rtf,text/rtf,application/vnd.oasis.opendocument.text,application/vnd.oasis.opendocument.spreadsheet,application/vnd.oasis.opendocument.presentation,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.rtf,.odt,.ods,.odp"
+      : "image/png,image/jpeg,image/webp,image/gif";
 
   return (
     <div className={cn("space-y-1.5", className)} data-testid={testId}>
@@ -126,12 +191,28 @@ export function CmsImageUpload({
 
       {value ? (
         <div className="relative group rounded-lg border bg-muted/20 overflow-hidden">
-          <img
-            src={value}
-            alt="Preview"
-            className="w-full object-cover max-h-48 rounded-lg"
-            data-testid={testId ? `${testId}-preview` : "cms-image-preview"}
-          />
+          {displayAssetKind === "image" ? (
+            <img
+              src={value}
+              alt="Preview"
+              className="w-full object-cover max-h-48 rounded-lg"
+              data-testid={testId ? `${testId}-preview` : "cms-image-preview"}
+            />
+          ) : (
+            <div className="flex min-h-40 w-full flex-col items-center justify-center gap-3 rounded-lg bg-muted/40 p-6 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-background shadow-sm">
+                <FileText className="h-7 w-7 text-violet-500" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">
+                  {selectedAsset?.originalName || "Uploaded document"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedAsset?.mimeType || "Document file"}
+                </p>
+              </div>
+            </div>
+          )}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors rounded-lg" />
           <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button
@@ -198,10 +279,14 @@ export function CmsImageUpload({
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground/80">
-                  Drop image here or{" "}
+                  Drop {acceptedMode === "all" ? "file" : "image"} here or{" "}
                   <span className="text-violet-500 hover:text-violet-600 underline underline-offset-2">browse</span>
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5">PNG, JPG, WebP, GIF · Max 10 MB</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {acceptedMode === "all"
+                    ? "Images, PDF, Word, Excel, PowerPoint, CSV, TXT, RTF, OpenDocument · Max 10 MB"
+                    : "PNG, JPG, WebP, GIF · Max 10 MB"}
+                </p>
               </div>
               <Button
                 type="button"
@@ -225,7 +310,7 @@ export function CmsImageUpload({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/png,image/jpeg,image/webp,image/gif"
+        accept={acceptAttr}
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
@@ -242,7 +327,11 @@ export function CmsImageUpload({
       <MediaPickerDialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
-        onSelect={(url) => onChange(url)}
+        typeFilter={acceptedMode === "all" ? "all" : "images"}
+        onSelect={(url, asset) => {
+          setSelectedAsset(asset);
+          onChange(url);
+        }}
       />
     </div>
   );

@@ -7,41 +7,54 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Image, Search, CheckCircle2 } from "lucide-react";
-import type { CmsMediaAsset } from "@shared/schema";
-import { format } from "date-fns";
+import { Image, Search, CheckCircle2, FileText } from "lucide-react";
+import type { CmsMediaLibraryAsset } from "@shared/schema";
 
 interface MediaPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (url: string, asset: CmsMediaAsset) => void;
+  onSelect: (url: string, asset: CmsMediaLibraryAsset) => void;
+  typeFilter?: "images" | "documents" | "all";
 }
 
-export function MediaPickerDialog({ open, onOpenChange, onSelect }: MediaPickerDialogProps) {
+export function MediaPickerDialog({
+  open,
+  onOpenChange,
+  onSelect,
+  typeFilter = "images",
+}: MediaPickerDialogProps) {
   const [search, setSearch] = useState("");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  const { data: assets = [], isLoading } = useQuery<CmsMediaAsset[]>({
+  const { data: assets = [], isLoading } = useQuery<CmsMediaLibraryAsset[]>({
     queryKey: ["/api/admin/cms/media"],
     enabled: open,
   });
 
-  const filtered = assets.filter((a) =>
-    !search ||
-    a.originalName.toLowerCase().includes(search.toLowerCase()) ||
-    (a.title ?? "").toLowerCase().includes(search.toLowerCase()) ||
-    (a.alt ?? "").toLowerCase().includes(search.toLowerCase()) ||
-    (a.caption ?? "").toLowerCase().includes(search.toLowerCase()) ||
-    (a.description ?? "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = assets.filter((a) => {
+    const matchesType =
+      typeFilter === "all" ||
+      (typeFilter === "images" && a.assetKind === "image") ||
+      (typeFilter === "documents" && a.assetKind === "document");
+    const matchesSearch =
+      !search ||
+      a.originalName.toLowerCase().includes(search.toLowerCase()) ||
+      (a.title ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (a.alt ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (a.caption ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (a.description ?? "").toLowerCase().includes(search.toLowerCase());
+    return matchesType && matchesSearch;
+  });
 
   const formatBytes = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
+
+  const libraryLabel =
+    typeFilter === "all" ? "media items" : typeFilter === "documents" ? "documents" : "images";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -56,7 +69,7 @@ export function MediaPickerDialog({ open, onOpenChange, onSelect }: MediaPickerD
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search images…"
+              placeholder={`Search ${libraryLabel}…`}
               className="pl-9"
               data-testid="input-media-search"
             />
@@ -71,8 +84,8 @@ export function MediaPickerDialog({ open, onOpenChange, onSelect }: MediaPickerD
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-muted-foreground gap-2">
               <Image className="h-10 w-10 opacity-30" />
-              <p className="text-sm font-medium">{search ? "No images match your search" : "No media uploaded yet"}</p>
-              <p className="text-xs">Upload images through the CMS builder or Media page</p>
+              <p className="text-sm font-medium">{search ? `No ${libraryLabel} match your search` : "No media uploaded yet"}</p>
+              <p className="text-xs">Upload media through the CMS builder or Media page</p>
             </div>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -89,12 +102,23 @@ export function MediaPickerDialog({ open, onOpenChange, onSelect }: MediaPickerD
                   data-testid={`media-asset-${asset.id}`}
                   title={asset.originalName}
                 >
-                  <img
-                    src={asset.url}
-                    alt={asset.alt ?? asset.originalName}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
+                  {asset.assetKind === "image" ? (
+                    <img
+                      src={asset.url}
+                      alt={asset.alt ?? asset.originalName}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-muted/30 p-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-background shadow-sm">
+                        <FileText className="h-6 w-6 text-violet-500" />
+                      </div>
+                      <span className="line-clamp-2 text-center text-xs font-medium text-foreground">
+                        {asset.originalName}
+                      </span>
+                    </div>
+                  )}
                   {hoveredId === asset.id && (
                     <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1 p-2">
                       <CheckCircle2 className="h-6 w-6 text-white" />
@@ -111,7 +135,7 @@ export function MediaPickerDialog({ open, onOpenChange, onSelect }: MediaPickerD
         </div>
 
         <div className="px-6 py-3 border-t bg-muted/20 text-xs text-muted-foreground">
-          {filtered.length} image{filtered.length !== 1 ? "s" : ""}
+          {filtered.length} {typeFilter === "all" ? "item" : typeFilter === "documents" ? "document" : "image"}{filtered.length !== 1 ? "s" : ""}
           {search ? " matching search" : " in library"}
         </div>
       </DialogContent>
