@@ -63,7 +63,7 @@ export function SectionHeading({
         </HeadingTag>
       )}
       {subtitle && (
-        <p className={cn("public-supporting-text max-w-2xl", subtitleClassName)}>
+        <p className={cn("public-heading-subtext max-w-2xl", subtitleClassName)}>
           {subtitle}
         </p>
       )}

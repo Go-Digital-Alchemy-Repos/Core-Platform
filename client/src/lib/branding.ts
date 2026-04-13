@@ -10,7 +10,9 @@ export interface BrandingSettings {
   h2Color: string | null;
   h3ToH6Color: string | null;
   bodyTextColor: string | null;
-  supportingTextColor: string | null;
+  headingSubtextColor: string | null;
+  supportingCopyColor: string | null;
+  helperTextColor: string | null;
   metaTextColor: string | null;
   linkColor: string | null;
   linkHoverColor: string | null;
@@ -66,7 +68,9 @@ export const DEFAULT_BRANDING_SETTINGS: BrandingSettings = {
   h2Color: null,
   h3ToH6Color: null,
   bodyTextColor: null,
-  supportingTextColor: null,
+  headingSubtextColor: null,
+  supportingCopyColor: null,
+  helperTextColor: null,
   metaTextColor: null,
   linkColor: null,
   linkHoverColor: null,

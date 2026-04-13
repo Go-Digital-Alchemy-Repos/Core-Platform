@@ -42,7 +42,7 @@ function RecentPostsWidget({ widget }: { widget: SidebarWidget }) {
     <WidgetCard title={widget.title || "Recent Posts"}>
       <div className="space-y-4">
         {visiblePosts.length === 0 ? (
-          <p className="text-sm public-supporting-text">Recent posts will appear here.</p>
+          <p className="text-sm public-helper-text">Recent posts will appear here.</p>
         ) : (
           visiblePosts.map((post) => (
             post.postType === "external" && post.externalUrl ? (
@@ -95,7 +95,7 @@ function NewsletterWidget({ widget }: { widget: SidebarWidget }) {
   return (
     <WidgetCard title={heading}>
       <form className="space-y-3" onSubmit={handleSubmit} data-testid="sidebar-newsletter-form">
-        <p className="text-sm public-supporting-text">{description}</p>
+        <p className="text-sm public-supporting-copy">{description}</p>
         <Input
           type="email"
           value={email}
@@ -176,7 +176,7 @@ function CategoriesWidget({ widget }: { widget: SidebarWidget }) {
     <WidgetCard title={widget.title || "Categories"}>
       <div className="space-y-2">
         {categories.length === 0 ? (
-          <p className="text-sm public-supporting-text">Categories will appear as posts are published.</p>
+          <p className="text-sm public-helper-text">Categories will appear as posts are published.</p>
         ) : (
           categories.map(([category, count]) => (
             <Link key={category} href={`/insights?category=${encodeURIComponent(category)}`}>
@@ -207,7 +207,7 @@ function TagsWidget({ widget }: { widget: SidebarWidget }) {
     <WidgetCard title={widget.title || "Popular Topics"}>
       <div className="flex flex-wrap gap-2">
         {tags.length === 0 ? (
-          <p className="text-sm public-supporting-text">Tags will appear as posts are published.</p>
+          <p className="text-sm public-helper-text">Tags will appear as posts are published.</p>
         ) : (
           tags.map((tag) => (
             <Link key={tag} href={`/insights?tag=${encodeURIComponent(tag)}`}>

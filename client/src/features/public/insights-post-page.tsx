@@ -40,7 +40,7 @@ function PodcastPlayer({ podcastUrl }: { podcastUrl: string }) {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-sm mb-1 public-heading-3">Listen to this episode</h3>
-            <p className="text-xs public-supporting-text mb-3">Available on your favorite podcast platform</p>
+            <p className="text-xs public-helper-text mb-3">Available on your favorite podcast platform</p>
             <div className="flex items-center gap-2 flex-wrap">
               <Button
                 size="sm"
@@ -133,7 +133,7 @@ export default function InsightsPostPage() {
       <PageLayout>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-24 text-center">
           <h1 className="text-2xl font-semibold mb-4 public-heading-1">Article Not Found</h1>
-          <p className="public-supporting-text mb-6">The article you're looking for doesn't exist or has been removed.</p>
+          <p className="public-helper-text mb-6">The article you're looking for doesn't exist or has been removed.</p>
           <Link href="/insights">
             <Button variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />

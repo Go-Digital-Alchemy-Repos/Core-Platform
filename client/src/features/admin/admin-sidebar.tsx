@@ -65,12 +65,11 @@ const navGroups: NavGroup[] = [
       },
       { title: "User Manager", href: "/admin/users", icon: Users, iconColor: "text-blue-600" },
       { title: "Membership Tiers", href: "/admin/membership-tiers", icon: CreditCard, iconColor: "text-amber-600" },
-      { title: "Events", href: "/admin/events", icon: CalendarDays, iconColor: "text-purple-600" },
       { title: "Applications", href: "/admin/applications", icon: ClipboardList, iconColor: "text-orange-600" },
     ],
   },
   {
-    label: "CMS",
+    label: "Content",
     items: [
       { title: "CMS Overview", href: "/admin/cms", icon: Globe, iconColor: "text-violet-600" },
       { title: "Pages", href: "/admin/cms/pages", icon: FileCode, iconColor: "text-violet-500" },
@@ -84,6 +83,7 @@ const navGroups: NavGroup[] = [
           { title: "Blog Settings", href: "/admin/cms/blog/settings", icon: Settings, iconColor: "text-slate-500" },
         ],
       },
+      { title: "Events", href: "/admin/events", icon: CalendarDays, iconColor: "text-purple-600" },
       { title: "Media", href: "/admin/cms/media", icon: Image, iconColor: "text-violet-400" },
       { title: "SEO", href: "/admin/cms/seo", icon: SearchIcon, iconColor: "text-violet-400" },
     ],

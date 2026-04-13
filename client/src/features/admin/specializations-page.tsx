@@ -11,7 +11,7 @@ export default function AdminSpecializationsPage() {
         <p className="text-muted-foreground mb-6" data-testid="text-specializations-page-description">
           Manage the professional specialization taxonomy used in therapist profiles and directory filters.
         </p>
-        <SpecializationsTab />
+        <SpecializationsTab showHeader={false} />
       </div>
     </AdminSidebar>
   );

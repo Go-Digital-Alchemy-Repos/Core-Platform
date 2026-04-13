@@ -32,7 +32,9 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         h2Color: payload?.h2Color ?? null,
         h3ToH6Color: payload?.h3ToH6Color ?? null,
         bodyTextColor: payload?.bodyTextColor ?? null,
-        supportingTextColor: payload?.supportingTextColor ?? null,
+        headingSubtextColor: payload?.headingSubtextColor ?? null,
+        supportingCopyColor: payload?.supportingCopyColor ?? null,
+        helperTextColor: payload?.helperTextColor ?? null,
         metaTextColor: payload?.metaTextColor ?? null,
         linkColor: payload?.linkColor ?? null,
         linkHoverColor: payload?.linkHoverColor ?? null,
@@ -63,7 +65,9 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     const h2Color = hexToHslToken(branding.h2Color);
     const h3ToH6Color = hexToHslToken(branding.h3ToH6Color);
     const bodyTextColor = hexToHslToken(branding.bodyTextColor);
-    const supportingTextColor = hexToHslToken(branding.supportingTextColor);
+    const headingSubtextColor = hexToHslToken(branding.headingSubtextColor);
+    const supportingCopyColor = hexToHslToken(branding.supportingCopyColor);
+    const helperTextColor = hexToHslToken(branding.helperTextColor);
     const metaTextColor = hexToHslToken(branding.metaTextColor);
     const linkColor = hexToHslToken(branding.linkColor);
     const linkHoverColor = hexToHslToken(branding.linkHoverColor);
@@ -87,7 +91,9 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         root.style.removeProperty("--public-text-h2");
         root.style.removeProperty("--public-text-h3");
         root.style.removeProperty("--public-text-body");
-        root.style.removeProperty("--public-text-supporting");
+        root.style.removeProperty("--public-text-heading-subtext");
+        root.style.removeProperty("--public-text-supporting-copy");
+        root.style.removeProperty("--public-text-helper");
         root.style.removeProperty("--public-text-meta");
         root.style.removeProperty("--public-text-link");
         root.style.removeProperty("--public-text-link-hover");
@@ -142,12 +148,24 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         root.style.removeProperty("--public-text-body");
       }
 
-      if (supportingTextColor) {
-        root.style.setProperty("--muted-foreground", supportingTextColor);
-        root.style.setProperty("--public-text-supporting", supportingTextColor);
+      if (headingSubtextColor) {
+        root.style.setProperty("--public-text-heading-subtext", headingSubtextColor);
+      } else {
+        root.style.removeProperty("--public-text-heading-subtext");
+      }
+
+      if (supportingCopyColor) {
+        root.style.setProperty("--public-text-supporting-copy", supportingCopyColor);
+      } else {
+        root.style.removeProperty("--public-text-supporting-copy");
+      }
+
+      if (helperTextColor) {
+        root.style.setProperty("--muted-foreground", helperTextColor);
+        root.style.setProperty("--public-text-helper", helperTextColor);
       } else {
         root.style.removeProperty("--muted-foreground");
-        root.style.removeProperty("--public-text-supporting");
+        root.style.removeProperty("--public-text-helper");
       }
 
       if (h1Color) {
@@ -222,7 +240,9 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     branding.h2Color,
     branding.h3ToH6Color,
     branding.bodyTextColor,
-    branding.supportingTextColor,
+    branding.headingSubtextColor,
+    branding.supportingCopyColor,
+    branding.helperTextColor,
     branding.metaTextColor,
     branding.linkColor,
     branding.linkHoverColor,

@@ -77,7 +77,9 @@ type BrandingColorSettingKey =
   | "text_h2_color"
   | "text_h3_h6_color"
   | "text_body_color"
-  | "text_muted_color"
+  | "text_heading_subtext_color"
+  | "text_supporting_copy_color"
+  | "text_helper_text_color"
   | "text_meta_color"
   | "text_link_color"
   | "text_link_hover_color"
@@ -105,7 +107,9 @@ const BRANDING_TYPOGRAPHY_COLOR_FIELDS: Array<{
   { key: "text_h2_color", label: "H2 Color", description: "Color for section-level headings and major titles." },
   { key: "text_h3_h6_color", label: "H3-H6 Color", description: "Color for smaller heading levels and card titles." },
   { key: "text_body_color", label: "Paragraph Text", description: "Default reading color for paragraphs, excerpts, and body copy." },
-  { key: "text_muted_color", label: "Heading Subtext", description: "Supporting color for section subtitles and helper copy." },
+  { key: "text_heading_subtext_color", label: "Heading Sub-Text", description: "Color for subtitle lines directly beneath major headings." },
+  { key: "text_supporting_copy_color", label: "Supporting Copy", description: "Use for section introductions, lead-in copy, and supporting editorial text." },
+  { key: "text_helper_text_color", label: "Helper Messaging", description: "Use for empty states, helper notes, and guidance text around UI and content." },
   { key: "text_meta_color", label: "Meta Text", description: "Use for dates, authors, categories, labels, and small metadata." },
   { key: "text_link_color", label: "Link Color", description: "Default color for editorial links and linked text actions." },
   { key: "text_link_hover_color", label: "Link Hover Color", description: "Hover color for links and lightweight text actions." },
@@ -591,7 +595,9 @@ export function BrandingTab({
     text_h2_color: brandingSettings.text_h2_color?.value || "",
     text_h3_h6_color: brandingSettings.text_h3_h6_color?.value || "",
     text_body_color: brandingSettings.text_body_color?.value || "",
-    text_muted_color: brandingSettings.text_muted_color?.value || "",
+    text_heading_subtext_color: brandingSettings.text_heading_subtext_color?.value || brandingSettings.text_muted_color?.value || "",
+    text_supporting_copy_color: brandingSettings.text_supporting_copy_color?.value || brandingSettings.text_muted_color?.value || "",
+    text_helper_text_color: brandingSettings.text_helper_text_color?.value || brandingSettings.text_muted_color?.value || "",
     text_meta_color: brandingSettings.text_meta_color?.value || "",
     text_link_color: brandingSettings.text_link_color?.value || "",
     text_link_hover_color: brandingSettings.text_link_hover_color?.value || "",
@@ -612,7 +618,9 @@ export function BrandingTab({
       text_h2_color: brandingSettings.text_h2_color?.value || "",
       text_h3_h6_color: brandingSettings.text_h3_h6_color?.value || "",
       text_body_color: brandingSettings.text_body_color?.value || "",
-      text_muted_color: brandingSettings.text_muted_color?.value || "",
+      text_heading_subtext_color: brandingSettings.text_heading_subtext_color?.value || brandingSettings.text_muted_color?.value || "",
+      text_supporting_copy_color: brandingSettings.text_supporting_copy_color?.value || brandingSettings.text_muted_color?.value || "",
+      text_helper_text_color: brandingSettings.text_helper_text_color?.value || brandingSettings.text_muted_color?.value || "",
       text_meta_color: brandingSettings.text_meta_color?.value || "",
       text_link_color: brandingSettings.text_link_color?.value || "",
       text_link_hover_color: brandingSettings.text_link_hover_color?.value || "",
@@ -631,6 +639,9 @@ export function BrandingTab({
     brandingSettings.text_h2_color?.value,
     brandingSettings.text_h3_h6_color?.value,
     brandingSettings.text_body_color?.value,
+    brandingSettings.text_heading_subtext_color?.value,
+    brandingSettings.text_supporting_copy_color?.value,
+    brandingSettings.text_helper_text_color?.value,
     brandingSettings.text_muted_color?.value,
     brandingSettings.text_meta_color?.value,
     brandingSettings.text_link_color?.value,
@@ -910,13 +921,19 @@ export function BrandingTab({
                   <p className="text-lg font-semibold" style={{ ...previewHeadingStyle, color: colorValues.text_h3_h6_color || colorValues.text_h2_color || colorValues.text_body_color || undefined }}>
                     H3-H6 card and supporting heading preview
                   </p>
-                  <p className="text-sm" style={{ ...previewBodyStyle, color: colorValues.text_muted_color || undefined }}>
-                    Heading sub-text / supporting copy preview for section introductions and helper messaging.
+                  <p className="text-sm" style={{ ...previewBodyStyle, color: colorValues.text_heading_subtext_color || undefined }}>
+                    Heading sub-text preview directly beneath a hero or section heading.
+                  </p>
+                  <p className="text-sm" style={{ ...previewBodyStyle, color: colorValues.text_supporting_copy_color || undefined }}>
+                    Supporting copy preview for section introductions, lead-ins, and editorial setup.
+                  </p>
+                  <p className="text-sm" style={{ ...previewBodyStyle, color: colorValues.text_helper_text_color || undefined }}>
+                    Helper messaging preview for empty states, guidance text, and interface hints.
                   </p>
                   <p className="text-sm" style={{ ...previewBodyStyle, color: colorValues.text_body_color || undefined }}>
                     Paragraph text preview for reading content, blog excerpts, and general body copy throughout the site.
                   </p>
-                  <p className="text-xs uppercase tracking-wide" style={{ color: colorValues.text_meta_color || colorValues.text_muted_color || undefined }}>
+                  <p className="text-xs uppercase tracking-wide" style={{ color: colorValues.text_meta_color || colorValues.text_helper_text_color || undefined }}>
                     Meta text preview for dates, authors, categories, and labels
                   </p>
                   <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -1432,7 +1449,7 @@ function EmailTemplatesTab() {
 
 type Specialization = { id: number; name: string; sortOrder: number };
 
-export function SpecializationsTab() {
+export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean } = {}) {
   const { toast } = useToast();
   const [addName, setAddName] = useState("");
   const [addOpen, setAddOpen] = useState(false);
@@ -1484,17 +1501,31 @@ export function SpecializationsTab() {
   return (
     <>
       <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Tag className="h-4 w-4" />
-                Specialization Settings
-              </CardTitle>
-              <CardDescription className="mt-1">
-                Manage the list of specializations available in mental health professional profiles and the directory filter.
-              </CardDescription>
+        {showHeader ? (
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Tag className="h-4 w-4" />
+                  Specialization Settings
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Manage the list of specializations available in mental health professional profiles and the directory filter.
+                </CardDescription>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => setAddOpen(true)}
+                className="bg-accent text-accent-foreground flex-shrink-0"
+                data-testid="button-add-specialization"
+              >
+                <Plus className="h-4 w-4 mr-1.5" />
+                Add
+              </Button>
             </div>
+          </CardHeader>
+        ) : (
+          <CardContent className="flex items-center justify-end border-b py-4">
             <Button
               size="sm"
               onClick={() => setAddOpen(true)}
@@ -1504,8 +1535,8 @@ export function SpecializationsTab() {
               <Plus className="h-4 w-4 mr-1.5" />
               Add
             </Button>
-          </div>
-        </CardHeader>
+          </CardContent>
+        )}
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-10">

@@ -41,7 +41,7 @@ export default function InsightsPage() {
             <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 public-heading-1" data-testid="text-insights-heading">
               Insights & Articles
             </h1>
-            <p className="text-base sm:text-lg public-supporting-text max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg public-supporting-copy max-w-2xl mx-auto leading-relaxed">
               Explore articles, research, and insights on Third Culture Kid mental health and cross-cultural counseling.
             </p>
             {(searchQuery || categoryFilter || tagFilter) && (
@@ -193,7 +193,7 @@ export default function InsightsPage() {
               <div className="text-center py-16">
                 <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">{posts && posts.length > 0 ? "No matching articles" : "No articles yet"}</h3>
-                <p className="text-sm public-supporting-text">
+                <p className="text-sm public-helper-text">
                   {posts && posts.length > 0
                     ? "Try a different search, category, or tag."
                     : "Check back soon for insights on TCK mental health and cross-cultural counseling."}

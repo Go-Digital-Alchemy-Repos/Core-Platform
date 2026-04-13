@@ -112,7 +112,9 @@
   --public-text-h2: var(--foreground);
   --public-text-h3: var(--foreground);
   --public-text-body: var(--foreground);
-  --public-text-supporting: var(--muted-foreground);
+  --public-text-heading-subtext: var(--muted-foreground);
+  --public-text-supporting-copy: var(--muted-foreground);
+  --public-text-helper: var(--muted-foreground);
   --public-text-meta: var(--muted-foreground);
   --public-text-link: var(--accent);
   --public-text-link-hover: var(--primary);
@@ -209,7 +211,9 @@
   --public-text-h2: var(--foreground);
   --public-text-h3: var(--foreground);
   --public-text-body: var(--foreground);
-  --public-text-supporting: var(--muted-foreground);
+  --public-text-heading-subtext: var(--muted-foreground);
+  --public-text-supporting-copy: var(--muted-foreground);
+  --public-text-helper: var(--muted-foreground);
   --public-text-meta: var(--muted-foreground);
   --public-text-link: var(--accent);
   --public-text-link-hover: var(--primary);
@@ -394,8 +398,20 @@
     color: hsl(var(--public-text-body));
   }
 
+  .public-heading-subtext {
+    color: hsl(var(--public-text-heading-subtext));
+  }
+
+  .public-supporting-copy {
+    color: hsl(var(--public-text-supporting-copy));
+  }
+
+  .public-helper-text {
+    color: hsl(var(--public-text-helper));
+  }
+
   .public-supporting-text {
-    color: hsl(var(--public-text-supporting));
+    color: hsl(var(--public-text-supporting-copy));
   }
 
   .public-meta-text {

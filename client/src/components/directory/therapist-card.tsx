@@ -74,7 +74,7 @@ export function TherapistCard({ profile, user }: TherapistCardProps) {
           </h3>
           {profile.title && (
             <p
-              className="text-sm public-supporting-text truncate"
+              className="text-sm public-supporting-copy truncate"
               data-testid={`text-title-${profile.id}`}
             >
               {profile.title}

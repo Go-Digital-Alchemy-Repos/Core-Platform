@@ -206,7 +206,7 @@ export function ContactFormBlock() {
                 <MapPin className="w-5 h-5 text-accent mt-0.5" />
                 <div>
                   <h3 className="font-semibold text-sm mb-1 public-heading-3">Location</h3>
-                  <p className="text-sm public-supporting-text">Global — serving TCKs worldwide</p>
+                  <p className="text-sm public-helper-text">Global — serving TCKs worldwide</p>
                 </div>
               </div>
             </CardContent>
@@ -249,7 +249,7 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
             )}
           </h1>
           {subheading && (
-            <p className="text-base sm:text-lg public-supporting-text max-w-2xl mx-auto mb-8" data-testid="text-join-subheading" style={subheadingTextStyle}>
+            <p className="text-base sm:text-lg public-heading-subtext max-w-2xl mx-auto mb-8" data-testid="text-join-subheading" style={subheadingTextStyle}>
               {subheading}
             </p>
           )}
@@ -264,7 +264,7 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
         <Clock className="mr-2 h-5 w-5" />
         {applicationStatusText}
       </Button>
-      <p className="text-sm sm:text-base public-supporting-text mt-6" data-testid="text-login-prompt" style={subheadingTextStyle}>
+      <p className="text-sm sm:text-base public-helper-text mt-6" data-testid="text-login-prompt" style={subheadingTextStyle}>
         {loginPromptPrefix}{" "}
         <button
           onClick={() => setLoginOpen(true)}
@@ -301,7 +301,7 @@ export function JoinHeroBlock({ props = {} }: { props?: Record<string, unknown> 
         )}
       </h1>
       {subheading && (
-        <p className="text-base sm:text-lg public-supporting-text max-w-2xl mx-auto" data-testid="text-join-hero-subheading" style={subheadingTextStyle}>
+        <p className="text-base sm:text-lg public-heading-subtext max-w-2xl mx-auto" data-testid="text-join-hero-subheading" style={subheadingTextStyle}>
           {subheading}
         </p>
       )}
@@ -478,7 +478,7 @@ function BlogFeedGrid({
 }) {
   if (visible.length === 0) {
     return (
-      <div className="text-center py-12 public-supporting-text">
+      <div className="text-center py-12 public-helper-text">
         <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />
         <p className="text-sm">{searchQuery || selectedCategory || selectedTag ? "No articles match your filters" : "No articles published yet"}</p>
       </div>
@@ -661,7 +661,7 @@ export function BlogFeaturedPostBlock({ props }: { props: Record<string, unknown
   return (
     <div className="py-4" data-testid="block-blog-featured-post">
       {!featured ? (
-        <div className="text-center py-12 public-supporting-text">
+        <div className="text-center py-12 public-helper-text">
           <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />
           <p className="text-sm">Featured article will appear here</p>
         </div>
