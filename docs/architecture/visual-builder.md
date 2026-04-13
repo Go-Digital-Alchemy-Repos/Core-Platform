@@ -42,7 +42,8 @@ File:
 Responsibilities:
 - left navigator / structure panel
 - center visual canvas
-- right inspector
+- local contextual editor on the canvas
+- right advanced inspector
 - block selection
 - reordering
 - duplication
@@ -75,6 +76,10 @@ Responsibilities:
 - grouped controls for `Content`, `Media`, `Layout`, and `Settings`
 - continued use of Cloudflare R2-backed media pickers instead of raw media URL entry
 
+The same block editor now supports two roles:
+- `contextual` mode for the lightweight local editor on the canvas
+- `full` mode for the advanced inspector on the right
+
 The inspector remains schema-driven and uses the registry definitions, but presents them in a more modern grouped experience.
 
 ## Canvas / Navigator / Inspector Model
@@ -96,13 +101,51 @@ The center pane is the actual editing surface:
 - supports click-to-select on the canvas
 - shows selection outlines and quick block actions
 - scrolls as a full page surface instead of previewing block cards
+- shows a contextual local editor near the selected section
+
+#### Floating Toolbar
+
+When a section is selected, a floating toolbar appears with high-frequency actions:
+- select / edit
+- move up
+- move down
+- duplicate
+- add below
+- delete
+
+#### Contextual Local Editor
+
+The local editor is the primary editing surface for common changes:
+- headings and subheadings
+- body copy
+- CTA text and link fields
+- common layout controls
+- image/media replacement using the existing R2-backed flows
+
+It intentionally does **not** try to expose every advanced field inline on the canvas.
 
 ### Right: Inspector
 
-The inspector is contextual:
-- updates when the selected block changes
-- groups editing controls by intent
-- keeps structured field editing for safety and compatibility
+The right inspector is now intentionally secondary:
+- used for advanced or less frequent settings
+- can be hidden so the canvas gets more room
+- stays synchronized to the same selected section as the navigator and local editor
+- still uses the full grouped editor for complete control when needed
+
+This keeps the builder from feeling like a detached form page on long documents.
+
+## Selection Synchronization
+
+Selection state is shared across:
+- left navigator
+- center canvas
+- local contextual editor
+- right advanced inspector
+
+Additional long-page usability improvements:
+- selecting a block scrolls it into view
+- selected sections remain visually obvious
+- the local editor follows the selected section instead of forcing users back to a static side panel
 
 ## Media Handling Rules
 
@@ -151,6 +194,7 @@ This admin visual builder is intentionally designed so that a future live-edit m
 - the same block renderer
 - the same section styling wrappers
 - the same structured JSON persistence
+- the same contextual-vs-advanced editing split
 
 The next logical step for front-end live editing is to extract the canvas selection layer and inspector state into shared editing primitives that can mount either:
 - inside the admin dashboard, or

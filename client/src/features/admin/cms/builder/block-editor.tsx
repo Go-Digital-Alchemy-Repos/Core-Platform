@@ -23,6 +23,8 @@ interface BlockEditorProps {
   blockDef: BlockDef;
   props: Record<string, unknown>;
   onChange: (props: Record<string, unknown>) => void;
+  mode?: "full" | "contextual";
+  onOpenAdvanced?: () => void;
 }
 
 const PROP_DISPLAY_PRIORITY: Record<string, number> = {
@@ -155,6 +157,32 @@ const MEDIA_KEY_FRAGMENTS = [
   "positiony",
 ];
 
+const CONTEXTUAL_PRIORITY: Record<string, number> = {
+  badge: 5,
+  eyebrow: 8,
+  title: 10,
+  heading: 11,
+  accentHeading: 12,
+  subtitle: 20,
+  subheading: 21,
+  content: 30,
+  body: 31,
+  ctaText: 40,
+  ctaLink: 41,
+  ctaSecondaryText: 42,
+  ctaSecondaryLink: 43,
+  imageUrl: 50,
+  backgroundImageUrl: 51,
+  thumbnailUrl: 52,
+  sectionBackgroundImageUrl: 53,
+  alignment: 60,
+  textAlign: 61,
+  layout: 62,
+  columns: 63,
+  imageWidth: 64,
+  imagePosition: 65,
+};
+
 function defaultColorValueForKey(key: string) {
   if (key === "overlayColor" || key === "sectionBackgroundOverlayColor") return "#000000";
   return key === "sectionRadialGradientColor" ? DEFAULT_RADIAL_GRADIENT_COLOR : DEFAULT_COLOR_VALUE;
@@ -189,6 +217,37 @@ function inferInspectorGroup(propDef: PropDef): InspectorGroup {
   if (propDef.type === "color" || propDef.type === "boolean") return "settings";
 
   return "content";
+}
+
+function getContextualPropDefs(propDefs: PropDef[]) {
+  const filtered = propDefs.filter((propDef) => {
+    const key = propDef.key.toLowerCase();
+
+    if (SECTION_SETTING_KEYS.has(propDef.key)) return false;
+    if (propDef.type === "color") return false;
+    if (key.includes("overlay") || key.includes("padding")) return false;
+
+    if (propDef.type === "image-url") return true;
+    if (propDef.type === "richtext") return true;
+    if (propDef.type === "array-items") return true;
+    if (Object.prototype.hasOwnProperty.call(CONTEXTUAL_PRIORITY, propDef.key)) return true;
+    if (LAYOUT_KEYS.has(propDef.key)) return true;
+
+    return false;
+  });
+
+  const sorted = filtered.sort((a, b) => {
+    const aPriority = CONTEXTUAL_PRIORITY[a.key] ?? 1000;
+    const bPriority = CONTEXTUAL_PRIORITY[b.key] ?? 1000;
+    if (aPriority !== bPriority) return aPriority - bPriority;
+    return propDefs.indexOf(a) - propDefs.indexOf(b);
+  });
+
+  if (sorted.length > 0) {
+    return sorted.slice(0, 8);
+  }
+
+  return propDefs.filter((propDef) => !SECTION_SETTING_KEYS.has(propDef.key)).slice(0, 6);
 }
 
 function ArrayItemsField({
@@ -439,7 +498,13 @@ function PropField({
   }
 }
 
-export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
+export function BlockEditor({
+  blockDef,
+  props,
+  onChange,
+  mode = "full",
+  onOpenAdvanced,
+}: BlockEditorProps) {
   const setProp = (key: string, val: unknown) => {
     onChange({ ...props, [key]: val });
   };
@@ -463,6 +528,24 @@ export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
     (group) => groupedPropDefs[group].length > 0
   );
   const defaultGroup = availableGroups[0] ?? "content";
+  const contextualPropDefs = useMemo(() => getContextualPropDefs(orderedPropDefs), [orderedPropDefs]);
+  const contextualGroups = useMemo(() => {
+    const groups: Record<InspectorGroup, PropDef[]> = {
+      content: [],
+      media: [],
+      layout: [],
+      settings: [],
+    };
+
+    for (const propDef of contextualPropDefs) {
+      groups[inferInspectorGroup(propDef)].push(propDef);
+    }
+
+    return (Object.keys(groups) as InspectorGroup[]).filter((group) => groups[group].length > 0).map((group) => ({
+      group,
+      propDefs: groups[group],
+    }));
+  }, [contextualPropDefs]);
 
   const renderPropList = (propDefs: PropDef[]) =>
     propDefs.map((propDef, idx) => {
@@ -516,7 +599,39 @@ export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
         <p className="text-xs text-muted-foreground">{blockDef.description}</p>
       </div>
       <Separator />
-      {availableGroups.length <= 1 ? (
+      {mode === "contextual" ? (
+        <div className="space-y-4">
+          {contextualGroups.length > 0 ? (
+            contextualGroups.map(({ group, propDefs }) => (
+              <div key={group} className="space-y-3">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {GROUP_METADATA[group].label}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{GROUP_METADATA[group].description}</p>
+                </div>
+                {renderPropList(propDefs)}
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              This section does not have common inline controls yet. Use advanced settings for full editing.
+            </p>
+          )}
+
+          <Separator />
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              Need backgrounds, overlays, detailed styling, or less common fields?
+            </p>
+            {onOpenAdvanced && (
+              <Button type="button" variant="outline" size="sm" onClick={onOpenAdvanced}>
+                More Settings
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : availableGroups.length <= 1 ? (
         renderPropList(groupedPropDefs[defaultGroup])
       ) : (
         <Tabs defaultValue={defaultGroup} className="space-y-4">

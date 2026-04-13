@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -60,6 +60,7 @@ import {
   Monitor,
   MousePointerClick,
   Newspaper,
+  Pencil,
   Phone,
   Play,
   Plus,
@@ -177,7 +178,9 @@ interface VisualCanvasProps {
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
   onMove: (id: string, direction: "up" | "down") => void;
-  onSaveAsSection: (id: string) => void;
+  onAddBelow: (id: string) => void;
+  contextualEditor: ReactNode;
+  registerBlockRef: (id: string, node: HTMLDivElement | null) => void;
 }
 
 function groupBlocksByCategory(blocks: BlockDef[]): { category: BlockCategory; label: string; items: BlockDef[] }[] {
@@ -412,7 +415,9 @@ function CanvasBlockFrame({
   onDuplicate,
   onDelete,
   onMove,
-  onSaveAsSection,
+  onAddBelow,
+  contextualEditor,
+  registerBlockRef,
 }: {
   block: BlockInstance;
   index: number;
@@ -421,14 +426,38 @@ function CanvasBlockFrame({
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
   onMove: (id: string, direction: "up" | "down") => void;
-  onSaveAsSection: (id: string) => void;
+  onAddBelow: (id: string) => void;
+  contextualEditor: ReactNode;
+  registerBlockRef: (id: string, node: HTMLDivElement | null) => void;
 }) {
   const blockDef = getBlockDef(block.type);
   const summary = getBlockSummary(block);
   const isDynamic = isDynamicBlock(block.type);
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const [editorPlacement, setEditorPlacement] = useState<"inline" | "overlay">("overlay");
+
+  useEffect(() => {
+    if (!isSelected) return;
+
+    const updatePlacement = () => {
+      const width = frameRef.current?.getBoundingClientRect().width ?? 0;
+      setEditorPlacement(width < 900 ? "inline" : "overlay");
+    };
+
+    updatePlacement();
+    window.addEventListener("resize", updatePlacement);
+    return () => window.removeEventListener("resize", updatePlacement);
+  }, [isSelected]);
 
   return (
-    <div className="group relative" data-testid={`canvas-block-${block.id}`}>
+    <div
+      ref={(node) => {
+        frameRef.current = node;
+        registerBlockRef(block.id, node);
+      }}
+      className="group relative scroll-mt-24"
+      data-testid={`canvas-block-${block.id}`}
+    >
       <div
         className={cn(
           "relative transition-all",
@@ -481,11 +510,11 @@ function CanvasBlockFrame({
           className="h-8 w-8 shadow-sm"
           onClick={(event) => {
             event.stopPropagation();
-            onSaveAsSection(block.id);
+            onSelect(block.id);
           }}
-          data-testid={`canvas-save-section-${block.id}`}
+          data-testid={`canvas-edit-${block.id}`}
         >
-          <Bookmark className="h-3.5 w-3.5" />
+          <Pencil className="h-3.5 w-3.5" />
         </Button>
         <Button
           type="button"
@@ -520,6 +549,19 @@ function CanvasBlockFrame({
           className="h-8 w-8 shadow-sm"
           onClick={(event) => {
             event.stopPropagation();
+            onAddBelow(block.id);
+          }}
+          data-testid={`canvas-add-below-${block.id}`}
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          className="h-8 w-8 shadow-sm"
+          onClick={(event) => {
+            event.stopPropagation();
             onDuplicate(block.id);
           }}
           data-testid={`canvas-duplicate-${block.id}`}
@@ -540,6 +582,19 @@ function CanvasBlockFrame({
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
+
+      {isSelected && (
+        <div
+          className={cn(
+            "pointer-events-auto z-30",
+            editorPlacement === "overlay"
+              ? "relative mt-4 px-2 sm:px-0 lg:absolute lg:right-4 lg:top-16 lg:mt-0 lg:w-[360px] lg:max-w-[calc(100%-2rem)]"
+              : "relative mt-4"
+          )}
+        >
+          {contextualEditor}
+        </div>
+      )}
     </div>
   );
 }
@@ -551,7 +606,9 @@ function VisualCanvas({
   onDuplicate,
   onDelete,
   onMove,
-  onSaveAsSection,
+  onAddBelow,
+  contextualEditor,
+  registerBlockRef,
 }: VisualCanvasProps) {
   let nonFullWidthIndex = 0;
 
@@ -600,7 +657,9 @@ function VisualCanvas({
                     onDuplicate={onDuplicate}
                     onDelete={onDelete}
                     onMove={onMove}
-                    onSaveAsSection={onSaveAsSection}
+                    onAddBelow={onAddBelow}
+                    contextualEditor={selectedId === block.id ? contextualEditor : null}
+                    registerBlockRef={registerBlockRef}
                   />
                 );
 
@@ -653,10 +712,21 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [navigatorSearch, setNavigatorSearch] = useState("");
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: string; position: "before" | "after" } | null>(null);
+  const [advancedInspectorOpen, setAdvancedInspectorOpen] = useState(false);
+  const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
+  const blockRefs = useRef(new Map<string, HTMLDivElement | null>());
 
   const blocks = content.blocks ?? [];
   const selectedBlock = blocks.find((block) => block.id === selectedId) ?? null;
   const selectedDef = selectedBlock ? getBlockDef(selectedBlock.type) : null;
+
+  const registerBlockRef = useCallback((id: string, node: HTMLDivElement | null) => {
+    if (node) {
+      blockRefs.current.set(id, node);
+    } else {
+      blockRefs.current.delete(id);
+    }
+  }, []);
 
   const setBlocks = useCallback(
     (nextBlocks: BlockInstance[]) => {
@@ -679,18 +749,51 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     });
   }, [blocks, navigatorSearch]);
 
+  useEffect(() => {
+    if (!selectedId) return;
+    const node = blockRefs.current.get(selectedId);
+    if (!node) return;
+
+    node.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "nearest",
+    });
+  }, [selectedId]);
+
   const addBlock = useCallback((type: string) => {
     const block = createBlock(type);
-    setBlocks([...blocks, block]);
+    const nextBlocks = [...blocks];
+    if (insertAtIndex === null) {
+      nextBlocks.push(block);
+    } else {
+      nextBlocks.splice(insertAtIndex, 0, block);
+    }
+    setBlocks(nextBlocks);
     setSelectedId(block.id);
     setAddDialogOpen(false);
-  }, [blocks, setBlocks]);
+    setInsertAtIndex(null);
+  }, [blocks, insertAtIndex, setBlocks]);
 
   const insertBlocks = useCallback((insertedBlocks: BlockInstance[]) => {
-    setBlocks([...blocks, ...insertedBlocks]);
+    const nextBlocks = [...blocks];
+    if (insertAtIndex === null) {
+      nextBlocks.push(...insertedBlocks);
+    } else {
+      nextBlocks.splice(insertAtIndex, 0, ...insertedBlocks);
+    }
+    setBlocks(nextBlocks);
     setSelectedId(insertedBlocks[0]?.id ?? null);
     setAddDialogOpen(false);
-  }, [blocks, setBlocks]);
+    setInsertAtIndex(null);
+  }, [blocks, insertAtIndex, setBlocks]);
+
+  const openAddBelow = useCallback((id: string) => {
+    const sourceIndex = blocks.findIndex((block) => block.id === id);
+    const nextIndex = sourceIndex < 0 ? blocks.length : sourceIndex + 1;
+    setInsertAtIndex(nextIndex);
+    setAddDialogOpen(true);
+  }, [blocks]);
 
   const updateBlockProps = useCallback((id: string, props: Record<string, unknown>) => {
     setBlocks(blocks.map((block) => (block.id === id ? { ...block, props } : block)));
@@ -865,9 +968,20 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         </div>
 
         <div className="flex gap-2">
-          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+          <Dialog
+            open={addDialogOpen}
+            onOpenChange={(open) => {
+              setAddDialogOpen(open);
+              if (!open) setInsertAtIndex(null);
+            }}
+          >
             <DialogTrigger asChild>
-              <Button size="sm" className="flex-1" data-testid="button-add-block">
+              <Button
+                size="sm"
+                className="flex-1"
+                data-testid="button-add-block"
+                onClick={() => setInsertAtIndex(null)}
+              >
                 <Plus className="mr-1.5 h-4 w-4" />
                 Add Content
               </Button>
@@ -1027,6 +1141,33 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     </div>
   );
 
+  const contextualEditor = selectedBlock && selectedDef ? (
+    <div className="rounded-2xl border border-violet-200/80 bg-background/95 shadow-[0_16px_40px_rgba(15,23,42,0.14)] backdrop-blur">
+      <div className="space-y-2 border-b border-border/70 px-4 py-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-violet-500" />
+            <p className="text-sm font-semibold">Quick Edit</p>
+          </div>
+          <p className="mt-1 truncate text-xs text-muted-foreground">
+            Common edits for {selectedDef.label.toLowerCase()} stay next to the section you selected.
+          </p>
+        </div>
+      </div>
+      <ScrollArea className="max-h-[70vh]">
+        <div className="p-4">
+          <BlockEditor
+            blockDef={selectedDef}
+            props={selectedBlock.props}
+            onChange={(props) => updateBlockProps(selectedBlock.id, props)}
+            mode="contextual"
+            onOpenAdvanced={() => setAdvancedInspectorOpen(true)}
+          />
+        </div>
+      </ScrollArea>
+    </div>
+  ) : null;
+
   const inspectorPanel = selectedBlock && selectedDef ? (
     <div className="flex h-full flex-col rounded-2xl border border-border/70 bg-background shadow-sm" data-testid="block-editor-panel">
       <div className="space-y-3 border-b border-border/70 px-4 py-4">
@@ -1037,19 +1178,30 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
               <p className="text-sm font-semibold">Inspector</p>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Edit the selected section using grouped controls tied directly to the canvas.
+              Advanced settings for the selected section. Use Quick Edit on the canvas for the most common changes.
             </p>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => setSelectedId(null)}
-            data-testid="button-close-editor-panel"
-          >
-            <ChevronDown className="h-4 w-4 -rotate-90" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setSavingSectionBlockId(selectedBlock.id)}
+            >
+              <Bookmark className="mr-1.5 h-4 w-4" />
+              Save Section
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setAdvancedInspectorOpen(false)}
+              data-testid="button-close-editor-panel"
+            >
+              <ChevronDown className="h-4 w-4 -rotate-90" />
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-3 py-2">
@@ -1095,7 +1247,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             <Badge variant="outline">{blocks.length} block{blocks.length !== 1 ? "s" : ""}</Badge>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Structure on the left, real page canvas in the center, contextual inspector on the right.
+            Structure on the left, real page canvas in the center, and a nearby quick editor on the canvas itself.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -1103,9 +1255,24 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             <Monitor className="h-3 w-3" />
             Canvas-first editing
           </Badge>
-          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAdvancedInspectorOpen((current) => !current)}
+            disabled={!selectedBlock}
+          >
+            <Settings2 className="mr-1.5 h-4 w-4" />
+            {advancedInspectorOpen ? "Hide Advanced" : "Show Advanced"}
+          </Button>
+          <Dialog
+            open={addDialogOpen}
+            onOpenChange={(open) => {
+              setAddDialogOpen(open);
+              if (!open) setInsertAtIndex(null);
+            }}
+          >
             <DialogTrigger asChild>
-              <Button data-testid="button-add-block-toolbar">
+              <Button data-testid="button-add-block-toolbar" onClick={() => setInsertAtIndex(null)}>
                 <Plus className="mr-1.5 h-4 w-4" />
                 Add Content
               </Button>
@@ -1125,41 +1292,81 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             onDuplicate={duplicateBlock}
             onDelete={removeBlock}
             onMove={moveBlock}
-            onSaveAsSection={setSavingSectionBlockId}
+            onAddBelow={openAddBelow}
+            contextualEditor={contextualEditor}
+            registerBlockRef={registerBlockRef}
           />
         </div>
-        {inspectorPanel}
+        {advancedInspectorOpen ? inspectorPanel : (
+          <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
+            Advanced inspector is hidden. Use Quick Edit on the selected section, or tap "Show Advanced" for full controls.
+          </div>
+        )}
       </div>
 
       <div className="hidden lg:block">
-        <ResizablePanelGroup
-          direction="horizontal"
-          className="min-h-[calc(100vh-270px)] rounded-2xl border border-border/60 bg-muted/10"
-        >
-          <ResizablePanel defaultSize={20} minSize={16}>
-            <div className="h-full p-3">{navigatorPanel}</div>
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={55} minSize={35}>
-            <div className="h-full p-3">
-              <div className="h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
-                <VisualCanvas
-                  blocks={blocks}
-                  selectedId={selectedId}
-                  onSelect={setSelectedId}
-                  onDuplicate={duplicateBlock}
-                  onDelete={removeBlock}
-                  onMove={moveBlock}
-                  onSaveAsSection={setSavingSectionBlockId}
-                />
+        {advancedInspectorOpen ? (
+          <ResizablePanelGroup
+            direction="horizontal"
+            className="min-h-[calc(100vh-270px)] rounded-2xl border border-border/60 bg-muted/10"
+          >
+            <ResizablePanel defaultSize={20} minSize={16}>
+              <div className="h-full p-3">{navigatorPanel}</div>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={55} minSize={35}>
+              <div className="h-full p-3">
+                <div className="h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
+                  <VisualCanvas
+                    blocks={blocks}
+                    selectedId={selectedId}
+                    onSelect={setSelectedId}
+                    onDuplicate={duplicateBlock}
+                    onDelete={removeBlock}
+                    onMove={moveBlock}
+                    onAddBelow={openAddBelow}
+                    contextualEditor={contextualEditor}
+                    registerBlockRef={registerBlockRef}
+                  />
+                </div>
               </div>
-            </div>
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={25} minSize={20}>
-            <div className="h-full p-3">{inspectorPanel}</div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={25} minSize={20}>
+              <div className="h-full p-3">{inspectorPanel}</div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        ) : (
+          <ResizablePanelGroup
+            direction="horizontal"
+            className="min-h-[calc(100vh-270px)] rounded-2xl border border-border/60 bg-muted/10"
+          >
+            <ResizablePanel defaultSize={22} minSize={18}>
+              <div className="h-full p-3">{navigatorPanel}</div>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={78} minSize={50}>
+              <div className="h-full p-3">
+                <div className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
+                  <div className="absolute right-4 top-4 z-20 rounded-full border border-border/70 bg-background/95 px-3 py-1 text-xs text-muted-foreground shadow-sm">
+                    Advanced inspector hidden
+                  </div>
+                  <VisualCanvas
+                    blocks={blocks}
+                    selectedId={selectedId}
+                    onSelect={setSelectedId}
+                    onDuplicate={duplicateBlock}
+                    onDelete={removeBlock}
+                    onMove={moveBlock}
+                    onAddBelow={openAddBelow}
+                    contextualEditor={contextualEditor}
+                    registerBlockRef={registerBlockRef}
+                  />
+                </div>
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        )}
       </div>
 
       <Dialog
