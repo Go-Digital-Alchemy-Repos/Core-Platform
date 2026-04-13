@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -829,7 +829,11 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [frontendPreviewOpen, setFrontendPreviewOpen] = useState(false);
   const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
+  const [desktopInspectorOffset, setDesktopInspectorOffset] = useState(0);
   const blockRefs = useRef(new Map<string, HTMLDivElement | null>());
+  const desktopCanvasPanelRef = useRef<HTMLDivElement | null>(null);
+  const desktopInspectorRailRef = useRef<HTMLDivElement | null>(null);
+  const desktopInspectorCardRef = useRef<HTMLDivElement | null>(null);
 
   const blocks = content.blocks ?? [];
   const selectedBlock = blocks.find((block) => block.id === selectedId) ?? null;
@@ -886,6 +890,84 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     if (!selectedId) return;
     scrollBlockIntoView(selectedId);
   }, [scrollBlockIntoView, selectedId]);
+
+  const syncDesktopInspectorPosition = useCallback(() => {
+    if (!selectedId || !advancedInspectorOpen) {
+      setDesktopInspectorOffset(0);
+      return;
+    }
+
+    const selectedNode = blockRefs.current.get(selectedId);
+    const canvasPanel = desktopCanvasPanelRef.current;
+    const inspectorRail = desktopInspectorRailRef.current;
+    const inspectorCard = desktopInspectorCardRef.current;
+
+    if (!selectedNode || !canvasPanel || !inspectorRail || !inspectorCard) {
+      setDesktopInspectorOffset(0);
+      return;
+    }
+
+    const canvasRect = canvasPanel.getBoundingClientRect();
+    const blockRect = selectedNode.getBoundingClientRect();
+    const railRect = inspectorRail.getBoundingClientRect();
+    const inspectorHeight = inspectorCard.getBoundingClientRect().height;
+
+    const idealTop = blockRect.top - canvasRect.top;
+    const maxTop = Math.max(railRect.height - inspectorHeight - 12, 0);
+    const nextOffset = Math.min(Math.max(idealTop, 0), maxTop);
+
+    setDesktopInspectorOffset((current) => (Math.abs(current - nextOffset) > 1 ? nextOffset : current));
+  }, [advancedInspectorOpen, selectedId]);
+
+  useLayoutEffect(() => {
+    syncDesktopInspectorPosition();
+  }, [syncDesktopInspectorPosition, selectedId, previewDevice, blocks.length]);
+
+  useEffect(() => {
+    if (!advancedInspectorOpen) {
+      setDesktopInspectorOffset(0);
+      return;
+    }
+
+    const canvasPanel = desktopCanvasPanelRef.current;
+    const inspectorRail = desktopInspectorRailRef.current;
+    const inspectorCard = desktopInspectorCardRef.current;
+    const selectedNode = selectedId ? blockRefs.current.get(selectedId) : null;
+    const viewport = canvasPanel?.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement | null;
+
+    let frameId: number | null = null;
+    const requestSync = () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+      frameId = requestAnimationFrame(() => {
+        syncDesktopInspectorPosition();
+        frameId = null;
+      });
+    };
+
+    requestSync();
+
+    viewport?.addEventListener("scroll", requestSync, { passive: true });
+    window.addEventListener("resize", requestSync);
+
+    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(requestSync) : null;
+    if (resizeObserver) {
+      if (canvasPanel) resizeObserver.observe(canvasPanel);
+      if (inspectorRail) resizeObserver.observe(inspectorRail);
+      if (inspectorCard) resizeObserver.observe(inspectorCard);
+      if (selectedNode) resizeObserver.observe(selectedNode);
+    }
+
+    return () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+      viewport?.removeEventListener("scroll", requestSync);
+      window.removeEventListener("resize", requestSync);
+      resizeObserver?.disconnect();
+    };
+  }, [advancedInspectorOpen, blocks.length, previewDevice, selectedId, syncDesktopInspectorPosition]);
 
   const addBlock = useCallback((type: string) => {
     const block = createBlock(type);
@@ -1268,7 +1350,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   );
 
   const inspectorPanel = selectedBlock && selectedDef ? (
-    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-border/70 bg-background shadow-sm lg:max-h-[calc(100vh-220px)]" data-testid="block-editor-panel">
+    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-border/70 bg-background shadow-sm lg:h-auto lg:max-h-[calc(100vh-220px)]" data-testid="block-editor-panel">
       <div className="space-y-3 border-b border-border/70 px-4 py-4">
         <div className="space-y-3">
           <div className="min-w-0">
@@ -1338,7 +1420,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       </ScrollArea>
     </div>
   ) : (
-    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-dashed border-border/70 bg-background/70 p-6 text-center shadow-sm lg:max-h-[calc(100vh-220px)]">
+    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-dashed border-border/70 bg-background/70 p-6 text-center shadow-sm lg:h-auto lg:max-h-[calc(100vh-220px)]">
       <div className="m-auto max-w-sm">
         <Settings2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground/35" />
         <p className="text-base font-semibold">Select a block to inspect</p>
@@ -1350,8 +1432,15 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   );
 
   const renderDesktopInspectorPanel = () => (
-    <div className="h-full min-h-0 overflow-visible p-3">
-      <div className="h-full lg:sticky lg:top-3">{inspectorPanel}</div>
+    <div ref={desktopInspectorRailRef} className="relative h-full min-h-0 overflow-hidden p-3">
+      <div
+        className="absolute left-3 right-3 top-3 transition-transform duration-200 ease-out"
+        style={{ transform: `translateY(${desktopInspectorOffset}px)` }}
+      >
+        <div ref={desktopInspectorCardRef}>
+          {inspectorPanel}
+        </div>
+      </div>
     </div>
   );
 
@@ -1456,7 +1545,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={55} minSize={35}>
               <div className="h-full min-h-0 p-3">
-                <div className="h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
+                <div ref={desktopCanvasPanelRef} className="h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
                   <VisualCanvas
                     blocks={blocks}
                     selectedId={selectedId}
@@ -1488,7 +1577,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={78} minSize={50}>
               <div className="h-full min-h-0 p-3">
-                <div className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
+                <div ref={desktopCanvasPanelRef} className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
                   <div className="absolute right-4 top-4 z-20 rounded-full border border-border/70 bg-background/95 px-3 py-1 text-xs text-muted-foreground shadow-sm">
                     Docked inspector hidden
                   </div>
@@ -1515,7 +1604,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           >
             <ResizablePanel defaultSize={72} minSize={45}>
               <div className="h-full min-h-0 p-3">
-                <div className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
+                <div ref={desktopCanvasPanelRef} className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
                   <div className="absolute left-4 top-4 z-20 rounded-full border border-border/70 bg-background/95 px-3 py-1 text-xs text-muted-foreground shadow-sm">
                     Structure hidden
                   </div>
@@ -1541,7 +1630,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           </ResizablePanelGroup>
         ) : (
           <div className="h-[calc(100vh-180px)] min-h-[720px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10 p-3">
-            <div className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
+            <div ref={desktopCanvasPanelRef} className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
               <div className="absolute left-4 top-4 z-20 rounded-full border border-border/70 bg-background/95 px-3 py-1 text-xs text-muted-foreground shadow-sm">
                 Structure hidden
               </div>
