@@ -646,7 +646,7 @@ export default function EventDetailPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8 sm:py-12" data-testid="section-event-info">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-8 pb-2 sm:pt-12 sm:pb-3" data-testid="section-event-info">
         {isLoading && <EventDetailSkeleton />}
 
         {error && (
@@ -766,7 +766,7 @@ export default function EventDetailPage() {
               {event.title}
             </h1>
 
-            <Card className="mb-8">
+            <Card className={showMap ? "mb-8" : "mb-2"}>
               <CardContent className="p-5 sm:p-6 space-y-4">
                 <div className="flex items-start gap-3">
                   <CalendarDays className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
@@ -854,7 +854,7 @@ export default function EventDetailPage() {
       </div>
 
       {event && (event.description || event.speakerName) && (
-        <section className="mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-14" data-testid="section-event-description">
+        <section className="mx-auto max-w-3xl px-4 sm:px-6 pt-4 pb-10 sm:pt-5 sm:pb-14" data-testid="section-event-description">
           <div>
             {event.description && (
               <>
@@ -897,7 +897,7 @@ export default function EventDetailPage() {
       )}
 
       {event && (
-        <section className="mx-auto max-w-3xl px-4 sm:px-6 py-10 sm:py-14" data-testid="section-event-registration">
+        <section className="mx-auto max-w-3xl px-4 sm:px-6 pt-4 pb-10 sm:pt-5 sm:pb-14" data-testid="section-event-registration">
           {event.registrationEnabled && (
               <Card className="mb-8" data-testid="section-registration-info">
                 <CardContent className="p-5 sm:p-6">
