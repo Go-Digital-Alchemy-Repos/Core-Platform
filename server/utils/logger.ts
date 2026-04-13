@@ -63,6 +63,7 @@ export const logger = {
   http: createChildLogger("http"),
   email: createChildLogger("email"),
   r2: createChildLogger("r2"),
+  backup: createChildLogger("backup"),
   stripe: createChildLogger("stripe"),
   auth: createChildLogger("auth"),
   app: createChildLogger("app"),

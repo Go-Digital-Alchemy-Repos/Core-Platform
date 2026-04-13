@@ -55,6 +55,7 @@ const CmsSectionEditorPage = lazy(() => import("@/features/admin/cms/cms-section
 const CmsThemesPage = lazy(() => import("@/features/admin/cms/cms-themes-page"));
 const CmsMenusPage = lazy(() => import("@/features/admin/cms/cms-menus-page"));
 const CmsSidebarsPage = lazy(() => import("@/features/admin/cms/cms-sidebars-page"));
+const SystemBackupsPage = lazy(() => import("@/features/admin/system-backups-page"));
 
 const InsightsPage = lazy(() => import("@/features/public/insights-page"));
 const InsightsPostPage = lazy(() => import("@/features/public/insights-post-page"));
@@ -157,6 +158,11 @@ function Router() {
         <Route path="/admin/settings">
           <ProtectedRoute roles={["admin"]}>
             <AdminSettingsPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/system/backups">
+          <ProtectedRoute roles={["admin"]}>
+            <SystemBackupsPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/applications/:id">

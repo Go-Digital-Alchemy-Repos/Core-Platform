@@ -23,6 +23,7 @@ import {
   Palette,
   Menu as MenuIcon,
   PanelRight,
+  Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -83,6 +84,7 @@ const navGroups: NavGroup[] = [
   {
     items: [
       { title: "Documentation", href: "/admin/docs", icon: FileText, iconColor: "text-indigo-600" },
+      { title: "System Backups", href: "/admin/system/backups", icon: Database, iconColor: "text-cyan-600" },
       { title: "Settings", href: "/admin/settings", icon: Settings, iconColor: "text-slate-500" },
     ],
   },

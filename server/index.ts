@@ -15,6 +15,7 @@ import { logger, requestIdMiddleware } from "./utils/logger";
 import { recordRequest, getMetricsSnapshot } from "./utils/metrics";
 import { startScheduledPublishService } from "./services/scheduled-publish.service";
 import { startEventReminderService } from "./services/event-reminder.service";
+import { startSystemBackupService } from "./services/system-backup.service";
 
 declare const __APP_VERSION__: string;
 const pkgVersion = typeof __APP_VERSION__ === "string" ? __APP_VERSION__ : "unknown";
@@ -226,6 +227,7 @@ app.use((req, res, next) => {
 
   startScheduledPublishService();
   startEventReminderService();
+  startSystemBackupService();
 
   const port = parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(
