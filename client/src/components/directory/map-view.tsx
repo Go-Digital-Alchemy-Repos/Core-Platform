@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useEffect, useMemo } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import { Link } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -46,6 +46,32 @@ interface MapViewProps {
   highlightedId?: string | null;
 }
 
+function MapSizeInvalidator() {
+  const map = useMap();
+
+  useEffect(() => {
+    const container = map.getContainer();
+    const invalidate = () => {
+      window.requestAnimationFrame(() => {
+        map.invalidateSize();
+      });
+    };
+
+    invalidate();
+
+    const timeout = window.setTimeout(invalidate, 120);
+    const resizeObserver = new ResizeObserver(() => invalidate());
+    resizeObserver.observe(container);
+
+    return () => {
+      window.clearTimeout(timeout);
+      resizeObserver.disconnect();
+    };
+  }, [map]);
+
+  return null;
+}
+
 export function MapView({ therapists, height = "500px", interactive = true, zoom: zoomProp, center: centerProp, highlightedId }: MapViewProps) {
   const markered = useMemo(
     () =>
@@ -73,8 +99,14 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
     ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
     : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
 
+  const hasPercentHeight = typeof height === "string" && height.includes("%");
+
   return (
-    <div style={{ height }} className="rounded-md overflow-hidden border isolate" data-testid="map-container">
+    <div
+      style={{ height, minHeight: hasPercentHeight ? "420px" : height }}
+      className="rounded-md overflow-hidden border isolate"
+      data-testid="map-container"
+    >
       <MapContainer
         center={center}
         zoom={zoom}
@@ -83,6 +115,7 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
         zoomControl={interactive}
         className="h-full w-full"
       >
+        <MapSizeInvalidator />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url={tileUrl}
