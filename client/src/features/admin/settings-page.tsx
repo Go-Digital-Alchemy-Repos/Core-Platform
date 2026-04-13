@@ -706,260 +706,275 @@ function BrandingTab({ settings }: { settings: SettingsData }) {
           Branding
         </h3>
         <p className="text-sm text-muted-foreground">
-          Control the public logo, the admin icon, and the frontend typography. Branding images are stored in Cloudflare R2 under the `branding/` directory.
+          Control the public logo, favicon, color palette, and frontend typography. Branding images are stored in Cloudflare R2 under the `branding/` directory.
         </p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <BrandingImageCard
-          settingKey="frontend_logo_url"
-          title="Frontend Logo"
-          description="Shown in the site header and footer."
-          currentUrl={brandingSettings.frontend_logo_url?.value || ""}
-        />
-        <BrandingImageCard
-          settingKey="admin_icon_url"
-          title="Admin Icon"
-          description="Shown in the admin sidebar and dashboard shell."
-          currentUrl={brandingSettings.admin_icon_url?.value || ""}
-        />
-        <BrandingImageCard
-          settingKey="favicon_url"
-          title="Favicon"
-          description="Shown in the browser tab, bookmarks, and saved shortcuts."
-          currentUrl={brandingSettings.favicon_url?.value || ""}
-        />
-      </div>
+      <Tabs defaultValue="branding" className="space-y-6">
+        <TabsList className="grid w-full max-w-md grid-cols-2" data-testid="tabs-branding-subtabs">
+          <TabsTrigger value="branding" data-testid="tab-branding-subtab-branding">
+            Branding
+          </TabsTrigger>
+          <TabsTrigger value="typography" data-testid="tab-branding-subtab-typography">
+            Typography
+          </TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Type className="h-4 w-4 text-primary" />
-            Frontend Typography
-          </CardTitle>
-          <CardDescription>
-            Choose one font for headings and another for body copy on the public-facing website. Each option includes an inline sample so editors can compare type directly in the admin.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>Heading Font</Label>
-              <Select value={headingFont} onValueChange={setHeadingFont}>
-                <SelectTrigger data-testid="select-branding-heading-font">
-                  <SelectValue placeholder="Use current theme font" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__default__">Use current theme font</SelectItem>
-                  {BRANDING_FONT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">Choose from 10 sans serif and 10 serif Google fonts.</p>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Body Font</Label>
-              <Select value={bodyFont} onValueChange={setBodyFont}>
-                <SelectTrigger data-testid="select-branding-body-font">
-                  <SelectValue placeholder="Use current theme font" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__default__">Use current theme font</SelectItem>
-                  {BRANDING_FONT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">Choose from the same balanced font library for paragraph copy.</p>
-            </div>
-          </div>
-
+        <TabsContent value="branding" className="space-y-6">
           <div className="grid gap-6 xl:grid-cols-2">
-            <Card className="border-dashed">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Heading Font Picker</CardTitle>
-                <CardDescription>Preview how each font feels in large editorial headings.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sans Serif Options</p>
-                  </div>
-                  <div className="grid gap-3">
-                    {BRANDING_SANS_FONT_OPTIONS.map((option) =>
-                      renderFontOptionCard(option, headingFont, setHeadingFont, "heading")
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Serif Options</p>
-                  </div>
-                  <div className="grid gap-3">
-                    {BRANDING_SERIF_FONT_OPTIONS.map((option) =>
-                      renderFontOptionCard(option, headingFont, setHeadingFont, "heading")
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-dashed">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Body Font Picker</CardTitle>
-                <CardDescription>Preview how each font reads in paragraph-sized content.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sans Serif Options</p>
-                  </div>
-                  <div className="grid gap-3">
-                    {BRANDING_SANS_FONT_OPTIONS.map((option) =>
-                      renderFontOptionCard(option, bodyFont, setBodyFont, "body")
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Serif Options</p>
-                  </div>
-                  <div className="grid gap-3">
-                    {BRANDING_SERIF_FONT_OPTIONS.map((option) =>
-                      renderFontOptionCard(option, bodyFont, setBodyFont, "body")
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <BrandingImageCard
+              settingKey="frontend_logo_url"
+              title="Frontend Logo"
+              description="Shown in the site header and footer."
+              currentUrl={brandingSettings.frontend_logo_url?.value || ""}
+            />
+            <BrandingImageCard
+              settingKey="admin_icon_url"
+              title="Admin Icon"
+              description="Shown in the admin sidebar and dashboard shell."
+              currentUrl={brandingSettings.admin_icon_url?.value || ""}
+            />
+            <BrandingImageCard
+              settingKey="favicon_url"
+              title="Favicon"
+              description="Shown in the browser tab, bookmarks, and saved shortcuts."
+              currentUrl={brandingSettings.favicon_url?.value || ""}
+            />
           </div>
 
-          <div className="rounded-xl border bg-muted/10 p-5">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Preview</p>
-            <h4 className="mt-3 text-2xl font-semibold" style={previewHeadingStyle}>
-              TCK Wellness helps globally mobile families feel understood.
-            </h4>
-            <p className="mt-3 text-sm text-muted-foreground" style={previewBodyStyle}>
-              Use this preview to compare heading and body combinations before saving. These font selections only apply to the public-facing website, not the admin dashboard.
-            </p>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Palette className="h-4 w-4 text-primary" />
+                Color Palette
+              </CardTitle>
+              <CardDescription>
+                Set the core frontend brand colors and the text colors used on the main UI color categories.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                {BRANDING_COLOR_FIELDS.map((field) => (
+                  <div key={field.key} className="space-y-1.5 rounded-xl border p-4">
+                    <div>
+                      <Label>{field.label}</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">{field.description}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={normalizeHexColor(colorValues[field.key]) || "#000000"}
+                        onChange={(event) => updateColorValue(field.key, event.target.value.toUpperCase())}
+                        className="h-10 w-12 cursor-pointer rounded-md border bg-background p-1"
+                        data-testid={`input-color-${field.key}`}
+                      />
+                      <Input
+                        value={colorValues[field.key]}
+                        onChange={(event) => updateColorValue(field.key, event.target.value)}
+                        placeholder="#000000"
+                        data-testid={`input-hex-${field.key}`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              onClick={() => saveFontsMutation.mutate()}
-              disabled={!hasFontChanges || saveFontsMutation.isPending}
-              data-testid="button-save-branding-fonts"
-            >
-              {saveFontsMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="mr-2 h-4 w-4" />
-              )}
-              Save Typography
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Palette className="h-4 w-4 text-primary" />
-            Color Palette
-          </CardTitle>
-          <CardDescription>
-            Set the core frontend brand colors and the text colors used on the main UI color categories.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            {BRANDING_COLOR_FIELDS.map((field) => (
-              <div key={field.key} className="space-y-1.5 rounded-xl border p-4">
-                <div>
-                  <Label>{field.label}</Label>
-                  <p className="mt-1 text-xs text-muted-foreground">{field.description}</p>
+              <div className="rounded-xl border bg-muted/10 p-5">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Palette Preview</p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <div className="rounded-lg px-4 py-2 text-sm font-medium" style={previewPaletteStyle}>
+                    Primary Action
+                  </div>
+                  <div
+                    className="rounded-lg px-4 py-2 text-sm font-medium"
+                    style={{
+                      backgroundColor: colorValues.brand_secondary_color || undefined,
+                      color: colorValues.text_secondary_foreground_color || undefined,
+                    }}
+                  >
+                    Secondary Action
+                  </div>
+                  <div
+                    className="rounded-lg px-4 py-2 text-sm font-medium"
+                    style={{
+                      backgroundColor: colorValues.brand_tertiary_color || undefined,
+                      color: colorValues.text_tertiary_foreground_color || undefined,
+                    }}
+                  >
+                    Tertiary Action
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={normalizeHexColor(colorValues[field.key]) || "#000000"}
-                    onChange={(event) => updateColorValue(field.key, event.target.value.toUpperCase())}
-                    className="h-10 w-12 cursor-pointer rounded-md border bg-background p-1"
-                    data-testid={`input-color-${field.key}`}
-                  />
-                  <Input
-                    value={colorValues[field.key]}
-                    onChange={(event) => updateColorValue(field.key, event.target.value)}
-                    placeholder="#000000"
-                    data-testid={`input-hex-${field.key}`}
-                  />
+                <div className="mt-4 space-y-2">
+                  <p className="text-base font-semibold" style={{ ...previewHeadingStyle, color: colorValues.text_body_color || undefined }}>
+                    Frontend heading preview
+                  </p>
+                  <p className="text-sm" style={{ ...previewBodyStyle, color: colorValues.text_body_color || undefined }}>
+                    Body copy preview using your selected font and body text color.
+                  </p>
+                  <p className="text-sm" style={{ color: colorValues.text_muted_color || undefined }}>
+                    Muted text preview for captions, secondary labels, and helper content.
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
 
-          <div className="rounded-xl border bg-muted/10 p-5">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Palette Preview</p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <div className="rounded-lg px-4 py-2 text-sm font-medium" style={previewPaletteStyle}>
-                Primary Action
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  onClick={() => saveColorsMutation.mutate()}
+                  disabled={!hasColorChanges || saveColorsMutation.isPending}
+                  data-testid="button-save-branding-colors"
+                >
+                  {saveColorsMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Save Color Palette
+                </Button>
               </div>
-              <div
-                className="rounded-lg px-4 py-2 text-sm font-medium"
-                style={{
-                  backgroundColor: colorValues.brand_secondary_color || undefined,
-                  color: colorValues.text_secondary_foreground_color || undefined,
-                }}
-              >
-                Secondary Action
-              </div>
-              <div
-                className="rounded-lg px-4 py-2 text-sm font-medium"
-                style={{
-                  backgroundColor: colorValues.brand_tertiary_color || undefined,
-                  color: colorValues.text_tertiary_foreground_color || undefined,
-                }}
-              >
-                Tertiary Action
-              </div>
-            </div>
-            <div className="mt-4 space-y-2">
-              <p className="text-base font-semibold" style={{ ...previewHeadingStyle, color: colorValues.text_body_color || undefined }}>
-                Frontend heading preview
-              </p>
-              <p className="text-sm" style={{ ...previewBodyStyle, color: colorValues.text_body_color || undefined }}>
-                Body copy preview using your selected font and body text color.
-              </p>
-              <p className="text-sm" style={{ color: colorValues.text_muted_color || undefined }}>
-                Muted text preview for captions, secondary labels, and helper content.
-              </p>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              onClick={() => saveColorsMutation.mutate()}
-              disabled={!hasColorChanges || saveColorsMutation.isPending}
-              data-testid="button-save-branding-colors"
-            >
-              {saveColorsMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="mr-2 h-4 w-4" />
-              )}
-              Save Color Palette
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="typography" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Type className="h-4 w-4 text-primary" />
+                Frontend Typography
+              </CardTitle>
+              <CardDescription>
+                Choose one font for headings and another for body copy on the public-facing website. Each option includes an inline sample so editors can compare type directly in the admin.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>Heading Font</Label>
+                  <Select value={headingFont} onValueChange={setHeadingFont}>
+                    <SelectTrigger data-testid="select-branding-heading-font">
+                      <SelectValue placeholder="Use current theme font" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__default__">Use current theme font</SelectItem>
+                      {BRANDING_FONT_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Choose from 10 sans serif and 10 serif Google fonts.</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>Body Font</Label>
+                  <Select value={bodyFont} onValueChange={setBodyFont}>
+                    <SelectTrigger data-testid="select-branding-body-font">
+                      <SelectValue placeholder="Use current theme font" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__default__">Use current theme font</SelectItem>
+                      {BRANDING_FONT_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Choose from the same balanced font library for paragraph copy.</p>
+                </div>
+              </div>
+
+              <div className="grid gap-6 xl:grid-cols-2">
+                <Card className="border-dashed">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Heading Font Picker</CardTitle>
+                    <CardDescription>Preview how each font feels in large editorial headings.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sans Serif Options</p>
+                      </div>
+                      <div className="grid gap-3">
+                        {BRANDING_SANS_FONT_OPTIONS.map((option) =>
+                          renderFontOptionCard(option, headingFont, setHeadingFont, "heading")
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Serif Options</p>
+                      </div>
+                      <div className="grid gap-3">
+                        {BRANDING_SERIF_FONT_OPTIONS.map((option) =>
+                          renderFontOptionCard(option, headingFont, setHeadingFont, "heading")
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-dashed">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Body Font Picker</CardTitle>
+                    <CardDescription>Preview how each font reads in paragraph-sized content.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sans Serif Options</p>
+                      </div>
+                      <div className="grid gap-3">
+                        {BRANDING_SANS_FONT_OPTIONS.map((option) =>
+                          renderFontOptionCard(option, bodyFont, setBodyFont, "body")
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Serif Options</p>
+                      </div>
+                      <div className="grid gap-3">
+                        {BRANDING_SERIF_FONT_OPTIONS.map((option) =>
+                          renderFontOptionCard(option, bodyFont, setBodyFont, "body")
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="rounded-xl border bg-muted/10 p-5">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Preview</p>
+                <h4 className="mt-3 text-2xl font-semibold" style={previewHeadingStyle}>
+                  TCK Wellness helps globally mobile families feel understood.
+                </h4>
+                <p className="mt-3 text-sm text-muted-foreground" style={previewBodyStyle}>
+                  Use this preview to compare heading and body combinations before saving. These font selections only apply to the public-facing website, not the admin dashboard.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  onClick={() => saveFontsMutation.mutate()}
+                  disabled={!hasFontChanges || saveFontsMutation.isPending}
+                  data-testid="button-save-branding-fonts"
+                >
+                  {saveFontsMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Save Typography
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
