@@ -57,6 +57,7 @@ const LazyJoinHeroBlock = lazy(() => import("./public-dynamic-blocks").then(m =>
 const LazyJoinRegistrationFormBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.JoinRegistrationFormBlock })));
 const LazyBlogPostFeedBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.BlogPostFeedBlock })));
 const LazyBlogFeaturedPostBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.BlogFeaturedPostBlock })));
+const LazyStandardBlogPageBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.StandardBlogPageBlock })));
 const LazyEventsArchiveSection = lazy(() => import("@/features/public/events-page").then(m => ({ default: m.EventsArchiveSection })));
 const LazyRecordingArchivesSection = lazy(() => import("@/features/public/recording-archives-page").then(m => ({ default: m.RecordingArchivesSection })));
 const LazyDirectoryBrowserSection = lazy(() => import("@/features/directory/directory-page").then(m => ({ default: m.DirectoryBrowserSection })));
@@ -1207,6 +1208,7 @@ const DYNAMIC_BLOCK_TYPES = new Set([
   "join-registration-form",
   "blog-post-feed",
   "blog-featured-post",
+  "standard-blog-page",
   "events-archive",
   "video-archives",
   "directory-browser",
@@ -1233,6 +1235,13 @@ export function PublicBlockRenderer({
       renderedBlock = (
         <Suspense fallback={<DynamicFallback />}>
           <LazyBlogFeaturedPostBlock props={block.props} />
+        </Suspense>
+      );
+    }
+    if (block.type === "standard-blog-page") {
+      renderedBlock = (
+        <Suspense fallback={<DynamicFallback />}>
+          <LazyStandardBlogPageBlock props={block.props} />
         </Suspense>
       );
     }

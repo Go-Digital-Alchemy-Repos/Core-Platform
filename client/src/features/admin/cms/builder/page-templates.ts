@@ -234,11 +234,9 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
         alignment: "center",
       }),
       block("blog-featured-post", {
-        title: "Featured Article",
         layout: "split",
       }),
       block("blog-post-feed", {
-        title: "All Articles",
         postsPerPage: 9,
         gridColumns: "3",
         feedStyle: "pagination",

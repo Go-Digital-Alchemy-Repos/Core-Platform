@@ -1367,7 +1367,6 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     isDynamic: true,
     category: "dynamic",
     defaultProps: {
-      title: "All Articles",
       postsPerPage: 9,
       gridColumns: "3",
       feedStyle: "pagination",
@@ -1376,7 +1375,6 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
       showTagFilter: true,
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
       { key: "postsPerPage", label: "Posts Per Page", type: "number", min: 3, max: 24 },
       { key: "gridColumns", label: "Grid Columns", type: "select", options: COLUMNS_OPTIONS },
       {
@@ -1401,11 +1399,9 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     isDynamic: true,
     category: "dynamic",
     defaultProps: {
-      title: "Featured Article",
       layout: "split",
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Optional heading" },
       {
         key: "layout",
         label: "Featured Layout",
@@ -1415,6 +1411,48 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
           { label: "Stacked Card", value: "stacked" },
         ],
       },
+    ],
+  },
+  {
+    type: "standard-blog-page",
+    label: "Standard Blog Page (Live)",
+    iconName: "Newspaper",
+    description: "Combined blog archive with filters, featured post, and article feed in one reusable live block",
+    isDynamic: true,
+    category: "dynamic",
+    defaultProps: {
+      layout: "split",
+      postsPerPage: 9,
+      gridColumns: "3",
+      feedStyle: "pagination",
+      showSearch: true,
+      showCategoryFilter: true,
+      showTagFilter: true,
+    },
+    propDefs: [
+      {
+        key: "layout",
+        label: "Featured Layout",
+        type: "select",
+        options: [
+          { label: "Split Card", value: "split" },
+          { label: "Stacked Card", value: "stacked" },
+        ],
+      },
+      { key: "postsPerPage", label: "Posts Per Page", type: "number", min: 3, max: 24 },
+      { key: "gridColumns", label: "Grid Columns", type: "select", options: COLUMNS_OPTIONS },
+      {
+        key: "feedStyle",
+        label: "Archive Navigation",
+        type: "select",
+        options: [
+          { label: "Pagination", value: "pagination" },
+          { label: "Load More", value: "load-more" },
+        ],
+      },
+      { key: "showSearch", label: "Show Search", type: "boolean" },
+      { key: "showCategoryFilter", label: "Show Category Filter", type: "boolean" },
+      { key: "showTagFilter", label: "Show Tag Filter", type: "boolean" },
     ],
   },
   {
