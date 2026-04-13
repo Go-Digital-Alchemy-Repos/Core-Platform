@@ -839,6 +839,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [frontendPreviewOpen, setFrontendPreviewOpen] = useState(false);
   const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
   const [desktopInspectorOffset, setDesktopInspectorOffset] = useState(0);
+  const [desktopInspectorMaxHeight, setDesktopInspectorMaxHeight] = useState<number | null>(null);
   const blockRefs = useRef(new Map<string, HTMLDivElement | null>());
   const desktopCanvasPanelRef = useRef<HTMLDivElement | null>(null);
   const desktopInspectorRailRef = useRef<HTMLDivElement | null>(null);
@@ -927,6 +928,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const syncDesktopInspectorPosition = useCallback(() => {
     if (!selectedId || !advancedInspectorOpen) {
       setDesktopInspectorOffset(0);
+      setDesktopInspectorMaxHeight(null);
       return;
     }
 
@@ -937,6 +939,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
     if (!selectedNode || !canvasPanel || !inspectorRail || !inspectorCard) {
       setDesktopInspectorOffset(0);
+      setDesktopInspectorMaxHeight(null);
       return;
     }
 
@@ -948,8 +951,10 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     const idealTop = blockRect.top - canvasRect.top;
     const maxTop = Math.max(railRect.height - inspectorHeight - 12, 0);
     const nextOffset = Math.min(Math.max(idealTop, 0), maxTop);
+    const nextMaxHeight = Math.max(railRect.height - nextOffset - 12, 0);
 
     setDesktopInspectorOffset((current) => (Math.abs(current - nextOffset) > 1 ? nextOffset : current));
+    setDesktopInspectorMaxHeight((current) => (current === null || Math.abs(current - nextMaxHeight) > 1 ? nextMaxHeight : current));
   }, [advancedInspectorOpen, selectedId]);
 
   useLayoutEffect(() => {
@@ -959,6 +964,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   useEffect(() => {
     if (!advancedInspectorOpen) {
       setDesktopInspectorOffset(0);
+      setDesktopInspectorMaxHeight(null);
       return;
     }
 
@@ -1400,7 +1406,11 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   );
 
   const inspectorPanel = selectedBlock && selectedDef ? (
-    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-border/70 bg-background shadow-sm lg:h-auto lg:max-h-[calc(100vh-220px)]" data-testid="block-editor-panel">
+    <div
+      className="flex h-full min-h-0 flex-col rounded-2xl border border-border/70 bg-background shadow-sm lg:h-auto lg:max-h-[calc(100vh-220px)]"
+      style={desktopInspectorMaxHeight ? { maxHeight: `${desktopInspectorMaxHeight}px` } : undefined}
+      data-testid="block-editor-panel"
+    >
       <div className="space-y-3 border-b border-border/70 px-4 py-4">
         <div className="space-y-3">
           <div className="min-w-0">
