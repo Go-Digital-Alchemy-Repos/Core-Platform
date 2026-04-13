@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -179,7 +179,6 @@ interface VisualCanvasProps {
   onDelete: (id: string) => void;
   onMove: (id: string, direction: "up" | "down") => void;
   onAddBelow: (id: string) => void;
-  contextualEditor: ReactNode;
   registerBlockRef: (id: string, node: HTMLDivElement | null) => void;
 }
 
@@ -416,7 +415,6 @@ function CanvasBlockFrame({
   onDelete,
   onMove,
   onAddBelow,
-  contextualEditor,
   registerBlockRef,
 }: {
   block: BlockInstance;
@@ -427,32 +425,15 @@ function CanvasBlockFrame({
   onDelete: (id: string) => void;
   onMove: (id: string, direction: "up" | "down") => void;
   onAddBelow: (id: string) => void;
-  contextualEditor: ReactNode;
   registerBlockRef: (id: string, node: HTMLDivElement | null) => void;
 }) {
   const blockDef = getBlockDef(block.type);
   const summary = getBlockSummary(block);
   const isDynamic = isDynamicBlock(block.type);
-  const frameRef = useRef<HTMLDivElement | null>(null);
-  const [editorPlacement, setEditorPlacement] = useState<"inline" | "overlay">("overlay");
-
-  useEffect(() => {
-    if (!isSelected) return;
-
-    const updatePlacement = () => {
-      const width = frameRef.current?.getBoundingClientRect().width ?? 0;
-      setEditorPlacement(width < 900 ? "inline" : "overlay");
-    };
-
-    updatePlacement();
-    window.addEventListener("resize", updatePlacement);
-    return () => window.removeEventListener("resize", updatePlacement);
-  }, [isSelected]);
 
   return (
     <div
       ref={(node) => {
-        frameRef.current = node;
         registerBlockRef(block.id, node);
       }}
       className="group relative scroll-mt-24"
@@ -582,19 +563,6 @@ function CanvasBlockFrame({
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
-
-      {isSelected && (
-        <div
-          className={cn(
-            "pointer-events-auto z-30",
-            editorPlacement === "overlay"
-              ? "relative mt-4 px-2 sm:px-0 lg:absolute lg:right-4 lg:top-16 lg:mt-0 lg:w-[360px] lg:max-w-[calc(100%-2rem)]"
-              : "relative mt-4"
-          )}
-        >
-          {contextualEditor}
-        </div>
-      )}
     </div>
   );
 }
@@ -607,7 +575,6 @@ function VisualCanvas({
   onDelete,
   onMove,
   onAddBelow,
-  contextualEditor,
   registerBlockRef,
 }: VisualCanvasProps) {
   let nonFullWidthIndex = 0;
@@ -628,7 +595,7 @@ function VisualCanvas({
           </Badge>
         </div>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="min-h-0 flex-1">
           {blocks.length === 0 ? (
             <div className="flex min-h-[640px] items-center justify-center p-10">
               <div className="max-w-md rounded-2xl border border-dashed border-border/80 bg-background/90 p-8 text-center shadow-sm">
@@ -654,13 +621,12 @@ function VisualCanvas({
                     index={index}
                     isSelected={selectedId === block.id}
                     onSelect={onSelect}
-                    onDuplicate={onDuplicate}
-                    onDelete={onDelete}
-                    onMove={onMove}
-                    onAddBelow={onAddBelow}
-                    contextualEditor={selectedId === block.id ? contextualEditor : null}
-                    registerBlockRef={registerBlockRef}
-                  />
+                  onDuplicate={onDuplicate}
+                  onDelete={onDelete}
+                  onMove={onMove}
+                  onAddBelow={onAddBelow}
+                  registerBlockRef={registerBlockRef}
+                />
                 );
 
                 if (hasCustomSectionStyle) {
@@ -712,13 +678,20 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [navigatorSearch, setNavigatorSearch] = useState("");
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: string; position: "before" | "after" } | null>(null);
-  const [advancedInspectorOpen, setAdvancedInspectorOpen] = useState(false);
+  const [advancedInspectorOpen, setAdvancedInspectorOpen] = useState(true);
   const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
   const blockRefs = useRef(new Map<string, HTMLDivElement | null>());
 
   const blocks = content.blocks ?? [];
   const selectedBlock = blocks.find((block) => block.id === selectedId) ?? null;
   const selectedDef = selectedBlock ? getBlockDef(selectedBlock.type) : null;
+
+  const selectBlock = useCallback((id: string | null) => {
+    setSelectedId(id);
+    if (id) {
+      setAdvancedInspectorOpen(true);
+    }
+  }, []);
 
   const registerBlockRef = useCallback((id: string, node: HTMLDivElement | null) => {
     if (node) {
@@ -770,10 +743,10 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       nextBlocks.splice(insertAtIndex, 0, block);
     }
     setBlocks(nextBlocks);
-    setSelectedId(block.id);
+    selectBlock(block.id);
     setAddDialogOpen(false);
     setInsertAtIndex(null);
-  }, [blocks, insertAtIndex, setBlocks]);
+  }, [blocks, insertAtIndex, selectBlock, setBlocks]);
 
   const insertBlocks = useCallback((insertedBlocks: BlockInstance[]) => {
     const nextBlocks = [...blocks];
@@ -783,10 +756,10 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       nextBlocks.splice(insertAtIndex, 0, ...insertedBlocks);
     }
     setBlocks(nextBlocks);
-    setSelectedId(insertedBlocks[0]?.id ?? null);
+    selectBlock(insertedBlocks[0]?.id ?? null);
     setAddDialogOpen(false);
     setInsertAtIndex(null);
-  }, [blocks, insertAtIndex, setBlocks]);
+  }, [blocks, insertAtIndex, selectBlock, setBlocks]);
 
   const openAddBelow = useCallback((id: string) => {
     const sourceIndex = blocks.findIndex((block) => block.id === id);
@@ -803,10 +776,10 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     if (selectedId === id) {
       const currentIndex = blocks.findIndex((block) => block.id === id);
       const fallbackSelection = blocks[currentIndex + 1]?.id ?? blocks[currentIndex - 1]?.id ?? null;
-      setSelectedId(fallbackSelection);
+      selectBlock(fallbackSelection);
     }
     setBlocks(blocks.filter((block) => block.id !== id));
-  }, [blocks, selectedId, setBlocks]);
+  }, [blocks, selectBlock, selectedId, setBlocks]);
 
   const duplicateBlock = useCallback((id: string) => {
     const sourceIndex = blocks.findIndex((block) => block.id === id);
@@ -815,8 +788,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     const nextBlocks = [...blocks];
     nextBlocks.splice(sourceIndex + 1, 0, copy);
     setBlocks(nextBlocks);
-    setSelectedId(copy.id);
-  }, [blocks, setBlocks]);
+    selectBlock(copy.id);
+  }, [blocks, selectBlock, setBlocks]);
 
   const moveBlock = useCallback((id: string, direction: "up" | "down") => {
     const currentIndex = blocks.findIndex((block) => block.id === id);
@@ -1002,7 +975,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-2 p-3">
           {visibleBlocks.length === 0 ? (
             <div className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
@@ -1047,7 +1020,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
                     <button
                       type="button"
-                      onClick={() => setSelectedId(block.id)}
+                      onClick={() => selectBlock(block.id)}
                       className="min-w-0 flex-1 text-left"
                       data-testid={`select-structure-block-${block.id}`}
                     >
@@ -1141,44 +1114,17 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     </div>
   );
 
-  const contextualEditor = selectedBlock && selectedDef ? (
-    <div className="rounded-2xl border border-violet-200/80 bg-background/95 shadow-[0_16px_40px_rgba(15,23,42,0.14)] backdrop-blur">
-      <div className="space-y-2 border-b border-border/70 px-4 py-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-violet-500" />
-            <p className="text-sm font-semibold">Quick Edit</p>
-          </div>
-          <p className="mt-1 truncate text-xs text-muted-foreground">
-            Common edits for {selectedDef.label.toLowerCase()} stay next to the section you selected.
-          </p>
-        </div>
-      </div>
-      <ScrollArea className="max-h-[70vh]">
-        <div className="p-4">
-          <BlockEditor
-            blockDef={selectedDef}
-            props={selectedBlock.props}
-            onChange={(props) => updateBlockProps(selectedBlock.id, props)}
-            mode="contextual"
-            onOpenAdvanced={() => setAdvancedInspectorOpen(true)}
-          />
-        </div>
-      </ScrollArea>
-    </div>
-  ) : null;
-
   const inspectorPanel = selectedBlock && selectedDef ? (
-    <div className="flex h-full flex-col rounded-2xl border border-border/70 bg-background shadow-sm" data-testid="block-editor-panel">
+    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-border/70 bg-background shadow-sm" data-testid="block-editor-panel">
       <div className="space-y-3 border-b border-border/70 px-4 py-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <Settings2 className="h-4 w-4 text-violet-500" />
-              <p className="text-sm font-semibold">Inspector</p>
+              <p className="text-sm font-semibold">Contextual Inspector</p>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Advanced settings for the selected section. Use Quick Edit on the canvas for the most common changes.
+              Full editing for the selected section lives here, with grouped controls for content, media, layout, and section settings.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -1215,7 +1161,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1">
         <div className="p-4">
           <BlockEditor
             blockDef={selectedDef}
@@ -1226,12 +1172,12 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       </ScrollArea>
     </div>
   ) : (
-    <div className="flex h-full flex-col rounded-2xl border border-dashed border-border/70 bg-background/70 p-6 text-center shadow-sm">
+    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-dashed border-border/70 bg-background/70 p-6 text-center shadow-sm">
       <div className="m-auto max-w-sm">
         <Settings2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground/35" />
         <p className="text-base font-semibold">Select a block to inspect</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Click any section directly on the canvas or from the structure panel to edit its content, media, layout, and settings.
+          Click any section directly on the canvas or from the structure panel. The docked inspector will open with the full editing form for that block.
         </p>
       </div>
     </div>
@@ -1247,7 +1193,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             <Badge variant="outline">{blocks.length} block{blocks.length !== 1 ? "s" : ""}</Badge>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Structure on the left, real page canvas in the center, and a nearby quick editor on the canvas itself.
+            Structure on the left, real page canvas in the center, a compact section toolbar on-canvas, and a docked inspector for full editing.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -1262,7 +1208,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             disabled={!selectedBlock}
           >
             <Settings2 className="mr-1.5 h-4 w-4" />
-            {advancedInspectorOpen ? "Hide Advanced" : "Show Advanced"}
+            {advancedInspectorOpen ? "Hide Inspector" : "Show Inspector"}
           </Button>
           <Dialog
             open={addDialogOpen}
@@ -1288,18 +1234,17 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           <VisualCanvas
             blocks={blocks}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={selectBlock}
             onDuplicate={duplicateBlock}
             onDelete={removeBlock}
             onMove={moveBlock}
             onAddBelow={openAddBelow}
-            contextualEditor={contextualEditor}
             registerBlockRef={registerBlockRef}
           />
         </div>
         {advancedInspectorOpen ? inspectorPanel : (
           <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
-            Advanced inspector is hidden. Use Quick Edit on the selected section, or tap "Show Advanced" for full controls.
+            The docked inspector is hidden. Use the section toolbar to select content, then tap "Show Inspector" for the full editing form.
           </div>
         )}
       </div>
@@ -1308,24 +1253,23 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         {advancedInspectorOpen ? (
           <ResizablePanelGroup
             direction="horizontal"
-            className="min-h-[calc(100vh-270px)] rounded-2xl border border-border/60 bg-muted/10"
+            className="min-h-[calc(100vh-270px)] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
           >
             <ResizablePanel defaultSize={20} minSize={16}>
-              <div className="h-full p-3">{navigatorPanel}</div>
+              <div className="h-full min-h-0 p-3">{navigatorPanel}</div>
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={55} minSize={35}>
-              <div className="h-full p-3">
+              <div className="h-full min-h-0 p-3">
                 <div className="h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
                   <VisualCanvas
                     blocks={blocks}
                     selectedId={selectedId}
-                    onSelect={setSelectedId}
+                    onSelect={selectBlock}
                     onDuplicate={duplicateBlock}
                     onDelete={removeBlock}
                     onMove={moveBlock}
                     onAddBelow={openAddBelow}
-                    contextualEditor={contextualEditor}
                     registerBlockRef={registerBlockRef}
                   />
                 </div>
@@ -1333,33 +1277,32 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={25} minSize={20}>
-              <div className="h-full p-3">{inspectorPanel}</div>
+              <div className="h-full min-h-0 p-3">{inspectorPanel}</div>
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : (
           <ResizablePanelGroup
             direction="horizontal"
-            className="min-h-[calc(100vh-270px)] rounded-2xl border border-border/60 bg-muted/10"
+            className="min-h-[calc(100vh-270px)] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
           >
             <ResizablePanel defaultSize={22} minSize={18}>
-              <div className="h-full p-3">{navigatorPanel}</div>
+              <div className="h-full min-h-0 p-3">{navigatorPanel}</div>
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={78} minSize={50}>
-              <div className="h-full p-3">
+              <div className="h-full min-h-0 p-3">
                 <div className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
                   <div className="absolute right-4 top-4 z-20 rounded-full border border-border/70 bg-background/95 px-3 py-1 text-xs text-muted-foreground shadow-sm">
-                    Advanced inspector hidden
+                    Docked inspector hidden
                   </div>
                   <VisualCanvas
                     blocks={blocks}
                     selectedId={selectedId}
-                    onSelect={setSelectedId}
+                    onSelect={selectBlock}
                     onDuplicate={duplicateBlock}
                     onDelete={removeBlock}
                     onMove={moveBlock}
                     onAddBelow={openAddBelow}
-                    contextualEditor={contextualEditor}
                     registerBlockRef={registerBlockRef}
                   />
                 </div>

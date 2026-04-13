@@ -42,7 +42,7 @@ File:
 Responsibilities:
 - left navigator / structure panel
 - center visual canvas
-- local contextual editor on the canvas
+- compact floating section toolbar on the canvas
 - right advanced inspector
 - block selection
 - reordering
@@ -72,12 +72,12 @@ File:
 - `client/src/features/admin/cms/builder/block-editor.tsx`
 
 Responsibilities:
-- contextual editing for the currently selected block
+- full editing for the currently selected block
 - grouped controls for `Content`, `Media`, `Layout`, and `Settings`
 - continued use of Cloudflare R2-backed media pickers instead of raw media URL entry
 
 The same block editor now supports two roles:
-- `contextual` mode for the lightweight local editor on the canvas
+- `contextual` mode for future lightweight inline use where safe
 - `full` mode for the advanced inspector on the right
 
 The inspector remains schema-driven and uses the registry definitions, but presents them in a more modern grouped experience.
@@ -101,7 +101,6 @@ The center pane is the actual editing surface:
 - supports click-to-select on the canvas
 - shows selection outlines and quick block actions
 - scrolls as a full page surface instead of previewing block cards
-- shows a contextual local editor near the selected section
 
 #### Floating Toolbar
 
@@ -113,39 +112,35 @@ When a section is selected, a floating toolbar appears with high-frequency actio
 - add below
 - delete
 
-#### Contextual Local Editor
-
-The local editor is the primary editing surface for common changes:
-- headings and subheadings
-- body copy
-- CTA text and link fields
-- common layout controls
-- image/media replacement using the existing R2-backed flows
-
-It intentionally does **not** try to expose every advanced field inline on the canvas.
+The floating toolbar is intentionally compact and non-blocking. It does **not** host full editing forms.
 
 ### Right: Inspector
 
-The right inspector is now intentionally secondary:
-- used for advanced or less frequent settings
-- can be hidden so the canvas gets more room
-- stays synchronized to the same selected section as the navigator and local editor
-- still uses the full grouped editor for complete control when needed
+The right inspector is the primary editing surface:
+- used for full block editing
+- stays synchronized to the same selected section as the navigator and canvas toolbar
+- supports long forms through its own internal scrolling region
+- keeps grouped controls for `Content`, `Media`, `Layout`, and `Settings`
+- continues using Cloudflare R2-backed media upload and picker flows instead of raw URL entry
 
-This keeps the builder from feeling like a detached form page on long documents.
+The inspector can still be hidden to prioritize canvas space, but the default editing pattern is now:
+1. select a section on the canvas
+2. use the floating toolbar for section actions
+3. edit full block fields in the docked inspector
 
 ## Selection Synchronization
 
 Selection state is shared across:
 - left navigator
 - center canvas
-- local contextual editor
-- right advanced inspector
+- floating section toolbar
+- right docked inspector
 
 Additional long-page usability improvements:
 - selecting a block scrolls it into view
 - selected sections remain visually obvious
-- the local editor follows the selected section instead of forcing users back to a static side panel
+- the docked inspector stays visible while the canvas scrolls
+- the inspector scrolls independently from the page canvas, which keeps long forms usable
 
 ## Media Handling Rules
 
