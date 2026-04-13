@@ -14,6 +14,7 @@ import { SpecializationStorage } from "./specialization.storage";
 import { ProfileViewStorage } from "./profile-view.storage";
 import { SavedProfessionalStorage } from "./saved-professional.storage";
 import { BlogStorage } from "./blog.storage";
+import { BlogTaxonomyStorage } from "./blog-taxonomy.storage";
 import { EventRegistrationStorage } from "./event-registration.storage";
 import { CmsPagesStorage } from "./cms-pages.storage";
 import { CmsPageRevisionsStorage } from "./cms-page-revisions.storage";
@@ -42,6 +43,7 @@ export const storage = {
   profileViews: new ProfileViewStorage(),
   savedProfessionals: new SavedProfessionalStorage(),
   blog: new BlogStorage(),
+  blogTaxonomies: new BlogTaxonomyStorage(),
   eventRegistrations: new EventRegistrationStorage(),
   cmsPages: new CmsPagesStorage(),
   cmsPageRevisions: new CmsPageRevisionsStorage(),

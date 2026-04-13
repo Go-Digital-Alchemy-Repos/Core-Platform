@@ -27,7 +27,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   Plus,
-  Pencil,
   Trash2,
   Eye,
   EyeOff,
@@ -35,6 +34,7 @@ import {
   Search,
   ExternalLink,
   CalendarClock,
+  Settings2,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { BlogPost } from "@shared/schema";
@@ -86,18 +86,26 @@ export default function CmsBlogPage() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-heading font-semibold" data-testid="text-cms-blog-title">
-              Blog
+              Posts
             </h1>
             <p className="text-muted-foreground mt-1">
               Manage articles and posts published at /insights
             </p>
           </div>
-          <Button asChild data-testid="button-new-post">
-            <Link href="/admin/cms/blog/new">
-              <Plus className="h-4 w-4 mr-2" />
-              New Post
-            </Link>
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button asChild variant="outline" data-testid="button-blog-settings">
+              <Link href="/admin/cms/blog/settings">
+                <Settings2 className="h-4 w-4 mr-2" />
+                Blog Settings
+              </Link>
+            </Button>
+            <Button asChild data-testid="button-new-post">
+              <Link href="/admin/cms/blog/new">
+                <Plus className="h-4 w-4 mr-2" />
+                New Post
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="flex gap-3 flex-wrap">

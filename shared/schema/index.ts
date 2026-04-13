@@ -15,6 +15,7 @@ export { specializations, insertSpecializationSchema, type InsertSpecialization,
 export { profileViews, insertProfileViewSchema, type InsertProfileView, type ProfileView } from "./profile-views";
 export { savedProfessionals, insertSavedProfessionalSchema, type InsertSavedProfessional, type SavedProfessional } from "./saved-professionals";
 export { blogPosts, insertBlogPostSchema, type InsertBlogPost, type BlogPost } from "./blog-posts";
+export { blogTaxonomies, BLOG_TAXONOMY_TYPES, insertBlogTaxonomySchema, type InsertBlogTaxonomy, type BlogTaxonomy } from "./blog-taxonomies";
 export { eventRegistrations, insertEventRegistrationSchema, type InsertEventRegistration, type EventRegistration } from "./event-registrations";
 export { cmsPages, insertCmsPageSchema, type InsertCmsPage, type CmsPage } from "./cms-pages";
 export { cmsPageRevisions, insertCmsPageRevisionSchema, type InsertCmsPageRevision, type CmsPageRevision } from "./cms-page-revisions";

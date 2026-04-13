@@ -41,6 +41,7 @@ const AdminSettingsPage = lazy(() => import("@/features/admin/settings-page"));
 const AdminBlogPage = lazy(() => import("@/features/admin/blog-page"));
 const CmsBlogPage = lazy(() => import("@/features/admin/cms/cms-blog-page"));
 const CmsBlogEditorPage = lazy(() => import("@/features/admin/cms/cms-blog-editor-page"));
+const CmsBlogSettingsPage = lazy(() => import("@/features/admin/cms/cms-blog-settings-page"));
 
 const AdminApplicationsPage = lazy(() => import("@/features/admin/applications-page"));
 const AdminApplicationDetailPage = lazy(() => import("@/features/admin/application-detail-page"));
@@ -193,6 +194,11 @@ function Router() {
         <Route path="/admin/cms/blog/new">
           <ProtectedRoute roles={["admin"]}>
             <CmsBlogEditorPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/blog/settings">
+          <ProtectedRoute roles={["admin"]}>
+            <CmsBlogSettingsPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/blog/:id">

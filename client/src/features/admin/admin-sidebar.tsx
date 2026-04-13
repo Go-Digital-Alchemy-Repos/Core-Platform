@@ -12,6 +12,7 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   BookOpen,
   Globe,
   FileCode,
@@ -34,9 +35,10 @@ import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 
 interface NavItem {
   title: string;
-  href: string;
+  href?: string;
   icon: React.ElementType;
   iconColor: string;
+  children?: NavItem[];
 }
 
 interface NavGroup {
@@ -60,7 +62,16 @@ const navGroups: NavGroup[] = [
     items: [
       { title: "CMS Overview", href: "/admin/cms", icon: Globe, iconColor: "text-violet-600" },
       { title: "Pages", href: "/admin/cms/pages", icon: FileCode, iconColor: "text-violet-500" },
-      { title: "Blog", href: "/admin/cms/blog", icon: BookOpen, iconColor: "text-purple-600" },
+      {
+        title: "Blog",
+        href: "/admin/cms/blog",
+        icon: BookOpen,
+        iconColor: "text-purple-600",
+        children: [
+          { title: "Posts", href: "/admin/cms/blog", icon: BookOpen, iconColor: "text-purple-600" },
+          { title: "Blog Settings", href: "/admin/cms/blog/settings", icon: Settings, iconColor: "text-slate-500" },
+        ],
+      },
       { title: "Media", href: "/admin/cms/media", icon: Image, iconColor: "text-violet-400" },
       { title: "Sections", href: "/admin/cms/sections", icon: Blocks, iconColor: "text-violet-400" },
       { title: "SEO", href: "/admin/cms/seo", icon: SearchIcon, iconColor: "text-violet-400" },
@@ -89,27 +100,42 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
 
   const renderNavItem = (item: NavItem) => {
     const exactOnlyRoutes = ["/admin", "/admin/cms"];
-    const isActive = location === item.href || (!exactOnlyRoutes.includes(item.href) && location.startsWith(item.href));
+    const isActive = Boolean(
+      item.href && (location === item.href || (!exactOnlyRoutes.includes(item.href) && location.startsWith(item.href)))
+    );
+    const isChildRouteActive = (child: NavItem) => {
+      if (!child.href) return false;
+      if (child.href === "/admin/cms/blog") {
+        return location === child.href || location === "/admin/cms/blog/new" || /^\/admin\/cms\/blog\/[^/]+$/.test(location);
+      }
+      return location === child.href || location.startsWith(child.href);
+    };
+
+    const childIsActive = Boolean(item.children?.some(isChildRouteActive));
+    const parentIsActive = isActive || childIsActive;
     const linkContent = (
-      <Link key={item.href} href={item.href}>
+      <Link key={item.href ?? item.title} href={item.href ?? "#"}>
         <span
           className={cn(
             "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium cursor-pointer hover-elevate whitespace-nowrap overflow-hidden",
-            isActive
+            parentIsActive
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground"
           )}
           data-testid={`link-admin-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
         >
-          <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "" : item.iconColor)} />
+          <item.icon className={cn("h-4 w-4 flex-shrink-0", parentIsActive ? "" : item.iconColor)} />
           <span
             className={cn(
-              "transition-opacity duration-200",
+              "transition-opacity duration-200 flex-1",
               collapsed ? "opacity-0" : "opacity-100"
             )}
           >
             {item.title}
           </span>
+          {item.children && !collapsed && (
+            <ChevronDown className={cn("h-4 w-4 transition-transform", childIsActive ? "rotate-180" : "")} />
+          )}
         </span>
       </Link>
     );
@@ -122,6 +148,33 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
             {item.title}
           </TooltipContent>
         </Tooltip>
+      );
+    }
+
+    if (item.children && !collapsed) {
+      return (
+        <div key={item.href ?? item.title} className="space-y-0.5">
+          {linkContent}
+          <div className="ml-5 border-l border-border/60 pl-2 space-y-0.5">
+            {item.children.map((child) => {
+              const childActive = isChildRouteActive(child);
+              return (
+                <Link key={child.href} href={child.href!}>
+                  <span
+                    className={cn(
+                      "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm cursor-pointer",
+                      childActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground"
+                    )}
+                    data-testid={`link-admin-${child.title.toLowerCase().replace(/\s+/g, "-")}`}
+                  >
+                    <child.icon className={cn("h-3.5 w-3.5 flex-shrink-0", childActive ? "text-primary" : child.iconColor)} />
+                    <span>{child.title}</span>
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       );
     }
 

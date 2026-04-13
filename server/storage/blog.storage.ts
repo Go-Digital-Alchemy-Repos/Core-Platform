@@ -44,6 +44,40 @@ export class BlogStorage {
     return true;
   }
 
+  async renameCategoryReferences(previousName: string, nextName: string | null): Promise<void> {
+    const posts = await this.getAllPosts();
+    const target = previousName.trim().toLowerCase();
+
+    await Promise.all(
+      posts
+        .filter((post) => (post.category ?? "").trim().toLowerCase() === target)
+        .map((post) =>
+          this.updatePost(post.id, { category: nextName, updatedAt: new Date() } as Partial<InsertBlogPost>)
+        )
+    );
+  }
+
+  async renameTagReferences(previousName: string, nextName: string | null): Promise<void> {
+    const posts = await this.getAllPosts();
+    const target = previousName.trim().toLowerCase();
+
+    await Promise.all(
+      posts
+        .filter((post) => (post.tags ?? []).some((tag) => tag.trim().toLowerCase() === target))
+        .map((post) => {
+          const nextTags = (post.tags ?? [])
+            .map((tag) => (tag.trim().toLowerCase() === target ? nextName : tag))
+            .filter((tag): tag is string => Boolean(tag))
+            .filter((tag, index, arr) => arr.findIndex((item) => item.trim().toLowerCase() === tag.trim().toLowerCase()) === index);
+
+          return this.updatePost(post.id, {
+            tags: nextTags.length > 0 ? nextTags : null,
+            updatedAt: new Date(),
+          } as Partial<InsertBlogPost>);
+        })
+    );
+  }
+
   async countPosts(): Promise<number> {
     const result = await db
       .select({ count: sql<number>`count(*)` })

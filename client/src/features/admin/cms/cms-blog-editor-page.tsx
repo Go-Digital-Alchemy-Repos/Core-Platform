@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -43,6 +43,9 @@ import {
   Link2,
   FileText,
   CalendarClock,
+  Plus,
+  X,
+  Settings2,
 } from "lucide-react";
 import {
   Popover,
@@ -55,7 +58,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { CmsImageUpload } from "./components/cms-image-upload";
 import { SeoPreview } from "@/components/shared/seo-preview";
 import { StructuredDataStatus } from "@/components/shared/structured-data-status";
-import type { BlogPost, CmsSidebar } from "@shared/schema";
+import type { BlogPost, BlogTaxonomy, CmsSidebar } from "@shared/schema";
 
 function generateSlug(title: string): string {
   return title
@@ -64,6 +67,27 @@ function generateSlug(title: string): string {
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .trim();
+}
+
+function parseTagsString(value: string | undefined) {
+  return (value ?? "")
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
+function buildCategoryPath(taxonomy: BlogTaxonomy, all: BlogTaxonomy[]): string {
+  const labels = [taxonomy.name];
+  let parentId = taxonomy.parentId;
+
+  while (parentId) {
+    const parent = all.find((item) => item.id === parentId);
+    if (!parent) break;
+    labels.unshift(parent.name);
+    parentId = parent.parentId;
+  }
+
+  return labels.join(" / ");
 }
 
 const postFormSchema = z.object({
@@ -109,6 +133,9 @@ export default function CmsBlogEditorPage() {
 
   const { data: sidebars = [] } = useQuery<CmsSidebar[]>({
     queryKey: ["/api/admin/cms/sidebars"],
+  });
+  const { data: taxonomies = [] } = useQuery<BlogTaxonomy[]>({
+    queryKey: ["/api/admin/blog/settings/taxonomies"],
   });
 
   const form = useForm<PostForm>({
@@ -169,12 +196,21 @@ export default function CmsBlogEditorPage() {
 
   const [blogScheduleDate, setBlogScheduleDate] = useState("");
   const [blogScheduleOpen, setBlogScheduleOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newTagName, setNewTagName] = useState("");
+  const [tagToAdd, setTagToAdd] = useState("");
+
+  const categories = useMemo(
+    () => taxonomies.filter((item) => item.type === "category"),
+    [taxonomies]
+  );
+  const availableTags = useMemo(
+    () => taxonomies.filter((item) => item.type === "tag"),
+    [taxonomies]
+  );
 
   const buildPayload = (data: PostForm) => {
-    const tagsArray = (data.tags ?? "")
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
+    const tagsArray = parseTagsString(data.tags);
     return {
       title: data.title,
       slug: data.slug || generateSlug(data.title),
@@ -236,6 +272,28 @@ export default function CmsBlogEditorPage() {
     })();
   };
 
+  const createTaxonomyMutation = useMutation({
+    mutationFn: async (payload: { name: string; type: "category" | "tag" }) => {
+      const response = await apiRequest("POST", "/api/admin/blog/settings/taxonomies", payload);
+      return response.json() as Promise<BlogTaxonomy>;
+    },
+    onSuccess: (taxonomy) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog/settings/taxonomies"] });
+      if (taxonomy.type === "category") {
+        form.setValue("category", taxonomy.name, { shouldDirty: true });
+        setNewCategoryName("");
+        toast({ title: "Category added to blog settings" });
+      } else {
+        const nextTags = Array.from(new Set([...parseTagsString(form.getValues("tags")), taxonomy.name]));
+        form.setValue("tags", nextTags.join(", "), { shouldDirty: true });
+        setNewTagName("");
+        setTagToAdd("");
+        toast({ title: "Tag added to blog settings" });
+      }
+    },
+    onError: (error: Error) => toast({ title: error.message || "Failed to add taxonomy", variant: "destructive" }),
+  });
+
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const isPublished = form.watch("isPublished");
   const watchPostType = form.watch("postType");
@@ -247,6 +305,7 @@ export default function CmsBlogEditorPage() {
   const watchBlogTitle = form.watch("title");
   const watchAuthorName = form.watch("authorName");
   const watchNoindex = form.watch("noindex");
+  const selectedTags = parseTagsString(form.watch("tags"));
 
   if (!isNew && isLoading) {
     return (
@@ -422,25 +481,59 @@ export default function CmsBlogEditorPage() {
                           <FormItem>
                             <FormLabel>Author Name</FormLabel>
                             <FormControl>
-                              <Input {...field} data-testid="input-post-author" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                            <Input {...field} data-testid="input-post-author" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                       <FormField
                         control={form.control}
                         name="category"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Category</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="e.g. TCK Research"
-                                {...field}
-                                data-testid="input-post-category"
-                              />
-                            </FormControl>
+                            <div className="space-y-2">
+                              <Select
+                                value={field.value || "__none__"}
+                                onValueChange={(value) => field.onChange(value === "__none__" ? "" : value)}
+                              >
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-post-category">
+                                    <SelectValue placeholder="Select a category" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="__none__">No category</SelectItem>
+                                  {categories.map((category) => (
+                                    <SelectItem key={category.id} value={category.name}>
+                                      {buildCategoryPath(category, categories)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <div className="flex gap-2">
+                                <Input
+                                  value={newCategoryName}
+                                  onChange={(e) => setNewCategoryName(e.target.value)}
+                                  placeholder="Add a new category"
+                                  data-testid="input-post-category-new"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => createTaxonomyMutation.mutate({ name: newCategoryName.trim(), type: "category" })}
+                                  disabled={!newCategoryName.trim() || createTaxonomyMutation.isPending}
+                                  data-testid="button-post-category-add"
+                                >
+                                  <Plus className="h-4 w-4 mr-1.5" />
+                                  Add
+                                </Button>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Need subcategories or bulk cleanup? Use <Link href="/admin/cms/blog/settings"><span className="underline cursor-pointer">Blog Settings</span></Link>.
+                              </p>
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -451,14 +544,90 @@ export default function CmsBlogEditorPage() {
                       name="tags"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Tags <span className="text-muted-foreground font-normal text-xs">(comma-separated)</span></FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="TCK, identity, belonging"
-                              {...field}
-                              data-testid="input-post-tags"
-                            />
-                          </FormControl>
+                          <FormLabel>Tags</FormLabel>
+                          <div className="space-y-3">
+                            <div className="flex flex-wrap gap-2">
+                              {selectedTags.length > 0 ? (
+                                selectedTags.map((tag) => (
+                                  <Badge key={tag} variant="secondary" className="gap-1 pr-1">
+                                    {tag}
+                                    <button
+                                      type="button"
+                                      className="rounded-full hover:bg-black/10 p-0.5"
+                                      onClick={() => {
+                                        const nextTags = selectedTags.filter((item) => item.toLowerCase() !== tag.toLowerCase());
+                                        field.onChange(nextTags.join(", "));
+                                      }}
+                                      data-testid={`button-remove-post-tag-${tag}`}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </Badge>
+                                ))
+                              ) : (
+                                <p className="text-sm text-muted-foreground">No tags selected yet.</p>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <Select
+                                value={tagToAdd || "__none__"}
+                                onValueChange={(value) => {
+                                  if (value === "__none__") {
+                                    setTagToAdd("");
+                                    return;
+                                  }
+                                  const nextTags = Array.from(new Set([...selectedTags, value]));
+                                  field.onChange(nextTags.join(", "));
+                                  setTagToAdd("");
+                                }}
+                              >
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-post-tags">
+                                    <SelectValue placeholder="Add an existing tag" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="__none__">Choose a tag</SelectItem>
+                                  {availableTags
+                                    .filter((tag) => !selectedTags.some((selected) => selected.toLowerCase() === tag.name.toLowerCase()))
+                                    .map((tag) => (
+                                      <SelectItem key={tag.id} value={tag.name}>
+                                        {tag.name}
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                asChild
+                                data-testid="button-blog-settings-inline"
+                              >
+                                <Link href="/admin/cms/blog/settings">
+                                  <Settings2 className="h-4 w-4 mr-1.5" />
+                                  Manage
+                                </Link>
+                              </Button>
+                            </div>
+                            <div className="flex gap-2">
+                              <Input
+                                value={newTagName}
+                                onChange={(e) => setNewTagName(e.target.value)}
+                                placeholder="Create a new tag"
+                                data-testid="input-post-tag-new"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => createTaxonomyMutation.mutate({ name: newTagName.trim(), type: "tag" })}
+                                disabled={!newTagName.trim() || createTaxonomyMutation.isPending}
+                                data-testid="button-post-tag-add"
+                              >
+                                <Plus className="h-4 w-4 mr-1.5" />
+                                Add
+                              </Button>
+                            </div>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
