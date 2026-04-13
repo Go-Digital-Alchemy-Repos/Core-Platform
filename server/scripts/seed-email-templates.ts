@@ -1,12 +1,13 @@
 import { db } from "../db";
 import { emailTemplates } from "@shared/schema";
+import { pathToFileURL } from "url";
 
 function baseWrap(title: string, body: string): string {
   return `<h2 style="margin:0 0 16px;color:#1e3a5f;font-size:20px;">${title}</h2>
 ${body}`;
 }
 
-const templates = [
+export const emailTemplateDefaults = [
   {
     slug: "therapist-approval",
     name: "Therapist Application Approved",
@@ -263,30 +264,46 @@ const templates = [
   },
 ];
 
-export async function seedEmailTemplates() {
+export async function seedEmailTemplates(refreshExisting = true) {
   console.log("Seeding email templates...");
-  for (const t of templates) {
+  for (const t of emailTemplateDefaults) {
+    if (refreshExisting) {
+      await db
+        .insert(emailTemplates)
+        .values(t)
+        .onConflictDoUpdate({
+          target: emailTemplates.slug,
+          set: {
+            name: t.name,
+            subject: t.subject,
+            htmlBody: t.htmlBody,
+            description: t.description,
+            variables: t.variables,
+            isActive: t.isActive ?? true,
+            updatedAt: new Date(),
+          },
+        });
+      continue;
+    }
+
     await db
       .insert(emailTemplates)
       .values(t)
-      .onConflictDoUpdate({
+      .onConflictDoNothing({
         target: emailTemplates.slug,
-        set: {
-          name: t.name,
-          subject: t.subject,
-          htmlBody: t.htmlBody,
-          description: t.description,
-          variables: t.variables,
-          updatedAt: new Date(),
-        },
       });
   }
-  console.log(`Seeded ${templates.length} email templates.`);
+  console.log(`Seeded ${emailTemplateDefaults.length} email templates.`);
 }
 
-seedEmailTemplates()
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+const executedDirectly =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (executedDirectly) {
+  seedEmailTemplates()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}

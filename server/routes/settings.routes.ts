@@ -12,6 +12,7 @@ import {
   renderTemplate,
 } from "../services/email.service";
 import * as r2Service from "../services/r2.service";
+import { seedEmailTemplates } from "../scripts/seed-email-templates";
 
 const router = Router();
 
@@ -161,6 +162,18 @@ router.get(
   asyncHandler(async (_req, res) => {
     const templates = await storage.emailTemplates.getAllTemplates();
     res.json(templates);
+  })
+);
+
+router.post(
+  "/email-templates/restore",
+  asyncHandler(async (_req, res) => {
+    await seedEmailTemplates(true);
+    const templates = await storage.emailTemplates.getAllTemplates();
+    res.json({
+      restored: templates.length,
+      templates,
+    });
   })
 );
 

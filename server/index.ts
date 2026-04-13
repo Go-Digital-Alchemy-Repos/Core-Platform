@@ -196,6 +196,9 @@ app.use((req, res, next) => {
   const { ensureSystemDocs } = await import("./services/system-docs.service");
   await ensureSystemDocs({ refreshExisting: false });
 
+  const { seedEmailTemplates } = await import("./scripts/seed-email-templates");
+  await seedEmailTemplates(false);
+
   await registerRoutes(httpServer, app);
 
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {

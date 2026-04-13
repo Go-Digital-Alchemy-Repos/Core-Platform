@@ -231,7 +231,7 @@ export default function DocsPage() {
 
   return (
     <AdminSidebar>
-      <div className="flex h-[calc(100vh-4rem)] flex-col gap-6 p-6">
+      <div className="flex h-[calc(100vh-4rem)] min-h-0 flex-col gap-6 overflow-hidden p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <h1 className="text-2xl font-heading font-bold" data-testid="text-page-title">
@@ -284,8 +284,8 @@ export default function DocsPage() {
           </Card>
         </div>
 
-        <div className="grid min-h-0 flex-1 gap-6 xl:grid-cols-[260px_340px_minmax(0,1fr)]">
-          <Card className="min-h-0">
+        <div className="grid min-h-0 flex-1 gap-6 overflow-hidden xl:grid-cols-[260px_340px_minmax(0,1fr)]">
+          <Card className="flex min-h-0 flex-col overflow-hidden">
             <CardHeader className="space-y-3">
               <CardTitle className="text-base">Browse</CardTitle>
               <div className="relative">
@@ -299,8 +299,8 @@ export default function DocsPage() {
                 />
               </div>
             </CardHeader>
-            <CardContent className="min-h-0 pb-4">
-              <ScrollArea className="h-[calc(100vh-24rem)] pr-3">
+            <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden pb-4">
+              <ScrollArea className="min-h-0 flex-1 pr-3">
                 <div className="space-y-1">
                   <button
                     onClick={() => setSelectedCategory(null)}
@@ -328,12 +328,12 @@ export default function DocsPage() {
             </CardContent>
           </Card>
 
-          <Card className="min-h-0">
+          <Card className="flex min-h-0 flex-col overflow-hidden">
             <CardHeader>
               <CardTitle className="text-base">Library</CardTitle>
             </CardHeader>
-            <CardContent className="min-h-0 pb-4">
-              <ScrollArea className="h-[calc(100vh-22rem)] pr-3">
+            <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden pb-4">
+              <ScrollArea className="min-h-0 flex-1 pr-3">
                 <div className="space-y-3">
                   {filteredDocs.length === 0 ? (
                     <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
@@ -377,10 +377,10 @@ export default function DocsPage() {
             </CardContent>
           </Card>
 
-          <Card className="min-h-0">
+          <Card className="flex min-h-0 flex-col overflow-hidden">
             {selectedDoc ? (
               <>
-                <CardHeader className="border-b">
+                <CardHeader className="shrink-0 border-b">
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                     <div className="space-y-3">
                       <div className="space-y-2">
@@ -418,8 +418,8 @@ export default function DocsPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="min-h-0 pb-4 pt-6">
-                  <ScrollArea className="h-[calc(100vh-22rem)] pr-4">
+                <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden pb-4 pt-6">
+                  <ScrollArea className="min-h-0 flex-1 pr-4">
                     <MarkdownDocument content={selectedDoc.content} data-testid="text-doc-content" />
                   </ScrollArea>
                 </CardContent>

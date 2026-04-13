@@ -45,6 +45,7 @@ import {
   Trash2,
   Tag,
   Link2,
+  RefreshCw,
 } from "lucide-react";
 
 type SettingsData = Record<
@@ -53,7 +54,7 @@ type SettingsData = Record<
 >;
 
 interface EmailTemplate {
-  id: number;
+  id: string;
   slug: string;
   name: string;
   subject: string;
@@ -590,6 +591,24 @@ function EmailTemplatesTab() {
     },
   });
 
+  const restoreMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/email-templates/restore");
+      return res.json();
+    },
+    onSuccess: async (payload: { restored: number }) => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/email-templates"] });
+      toast({
+        title: "System email templates restored",
+        description: `${payload.restored} templates are now available in the library.`,
+      });
+    },
+    onError: (err: Error) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-templates"] });
+      toast({ title: "Restore failed", description: err.message, variant: "destructive" });
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -609,11 +628,27 @@ function EmailTemplatesTab() {
         </p>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="outline"
+          onClick={() => restoreMutation.mutate()}
+          disabled={restoreMutation.isPending}
+          data-testid="button-restore-email-templates"
+        >
+          {restoreMutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="mr-2 h-4 w-4" />
+          )}
+          Restore System Templates
+        </Button>
+      </div>
+
       {!templates?.length && (
         <Card>
           <CardContent className="flex items-center gap-3 py-8 justify-center text-muted-foreground">
             <AlertCircle className="h-5 w-5" />
-            <span>No email templates found. Run the seed script to populate defaults.</span>
+            <span>No email templates found. Use “Restore System Templates” to repopulate the defaults.</span>
           </CardContent>
         </Card>
       )}
