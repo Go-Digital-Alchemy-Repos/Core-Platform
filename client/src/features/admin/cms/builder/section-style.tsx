@@ -22,6 +22,10 @@ interface SectionStyleConfig {
   showRadialGradient: boolean;
   radialGradientColor: string;
   radialGradientPosition: "top" | "bottom";
+  borderTopWidth: number;
+  borderTopColor: string;
+  borderBottomWidth: number;
+  borderBottomColor: string;
   paddingTop: string;
   paddingBottom: string;
 }
@@ -44,6 +48,10 @@ function num(v: unknown, fallback = 50): number {
 
 function clampPercent(value: number) {
   return Math.max(0, Math.min(100, value));
+}
+
+function clampBorderWidth(value: number) {
+  return Math.max(0, Math.min(24, value));
 }
 
 function normalizePaddingValue(value: unknown): string {
@@ -87,6 +95,10 @@ export function getSectionStyleConfig(
     showRadialGradient: Boolean(props.sectionShowRadialGradient),
     radialGradientColor: normalizeHexColor(str(props.sectionRadialGradientColor)) || "#89cda1",
     radialGradientPosition: str(props.sectionRadialGradientPosition) === "bottom" ? "bottom" : "top",
+    borderTopWidth: clampBorderWidth(num(props.sectionBorderTopWidth, 0)),
+    borderTopColor: normalizeHexColor(str(props.sectionBorderTopColor)) || "#d9e2dc",
+    borderBottomWidth: clampBorderWidth(num(props.sectionBorderBottomWidth, 0)),
+    borderBottomColor: normalizeHexColor(str(props.sectionBorderBottomColor)) || "#d9e2dc",
     paddingTop: normalizePaddingValue(props.sectionPaddingTop),
     paddingBottom: normalizePaddingValue(props.sectionPaddingBottom),
   };
@@ -94,9 +106,11 @@ export function getSectionStyleConfig(
 
 export function hasSectionStyleConfig(config: SectionStyleConfig) {
   return Boolean(
-    config.backgroundColor ||
+      config.backgroundColor ||
       config.backgroundImageUrl ||
       config.showRadialGradient ||
+      config.borderTopWidth > 0 ||
+      config.borderBottomWidth > 0 ||
       config.paddingTop !== DEFAULT_SECTION_PADDING ||
       config.paddingBottom !== DEFAULT_SECTION_PADDING
   );
@@ -149,8 +163,22 @@ export function SectionStyleWrapper({
           backgroundPosition: `${config.backgroundPositionX}% ${config.backgroundPositionY}%`,
           backgroundRepeat: "no-repeat",
         }
-      : !config.backgroundColor && !defaultBackgroundColor
+          : !config.backgroundColor && !defaultBackgroundColor
       ? { background: DEFAULT_SECTION_LINEAR_GRADIENT }
+      : {}),
+    ...(config.borderTopWidth > 0
+      ? {
+          borderTopStyle: "solid",
+          borderTopWidth: `${config.borderTopWidth}px`,
+          borderTopColor: config.borderTopColor,
+        }
+      : {}),
+    ...(config.borderBottomWidth > 0
+      ? {
+          borderBottomStyle: "solid",
+          borderBottomWidth: `${config.borderBottomWidth}px`,
+          borderBottomColor: config.borderBottomColor,
+        }
       : {}),
   };
   const overlayOpacity = config.backgroundImageUrl ? config.backgroundOverlayOpacity / 100 : 0;

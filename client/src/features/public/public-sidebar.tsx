@@ -40,7 +40,7 @@ function RecentPostsWidget({ widget }: { widget: SidebarWidget }) {
 
   return (
     <WidgetCard title={widget.title || "Recent Posts"}>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {visiblePosts.length === 0 ? (
           <p className="text-sm text-muted-foreground">Recent posts will appear here.</p>
         ) : (
@@ -51,7 +51,7 @@ function RecentPostsWidget({ widget }: { widget: SidebarWidget }) {
                 href={post.externalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block text-sm font-medium leading-snug hover:text-accent transition-colors"
+                className="block text-sm font-medium leading-relaxed hover:text-accent transition-colors"
                 data-testid={`sidebar-recent-post-${post.id}`}
               >
                 {post.title}
@@ -59,7 +59,7 @@ function RecentPostsWidget({ widget }: { widget: SidebarWidget }) {
             ) : (
               <Link key={post.id} href={`/insights/${post.slug}`}>
                 <span
-                  className="block text-sm font-medium leading-snug hover:text-accent transition-colors"
+                  className="block text-sm font-medium leading-relaxed hover:text-accent transition-colors"
                   data-testid={`sidebar-recent-post-${post.id}`}
                 >
                   {post.title}

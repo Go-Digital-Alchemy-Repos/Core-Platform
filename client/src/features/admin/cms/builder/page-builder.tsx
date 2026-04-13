@@ -1460,7 +1460,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
-        <div className="p-4">
+        <div className="p-4 pb-12">
           <BlockEditor
             blockDef={selectedDef}
             props={selectedBlock.props}

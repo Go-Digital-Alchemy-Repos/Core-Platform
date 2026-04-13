@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, useRef } from "react";
 import { Switch, Route, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
@@ -292,6 +292,51 @@ function SetupGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function RouteScrollManager() {
+  const [location] = useLocation();
+  const lastPathnameRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("scrollRestoration" in window.history)) return;
+    const previous = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+    return () => {
+      window.history.scrollRestoration = previous;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const pathname = location.split(/[?#]/)[0] || "/";
+    const lastPathname = lastPathnameRef.current;
+    lastPathnameRef.current = pathname;
+
+    if (lastPathname === null || lastPathname === pathname) return;
+
+    const scrollToTarget = () => {
+      const hash = window.location.hash;
+      if (hash) {
+        const target = document.getElementById(hash.slice(1));
+        if (target) {
+          target.scrollIntoView({ block: "start" });
+          return;
+        }
+      }
+
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    };
+
+    const frame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(scrollToTarget);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [location]);
+
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -300,6 +345,7 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <SetupGuard>
+              <RouteScrollManager />
               <Router />
             </SetupGuard>
           </TooltipProvider>

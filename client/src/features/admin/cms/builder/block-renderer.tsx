@@ -507,6 +507,8 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
     queryKey: ["/api/events"],
   });
   const limit = num(props.limit, 3);
+  const ctaText = str(props.ctaText);
+  const ctaLink = str(props.ctaLink);
   const visible = (events ?? []).filter((e) => new Date(e.date) > new Date()).slice(0, limit);
   return (
     <div className="py-4">
@@ -536,6 +538,17 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
           </Link>
         ))}
       </div>
+      {ctaText && (
+        <div className="mt-6 flex justify-center">
+          {ctaLink ? (
+            <Link href={ctaLink}>
+              <Button>{ctaText}</Button>
+            </Link>
+          ) : (
+            <Button>{ctaText}</Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1636,24 +1649,25 @@ function TherapistMapBlock({ props }: { props: Record<string, unknown> }) {
       })),
     [allTherapistsData]
   );
+  const headingAlignment = str(props.sectionHeadingAlignment) || "center";
+  const buttonJustifyClass = headingAlignment === "left"
+    ? "justify-start"
+    : headingAlignment === "right"
+      ? "justify-end"
+      : "justify-center";
 
   return (
     <section className="relative bg-[#ffffff4d] overflow-hidden" data-testid="section-professional-map">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
-        <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap mb-8 sm:mb-12">
-          <div>
-            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold" data-testid="text-map-heading">
-              {str(props.title) || "Our Mental Health Professionals Around the World"}
-            </h2>
-            <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
-              {str(props.subtitle) || "Click a pin to learn more about a TCK-informed professional near you"}
-            </p>
+        <div className="mb-8 sm:mb-12 space-y-5">
+          <SectionHeading props={props} defaultAlignment="center" />
+          <div className={`flex ${buttonJustifyClass}`}>
+            <Link href="/directory">
+              <Button variant="outline" data-testid="button-view-all-therapists">
+                Find a Mental Health Professional <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
-          <Link href="/directory">
-            <Button variant="outline" data-testid="button-view-all-therapists">
-              Find a Mental Health Professional <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
         </div>
         {isLoading ? (
           <div className="flex justify-center py-16">

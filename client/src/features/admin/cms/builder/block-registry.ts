@@ -190,6 +190,10 @@ const SHARED_SECTION_STYLE_DEFAULTS = {
   sectionShowRadialGradient: false,
   sectionRadialGradientColor: "#89cda1",
   sectionRadialGradientPosition: "top",
+  sectionBorderTopWidth: 0,
+  sectionBorderTopColor: "#d9e2dc",
+  sectionBorderBottomWidth: 0,
+  sectionBorderBottomColor: "#d9e2dc",
   sectionPaddingTop: "md",
   sectionPaddingBottom: "md",
 };
@@ -204,6 +208,10 @@ const SHARED_SECTION_STYLE_PROP_DEFS: PropDef[] = [
   { key: "sectionShowRadialGradient", label: "Show Radial Gradient Overlay", type: "boolean" },
   { key: "sectionRadialGradientColor", label: "Radial Gradient Color", type: "color", placeholder: "#89cda1" },
   { key: "sectionRadialGradientPosition", label: "Radial Gradient Position", type: "select", options: RADIAL_GRADIENT_POSITION_OPTIONS },
+  { key: "sectionBorderTopWidth", label: "Top Border Thickness (px)", type: "number", min: 0, max: 24 },
+  { key: "sectionBorderTopColor", label: "Top Border Color", type: "color", placeholder: "#d9e2dc" },
+  { key: "sectionBorderBottomWidth", label: "Bottom Border Thickness (px)", type: "number", min: 0, max: 24 },
+  { key: "sectionBorderBottomColor", label: "Bottom Border Color", type: "color", placeholder: "#d9e2dc" },
 ];
 
 const SHARED_SECTION_ACCENT_PROP_DEFS: PropDef[] = [
@@ -211,6 +219,10 @@ const SHARED_SECTION_ACCENT_PROP_DEFS: PropDef[] = [
   { key: "sectionShowRadialGradient", label: "Show Radial Gradient Overlay", type: "boolean" },
   { key: "sectionRadialGradientColor", label: "Radial Gradient Color", type: "color", placeholder: "#89cda1" },
   { key: "sectionRadialGradientPosition", label: "Radial Gradient Position", type: "select", options: RADIAL_GRADIENT_POSITION_OPTIONS },
+  { key: "sectionBorderTopWidth", label: "Top Border Thickness (px)", type: "number", min: 0, max: 24 },
+  { key: "sectionBorderTopColor", label: "Top Border Color", type: "color", placeholder: "#d9e2dc" },
+  { key: "sectionBorderBottomWidth", label: "Bottom Border Thickness (px)", type: "number", min: 0, max: 24 },
+  { key: "sectionBorderBottomColor", label: "Bottom Border Color", type: "color", placeholder: "#d9e2dc" },
 ];
 
 const SHARED_SECTION_PADDING_PROP_DEFS: PropDef[] = [
@@ -682,11 +694,15 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       title: "Upcoming Events",
       subtitle: "Join our community events and webinars.",
       limit: 3,
+      ctaText: "",
+      ctaLink: "",
     },
     propDefs: [
       { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
       { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Supporting text" },
       { key: "limit", label: "Max Events to Show", type: "number", min: 1, max: 9 },
+      { key: "ctaText", label: "Button Text", type: "text", placeholder: "Optional button label" },
+      { key: "ctaLink", label: "Button Link", type: "url", placeholder: "/events or https://..." },
     ],
   },
   {
@@ -1359,7 +1375,10 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
       title: "Our Mental Health Professionals Around the World",
       subtitle: "Click a pin to learn more about a TCK-informed professional near you",
     },
-    propDefs: [],
+    propDefs: [
+      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
+      { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Supporting text" },
+    ],
   },
   {
     type: "blog-post-feed",

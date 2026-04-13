@@ -67,6 +67,10 @@ const SECTION_STYLE_KEYS = new Set([
   "sectionShowRadialGradient",
   "sectionRadialGradientColor",
   "sectionRadialGradientPosition",
+  "sectionBorderTopWidth",
+  "sectionBorderTopColor",
+  "sectionBorderBottomWidth",
+  "sectionBorderBottomColor",
   "sectionPaddingTop",
   "sectionPaddingBottom",
 ]);
@@ -647,7 +651,7 @@ export function BlockEditor({
           <div className="sticky top-0 z-10 -mx-4 border-b border-border/70 bg-background/95 px-4 pb-3 pt-1 backdrop-blur">
             {editorIntro}
           </div>
-          <div className="px-0 pb-1">
+          <div className="px-0 pb-8">
             {renderPropList(groupedPropDefs[defaultGroup])}
           </div>
         </div>
@@ -672,7 +676,7 @@ export function BlockEditor({
             </TabsList>
           </div>
           {availableGroups.map((group) => (
-            <TabsContent key={group} value={group} className="mt-0 space-y-4">
+            <TabsContent key={group} value={group} className="mt-0 space-y-4 pb-8">
               <div className="space-y-1">
                 <p className="text-sm font-semibold">{GROUP_METADATA[group].label}</p>
                 <p className="text-xs text-muted-foreground">{GROUP_METADATA[group].description}</p>

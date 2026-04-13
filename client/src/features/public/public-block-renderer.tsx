@@ -495,6 +495,8 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
     queryKey: ["/api/events"],
   });
   const limit = num(props.limit, 3);
+  const ctaText = str(props.ctaText);
+  const ctaLink = str(props.ctaLink);
   const visible = (events ?? []).filter((e) => new Date(e.date) > new Date()).slice(0, limit);
   return (
     <div className="py-4">
@@ -524,6 +526,17 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
           </Link>
         ))}
       </div>
+      {ctaText && (
+        <div className="mt-6 flex justify-center">
+          {ctaLink ? (
+            <Link href={ctaLink}>
+              <Button>{ctaText}</Button>
+            </Link>
+          ) : (
+            <Button>{ctaText}</Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
