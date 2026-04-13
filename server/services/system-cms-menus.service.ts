@@ -16,6 +16,47 @@ function item(label: string, url: string, children: MenuItem[] = [], openInNewTa
   };
 }
 
+function patchLegalItemUrls(items: MenuItem[]): { items: MenuItem[]; changed: boolean } {
+  let changed = false;
+
+  const nextItems = items.map((entry) => {
+    const nextChildren = entry.children?.length
+      ? patchLegalItemUrls(entry.children)
+      : { items: entry.children ?? [], changed: false };
+
+    const normalizedLabel = entry.label.trim().toLowerCase();
+    let nextUrl = entry.url;
+
+    if (
+      normalizedLabel === "privacy policy" &&
+      (entry.url === "/contact" || entry.url === "" || entry.url === "#")
+    ) {
+      nextUrl = "/privacy-policy";
+      changed = true;
+    }
+
+    if (
+      normalizedLabel === "terms of service" &&
+      (entry.url === "/contact" || entry.url === "" || entry.url === "#")
+    ) {
+      nextUrl = "/terms-of-service";
+      changed = true;
+    }
+
+    if (nextChildren.changed) {
+      changed = true;
+    }
+
+    return {
+      ...entry,
+      url: nextUrl,
+      children: nextChildren.items,
+    };
+  });
+
+  return { items: nextItems, changed };
+}
+
 const defaultMenus: Array<InsertCmsMenu & { location: StandardMenuLocation }> = [
   {
     name: "Main Navigation",
@@ -71,8 +112,8 @@ const defaultMenus: Array<InsertCmsMenu & { location: StandardMenuLocation }> = 
     name: "Legal",
     location: "footer_legal",
     items: [
-      item("Privacy Policy", "/contact"),
-      item("Terms of Service", "/contact"),
+      item("Privacy Policy", "/privacy-policy"),
+      item("Terms of Service", "/terms-of-service"),
     ],
   },
 ];
@@ -99,6 +140,16 @@ export async function ensureSystemCmsMenus() {
   if (!hasAnyFooterMenus) {
     for (const menu of defaultMenus.filter((entry) => entry.location !== "main_navigation")) {
       await storage.cmsMenus.create(menu);
+    }
+  }
+
+  const legalMenu = await storage.cmsMenus.getByLocation("footer_legal");
+  if (legalMenu?.items) {
+    const patched = patchLegalItemUrls((legalMenu.items as MenuItem[]) || []);
+    if (patched.changed) {
+      await storage.cmsMenus.update(legalMenu.id, {
+        items: patched.items,
+      });
     }
   }
 }

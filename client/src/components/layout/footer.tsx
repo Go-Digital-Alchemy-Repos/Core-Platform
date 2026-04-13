@@ -29,8 +29,8 @@ const defaultCompanyLinks = [
 ];
 
 const defaultLegalLinks = [
-  { href: "/contact", label: "Privacy Policy", testId: "link-footer-privacy" },
-  { href: "/contact", label: "Terms of Service", testId: "link-footer-terms" },
+  { href: "/privacy-policy", label: "Privacy Policy", testId: "link-footer-privacy" },
+  { href: "/terms-of-service", label: "Terms of Service", testId: "link-footer-terms" },
 ];
 
 type FooterLegalLink = {

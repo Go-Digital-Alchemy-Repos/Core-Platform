@@ -59,6 +59,7 @@ const CmsSidebarsPage = lazy(() => import("@/features/admin/cms/cms-sidebars-pag
 const InsightsPage = lazy(() => import("@/features/public/insights-page"));
 const InsightsPostPage = lazy(() => import("@/features/public/insights-post-page"));
 const RecordingArchivesPage = lazy(() => import("@/features/public/recording-archives-page"));
+const LegalFallbackPage = lazy(() => import("@/features/public/legal-fallback-page"));
 
 function PageLoader() {
   return (
@@ -82,6 +83,8 @@ function Router() {
         <Route path="/insights" component={() => <CmsHybridPage slug="insights" fallback={<InsightsPage />} />} />
         <Route path="/insights/:slug" component={InsightsPostPage} />
         <Route path="/directory" component={() => <CmsHybridPage slug="directory" fallback={<DirectoryPage />} />} />
+        <Route path="/privacy-policy" component={() => <CmsHybridPage slug="privacy-policy" fallback={<LegalFallbackPage title="Privacy Policy" subtitle="Review how TCK Wellness collects, uses, stores, and protects information across the website and related services." />} />} />
+        <Route path="/terms-of-service" component={() => <CmsHybridPage slug="terms-of-service" fallback={<LegalFallbackPage title="Terms of Service" subtitle="Review the terms governing use of the TCK Wellness website, directory, events, and related services." />} />} />
         <Route path="/directory/:id" component={TherapistProfilePage} />
         <Route path="/reference/:token" component={ReferenceFormPage} />
         <Route path="/auth/login" component={LoginPage} />
