@@ -7,6 +7,11 @@ type CmsMediaMetadataUpdate = Partial<Pick<
   "originalName" | "title" | "alt" | "caption" | "description" | "seoTitle" | "seoDescription" | "ogTitle" | "ogDescription"
 >>;
 
+type CmsMediaFileUpdate = Pick<CmsMediaAsset, "mimeType" | "fileSize" | "url"> & {
+  filename?: CmsMediaAsset["filename"];
+  r2Key?: CmsMediaAsset["r2Key"];
+};
+
 export class CmsMediaStorage {
   async getAllMedia(): Promise<CmsMediaAsset[]> {
     return db.select().from(cmsMedia).orderBy(desc(cmsMedia.createdAt));
@@ -32,6 +37,15 @@ export class CmsMediaStorage {
   }
 
   async updateMetadata(id: string, data: CmsMediaMetadataUpdate): Promise<CmsMediaAsset | undefined> {
+    const [asset] = await db
+      .update(cmsMedia)
+      .set(data)
+      .where(eq(cmsMedia.id, id))
+      .returning();
+    return asset;
+  }
+
+  async updateFile(id: string, data: CmsMediaFileUpdate): Promise<CmsMediaAsset | undefined> {
     const [asset] = await db
       .update(cmsMedia)
       .set(data)

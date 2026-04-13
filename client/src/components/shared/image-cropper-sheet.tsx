@@ -17,13 +17,45 @@ import { Button } from "@/components/ui/button";
 interface ImageCropperSheetProps {
   imageSrc: string | null;
   fileName?: string;
+  aspect?: number;
+  circularCrop?: boolean;
+  title?: string;
+  description?: string;
+  applyLabel?: string;
+  outputMimeType?: "image/jpeg" | "image/png" | "image/webp";
+  confirmDisabled?: boolean;
   onConfirm: (file: File) => void;
   onCancel: () => void;
 }
 
-function makeInitialCrop(width: number, height: number): Crop {
+function extensionForMimeType(mimeType: "image/jpeg" | "image/png" | "image/webp") {
+  switch (mimeType) {
+    case "image/png":
+      return ".png";
+    case "image/webp":
+      return ".webp";
+    default:
+      return ".jpg";
+  }
+}
+
+function withFileExtension(fileName: string, mimeType: "image/jpeg" | "image/png" | "image/webp") {
+  return fileName.replace(/\.[^.]+$/, "") + extensionForMimeType(mimeType);
+}
+
+function makeInitialCrop(width: number, height: number, aspect?: number): Crop {
+  if (!aspect) {
+    return {
+      unit: "%",
+      x: 5,
+      y: 5,
+      width: 90,
+      height: 90,
+    };
+  }
+
   return centerCrop(
-    makeAspectCrop({ unit: "%", width: 90 }, 1, width, height),
+    makeAspectCrop({ unit: "%", width: 90 }, aspect, width, height),
     width,
     height
   );
@@ -32,7 +64,8 @@ function makeInitialCrop(width: number, height: number): Crop {
 async function getCroppedFile(
   image: HTMLImageElement,
   crop: PixelCrop,
-  fileName: string
+  fileName: string,
+  outputMimeType: "image/jpeg" | "image/png" | "image/webp"
 ): Promise<File> {
   const canvas = document.createElement("canvas");
   const scaleX = image.naturalWidth / image.width;
@@ -56,9 +89,9 @@ async function getCroppedFile(
     canvas.toBlob(
       (blob) => {
         if (!blob) { reject(new Error("Could not crop image")); return; }
-        resolve(new File([blob], fileName, { type: "image/jpeg" }));
+        resolve(new File([blob], withFileExtension(fileName, outputMimeType), { type: outputMimeType }));
       },
-      "image/jpeg",
+      outputMimeType,
       0.95
     );
   });
@@ -67,6 +100,13 @@ async function getCroppedFile(
 export function ImageCropperSheet({
   imageSrc,
   fileName = "avatar.jpg",
+  aspect,
+  circularCrop = false,
+  title = "Crop Photo",
+  description = "Drag the handles to adjust the crop area, then click Apply.",
+  applyLabel = "Apply & Upload",
+  outputMimeType = "image/jpeg",
+  confirmDisabled = false,
   onConfirm,
   onCancel,
 }: ImageCropperSheetProps) {
@@ -77,23 +117,23 @@ export function ImageCropperSheet({
 
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
-    setCrop(makeInitialCrop(width, height));
-  }, []);
+    setCrop(makeInitialCrop(width, height, aspect));
+  }, [aspect]);
 
   async function handleConfirm() {
     if (!imgRef.current || !completedCrop) return;
     setProcessing(true);
     try {
-      const cropped = await getCroppedFile(imgRef.current, completedCrop, fileName);
+      const cropped = await getCroppedFile(imgRef.current, completedCrop, fileName, outputMimeType);
       const compressed = await imageCompression(cropped, {
         maxSizeMB: 2,
         maxWidthOrHeight: 1200,
         useWebWorker: true,
-        fileType: "image/jpeg",
+        fileType: outputMimeType,
         initialQuality: 0.88,
       });
-      const compressedFile = new File([compressed], fileName.replace(/\.[^.]+$/, ".jpg"), {
-        type: "image/jpeg",
+      const compressedFile = new File([compressed], withFileExtension(fileName, outputMimeType), {
+        type: outputMimeType,
       });
       onConfirm(compressedFile);
     } catch (err) {
@@ -109,11 +149,9 @@ export function ImageCropperSheet({
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <CropIcon className="h-4 w-4" />
-            Crop Photo
+            {title}
           </SheetTitle>
-          <SheetDescription>
-            Drag the handles to adjust the crop area, then click Apply.
-          </SheetDescription>
+          <SheetDescription>{description}</SheetDescription>
         </SheetHeader>
         <SheetBody>
           {imageSrc && (
@@ -122,8 +160,8 @@ export function ImageCropperSheet({
                 crop={crop}
                 onChange={(c) => setCrop(c)}
                 onComplete={(c) => setCompletedCrop(c)}
-                aspect={1}
-                circularCrop
+                aspect={aspect}
+                circularCrop={circularCrop}
                 keepSelection
                 minWidth={50}
                 minHeight={50}
@@ -149,7 +187,7 @@ export function ImageCropperSheet({
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={!completedCrop || processing}
+            disabled={!completedCrop || processing || confirmDisabled}
             data-testid="button-apply-crop"
           >
             {processing ? (
@@ -157,7 +195,7 @@ export function ImageCropperSheet({
             ) : (
               <CropIcon className="h-4 w-4 mr-2" />
             )}
-            Apply &amp; Upload
+            {applyLabel}
           </Button>
         </SheetFooter>
       </SheetContent>

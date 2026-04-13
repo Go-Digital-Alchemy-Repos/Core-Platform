@@ -45,6 +45,13 @@ function ensureCmsDir() {
   }
 }
 
+function ensureParentDir(filePath: string) {
+  const directory = path.dirname(filePath);
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true });
+  }
+}
+
 function stripExtension(filename: string) {
   return filename.replace(/\.[^.]+$/, "");
 }
@@ -182,6 +189,50 @@ router.patch(
       seoDescription: coerceEmptyToNull(parsed.data.seoDescription),
       ogTitle: coerceEmptyToNull(parsed.data.ogTitle),
       ogDescription: coerceEmptyToNull(parsed.data.ogDescription),
+    });
+
+    if (!updated) return res.status(404).json({ error: "Media not found" });
+    res.json({
+      ...updated,
+      url: (await r2Service.normalizePublicUrl(updated.url)) ?? updated.url,
+    });
+  })
+);
+
+router.post(
+  "/media/:id/replace",
+  cmsUpload.single("file"),
+  asyncHandler(async (req, res) => {
+    const id = paramString(req.params.id);
+    const asset = await storage.cmsMedia.getMedia(id);
+    if (!asset) return res.status(404).json({ error: "Media not found" });
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const optimized = await optimizeImage(req.file.buffer, req.file.mimetype, CMS_OPTIONS);
+    let publicUrl = asset.url;
+
+    if (asset.r2Key) {
+      const uploadedUrl = await r2Service.uploadFile(asset.r2Key, optimized.buffer, optimized.mimeType);
+      if (!uploadedUrl) {
+        return res.status(500).json({ error: "Failed to replace image in Cloudflare R2" });
+      }
+      publicUrl = uploadedUrl;
+    } else if (asset.url.startsWith("/uploads/cms/")) {
+      const localPath = path.resolve(process.cwd(), asset.url.slice(1));
+      ensureParentDir(localPath);
+      fs.writeFileSync(localPath, optimized.buffer);
+      publicUrl = asset.url;
+    } else {
+      return res.status(400).json({ error: "This media asset cannot be replaced in place" });
+    }
+
+    const updated = await storage.cmsMedia.updateFile(id, {
+      mimeType: optimized.mimeType,
+      fileSize: optimized.optimizedSize,
+      url: publicUrl,
+      r2Key: asset.r2Key,
     });
 
     if (!updated) return res.status(404).json({ error: "Media not found" });

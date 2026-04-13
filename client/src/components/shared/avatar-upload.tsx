@@ -209,6 +209,8 @@ export function AvatarUpload({
       <ImageCropperSheet
         imageSrc={cropSrc}
         fileName={cropFileName}
+        aspect={1}
+        circularCrop
         onConfirm={handleCropConfirm}
         onCancel={handleCropCancel}
       />

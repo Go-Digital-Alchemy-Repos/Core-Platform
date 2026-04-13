@@ -1106,6 +1106,8 @@ function OverviewTab({
     <ImageCropperSheet
       imageSrc={cropSrc}
       fileName={cropFileName}
+      aspect={1}
+      circularCrop
       onConfirm={(file) => { setCropSrc(null); onAvatarUpload(file); }}
       onCancel={() => setCropSrc(null)}
     />

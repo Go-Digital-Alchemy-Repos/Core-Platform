@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Image, Search, Trash2, Copy, Upload, Save } from "lucide-react";
+import { Image, Search, Trash2, Copy, Upload, Save, Crop, Loader2 } from "lucide-react";
 import { CmsImageUpload } from "./components/cms-image-upload";
 import type { CmsMediaAsset } from "@shared/schema";
 import { format } from "date-fns";
@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { apiRequest } from "@/lib/queryClient";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageCropperSheet } from "@/components/shared/image-cropper-sheet";
 
 type MediaMetadataForm = {
   originalName: string;
@@ -66,6 +67,9 @@ export default function CmsMediaPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<CmsMediaAsset | null>(null);
   const [metadataForm, setMetadataForm] = useState<MediaMetadataForm>(buildMetadataForm(null));
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropFileName, setCropFileName] = useState("image.webp");
+  const [isPreparingCrop, setIsPreparingCrop] = useState(false);
 
   const { data: assets = [], isLoading } = useQuery<CmsMediaAsset[]>({
     queryKey: ["/api/admin/cms/media"],
@@ -74,6 +78,14 @@ export default function CmsMediaPage() {
   useEffect(() => {
     setMetadataForm(buildMetadataForm(selectedAsset));
   }, [selectedAsset]);
+
+  useEffect(() => {
+    return () => {
+      if (cropSrc?.startsWith("blob:")) {
+        URL.revokeObjectURL(cropSrc);
+      }
+    };
+  }, [cropSrc]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -102,6 +114,35 @@ export default function CmsMediaPage() {
     onError: () => toast({ title: "Failed to save image details", variant: "destructive" }),
   });
 
+  const replaceImageMutation = useMutation({
+    mutationFn: async (payload: { id: string; file: File }) => {
+      const formData = new FormData();
+      formData.append("file", payload.file);
+      const res = await fetch(`/api/admin/cms/media/${payload.id}/replace`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || data.message || "Failed to replace image");
+      }
+      return res.json() as Promise<CmsMediaAsset>;
+    },
+    onSuccess: (asset) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/media"] });
+      setSelectedAsset(asset);
+      toast({ title: "Image updated" });
+      if (cropSrc?.startsWith("blob:")) {
+        URL.revokeObjectURL(cropSrc);
+      }
+      setCropSrc(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to crop image", description: error.message, variant: "destructive" });
+    },
+  });
+
   const filteredAssets = assets.filter((a) =>
     !search ||
     a.originalName.toLowerCase().includes(search.toLowerCase()) ||
@@ -125,6 +166,31 @@ export default function CmsMediaPage() {
 
   const updateMetadataField = (key: keyof MediaMetadataForm, value: string) => {
     setMetadataForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const prepareCropper = async () => {
+    if (!selectedAsset) return;
+    setIsPreparingCrop(true);
+    try {
+      const response = await fetch(selectedAsset.url, { credentials: "omit" });
+      if (!response.ok) {
+        throw new Error("Could not load image for cropping");
+      }
+      const blob = await response.blob();
+      if (cropSrc?.startsWith("blob:")) {
+        URL.revokeObjectURL(cropSrc);
+      }
+      setCropFileName(selectedAsset.originalName || "image.webp");
+      setCropSrc(URL.createObjectURL(blob));
+    } catch (error) {
+      toast({
+        title: "Unable to open crop tool",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPreparingCrop(false);
+    }
   };
 
   const hasMetadataChanges = selectedAsset
@@ -252,8 +318,8 @@ export default function CmsMediaPage() {
 
       <Dialog open={!!selectedAsset} onOpenChange={(open) => !open && setSelectedAsset(null)}>
         {selectedAsset && (
-          <DialogContent className="max-w-3xl max-h-[92vh] overflow-hidden">
-            <DialogHeader>
+          <DialogContent className="w-[min(96vw,72rem)] max-w-5xl h-[min(94vh,920px)] overflow-hidden p-0 gap-0 flex flex-col">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b">
               <DialogTitle className="truncate">{selectedAsset.originalName}</DialogTitle>
               <DialogDescription>
                 {formatBytes(selectedAsset.fileSize)} · {selectedAsset.mimeType}
@@ -262,11 +328,11 @@ export default function CmsMediaPage() {
                 )}
               </DialogDescription>
             </DialogHeader>
-            <div className="overflow-y-auto pr-1 space-y-5">
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
               <img
                 src={selectedAsset.url}
                 alt={selectedAsset.alt ?? selectedAsset.originalName}
-                className="w-full rounded-lg border object-cover max-h-72"
+                className="w-full rounded-lg border object-cover max-h-[420px]"
                 data-testid="img-asset-preview"
               />
               <div className="space-y-2">
@@ -401,6 +467,22 @@ export default function CmsMediaPage() {
                     variant="outline"
                     size="sm"
                     className="gap-1.5"
+                    onClick={prepareCropper}
+                    disabled={isPreparingCrop || replaceImageMutation.isPending}
+                    data-testid="button-crop-image"
+                  >
+                    {isPreparingCrop ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Crop className="h-3.5 w-3.5" />
+                    )}
+                    {isPreparingCrop ? "Preparing..." : "Crop Image"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
                     onClick={() => copyUrl(selectedAsset.url)}
                     data-testid="button-copy-url-main"
                   >
@@ -412,7 +494,7 @@ export default function CmsMediaPage() {
                     size="sm"
                     className="gap-1.5"
                     onClick={() => metadataMutation.mutate({ id: selectedAsset.id, data: metadataForm })}
-                    disabled={!hasMetadataChanges || metadataMutation.isPending}
+                    disabled={!hasMetadataChanges || metadataMutation.isPending || replaceImageMutation.isPending}
                     data-testid="button-save-media-details"
                   >
                     <Save className="h-3.5 w-3.5" />
@@ -425,6 +507,7 @@ export default function CmsMediaPage() {
                   size="sm"
                   className="gap-1.5"
                   onClick={() => setDeletingId(selectedAsset.id)}
+                  disabled={replaceImageMutation.isPending}
                   data-testid="button-delete-asset"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -435,6 +518,26 @@ export default function CmsMediaPage() {
           </DialogContent>
         )}
       </Dialog>
+
+      <ImageCropperSheet
+        imageSrc={cropSrc}
+        fileName={cropFileName}
+        title="Crop Image"
+        description="Adjust the crop area and save it back to this media item."
+        applyLabel={replaceImageMutation.isPending ? "Saving..." : "Apply Crop"}
+        outputMimeType="image/webp"
+        confirmDisabled={replaceImageMutation.isPending}
+        onConfirm={(file) => {
+          if (!selectedAsset) return;
+          replaceImageMutation.mutate({ id: selectedAsset.id, file });
+        }}
+        onCancel={() => {
+          if (cropSrc?.startsWith("blob:")) {
+            URL.revokeObjectURL(cropSrc);
+          }
+          setCropSrc(null);
+        }}
+      />
 
       <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent>
