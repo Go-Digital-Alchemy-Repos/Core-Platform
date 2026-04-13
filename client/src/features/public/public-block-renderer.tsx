@@ -477,7 +477,7 @@ function FeaturedProfessionalsBlock({ props }: { props: Record<string, unknown> 
 }
 
 function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
-  const { data: events } = useQuery<{ id: string; title: string; date: string; isVirtual: boolean }[]>({
+  const { data: events } = useQuery<{ id: string; title: string; date: string; isVirtual: boolean; imageUrl?: string | null }[]>({
     queryKey: ["/api/events"],
   });
   const limit = num(props.limit, 3);
@@ -493,12 +493,19 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
           </div>
         ) : visible.map((e) => (
           <Link key={e.id} href={`/events/${e.id}`}>
-            <Card className="hover:shadow-md transition-shadow cursor-pointer" data-testid={`event-preview-${e.id}`}>
-              <CardContent className="pt-4">
-                <p className="text-xs text-accent font-medium mb-1">{new Date(e.date).toLocaleDateString()}</p>
-                <p className="font-semibold text-sm line-clamp-2">{e.title}</p>
-                <p className="text-xs text-muted-foreground mt-1">{e.isVirtual ? "Virtual" : "In Person"}</p>
-              </CardContent>
+            <Card className="h-full overflow-hidden hover:shadow-md transition-shadow cursor-pointer" data-testid={`event-preview-${e.id}`}>
+              <div className={e.imageUrl ? "flex h-full" : ""}>
+                {e.imageUrl && (
+                  <div className="w-28 min-w-[7rem] shrink-0" data-testid={`img-event-preview-${e.id}`}>
+                    <img src={e.imageUrl} alt={e.title} className="h-full w-full object-cover" />
+                  </div>
+                )}
+                <CardContent className={e.imageUrl ? "p-4 flex-1" : "pt-4"}>
+                  <p className="text-xs text-accent font-medium mb-1">{new Date(e.date).toLocaleDateString()}</p>
+                  <p className="font-semibold text-sm line-clamp-2">{e.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{e.isVirtual ? "Virtual" : "In Person"}</p>
+                </CardContent>
+              </div>
             </Card>
           </Link>
         ))}
