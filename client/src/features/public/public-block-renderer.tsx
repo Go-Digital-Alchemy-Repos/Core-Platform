@@ -147,7 +147,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
 
   return (
     <section
-      className={`relative flex items-center overflow-hidden rounded-lg ${isSplit ? "justify-start text-left" : "justify-center text-center"}`}
+      className={`relative flex items-center overflow-hidden ${isSplit ? "justify-start text-left" : "justify-center text-center"}`}
       style={{
         minHeight: minHeightStyle,
         ...(sectionStyleConfig.backgroundColor ? { backgroundColor: sectionStyleConfig.backgroundColor } : {}),
@@ -163,7 +163,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
           <source src={videoBg} type="video/mp4" />
         </video>
       )}
-      <div className="absolute inset-0 rounded-lg" style={overlayStyle} />
+      <div className="absolute inset-0" style={overlayStyle} />
       <div className={`relative z-10 px-8 py-16 ${isSplit ? "max-w-2xl" : "max-w-3xl mx-auto"}`}>
         {badge && (
           <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-semibold mb-4 border border-accent/30">
@@ -386,7 +386,7 @@ function CtaBlock({ props }: { props: Record<string, unknown> }) {
     ? "bg-accent text-accent-foreground"
     : "bg-muted/40 border";
   return (
-    <div className={`rounded-2xl px-8 py-14 text-center ${bgClass}`}>
+    <div className={`px-8 py-14 text-center ${bgClass}`}>
       <h2 className="text-3xl font-heading font-bold mb-3">{str(props.heading) || "Ready to Get Started?"}</h2>
       {str(props.subheading) && <p className={`mb-8 max-w-xl mx-auto ${variant === "light" ? "text-muted-foreground" : "opacity-80"}`}>{str(props.subheading)}</p>}
       <div className="flex flex-wrap gap-3 justify-center">
