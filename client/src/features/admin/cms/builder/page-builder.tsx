@@ -164,6 +164,7 @@ const BLOCK_CATEGORY_LABELS: Record<BlockCategory, string> = {
 };
 
 const BLOCK_CATEGORY_ORDER: BlockCategory[] = ["hero", "layout", "content", "media", "social-proof", "conversion", "data", "dynamic"];
+const SYSTEM_SECTION_NAME_PREFIX = "Starter - ";
 
 interface PageBuilderProps {
   content: BuilderContent;
@@ -429,6 +430,13 @@ function SectionsLibrary({ onInsert }: { onInsert: (blocks: BlockInstance[]) => 
   });
 
   const filteredSections = sections.filter((section) => {
+    const sectionBlocks = Array.isArray(section.blocks) ? (section.blocks as BlockInstance[]) : [];
+    const containsDynamicStarterBlock =
+      section.name.startsWith(SYSTEM_SECTION_NAME_PREFIX) &&
+      sectionBlocks.some((block) => getBlockDef(block.type)?.isDynamic);
+
+    if (containsDynamicStarterBlock) return false;
+
     const matchesSearch = !search || section.name.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = categoryFilter === "all" || section.category === categoryFilter;
     return matchesSearch && matchesCategory;

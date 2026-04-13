@@ -12,6 +12,7 @@ const LOREM_BODY =
 const LOREM_LONG =
   "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.";
 const LOREM_RICHTEXT = `<p>${LOREM_BODY}</p><p>${LOREM_LONG}</p>`;
+const STARTER_LIBRARY_BLOCKS = ALL_BLOCKS.filter((block) => !block.isDynamic);
 
 function mapBlockToSectionCategory(block: BlockDef): string {
   if (block.type.includes("hero")) return "hero";
@@ -125,11 +126,24 @@ export async function ensureSystemCmsSections(options?: { refreshExisting?: bool
   const refreshExisting = options?.refreshExisting ?? false;
   const existingSections = await storage.cmsSections.getAllSections();
   const existingByName = new Map(existingSections.map((section) => [section.name, section]));
+  const desiredStarterNames = new Set(
+    STARTER_LIBRARY_BLOCKS.map((block) => `${SYSTEM_SECTION_NAME_PREFIX}${block.label}`)
+  );
 
   let created = 0;
   let updated = 0;
+  let deleted = 0;
 
-  for (const block of ALL_BLOCKS) {
+  if (refreshExisting) {
+    for (const section of existingSections) {
+      if (section.name.startsWith(SYSTEM_SECTION_NAME_PREFIX) && !desiredStarterNames.has(section.name)) {
+        await storage.cmsSections.deleteSection(section.id);
+        deleted += 1;
+      }
+    }
+  }
+
+  for (const block of STARTER_LIBRARY_BLOCKS) {
     const starterSection = buildStarterSectionRecord(block);
     const existing = existingByName.get(starterSection.name);
 
@@ -156,12 +170,14 @@ export async function ensureSystemCmsSections(options?: { refreshExisting?: bool
   logger.cms.info("Ensured system CMS reusable sections", {
     created,
     updated,
+    deleted,
     refreshExisting,
   });
 
   return {
     created,
     updated,
-    total: ALL_BLOCKS.length,
+    deleted,
+    total: STARTER_LIBRARY_BLOCKS.length,
   };
 }

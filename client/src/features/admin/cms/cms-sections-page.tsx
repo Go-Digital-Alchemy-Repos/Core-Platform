@@ -29,8 +29,10 @@ import { Plus, RefreshCcw, Trash2, Pencil, Blocks, Search, Layers } from "lucide
 import { apiRequest } from "@/lib/queryClient";
 import type { CmsSection } from "@shared/schema";
 import { format } from "date-fns";
+import { getBlockDef, type BlockInstance } from "./builder/block-registry";
 
 const CATEGORIES = ["all", "general", "hero", "cta", "testimonials", "faq", "features", "content", "team"];
+const SYSTEM_SECTION_NAME_PREFIX = "Starter - ";
 
 const CATEGORY_COLORS: Record<string, string> = {
   general: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
@@ -69,13 +71,13 @@ export default function CmsSectionsPage() {
   const restoreStartersMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/admin/cms/sections/system/starter-library");
-      return response.json() as Promise<{ created: number; updated: number; total: number }>;
+      return response.json() as Promise<{ created: number; updated: number; deleted: number; total: number }>;
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/sections"] });
       toast({
         title: "Starter section library updated",
-        description: `${result.created} created and ${result.updated} refreshed with placeholder Latin content.`,
+        description: `${result.created} created, ${result.updated} refreshed, and ${result.deleted ?? 0} outdated starter sections removed.`,
       });
     },
     onError: () => {
@@ -84,6 +86,13 @@ export default function CmsSectionsPage() {
   });
 
   const filtered = sections.filter((s) => {
+    const sectionBlocks = Array.isArray(s.blocks) ? (s.blocks as BlockInstance[]) : [];
+    const containsDynamicStarterBlock =
+      s.name.startsWith(SYSTEM_SECTION_NAME_PREFIX) &&
+      sectionBlocks.some((block) => getBlockDef(block.type)?.isDynamic);
+
+    if (containsDynamicStarterBlock) return false;
+
     const matchSearch =
       !search ||
       s.name.toLowerCase().includes(search.toLowerCase()) ||
