@@ -568,7 +568,17 @@ function BrandingImageCard({
   );
 }
 
-function BrandingTab({ settings }: { settings: SettingsData }) {
+export type BrandingSubview = "branding" | "colors" | "typography";
+
+export function BrandingTab({
+  settings,
+  initialSubtab = "branding",
+  showHeader = true,
+}: {
+  settings: SettingsData;
+  initialSubtab?: BrandingSubview;
+  showHeader?: boolean;
+}) {
   const { toast } = useToast();
   const brandingSettings = settings.branding || {};
   const [bodyFont, setBodyFont] = useState(brandingSettings.frontend_body_font?.value || "__default__");
@@ -762,16 +772,18 @@ function BrandingTab({ settings }: { settings: SettingsData }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold" data-testid="text-branding-heading">
-          Branding
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          Control the public logo, favicon, color palette, and frontend typography. Branding images are stored in Cloudflare R2 under the `branding/` directory.
-        </p>
-      </div>
+      {showHeader && (
+        <div>
+          <h3 className="text-lg font-semibold" data-testid="text-branding-heading">
+            Branding
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Control the public logo, favicon, color palette, and frontend typography. Branding images are stored in Cloudflare R2 under the `branding/` directory.
+          </p>
+        </div>
+      )}
 
-      <Tabs defaultValue="branding" className="space-y-6">
+      <Tabs defaultValue={initialSubtab} className="space-y-6">
         <TabsList className="grid w-full max-w-lg grid-cols-3" data-testid="tabs-branding-subtabs">
           <TabsTrigger value="branding" data-testid="tab-branding-subtab-branding">
             Branding
@@ -1420,7 +1432,7 @@ function EmailTemplatesTab() {
 
 type Specialization = { id: number; name: string; sortOrder: number };
 
-function SpecializationsTab() {
+export function SpecializationsTab() {
   const { toast } = useToast();
   const [addName, setAddName] = useState("");
   const [addOpen, setAddOpen] = useState(false);
@@ -1646,7 +1658,7 @@ export default function AdminSettingsPage() {
           System Settings
         </h1>
         <p className="text-muted-foreground mb-6">
-          Manage integrations, branding, and system templates
+          Manage integrations and system email templates.
         </p>
 
         <Tabs defaultValue="integrations">
@@ -1654,14 +1666,8 @@ export default function AdminSettingsPage() {
             <TabsTrigger value="integrations" data-testid="tab-integrations">
               Integrations
             </TabsTrigger>
-            <TabsTrigger value="branding" data-testid="tab-branding">
-              Branding
-            </TabsTrigger>
             <TabsTrigger value="templates" data-testid="tab-templates">
               Email Templates
-            </TabsTrigger>
-            <TabsTrigger value="specializations" data-testid="tab-specializations">
-              Specializations
             </TabsTrigger>
           </TabsList>
 
@@ -1675,22 +1681,8 @@ export default function AdminSettingsPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="branding" className="mt-6">
-            {isLoading ? (
-              <div className="flex items-center justify-center p-12">
-                <Loader2 className="h-6 w-6 animate-spin" />
-              </div>
-            ) : (
-              <BrandingTab settings={settings || {}} />
-            )}
-          </TabsContent>
-
           <TabsContent value="templates" className="mt-6">
             <EmailTemplatesTab />
-          </TabsContent>
-
-          <TabsContent value="specializations" className="mt-6">
-            <SpecializationsTab />
           </TabsContent>
         </Tabs>
       </div>

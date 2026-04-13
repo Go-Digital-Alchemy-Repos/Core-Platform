@@ -40,6 +40,8 @@ const AdminMembershipTiersPage = lazy(() => import("@/features/admin/membership-
 const AdminEventsPage = lazy(() => import("@/features/admin/events-page"));
 const DocsPage = lazy(() => import("@/features/admin/docs-page"));
 const AdminSettingsPage = lazy(() => import("@/features/admin/settings-page"));
+const AdminDesignPage = lazy(() => import("@/features/admin/design-page"));
+const AdminSpecializationsPage = lazy(() => import("@/features/admin/specializations-page"));
 const AdminBlogPage = lazy(() => import("@/features/admin/blog-page"));
 const CmsBlogPage = lazy(() => import("@/features/admin/cms/cms-blog-page"));
 const CmsBlogEditorPage = lazy(() => import("@/features/admin/cms/cms-blog-editor-page"));
@@ -160,6 +162,29 @@ function Router() {
         <Route path="/admin/settings">
           <ProtectedRoute roles={["admin"]}>
             <AdminSettingsPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/design/branding">
+          <ProtectedRoute roles={["admin"]}>
+            <AdminDesignPage initialSubview="branding" />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/design">
+          <Redirect to="/admin/design/branding" />
+        </Route>
+        <Route path="/admin/design/colors">
+          <ProtectedRoute roles={["admin"]}>
+            <AdminDesignPage initialSubview="colors" />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/design/typography">
+          <ProtectedRoute roles={["admin"]}>
+            <AdminDesignPage initialSubview="typography" />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/therapists/specializations">
+          <ProtectedRoute roles={["admin"]}>
+            <AdminSpecializationsPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/system/backups">

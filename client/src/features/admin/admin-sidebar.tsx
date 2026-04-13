@@ -23,6 +23,9 @@ import {
   Menu as MenuIcon,
   PanelRight,
   Database,
+  Palette,
+  Type,
+  Tag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -50,7 +53,16 @@ const navGroups: NavGroup[] = [
   {
     items: [
       { title: "Dashboard", href: "/admin", icon: LayoutDashboard, iconColor: "text-teal-600" },
-      { title: "Mental Health Professionals", href: "/admin/therapists", icon: UserCheck, iconColor: "text-emerald-600" },
+      {
+        title: "Mental Health Professionals",
+        href: "/admin/therapists",
+        icon: UserCheck,
+        iconColor: "text-emerald-600",
+        children: [
+          { title: "Directory Profiles", href: "/admin/therapists", icon: UserCheck, iconColor: "text-emerald-600" },
+          { title: "Specializations", href: "/admin/therapists/specializations", icon: Tag, iconColor: "text-emerald-500" },
+        ],
+      },
       { title: "User Manager", href: "/admin/users", icon: Users, iconColor: "text-blue-600" },
       { title: "Membership Tiers", href: "/admin/membership-tiers", icon: CreditCard, iconColor: "text-amber-600" },
       { title: "Events", href: "/admin/events", icon: CalendarDays, iconColor: "text-purple-600" },
@@ -73,13 +85,22 @@ const navGroups: NavGroup[] = [
         ],
       },
       { title: "Media", href: "/admin/cms/media", icon: Image, iconColor: "text-violet-400" },
-      { title: "Sections", href: "/admin/cms/sections", icon: Blocks, iconColor: "text-violet-400" },
       { title: "SEO", href: "/admin/cms/seo", icon: SearchIcon, iconColor: "text-violet-400" },
-      { title: "Menus", href: "/admin/cms/menus", icon: MenuIcon, iconColor: "text-violet-500" },
-      { title: "Sidebars & Widgets", href: "/admin/cms/sidebars", icon: PanelRight, iconColor: "text-emerald-500" },
     ],
   },
   {
+    label: "Design",
+    items: [
+      { title: "Branding", href: "/admin/design/branding", icon: Image, iconColor: "text-pink-500" },
+      { title: "Color Palette", href: "/admin/design/colors", icon: Palette, iconColor: "text-rose-500" },
+      { title: "Typography", href: "/admin/design/typography", icon: Type, iconColor: "text-sky-600" },
+      { title: "Menus", href: "/admin/cms/menus", icon: MenuIcon, iconColor: "text-violet-500" },
+      { title: "Sidebars & Widgets", href: "/admin/cms/sidebars", icon: PanelRight, iconColor: "text-emerald-500" },
+      { title: "Sections", href: "/admin/cms/sections", icon: Blocks, iconColor: "text-violet-400" },
+    ],
+  },
+  {
+    label: "System",
     items: [
       { title: "Documentation", href: "/admin/docs", icon: FileText, iconColor: "text-indigo-600" },
       { title: "System Backups", href: "/admin/system/backups", icon: Database, iconColor: "text-cyan-600" },
