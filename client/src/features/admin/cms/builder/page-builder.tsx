@@ -1,7 +1,6 @@
-import { useState, useCallback, type DragEvent } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo, useState, type DragEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,13 +8,12 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -25,62 +23,84 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Plus,
-  Trash2,
-  ChevronUp,
-  ChevronDown,
-  Eye,
-  EyeOff,
-  Pencil,
-  Layers,
-  Sparkles,
-  FileText,
-  LayoutTemplate,
-  Megaphone,
-  LayoutGrid,
-  HelpCircle,
-  Quote,
-  UserCheck,
-  CalendarDays,
-  BookOpen,
-  MousePointerClick,
-  Image,
-  Play,
-  Minus,
-  Heading,
-  Globe,
-  Phone,
-  GripVertical,
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import {
+  ArrowDown,
+  ArrowUp,
   Bookmark,
-  Search,
+  BookOpen,
   Blocks,
+  CalendarDays,
+  ChevronDown,
+  ClipboardCheck,
+  Copy,
+  FileText,
+  FlaskConical,
+  GalleryHorizontal,
+  Globe,
+  Grid2X2,
+  Grid3X3,
+  GripVertical,
+  Heading,
+  HelpCircle,
+  Image,
+  Layers,
+  LayoutGrid,
+  LayoutTemplate,
+  List,
+  ListChecks,
+  ListOrdered,
   Lock,
   Map as MapIcon,
-  UserPlus,
-  List,
-  ShieldCheck,
-  ArrowRight,
-  Shield,
+  Megaphone,
+  Minus,
+  Monitor,
+  MousePointerClick,
   Newspaper,
-  TrendingUp,
-  Grid3X3,
-  GalleryHorizontal,
-  BarChart3,
-  Grid2X2,
-  ListChecks,
-  FlaskConical,
-  ClipboardCheck,
-  BadgeCheck,
-  Workflow,
-  ListOrdered,
+  Phone,
+  Play,
+  Plus,
+  Quote,
   Rss,
+  Search,
+  Settings2,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  Trash2,
+  UserCheck,
   Users,
+  Workflow,
+  ArrowRight,
+  BadgeCheck,
+  BarChart3,
+  UserPlus2,
 } from "lucide-react";
-import { BLOCK_REGISTRY, ALL_BLOCKS, getBlockDef, createBlock, isDynamicBlock, type BlockInstance, type BuilderContent, type BlockCategory, type BlockDef } from "./block-registry";
+import {
+  ALL_BLOCKS,
+  createBlock,
+  getBlockDef,
+  isDynamicBlock,
+  type BlockCategory,
+  type BlockDef,
+  type BlockInstance,
+  type BuilderContent,
+} from "./block-registry";
 import { BlockEditor } from "./block-editor";
-import { PageRenderer, BlockRenderer } from "./block-renderer";
+import {
+  getSectionPaddingClasses,
+  getSectionStyleConfig,
+  hasSectionStyleConfig,
+  SectionStyleWrapper,
+} from "./section-style";
+import { PublicBlockRenderer, FULL_WIDTH_BLOCK_TYPES } from "@/features/public/public-block-renderer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 import type { CmsSection } from "@shared/schema";
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -103,7 +123,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Phone,
   Map: MapIcon,
   Mail: Globe,
-  UserPlus,
+  UserPlus: UserPlus2,
   Lock,
   List,
   ShieldCheck,
@@ -140,23 +160,6 @@ const BLOCK_CATEGORY_LABELS: Record<BlockCategory, string> = {
 
 const BLOCK_CATEGORY_ORDER: BlockCategory[] = ["hero", "layout", "content", "media", "social-proof", "conversion", "data", "dynamic"];
 
-function groupBlocksByCategory(blocks: BlockDef[]): { category: BlockCategory; label: string; items: BlockDef[] }[] {
-  const grouped = new Map<BlockCategory, BlockDef[]>();
-  for (const block of blocks) {
-    const cat = block.category;
-    if (!grouped.has(cat)) grouped.set(cat, []);
-    grouped.get(cat)!.push(block);
-  }
-  return BLOCK_CATEGORY_ORDER
-    .filter((cat) => grouped.has(cat))
-    .map((cat) => ({ category: cat, label: BLOCK_CATEGORY_LABELS[cat], items: grouped.get(cat)! }));
-}
-
-function BlockIcon({ name, className }: { name: string; className?: string }) {
-  const Icon = ICON_MAP[name] ?? Layers;
-  return <Icon className={className} />;
-}
-
 interface PageBuilderProps {
   content: BuilderContent;
   onChange: (content: BuilderContent) => void;
@@ -165,6 +168,65 @@ interface PageBuilderProps {
 interface SaveSectionDialogProps {
   block: BlockInstance;
   onClose: () => void;
+}
+
+interface VisualCanvasProps {
+  blocks: BlockInstance[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onDuplicate: (id: string) => void;
+  onDelete: (id: string) => void;
+  onMove: (id: string, direction: "up" | "down") => void;
+  onSaveAsSection: (id: string) => void;
+}
+
+function groupBlocksByCategory(blocks: BlockDef[]): { category: BlockCategory; label: string; items: BlockDef[] }[] {
+  const grouped = new Map<BlockCategory, BlockDef[]>();
+  for (const block of blocks) {
+    const category = block.category;
+    if (!grouped.has(category)) grouped.set(category, []);
+    grouped.get(category)!.push(block);
+  }
+
+  return BLOCK_CATEGORY_ORDER
+    .filter((category) => grouped.has(category))
+    .map((category) => ({
+      category,
+      label: BLOCK_CATEGORY_LABELS[category],
+      items: grouped.get(category)!,
+    }));
+}
+
+function BlockIcon({ name, className }: { name: string; className?: string }) {
+  const Icon = ICON_MAP[name] ?? Layers;
+  return <Icon className={className} />;
+}
+
+function cloneProps<T>(value: T): T {
+  if (typeof structuredClone === "function") {
+    return structuredClone(value);
+  }
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function duplicateBlockInstance(block: BlockInstance): BlockInstance {
+  return {
+    id: crypto.randomUUID(),
+    type: block.type,
+    props: cloneProps(block.props),
+  };
+}
+
+function getBlockSummary(block: BlockInstance) {
+  const candidates = [
+    block.props.title,
+    block.props.heading,
+    block.props.sectionEyebrow,
+    block.props.badge,
+    block.props.ctaText,
+  ];
+  const summary = candidates.find((candidate) => typeof candidate === "string" && candidate.trim().length > 0);
+  return typeof summary === "string" ? summary : "";
 }
 
 function SaveSectionDialog({ block, onClose }: SaveSectionDialogProps) {
@@ -176,20 +238,22 @@ function SaveSectionDialog({ block, onClose }: SaveSectionDialogProps) {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/admin/cms/sections", {
+      const response = await apiRequest("POST", "/api/admin/cms/sections", {
         name,
         description,
         category,
         blocks: [block],
       });
-      return res.json();
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/sections"] });
       toast({ title: "Saved as reusable section" });
       onClose();
     },
-    onError: () => toast({ title: "Failed to save section", variant: "destructive" }),
+    onError: () => {
+      toast({ title: "Failed to save section", variant: "destructive" });
+    },
   });
 
   return (
@@ -198,7 +262,7 @@ function SaveSectionDialog({ block, onClose }: SaveSectionDialogProps) {
         <Label>Section Name</Label>
         <Input
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(event) => setName(event.target.value)}
           placeholder="e.g. Homepage Hero"
           data-testid="input-save-section-name"
           autoFocus
@@ -211,41 +275,43 @@ function SaveSectionDialog({ block, onClose }: SaveSectionDialogProps) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {SECTION_CATEGORIES.map((c) => (
-              <SelectItem key={c} value={c} className="capitalize">{c}</SelectItem>
+            {SECTION_CATEGORIES.map((value) => (
+              <SelectItem key={value} value={value} className="capitalize">
+                {value}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
       <div className="space-y-1.5">
-        <Label>Description <span className="text-muted-foreground font-normal text-xs">(optional)</span></Label>
+        <Label>
+          Description <span className="text-xs font-normal text-muted-foreground">(optional)</span>
+        </Label>
         <Textarea
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="When to use this section…"
+          onChange={(event) => setDescription(event.target.value)}
+          placeholder="When to use this section..."
           rows={2}
           data-testid="input-save-section-description"
         />
       </div>
       <DialogFooter>
-        <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
         <Button
           onClick={() => saveMutation.mutate()}
           disabled={!name.trim() || saveMutation.isPending}
           data-testid="button-confirm-save-section"
         >
-          {saveMutation.isPending ? "Saving…" : "Save Section"}
+          {saveMutation.isPending ? "Saving..." : "Save Section"}
         </Button>
       </DialogFooter>
     </div>
   );
 }
 
-interface SectionsLibraryProps {
-  onInsert: (blocks: BlockInstance[]) => void;
-}
-
-function SectionsLibrary({ onInsert }: SectionsLibraryProps) {
+function SectionsLibrary({ onInsert }: { onInsert: (blocks: BlockInstance[]) => void }) {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
@@ -253,76 +319,80 @@ function SectionsLibrary({ onInsert }: SectionsLibraryProps) {
     queryKey: ["/api/admin/cms/sections"],
   });
 
-  const filtered = sections.filter((s) => {
-    const matchSearch = !search || s.name.toLowerCase().includes(search.toLowerCase());
-    const matchCat = categoryFilter === "all" || s.category === categoryFilter;
-    return matchSearch && matchCat;
+  const filteredSections = sections.filter((section) => {
+    const matchesSearch = !search || section.name.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || section.category === categoryFilter;
+    return matchesSearch && matchesCategory;
   });
 
   const insertSection = (section: CmsSection) => {
     const blocks = Array.isArray(section.blocks) ? (section.blocks as BlockInstance[]) : [];
-    const remapped = blocks.map((b) => ({
-      ...b,
-      id: crypto.randomUUID(),
-    }));
-    onInsert(remapped);
+    const remappedBlocks = blocks.map((block) => ({ ...block, id: crypto.randomUUID() }));
+    onInsert(remappedBlocks);
   };
 
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search saved sections…"
-            className="pl-8 h-8 text-sm"
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search saved sections..."
+            className="h-8 pl-8 text-sm"
             data-testid="input-library-search"
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-32 h-8 text-xs" data-testid="select-library-category">
+          <SelectTrigger className="h-8 w-32 text-xs" data-testid="select-library-category">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all" className="text-xs">All</SelectItem>
-            {SECTION_CATEGORIES.map((c) => (
-              <SelectItem key={c} value={c} className="text-xs capitalize">{c}</SelectItem>
+            {SECTION_CATEGORIES.map((value) => (
+              <SelectItem key={value} value={value} className="text-xs capitalize">
+                {value}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">Loading…</div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-32 text-muted-foreground gap-2">
+        <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">Loading...</div>
+      ) : filteredSections.length === 0 ? (
+        <div className="flex h-32 flex-col items-center justify-center gap-2 text-muted-foreground">
           <Blocks className="h-8 w-8 opacity-30" />
           <p className="text-sm font-medium">{search ? "No sections match" : "No saved sections yet"}</p>
           <p className="text-xs">
-            {search ? "Try a different search" : "Save a block as a reusable section using the bookmark icon on any block"}
+            {search ? "Try a different search" : "Save a block as a reusable section from the visual builder"}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          {filtered.map((section) => {
+          {filteredSections.map((section) => {
             const blockCount = Array.isArray(section.blocks) ? section.blocks.length : 0;
             return (
               <button
                 key={section.id}
+                type="button"
                 onClick={() => insertSection(section)}
-                className="flex items-start gap-2.5 p-3 rounded-lg border hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30 text-left transition-colors group"
+                className="group flex items-start gap-2.5 rounded-lg border p-3 text-left transition-colors hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30"
                 data-testid={`insert-section-${section.id}`}
               >
-                <div className="h-7 w-7 rounded-md bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0">
+                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-violet-100 dark:bg-violet-900/30">
                   <Layers className="h-3.5 w-3.5 text-violet-600" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium leading-tight truncate">{section.name}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <Badge variant="secondary" className="text-[9px] capitalize px-1 py-0">{section.category ?? "general"}</Badge>
-                    <span className="text-[10px] text-muted-foreground">{blockCount} block{blockCount !== 1 ? "s" : ""}</span>
+                  <p className="truncate text-sm font-medium leading-tight">{section.name}</p>
+                  <div className="mt-0.5 flex items-center gap-1.5">
+                    <Badge variant="secondary" className="px-1 py-0 text-[9px] capitalize">
+                      {section.category ?? "general"}
+                    </Badge>
+                    <span className="text-[10px] text-muted-foreground">
+                      {blockCount} block{blockCount !== 1 ? "s" : ""}
+                    </span>
                   </div>
                 </div>
               </button>
@@ -334,72 +404,348 @@ function SectionsLibrary({ onInsert }: SectionsLibraryProps) {
   );
 }
 
+function CanvasBlockFrame({
+  block,
+  index,
+  isSelected,
+  onSelect,
+  onDuplicate,
+  onDelete,
+  onMove,
+  onSaveAsSection,
+}: {
+  block: BlockInstance;
+  index: number;
+  isSelected: boolean;
+  onSelect: (id: string) => void;
+  onDuplicate: (id: string) => void;
+  onDelete: (id: string) => void;
+  onMove: (id: string, direction: "up" | "down") => void;
+  onSaveAsSection: (id: string) => void;
+}) {
+  const blockDef = getBlockDef(block.type);
+  const summary = getBlockSummary(block);
+  const isDynamic = isDynamicBlock(block.type);
+
+  return (
+    <div className="group relative" data-testid={`canvas-block-${block.id}`}>
+      <div
+        className={cn(
+          "relative transition-all",
+          isSelected
+            ? "ring-2 ring-violet-500 ring-offset-4 ring-offset-background"
+            : "hover:ring-2 hover:ring-violet-300/70 hover:ring-offset-2 hover:ring-offset-background"
+        )}
+      >
+        <div className="pointer-events-none select-none">
+          <PublicBlockRenderer block={block} disableSectionStyleWrap />
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => onSelect(block.id)}
+        className="absolute inset-0 z-10"
+        aria-label={`Select ${blockDef?.label ?? block.type} block`}
+        data-testid={`select-canvas-block-${block.id}`}
+      />
+
+      <div className="pointer-events-none absolute left-3 top-3 z-20 flex max-w-[70%] flex-wrap items-center gap-2">
+        <Badge className="bg-slate-900/80 text-white hover:bg-slate-900/80">{index + 1}</Badge>
+        <Badge variant="secondary" className="bg-background/90 backdrop-blur">
+          {blockDef?.label ?? block.type}
+        </Badge>
+        {isDynamic && (
+          <Badge variant="outline" className="border-amber-300 bg-amber-50/90 text-amber-800 backdrop-blur dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
+            <Lock className="mr-1 h-2.5 w-2.5" />
+            Dynamic
+          </Badge>
+        )}
+        {summary && (
+          <span className="truncate rounded-full bg-background/90 px-2 py-1 text-[11px] text-muted-foreground shadow-sm backdrop-blur">
+            {summary}
+          </span>
+        )}
+      </div>
+
+      <div
+        className={cn(
+          "absolute right-3 top-3 z-20 flex items-center gap-1 transition-opacity",
+          isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+        )}
+      >
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          className="h-8 w-8 shadow-sm"
+          onClick={(event) => {
+            event.stopPropagation();
+            onSaveAsSection(block.id);
+          }}
+          data-testid={`canvas-save-section-${block.id}`}
+        >
+          <Bookmark className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          className="h-8 w-8 shadow-sm"
+          onClick={(event) => {
+            event.stopPropagation();
+            onMove(block.id, "up");
+          }}
+          data-testid={`canvas-move-up-${block.id}`}
+        >
+          <ArrowUp className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          className="h-8 w-8 shadow-sm"
+          onClick={(event) => {
+            event.stopPropagation();
+            onMove(block.id, "down");
+          }}
+          data-testid={`canvas-move-down-${block.id}`}
+        >
+          <ArrowDown className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          className="h-8 w-8 shadow-sm"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDuplicate(block.id);
+          }}
+          data-testid={`canvas-duplicate-${block.id}`}
+        >
+          <Copy className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="destructive"
+          size="icon"
+          className="h-8 w-8 shadow-sm"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete(block.id);
+          }}
+          data-testid={`canvas-delete-${block.id}`}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function VisualCanvas({
+  blocks,
+  selectedId,
+  onSelect,
+  onDuplicate,
+  onDelete,
+  onMove,
+  onSaveAsSection,
+}: VisualCanvasProps) {
+  let nonFullWidthIndex = 0;
+
+  return (
+    <div className="h-full bg-[radial-gradient(circle_at_top,_rgba(137,205,161,0.12),_transparent_45%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,250,252,0.98))] p-5">
+      <div className="mx-auto flex min-h-full max-w-[1280px] flex-col overflow-hidden rounded-[28px] border border-border/60 bg-background shadow-[0_20px_70px_rgba(15,23,42,0.08)]">
+        <div className="flex items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold">Visual Canvas</p>
+            <p className="text-xs text-muted-foreground">
+              This editing surface uses the published page renderer, then layers selection and editing tools on top.
+            </p>
+          </div>
+          <Badge variant="outline" className="gap-1">
+            <Monitor className="h-3 w-3" />
+            Live layout preview
+          </Badge>
+        </div>
+
+        <ScrollArea className="flex-1">
+          {blocks.length === 0 ? (
+            <div className="flex min-h-[640px] items-center justify-center p-10">
+              <div className="max-w-md rounded-2xl border border-dashed border-border/80 bg-background/90 p-8 text-center shadow-sm">
+                <Layers className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
+                <p className="text-base font-semibold">Your page canvas is empty</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Add a block or insert a saved section from the left panel to begin building visually.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-0">
+              {blocks.map((block, index) => {
+                const isFullWidth = FULL_WIDTH_BLOCK_TYPES.has(block.type);
+                const sectionStyleConfig = getSectionStyleConfig(block.props);
+                const hasCustomSectionStyle = block.type !== "hero" && hasSectionStyleConfig(sectionStyleConfig);
+                const visualIndex = isFullWidth ? nonFullWidthIndex : nonFullWidthIndex++;
+                const isAlternate = visualIndex % 2 === 1 && !hasCustomSectionStyle;
+
+                const framedBlock = (
+                  <CanvasBlockFrame
+                    block={block}
+                    index={index}
+                    isSelected={selectedId === block.id}
+                    onSelect={onSelect}
+                    onDuplicate={onDuplicate}
+                    onDelete={onDelete}
+                    onMove={onMove}
+                    onSaveAsSection={onSaveAsSection}
+                  />
+                );
+
+                if (hasCustomSectionStyle) {
+                  return (
+                    <SectionStyleWrapper
+                      key={block.id}
+                      props={block.props}
+                      className="rounded-none"
+                      contentClassName={isFullWidth ? undefined : getSectionPaddingClasses(block.props)}
+                    >
+                      {isFullWidth ? (
+                        framedBlock
+                      ) : (
+                        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
+                          {framedBlock}
+                        </div>
+                      )}
+                    </SectionStyleWrapper>
+                  );
+                }
+
+                if (isFullWidth) {
+                  return <div key={block.id}>{framedBlock}</div>;
+                }
+
+                return (
+                  <section
+                    key={block.id}
+                    className={cn("relative", isAlternate && "bg-muted/30")}
+                  >
+                    <div className={cn("relative mx-auto max-w-7xl px-4 sm:px-6", getSectionPaddingClasses(block.props))}>
+                      {framedBlock}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          )}
+        </ScrollArea>
+      </div>
+    </div>
+  );
+}
+
 export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [previewMode, setPreviewMode] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [savingSectionBlockId, setSavingSectionBlockId] = useState<string | null>(null);
+  const [navigatorSearch, setNavigatorSearch] = useState("");
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: string; position: "before" | "after" } | null>(null);
 
   const blocks = content.blocks ?? [];
-
-  const selectedBlock = blocks.find((b) => b.id === selectedId) ?? null;
+  const selectedBlock = blocks.find((block) => block.id === selectedId) ?? null;
   const selectedDef = selectedBlock ? getBlockDef(selectedBlock.type) : null;
 
   const setBlocks = useCallback(
-    (next: BlockInstance[]) => onChange({ ...content, blocks: next }),
+    (nextBlocks: BlockInstance[]) => {
+      onChange({ ...content, blocks: nextBlocks });
+    },
     [content, onChange]
   );
 
-  const addBlock = (type: string) => {
+  const visibleBlocks = useMemo(() => {
+    const term = navigatorSearch.trim().toLowerCase();
+    if (!term) return blocks;
+    return blocks.filter((block) => {
+      const def = getBlockDef(block.type);
+      const summary = getBlockSummary(block).toLowerCase();
+      return (
+        block.type.toLowerCase().includes(term) ||
+        def?.label.toLowerCase().includes(term) ||
+        summary.includes(term)
+      );
+    });
+  }, [blocks, navigatorSearch]);
+
+  const addBlock = useCallback((type: string) => {
     const block = createBlock(type);
     setBlocks([...blocks, block]);
     setSelectedId(block.id);
     setAddDialogOpen(false);
-  };
+  }, [blocks, setBlocks]);
 
-  const insertBlocks = (newBlocks: BlockInstance[]) => {
-    setBlocks([...blocks, ...newBlocks]);
+  const insertBlocks = useCallback((insertedBlocks: BlockInstance[]) => {
+    setBlocks([...blocks, ...insertedBlocks]);
+    setSelectedId(insertedBlocks[0]?.id ?? null);
     setAddDialogOpen(false);
-  };
+  }, [blocks, setBlocks]);
 
-  const removeBlock = (id: string) => {
-    if (selectedId === id) setSelectedId(null);
-    setBlocks(blocks.filter((b) => b.id !== id));
-  };
+  const updateBlockProps = useCallback((id: string, props: Record<string, unknown>) => {
+    setBlocks(blocks.map((block) => (block.id === id ? { ...block, props } : block)));
+  }, [blocks, setBlocks]);
 
-  const moveBlock = (id: string, dir: "up" | "down") => {
-    const idx = blocks.findIndex((b) => b.id === id);
-    if (idx < 0) return;
-    const next = [...blocks];
-    if (dir === "up" && idx > 0) {
-      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-    } else if (dir === "down" && idx < next.length - 1) {
-      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+  const removeBlock = useCallback((id: string) => {
+    if (selectedId === id) {
+      const currentIndex = blocks.findIndex((block) => block.id === id);
+      const fallbackSelection = blocks[currentIndex + 1]?.id ?? blocks[currentIndex - 1]?.id ?? null;
+      setSelectedId(fallbackSelection);
     }
-    setBlocks(next);
-  };
+    setBlocks(blocks.filter((block) => block.id !== id));
+  }, [blocks, selectedId, setBlocks]);
 
-  const reorderBlocks = useCallback(
-    (sourceId: string, targetId: string, position: "before" | "after") => {
-      if (sourceId === targetId) return;
+  const duplicateBlock = useCallback((id: string) => {
+    const sourceIndex = blocks.findIndex((block) => block.id === id);
+    if (sourceIndex < 0) return;
+    const copy = duplicateBlockInstance(blocks[sourceIndex]);
+    const nextBlocks = [...blocks];
+    nextBlocks.splice(sourceIndex + 1, 0, copy);
+    setBlocks(nextBlocks);
+    setSelectedId(copy.id);
+  }, [blocks, setBlocks]);
 
-      const sourceIndex = blocks.findIndex((b) => b.id === sourceId);
-      const targetIndex = blocks.findIndex((b) => b.id === targetId);
+  const moveBlock = useCallback((id: string, direction: "up" | "down") => {
+    const currentIndex = blocks.findIndex((block) => block.id === id);
+    if (currentIndex < 0) return;
 
-      if (sourceIndex < 0 || targetIndex < 0) return;
+    const nextBlocks = [...blocks];
+    if (direction === "up" && currentIndex > 0) {
+      [nextBlocks[currentIndex - 1], nextBlocks[currentIndex]] = [nextBlocks[currentIndex], nextBlocks[currentIndex - 1]];
+    } else if (direction === "down" && currentIndex < nextBlocks.length - 1) {
+      [nextBlocks[currentIndex], nextBlocks[currentIndex + 1]] = [nextBlocks[currentIndex + 1], nextBlocks[currentIndex]];
+    } else {
+      return;
+    }
 
-      const next = [...blocks];
-      const [movedBlock] = next.splice(sourceIndex, 1);
-      const adjustedTargetIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
-      const insertIndex = position === "before" ? adjustedTargetIndex : adjustedTargetIndex + 1;
+    setBlocks(nextBlocks);
+  }, [blocks, setBlocks]);
 
-      next.splice(insertIndex, 0, movedBlock);
-      setBlocks(next);
-    },
-    [blocks, setBlocks]
-  );
+  const reorderBlocks = useCallback((sourceId: string, targetId: string, position: "before" | "after") => {
+    if (sourceId === targetId) return;
+
+    const sourceIndex = blocks.findIndex((block) => block.id === sourceId);
+    const targetIndex = blocks.findIndex((block) => block.id === targetId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+
+    const nextBlocks = [...blocks];
+    const [movedBlock] = nextBlocks.splice(sourceIndex, 1);
+    const adjustedTargetIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
+    const insertIndex = position === "before" ? adjustedTargetIndex : adjustedTargetIndex + 1;
+
+    nextBlocks.splice(insertIndex, 0, movedBlock);
+    setBlocks(nextBlocks);
+  }, [blocks, setBlocks]);
 
   const clearDragState = useCallback(() => {
     setDraggedBlockId(null);
@@ -443,46 +789,16 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     clearDragState();
   }, [clearDragState, draggedBlockId, dropTarget, reorderBlocks]);
 
-  const updateBlockProps = (id: string, props: Record<string, unknown>) => {
-    setBlocks(blocks.map((b) => (b.id === id ? { ...b, props } : b)));
-  };
+  const savingBlock = savingSectionBlockId
+    ? blocks.find((block) => block.id === savingSectionBlockId) ?? null
+    : null;
 
-  const savingBlock = savingSectionBlockId ? blocks.find((b) => b.id === savingSectionBlockId) ?? null : null;
-
-  if (previewMode) {
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-muted-foreground">Page Preview</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPreviewMode(false)}
-            data-testid="button-exit-preview"
-          >
-            <EyeOff className="h-4 w-4 mr-1.5" />
-            Exit Preview
-          </Button>
-        </div>
-        <div className="border rounded-xl bg-background p-6 min-h-[400px]">
-          {blocks.length === 0 ? (
-            <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
-              No blocks yet — exit preview and add blocks.
-            </div>
-          ) : (
-            <PageRenderer blocks={blocks} />
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  const AddBlockDialogContent = () => (
-    <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0">
-      <DialogHeader className="px-6 pt-6 pb-0">
+  const addBlockDialogContent = (
+    <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col p-0">
+      <DialogHeader className="px-6 pb-0 pt-6">
         <DialogTitle>Add Content</DialogTitle>
       </DialogHeader>
-      <Tabs defaultValue="blocks" className="flex-1 flex flex-col overflow-hidden">
+      <Tabs defaultValue="blocks" className="flex flex-1 flex-col overflow-hidden">
         <div className="px-6 pt-3">
           <TabsList className="w-full">
             <TabsTrigger value="blocks" className="flex-1 gap-1.5">
@@ -495,25 +811,28 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             </TabsTrigger>
           </TabsList>
         </div>
-        <TabsContent value="blocks" className="flex-1 overflow-y-auto px-6 pb-6 pt-3 mt-0">
+        <TabsContent value="blocks" className="mt-0 flex-1 overflow-y-auto px-6 pb-6 pt-3">
           <div className="space-y-5">
             {groupBlocksByCategory(ALL_BLOCKS).map(({ category, label, items }) => (
               <div key={category}>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{label}</h3>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {label}
+                </h3>
                 <div className="grid grid-cols-2 gap-2">
-                  {items.map((def) => (
+                  {items.map((definition) => (
                     <button
-                      key={def.type}
-                      onClick={() => addBlock(def.type)}
-                      className="flex items-start gap-3 p-3 rounded-lg border hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30 text-left transition-colors group"
-                      data-testid={`block-type-${def.type}`}
+                      key={definition.type}
+                      type="button"
+                      onClick={() => addBlock(definition.type)}
+                      className="group flex items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30"
+                      data-testid={`block-type-${definition.type}`}
                     >
-                      <div className="h-8 w-8 rounded-md bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-200 dark:group-hover:bg-violet-900/50 transition-colors">
-                        <BlockIcon name={def.iconName} className="h-4 w-4 text-violet-600" />
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-violet-100 transition-colors group-hover:bg-violet-200 dark:bg-violet-900/30 dark:group-hover:bg-violet-900/50">
+                        <BlockIcon name={definition.iconName} className="h-4 w-4 text-violet-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium leading-tight">{def.label}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{def.description}</p>
+                        <p className="text-sm font-medium leading-tight">{definition.label}</p>
+                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{definition.description}</p>
                       </div>
                     </button>
                   ))}
@@ -522,236 +841,332 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             ))}
           </div>
         </TabsContent>
-        <TabsContent value="sections" className="flex-1 overflow-y-auto px-6 pb-6 pt-3 mt-0">
-          <SectionsLibrary onInsert={(newBlocks) => insertBlocks(newBlocks)} />
+        <TabsContent value="sections" className="mt-0 flex-1 overflow-y-auto px-6 pb-6 pt-3">
+          <SectionsLibrary onInsert={insertBlocks} />
         </TabsContent>
       </Tabs>
     </DialogContent>
   );
 
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Layers className="h-4 w-4 text-violet-500" />
-          <span className="text-sm font-medium">Page Builder</span>
-          <Badge variant="outline" className="text-xs">{blocks.length} block{blocks.length !== 1 ? "s" : ""}</Badge>
+  const navigatorPanel = (
+    <div className="flex h-full flex-col rounded-2xl border border-border/70 bg-background shadow-sm">
+      <div className="space-y-3 border-b border-border/70 px-4 py-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <ListOrdered className="h-4 w-4 text-violet-500" />
+              <p className="text-sm font-semibold">Structure</p>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Reorder, duplicate, and select blocks. The canvas stays in sync.
+            </p>
+          </div>
+          <Badge variant="outline">{blocks.length}</Badge>
         </div>
-        <div className="flex items-center gap-2">
-          {blocks.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPreviewMode(true)}
-              data-testid="button-preview"
-            >
-              <Eye className="h-4 w-4 mr-1.5" />
-              Preview
-            </Button>
-          )}
+
+        <div className="flex gap-2">
           <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" data-testid="button-add-block">
-                <Plus className="h-4 w-4 mr-1.5" />
-                Add Block
+              <Button size="sm" className="flex-1" data-testid="button-add-block">
+                <Plus className="mr-1.5 h-4 w-4" />
+                Add Content
               </Button>
             </DialogTrigger>
-            <AddBlockDialogContent />
+            {addBlockDialogContent}
           </Dialog>
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={navigatorSearch}
+            onChange={(event) => setNavigatorSearch(event.target.value)}
+            placeholder="Filter blocks..."
+            className="h-9 pl-8 text-sm"
+            data-testid="input-builder-filter"
+          />
         </div>
       </div>
 
-      {blocks.length === 0 ? (
-        <div className="border-2 border-dashed border-muted rounded-xl p-12 text-center">
-          <Layers className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
-          <p className="font-medium text-muted-foreground">No blocks yet</p>
-          <p className="text-xs text-muted-foreground mt-1 mb-4">
-            Add content blocks or insert from your saved sections library
-          </p>
-          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" data-testid="button-add-first-block">
-                <Plus className="h-4 w-4 mr-2" />
-                Add First Block
-              </Button>
-            </DialogTrigger>
-            <AddBlockDialogContent />
-          </Dialog>
-        </div>
-      ) : (
-        <div className={`grid gap-4 ${selectedBlock ? "lg:grid-cols-[1fr_340px]" : "grid-cols-1"} ${selectedBlock ? "lg:h-[calc(100vh-220px)]" : ""}`}>
-          <div className={`space-y-2 ${selectedBlock ? "lg:overflow-y-auto lg:pr-1" : ""}`} data-testid="builder-block-list">
-            {blocks.map((block, idx) => {
-              const def = getBlockDef(block.type);
+      <ScrollArea className="flex-1">
+        <div className="space-y-2 p-3">
+          {visibleBlocks.length === 0 ? (
+            <div className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
+              {blocks.length === 0 ? "No blocks yet. Add content to start building." : "No blocks match that filter."}
+            </div>
+          ) : (
+            visibleBlocks.map((block, visibleIndex) => {
+              const definition = getBlockDef(block.type);
+              const blockIndex = blocks.findIndex((candidate) => candidate.id === block.id);
               const isSelected = block.id === selectedId;
-              const dynamic = isDynamicBlock(block.type);
-              const dynamicEditable = dynamic && def && def.propDefs.length > 0;
-              const isDraggable = !dynamic || dynamicEditable;
+              const isDynamic = isDynamicBlock(block.type);
+              const summary = getBlockSummary(block);
               const showDropBefore = dropTarget?.id === block.id && dropTarget.position === "before";
               const showDropAfter = dropTarget?.id === block.id && dropTarget.position === "after";
+
               return (
                 <div
                   key={block.id}
-                  className={`border rounded-lg overflow-hidden transition-all ${
-                    dynamic
-                      ? "border-amber-300 dark:border-amber-700 bg-amber-50/30 dark:bg-amber-950/10"
-                      : isSelected
-                      ? "border-violet-400 shadow-sm"
-                      : "border-border hover:border-muted-foreground/30"
-                  } ${draggedBlockId === block.id ? "opacity-60" : ""} ${
-                    showDropBefore ? "ring-2 ring-inset ring-violet-400 ring-offset-1" : ""
-                  } ${
-                    showDropAfter ? "shadow-[inset_0_-2px_0_0_rgb(167_139_250)]" : ""
-                  }`}
-                  data-testid={`block-item-${block.id}`}
-                  onDragOver={isDraggable ? (event) => handleDragOver(event, block.id) : undefined}
-                  onDrop={isDraggable ? (event) => handleDrop(event, block.id) : undefined}
+                  className={cn(
+                    "rounded-xl border transition-all",
+                    isSelected ? "border-violet-400 bg-violet-50/80 shadow-sm dark:bg-violet-950/20" : "border-border/70 bg-background",
+                    draggedBlockId === block.id && "opacity-60",
+                    showDropBefore && "ring-2 ring-inset ring-violet-400 ring-offset-1",
+                    showDropAfter && "shadow-[inset_0_-2px_0_0_rgb(167_139_250)]"
+                  )}
+                  onDragOver={(event) => handleDragOver(event, block.id)}
+                  onDrop={(event) => handleDrop(event, block.id)}
+                  data-testid={`builder-structure-item-${block.id}`}
                 >
-                  <div className={`flex items-center gap-2 px-3 py-2 ${dynamic ? "bg-amber-50/50 dark:bg-amber-950/20" : "bg-muted/20"}`}>
+                  <div className="flex items-start gap-2 px-3 py-3">
                     <button
                       type="button"
-                      draggable={isDraggable}
-                      onDragStart={isDraggable ? (event) => handleDragStart(event, block.id) : undefined}
-                      onDragEnd={isDraggable ? clearDragState : undefined}
-                      className={`flex h-6 w-6 items-center justify-center rounded-sm flex-shrink-0 ${
-                        isDraggable ? "cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground/70" : "cursor-not-allowed text-muted-foreground/30"
-                      }`}
-                      aria-label={isDraggable ? `Drag ${def?.label ?? block.type} block` : "Block position locked"}
-                      title={isDraggable ? "Drag to reorder" : "This block position is locked"}
+                      draggable
+                      onDragStart={(event) => handleDragStart(event, block.id)}
+                      onDragEnd={clearDragState}
+                      className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground/60 hover:text-foreground"
+                      title="Drag to reorder"
                       data-testid={`drag-handle-${block.id}`}
                     >
                       <GripVertical className="h-4 w-4" />
                     </button>
-                    <div className={`h-6 w-6 rounded flex items-center justify-center flex-shrink-0 ${dynamic ? "bg-amber-100 dark:bg-amber-900/30" : "bg-violet-100 dark:bg-violet-900/30"}`}>
-                      {def && <BlockIcon name={def.iconName} className={`h-3.5 w-3.5 ${dynamic ? "text-amber-600" : "text-violet-600"}`} />}
-                    </div>
-                    <span className="text-xs font-medium flex-1 truncate">
-                      {def?.label ?? block.type}
-                      {dynamic && (
-                        <Badge variant="outline" className="ml-1.5 text-[9px] px-1 py-0 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400">
-                          <Lock className="h-2.5 w-2.5 mr-0.5" />
-                          Dynamic
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(block.id)}
+                      className="min-w-0 flex-1 text-left"
+                      data-testid={`select-structure-block-${block.id}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-violet-100 dark:bg-violet-900/30">
+                          {definition && <BlockIcon name={definition.iconName} className="h-3.5 w-3.5 text-violet-600" />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {definition?.label ?? block.type}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            Block {blockIndex + 1}
+                            {summary ? ` • ${summary}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        <Badge variant="secondary" className="px-1 py-0 text-[10px] capitalize">
+                          {definition?.category ?? "content"}
                         </Badge>
-                      )}
-                      {(!dynamic || dynamicEditable) && (() => {
-                        const subtitle = typeof block.props.title === "string" && block.props.title
-                          ? block.props.title
-                          : typeof block.props.heading === "string" && block.props.heading
-                          ? block.props.heading
-                          : null;
-                        return subtitle ? (
-                          <span className="text-muted-foreground font-normal ml-1.5">— {subtitle}</span>
-                        ) : null;
-                      })()}
-                    </span>
-                    <div className="flex items-center gap-0.5 flex-shrink-0">
-                      {(!dynamic || dynamicEditable) && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            disabled={idx === 0}
-                            onClick={() => moveBlock(block.id, "up")}
-                            data-testid={`button-move-up-${block.id}`}
-                            title="Move up"
-                          >
-                            <ChevronUp className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            disabled={idx === blocks.length - 1}
-                            onClick={() => moveBlock(block.id, "down")}
-                            data-testid={`button-move-down-${block.id}`}
-                            title="Move down"
-                          >
-                            <ChevronDown className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      )}
-                      {(!dynamic || dynamicEditable) && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={`h-6 w-6 ${isSelected ? "text-violet-600" : ""}`}
-                            onClick={() => setSelectedId(isSelected ? null : block.id)}
-                            data-testid={`button-edit-block-${block.id}`}
-                            title={isSelected ? "Close editor" : "Edit block"}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-muted-foreground hover:text-amber-600"
-                            onClick={() => setSavingSectionBlockId(block.id)}
-                            data-testid={`button-save-section-${block.id}`}
-                            title="Save as reusable section"
-                          >
-                            <Bookmark className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-destructive hover:text-destructive"
-                            onClick={() => removeBlock(block.id)}
-                            data-testid={`button-delete-block-${block.id}`}
-                            title="Remove block"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      )}
+                        {isDynamic && (
+                          <Badge variant="outline" className="px-1 py-0 text-[10px]">
+                            Dynamic
+                          </Badge>
+                        )}
+                        {FULL_WIDTH_BLOCK_TYPES.has(block.type) && (
+                          <Badge variant="outline" className="px-1 py-0 text-[10px]">
+                            Full Width
+                          </Badge>
+                        )}
+                        {visibleIndex > 0 && (
+                          <span className="text-[10px] text-muted-foreground">
+                            {visibleIndex + 1} in filtered view
+                          </span>
+                        )}
+                      </div>
+                    </button>
+
+                    <div className="flex flex-col gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={blockIndex === 0}
+                        onClick={() => moveBlock(block.id, "up")}
+                        data-testid={`button-move-up-${block.id}`}
+                      >
+                        <ChevronDown className="h-3.5 w-3.5 rotate-180" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={blockIndex === blocks.length - 1}
+                        onClick={() => moveBlock(block.id, "down")}
+                        data-testid={`button-move-down-${block.id}`}
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => duplicateBlock(block.id)}
+                        data-testid={`button-duplicate-block-${block.id}`}
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={() => removeBlock(block.id)}
+                        data-testid={`button-delete-block-${block.id}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
-                  </div>
-                  <div className="p-3 pointer-events-none select-none opacity-80 max-h-48 overflow-hidden">
-                    <BlockRenderer block={block} isAdminPreview={dynamic} />
                   </div>
                 </div>
               );
-            })}
-          </div>
-
-          {selectedBlock && selectedDef && (
-            <div
-              className="border rounded-xl bg-background lg:overflow-y-auto"
-              data-testid="block-editor-panel"
-            >
-              <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/20">
-                <div className="flex items-center gap-2">
-                  <BlockIcon name={selectedDef.iconName} className="h-4 w-4 text-violet-500" />
-                  <span className="text-sm font-semibold">{selectedDef.label}</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setSelectedId(null)}
-                  data-testid="button-close-editor-panel"
-                >
-                  <EyeOff className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              <ScrollArea className="lg:h-auto h-[calc(100vh-300px)] max-h-[600px] lg:max-h-none">
-                <div className="p-4">
-                  <BlockEditor
-                    blockDef={selectedDef}
-                    props={selectedBlock.props}
-                    onChange={(props) => updateBlockProps(selectedBlock.id, props)}
-                  />
-                </div>
-              </ScrollArea>
-            </div>
+            })
           )}
         </div>
-      )}
+      </ScrollArea>
+    </div>
+  );
+
+  const inspectorPanel = selectedBlock && selectedDef ? (
+    <div className="flex h-full flex-col rounded-2xl border border-border/70 bg-background shadow-sm" data-testid="block-editor-panel">
+      <div className="space-y-3 border-b border-border/70 px-4 py-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4 text-violet-500" />
+              <p className="text-sm font-semibold">Inspector</p>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Edit the selected section using grouped controls tied directly to the canvas.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setSelectedId(null)}
+            data-testid="button-close-editor-panel"
+          >
+            <ChevronDown className="h-4 w-4 -rotate-90" />
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-3 py-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-violet-100 dark:bg-violet-900/30">
+            <BlockIcon name={selectedDef.iconName} className="h-4 w-4 text-violet-600" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">{selectedDef.label}</p>
+            <p className="truncate text-xs text-muted-foreground">{selectedDef.description}</p>
+          </div>
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1">
+        <div className="p-4">
+          <BlockEditor
+            blockDef={selectedDef}
+            props={selectedBlock.props}
+            onChange={(props) => updateBlockProps(selectedBlock.id, props)}
+          />
+        </div>
+      </ScrollArea>
+    </div>
+  ) : (
+    <div className="flex h-full flex-col rounded-2xl border border-dashed border-border/70 bg-background/70 p-6 text-center shadow-sm">
+      <div className="m-auto max-w-sm">
+        <Settings2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground/35" />
+        <p className="text-base font-semibold">Select a block to inspect</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Click any section directly on the canvas or from the structure panel to edit its content, media, layout, and settings.
+        </p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-violet-500" />
+            <p className="text-sm font-semibold">Visual Builder</p>
+            <Badge variant="outline">{blocks.length} block{blocks.length !== 1 ? "s" : ""}</Badge>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Structure on the left, real page canvas in the center, contextual inspector on the right.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary" className="gap-1">
+            <Monitor className="h-3 w-3" />
+            Canvas-first editing
+          </Badge>
+          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-block-toolbar">
+                <Plus className="mr-1.5 h-4 w-4" />
+                Add Content
+              </Button>
+            </DialogTrigger>
+            {addBlockDialogContent}
+          </Dialog>
+        </div>
+      </div>
+
+      <div className="space-y-4 lg:hidden">
+        {navigatorPanel}
+        <div className="rounded-2xl border border-border/70 bg-background shadow-sm">
+          <VisualCanvas
+            blocks={blocks}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onDuplicate={duplicateBlock}
+            onDelete={removeBlock}
+            onMove={moveBlock}
+            onSaveAsSection={setSavingSectionBlockId}
+          />
+        </div>
+        {inspectorPanel}
+      </div>
+
+      <div className="hidden lg:block">
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="min-h-[calc(100vh-270px)] rounded-2xl border border-border/60 bg-muted/10"
+        >
+          <ResizablePanel defaultSize={20} minSize={16}>
+            <div className="h-full p-3">{navigatorPanel}</div>
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={55} minSize={35}>
+            <div className="h-full p-3">
+              <div className="h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
+                <VisualCanvas
+                  blocks={blocks}
+                  selectedId={selectedId}
+                  onSelect={setSelectedId}
+                  onDuplicate={duplicateBlock}
+                  onDelete={removeBlock}
+                  onMove={moveBlock}
+                  onSaveAsSection={setSavingSectionBlockId}
+                />
+              </div>
+            </div>
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={25} minSize={20}>
+            <div className="h-full p-3">{inspectorPanel}</div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
 
       <Dialog
         open={!!savingSectionBlockId}
-        onOpenChange={(open) => { if (!open) setSavingSectionBlockId(null); }}
+        onOpenChange={(open) => {
+          if (!open) setSavingSectionBlockId(null);
+        }}
       >
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -761,10 +1176,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             </DialogTitle>
           </DialogHeader>
           {savingBlock && (
-            <SaveSectionDialog
-              block={savingBlock}
-              onClose={() => setSavingSectionBlockId(null)}
-            />
+            <SaveSectionDialog block={savingBlock} onClose={() => setSavingSectionBlockId(null)} />
           )}
         </DialogContent>
       </Dialog>

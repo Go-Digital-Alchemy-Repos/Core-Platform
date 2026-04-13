@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2 } from "lucide-react";
 import type { BlockDef, PropDef } from "./block-registry";
 import { CmsImageUpload } from "../components/cms-image-upload";
@@ -92,6 +94,67 @@ const IMAGE_POSITION_FIELD_GROUPS = [
   },
 ];
 
+type InspectorGroup = "content" | "media" | "layout" | "settings";
+
+const GROUP_METADATA: Record<InspectorGroup, { label: string; description: string }> = {
+  content: {
+    label: "Content",
+    description: "Headings, copy, calls to action, and the words people actually read.",
+  },
+  media: {
+    label: "Media",
+    description: "Images, videos, thumbnails, and image focal positioning.",
+  },
+  layout: {
+    label: "Layout",
+    description: "Alignment, column counts, widths, spacing, and structural arrangement.",
+  },
+  settings: {
+    label: "Settings",
+    description: "Section backgrounds, overlays, styles, visibility toggles, and appearance controls.",
+  },
+};
+
+const LAYOUT_KEYS = new Set([
+  "alignment",
+  "textAlign",
+  "sectionHeadingAlignment",
+  "sectionHeadingLevel",
+  "headingLevel",
+  "columns",
+  "layout",
+  "position",
+  "imagePosition",
+  "imageWidth",
+  "videoAspect",
+  "minHeight",
+  "experienceLevel",
+  "topSpacing",
+  "bottomSpacing",
+]);
+
+const SETTINGS_KEY_FRAGMENTS = [
+  "color",
+  "variant",
+  "style",
+  "theme",
+  "show",
+  "enable",
+  "opacity",
+  "icon",
+];
+
+const MEDIA_KEY_FRAGMENTS = [
+  "image",
+  "background",
+  "thumbnail",
+  "video",
+  "media",
+  "focal",
+  "positionx",
+  "positiony",
+];
+
 function defaultColorValueForKey(key: string) {
   if (key === "overlayColor" || key === "sectionBackgroundOverlayColor") return "#000000";
   return key === "sectionRadialGradientColor" ? DEFAULT_RADIAL_GRADIENT_COLOR : DEFAULT_COLOR_VALUE;
@@ -112,6 +175,20 @@ function orderPropDefs(propDefs: PropDef[]) {
       return a.index - b.index;
     })
     .map(({ propDef }) => propDef);
+}
+
+function inferInspectorGroup(propDef: PropDef): InspectorGroup {
+  const normalizedKey = propDef.key.toLowerCase();
+
+  if (SECTION_SETTING_KEYS.has(propDef.key)) return "settings";
+  if (propDef.type === "image-url") return "media";
+  if (POSITION_PICKER_KEYS.has(propDef.key)) return "media";
+  if (MEDIA_KEY_FRAGMENTS.some((fragment) => normalizedKey.includes(fragment))) return "media";
+  if (LAYOUT_KEYS.has(propDef.key)) return "layout";
+  if (SETTINGS_KEY_FRAGMENTS.some((fragment) => normalizedKey.includes(fragment))) return "settings";
+  if (propDef.type === "color" || propDef.type === "boolean") return "settings";
+
+  return "content";
 }
 
 function ArrayItemsField({
@@ -367,8 +444,25 @@ export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
     onChange({ ...props, [key]: val });
   };
   const orderedPropDefs = orderPropDefs(blockDef.propDefs);
-  const mainPropDefs = orderedPropDefs.filter((propDef) => !SECTION_SETTING_KEYS.has(propDef.key));
-  const sectionSettingPropDefs = orderedPropDefs.filter((propDef) => SECTION_SETTING_KEYS.has(propDef.key));
+  const groupedPropDefs = useMemo(() => {
+    const groups: Record<InspectorGroup, PropDef[]> = {
+      content: [],
+      media: [],
+      layout: [],
+      settings: [],
+    };
+
+    for (const propDef of orderedPropDefs) {
+      groups[inferInspectorGroup(propDef)].push(propDef);
+    }
+
+    return groups;
+  }, [orderedPropDefs]);
+
+  const availableGroups = (Object.keys(groupedPropDefs) as InspectorGroup[]).filter(
+    (group) => groupedPropDefs[group].length > 0
+  );
+  const defaultGroup = availableGroups[0] ?? "content";
 
   const renderPropList = (propDefs: PropDef[]) =>
     propDefs.map((propDef, idx) => {
@@ -422,18 +516,35 @@ export function BlockEditor({ blockDef, props, onChange }: BlockEditorProps) {
         <p className="text-xs text-muted-foreground">{blockDef.description}</p>
       </div>
       <Separator />
-      {renderPropList(mainPropDefs)}
-      {sectionSettingPropDefs.length > 0 && (
-        <>
-          <Separator />
-          <div className="space-y-1">
-            <p className="text-sm font-semibold">Section Settings</p>
-            <p className="text-xs text-muted-foreground">
-              Control the section container itself, including backgrounds, overlays, and vertical spacing.
-            </p>
-          </div>
-          {renderPropList(sectionSettingPropDefs)}
-        </>
+      {availableGroups.length <= 1 ? (
+        renderPropList(groupedPropDefs[defaultGroup])
+      ) : (
+        <Tabs defaultValue={defaultGroup} className="space-y-4">
+          <TabsList
+            className={`grid w-full ${
+              availableGroups.length === 2
+                ? "grid-cols-2"
+                : availableGroups.length === 3
+                  ? "grid-cols-3"
+                  : "grid-cols-4"
+            }`}
+          >
+            {availableGroups.map((group) => (
+              <TabsTrigger key={group} value={group} className="text-xs">
+                {GROUP_METADATA[group].label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {availableGroups.map((group) => (
+            <TabsContent key={group} value={group} className="mt-0 space-y-4">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold">{GROUP_METADATA[group].label}</p>
+                <p className="text-xs text-muted-foreground">{GROUP_METADATA[group].description}</p>
+              </div>
+              {renderPropList(groupedPropDefs[group])}
+            </TabsContent>
+          ))}
+        </Tabs>
       )}
     </div>
   );

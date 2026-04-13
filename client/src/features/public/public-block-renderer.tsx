@@ -1338,7 +1338,7 @@ export function PublicBlockRenderer({
   );
 }
 
-const FULL_WIDTH_BLOCKS = new Set([
+export const FULL_WIDTH_BLOCK_TYPES = new Set([
   "hero",
   "join-hero",
   "join-registration-form",
@@ -1358,7 +1358,7 @@ export function PublicPageRenderer({ blocks }: { blocks: BlockInstance[] }) {
   return (
     <div>
       {normalizedBlocks.map((block) => {
-        const isFullWidth = FULL_WIDTH_BLOCKS.has(block.type);
+        const isFullWidth = FULL_WIDTH_BLOCK_TYPES.has(block.type);
         const sectionStyleConfig = getSectionStyleConfig(block.props, { resolveAssetUrl: resolveCmsAssetUrl });
         const hasCustomSectionStyle = block.type !== "hero" && hasSectionStyleConfig(sectionStyleConfig);
         const idx = isFullWidth ? nonFullWidthIndex : nonFullWidthIndex++;

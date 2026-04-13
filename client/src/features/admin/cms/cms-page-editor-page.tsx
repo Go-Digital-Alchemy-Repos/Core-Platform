@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -324,7 +325,12 @@ export default function CmsPageEditorPage() {
 
   return (
     <AdminSidebar>
-      <div className="p-6 max-w-6xl mx-auto space-y-4">
+      <div
+        className={cn(
+          "space-y-4 p-6 mx-auto",
+          activeTab === "builder" ? "max-w-[1800px]" : "max-w-6xl"
+        )}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
