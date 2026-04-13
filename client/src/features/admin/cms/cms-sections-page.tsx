@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Pencil, Blocks, Search, Layers } from "lucide-react";
+import { Plus, RefreshCcw, Trash2, Pencil, Blocks, Search, Layers } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { CmsSection } from "@shared/schema";
 import { format } from "date-fns";
@@ -66,6 +66,23 @@ export default function CmsSectionsPage() {
     onError: () => toast({ title: "Failed to delete section", variant: "destructive" }),
   });
 
+  const restoreStartersMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/admin/cms/sections/system/starter-library");
+      return response.json() as Promise<{ created: number; updated: number; total: number }>;
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/sections"] });
+      toast({
+        title: "Starter section library updated",
+        description: `${result.created} created and ${result.updated} refreshed with placeholder Latin content.`,
+      });
+    },
+    onError: () => {
+      toast({ title: "Failed to restore starter sections", variant: "destructive" });
+    },
+  });
+
   const filtered = sections.filter((s) => {
     const matchSearch =
       !search ||
@@ -92,12 +109,24 @@ export default function CmsSectionsPage() {
               Save and reuse block groups across any CMS page
             </p>
           </div>
-          <Button asChild data-testid="button-new-section">
-            <Link href="/admin/cms/sections/new">
-              <Plus className="h-4 w-4 mr-2" />
-              New Section
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => restoreStartersMutation.mutate()}
+              disabled={restoreStartersMutation.isPending}
+              data-testid="button-restore-starter-sections"
+            >
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              {restoreStartersMutation.isPending ? "Updating Starter Library..." : "Restore Starter Sections"}
+            </Button>
+            <Button asChild data-testid="button-new-section">
+              <Link href="/admin/cms/sections/new">
+                <Plus className="h-4 w-4 mr-2" />
+                New Section
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="flex gap-3 flex-wrap">
@@ -141,15 +170,26 @@ export default function CmsSectionsPage() {
               <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-5">
                 {search || categoryFilter !== "all"
                   ? "Try a different search or category."
-                  : "Save block groups as reusable sections to speed up page building. You can also save a block directly from the page builder."}
+                  : "Save block groups as reusable sections to speed up page building. You can also save a block directly from the page builder or restore the full starter library."}
               </p>
               {!search && categoryFilter === "all" && (
-                <Button asChild variant="outline">
-                  <Link href="/admin/cms/sections/new">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create First Section
-                  </Link>
-                </Button>
+                <div className="flex items-center justify-center gap-2 flex-wrap">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => restoreStartersMutation.mutate()}
+                    disabled={restoreStartersMutation.isPending}
+                  >
+                    <RefreshCcw className="h-4 w-4 mr-2" />
+                    {restoreStartersMutation.isPending ? "Updating Starter Library..." : "Restore Starter Sections"}
+                  </Button>
+                  <Button asChild variant="outline">
+                    <Link href="/admin/cms/sections/new">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create First Section
+                    </Link>
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>

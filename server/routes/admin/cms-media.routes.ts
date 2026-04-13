@@ -187,6 +187,39 @@ router.get(
   })
 );
 
+router.get(
+  "/media/:id/source",
+  asyncHandler(async (req, res) => {
+    const id = paramString(req.params.id);
+    const asset = await storage.cmsMedia.getMedia(id);
+    if (!asset) return res.status(404).json({ error: "Media not found" });
+
+    let fileBuffer: Buffer | null = null;
+    let contentType = asset.mimeType;
+
+    if (asset.r2Key) {
+      const downloaded = await r2Service.downloadFile(asset.r2Key);
+      if (!downloaded) {
+        return res.status(404).json({ error: "Unable to load media source" });
+      }
+      fileBuffer = downloaded.buffer;
+      contentType = downloaded.contentType ?? asset.mimeType;
+    } else if (asset.url.startsWith("/uploads/cms/")) {
+      const localPath = path.resolve(process.cwd(), asset.url.slice(1));
+      if (!fs.existsSync(localPath)) {
+        return res.status(404).json({ error: "Media file not found" });
+      }
+      fileBuffer = fs.readFileSync(localPath);
+    } else {
+      return res.status(400).json({ error: "This media asset cannot be streamed for editing" });
+    }
+
+    res.setHeader("Content-Type", contentType || "application/octet-stream");
+    res.setHeader("Cache-Control", "private, no-store, max-age=0");
+    res.send(fileBuffer);
+  })
+);
+
 router.patch(
   "/media/:id",
   asyncHandler(async (req, res) => {

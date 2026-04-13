@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
+import { useBranding } from "@/components/shared/branding-provider";
 import type { CmsMenu, MenuItem, PublicMenuLocation } from "@shared/schema";
 
 const defaultPlatformLinks = [
@@ -147,6 +148,7 @@ function StandardFooterColumn({ menu }: { menu: CmsMenu }) {
 }
 
 export function Footer() {
+  const { frontendLogoUrl } = useBranding();
   const { data: publicMenus } = useQuery<Partial<Record<PublicMenuLocation, CmsMenu>>>({
     queryKey: ["/api/cms/menus"],
     queryFn: async () => {
@@ -190,6 +192,7 @@ export function Footer() {
   }, [publicMenus]) as FooterLegalLink[];
 
   const useStandardFooterMenus = standardFooterMenus.length > 0;
+  const brandLogo = frontendLogoUrl || logoImg;
 
   return (
     <footer className="border-t bg-muted/30" data-testid="footer">
@@ -197,7 +200,7 @@ export function Footer() {
         <div className={`grid grid-cols-2 sm:grid-cols-2 ${useStandardFooterMenus ? "lg:grid-cols-6" : "lg:grid-cols-5"} gap-8 sm:gap-10 lg:gap-12`}>
           <div className="col-span-2">
             <img
-              src={logoImg}
+              src={brandLogo}
               alt="TCK Wellness"
               className="h-8 sm:h-9 w-auto mb-3 sm:mb-4 dark:brightness-[1.8] dark:contrast-[0.9]"
             />

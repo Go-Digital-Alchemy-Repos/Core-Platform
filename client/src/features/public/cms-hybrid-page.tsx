@@ -20,6 +20,12 @@ interface CmsHybridPageProps {
   fallback: React.ReactNode;
 }
 
+interface CmsPageViewProps {
+  page: CmsPage;
+  globalSeo?: SeoSettings;
+  previewLabel?: string;
+}
+
 class CmsNotFoundError extends Error {
   constructor(slug: string) {
     super(`CMS page not found: ${slug}`);
@@ -157,6 +163,52 @@ function CmsLoadingPage() {
   );
 }
 
+export function CmsPageView({ page, globalSeo, previewLabel }: CmsPageViewProps) {
+  const blocks = parseCmsContent(page.content);
+  const showSidebar = page.template === "with-sidebar" && Boolean(page.sidebarId || page.slug === "insights");
+  const useDefaultSidebar = !page.sidebarId && page.slug === "insights";
+  const heroBlocks = showSidebar && blocks[0] && /hero/i.test(blocks[0].type) ? [blocks[0]] : [];
+  const contentBlocks = heroBlocks.length > 0 ? blocks.slice(1) : blocks;
+
+  return (
+    <div className="min-h-screen flex flex-col" data-testid="cms-public-page">
+      <CmsPageSeo page={page} globalSeo={globalSeo} />
+      {previewLabel ? (
+        <div className="border-b border-primary/20 bg-primary/10 px-4 py-2 text-center text-sm font-medium text-primary">
+          {previewLabel}
+        </div>
+      ) : null}
+      <Navbar />
+      <main className="flex-1">
+        {blocks.length > 0 ? (
+          showSidebar ? (
+            <>
+              {heroBlocks.length > 0 && <PublicPageRenderer blocks={heroBlocks} />}
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+                <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
+                  <div className="space-y-8" data-testid="cms-page-main-with-sidebar">
+                    {contentBlocks.map((block) => (
+                      <PublicBlockRenderer key={block.id} block={block} />
+                    ))}
+                  </div>
+                  <PublicSidebar sidebarId={page.sidebarId} useDefault={useDefaultSidebar} />
+                </div>
+              </div>
+            </>
+          ) : (
+            <PublicPageRenderer blocks={blocks} />
+          )
+        ) : (
+          <div className="max-w-4xl mx-auto px-4 py-16">
+            <h1 className="text-3xl font-heading font-semibold">{page.title}</h1>
+          </div>
+        )}
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
 export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
   const { data: page, isLoading, error } = useQuery<CmsPage>({
     queryKey: ["/api/cms/pages/by-slug", slug],
@@ -204,42 +256,5 @@ export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
     return <>{fallback}</>;
   }
 
-  const blocks = parseCmsContent(page.content);
-  const showSidebar = page.template === "with-sidebar" && Boolean(page.sidebarId || page.slug === "insights");
-  const useDefaultSidebar = !page.sidebarId && page.slug === "insights";
-  const heroBlocks = showSidebar && blocks[0] && /hero/i.test(blocks[0].type) ? [blocks[0]] : [];
-  const contentBlocks = heroBlocks.length > 0 ? blocks.slice(1) : blocks;
-
-  return (
-    <div className="min-h-screen flex flex-col" data-testid="cms-public-page">
-      <CmsPageSeo page={page} globalSeo={globalSeo} />
-      <Navbar />
-      <main className="flex-1">
-        {blocks.length > 0 ? (
-          showSidebar ? (
-            <>
-              {heroBlocks.length > 0 && <PublicPageRenderer blocks={heroBlocks} />}
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-                <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
-                  <div className="space-y-8" data-testid="cms-page-main-with-sidebar">
-                    {contentBlocks.map((block) => (
-                      <PublicBlockRenderer key={block.id} block={block} />
-                    ))}
-                  </div>
-                  <PublicSidebar sidebarId={page.sidebarId} useDefault={useDefaultSidebar} />
-                </div>
-              </div>
-            </>
-          ) : (
-            <PublicPageRenderer blocks={blocks} />
-          )
-        ) : (
-          <div className="max-w-4xl mx-auto px-4 py-16">
-            <h1 className="text-3xl font-heading font-semibold">{page.title}</h1>
-          </div>
-        )}
-      </main>
-      <Footer />
-    </div>
-  );
+  return <CmsPageView page={page} globalSeo={globalSeo} />;
 }

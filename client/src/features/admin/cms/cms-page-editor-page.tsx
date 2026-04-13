@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { CmsImageUpload } from "./components/cms-image-upload";
 import { useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -49,6 +49,10 @@ import {
   Loader2,
   LayoutTemplate,
   Check,
+  Copy,
+  ExternalLink,
+  AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import {
   Popover,
@@ -62,6 +66,7 @@ import type { BuilderContent } from "./builder/block-registry";
 import { mergeJoinHeroBlocks } from "@shared/cms-blocks";
 import { TemplatePicker } from "./components/template-picker";
 import { LandingPageWizard } from "./components/landing-page-wizard";
+import { analyzeCmsPageQuality } from "@/lib/cms-page-quality";
 
 const editorSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -176,6 +181,7 @@ export default function CmsPageEditorPage() {
   const watchNoindex = form.watch("noindex");
   const watchStatus = form.watch("status");
   const watchTemplate = form.watch("template");
+  const watchSidebarId = form.watch("sidebarId");
   const hasFaqBlocks = (builderContent?.blocks ?? []).some((b: any) => b.type === "faq");
 
   useEffect(() => {
@@ -196,6 +202,7 @@ export default function CmsPageEditorPage() {
       const created: CmsPage = await res.json();
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages"] });
       toast({ title: "Page created successfully" });
+      setDraftPreviewUrl("");
       setSaveStatus("success");
       navTimerRef.current = setTimeout(() => navigate(`/admin/cms/pages/${created.id}`), 1500);
     },
@@ -214,6 +221,7 @@ export default function CmsPageEditorPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id, "revisions"] });
       toast({ title: "Page saved" });
+      setDraftPreviewUrl("");
       setSaveStatus("success");
     },
     onError: async (err: any) => {
@@ -245,6 +253,7 @@ export default function CmsPageEditorPage() {
 
   const [scheduleDate, setScheduleDate] = useState("");
   const [schedulePopoverOpen, setSchedulePopoverOpen] = useState(false);
+  const [draftPreviewUrl, setDraftPreviewUrl] = useState("");
 
   const scheduleMutation = useMutation({
     mutationFn: (scheduledAt: string) =>
@@ -279,6 +288,46 @@ export default function CmsPageEditorPage() {
     },
   });
 
+  const previewLinkMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("GET", `/api/admin/cms/pages/${id}/preview-link`);
+      return response.json() as Promise<{ previewUrl: string; previewPath: string; expiresInHours: number }>;
+    },
+    onSuccess: (result) => {
+      setDraftPreviewUrl(result.previewUrl);
+      toast({
+        title: "Draft preview link ready",
+        description: `This preview link is ready to use and will expire in ${result.expiresInHours} hours.`,
+      });
+    },
+    onError: () => {
+      toast({ title: "Could not generate preview link", variant: "destructive" });
+    },
+  });
+
+  const openDraftPreview = async () => {
+    try {
+      const result = draftPreviewUrl
+        ? { previewUrl: draftPreviewUrl }
+        : await previewLinkMutation.mutateAsync();
+      window.open(result.previewUrl, "_blank", "noopener,noreferrer");
+    } catch {
+      toast({ title: "Could not open draft preview", variant: "destructive" });
+    }
+  };
+
+  const copyDraftPreview = async () => {
+    try {
+      const result = draftPreviewUrl
+        ? { previewUrl: draftPreviewUrl }
+        : await previewLinkMutation.mutateAsync();
+      await navigator.clipboard.writeText(result.previewUrl);
+      toast({ title: "Draft preview link copied" });
+    } catch {
+      toast({ title: "Could not copy preview link", variant: "destructive" });
+    }
+  };
+
   const onSave = () => {
     form.handleSubmit((formData) => {
       const payload = {
@@ -310,6 +359,42 @@ export default function CmsPageEditorPage() {
       if (navTimerRef.current) clearTimeout(navTimerRef.current);
     };
   }, []);
+
+  const qualityIssues = useMemo(
+    () =>
+      analyzeCmsPageQuality({
+        title: form.getValues("title"),
+        slug: form.getValues("slug"),
+        status: watchStatus,
+        template: watchTemplate,
+        sidebarId: watchSidebarId,
+        seoTitle: watchSeoTitle,
+        seoDescription: watchSeoDescription,
+        ogImageUrl: watchOgImageUrl,
+        noindex: watchNoindex,
+        blocks: builderContent.blocks,
+      }),
+    [
+      builderContent.blocks,
+      form,
+      watchSidebarId,
+      watchSlug,
+      watchTitle,
+      watchNoindex,
+      watchOgImageUrl,
+      watchSeoDescription,
+      watchSeoTitle,
+      watchStatus,
+      watchTemplate,
+    ]
+  );
+
+  const qualitySummary = useMemo(() => {
+    const errors = qualityIssues.filter((issue) => issue.severity === "error").length;
+    const warnings = qualityIssues.filter((issue) => issue.severity === "warning").length;
+    const info = qualityIssues.filter((issue) => issue.severity === "info").length;
+    return { errors, warnings, info };
+  }, [qualityIssues]);
 
   if (!isNew && pageLoading) {
     return (
@@ -353,6 +438,49 @@ export default function CmsPageEditorPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {!isNew && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copyDraftPreview()}
+                  disabled={previewLinkMutation.isPending}
+                  data-testid="button-copy-draft-preview"
+                >
+                  {previewLinkMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  ) : (
+                    <Copy className="h-4 w-4 mr-1.5" />
+                  )}
+                  Copy Preview Link
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openDraftPreview()}
+                  disabled={previewLinkMutation.isPending}
+                  data-testid="button-open-draft-preview"
+                >
+                  {previewLinkMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  ) : (
+                    <ExternalLink className="h-4 w-4 mr-1.5" />
+                  )}
+                  Draft Preview
+                </Button>
+              </>
+            )}
+            {qualityIssues.length > 0 ? (
+              <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800" data-testid="badge-quality-issues">
+                <AlertTriangle className="mr-1 h-3 w-3" />
+                {qualitySummary.errors + qualitySummary.warnings} quality issue{qualitySummary.errors + qualitySummary.warnings === 1 ? "" : "s"}
+              </Badge>
+            ) : (
+              <Badge className="bg-emerald-600 text-white" data-testid="badge-quality-ready">
+                <Check className="mr-1 h-3 w-3" />
+                Ready to publish
+              </Badge>
+            )}
             {isNew && (
               <Button
                 variant="outline"
@@ -517,6 +645,10 @@ export default function CmsPageEditorPage() {
             <TabsTrigger value="seo" data-testid="tab-seo">
               <Globe className="h-4 w-4 mr-1.5" />
               SEO
+            </TabsTrigger>
+            <TabsTrigger value="quality" data-testid="tab-quality">
+              <Sparkles className="h-4 w-4 mr-1.5" />
+              Quality
             </TabsTrigger>
           </TabsList>
 
@@ -918,6 +1050,121 @@ export default function CmsPageEditorPage() {
                 }}
                 data-testid="structured-data-status"
               />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="quality" className="mt-0">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Publication Checklist</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {qualityIssues.length === 0 ? (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+                      <div className="flex items-center gap-2 font-medium">
+                        <Check className="h-4 w-4" />
+                        This page looks ready for publishing
+                      </div>
+                      <p className="mt-2 text-sm">
+                        We did not detect any obvious content, SEO, or structural issues in the current draft.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3" data-testid="list-page-quality-issues">
+                      {qualityIssues.map((issue) => (
+                        <div
+                          key={issue.id}
+                          className={cn(
+                            "rounded-xl border p-4",
+                            issue.severity === "error" && "border-red-200 bg-red-50",
+                            issue.severity === "warning" && "border-amber-200 bg-amber-50",
+                            issue.severity === "info" && "border-blue-200 bg-blue-50"
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-medium text-sm">{issue.title}</p>
+                              <p className="mt-1 text-sm text-muted-foreground">{issue.description}</p>
+                            </div>
+                            <Badge variant="outline" className="capitalize">{issue.severity}</Badge>
+                          </div>
+                          <div className="mt-3">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => setActiveTab(issue.tab)}
+                            >
+                              Open {issue.tab === "builder" ? "Builder" : issue.tab === "seo" ? "SEO" : "Settings"}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Preview & Readiness</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 pt-0">
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="rounded-lg border bg-background p-3">
+                        <p className="text-lg font-semibold">{qualitySummary.errors}</p>
+                        <p className="text-xs text-muted-foreground">Errors</p>
+                      </div>
+                      <div className="rounded-lg border bg-background p-3">
+                        <p className="text-lg font-semibold">{qualitySummary.warnings}</p>
+                        <p className="text-xs text-muted-foreground">Warnings</p>
+                      </div>
+                      <div className="rounded-lg border bg-background p-3">
+                        <p className="text-lg font-semibold">{qualitySummary.info}</p>
+                        <p className="text-xs text-muted-foreground">Notes</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Button
+                        type="button"
+                        className="w-full"
+                        variant="outline"
+                        onClick={() => openDraftPreview()}
+                        disabled={previewLinkMutation.isPending || isNew}
+                      >
+                        {previewLinkMutation.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                        )}
+                        Open Draft Preview
+                      </Button>
+                      <Button
+                        type="button"
+                        className="w-full"
+                        variant="outline"
+                        onClick={() => copyDraftPreview()}
+                        disabled={previewLinkMutation.isPending || isNew}
+                      >
+                        {previewLinkMutation.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Copy className="mr-2 h-4 w-4" />
+                        )}
+                        Copy Draft Preview Link
+                      </Button>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      Preview links open the real frontend renderer with the current saved draft, so editors can review layout and content before publishing.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

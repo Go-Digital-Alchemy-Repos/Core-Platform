@@ -3,6 +3,7 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   HeadBucketCommand,
+  GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { logger } from "../utils/logger";
 import { retryOnce } from "../utils/retry";
@@ -162,6 +163,39 @@ export async function deleteFile(key: string): Promise<boolean> {
   } catch (err) {
     logger.r2.error("Delete failed", err, { key });
     return false;
+  }
+}
+
+export async function downloadFile(
+  key: string
+): Promise<{ buffer: Buffer; contentType: string | null } | null> {
+  const r2 = await getClient();
+  if (!r2) return null;
+
+  try {
+    const response = await retryOnce(
+      () =>
+        r2.client.send(
+          new GetObjectCommand({
+            Bucket: r2.bucketName,
+            Key: key,
+          })
+        ),
+      "R2 download"
+    );
+
+    const bytes = await response.Body?.transformToByteArray?.();
+    if (!bytes) {
+      return null;
+    }
+
+    return {
+      buffer: Buffer.from(bytes),
+      contentType: response.ContentType ?? null,
+    };
+  } catch (err) {
+    logger.r2.error("Download failed", err, { key });
+    return null;
   }
 }
 

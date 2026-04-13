@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../../middleware/error-handler";
 import { storage } from "../../storage";
+import { ensureSystemCmsSections } from "../../services/system-cms-sections.service";
 import { paramString } from "../../utils/params";
 
 const router = Router();
@@ -21,6 +22,14 @@ router.get(
   asyncHandler(async (_req, res) => {
     const sections = await storage.cmsSections.getAllSections();
     res.json(sections);
+  })
+);
+
+router.post(
+  "/sections/system/starter-library",
+  asyncHandler(async (_req, res) => {
+    const result = await ensureSystemCmsSections({ refreshExisting: true });
+    res.json({ success: true, ...result });
   })
 );
 

@@ -5,6 +5,7 @@ import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/shared/theme-provider";
+import { BrandingProvider } from "@/components/shared/branding-provider";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
@@ -16,6 +17,7 @@ const EventsPage = lazy(() => import("@/features/public/events-page"));
 const EventDetailPage = lazy(() => import("@/features/public/event-detail-page"));
 const JoinNetworkPage = lazy(() => import("@/features/public/join-network-page"));
 import { CmsHybridPage } from "@/features/public/cms-hybrid-page";
+const CmsPreviewPage = lazy(() => import("@/features/public/cms-preview-page"));
 
 const LoginPage = lazy(() => import("@/features/auth/login-page"));
 const ForgotPasswordPage = lazy(() => import("@/features/auth/forgot-password-page"));
@@ -77,6 +79,7 @@ function Router() {
         <Route path="/" component={() => <CmsHybridPage slug="home" fallback={<HomePage />} />} />
         <Route path="/about" component={() => <CmsHybridPage slug="about" fallback={<AboutPage />} />} />
         <Route path="/contact" component={() => <CmsHybridPage slug="contact" fallback={<ContactPage />} />} />
+        <Route path="/preview/cms/:id" component={CmsPreviewPage} />
         <Route path="/join" component={() => <CmsHybridPage slug="join" fallback={<JoinNetworkPage />} />} />
         <Route path="/events" component={() => <CmsHybridPage slug="events" fallback={<EventsPage />} />} />
         <Route path="/events/:id" component={EventDetailPage} />
@@ -293,12 +296,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <SetupGuard>
-            <Router />
-          </SetupGuard>
-        </TooltipProvider>
+        <BrandingProvider>
+          <TooltipProvider>
+            <Toaster />
+            <SetupGuard>
+              <Router />
+            </SetupGuard>
+          </TooltipProvider>
+        </BrandingProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

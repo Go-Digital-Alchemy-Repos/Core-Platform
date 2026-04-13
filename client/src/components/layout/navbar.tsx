@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle, useTheme } from "@/components/shared/theme-provider";
+import { useBranding } from "@/components/shared/branding-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { NotificationBell } from "@/components/shared/notification-bell";
@@ -98,6 +99,7 @@ export function Navbar() {
   const [location] = useLocation();
   const { user, isLoading, logout, isAdmin, isTherapist } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { frontendLogoUrl } = useBranding();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -135,12 +137,13 @@ export function Navbar() {
   }, [searchOpen]);
 
   const unreadNotifCount = useUnreadNotificationCount();
+  const brandLogo = frontendLogoUrl || logoImg;
 
   return (
     <nav className="sticky top-0 z-[999] bg-background/95 backdrop-blur-sm border-b" data-testid="navbar">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 py-3 sm:py-4">
         <Link href="/" data-testid="link-brand">
-          <img src={logoImg} alt="TCK Wellness" className="h-8 sm:h-10 w-auto dark:brightness-[1.8] dark:contrast-[0.9]" />
+          <img src={brandLogo} alt="TCK Wellness" className="h-8 sm:h-10 w-auto dark:brightness-[1.8] dark:contrast-[0.9]" />
         </Link>
 
         <div className="hidden md:flex items-center gap-2 flex-wrap">
@@ -373,7 +376,7 @@ export function Navbar() {
             <SheetContent side="right" className="w-72">
               <SheetHeader>
                 <SheetTitle>
-                  <img src={logoImg} alt="TCK Wellness" className="h-8 w-auto dark:brightness-[1.8] dark:contrast-[0.9]" />
+                  <img src={brandLogo} alt="TCK Wellness" className="h-8 w-auto dark:brightness-[1.8] dark:contrast-[0.9]" />
                 </SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-1 mt-6">

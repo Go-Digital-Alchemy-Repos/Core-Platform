@@ -223,7 +223,9 @@ export default function CmsMediaPage() {
     if (!selectedAsset) return;
     setIsPreparingCrop(true);
     try {
-      const response = await fetch(selectedAsset.url, { credentials: "omit" });
+      const response = await fetch(`/api/admin/cms/media/${selectedAsset.id}/source`, {
+        credentials: "include",
+      });
       if (!response.ok) {
         throw new Error("Could not load image for cropping");
       }

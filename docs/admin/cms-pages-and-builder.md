@@ -33,6 +33,8 @@ The right inspector is the primary editing surface for full block settings. It i
 - Save when you want to keep work in progress.
 - Publish when the page is ready for the public site.
 - Revision history remains tied to the same CMS page model, so structured content changes stay traceable.
+- Use the draft preview link in the page editor when you want to review the real frontend rendering of the current saved draft before it goes live.
+- Use the Quality tab before publishing to catch missing SEO fields, empty sections, incomplete CTAs, missing image alt text, and other common page issues.
 
 ## Safe Content Editing Rules
 
@@ -40,3 +42,4 @@ The right inspector is the primary editing surface for full block settings. It i
 - Use the media library for images and documents.
 - Avoid pasting raw third-party code unless the section explicitly supports HTML content.
 - Check CTA links carefully before publishing.
+- When sharing a preview link, remember it represents the latest saved draft. Saving again refreshes the underlying preview token so reviewers are always looking at the current version.

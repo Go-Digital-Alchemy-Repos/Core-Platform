@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -46,12 +47,52 @@ import {
   Tag,
   Link2,
   RefreshCw,
+  ImageIcon,
+  Type,
+  Check,
+  Palette,
 } from "lucide-react";
+import {
+  BRANDING_FONT_OPTIONS,
+  BRANDING_SANS_FONT_OPTIONS,
+  BRANDING_SERIF_FONT_OPTIONS,
+  fontFamilyForBrandingOption,
+  normalizeHexColor,
+  type BrandingFontOption,
+} from "@/lib/branding";
+import { cn } from "@/lib/utils";
 
 type SettingsData = Record<
   string,
   Record<string, { value: string; isSecret: boolean }>
 >;
+
+type BrandingSettingKey = "frontend_logo_url" | "admin_icon_url";
+
+type BrandingColorSettingKey =
+  | "brand_primary_color"
+  | "brand_secondary_color"
+  | "brand_tertiary_color"
+  | "text_body_color"
+  | "text_muted_color"
+  | "text_primary_foreground_color"
+  | "text_secondary_foreground_color"
+  | "text_tertiary_foreground_color";
+
+const BRANDING_COLOR_FIELDS: Array<{
+  key: BrandingColorSettingKey;
+  label: string;
+  description: string;
+}> = [
+  { key: "brand_primary_color", label: "Primary Color", description: "Main brand and button color." },
+  { key: "brand_secondary_color", label: "Secondary Color", description: "Support color for secondary UI states." },
+  { key: "brand_tertiary_color", label: "Tertiary Color", description: "Accent color used across highlights and links." },
+  { key: "text_body_color", label: "Body Text Color", description: "Default text color for main content." },
+  { key: "text_muted_color", label: "Muted Text Color", description: "Secondary and subdued text color." },
+  { key: "text_primary_foreground_color", label: "Primary Text on Color", description: "Text shown on primary-colored buttons and badges." },
+  { key: "text_secondary_foreground_color", label: "Secondary Text on Color", description: "Text shown on secondary-colored UI surfaces." },
+  { key: "text_tertiary_foreground_color", label: "Tertiary Text on Color", description: "Text shown on tertiary/accent-colored UI surfaces." },
+];
 
 interface EmailTemplate {
   id: string;
@@ -377,6 +418,537 @@ function IntegrationsTab({ settings }: { settings: SettingsData }) {
       {INTEGRATIONS.map((config) => (
         <IntegrationCard key={config.category} config={config} settings={settings} />
       ))}
+    </div>
+  );
+}
+
+function BrandingImageCard({
+  settingKey,
+  title,
+  description,
+  currentUrl,
+}: {
+  settingKey: BrandingSettingKey;
+  title: string;
+  description: string;
+  currentUrl: string;
+}) {
+  const { toast } = useToast();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("settingKey", settingKey);
+
+      const response = await fetch("/api/admin/branding/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || payload.message || "Upload failed");
+      }
+
+      return response.json() as Promise<{ key: BrandingSettingKey; url: string }>;
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/branding"] }),
+      ]);
+      toast({ title: `${title} updated` });
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    uploadMutation.mutate(file);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <ImageIcon className="h-4 w-4 text-primary" />
+          {title}
+        </CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex min-h-[120px] items-center justify-center rounded-xl border border-dashed bg-muted/20 p-4">
+          {currentUrl ? (
+            <img
+              src={currentUrl}
+              alt={title}
+              className={settingKey === "admin_icon_url" ? "h-16 w-16 rounded-xl object-contain" : "max-h-16 w-auto object-contain"}
+            />
+          ) : (
+            <div className="text-center text-sm text-muted-foreground">
+              <p>No image uploaded yet.</p>
+              <p className="mt-1 text-xs">Images uploaded here are stored in R2 under the `branding/` directory.</p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploadMutation.isPending}
+            data-testid={`button-upload-${settingKey}`}
+          >
+            {uploadMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <ImageIcon className="mr-2 h-4 w-4" />
+            )}
+            Upload Image
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function BrandingTab({ settings }: { settings: SettingsData }) {
+  const { toast } = useToast();
+  const brandingSettings = settings.branding || {};
+  const [bodyFont, setBodyFont] = useState(brandingSettings.frontend_body_font?.value || "__default__");
+  const [headingFont, setHeadingFont] = useState(brandingSettings.frontend_heading_font?.value || "__default__");
+  const [colorValues, setColorValues] = useState<Record<BrandingColorSettingKey, string>>({
+    brand_primary_color: brandingSettings.brand_primary_color?.value || "",
+    brand_secondary_color: brandingSettings.brand_secondary_color?.value || "",
+    brand_tertiary_color: brandingSettings.brand_tertiary_color?.value || "",
+    text_body_color: brandingSettings.text_body_color?.value || "",
+    text_muted_color: brandingSettings.text_muted_color?.value || "",
+    text_primary_foreground_color: brandingSettings.text_primary_foreground_color?.value || "",
+    text_secondary_foreground_color: brandingSettings.text_secondary_foreground_color?.value || "",
+    text_tertiary_foreground_color: brandingSettings.text_tertiary_foreground_color?.value || "",
+  });
+
+  useEffect(() => {
+    setBodyFont(brandingSettings.frontend_body_font?.value || "__default__");
+    setHeadingFont(brandingSettings.frontend_heading_font?.value || "__default__");
+    setColorValues({
+      brand_primary_color: brandingSettings.brand_primary_color?.value || "",
+      brand_secondary_color: brandingSettings.brand_secondary_color?.value || "",
+      brand_tertiary_color: brandingSettings.brand_tertiary_color?.value || "",
+      text_body_color: brandingSettings.text_body_color?.value || "",
+      text_muted_color: brandingSettings.text_muted_color?.value || "",
+      text_primary_foreground_color: brandingSettings.text_primary_foreground_color?.value || "",
+      text_secondary_foreground_color: brandingSettings.text_secondary_foreground_color?.value || "",
+      text_tertiary_foreground_color: brandingSettings.text_tertiary_foreground_color?.value || "",
+    });
+  }, [
+    brandingSettings.frontend_body_font?.value,
+    brandingSettings.frontend_heading_font?.value,
+    brandingSettings.brand_primary_color?.value,
+    brandingSettings.brand_secondary_color?.value,
+    brandingSettings.brand_tertiary_color?.value,
+    brandingSettings.text_body_color?.value,
+    brandingSettings.text_muted_color?.value,
+    brandingSettings.text_primary_foreground_color?.value,
+    brandingSettings.text_secondary_foreground_color?.value,
+    brandingSettings.text_tertiary_foreground_color?.value,
+  ]);
+
+  const saveFontsMutation = useMutation({
+    mutationFn: async () => {
+      const requests = [
+        apiRequest("PUT", "/api/admin/settings", {
+          key: "frontend_body_font",
+          value: bodyFont === "__default__" ? "" : bodyFont,
+          category: "branding",
+          isSecret: false,
+        }),
+        apiRequest("PUT", "/api/admin/settings", {
+          key: "frontend_heading_font",
+          value: headingFont === "__default__" ? "" : headingFont,
+          category: "branding",
+          isSecret: false,
+        }),
+      ];
+
+      await Promise.all(requests);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/branding"] }),
+      ]);
+      toast({ title: "Branding fonts updated" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Could not save branding fonts", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const hasFontChanges =
+    bodyFont !== (brandingSettings.frontend_body_font?.value || "__default__") ||
+    headingFont !== (brandingSettings.frontend_heading_font?.value || "__default__");
+
+  const saveColorsMutation = useMutation({
+    mutationFn: async () => {
+      await Promise.all(
+        BRANDING_COLOR_FIELDS.map((field) =>
+          apiRequest("PUT", "/api/admin/settings", {
+            key: field.key,
+            value: normalizeHexColor(colorValues[field.key]) || "",
+            category: "branding",
+            isSecret: false,
+          })
+        )
+      );
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/branding"] }),
+      ]);
+      toast({ title: "Brand color palette updated" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Could not save brand colors", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const hasColorChanges = BRANDING_COLOR_FIELDS.some(
+    (field) => colorValues[field.key] !== (brandingSettings[field.key]?.value || "")
+  );
+
+  const previewBodyStyle = {
+    fontFamily: fontFamilyForBrandingOption(bodyFont === "__default__" ? null : bodyFont) ?? undefined,
+  };
+  const previewHeadingStyle = {
+    fontFamily: fontFamilyForBrandingOption(headingFont === "__default__" ? null : headingFont) ?? undefined,
+  };
+
+  const previewPaletteStyle = {
+    backgroundColor: colorValues.brand_primary_color || undefined,
+    color: colorValues.text_primary_foreground_color || undefined,
+  };
+
+  const updateColorValue = (key: BrandingColorSettingKey, value: string) => {
+    setColorValues((current) => ({ ...current, [key]: value }));
+  };
+
+  const renderFontOptionCard = (
+    option: BrandingFontOption,
+    selectedValue: string,
+    onSelect: (value: string) => void,
+    sampleKind: "heading" | "body"
+  ) => (
+    <button
+      key={option.value}
+      type="button"
+      onClick={() => onSelect(option.value)}
+      className={cn(
+        "w-full rounded-xl border p-4 text-left transition-all hover:border-primary/50 hover:bg-primary/5",
+        selectedValue === option.value
+          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+          : "border-border/70 bg-background"
+      )}
+      data-testid={`button-branding-font-${sampleKind}-${option.value}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold" style={{ fontFamily: option.family }}>
+            {option.label}
+          </p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            {option.category === "sans" ? "Sans Serif" : "Serif"}
+          </p>
+        </div>
+        {selectedValue === option.value && (
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Check className="h-3.5 w-3.5" />
+          </span>
+        )}
+      </div>
+      <p
+        className={cn("mt-3 text-balance text-slate-900", sampleKind === "heading" ? "text-xl font-semibold" : "text-sm")}
+        style={{ fontFamily: option.family }}
+      >
+        {sampleKind === "heading" ? "The right words should feel understood." : "Thoughtful typography helps editors preview the real feeling of the brand before publishing."}
+      </p>
+      <p className="mt-2 text-xs text-muted-foreground">{option.preview}</p>
+    </button>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold" data-testid="text-branding-heading">
+          Branding
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Control the public logo, the admin icon, and the frontend typography. Branding images are stored in Cloudflare R2 under the `branding/` directory.
+        </p>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <BrandingImageCard
+          settingKey="frontend_logo_url"
+          title="Frontend Logo"
+          description="Shown in the site header and footer."
+          currentUrl={brandingSettings.frontend_logo_url?.value || ""}
+        />
+        <BrandingImageCard
+          settingKey="admin_icon_url"
+          title="Admin Icon"
+          description="Shown in the admin sidebar and dashboard shell."
+          currentUrl={brandingSettings.admin_icon_url?.value || ""}
+        />
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Type className="h-4 w-4 text-primary" />
+            Frontend Typography
+          </CardTitle>
+          <CardDescription>
+            Choose one font for headings and another for body copy on the public-facing website. Each option includes an inline sample so editors can compare type directly in the admin.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Heading Font</Label>
+              <Select value={headingFont} onValueChange={setHeadingFont}>
+                <SelectTrigger data-testid="select-branding-heading-font">
+                  <SelectValue placeholder="Use current theme font" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__default__">Use current theme font</SelectItem>
+                  {BRANDING_FONT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Choose from 10 sans serif and 10 serif Google fonts.</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Body Font</Label>
+              <Select value={bodyFont} onValueChange={setBodyFont}>
+                <SelectTrigger data-testid="select-branding-body-font">
+                  <SelectValue placeholder="Use current theme font" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__default__">Use current theme font</SelectItem>
+                  {BRANDING_FONT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Choose from the same balanced font library for paragraph copy.</p>
+            </div>
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <Card className="border-dashed">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Heading Font Picker</CardTitle>
+                <CardDescription>Preview how each font feels in large editorial headings.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sans Serif Options</p>
+                  </div>
+                  <div className="grid gap-3">
+                    {BRANDING_SANS_FONT_OPTIONS.map((option) =>
+                      renderFontOptionCard(option, headingFont, setHeadingFont, "heading")
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Serif Options</p>
+                  </div>
+                  <div className="grid gap-3">
+                    {BRANDING_SERIF_FONT_OPTIONS.map((option) =>
+                      renderFontOptionCard(option, headingFont, setHeadingFont, "heading")
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-dashed">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Body Font Picker</CardTitle>
+                <CardDescription>Preview how each font reads in paragraph-sized content.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sans Serif Options</p>
+                  </div>
+                  <div className="grid gap-3">
+                    {BRANDING_SANS_FONT_OPTIONS.map((option) =>
+                      renderFontOptionCard(option, bodyFont, setBodyFont, "body")
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Serif Options</p>
+                  </div>
+                  <div className="grid gap-3">
+                    {BRANDING_SERIF_FONT_OPTIONS.map((option) =>
+                      renderFontOptionCard(option, bodyFont, setBodyFont, "body")
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="rounded-xl border bg-muted/10 p-5">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Preview</p>
+            <h4 className="mt-3 text-2xl font-semibold" style={previewHeadingStyle}>
+              TCK Wellness helps globally mobile families feel understood.
+            </h4>
+            <p className="mt-3 text-sm text-muted-foreground" style={previewBodyStyle}>
+              Use this preview to compare heading and body combinations before saving. These font selections only apply to the public-facing website, not the admin dashboard.
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              onClick={() => saveFontsMutation.mutate()}
+              disabled={!hasFontChanges || saveFontsMutation.isPending}
+              data-testid="button-save-branding-fonts"
+            >
+              {saveFontsMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Save Typography
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Palette className="h-4 w-4 text-primary" />
+            Color Palette
+          </CardTitle>
+          <CardDescription>
+            Set the core frontend brand colors and the text colors used on the main UI color categories.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            {BRANDING_COLOR_FIELDS.map((field) => (
+              <div key={field.key} className="space-y-1.5 rounded-xl border p-4">
+                <div>
+                  <Label>{field.label}</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">{field.description}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={normalizeHexColor(colorValues[field.key]) || "#000000"}
+                    onChange={(event) => updateColorValue(field.key, event.target.value.toUpperCase())}
+                    className="h-10 w-12 cursor-pointer rounded-md border bg-background p-1"
+                    data-testid={`input-color-${field.key}`}
+                  />
+                  <Input
+                    value={colorValues[field.key]}
+                    onChange={(event) => updateColorValue(field.key, event.target.value)}
+                    placeholder="#000000"
+                    data-testid={`input-hex-${field.key}`}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-xl border bg-muted/10 p-5">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Palette Preview</p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <div className="rounded-lg px-4 py-2 text-sm font-medium" style={previewPaletteStyle}>
+                Primary Action
+              </div>
+              <div
+                className="rounded-lg px-4 py-2 text-sm font-medium"
+                style={{
+                  backgroundColor: colorValues.brand_secondary_color || undefined,
+                  color: colorValues.text_secondary_foreground_color || undefined,
+                }}
+              >
+                Secondary Action
+              </div>
+              <div
+                className="rounded-lg px-4 py-2 text-sm font-medium"
+                style={{
+                  backgroundColor: colorValues.brand_tertiary_color || undefined,
+                  color: colorValues.text_tertiary_foreground_color || undefined,
+                }}
+              >
+                Tertiary Action
+              </div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <p className="text-base font-semibold" style={{ ...previewHeadingStyle, color: colorValues.text_body_color || undefined }}>
+                Frontend heading preview
+              </p>
+              <p className="text-sm" style={{ ...previewBodyStyle, color: colorValues.text_body_color || undefined }}>
+                Body copy preview using your selected font and body text color.
+              </p>
+              <p className="text-sm" style={{ color: colorValues.text_muted_color || undefined }}>
+                Muted text preview for captions, secondary labels, and helper content.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              onClick={() => saveColorsMutation.mutate()}
+              disabled={!hasColorChanges || saveColorsMutation.isPending}
+              data-testid="button-save-branding-colors"
+            >
+              {saveColorsMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Save Color Palette
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -938,13 +1510,16 @@ export default function AdminSettingsPage() {
           System Settings
         </h1>
         <p className="text-muted-foreground mb-6">
-          Manage integrations and email templates
+          Manage integrations, branding, and system templates
         </p>
 
         <Tabs defaultValue="integrations">
           <TabsList data-testid="tabs-settings">
             <TabsTrigger value="integrations" data-testid="tab-integrations">
               Integrations
+            </TabsTrigger>
+            <TabsTrigger value="branding" data-testid="tab-branding">
+              Branding
             </TabsTrigger>
             <TabsTrigger value="templates" data-testid="tab-templates">
               Email Templates
@@ -961,6 +1536,16 @@ export default function AdminSettingsPage() {
               </div>
             ) : (
               <IntegrationsTab settings={settings || {}} />
+            )}
+          </TabsContent>
+
+          <TabsContent value="branding" className="mt-6">
+            {isLoading ? (
+              <div className="flex items-center justify-center p-12">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : (
+              <BrandingTab settings={settings || {}} />
             )}
           </TabsContent>
 

@@ -1,4 +1,7 @@
 import { Router } from "express";
+import fs from "fs";
+import path from "path";
+import multer from "multer";
 import { z } from "zod";
 import { storage } from "../storage/index";
 import { logger } from "../utils/logger";
@@ -13,8 +16,38 @@ import {
 } from "../services/email.service";
 import * as r2Service from "../services/r2.service";
 import { ensureSystemEmailTemplates } from "../services/system-email-templates.service";
+import { CMS_OPTIONS, isImageMime, optimizeImage } from "../services/image-optimizer";
 
 const router = Router();
+
+const LOCAL_BRANDING_DIR = path.resolve(process.cwd(), "uploads", "branding");
+const MAX_BRANDING_IMAGE_SIZE = 10 * 1024 * 1024;
+
+const brandingUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_BRANDING_IMAGE_SIZE },
+  fileFilter: (_req, file, cb) => {
+    if (isImageMime(file.mimetype)) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error("Accepted file types: PNG, JPEG, WebP, and GIF"));
+  },
+});
+
+function ensureBrandingDir() {
+  if (!fs.existsSync(LOCAL_BRANDING_DIR)) {
+    fs.mkdirSync(LOCAL_BRANDING_DIR, { recursive: true });
+  }
+}
+
+function stripExtension(filename: string) {
+  return filename.replace(/\.[^.]+$/, "");
+}
+
+function buildSafeBrandingFilename(name: string) {
+  return name.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
 
 router.use(authenticateToken);
 router.use(requireRole("admin"));
@@ -42,6 +75,10 @@ const upsertSettingSchema = z.object({
   value: z.string(),
   category: z.string().min(1),
   isSecret: z.boolean().default(false),
+});
+
+const brandingUploadSchema = z.object({
+  settingKey: z.enum(["frontend_logo_url", "admin_icon_url"]),
 });
 
 router.put(
@@ -74,6 +111,50 @@ router.put(
     res.json({
       ...setting,
       value: setting.isSecret ? "••••••••" : setting.value,
+    });
+  })
+);
+
+router.post(
+  "/branding/upload",
+  brandingUpload.single("file"),
+  asyncHandler(async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const parsed = brandingUploadSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid branding upload request" });
+    }
+
+    const safeName = buildSafeBrandingFilename(req.file.originalname);
+    const baseName = stripExtension(safeName) || "branding-image";
+    const optimized = await optimizeImage(req.file.buffer, req.file.mimetype, CMS_OPTIONS);
+    const filename = `${Date.now()}-${baseName}${optimized.extension}`;
+    const r2Key = `branding/${filename}`;
+
+    const r2Configured = await r2Service.isConfigured();
+    let publicUrl: string | null = null;
+
+    if (r2Configured) {
+      publicUrl = await r2Service.uploadFile(r2Key, optimized.buffer, optimized.mimeType);
+    }
+
+    if (!publicUrl) {
+      ensureBrandingDir();
+      const localPath = path.join(LOCAL_BRANDING_DIR, filename);
+      fs.writeFileSync(localPath, optimized.buffer);
+      publicUrl = `/uploads/branding/${filename}`;
+    }
+
+    await storage.settings.upsertSetting(parsed.data.settingKey, publicUrl, "branding", false);
+    storage.settings.invalidateCategory("branding");
+    r2Service.resetClient();
+
+    res.status(201).json({
+      key: parsed.data.settingKey,
+      url: publicUrl,
     });
   })
 );

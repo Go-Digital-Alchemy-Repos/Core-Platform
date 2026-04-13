@@ -28,6 +28,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import logoIcon from "@assets/TCK-Wellness_Icon.webp";
+import { useBranding } from "@/components/shared/branding-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -97,8 +98,10 @@ interface AdminSidebarProps {
 export function AdminSidebar({ children }: AdminSidebarProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const { adminIconUrl } = useBranding();
   const [profileOpen, setProfileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const adminLogo = adminIconUrl || logoIcon;
 
   const renderNavItem = (item: NavItem) => {
     const exactOnlyRoutes = ["/admin", "/admin/cms"];
@@ -185,7 +188,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="flex min-h-screen relative">
+      <div className="admin-shell flex min-h-screen relative">
         <div className="relative flex-shrink-0">
           <aside
             className={cn(
@@ -196,7 +199,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
             <div className="p-4">
               <div className="flex items-center gap-3" data-testid="text-admin-title">
                 <img
-                  src={logoIcon}
+                  src={adminLogo}
                   alt="TCK Wellness"
                   className="h-9 w-9 object-contain flex-shrink-0"
                   data-testid="img-admin-logo"

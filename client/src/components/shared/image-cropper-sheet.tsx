@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import ReactCrop, { type Crop, type PixelCrop, centerCrop, makeAspectCrop } from "react-image-crop";
 import imageCompression from "browser-image-compression";
 import "react-image-crop/dist/ReactCrop.css";
@@ -61,6 +61,26 @@ function makeInitialCrop(width: number, height: number, aspect?: number): Crop {
   );
 }
 
+function cropToPixelCrop(crop: Crop, width: number, height: number): PixelCrop {
+  if (crop.unit === "%") {
+    return {
+      unit: "px",
+      x: Math.round((crop.x ?? 0) * width / 100),
+      y: Math.round((crop.y ?? 0) * height / 100),
+      width: Math.round((crop.width ?? 0) * width / 100),
+      height: Math.round((crop.height ?? 0) * height / 100),
+    };
+  }
+
+  return {
+    unit: "px",
+    x: Math.round(crop.x ?? 0),
+    y: Math.round(crop.y ?? 0),
+    width: Math.round(crop.width ?? 0),
+    height: Math.round(crop.height ?? 0),
+  };
+}
+
 async function getCroppedFile(
   image: HTMLImageElement,
   crop: PixelCrop,
@@ -115,9 +135,19 @@ export function ImageCropperSheet({
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [processing, setProcessing] = useState(false);
 
+  useEffect(() => {
+    if (!imageSrc) {
+      setCrop(undefined);
+      setCompletedCrop(undefined);
+      setProcessing(false);
+    }
+  }, [imageSrc]);
+
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
-    setCrop(makeInitialCrop(width, height, aspect));
+    const initialCrop = makeInitialCrop(width, height, aspect);
+    setCrop(initialCrop);
+    setCompletedCrop(cropToPixelCrop(initialCrop, width, height));
   }, [aspect]);
 
   async function handleConfirm() {

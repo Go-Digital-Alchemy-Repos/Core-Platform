@@ -4,6 +4,7 @@ import { storage } from "../../storage";
 import { paramString } from "../../utils/params";
 import { insertCmsPageSchema } from "@shared/schema";
 import { logger } from "../../utils/logger";
+import { createCmsPreviewToken } from "../../utils/cms-preview-token";
 
 const router = Router();
 
@@ -87,6 +88,31 @@ router.get("/pages/:id", async (req, res) => {
   } catch (error) {
     logger.cms.error("Failed to fetch page", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to fetch CMS page" });
+  }
+});
+
+router.get("/pages/:id/preview-link", async (req, res) => {
+  try {
+    const id = paramString(req.params.id);
+    const page = await storage.cmsPages.getPage(id);
+    if (!page) return res.status(404).json({ error: "Page not found" });
+
+    const token = createCmsPreviewToken(page);
+    const previewPath = `/preview/cms/${page.id}?token=${encodeURIComponent(token)}`;
+    const previewUrl = `${req.protocol}://${req.get("host")}${previewPath}`;
+
+    res.json({
+      token,
+      previewPath,
+      previewUrl,
+      expiresInHours: 168,
+      pageId: page.id,
+      slug: page.slug,
+      status: page.status,
+    });
+  } catch (error) {
+    logger.cms.error("Failed to generate preview link", error, { requestId: req.requestId });
+    res.status(500).json({ error: "Failed to generate preview link" });
   }
 });
 

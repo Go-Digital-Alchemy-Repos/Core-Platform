@@ -207,6 +207,11 @@
 }
 
 @layer base {
+  .admin-shell {
+    --font-sans: 'Inter', sans-serif;
+    --font-serif: 'Inter', sans-serif;
+  }
+
   * {
     @apply border-border;
   }

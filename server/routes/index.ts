@@ -78,6 +78,44 @@ export function registerApiRoutes(app: Express) {
     }
   });
 
+  app.get("/api/branding", async (_req, res) => {
+    try {
+      const branding = await storage.settings.getDecryptedCategory("branding");
+      res.json({
+        frontendLogoUrl: branding.frontend_logo_url || null,
+        adminIconUrl: branding.admin_icon_url || null,
+        bodyFont: branding.frontend_body_font || null,
+        headingFont: branding.frontend_heading_font || null,
+        primaryColor: branding.brand_primary_color || null,
+        secondaryColor: branding.brand_secondary_color || null,
+        tertiaryColor: branding.brand_tertiary_color || null,
+        bodyTextColor: branding.text_body_color || null,
+        mutedTextColor: branding.text_muted_color || null,
+        primaryTextColor: branding.text_primary_foreground_color || null,
+        secondaryTextColor: branding.text_secondary_foreground_color || null,
+        tertiaryTextColor: branding.text_tertiary_foreground_color || null,
+      });
+    } catch (err) {
+      logger.app.warn("Failed to retrieve branding settings, returning defaults", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      res.json({
+        frontendLogoUrl: null,
+        adminIconUrl: null,
+        bodyFont: null,
+        headingFont: null,
+        primaryColor: null,
+        secondaryColor: null,
+        tertiaryColor: null,
+        bodyTextColor: null,
+        mutedTextColor: null,
+        primaryTextColor: null,
+        secondaryTextColor: null,
+        tertiaryTextColor: null,
+      });
+    }
+  });
+
   app.get("/api/membership-tiers", async (_req, res) => {
     const tiers = await storage.tiers.getActiveTiers();
     res.json(tiers);
