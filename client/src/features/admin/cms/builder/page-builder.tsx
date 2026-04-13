@@ -822,6 +822,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [savingSectionBlockId, setSavingSectionBlockId] = useState<string | null>(null);
   const [navigatorSearch, setNavigatorSearch] = useState("");
+  const [addContentSearch, setAddContentSearch] = useState("");
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: string; position: "before" | "after" } | null>(null);
   const [structurePanelOpen, setStructurePanelOpen] = useState(true);
@@ -885,6 +886,30 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       );
     });
   }, [blocks, navigatorSearch]);
+
+  const filteredAddContentGroups = useMemo(() => {
+    const term = addContentSearch.trim().toLowerCase();
+    const grouped = groupBlocksByCategory(ALL_BLOCKS);
+    if (!term) return grouped;
+
+    return grouped
+      .map(({ category, label, items }) => ({
+        category,
+        label,
+        items: items.filter((definition) => {
+          const haystack = [
+            definition.label,
+            definition.description,
+            definition.type,
+            BLOCK_CATEGORY_LABELS[definition.category],
+          ]
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(term);
+        }),
+      }))
+      .filter(({ items }) => items.length > 0);
+  }, [addContentSearch]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -1124,7 +1149,21 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         </div>
         <TabsContent value="blocks" className="mt-0 flex-1 overflow-y-auto px-6 pb-6 pt-3">
           <div className="space-y-5">
-            {groupBlocksByCategory(ALL_BLOCKS).map(({ category, label, items }) => (
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={addContentSearch}
+                onChange={(event) => setAddContentSearch(event.target.value)}
+                placeholder="Search block types..."
+                className="h-9 pl-8 text-sm"
+                data-testid="input-add-content-search"
+              />
+            </div>
+            {filteredAddContentGroups.length === 0 ? (
+              <div className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
+                No block types match that search.
+              </div>
+            ) : filteredAddContentGroups.map(({ category, label, items }) => (
               <div key={category}>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   {label}
@@ -1180,7 +1219,10 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             open={addDialogOpen}
             onOpenChange={(open) => {
               setAddDialogOpen(open);
-              if (!open) setInsertAtIndex(null);
+              if (!open) {
+                setInsertAtIndex(null);
+                setAddContentSearch("");
+              }
             }}
           >
             <DialogTrigger asChild>
@@ -1492,7 +1534,10 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             open={addDialogOpen}
             onOpenChange={(open) => {
               setAddDialogOpen(open);
-              if (!open) setInsertAtIndex(null);
+              if (!open) {
+                setInsertAtIndex(null);
+                setAddContentSearch("");
+              }
             }}
           >
             <DialogTrigger asChild>
