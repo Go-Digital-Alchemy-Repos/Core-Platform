@@ -28,8 +28,15 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         primaryColor: payload?.primaryColor ?? null,
         secondaryColor: payload?.secondaryColor ?? null,
         tertiaryColor: payload?.tertiaryColor ?? null,
+        h1Color: payload?.h1Color ?? null,
+        h2Color: payload?.h2Color ?? null,
+        h3ToH6Color: payload?.h3ToH6Color ?? null,
         bodyTextColor: payload?.bodyTextColor ?? null,
-        mutedTextColor: payload?.mutedTextColor ?? null,
+        supportingTextColor: payload?.supportingTextColor ?? null,
+        metaTextColor: payload?.metaTextColor ?? null,
+        linkColor: payload?.linkColor ?? null,
+        linkHoverColor: payload?.linkHoverColor ?? null,
+        inverseTextColor: payload?.inverseTextColor ?? null,
         primaryTextColor: payload?.primaryTextColor ?? null,
         secondaryTextColor: payload?.secondaryTextColor ?? null,
         tertiaryTextColor: payload?.tertiaryTextColor ?? null,
@@ -52,8 +59,15 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     const primaryColor = hexToHslToken(branding.primaryColor);
     const secondaryColor = hexToHslToken(branding.secondaryColor);
     const tertiaryColor = hexToHslToken(branding.tertiaryColor);
+    const h1Color = hexToHslToken(branding.h1Color);
+    const h2Color = hexToHslToken(branding.h2Color);
+    const h3ToH6Color = hexToHslToken(branding.h3ToH6Color);
     const bodyTextColor = hexToHslToken(branding.bodyTextColor);
-    const mutedTextColor = hexToHslToken(branding.mutedTextColor);
+    const supportingTextColor = hexToHslToken(branding.supportingTextColor);
+    const metaTextColor = hexToHslToken(branding.metaTextColor);
+    const linkColor = hexToHslToken(branding.linkColor);
+    const linkHoverColor = hexToHslToken(branding.linkHoverColor);
+    const inverseTextColor = hexToHslToken(branding.inverseTextColor);
     const primaryTextColor = hexToHslToken(branding.primaryTextColor);
     const secondaryTextColor = hexToHslToken(branding.secondaryTextColor);
     const tertiaryTextColor = hexToHslToken(branding.tertiaryTextColor);
@@ -69,6 +83,15 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         root.style.removeProperty("--card-foreground");
         root.style.removeProperty("--popover-foreground");
         root.style.removeProperty("--muted-foreground");
+        root.style.removeProperty("--public-text-h1");
+        root.style.removeProperty("--public-text-h2");
+        root.style.removeProperty("--public-text-h3");
+        root.style.removeProperty("--public-text-body");
+        root.style.removeProperty("--public-text-supporting");
+        root.style.removeProperty("--public-text-meta");
+        root.style.removeProperty("--public-text-link");
+        root.style.removeProperty("--public-text-link-hover");
+        root.style.removeProperty("--public-text-inverse");
         root.style.removeProperty("--primary-foreground");
         root.style.removeProperty("--secondary-foreground");
         root.style.removeProperty("--accent-foreground");
@@ -111,16 +134,62 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         root.style.setProperty("--foreground", bodyTextColor);
         root.style.setProperty("--card-foreground", bodyTextColor);
         root.style.setProperty("--popover-foreground", bodyTextColor);
+        root.style.setProperty("--public-text-body", bodyTextColor);
       } else {
         root.style.removeProperty("--foreground");
         root.style.removeProperty("--card-foreground");
         root.style.removeProperty("--popover-foreground");
+        root.style.removeProperty("--public-text-body");
       }
 
-      if (mutedTextColor) {
-        root.style.setProperty("--muted-foreground", mutedTextColor);
+      if (supportingTextColor) {
+        root.style.setProperty("--muted-foreground", supportingTextColor);
+        root.style.setProperty("--public-text-supporting", supportingTextColor);
       } else {
         root.style.removeProperty("--muted-foreground");
+        root.style.removeProperty("--public-text-supporting");
+      }
+
+      if (h1Color) {
+        root.style.setProperty("--public-text-h1", h1Color);
+      } else {
+        root.style.removeProperty("--public-text-h1");
+      }
+
+      if (h2Color) {
+        root.style.setProperty("--public-text-h2", h2Color);
+      } else {
+        root.style.removeProperty("--public-text-h2");
+      }
+
+      if (h3ToH6Color) {
+        root.style.setProperty("--public-text-h3", h3ToH6Color);
+      } else {
+        root.style.removeProperty("--public-text-h3");
+      }
+
+      if (metaTextColor) {
+        root.style.setProperty("--public-text-meta", metaTextColor);
+      } else {
+        root.style.removeProperty("--public-text-meta");
+      }
+
+      if (linkColor) {
+        root.style.setProperty("--public-text-link", linkColor);
+      } else {
+        root.style.removeProperty("--public-text-link");
+      }
+
+      if (linkHoverColor) {
+        root.style.setProperty("--public-text-link-hover", linkHoverColor);
+      } else {
+        root.style.removeProperty("--public-text-link-hover");
+      }
+
+      if (inverseTextColor) {
+        root.style.setProperty("--public-text-inverse", inverseTextColor);
+      } else {
+        root.style.removeProperty("--public-text-inverse");
       }
 
       if (primaryTextColor) {
@@ -149,8 +218,15 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     branding.primaryColor,
     branding.secondaryColor,
     branding.tertiaryColor,
+    branding.h1Color,
+    branding.h2Color,
+    branding.h3ToH6Color,
     branding.bodyTextColor,
-    branding.mutedTextColor,
+    branding.supportingTextColor,
+    branding.metaTextColor,
+    branding.linkColor,
+    branding.linkHoverColor,
+    branding.inverseTextColor,
     branding.primaryTextColor,
     branding.secondaryTextColor,
     branding.tertiaryTextColor,

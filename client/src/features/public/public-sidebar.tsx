@@ -42,7 +42,7 @@ function RecentPostsWidget({ widget }: { widget: SidebarWidget }) {
     <WidgetCard title={widget.title || "Recent Posts"}>
       <div className="space-y-4">
         {visiblePosts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Recent posts will appear here.</p>
+          <p className="text-sm public-supporting-text">Recent posts will appear here.</p>
         ) : (
           visiblePosts.map((post) => (
             post.postType === "external" && post.externalUrl ? (
@@ -51,7 +51,7 @@ function RecentPostsWidget({ widget }: { widget: SidebarWidget }) {
                 href={post.externalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block text-sm font-medium leading-relaxed hover:text-accent transition-colors"
+                className="block text-sm font-medium leading-relaxed public-link-text hover:text-[var(--public-text-link-hover)] transition-colors"
                 data-testid={`sidebar-recent-post-${post.id}`}
               >
                 {post.title}
@@ -59,7 +59,7 @@ function RecentPostsWidget({ widget }: { widget: SidebarWidget }) {
             ) : (
               <Link key={post.id} href={`/insights/${post.slug}`}>
                 <span
-                  className="block text-sm font-medium leading-relaxed hover:text-accent transition-colors"
+                  className="block text-sm font-medium leading-relaxed public-link-text hover:text-[var(--public-text-link-hover)] transition-colors"
                   data-testid={`sidebar-recent-post-${post.id}`}
                 >
                   {post.title}
@@ -95,7 +95,7 @@ function NewsletterWidget({ widget }: { widget: SidebarWidget }) {
   return (
     <WidgetCard title={heading}>
       <form className="space-y-3" onSubmit={handleSubmit} data-testid="sidebar-newsletter-form">
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <p className="text-sm public-supporting-text">{description}</p>
         <Input
           type="email"
           value={email}
@@ -121,7 +121,7 @@ function CalloutWidget({ widget }: { widget: SidebarWidget }) {
   return (
     <WidgetCard title={widget.title || "Helpful Resource"}>
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+        <p className="text-sm public-body-text leading-relaxed">{body}</p>
         {buttonText && (
           <Button asChild variant="outline" className="w-full">
             <Link href={buttonUrl}>
@@ -176,7 +176,7 @@ function CategoriesWidget({ widget }: { widget: SidebarWidget }) {
     <WidgetCard title={widget.title || "Categories"}>
       <div className="space-y-2">
         {categories.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Categories will appear as posts are published.</p>
+          <p className="text-sm public-supporting-text">Categories will appear as posts are published.</p>
         ) : (
           categories.map(([category, count]) => (
             <Link key={category} href={`/insights?category=${encodeURIComponent(category)}`}>
@@ -207,7 +207,7 @@ function TagsWidget({ widget }: { widget: SidebarWidget }) {
     <WidgetCard title={widget.title || "Popular Topics"}>
       <div className="flex flex-wrap gap-2">
         {tags.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Tags will appear as posts are published.</p>
+          <p className="text-sm public-supporting-text">Tags will appear as posts are published.</p>
         ) : (
           tags.map((tag) => (
             <Link key={tag} href={`/insights?tag=${encodeURIComponent(tag)}`}>

@@ -481,7 +481,7 @@ function FeaturedProfessionalsBlock({ props }: { props: Record<string, unknown> 
                 <UserCheck className="h-6 w-6 text-accent" />
               </div>
               <p className="font-semibold text-sm">{c.user?.firstName} {c.user?.lastName}</p>
-              <p className="text-xs text-muted-foreground">{c.title}</p>
+              <p className="text-xs public-meta-text">{c.title}</p>
             </CardContent>
           </Card>
         ))}
@@ -519,7 +519,7 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
                 <CardContent className={e.imageUrl ? "p-4 flex-1" : "pt-4"}>
                   <p className="text-xs text-accent font-medium mb-1">{new Date(e.date).toLocaleDateString()}</p>
                   <p className="font-semibold text-sm line-clamp-2">{e.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{e.isVirtual ? "Virtual" : "In Person"}</p>
+                  <p className="text-xs public-meta-text mt-1">{e.isVirtual ? "Virtual" : "In Person"}</p>
                 </CardContent>
               </div>
             </Card>
@@ -566,8 +566,8 @@ function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
                 </div>
               )}
               <CardContent className={p.coverImageUrl ? "p-5" : "pt-4"}>
-                <p className="font-semibold text-sm mb-1 line-clamp-2">{p.title}</p>
-                <p className="text-xs text-muted-foreground line-clamp-3">{p.excerpt}</p>
+                <p className="font-semibold text-sm mb-1 line-clamp-2 public-heading-3">{p.title}</p>
+                <p className="text-xs public-body-text line-clamp-3 leading-relaxed">{p.excerpt}</p>
               </CardContent>
             </Card>
           </Link>

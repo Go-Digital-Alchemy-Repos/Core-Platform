@@ -108,6 +108,15 @@
   --font-sans: 'Nunito Sans', sans-serif;
   --font-serif: 'EB Garamond', serif;
   --font-mono: 'JetBrains Mono', monospace;
+  --public-text-h1: var(--foreground);
+  --public-text-h2: var(--foreground);
+  --public-text-h3: var(--foreground);
+  --public-text-body: var(--foreground);
+  --public-text-supporting: var(--muted-foreground);
+  --public-text-meta: var(--muted-foreground);
+  --public-text-link: var(--accent);
+  --public-text-link-hover: var(--primary);
+  --public-text-inverse: 40 20% 98%;
   --radius: .5rem;
   --shadow-2xs: 0px 1px 2px 0px rgba(31,42,68, 0.04);
   --shadow-xs: 0px 1px 3px 0px rgba(31,42,68, 0.06);
@@ -195,6 +204,16 @@
   --chart-3: 22 48% 50%;
   --chart-4: 222 25% 50%;
   --chart-5: 153 15% 55%;
+
+  --public-text-h1: var(--foreground);
+  --public-text-h2: var(--foreground);
+  --public-text-h3: var(--foreground);
+  --public-text-body: var(--foreground);
+  --public-text-supporting: var(--muted-foreground);
+  --public-text-meta: var(--muted-foreground);
+  --public-text-link: var(--accent);
+  --public-text-link-hover: var(--primary);
+  --public-text-inverse: 40 15% 90%;
 
   --shadow-2xs: 0px 1px 2px 0px rgba(0,0,0, 0.15);
   --shadow-xs: 0px 1px 3px 0px rgba(0,0,0, 0.20);
@@ -357,6 +376,63 @@
 
   img {
     @apply transition-opacity duration-300 ease-in-out max-w-full;
+  }
+
+  .public-heading-1 {
+    color: hsl(var(--public-text-h1));
+  }
+
+  .public-heading-2 {
+    color: hsl(var(--public-text-h2));
+  }
+
+  .public-heading-3 {
+    color: hsl(var(--public-text-h3));
+  }
+
+  .public-body-text {
+    color: hsl(var(--public-text-body));
+  }
+
+  .public-supporting-text {
+    color: hsl(var(--public-text-supporting));
+  }
+
+  .public-meta-text {
+    color: hsl(var(--public-text-meta));
+  }
+
+  .public-link-text {
+    color: hsl(var(--public-text-link));
+    transition: color 200ms ease-in-out;
+  }
+
+  .public-link-text:hover {
+    color: hsl(var(--public-text-link-hover));
+  }
+
+  .public-inverse-text {
+    color: hsl(var(--public-text-inverse));
+  }
+
+  .public-prose {
+    color: hsl(var(--public-text-body));
+  }
+
+  .public-prose p,
+  .public-prose li,
+  .public-prose blockquote,
+  .public-prose figcaption {
+    color: hsl(var(--public-text-body));
+  }
+
+  .public-prose a {
+    color: hsl(var(--public-text-link));
+    transition: color 200ms ease-in-out;
+  }
+
+  .public-prose a:hover {
+    color: hsl(var(--public-text-link-hover));
   }
 }
 

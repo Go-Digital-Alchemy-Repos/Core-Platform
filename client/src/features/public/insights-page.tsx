@@ -38,14 +38,14 @@ export default function InsightsPage() {
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <div className="text-center">
-            <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4" data-testid="text-insights-heading">
+            <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 public-heading-1" data-testid="text-insights-heading">
               Insights & Articles
             </h1>
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg public-supporting-text max-w-2xl mx-auto leading-relaxed">
               Explore articles, research, and insights on Third Culture Kid mental health and cross-cultural counseling.
             </p>
             {(searchQuery || categoryFilter || tagFilter) && (
-              <p className="text-sm text-muted-foreground mt-4" data-testid="text-insights-filters">
+              <p className="text-sm public-meta-text mt-4" data-testid="text-insights-filters">
                 Filtering
                 {searchQuery ? ` by "${searchQuery}"` : ""}
                 {categoryFilter ? ` in ${categoryFilter}` : ""}
@@ -82,11 +82,11 @@ export default function InsightsPage() {
                           <Badge variant="outline" className="text-xs" data-testid={`badge-type-${featuredPost.id}`}><ExternalLink className="h-3 w-3 mr-1" />External</Badge>
                           {getPrimaryPostCategory(featuredPost) && <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${featuredPost.id}`}>{getPrimaryPostCategory(featuredPost)}</Badge>}
                         </div>
-                        <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-semibold mb-3" data-testid={`text-blog-title-${featuredPost.id}`}>{featuredPost.title}</h2>
-                        {featuredPost.excerpt && <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-4 line-clamp-3">{featuredPost.excerpt}</p>}
+                        <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-semibold mb-3 public-heading-2" data-testid={`text-blog-title-${featuredPost.id}`}>{featuredPost.title}</h2>
+                        {featuredPost.excerpt && <p className="text-sm sm:text-base public-body-text leading-relaxed mb-4 line-clamp-3">{featuredPost.excerpt}</p>}
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">By {featuredPost.authorName}</span>
-                          <span className="text-sm text-accent font-medium flex items-center gap-1">Visit Article <ExternalLink className="h-4 w-4" /></span>
+                          <span className="text-sm public-meta-text">By {featuredPost.authorName}</span>
+                          <span className="text-sm public-link-text font-medium flex items-center gap-1">Visit Article <ExternalLink className="h-4 w-4" /></span>
                         </div>
                       </CardContent>
                     </div>
@@ -107,11 +107,11 @@ export default function InsightsPage() {
                           {featuredPost.postType === "podcast" && <Badge variant="secondary" className="text-xs" data-testid={`badge-type-${featuredPost.id}`}><Headphones className="h-3 w-3 mr-1" />Podcast</Badge>}
                           {getPrimaryPostCategory(featuredPost) && <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${featuredPost.id}`}>{getPrimaryPostCategory(featuredPost)}</Badge>}
                         </div>
-                        <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-semibold mb-3" data-testid={`text-blog-title-${featuredPost.id}`}>{featuredPost.title}</h2>
-                        {featuredPost.excerpt && <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-4 line-clamp-3">{featuredPost.excerpt}</p>}
+                        <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-semibold mb-3 public-heading-2" data-testid={`text-blog-title-${featuredPost.id}`}>{featuredPost.title}</h2>
+                        {featuredPost.excerpt && <p className="text-sm sm:text-base public-body-text leading-relaxed mb-4 line-clamp-3">{featuredPost.excerpt}</p>}
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">By {featuredPost.authorName}</span>
-                          <span className="text-sm text-accent font-medium flex items-center gap-1">
+                          <span className="text-sm public-meta-text">By {featuredPost.authorName}</span>
+                          <span className="text-sm public-link-text font-medium flex items-center gap-1">
                             {featuredPost.postType === "podcast" ? "Listen Now" : "Read More"} <ArrowRight className="h-4 w-4" />
                           </span>
                         </div>
@@ -154,17 +154,17 @@ export default function InsightsPage() {
                               </Badge>
                             )}
                           </div>
-                          <h2 className="font-semibold text-lg mb-2 line-clamp-2" data-testid={`text-blog-title-${post.id}`}>
+                          <h2 className="font-semibold text-lg mb-2 line-clamp-2 public-heading-3" data-testid={`text-blog-title-${post.id}`}>
                             {post.title}
                           </h2>
                           {post.excerpt && (
-                            <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed mb-3">
+                            <p className="text-sm public-body-text line-clamp-3 leading-relaxed mb-3">
                               {post.excerpt}
                             </p>
                           )}
                           <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">By {post.authorName}</span>
-                            <span className="text-xs text-accent font-medium flex items-center gap-1">
+                            <span className="text-xs public-meta-text">By {post.authorName}</span>
+                            <span className="text-xs public-link-text font-medium flex items-center gap-1">
                               {isExternal ? <>Visit Article <ExternalLink className="h-3 w-3" /></> : isPodcast ? <>Listen Now <ArrowRight className="h-3 w-3" /></> : <>Read More <ArrowRight className="h-3 w-3" /></>}
                             </span>
                           </div>
@@ -193,7 +193,7 @@ export default function InsightsPage() {
               <div className="text-center py-16">
                 <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">{posts && posts.length > 0 ? "No matching articles" : "No articles yet"}</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm public-supporting-text">
                   {posts && posts.length > 0
                     ? "Try a different search, category, or tag."
                     : "Check back soon for insights on TCK mental health and cross-cultural counseling."}

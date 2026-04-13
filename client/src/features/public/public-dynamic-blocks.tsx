@@ -205,8 +205,8 @@ export function ContactFormBlock() {
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-accent mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-sm mb-1">Location</h3>
-                  <p className="text-sm text-muted-foreground">Global — serving TCKs worldwide</p>
+                  <h3 className="font-semibold text-sm mb-1 public-heading-3">Location</h3>
+                  <p className="text-sm public-supporting-text">Global — serving TCKs worldwide</p>
                 </div>
               </div>
             </CardContent>
@@ -249,7 +249,7 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
             )}
           </h1>
           {subheading && (
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8" data-testid="text-join-subheading" style={subheadingTextStyle}>
+            <p className="text-base sm:text-lg public-supporting-text max-w-2xl mx-auto mb-8" data-testid="text-join-subheading" style={subheadingTextStyle}>
               {subheading}
             </p>
           )}
@@ -264,7 +264,7 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
         <Clock className="mr-2 h-5 w-5" />
         {applicationStatusText}
       </Button>
-      <p className="text-sm sm:text-base text-muted-foreground mt-6" data-testid="text-login-prompt" style={subheadingTextStyle}>
+      <p className="text-sm sm:text-base public-supporting-text mt-6" data-testid="text-login-prompt" style={subheadingTextStyle}>
         {loginPromptPrefix}{" "}
         <button
           onClick={() => setLoginOpen(true)}
@@ -301,7 +301,7 @@ export function JoinHeroBlock({ props = {} }: { props?: Record<string, unknown> 
         )}
       </h1>
       {subheading && (
-        <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-join-hero-subheading" style={subheadingTextStyle}>
+        <p className="text-base sm:text-lg public-supporting-text max-w-2xl mx-auto" data-testid="text-join-hero-subheading" style={subheadingTextStyle}>
           {subheading}
         </p>
       )}
@@ -352,10 +352,10 @@ function FeaturedBlogCard({
           </div>
         )}
         <CardContent className="p-6 flex flex-col justify-center">
-          <h3 className="text-xl font-heading font-bold mb-3">{post.title}</h3>
-          <p className="text-sm text-muted-foreground line-clamp-4">{post.excerpt}</p>
+          <h3 className="text-xl font-heading font-bold mb-3 public-heading-3">{post.title}</h3>
+          <p className="text-sm public-body-text line-clamp-4 leading-relaxed">{post.excerpt}</p>
           <div className="mt-4">
-            <span className="text-sm text-accent font-medium inline-flex items-center gap-1">
+            <span className="text-sm public-link-text font-medium inline-flex items-center gap-1">
               {actionText} {isExternal ? <ExternalLink className="h-3.5 w-3.5" /> : <ArrowRight className="h-3.5 w-3.5" />}
             </span>
           </div>
@@ -478,7 +478,7 @@ function BlogFeedGrid({
 }) {
   if (visible.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
+      <div className="text-center py-12 public-supporting-text">
         <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />
         <p className="text-sm">{searchQuery || selectedCategory || selectedTag ? "No articles match your filters" : "No articles published yet"}</p>
       </div>
@@ -500,10 +500,10 @@ function BlogFeedGrid({
                 </div>
               )}
               <CardContent className="p-4">
-                {getPrimaryPostCategory(p) && <span className="text-xs text-accent font-medium">{getPrimaryPostCategory(p)}</span>}
-                <p className="font-semibold text-sm mb-1 line-clamp-2">{p.title}</p>
-                <p className="text-xs text-muted-foreground line-clamp-3">{p.excerpt}</p>
-                <span className="mt-3 text-xs text-accent font-medium inline-flex items-center gap-1">
+                {getPrimaryPostCategory(p) && <span className="text-xs public-meta-text font-medium">{getPrimaryPostCategory(p)}</span>}
+                <p className="font-semibold text-sm mb-1 line-clamp-2 public-heading-3">{p.title}</p>
+                <p className="text-xs public-body-text line-clamp-3 leading-relaxed">{p.excerpt}</p>
+                <span className="mt-3 text-xs public-link-text font-medium inline-flex items-center gap-1">
                   {actionText} {isExternal ? <ExternalLink className="h-3 w-3" /> : <ArrowRight className="h-3 w-3" />}
                 </span>
               </CardContent>
@@ -536,7 +536,7 @@ function BlogFeedGrid({
           >
             Previous
           </Button>
-          <span className="text-sm text-muted-foreground px-3">
+          <span className="text-sm public-meta-text px-3">
             Page {safePage} of {totalPages}
           </span>
           <Button
@@ -661,7 +661,7 @@ export function BlogFeaturedPostBlock({ props }: { props: Record<string, unknown
   return (
     <div className="py-4" data-testid="block-blog-featured-post">
       {!featured ? (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="text-center py-12 public-supporting-text">
           <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />
           <p className="text-sm">Featured article will appear here</p>
         </div>

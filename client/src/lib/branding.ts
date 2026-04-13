@@ -6,8 +6,15 @@ export interface BrandingSettings {
   primaryColor: string | null;
   secondaryColor: string | null;
   tertiaryColor: string | null;
+  h1Color: string | null;
+  h2Color: string | null;
+  h3ToH6Color: string | null;
   bodyTextColor: string | null;
-  mutedTextColor: string | null;
+  supportingTextColor: string | null;
+  metaTextColor: string | null;
+  linkColor: string | null;
+  linkHoverColor: string | null;
+  inverseTextColor: string | null;
   primaryTextColor: string | null;
   secondaryTextColor: string | null;
   tertiaryTextColor: string | null;
@@ -55,8 +62,15 @@ export const DEFAULT_BRANDING_SETTINGS: BrandingSettings = {
   primaryColor: null,
   secondaryColor: null,
   tertiaryColor: null,
+  h1Color: null,
+  h2Color: null,
+  h3ToH6Color: null,
   bodyTextColor: null,
-  mutedTextColor: null,
+  supportingTextColor: null,
+  metaTextColor: null,
+  linkColor: null,
+  linkHoverColor: null,
+  inverseTextColor: null,
   primaryTextColor: null,
   secondaryTextColor: null,
   tertiaryTextColor: null,

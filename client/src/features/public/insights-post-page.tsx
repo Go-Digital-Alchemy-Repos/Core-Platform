@@ -39,8 +39,8 @@ function PodcastPlayer({ podcastUrl }: { podcastUrl: string }) {
             <Headphones className="h-6 w-6 text-purple-600 dark:text-purple-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-sm mb-1">Listen to this episode</h3>
-            <p className="text-xs text-muted-foreground mb-3">Available on your favorite podcast platform</p>
+            <h3 className="font-semibold text-sm mb-1 public-heading-3">Listen to this episode</h3>
+            <p className="text-xs public-supporting-text mb-3">Available on your favorite podcast platform</p>
             <div className="flex items-center gap-2 flex-wrap">
               <Button
                 size="sm"
@@ -132,8 +132,8 @@ export default function InsightsPostPage() {
     return (
       <PageLayout>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-24 text-center">
-          <h1 className="text-2xl font-semibold mb-4">Article Not Found</h1>
-          <p className="text-muted-foreground mb-6">The article you're looking for doesn't exist or has been removed.</p>
+          <h1 className="text-2xl font-semibold mb-4 public-heading-1">Article Not Found</h1>
+          <p className="public-supporting-text mb-6">The article you're looking for doesn't exist or has been removed.</p>
           <Link href="/insights">
             <Button variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -187,11 +187,11 @@ export default function InsightsPostPage() {
               ))}
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-heading font-semibold mb-4" data-testid="text-post-title">
+            <h1 className="text-3xl sm:text-4xl font-heading font-semibold mb-4 public-heading-1" data-testid="text-post-title">
               {post.title}
             </h1>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8 flex-wrap">
+            <div className="flex items-center gap-4 text-sm public-meta-text mb-8 flex-wrap">
               <span className="flex items-center gap-1.5" data-testid="text-post-author">
                 <User className="h-3.5 w-3.5" />
                 {post.authorName}
@@ -199,20 +199,20 @@ export default function InsightsPostPage() {
             </div>
 
             {post.excerpt && (
-              <p className="text-lg text-muted-foreground mb-8 leading-relaxed" data-testid="text-post-excerpt">
+              <p className="text-lg public-body-text mb-8 leading-relaxed" data-testid="text-post-excerpt">
                 {post.excerpt}
               </p>
             )}
 
             {post.content && post.content.trim().startsWith("<") ? (
               <div
-                className="prose prose-neutral dark:prose-invert max-w-none"
+                className="prose prose-neutral dark:prose-invert max-w-none public-prose"
                 data-testid="div-post-content"
                 dangerouslySetInnerHTML={{ __html: post.content }}
               />
             ) : (
               <div
-                className="prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap"
+                className="prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap public-prose"
                 data-testid="div-post-content"
               >
                 {post.content}

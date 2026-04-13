@@ -74,7 +74,7 @@ export function TherapistCard({ profile, user }: TherapistCardProps) {
           </h3>
           {profile.title && (
             <p
-              className="text-sm text-muted-foreground truncate"
+              className="text-sm public-supporting-text truncate"
               data-testid={`text-title-${profile.id}`}
             >
               {profile.title}
@@ -99,7 +99,7 @@ export function TherapistCard({ profile, user }: TherapistCardProps) {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 text-sm public-meta-text">
           {locationText ? (
             <span className="inline-flex items-center gap-1">
               <MapPin className="h-3.5 w-3.5 shrink-0" />

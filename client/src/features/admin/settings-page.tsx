@@ -73,13 +73,20 @@ type BrandingColorSettingKey =
   | "brand_primary_color"
   | "brand_secondary_color"
   | "brand_tertiary_color"
+  | "text_h1_color"
+  | "text_h2_color"
+  | "text_h3_h6_color"
   | "text_body_color"
   | "text_muted_color"
+  | "text_meta_color"
+  | "text_link_color"
+  | "text_link_hover_color"
+  | "text_inverse_color"
   | "text_primary_foreground_color"
   | "text_secondary_foreground_color"
   | "text_tertiary_foreground_color";
 
-const BRANDING_COLOR_FIELDS: Array<{
+const BRANDING_CORE_COLOR_FIELDS: Array<{
   key: BrandingColorSettingKey;
   label: string;
   description: string;
@@ -87,12 +94,39 @@ const BRANDING_COLOR_FIELDS: Array<{
   { key: "brand_primary_color", label: "Primary Color", description: "Main brand and button color." },
   { key: "brand_secondary_color", label: "Secondary Color", description: "Support color for secondary UI states." },
   { key: "brand_tertiary_color", label: "Tertiary Color", description: "Accent color used across highlights and links." },
-  { key: "text_body_color", label: "Body Text Color", description: "Default text color for main content." },
-  { key: "text_muted_color", label: "Muted Text Color", description: "Secondary and subdued text color." },
+];
+
+const BRANDING_TYPOGRAPHY_COLOR_FIELDS: Array<{
+  key: BrandingColorSettingKey;
+  label: string;
+  description: string;
+}> = [
+  { key: "text_h1_color", label: "H1 Color", description: "Primary color for main page headings." },
+  { key: "text_h2_color", label: "H2 Color", description: "Color for section-level headings and major titles." },
+  { key: "text_h3_h6_color", label: "H3-H6 Color", description: "Color for smaller heading levels and card titles." },
+  { key: "text_body_color", label: "Paragraph Text", description: "Default reading color for paragraphs, excerpts, and body copy." },
+  { key: "text_muted_color", label: "Heading Subtext", description: "Supporting color for section subtitles and helper copy." },
+  { key: "text_meta_color", label: "Meta Text", description: "Use for dates, authors, categories, labels, and small metadata." },
+  { key: "text_link_color", label: "Link Color", description: "Default color for editorial links and linked text actions." },
+  { key: "text_link_hover_color", label: "Link Hover Color", description: "Hover color for links and lightweight text actions." },
+  { key: "text_inverse_color", label: "Inverse Text", description: "Text shown on dark surfaces, image overlays, and high-contrast areas." },
+];
+
+const BRANDING_UI_TEXT_COLOR_FIELDS: Array<{
+  key: BrandingColorSettingKey;
+  label: string;
+  description: string;
+}> = [
   { key: "text_primary_foreground_color", label: "Primary Text on Color", description: "Text shown on primary-colored buttons and badges." },
   { key: "text_secondary_foreground_color", label: "Secondary Text on Color", description: "Text shown on secondary-colored UI surfaces." },
   { key: "text_tertiary_foreground_color", label: "Tertiary Text on Color", description: "Text shown on tertiary/accent-colored UI surfaces." },
 ];
+
+const BRANDING_COLOR_FIELDS = [
+  ...BRANDING_CORE_COLOR_FIELDS,
+  ...BRANDING_TYPOGRAPHY_COLOR_FIELDS,
+  ...BRANDING_UI_TEXT_COLOR_FIELDS,
+] as const;
 
 interface EmailTemplate {
   id: string;
@@ -543,8 +577,15 @@ function BrandingTab({ settings }: { settings: SettingsData }) {
     brand_primary_color: brandingSettings.brand_primary_color?.value || "",
     brand_secondary_color: brandingSettings.brand_secondary_color?.value || "",
     brand_tertiary_color: brandingSettings.brand_tertiary_color?.value || "",
+    text_h1_color: brandingSettings.text_h1_color?.value || "",
+    text_h2_color: brandingSettings.text_h2_color?.value || "",
+    text_h3_h6_color: brandingSettings.text_h3_h6_color?.value || "",
     text_body_color: brandingSettings.text_body_color?.value || "",
     text_muted_color: brandingSettings.text_muted_color?.value || "",
+    text_meta_color: brandingSettings.text_meta_color?.value || "",
+    text_link_color: brandingSettings.text_link_color?.value || "",
+    text_link_hover_color: brandingSettings.text_link_hover_color?.value || "",
+    text_inverse_color: brandingSettings.text_inverse_color?.value || "",
     text_primary_foreground_color: brandingSettings.text_primary_foreground_color?.value || "",
     text_secondary_foreground_color: brandingSettings.text_secondary_foreground_color?.value || "",
     text_tertiary_foreground_color: brandingSettings.text_tertiary_foreground_color?.value || "",
@@ -557,8 +598,15 @@ function BrandingTab({ settings }: { settings: SettingsData }) {
       brand_primary_color: brandingSettings.brand_primary_color?.value || "",
       brand_secondary_color: brandingSettings.brand_secondary_color?.value || "",
       brand_tertiary_color: brandingSettings.brand_tertiary_color?.value || "",
+      text_h1_color: brandingSettings.text_h1_color?.value || "",
+      text_h2_color: brandingSettings.text_h2_color?.value || "",
+      text_h3_h6_color: brandingSettings.text_h3_h6_color?.value || "",
       text_body_color: brandingSettings.text_body_color?.value || "",
       text_muted_color: brandingSettings.text_muted_color?.value || "",
+      text_meta_color: brandingSettings.text_meta_color?.value || "",
+      text_link_color: brandingSettings.text_link_color?.value || "",
+      text_link_hover_color: brandingSettings.text_link_hover_color?.value || "",
+      text_inverse_color: brandingSettings.text_inverse_color?.value || "",
       text_primary_foreground_color: brandingSettings.text_primary_foreground_color?.value || "",
       text_secondary_foreground_color: brandingSettings.text_secondary_foreground_color?.value || "",
       text_tertiary_foreground_color: brandingSettings.text_tertiary_foreground_color?.value || "",
@@ -569,8 +617,15 @@ function BrandingTab({ settings }: { settings: SettingsData }) {
     brandingSettings.brand_primary_color?.value,
     brandingSettings.brand_secondary_color?.value,
     brandingSettings.brand_tertiary_color?.value,
+    brandingSettings.text_h1_color?.value,
+    brandingSettings.text_h2_color?.value,
+    brandingSettings.text_h3_h6_color?.value,
     brandingSettings.text_body_color?.value,
     brandingSettings.text_muted_color?.value,
+    brandingSettings.text_meta_color?.value,
+    brandingSettings.text_link_color?.value,
+    brandingSettings.text_link_hover_color?.value,
+    brandingSettings.text_inverse_color?.value,
     brandingSettings.text_primary_foreground_color?.value,
     brandingSettings.text_secondary_foreground_color?.value,
     brandingSettings.text_tertiary_foreground_color?.value,
@@ -650,6 +705,12 @@ function BrandingTab({ settings }: { settings: SettingsData }) {
   const previewPaletteStyle = {
     backgroundColor: colorValues.brand_primary_color || undefined,
     color: colorValues.text_primary_foreground_color || undefined,
+  };
+  const previewLinkStyle = {
+    color: colorValues.text_link_color || undefined,
+  };
+  const previewLinkHoverStyle = {
+    color: colorValues.text_link_hover_color || colorValues.text_link_color || undefined,
   };
 
   const updateColorValue = (key: BrandingColorSettingKey, value: string) => {
@@ -748,35 +809,59 @@ function BrandingTab({ settings }: { settings: SettingsData }) {
                 Color Palette
               </CardTitle>
               <CardDescription>
-                Set the core frontend brand colors and the text colors used on the main UI color categories.
+                Set the core frontend brand colors, typography colors, and UI foreground colors. This keeps headings, body copy, supporting text, metadata, and links distinct without needing one-off overrides.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              <div className="grid gap-4 md:grid-cols-2">
-                {BRANDING_COLOR_FIELDS.map((field) => (
-                  <div key={field.key} className="space-y-1.5 rounded-xl border p-4">
-                    <div>
-                      <Label>{field.label}</Label>
-                      <p className="mt-1 text-xs text-muted-foreground">{field.description}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="color"
-                        value={normalizeHexColor(colorValues[field.key]) || "#000000"}
-                        onChange={(event) => updateColorValue(field.key, event.target.value.toUpperCase())}
-                        className="h-10 w-12 cursor-pointer rounded-md border bg-background p-1"
-                        data-testid={`input-color-${field.key}`}
-                      />
-                      <Input
-                        value={colorValues[field.key]}
-                        onChange={(event) => updateColorValue(field.key, event.target.value)}
-                        placeholder="#000000"
-                        data-testid={`input-hex-${field.key}`}
-                      />
-                    </div>
+              {[
+                {
+                  title: "Core Colors",
+                  description: "These power the main brand accents, buttons, and highlighted interface states on the public site.",
+                  fields: BRANDING_CORE_COLOR_FIELDS,
+                },
+                {
+                  title: "Typography Colors",
+                  description: "Use these to separate major headings, paragraph copy, section subtext, metadata, and editorial links.",
+                  fields: BRANDING_TYPOGRAPHY_COLOR_FIELDS,
+                },
+                {
+                  title: "Text on Color Surfaces",
+                  description: "These colors are used when text appears on branded buttons, badges, and other colored UI surfaces.",
+                  fields: BRANDING_UI_TEXT_COLOR_FIELDS,
+                },
+              ].map((group) => (
+                <div key={group.title} className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-semibold">{group.title}</h4>
+                    <p className="mt-1 text-xs text-muted-foreground">{group.description}</p>
                   </div>
-                ))}
-              </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {group.fields.map((field) => (
+                      <div key={field.key} className="space-y-1.5 rounded-xl border p-4">
+                        <div>
+                          <Label>{field.label}</Label>
+                          <p className="mt-1 text-xs text-muted-foreground">{field.description}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={normalizeHexColor(colorValues[field.key]) || "#000000"}
+                            onChange={(event) => updateColorValue(field.key, event.target.value.toUpperCase())}
+                            className="h-10 w-12 cursor-pointer rounded-md border bg-background p-1"
+                            data-testid={`input-color-${field.key}`}
+                          />
+                          <Input
+                            value={colorValues[field.key]}
+                            onChange={(event) => updateColorValue(field.key, event.target.value)}
+                            placeholder="#000000"
+                            data-testid={`input-hex-${field.key}`}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
 
               <div className="rounded-xl border bg-muted/10 p-5">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Palette Preview</p>
@@ -803,16 +888,42 @@ function BrandingTab({ settings }: { settings: SettingsData }) {
                     Tertiary Action
                   </div>
                 </div>
-                <div className="mt-4 space-y-2">
-                  <p className="text-base font-semibold" style={{ ...previewHeadingStyle, color: colorValues.text_body_color || undefined }}>
-                    Frontend heading preview
+                <div className="mt-5 rounded-xl border bg-background p-5 space-y-3">
+                  <p className="text-3xl font-semibold" style={{ ...previewHeadingStyle, color: colorValues.text_h1_color || colorValues.text_body_color || undefined }}>
+                    H1 headline preview
+                  </p>
+                  <p className="text-2xl font-semibold" style={{ ...previewHeadingStyle, color: colorValues.text_h2_color || colorValues.text_h1_color || colorValues.text_body_color || undefined }}>
+                    H2 section heading preview
+                  </p>
+                  <p className="text-lg font-semibold" style={{ ...previewHeadingStyle, color: colorValues.text_h3_h6_color || colorValues.text_h2_color || colorValues.text_body_color || undefined }}>
+                    H3-H6 card and supporting heading preview
+                  </p>
+                  <p className="text-sm" style={{ ...previewBodyStyle, color: colorValues.text_muted_color || undefined }}>
+                    Heading sub-text / supporting copy preview for section introductions and helper messaging.
                   </p>
                   <p className="text-sm" style={{ ...previewBodyStyle, color: colorValues.text_body_color || undefined }}>
-                    Body copy preview using your selected font and body text color.
+                    Paragraph text preview for reading content, blog excerpts, and general body copy throughout the site.
                   </p>
-                  <p className="text-sm" style={{ color: colorValues.text_muted_color || undefined }}>
-                    Muted text preview for captions, secondary labels, and helper content.
+                  <p className="text-xs uppercase tracking-wide" style={{ color: colorValues.text_meta_color || colorValues.text_muted_color || undefined }}>
+                    Meta text preview for dates, authors, categories, and labels
                   </p>
+                  <div className="flex flex-wrap items-center gap-4 text-sm">
+                    <a href="#branding-preview-link" className="underline underline-offset-4" style={previewLinkStyle}>
+                      Link color preview
+                    </a>
+                    <span className="underline underline-offset-4" style={previewLinkHoverStyle}>
+                      Link hover preview
+                    </span>
+                  </div>
+                  <div
+                    className="rounded-lg px-4 py-3 text-sm font-medium"
+                    style={{
+                      backgroundColor: colorValues.brand_primary_color || "#1F2A44",
+                      color: colorValues.text_inverse_color || colorValues.text_primary_foreground_color || undefined,
+                    }}
+                  >
+                    Inverse text preview on dark or branded surfaces
+                  </div>
                 </div>
               </div>
 
