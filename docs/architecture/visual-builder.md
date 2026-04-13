@@ -119,6 +119,7 @@ The floating toolbar is intentionally compact and non-blocking. It does **not** 
 The right inspector is the primary editing surface:
 - used for full block editing
 - stays synchronized to the same selected section as the navigator and canvas toolbar
+- remains visible as a docked desktop rail while the canvas scrolls inside the sticky builder shell
 - supports long forms through its own internal scrolling region
 - keeps grouped controls for `Content`, `Media`, `Layout`, and `Settings`
 - continues using Cloudflare R2-backed media upload and picker flows instead of raw URL entry
@@ -139,8 +140,10 @@ Selection state is shared across:
 Additional long-page usability improvements:
 - selecting a block scrolls it into view
 - selected sections remain visually obvious
+- the desktop builder shell stays pinned in the viewport so authors do not lose the inspector while working lower on the page
 - the docked inspector stays visible while the canvas scrolls
 - the inspector scrolls independently from the page canvas, which keeps long forms usable
+- the inspector includes a direct "Locate" action to jump the selected block back into view on the canvas
 
 ## Media Handling Rules
 

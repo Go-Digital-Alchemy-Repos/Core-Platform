@@ -53,6 +53,7 @@ import {
   List,
   ListChecks,
   ListOrdered,
+  LocateFixed,
   Lock,
   Map as MapIcon,
   Megaphone,
@@ -701,6 +702,17 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     }
   }, []);
 
+  const scrollBlockIntoView = useCallback((id: string) => {
+    const node = blockRefs.current.get(id);
+    if (!node) return;
+
+    node.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "nearest",
+    });
+  }, []);
+
   const setBlocks = useCallback(
     (nextBlocks: BlockInstance[]) => {
       onChange({ ...content, blocks: nextBlocks });
@@ -724,15 +736,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
   useEffect(() => {
     if (!selectedId) return;
-    const node = blockRefs.current.get(selectedId);
-    if (!node) return;
-
-    node.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-      inline: "nearest",
-    });
-  }, [selectedId]);
+    scrollBlockIntoView(selectedId);
+  }, [scrollBlockIntoView, selectedId]);
 
   const addBlock = useCallback((type: string) => {
     const block = createBlock(type);
@@ -1132,6 +1137,16 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
               type="button"
               variant="outline"
               size="sm"
+              onClick={() => scrollBlockIntoView(selectedBlock.id)}
+              data-testid="button-locate-block-on-canvas"
+            >
+              <LocateFixed className="mr-1.5 h-4 w-4" />
+              Locate
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setSavingSectionBlockId(selectedBlock.id)}
             >
               <Bookmark className="mr-1.5 h-4 w-4" />
@@ -1158,6 +1173,9 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             <p className="truncate text-sm font-medium">{selectedDef.label}</p>
             <p className="truncate text-xs text-muted-foreground">{selectedDef.description}</p>
           </div>
+          <Badge variant="outline" className="ml-auto shrink-0">
+            Block {blocks.findIndex((block) => block.id === selectedBlock.id) + 1}
+          </Badge>
         </div>
       </div>
 
@@ -1249,11 +1267,11 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         )}
       </div>
 
-      <div className="hidden lg:block">
+      <div className="hidden lg:sticky lg:top-6 lg:block">
         {advancedInspectorOpen ? (
           <ResizablePanelGroup
             direction="horizontal"
-            className="min-h-[calc(100vh-270px)] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
+            className="h-[calc(100vh-180px)] min-h-[720px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
           >
             <ResizablePanel defaultSize={20} minSize={16}>
               <div className="h-full min-h-0 p-3">{navigatorPanel}</div>
@@ -1283,7 +1301,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         ) : (
           <ResizablePanelGroup
             direction="horizontal"
-            className="min-h-[calc(100vh-270px)] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
+            className="h-[calc(100vh-180px)] min-h-[720px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
           >
             <ResizablePanel defaultSize={22} minSize={18}>
               <div className="h-full min-h-0 p-3">{navigatorPanel}</div>
