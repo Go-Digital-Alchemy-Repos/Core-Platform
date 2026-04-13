@@ -23,6 +23,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { SectionHeading } from "@/features/admin/cms/builder/section-heading";
 import { normalizeHexColor } from "@/features/admin/cms/builder/section-style";
+import { getPostCategories, getPrimaryPostCategory, postMatchesCategory } from "@/lib/blog-post-categories";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -317,6 +318,7 @@ interface BlogPost {
   excerpt: string;
   slug: string;
   category?: string;
+  categories?: string[] | null;
   tags?: string[];
   coverImageUrl?: string;
   postType?: string | null;
@@ -324,22 +326,28 @@ interface BlogPost {
   isPublished: boolean;
 }
 
+function getBlogCardMotionClass(enabled: boolean) {
+  return enabled ? "blog-card-motion" : "";
+}
+
 function FeaturedBlogCard({
   post,
   layout,
+  enableHoverMotion = true,
 }: {
   post: BlogPost;
   layout: string;
+  enableHoverMotion?: boolean;
 }) {
   const isExternal = post.postType === "external" && post.externalUrl;
   const isPodcast = post.postType === "podcast";
   const actionText = isExternal ? "Visit Article" : isPodcast ? "Listen Now" : "Read Article";
   const card = (
-    <Card className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden" data-testid="blog-featured-card">
+    <Card className={`cursor-pointer overflow-hidden ${getBlogCardMotionClass(enableHoverMotion)}`} data-testid="blog-featured-card">
       <div className={layout === "stacked" ? "grid grid-cols-1" : "grid grid-cols-1 md:grid-cols-2"}>
         {post.coverImageUrl && (
           <div className="aspect-[16/9] md:aspect-auto overflow-hidden">
-            <img src={post.coverImageUrl} alt={post.title} className="w-full h-full object-cover" />
+            <img src={post.coverImageUrl} alt={post.title} className="w-full h-full object-cover" data-blog-card-image />
           </div>
         )}
         <CardContent className="p-6 flex flex-col justify-center">
@@ -451,6 +459,7 @@ function BlogFeedGrid({
   onPrevPage,
   onNextPage,
   onLoadMore,
+  enableHoverMotion,
 }: {
   visible: BlogPost[];
   feedStyle: string;
@@ -464,6 +473,7 @@ function BlogFeedGrid({
   onPrevPage: () => void;
   onNextPage: () => void;
   onLoadMore: () => void;
+  enableHoverMotion: boolean;
 }) {
   if (visible.length === 0) {
     return (
@@ -482,14 +492,14 @@ function BlogFeedGrid({
           const isPodcast = p.postType === "podcast";
           const actionText = isExternal ? "Visit Article" : isPodcast ? "Listen Now" : "Read More";
           const card = (
-            <Card className="h-full cursor-pointer hover:shadow-md transition-shadow" data-testid={`blog-feed-card-${p.id}`}>
+            <Card className={`h-full cursor-pointer ${getBlogCardMotionClass(enableHoverMotion)}`} data-testid={`blog-feed-card-${p.id}`}>
               {p.coverImageUrl && (
                 <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
-                  <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" />
+                  <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" data-blog-card-image />
                 </div>
               )}
               <CardContent className="p-4">
-                {p.category && <span className="text-xs text-accent font-medium">{p.category}</span>}
+                {getPrimaryPostCategory(p) && <span className="text-xs text-accent font-medium">{getPrimaryPostCategory(p)}</span>}
                 <p className="font-semibold text-sm mb-1 line-clamp-2">{p.title}</p>
                 <p className="text-xs text-muted-foreground line-clamp-3">{p.excerpt}</p>
                 <span className="mt-3 text-xs text-accent font-medium inline-flex items-center gap-1">
@@ -565,6 +575,7 @@ export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> })
   const showSearch = props.showSearch !== false;
   const showCategoryFilter = props.showCategoryFilter !== false;
   const showTagFilter = props.showTagFilter !== false;
+  const enableHoverMotion = props.enableHoverMotion !== false;
   const published = (posts ?? []).filter((p) => p.isPublished);
 
   useEffect(() => {
@@ -575,12 +586,12 @@ export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> })
     setCurrentPage(1);
   }, [location]);
 
-  const categories = Array.from(new Set(published.map((p) => p.category).filter(Boolean))) as string[];
+  const categories = Array.from(new Set(published.flatMap((p) => getPostCategories(p)).filter(Boolean))) as string[];
   const allTags = Array.from(new Set(published.flatMap((p) => p.tags ?? []).filter(Boolean)));
 
   const filtered = published.filter((p) => {
     if (searchQuery && !p.title.toLowerCase().includes(searchQuery.toLowerCase()) && !(p.excerpt ?? "").toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    if (selectedCategory && p.category !== selectedCategory) return false;
+    if (selectedCategory && !postMatchesCategory(p, selectedCategory)) return false;
     if (selectedTag && !(p.tags ?? []).includes(selectedTag)) return false;
     return true;
   });
@@ -632,6 +643,7 @@ export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> })
         onPrevPage={() => setCurrentPage((p) => Math.max(1, p - 1))}
         onNextPage={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
         onLoadMore={() => setCurrentPage((page) => page + 1)}
+        enableHoverMotion={enableHoverMotion}
       />
     </div>
   );
@@ -643,6 +655,7 @@ export function BlogFeaturedPostBlock({ props }: { props: Record<string, unknown
   });
   const featured = (posts ?? []).filter((p) => p.isPublished)[0];
   const layout = String(props.layout ?? "split");
+  const enableHoverMotion = props.enableHoverMotion !== false;
 
   return (
     <div className="py-4" data-testid="block-blog-featured-post">
@@ -652,7 +665,7 @@ export function BlogFeaturedPostBlock({ props }: { props: Record<string, unknown
           <p className="text-sm">Featured article will appear here</p>
         </div>
       ) : (
-        <FeaturedBlogCard post={featured} layout={layout} />
+        <FeaturedBlogCard post={featured} layout={layout} enableHoverMotion={enableHoverMotion} />
       )}
     </div>
   );
@@ -676,6 +689,7 @@ export function StandardBlogPageBlock({ props }: { props: Record<string, unknown
   const showSearch = props.showSearch !== false;
   const showCategoryFilter = props.showCategoryFilter !== false;
   const showTagFilter = props.showTagFilter !== false;
+  const enableHoverMotion = props.enableHoverMotion !== false;
   const published = (posts ?? []).filter((p) => p.isPublished);
 
   useEffect(() => {
@@ -686,13 +700,13 @@ export function StandardBlogPageBlock({ props }: { props: Record<string, unknown
     setCurrentPage(1);
   }, [location]);
 
-  const categories = Array.from(new Set(published.map((p) => p.category).filter(Boolean))) as string[];
+  const categories = Array.from(new Set(published.flatMap((p) => getPostCategories(p)).filter(Boolean))) as string[];
   const allTags = Array.from(new Set(published.flatMap((p) => p.tags ?? []).filter(Boolean)));
 
   const filtered = published.filter((p) => {
     if (featured?.id && p.id === featured.id) return false;
     if (searchQuery && !p.title.toLowerCase().includes(searchQuery.toLowerCase()) && !(p.excerpt ?? "").toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    if (selectedCategory && p.category !== selectedCategory) return false;
+    if (selectedCategory && !postMatchesCategory(p, selectedCategory)) return false;
     if (selectedTag && !(p.tags ?? []).includes(selectedTag)) return false;
     return true;
   });
@@ -731,7 +745,7 @@ export function StandardBlogPageBlock({ props }: { props: Record<string, unknown
         onTagChange={(value) => { setSelectedTag(value); setCurrentPage(1); }}
         onReset={resetFilters}
       />
-      {featured ? <FeaturedBlogCard post={featured} layout={layout} /> : null}
+      {featured ? <FeaturedBlogCard post={featured} layout={layout} enableHoverMotion={enableHoverMotion} /> : null}
       <BlogFeedGrid
         visible={visible}
         feedStyle={feedStyle}
@@ -745,6 +759,7 @@ export function StandardBlogPageBlock({ props }: { props: Record<string, unknown
         onPrevPage={() => setCurrentPage((p) => Math.max(1, p - 1))}
         onNextPage={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
         onLoadMore={() => setCurrentPage((page) => page + 1)}
+        enableHoverMotion={enableHoverMotion}
       />
     </div>
   );

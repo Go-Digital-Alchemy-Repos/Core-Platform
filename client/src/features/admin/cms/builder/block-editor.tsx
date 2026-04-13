@@ -349,6 +349,7 @@ function ArrayItemsField({
                   value={String(item[field.key] ?? "")}
                   onChange={(e) => updateItem(idx, field.key, e.target.value)}
                   placeholder={field.placeholder}
+                  autoPrependHttps={field.type === "url"}
                   className="h-8 text-xs"
                 />
               )}
@@ -392,6 +393,7 @@ function PropField({
           value={strVal}
           onChange={(e) => onChange(e.target.value)}
           placeholder={propDef.placeholder}
+          autoPrependHttps={propDef.type === "url"}
           className="text-sm"
           data-testid={`prop-input-${propDef.key}`}
         />

@@ -293,6 +293,7 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
                     value={ctaLink}
                     onChange={(e) => setCtaLink(e.target.value)}
                     placeholder="/directory"
+                    autoPrependHttps
                     className="mt-1 font-mono text-sm"
                     data-testid="input-wizard-cta-link"
                   />

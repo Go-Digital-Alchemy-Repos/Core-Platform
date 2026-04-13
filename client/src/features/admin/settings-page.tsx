@@ -330,6 +330,10 @@ function IntegrationCard({
           const hasExisting = existing && existing.value && existing.value !== "";
           const currentVal = values[field.key] ?? "";
           const isVisible = showSecrets[field.key];
+          const shouldAutoPrependHttps =
+            /url/i.test(field.label) ||
+            field.key.toLowerCase().endsWith("_url") ||
+            field.placeholder?.startsWith("https://") === true;
 
           return (
             <div key={field.key} className="space-y-1.5">
@@ -350,6 +354,7 @@ function IntegrationCard({
                     onChange={(e) =>
                       setValues((prev) => ({ ...prev, [field.key]: e.target.value }))
                     }
+                    autoPrependHttps={shouldAutoPrependHttps}
                     data-testid={`input-${field.key}`}
                   />
                 </div>

@@ -303,6 +303,7 @@ export default function CmsSeoPage() {
                                 {...field}
                                 value={field.value ?? ""}
                                 placeholder="https://tckwellness.com"
+                                autoPrependHttps
                                 data-testid="input-site-url"
                               />
                             </FormControl>
@@ -486,6 +487,7 @@ export default function CmsSeoPage() {
                                   {...field}
                                   value={field.value ?? ""}
                                   placeholder="https://facebook.com/tckwellness"
+                                  autoPrependHttps
                                   data-testid="input-facebook-url"
                                 />
                               </FormControl>
@@ -525,6 +527,7 @@ export default function CmsSeoPage() {
                                   {...field}
                                   value={field.value ?? ""}
                                   placeholder="https://linkedin.com/company/tckwellness"
+                                  autoPrependHttps
                                   data-testid="input-linkedin-url"
                                 />
                               </FormControl>
@@ -543,6 +546,7 @@ export default function CmsSeoPage() {
                                   {...field}
                                   value={field.value ?? ""}
                                   placeholder="https://instagram.com/tckwellness"
+                                  autoPrependHttps
                                   data-testid="input-instagram-url"
                                 />
                               </FormControl>

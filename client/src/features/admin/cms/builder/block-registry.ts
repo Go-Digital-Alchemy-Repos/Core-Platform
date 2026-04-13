@@ -699,11 +699,13 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       title: "Latest Insights",
       subtitle: "Resources and perspectives for the TCK community.",
       limit: 3,
+      enableHoverMotion: true,
     },
     propDefs: [
       { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
       { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Supporting text" },
       { key: "limit", label: "Max Articles to Show", type: "number", min: 1, max: 9 },
+      { key: "enableHoverMotion", label: "Enable Hover Motion", type: "boolean" },
     ],
   },
   {
@@ -1373,6 +1375,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
       showSearch: true,
       showCategoryFilter: true,
       showTagFilter: true,
+      enableHoverMotion: true,
     },
     propDefs: [
       { key: "postsPerPage", label: "Posts Per Page", type: "number", min: 3, max: 24 },
@@ -1389,6 +1392,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
       { key: "showSearch", label: "Show Search", type: "boolean" },
       { key: "showCategoryFilter", label: "Show Category Filter", type: "boolean" },
       { key: "showTagFilter", label: "Show Tag Filter", type: "boolean" },
+      { key: "enableHoverMotion", label: "Enable Hover Motion", type: "boolean" },
     ],
   },
   {
@@ -1400,6 +1404,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     category: "dynamic",
     defaultProps: {
       layout: "split",
+      enableHoverMotion: true,
     },
     propDefs: [
       {
@@ -1411,6 +1416,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
           { label: "Stacked Card", value: "stacked" },
         ],
       },
+      { key: "enableHoverMotion", label: "Enable Hover Motion", type: "boolean" },
     ],
   },
   {
@@ -1428,6 +1434,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
       showSearch: true,
       showCategoryFilter: true,
       showTagFilter: true,
+      enableHoverMotion: true,
     },
     propDefs: [
       {
@@ -1453,6 +1460,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
       { key: "showSearch", label: "Show Search", type: "boolean" },
       { key: "showCategoryFilter", label: "Show Category Filter", type: "boolean" },
       { key: "showTagFilter", label: "Show Tag Filter", type: "boolean" },
+      { key: "enableHoverMotion", label: "Enable Hover Motion", type: "boolean" },
     ],
   },
   {

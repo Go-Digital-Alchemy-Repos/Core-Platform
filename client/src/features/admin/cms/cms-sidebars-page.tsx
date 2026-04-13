@@ -184,6 +184,7 @@ function WidgetSettings({
                 value={String(widget.settings.actionUrl ?? "")}
                 onChange={(event) => updateSetting("actionUrl", event.target.value)}
                 placeholder="https://... or leave blank for email signup"
+                autoPrependHttps
               />
             </div>
           </div>
@@ -207,7 +208,7 @@ function WidgetSettings({
             </div>
             <div className="space-y-1.5">
               <Label>Button URL</Label>
-              <Input value={String(widget.settings.buttonUrl ?? "")} onChange={(event) => updateSetting("buttonUrl", event.target.value)} placeholder="/contact" />
+              <Input value={String(widget.settings.buttonUrl ?? "")} onChange={(event) => updateSetting("buttonUrl", event.target.value)} placeholder="/contact" autoPrependHttps />
             </div>
           </div>
         </div>

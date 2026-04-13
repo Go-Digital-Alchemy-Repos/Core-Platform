@@ -533,6 +533,7 @@ function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
     queryKey: ["/api/blog"],
   });
   const limit = num(props.limit, 3);
+  const enableHoverMotion = props.enableHoverMotion !== false;
   const visible = (posts ?? []).filter((p) => p.isPublished).slice(0, limit);
   return (
     <div className="py-4">
@@ -545,10 +546,10 @@ function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
           </div>
         ) : visible.map((p) => (
           <Link key={p.id} href={`/insights/${p.slug}`}>
-            <Card className="h-full overflow-hidden hover:shadow-md transition-shadow cursor-pointer" data-testid={`blog-preview-${p.id}`}>
+            <Card className={`h-full overflow-hidden cursor-pointer ${enableHoverMotion ? "blog-card-motion" : ""}`} data-testid={`blog-preview-${p.id}`}>
               {p.coverImageUrl && (
                 <div className="aspect-[16/9] overflow-hidden">
-                  <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" data-testid={`img-blog-preview-${p.id}`} />
+                  <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" data-blog-card-image data-testid={`img-blog-preview-${p.id}`} />
                 </div>
               )}
               <CardContent className={p.coverImageUrl ? "p-5" : "pt-4"}>

@@ -12,6 +12,7 @@ export const blogPosts = pgTable("blog_posts", {
   coverImageUrl: text("cover_image_url"),
   authorName: text("author_name").notNull(),
   category: varchar("category", { length: 100 }),
+  categories: text("categories").array(),
   tags: text("tags").array(),
   postType: text("post_type").default("article"),
   podcastUrl: text("podcast_url"),

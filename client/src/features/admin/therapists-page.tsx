@@ -770,7 +770,7 @@ function AddTherapistSheet({
                 <FormField control={form.control} name="website" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Website</FormLabel>
-                    <FormControl><Input placeholder="https://example.com" {...field} data-testid="input-add-website" /></FormControl>
+                    <FormControl><Input placeholder="https://example.com" autoPrependHttps {...field} data-testid="input-add-website" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -1327,7 +1327,7 @@ function OverviewTab({
             <FormField control={form.control} name="website" render={({ field }) => (
               <FormItem>
                 <FormLabel>Website</FormLabel>
-                <FormControl><Input {...field} data-testid="input-edit-website" /></FormControl>
+                <FormControl><Input autoPrependHttps {...field} data-testid="input-edit-website" /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />

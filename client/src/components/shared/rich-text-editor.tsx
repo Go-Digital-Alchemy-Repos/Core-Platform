@@ -350,6 +350,7 @@ export function RichTextEditor({ onSend, disabled, placeholder, sendRef }: RichT
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               placeholder="Enter URL..."
+              autoPrependHttps
               className="h-7 text-xs flex-1"
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); insertLink(); } }}
               autoFocus

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Search, Tag, FolderOpen, ArrowRight } from "lucide-react";
+import { Mail, Search, Tag, ArrowRight } from "lucide-react";
 import type { BlogPost, CmsSidebar, SidebarWidget } from "@shared/schema";
 
 function text(value: unknown, fallback = "") {
@@ -45,17 +45,27 @@ function RecentPostsWidget({ widget }: { widget: SidebarWidget }) {
           <p className="text-sm text-muted-foreground">Recent posts will appear here.</p>
         ) : (
           visiblePosts.map((post) => (
-            <Link key={post.id} href={`/insights/${post.slug}`}>
-              <span className="block rounded-md border p-3 hover:bg-muted/40 transition-colors" data-testid={`sidebar-recent-post-${post.id}`}>
-                <span className="text-sm font-medium leading-snug line-clamp-2">{post.title}</span>
-                {post.category && (
-                  <span className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                    <FolderOpen className="h-3 w-3" />
-                    {post.category}
-                  </span>
-                )}
-              </span>
-            </Link>
+            post.postType === "external" && post.externalUrl ? (
+              <a
+                key={post.id}
+                href={post.externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-sm font-medium leading-snug hover:text-accent transition-colors"
+                data-testid={`sidebar-recent-post-${post.id}`}
+              >
+                {post.title}
+              </a>
+            ) : (
+              <Link key={post.id} href={`/insights/${post.slug}`}>
+                <span
+                  className="block text-sm font-medium leading-snug hover:text-accent transition-colors"
+                  data-testid={`sidebar-recent-post-${post.id}`}
+                >
+                  {post.title}
+                </span>
+              </Link>
+            )
           ))
         )}
       </div>

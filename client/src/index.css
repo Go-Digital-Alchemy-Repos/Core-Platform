@@ -319,4 +319,44 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+
+  .blog-card-motion {
+    transition:
+      box-shadow 280ms ease,
+      transform 280ms ease;
+  }
+
+  .blog-card-motion [data-blog-card-image] {
+    transition: transform 420ms ease;
+    transform-origin: center center;
+    will-change: transform;
+  }
+
+  .blog-card-motion:hover,
+  .blog-card-motion:focus-within {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .blog-card-motion:hover [data-blog-card-image],
+  .blog-card-motion:focus-within [data-blog-card-image] {
+    transform: scale(1.03);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blog-card-motion,
+    .blog-card-motion [data-blog-card-image] {
+      transition: none;
+    }
+
+    .blog-card-motion:hover,
+    .blog-card-motion:focus-within {
+      transform: none;
+    }
+
+    .blog-card-motion:hover [data-blog-card-image],
+    .blog-card-motion:focus-within [data-blog-card-image] {
+      transform: none;
+    }
+  }
 }

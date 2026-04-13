@@ -760,7 +760,7 @@ export default function AdminApplicationDetailPage() {
                     </div>
                     <div>
                       <Label htmlFor="bgReportUrl" className="text-xs">Report URL</Label>
-                      <Input id="bgReportUrl" value={bgReportUrl} onChange={(e) => setBgReportUrl(e.target.value)} placeholder="https://..." className="h-8 text-sm" data-testid="input-bg-report-url" />
+                      <Input id="bgReportUrl" value={bgReportUrl} onChange={(e) => setBgReportUrl(e.target.value)} placeholder="https://..." autoPrependHttps className="h-8 text-sm" data-testid="input-bg-report-url" />
                     </div>
                     <div>
                       <Label htmlFor="bgNotes" className="text-xs">Notes</Label>
@@ -885,7 +885,7 @@ export default function AdminApplicationDetailPage() {
                     </div>
                     <div>
                       <Label htmlFor="intMeetingUrl" className="text-xs">Meeting URL</Label>
-                      <Input id="intMeetingUrl" value={intMeetingUrl} onChange={(e) => setIntMeetingUrl(e.target.value)} placeholder="https://zoom.us/..." className="h-8 text-sm" data-testid="input-meeting-url" />
+                      <Input id="intMeetingUrl" value={intMeetingUrl} onChange={(e) => setIntMeetingUrl(e.target.value)} placeholder="https://zoom.us/..." autoPrependHttps className="h-8 text-sm" data-testid="input-meeting-url" />
                     </div>
                     <Button size="sm" onClick={() => scheduleInterview.mutate()} disabled={scheduleInterview.isPending} data-testid="button-schedule-interview">
                       {scheduleInterview.isPending && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}

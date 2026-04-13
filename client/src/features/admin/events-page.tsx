@@ -1034,7 +1034,7 @@ function EventsContent() {
                                 <FormItem>
                                   <FormLabel>Zoom / Meeting Link</FormLabel>
                                   <FormControl>
-                                    <Input {...field} placeholder="https://zoom.us/j/..." data-testid="input-event-zoom-link" />
+                                    <Input {...field} placeholder="https://zoom.us/j/..." autoPrependHttps data-testid="input-event-zoom-link" />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -1047,7 +1047,7 @@ function EventsContent() {
                                 <FormItem>
                                   <FormLabel>Virtual Join URL</FormLabel>
                                   <FormControl>
-                                    <Input {...field} placeholder="https://..." data-testid="input-event-virtual-join-url" />
+                                    <Input {...field} placeholder="https://..." autoPrependHttps data-testid="input-event-virtual-join-url" />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -1467,7 +1467,7 @@ function EventsContent() {
                               <FormItem>
                                 <FormLabel>Recording URL</FormLabel>
                                 <FormControl>
-                                  <Input {...field} placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..." data-testid="input-event-recording-url" />
+                                  <Input {...field} placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..." autoPrependHttps data-testid="input-event-recording-url" />
                                 </FormControl>
                                 <p className="text-xs text-muted-foreground">YouTube and Vimeo links are automatically embeddable</p>
                                 <FormMessage />

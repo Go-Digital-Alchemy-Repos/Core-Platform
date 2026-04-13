@@ -5,6 +5,7 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, BookOpen, Headphones, ExternalLink } from "lucide-react";
+import { getPrimaryPostCategory, postMatchesCategory } from "@/lib/blog-post-categories";
 import type { BlogPost } from "@shared/schema";
 import { PublicSidebar } from "@/features/public/public-sidebar";
 
@@ -23,7 +24,7 @@ export default function InsightsPage() {
     const matchesSearch = !searchQuery || [post.title, post.excerpt, post.content, post.authorName]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(searchQuery));
-    const matchesCategory = !categoryFilter || post.category === categoryFilter;
+    const matchesCategory = !categoryFilter || postMatchesCategory(post, categoryFilter);
     const matchesTag = !tagFilter || Boolean(post.tags?.includes(tagFilter));
     return matchesSearch && matchesCategory && matchesTag;
   });
@@ -68,18 +69,18 @@ export default function InsightsPage() {
             {featuredPost && (
               featuredPost.postType === "external" && featuredPost.externalUrl ? (
                 <a href={featuredPost.externalUrl} target="_blank" rel="noopener noreferrer">
-                  <Card className="overflow-hidden cursor-pointer hover-elevate" data-testid={`card-blog-featured-${featuredPost.id}`}>
+                  <Card className="overflow-hidden cursor-pointer hover-elevate blog-card-motion" data-testid={`card-blog-featured-${featuredPost.id}`}>
                     <div className="grid grid-cols-1 md:grid-cols-2">
                       {featuredPost.coverImageUrl && (
                         <div className="aspect-[16/9] md:aspect-auto md:min-h-[320px] overflow-hidden">
-                          <img src={featuredPost.coverImageUrl} alt={featuredPost.title} className="w-full h-full object-cover" data-testid={`img-blog-cover-${featuredPost.id}`} />
+                          <img src={featuredPost.coverImageUrl} alt={featuredPost.title} className="w-full h-full object-cover" data-blog-card-image data-testid={`img-blog-cover-${featuredPost.id}`} />
                         </div>
                       )}
                       <CardContent className="p-6 sm:p-8 flex flex-col justify-center">
                         <div className="flex items-center gap-2 mb-3 flex-wrap">
                           <Badge variant="default" className="text-xs bg-accent text-accent-foreground" data-testid={`badge-featured-${featuredPost.id}`}>Featured</Badge>
                           <Badge variant="outline" className="text-xs" data-testid={`badge-type-${featuredPost.id}`}><ExternalLink className="h-3 w-3 mr-1" />External</Badge>
-                          {featuredPost.category && <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${featuredPost.id}`}>{featuredPost.category}</Badge>}
+                          {getPrimaryPostCategory(featuredPost) && <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${featuredPost.id}`}>{getPrimaryPostCategory(featuredPost)}</Badge>}
                         </div>
                         <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-semibold mb-3" data-testid={`text-blog-title-${featuredPost.id}`}>{featuredPost.title}</h2>
                         {featuredPost.excerpt && <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-4 line-clamp-3">{featuredPost.excerpt}</p>}
@@ -93,18 +94,18 @@ export default function InsightsPage() {
                 </a>
               ) : (
                 <Link href={`/insights/${featuredPost.slug}`}>
-                  <Card className="overflow-hidden cursor-pointer hover-elevate" data-testid={`card-blog-featured-${featuredPost.id}`}>
+                  <Card className="overflow-hidden cursor-pointer hover-elevate blog-card-motion" data-testid={`card-blog-featured-${featuredPost.id}`}>
                     <div className="grid grid-cols-1 md:grid-cols-2">
                       {featuredPost.coverImageUrl && (
                         <div className="aspect-[16/9] md:aspect-auto md:min-h-[320px] overflow-hidden">
-                          <img src={featuredPost.coverImageUrl} alt={featuredPost.title} className="w-full h-full object-cover" data-testid={`img-blog-cover-${featuredPost.id}`} />
+                          <img src={featuredPost.coverImageUrl} alt={featuredPost.title} className="w-full h-full object-cover" data-blog-card-image data-testid={`img-blog-cover-${featuredPost.id}`} />
                         </div>
                       )}
                       <CardContent className="p-6 sm:p-8 flex flex-col justify-center">
                         <div className="flex items-center gap-2 mb-3 flex-wrap">
                           <Badge variant="default" className="text-xs bg-accent text-accent-foreground" data-testid={`badge-featured-${featuredPost.id}`}>Featured</Badge>
                           {featuredPost.postType === "podcast" && <Badge variant="secondary" className="text-xs" data-testid={`badge-type-${featuredPost.id}`}><Headphones className="h-3 w-3 mr-1" />Podcast</Badge>}
-                          {featuredPost.category && <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${featuredPost.id}`}>{featuredPost.category}</Badge>}
+                          {getPrimaryPostCategory(featuredPost) && <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${featuredPost.id}`}>{getPrimaryPostCategory(featuredPost)}</Badge>}
                         </div>
                         <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-semibold mb-3" data-testid={`text-blog-title-${featuredPost.id}`}>{featuredPost.title}</h2>
                         {featuredPost.excerpt && <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-4 line-clamp-3">{featuredPost.excerpt}</p>}
@@ -129,10 +130,10 @@ export default function InsightsPage() {
                     const isExternal = post.postType === "external" && post.externalUrl;
                     const isPodcast = post.postType === "podcast";
                     const cardInner = (
-                      <Card className="h-full cursor-pointer hover-elevate" data-testid={`card-blog-${post.id}`}>
+                      <Card className="h-full cursor-pointer hover-elevate blog-card-motion" data-testid={`card-blog-${post.id}`}>
                         {post.coverImageUrl && (
                           <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
-                            <img src={post.coverImageUrl} alt={post.title} className="w-full h-full object-cover" data-testid={`img-blog-cover-${post.id}`} />
+                            <img src={post.coverImageUrl} alt={post.title} className="w-full h-full object-cover" data-blog-card-image data-testid={`img-blog-cover-${post.id}`} />
                           </div>
                         )}
                         <CardContent className={post.coverImageUrl ? "p-5" : "p-6"}>
@@ -147,9 +148,9 @@ export default function InsightsPage() {
                                 <ExternalLink className="h-3 w-3 mr-1" />External
                               </Badge>
                             )}
-                            {post.category && (
+                            {getPrimaryPostCategory(post) && (
                               <Badge variant="secondary" className="text-xs" data-testid={`badge-category-${post.id}`}>
-                                {post.category}
+                                {getPrimaryPostCategory(post)}
                               </Badge>
                             )}
                           </div>

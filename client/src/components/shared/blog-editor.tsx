@@ -358,6 +358,7 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               placeholder="https://example.com"
+              autoPrependHttps
               className="h-8 text-xs"
               autoFocus
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); insertLink(); } }}
@@ -425,6 +426,7 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="https://example.com/image.jpg"
+                autoPrependHttps
                 className="h-8 text-xs flex-1"
                 autoFocus
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); insertImageUrl(); } }}

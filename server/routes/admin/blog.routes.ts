@@ -51,20 +51,40 @@ function buildUniqueTaxonomySlug(type: BlogTaxonomy["type"], name: string, taxon
 async function getResolvedTaxonomies(): Promise<BlogTaxonomy[]> {
   const posts = await storage.blog.getAllPosts();
   for (const post of posts) {
-    await ensureTaxonomiesExist(post.category, post.tags);
+    await ensureTaxonomiesExist(post.categories, post.category, post.tags);
   }
   return storage.blogTaxonomies.getAllTaxonomies();
 }
 
-async function ensureTaxonomiesExist(category: string | null | undefined, tags: string[] | null | undefined) {
+function normalizeCategories(
+  categories: string[] | null | undefined,
+  category: string | null | undefined,
+) {
+  const seen = new Set<string>();
+  return [...(categories ?? []), category ?? ""]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .filter((value) => {
+      const key = value.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+async function ensureTaxonomiesExist(
+  categories: string[] | null | undefined,
+  category: string | null | undefined,
+  tags: string[] | null | undefined,
+) {
   const existing = await storage.blogTaxonomies.getAllTaxonomies();
 
-  if (category?.trim()) {
-    const match = existing.find((item) => item.type === "category" && item.name.trim().toLowerCase() === category.trim().toLowerCase());
+  for (const categoryName of normalizeCategories(categories, category)) {
+    const match = existing.find((item) => item.type === "category" && item.name.trim().toLowerCase() === categoryName.trim().toLowerCase());
     if (!match) {
-      const slug = buildUniqueTaxonomySlug("category", category, existing);
+      const slug = buildUniqueTaxonomySlug("category", categoryName, existing);
       const created = await storage.blogTaxonomies.createTaxonomy({
-        name: category.trim(),
+        name: categoryName.trim(),
         slug,
         type: "category",
         parentId: null,
@@ -249,7 +269,7 @@ router.post(
     if (data.isPublished) {
       data.scheduledAt = null;
     }
-    await ensureTaxonomiesExist(data.category, data.tags);
+    await ensureTaxonomiesExist(data.categories, data.category, data.tags);
     const post = await storage.blog.createPost(data);
     res.status(201).json(await normalizePostImages(post));
   })
@@ -270,7 +290,7 @@ router.put(
     if (data.isPublished === true) {
       data.scheduledAt = null;
     }
-    await ensureTaxonomiesExist(data.category, data.tags);
+    await ensureTaxonomiesExist(data.categories, data.category, data.tags);
     const post = await storage.blog.updatePost(id, data);
     if (!post) {
       return res.status(404).json({ message: "Post not found" });

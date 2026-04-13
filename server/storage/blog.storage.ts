@@ -50,10 +50,27 @@ export class BlogStorage {
 
     await Promise.all(
       posts
-        .filter((post) => (post.category ?? "").trim().toLowerCase() === target)
-        .map((post) =>
-          this.updatePost(post.id, { category: nextName, updatedAt: new Date() } as Partial<InsertBlogPost>)
-        )
+        .filter((post) => {
+          const primaryMatch = (post.category ?? "").trim().toLowerCase() === target;
+          const categoryListMatch = (post.categories ?? []).some((category) => category.trim().toLowerCase() === target);
+          return primaryMatch || categoryListMatch;
+        })
+        .map((post) => {
+          const nextCategories = (post.categories ?? [])
+            .map((category) => (category.trim().toLowerCase() === target ? nextName : category))
+            .filter((category): category is string => Boolean(category))
+            .filter((category, index, arr) => arr.findIndex((item) => item.trim().toLowerCase() === category.trim().toLowerCase()) === index);
+
+          const nextPrimaryCategory = (post.category ?? "").trim().toLowerCase() === target
+            ? nextName
+            : post.category ?? nextCategories[0] ?? null;
+
+          return this.updatePost(post.id, {
+            category: nextPrimaryCategory || nextCategories[0] || null,
+            categories: nextCategories.length > 0 ? nextCategories : null,
+            updatedAt: new Date(),
+          } as Partial<InsertBlogPost>);
+        })
     );
   }
 

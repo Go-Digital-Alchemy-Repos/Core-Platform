@@ -231,6 +231,7 @@ export function CmsRichTextEditor({
                     value={linkUrl}
                     onChange={(e) => setLinkUrl(e.target.value)}
                     placeholder="https://example.com"
+                    autoPrependHttps
                     className="h-8 text-xs"
                     autoFocus
                     onKeyDown={(e) => {

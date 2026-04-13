@@ -37,6 +37,7 @@ import {
   Settings2,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { getPostCategories, getPrimaryPostCategory } from "@/lib/blog-post-categories";
 import type { BlogPost } from "@shared/schema";
 import { format } from "date-fns";
 
@@ -70,7 +71,7 @@ export default function CmsBlogPage() {
       !search ||
       p.title.toLowerCase().includes(search.toLowerCase()) ||
       (p.authorName ?? "").toLowerCase().includes(search.toLowerCase()) ||
-      (p.category ?? "").toLowerCase().includes(search.toLowerCase());
+      getPostCategories(p).some((category) => category.toLowerCase().includes(search.toLowerCase()));
     const isScheduled = !p.isPublished && !!p.scheduledAt;
     const matchStatus =
       statusFilter === "all" ||
@@ -191,8 +192,8 @@ export default function CmsBlogPage() {
                           Draft
                         </Badge>
                       )}
-                      {post.category && (
-                        <Badge variant="secondary" className="text-xs">{post.category}</Badge>
+                      {getPrimaryPostCategory(post) && (
+                        <Badge variant="secondary" className="text-xs">{getPrimaryPostCategory(post)}</Badge>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">
