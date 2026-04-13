@@ -14,7 +14,7 @@ export class DocsStorage {
   }
 
   async getAllDocs(): Promise<Doc[]> {
-    return db.select().from(docs).orderBy(asc(docs.category), asc(docs.sortOrder));
+    return db.select().from(docs).orderBy(asc(docs.sortOrder), asc(docs.title));
   }
 
   async getDocsByCategory(category: string): Promise<Doc[]> {
@@ -22,7 +22,7 @@ export class DocsStorage {
       .select()
       .from(docs)
       .where(eq(docs.category, category))
-      .orderBy(asc(docs.sortOrder));
+      .orderBy(asc(docs.sortOrder), asc(docs.title));
   }
 
   async getPublishedDocs(): Promise<Doc[]> {
@@ -30,7 +30,7 @@ export class DocsStorage {
       .select()
       .from(docs)
       .where(eq(docs.isPublished, true))
-      .orderBy(asc(docs.category), asc(docs.sortOrder));
+      .orderBy(asc(docs.sortOrder), asc(docs.title));
   }
 
   async createDoc(data: InsertDoc): Promise<Doc> {

@@ -193,6 +193,9 @@ app.use((req, res, next) => {
   const { ensureSystemCmsMenus } = await import("./services/system-cms-menus.service");
   await ensureSystemCmsMenus();
 
+  const { ensureSystemDocs } = await import("./services/system-docs.service");
+  await ensureSystemDocs({ refreshExisting: false });
+
   await registerRoutes(httpServer, app);
 
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {

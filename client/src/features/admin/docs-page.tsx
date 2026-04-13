@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { AdminSidebar } from "./admin-sidebar";
@@ -19,21 +19,58 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { MarkdownDocument } from "@/components/shared/markdown-document";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, FileText, Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import { markdownToExcerpt } from "@/lib/markdown";
+import {
+  BookOpenText,
+  Edit,
+  Eye,
+  EyeOff,
+  FileText,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+} from "lucide-react";
 import type { Doc } from "@shared/schema";
 
-const DOC_CATEGORIES = [
+const PREFERRED_CATEGORIES = [
   "Getting Started",
-  "User Management",
-  "Mental Health Professional Management",
-  "Subscriptions & Billing",
-  "Directory & Search",
-  "Events",
+  "Admin Guides",
+  "Architecture",
+  "Architecture Decisions",
+  "Operations & Recovery",
+  "Deployment & Release",
   "API Reference",
-  "System Architecture",
+  "Engineering Quality",
+  "Security",
+  "Product & Planning",
+  "Reference",
 ];
+
+function sortCategories(categories: string[]) {
+  return [...categories].sort((a, b) => {
+    const aIndex = PREFERRED_CATEGORIES.indexOf(a);
+    const bIndex = PREFERRED_CATEGORIES.indexOf(b);
+
+    if (aIndex === -1 && bIndex === -1) {
+      return a.localeCompare(b);
+    }
+
+    if (aIndex === -1) {
+      return 1;
+    }
+
+    if (bIndex === -1) {
+      return -1;
+    }
+
+    return aIndex - bIndex;
+  });
+}
 
 export default function DocsPage() {
   const { toast } = useToast();
@@ -48,13 +85,29 @@ export default function DocsPage() {
     queryKey: ["/api/admin/docs"],
   });
 
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/docs/sync");
+      return res.json();
+    },
+    onSuccess: async (payload: { total: number; created: number; updated: number; docs: Doc[] }) => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/docs"] });
+      const firstDoc = payload.docs?.[0] ?? null;
+      setSelectedDoc(firstDoc);
+      toast({
+        title: "System documentation synced",
+        description: `${payload.total} documents available, ${payload.created} created, ${payload.updated} refreshed.`,
+      });
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: Partial<Doc>) => {
       const res = await apiRequest("POST", "/api/admin/docs", data);
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/docs"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/docs"] });
       setSheetOpen(false);
       setEditingDoc(null);
       toast({ title: "Document created" });
@@ -66,8 +119,8 @@ export default function DocsPage() {
       const res = await apiRequest("PUT", `/api/admin/docs/${id}`, data);
       return res.json();
     },
-    onSuccess: (updated: Doc) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/docs"] });
+    onSuccess: async (updated: Doc) => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/docs"] });
       setSheetOpen(false);
       setEditingDoc(null);
       if (selectedDoc?.id === updated.id) {
@@ -81,31 +134,65 @@ export default function DocsPage() {
     mutationFn: async (id: string) => {
       await apiRequest("DELETE", `/api/admin/docs/${id}`);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/docs"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/docs"] });
       setSelectedDoc(null);
       toast({ title: "Document deleted" });
     },
   });
 
-  const filteredDocs = allDocs.filter((doc) => {
-    const matchesCategory = !selectedCategory || doc.category === selectedCategory;
-    const matchesSearch =
-      !searchQuery ||
-      doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.content.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
-
-  const categories = DOC_CATEGORIES.filter((cat) =>
-    allDocs.some((doc) => doc.category === cat)
+  const filteredDocs = useMemo(
+    () =>
+      allDocs.filter((doc) => {
+        const matchesCategory = !selectedCategory || doc.category === selectedCategory;
+        const normalizedQuery = searchQuery.trim().toLowerCase();
+        const matchesSearch =
+          !normalizedQuery ||
+          doc.title.toLowerCase().includes(normalizedQuery) ||
+          doc.content.toLowerCase().includes(normalizedQuery);
+        return matchesCategory && matchesSearch;
+      }),
+    [allDocs, searchQuery, selectedCategory],
   );
+
+  const categories = useMemo(
+    () => sortCategories([...new Set(allDocs.map((doc) => doc.category))]),
+    [allDocs],
+  );
+
+  const categoryOptions = useMemo(
+    () => sortCategories([...new Set([...PREFERRED_CATEGORIES, ...categories])]),
+    [categories],
+  );
+
+  useEffect(() => {
+    if (!selectedDoc && filteredDocs.length > 0) {
+      setSelectedDoc(filteredDocs[0]);
+      return;
+    }
+
+    if (selectedDoc && !allDocs.some((doc) => doc.id === selectedDoc.id)) {
+      setSelectedDoc(filteredDocs[0] ?? null);
+      return;
+    }
+
+    if (selectedDoc && filteredDocs.length > 0 && !filteredDocs.some((doc) => doc.id === selectedDoc.id)) {
+      setSelectedDoc(filteredDocs[0] ?? null);
+    }
+  }, [allDocs, filteredDocs, selectedDoc]);
+
+  useEffect(() => {
+    if (selectedCategory && !categories.includes(selectedCategory)) {
+      setSelectedCategory(null);
+    }
+  }, [categories, selectedCategory]);
 
   const handleSave = () => {
     if (!editingDoc?.title || !editingDoc?.slug || !editingDoc?.category || !editingDoc?.content) {
       toast({ title: "Please fill in all required fields", variant: "destructive" });
       return;
     }
+
     if (editingDoc.id) {
       updateMutation.mutate(editingDoc as Partial<Doc> & { id: string });
     } else {
@@ -114,7 +201,14 @@ export default function DocsPage() {
   };
 
   const openCreate = () => {
-    setEditingDoc({ title: "", slug: "", category: DOC_CATEGORIES[0], content: "", isPublished: true, sortOrder: 0 });
+    setEditingDoc({
+      title: "",
+      slug: "",
+      category: categoryOptions[0] ?? "Getting Started",
+      content: "",
+      isPublished: true,
+      sortOrder: allDocs.length + 1,
+    });
     setShowPreview(false);
     setSheetOpen(true);
   };
@@ -128,7 +222,7 @@ export default function DocsPage() {
   if (isLoading) {
     return (
       <AdminSidebar>
-        <div className="flex items-center justify-center h-64">
+        <div className="flex h-64 items-center justify-center">
           <LoadingSpinner />
         </div>
       </AdminSidebar>
@@ -137,111 +231,208 @@ export default function DocsPage() {
 
   return (
     <AdminSidebar>
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-heading font-bold" data-testid="text-page-title">Documentation Library</h1>
-          <Button onClick={openCreate} data-testid="button-create-doc">
-            <Plus className="w-4 h-4 mr-2" />
-            New Document
-          </Button>
-        </div>
-
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search documentation..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-            data-testid="input-search-docs"
-          />
-        </div>
-
-        <div className="flex gap-6">
-          <div className="w-56 shrink-0 space-y-1">
-            <button
-              onClick={() => setSelectedCategory(null)}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm ${!selectedCategory ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-              data-testid="button-category-all"
-            >
-              All Documents
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => { setSelectedCategory(cat); setSelectedDoc(null); }}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm ${selectedCategory === cat ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-                data-testid={`button-category-${cat.toLowerCase().replace(/\s+/g, "-")}`}
-              >
-                {cat}
-              </button>
-            ))}
+      <div className="flex h-[calc(100vh-4rem)] flex-col gap-6 p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-heading font-bold" data-testid="text-page-title">
+              Documentation Library
+            </h1>
+            <p className="max-w-3xl text-sm text-muted-foreground">
+              Internal operating documentation for the CMS, content workflows, infrastructure, deployment, and system architecture.
+            </p>
           </div>
 
-          <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => syncMutation.mutate()}
+              disabled={syncMutation.isPending}
+              data-testid="button-sync-system-docs"
+            >
+              {syncMutation.isPending ? (
+                <LoadingSpinner />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
+              Sync System Docs
+            </Button>
+            <Button onClick={openCreate} data-testid="button-create-doc">
+              <Plus className="mr-2 h-4 w-4" />
+              New Document
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardContent className="py-4">
+              <div className="text-sm text-muted-foreground">Published library</div>
+              <div className="mt-1 text-2xl font-semibold" data-testid="text-doc-count">{allDocs.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="py-4">
+              <div className="text-sm text-muted-foreground">Categories</div>
+              <div className="mt-1 text-2xl font-semibold">{categories.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="py-4">
+              <div className="text-sm text-muted-foreground">Visible results</div>
+              <div className="mt-1 text-2xl font-semibold">{filteredDocs.length}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid min-h-0 flex-1 gap-6 xl:grid-cols-[260px_340px_minmax(0,1fr)]">
+          <Card className="min-h-0">
+            <CardHeader className="space-y-3">
+              <CardTitle className="text-base">Browse</CardTitle>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search docs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-search-docs"
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="min-h-0 pb-4">
+              <ScrollArea className="h-[calc(100vh-24rem)] pr-3">
+                <div className="space-y-1">
+                  <button
+                    onClick={() => setSelectedCategory(null)}
+                    className={`w-full rounded-md px-3 py-2 text-left text-sm ${!selectedCategory ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                    data-testid="button-category-all"
+                  >
+                    All Documents
+                  </button>
+                  {categories.map((category) => {
+                    const count = allDocs.filter((doc) => doc.category === category).length;
+                    return (
+                      <button
+                        key={category}
+                        onClick={() => setSelectedCategory(category)}
+                        className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm ${selectedCategory === category ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                        data-testid={`button-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
+                      >
+                        <span>{category}</span>
+                        <span className="text-xs opacity-80">{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          <Card className="min-h-0">
+            <CardHeader>
+              <CardTitle className="text-base">Library</CardTitle>
+            </CardHeader>
+            <CardContent className="min-h-0 pb-4">
+              <ScrollArea className="h-[calc(100vh-22rem)] pr-3">
+                <div className="space-y-3">
+                  {filteredDocs.length === 0 ? (
+                    <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
+                      <BookOpenText className="mx-auto mb-3 h-10 w-10 opacity-50" />
+                      <p>No documentation found yet.</p>
+                      <p className="mt-1">Use “Sync System Docs” to import the repo documentation into the admin library.</p>
+                    </div>
+                  ) : (
+                    filteredDocs.map((doc) => (
+                      <button
+                        key={doc.id}
+                        type="button"
+                        className={`w-full rounded-xl border p-4 text-left transition-colors ${selectedDoc?.id === doc.id ? "border-primary bg-primary/5" : "hover:border-primary/40 hover:bg-muted/50"}`}
+                        onClick={() => setSelectedDoc(doc)}
+                        data-testid={`card-doc-${doc.id}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-2">
+                            <div className="font-medium leading-snug">{doc.title}</div>
+                            <div className="flex flex-wrap gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {doc.category}
+                              </Badge>
+                              {!doc.isPublished && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Draft
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm leading-6 text-muted-foreground">
+                              {markdownToExcerpt(doc.content)}
+                            </p>
+                          </div>
+                          <FileText className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          <Card className="min-h-0">
             {selectedDoc ? (
-              <Card>
-                <CardHeader className="flex flex-row items-start justify-between">
-                  <div>
-                    <CardTitle className="font-heading" data-testid="text-doc-title">{selectedDoc.title}</CardTitle>
-                    <div className="flex gap-2 mt-2">
-                      <Badge variant="outline">{selectedDoc.category}</Badge>
-                      {selectedDoc.isPublished ? (
-                        <Badge data-testid="badge-published">Published</Badge>
-                      ) : (
-                        <Badge variant="secondary" data-testid="badge-draft">Draft</Badge>
-                      )}
+              <>
+                <CardHeader className="border-b">
+                  <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <CardTitle className="font-heading text-xl" data-testid="text-doc-title">
+                          {selectedDoc.title}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          System and editorial documentation for the TCK Wellness platform.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline">{selectedDoc.category}</Badge>
+                        {selectedDoc.isPublished ? (
+                          <Badge data-testid="badge-published">Published</Badge>
+                        ) : (
+                          <Badge variant="secondary" data-testid="badge-draft">
+                            Draft
+                          </Badge>
+                        )}
+                        <Badge variant="secondary">Slug: {selectedDoc.slug}</Badge>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" onClick={() => openEdit(selectedDoc)} data-testid="button-edit-doc">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteMutation.mutate(selectedDoc.id)}
+                        data-testid="button-delete-doc"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => openEdit(selectedDoc)} data-testid="button-edit-doc">
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => deleteMutation.mutate(selectedDoc.id)} data-testid="button-delete-doc">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedDoc(null)}>Back</Button>
-                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap" data-testid="text-doc-content">
-                    {selectedDoc.content}
-                  </div>
+                <CardContent className="min-h-0 pb-4 pt-6">
+                  <ScrollArea className="h-[calc(100vh-22rem)] pr-4">
+                    <MarkdownDocument content={selectedDoc.content} data-testid="text-doc-content" />
+                  </ScrollArea>
                 </CardContent>
-              </Card>
+              </>
             ) : (
-              <div className="grid gap-3">
-                {filteredDocs.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-8 text-center text-muted-foreground">
-                      <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No documents found</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  filteredDocs.map((doc) => (
-                    <Card
-                      key={doc.id}
-                      className="cursor-pointer hover:border-primary/50 transition-colors"
-                      onClick={() => setSelectedDoc(doc)}
-                      data-testid={`card-doc-${doc.id}`}
-                    >
-                      <CardContent className="py-4 flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium">{doc.title}</h3>
-                          <div className="flex gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">{doc.category}</Badge>
-                            {!doc.isPublished && <Badge variant="secondary" className="text-xs">Draft</Badge>}
-                          </div>
-                        </div>
-                        <FileText className="w-5 h-5 text-muted-foreground" />
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
+              <CardContent className="flex h-full items-center justify-center p-8 text-center text-sm text-muted-foreground">
+                <div className="space-y-3">
+                  <BookOpenText className="mx-auto h-12 w-12 opacity-50" />
+                  <p>Select a document to read it here.</p>
+                </div>
+              </CardContent>
             )}
-          </div>
+          </Card>
         </div>
       </div>
 
@@ -279,14 +470,16 @@ export default function DocsPage() {
                     <Label>Category</Label>
                     <Select
                       value={editingDoc.category || ""}
-                      onValueChange={(v) => setEditingDoc({ ...editingDoc, category: v })}
+                      onValueChange={(value) => setEditingDoc({ ...editingDoc, category: value })}
                     >
                       <SelectTrigger data-testid="select-doc-category">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {DOC_CATEGORIES.map((cat) => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        {categoryOptions.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -295,7 +488,7 @@ export default function DocsPage() {
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={editingDoc.isPublished ?? true}
-                        onCheckedChange={(v) => setEditingDoc({ ...editingDoc, isPublished: v })}
+                        onCheckedChange={(value) => setEditingDoc({ ...editingDoc, isPublished: value })}
                         data-testid="switch-doc-published"
                       />
                       <Label>{editingDoc.isPublished ? "Published" : "Draft"}</Label>
@@ -305,7 +498,12 @@ export default function DocsPage() {
                       <Input
                         type="number"
                         value={editingDoc.sortOrder || 0}
-                        onChange={(e) => setEditingDoc({ ...editingDoc, sortOrder: parseInt(e.target.value) || 0 })}
+                        onChange={(e) =>
+                          setEditingDoc({
+                            ...editingDoc,
+                            sortOrder: Number.parseInt(e.target.value, 10) || 0,
+                          })
+                        }
                         className="w-20"
                         data-testid="input-doc-sort"
                       />
@@ -313,21 +511,31 @@ export default function DocsPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="mb-2 flex items-center justify-between">
                     <Label>Content (Markdown)</Label>
                     <Button variant="ghost" size="sm" onClick={() => setShowPreview(!showPreview)}>
-                      {showPreview ? <><EyeOff className="w-4 h-4 mr-1" /> Edit</> : <><Eye className="w-4 h-4 mr-1" /> Preview</>}
+                      {showPreview ? (
+                        <>
+                          <EyeOff className="mr-1 h-4 w-4" />
+                          Edit
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="mr-1 h-4 w-4" />
+                          Preview
+                        </>
+                      )}
                     </Button>
                   </div>
                   {showPreview ? (
-                    <div className="prose prose-sm max-w-none dark:prose-invert border rounded-md p-4 min-h-[300px] whitespace-pre-wrap">
-                      {editingDoc.content}
+                    <div className="min-h-[300px] rounded-md border p-4">
+                      <MarkdownDocument content={editingDoc.content || ""} />
                     </div>
                   ) : (
                     <Textarea
                       value={editingDoc.content || ""}
                       onChange={(e) => setEditingDoc({ ...editingDoc, content: e.target.value })}
-                      rows={15}
+                      rows={18}
                       className="font-mono text-sm"
                       data-testid="textarea-doc-content"
                     />
@@ -337,7 +545,9 @@ export default function DocsPage() {
             )}
           </SheetBody>
           <SheetFooter>
-            <Button variant="outline" onClick={() => setSheetOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setSheetOpen(false)}>
+              Cancel
+            </Button>
             <Button
               onClick={handleSave}
               disabled={createMutation.isPending || updateMutation.isPending}
