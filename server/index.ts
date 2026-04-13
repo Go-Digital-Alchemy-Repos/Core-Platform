@@ -187,17 +187,8 @@ app.use((req, res, next) => {
   const { initSearchIndex } = await import("./lib/search-index");
   await initSearchIndex();
 
-  const { ensureSystemCmsPages } = await import("./services/system-cms-pages.service");
-  await ensureSystemCmsPages();
-
-  const { ensureSystemCmsMenus } = await import("./services/system-cms-menus.service");
-  await ensureSystemCmsMenus();
-
-  const { ensureSystemDocs } = await import("./services/system-docs.service");
-  await ensureSystemDocs({ refreshExisting: false });
-
-  const { seedEmailTemplates } = await import("./scripts/seed-email-templates");
-  await seedEmailTemplates(false);
+  const { runSystemBootstrap } = await import("./services/system-bootstrap.service");
+  await runSystemBootstrap();
 
   await registerRoutes(httpServer, app);
 

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, type CSSProperties, type ReactElement } from "react";
+import { useState, useMemo, useEffect, type ReactElement } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useForm } from "react-hook-form";
@@ -50,6 +50,18 @@ import {
   normalizeHexColor,
 } from "./section-style";
 import { SectionHeading } from "./section-heading";
+import {
+  arr,
+  colorStyle,
+  getMobileImageStyles,
+  getVimeoId,
+  getYouTubeId,
+  IMAGE_WIDTH_MAP,
+  num,
+  resolveCmsAssetUrl,
+  SPACING_MAP,
+  str,
+} from "./block-renderer.shared";
 
 const LUCIDE_MAP: Record<string, React.ElementType> = {
   Globe, Heart, Users, MapPin, Mail, Phone, Star, CheckCircle,
@@ -67,74 +79,6 @@ const LUCIDE_MAP: Record<string, React.ElementType> = {
 function LucideIcon({ name, className }: { name: string; className?: string }) {
   const Icon = LUCIDE_MAP[name] ?? Globe;
   return <Icon className={className} />;
-}
-
-function str(v: unknown): string {
-  return typeof v === "string" ? v : "";
-}
-function num(v: unknown, fallback = 3): number {
-  return typeof v === "number" ? v : fallback;
-}
-function arr<T>(v: unknown): T[] {
-  return Array.isArray(v) ? (v as T[]) : [];
-}
-
-function colorStyle(value: unknown, fallback?: string) {
-  const normalized = normalizeHexColor(str(value)) || fallback || "";
-  return normalized ? { color: normalized } : undefined;
-}
-
-const MOBILE_IMAGE_HEIGHT_MAP: Record<string, string> = {
-  auto: "auto",
-  sm: "240px",
-  md: "320px",
-  lg: "420px",
-  xl: "520px",
-};
-
-function getMobileImageStyles(props: Record<string, unknown>): CSSProperties {
-  const fit = str(props.mobileImageFit) || "cover";
-  const heightKey = str(props.mobileImageHeight) || "auto";
-  const height = MOBILE_IMAGE_HEIGHT_MAP[heightKey] ?? MOBILE_IMAGE_HEIGHT_MAP.auto;
-  const positionX = Math.max(0, Math.min(100, num(props.mobileImagePositionX, 50)));
-  const positionY = Math.max(0, Math.min(100, num(props.mobileImagePositionY, 50)));
-
-  return {
-    ["--mobile-image-fit" as string]: fit,
-    ["--mobile-image-height" as string]: height,
-    ["--mobile-image-position" as string]: `${positionX}% ${positionY}%`,
-  };
-}
-
-function getYouTubeId(url: string): string | null {
-  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-  return m ? m[1] : null;
-}
-function getVimeoId(url: string): string | null {
-  const m = url.match(/vimeo\.com\/(\d+)/);
-  return m ? m[1] : null;
-}
-
-const SPACING_MAP: Record<string, string> = {
-  xs: "h-4",
-  sm: "h-8",
-  md: "h-16",
-  lg: "h-24",
-  xl: "h-32",
-};
-
-const IMAGE_WIDTH_MAP: Record<string, string> = {
-  full: "w-full",
-  contained: "max-w-4xl mx-auto",
-  narrow: "max-w-2xl mx-auto",
-};
-
-const LEGACY_CMS_ASSET_MAP: Record<string, string> = {
-  "/images/hero-therapy-session.png": "/images/hero-therapy-session-1920w.webp",
-};
-
-function resolveCmsAssetUrl(url: string): string {
-  return LEGACY_CMS_ASSET_MAP[url] ?? url;
 }
 
 function HeroBlock({ props }: { props: Record<string, unknown> }) {

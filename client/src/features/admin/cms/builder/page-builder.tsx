@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -101,7 +102,7 @@ import {
   hasSectionStyleConfig,
   SectionStyleWrapper,
 } from "./section-style";
-import { PublicBlockRenderer, FULL_WIDTH_BLOCK_TYPES } from "@/features/public/public-block-renderer";
+import { PublicBlockRenderer, PublicPageRenderer, FULL_WIDTH_BLOCK_TYPES } from "@/features/public/public-block-renderer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
@@ -187,6 +188,14 @@ interface VisualCanvasProps {
   onPreviewDeviceChange: (device: "desktop" | "tablet" | "mobile") => void;
 }
 
+interface FrontendPreviewDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  blocks: BlockInstance[];
+  previewDevice: "desktop" | "tablet" | "mobile";
+  onPreviewDeviceChange: (device: "desktop" | "tablet" | "mobile") => void;
+}
+
 const PREVIEW_DEVICE_LABELS = {
   desktop: "Desktop",
   tablet: "Tablet",
@@ -198,6 +207,87 @@ const PREVIEW_DEVICE_FRAME_CLASSES = {
   tablet: "w-full max-w-[834px]",
   mobile: "w-full max-w-[430px]",
 } as const;
+
+function FrontendPreviewDialog({
+  open,
+  onOpenChange,
+  blocks,
+  previewDevice,
+  onPreviewDeviceChange,
+}: FrontendPreviewDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex h-[calc(100vh-2rem)] w-[min(1440px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] flex-col overflow-hidden p-0">
+        <DialogHeader className="shrink-0 border-b border-border/60 px-6 py-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-1">
+              <DialogTitle className="flex items-center gap-2">
+                <Monitor className="h-4 w-4 text-primary" />
+                Frontend Preview
+              </DialogTitle>
+              <DialogDescription>
+                Review the current page content with the published renderer only, without builder chrome, before you publish.
+              </DialogDescription>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="gap-1">
+                <Monitor className="h-3 w-3" />
+                {PREVIEW_DEVICE_LABELS[previewDevice]}
+              </Badge>
+              <div className="flex items-center rounded-lg border border-border/70 bg-background p-1">
+                <Button
+                  type="button"
+                  variant={previewDevice === "desktop" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => onPreviewDeviceChange("desktop")}
+                  data-testid="button-frontend-preview-desktop"
+                  title="Desktop preview"
+                >
+                  <Monitor className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant={previewDevice === "tablet" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => onPreviewDeviceChange("tablet")}
+                  data-testid="button-frontend-preview-tablet"
+                  title="Tablet preview"
+                >
+                  <Tablet className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant={previewDevice === "mobile" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => onPreviewDeviceChange("mobile")}
+                  data-testid="button-frontend-preview-mobile"
+                  title="Mobile preview"
+                >
+                  <Smartphone className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogHeader>
+        <div className="min-h-0 flex-1 bg-[radial-gradient(circle_at_top,_rgba(137,205,161,0.10),_transparent_45%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,250,252,0.98))] p-4 sm:p-6">
+          <ScrollArea className="h-full">
+            <div
+              className={cn(
+                "mx-auto overflow-hidden rounded-[28px] border border-border/60 bg-background shadow-[0_20px_70px_rgba(15,23,42,0.08)] transition-[max-width] duration-200",
+                PREVIEW_DEVICE_FRAME_CLASSES[previewDevice],
+              )}
+            >
+              <PublicPageRenderer blocks={blocks} />
+            </div>
+          </ScrollArea>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function groupBlocksByCategory(blocks: BlockDef[]): { category: BlockCategory; label: string; items: BlockDef[] }[] {
   const grouped = new Map<BlockCategory, BlockDef[]>();
@@ -737,6 +827,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [structurePanelOpen, setStructurePanelOpen] = useState(true);
   const [advancedInspectorOpen, setAdvancedInspectorOpen] = useState(true);
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [frontendPreviewOpen, setFrontendPreviewOpen] = useState(false);
   const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
   const blockRefs = useRef(new Map<string, HTMLDivElement | null>());
 
@@ -1293,6 +1384,15 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             <Settings2 className="mr-1.5 h-4 w-4" />
             {advancedInspectorOpen ? "Hide Inspector" : "Show Inspector"}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFrontendPreviewOpen(true)}
+            data-testid="button-open-frontend-preview"
+          >
+            <Monitor className="mr-1.5 h-4 w-4" />
+            Frontend Preview
+          </Button>
           <Dialog
             open={addDialogOpen}
             onOpenChange={(open) => {
@@ -1477,6 +1577,14 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      <FrontendPreviewDialog
+        open={frontendPreviewOpen}
+        onOpenChange={setFrontendPreviewOpen}
+        blocks={blocks}
+        previewDevice={previewDevice}
+        onPreviewDeviceChange={setPreviewDevice}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "../db";
 import { emailTemplates, type EmailTemplate } from "@shared/schema";
 
@@ -12,7 +12,7 @@ export class EmailTemplateStorage {
   }
 
   async getAllTemplates(): Promise<EmailTemplate[]> {
-    return db.select().from(emailTemplates);
+    return db.select().from(emailTemplates).orderBy(asc(emailTemplates.name));
   }
 
   async updateTemplate(
