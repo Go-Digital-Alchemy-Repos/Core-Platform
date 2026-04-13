@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -439,30 +440,56 @@ function FaqBlock({ props }: { props: Record<string, unknown> }) {
 
 function TestimonialsBlock({ props }: { props: Record<string, unknown> }) {
   const items = arr<{ quote: string; name: string; role: string; location: string }>(props.items);
+  const shouldCarousel = items.length > 2;
+
+  const renderCard = (item: { quote: string; name: string; role: string; location: string }, i: number) => (
+    <Card key={i} className="bg-muted/30 h-full">
+      <CardContent className="pt-6">
+        <Quote className="h-5 w-5 text-accent mb-3" />
+        <p className="text-sm leading-relaxed mb-4 italic">"{item.quote}"</p>
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
+            <span className="text-xs font-semibold text-accent">{item.name?.[0] ?? "?"}</span>
+          </div>
+          <div>
+            <p className="text-sm font-semibold">{item.name}</p>
+            <p className="text-xs text-muted-foreground">{item.role}{item.location ? ` · ${item.location}` : ""}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="py-4">
       <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {items.length === 0 ? (
-          <p className="text-muted-foreground">Add testimonials to display here.</p>
-        ) : items.map((item, i) => (
-          <Card key={i} className="bg-muted/30">
-            <CardContent className="pt-6">
-              <Quote className="h-5 w-5 text-accent mb-3" />
-              <p className="text-sm leading-relaxed mb-4 italic">"{item.quote}"</p>
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
-                  <span className="text-xs font-semibold text-accent">{item.name?.[0] ?? "?"}</span>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">{item.name}</p>
-                  <p className="text-xs text-muted-foreground">{item.role}{item.location ? ` · ${item.location}` : ""}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {items.length === 0 ? (
+        <p className="text-muted-foreground">Add testimonials to display here.</p>
+      ) : shouldCarousel ? (
+        <div className="px-10 md:px-12">
+          <Carousel
+            opts={{
+              align: "start",
+              loop: false,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-6">
+              {items.map((item, i) => (
+                <CarouselItem key={i} className="pl-6 basis-full md:basis-1/2">
+                  {renderCard(item, i)}
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="left-0 h-9 w-9 border-border/70 bg-background/95" />
+            <CarouselNext className="right-0 h-9 w-9 border-border/70 bg-background/95" />
+          </Carousel>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {items.map((item, i) => renderCard(item, i))}
+        </div>
+      )}
     </div>
   );
 }
