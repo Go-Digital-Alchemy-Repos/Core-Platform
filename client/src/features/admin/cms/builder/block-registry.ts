@@ -386,7 +386,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     category: "content",
     defaultProps: {
       heading: "About Our Mission",
-      body: "We provide access to culturally informed mental health professionals who understand what it means to grow up between worlds.",
+      body: "<p>We provide access to culturally informed mental health professionals who understand what it means to grow up between worlds.</p>",
       imageUrl: "",
       imageAlt: "About TCK Wellness",
       imageCaption: "",
@@ -394,7 +394,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     },
     propDefs: [
       { key: "heading", label: "Heading", type: "text", placeholder: "Section heading" },
-      { key: "body", label: "Body Text", type: "textarea", placeholder: "Main text content" },
+      { key: "body", label: "Body Text", type: "richtext", placeholder: "Main text content" },
       { key: "imageUrl", label: "Image", type: "image-url", placeholder: "Upload or select image" },
       { key: "imageAlt", label: "Image Alt Text", type: "text", placeholder: "Descriptive alt text" },
       { key: "imageCaption", label: "Image Caption", type: "text", placeholder: "Optional caption" },
@@ -411,13 +411,13 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       title: "Compare Your Options",
       subtitle: "",
       leftHeading: "Column One",
-      leftBody: "Use this space for supporting copy before the list.",
+      leftBody: "<p>Use this space for supporting copy before the list.</p>",
       leftItems: [
         { text: "Bullet point one" },
         { text: "Bullet point two" },
       ],
       rightHeading: "Column Two",
-      rightBody: "Use this column for a second list or additional detail.",
+      rightBody: "<p>Use this column for a second list or additional detail.</p>",
       rightItems: [
         { text: "Bullet point one" },
         { text: "Bullet point two" },
@@ -427,7 +427,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       { key: "title", label: "Section Title", type: "text", placeholder: "Optional section heading" },
       { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Optional supporting description" },
       { key: "leftHeading", label: "Left Column Heading", type: "text", placeholder: "Left column title" },
-      { key: "leftBody", label: "Left Column Body", type: "textarea", placeholder: "Optional supporting text" },
+      { key: "leftBody", label: "Left Column Body", type: "richtext", placeholder: "Optional supporting text" },
       {
         key: "leftItems",
         label: "Left Column Items",
@@ -435,7 +435,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         itemSchema: [{ key: "text", label: "Item Text", type: "text", placeholder: "Bullet point" }],
       },
       { key: "rightHeading", label: "Right Column Heading", type: "text", placeholder: "Right column title" },
-      { key: "rightBody", label: "Right Column Body", type: "textarea", placeholder: "Optional supporting text" },
+      { key: "rightBody", label: "Right Column Body", type: "richtext", placeholder: "Optional supporting text" },
       {
         key: "rightItems",
         label: "Right Column Items",

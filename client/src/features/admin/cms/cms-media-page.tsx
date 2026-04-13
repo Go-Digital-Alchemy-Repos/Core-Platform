@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Image, Search, Trash2, Copy, Upload } from "lucide-react";
+import { Image, Search, Trash2, Copy, Upload, Save } from "lucide-react";
 import { CmsImageUpload } from "./components/cms-image-upload";
 import type { CmsMediaAsset } from "@shared/schema";
 import { format } from "date-fns";
@@ -28,6 +29,33 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { apiRequest } from "@/lib/queryClient";
+import { Textarea } from "@/components/ui/textarea";
+
+type MediaMetadataForm = {
+  originalName: string;
+  title: string;
+  alt: string;
+  caption: string;
+  description: string;
+  seoTitle: string;
+  seoDescription: string;
+  ogTitle: string;
+  ogDescription: string;
+};
+
+function buildMetadataForm(asset: CmsMediaAsset | null): MediaMetadataForm {
+  return {
+    originalName: asset?.originalName ?? "",
+    title: asset?.title ?? "",
+    alt: asset?.alt ?? "",
+    caption: asset?.caption ?? "",
+    description: asset?.description ?? "",
+    seoTitle: asset?.seoTitle ?? "",
+    seoDescription: asset?.seoDescription ?? "",
+    ogTitle: asset?.ogTitle ?? "",
+    ogDescription: asset?.ogDescription ?? "",
+  };
+}
 
 export default function CmsMediaPage() {
   const { toast } = useToast();
@@ -37,28 +65,50 @@ export default function CmsMediaPage() {
   const [pendingUploadUrl, setPendingUploadUrl] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<CmsMediaAsset | null>(null);
+  const [metadataForm, setMetadataForm] = useState<MediaMetadataForm>(buildMetadataForm(null));
 
   const { data: assets = [], isLoading } = useQuery<CmsMediaAsset[]>({
     queryKey: ["/api/admin/cms/media"],
   });
 
+  useEffect(() => {
+    setMetadataForm(buildMetadataForm(selectedAsset));
+  }, [selectedAsset]);
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       await apiRequest("DELETE", `/api/admin/cms/media/${id}`);
     },
-    onSuccess: () => {
+    onSuccess: (_data, deletedId) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/media"] });
       toast({ title: "Image deleted" });
       setDeletingId(null);
-      if (selectedAsset?.id === deletingId) setSelectedAsset(null);
+      setSelectedAsset((current) => (current?.id === deletedId ? null : current));
     },
     onError: () => toast({ title: "Failed to delete image", variant: "destructive" }),
+  });
+
+  const metadataMutation = useMutation({
+    mutationFn: async (payload: { id: string; data: MediaMetadataForm }) => {
+      const response = await apiRequest("PATCH", `/api/admin/cms/media/${payload.id}`, payload.data);
+      return response.json() as Promise<CmsMediaAsset>;
+    },
+    onSuccess: (asset) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/media"] });
+      setSelectedAsset(asset);
+      setMetadataForm(buildMetadataForm(asset));
+      toast({ title: "Image details saved" });
+    },
+    onError: () => toast({ title: "Failed to save image details", variant: "destructive" }),
   });
 
   const filteredAssets = assets.filter((a) =>
     !search ||
     a.originalName.toLowerCase().includes(search.toLowerCase()) ||
-    (a.alt ?? "").toLowerCase().includes(search.toLowerCase())
+    (a.title ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    (a.alt ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    (a.caption ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    (a.description ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
   const formatBytes = (bytes: number) => {
@@ -72,6 +122,14 @@ export default function CmsMediaPage() {
       toast({ title: "URL copied to clipboard" });
     });
   };
+
+  const updateMetadataField = (key: keyof MediaMetadataForm, value: string) => {
+    setMetadataForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const hasMetadataChanges = selectedAsset
+    ? JSON.stringify(metadataForm) !== JSON.stringify(buildMetadataForm(selectedAsset))
+    : false;
 
   return (
     <AdminSidebar>
@@ -100,7 +158,7 @@ export default function CmsMediaPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search images by name or alt text…"
+            placeholder="Search images by name, title, alt text, or description…"
             className="pl-9"
             data-testid="input-media-search"
           />
@@ -194,7 +252,7 @@ export default function CmsMediaPage() {
 
       <Dialog open={!!selectedAsset} onOpenChange={(open) => !open && setSelectedAsset(null)}>
         {selectedAsset && (
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-3xl max-h-[92vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle className="truncate">{selectedAsset.originalName}</DialogTitle>
               <DialogDescription>
@@ -204,38 +262,163 @@ export default function CmsMediaPage() {
                 )}
               </DialogDescription>
             </DialogHeader>
-            <img
-              src={selectedAsset.url}
-              alt={selectedAsset.alt ?? selectedAsset.originalName}
-              className="w-full rounded-lg border object-cover max-h-72"
-              data-testid="img-asset-preview"
-            />
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/40 text-xs font-mono break-all">
-                <span className="flex-1 text-muted-foreground line-clamp-2">{selectedAsset.url}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 flex-shrink-0"
-                  onClick={() => copyUrl(selectedAsset.url)}
-                  data-testid="button-copy-url"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                </Button>
+            <div className="overflow-y-auto pr-1 space-y-5">
+              <img
+                src={selectedAsset.url}
+                alt={selectedAsset.alt ?? selectedAsset.originalName}
+                className="w-full rounded-lg border object-cover max-h-72"
+                data-testid="img-asset-preview"
+              />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/40 text-xs font-mono break-all">
+                  <span className="flex-1 text-muted-foreground line-clamp-2">{selectedAsset.url}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 flex-shrink-0"
+                    onClick={() => copyUrl(selectedAsset.url)}
+                    data-testid="button-copy-url"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
-              <div className="flex justify-between items-center pt-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => copyUrl(selectedAsset.url)}
-                  data-testid="button-copy-url-main"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  Copy URL
-                </Button>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="media-original-name">File Name</Label>
+                  <Input
+                    id="media-original-name"
+                    value={metadataForm.originalName}
+                    onChange={(e) => updateMetadataField("originalName", e.target.value)}
+                    placeholder="hero-image.webp"
+                    data-testid="input-media-original-name"
+                  />
+                  <p className="text-xs text-muted-foreground">Updates the library label without changing the current file URL.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="media-title">Title</Label>
+                  <Input
+                    id="media-title"
+                    value={metadataForm.title}
+                    onChange={(e) => updateMetadataField("title", e.target.value)}
+                    placeholder="Human-friendly media title"
+                    data-testid="input-media-title"
+                  />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="media-alt">Alt Text</Label>
+                  <Input
+                    id="media-alt"
+                    value={metadataForm.alt}
+                    onChange={(e) => updateMetadataField("alt", e.target.value)}
+                    placeholder="Describe the image for accessibility and SEO"
+                    data-testid="input-media-alt"
+                  />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="media-caption">Caption</Label>
+                  <Textarea
+                    id="media-caption"
+                    value={metadataForm.caption}
+                    onChange={(e) => updateMetadataField("caption", e.target.value)}
+                    placeholder="Optional caption shown alongside the image"
+                    rows={2}
+                    data-testid="textarea-media-caption"
+                  />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="media-description">Description</Label>
+                  <Textarea
+                    id="media-description"
+                    value={metadataForm.description}
+                    onChange={(e) => updateMetadataField("description", e.target.value)}
+                    placeholder="Internal notes or fuller editorial context"
+                    rows={3}
+                    data-testid="textarea-media-description"
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-xl border p-4 space-y-4 bg-muted/10">
+                <div>
+                  <h3 className="text-sm font-semibold">SEO & Social Metadata</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Use these fields when an image needs its own editorial metadata for search previews or social sharing workflows.
+                  </p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="media-seo-title">SEO Title</Label>
+                    <Input
+                      id="media-seo-title"
+                      value={metadataForm.seoTitle}
+                      onChange={(e) => updateMetadataField("seoTitle", e.target.value)}
+                      placeholder="Search-friendly image title"
+                      data-testid="input-media-seo-title"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="media-og-title">Open Graph Title</Label>
+                    <Input
+                      id="media-og-title"
+                      value={metadataForm.ogTitle}
+                      onChange={(e) => updateMetadataField("ogTitle", e.target.value)}
+                      placeholder="Social sharing title"
+                      data-testid="input-media-og-title"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="media-seo-description">SEO Description</Label>
+                    <Textarea
+                      id="media-seo-description"
+                      value={metadataForm.seoDescription}
+                      onChange={(e) => updateMetadataField("seoDescription", e.target.value)}
+                      placeholder="Short metadata description for search contexts"
+                      rows={3}
+                      data-testid="textarea-media-seo-description"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="media-og-description">Open Graph Description</Label>
+                    <Textarea
+                      id="media-og-description"
+                      value={metadataForm.ogDescription}
+                      onChange={(e) => updateMetadataField("ogDescription", e.target.value)}
+                      placeholder="Short description for social previews"
+                      rows={3}
+                      data-testid="textarea-media-og-description"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center pt-1 gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => copyUrl(selectedAsset.url)}
+                    data-testid="button-copy-url-main"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy URL
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => metadataMutation.mutate({ id: selectedAsset.id, data: metadataForm })}
+                    disabled={!hasMetadataChanges || metadataMutation.isPending}
+                    data-testid="button-save-media-details"
+                  >
+                    <Save className="h-3.5 w-3.5" />
+                    {metadataMutation.isPending ? "Saving..." : "Save Details"}
+                  </Button>
+                </div>
                 <Button
                   type="button"
                   variant="destructive"

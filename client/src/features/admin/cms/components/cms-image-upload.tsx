@@ -227,7 +227,11 @@ export function CmsImageUpload({
         type="file"
         accept="image/png,image/jpeg,image/webp,image/gif"
         className="hidden"
-        onChange={(e) => handleFile(e.target.files?.[0])}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          handleFile(file);
+          e.target.value = "";
+        }}
         data-testid={testId ? `${testId}-file-input` : "cms-image-file-input"}
       />
 

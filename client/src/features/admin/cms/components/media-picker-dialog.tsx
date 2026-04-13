@@ -29,7 +29,12 @@ export function MediaPickerDialog({ open, onOpenChange, onSelect }: MediaPickerD
   });
 
   const filtered = assets.filter((a) =>
-    !search || a.originalName.toLowerCase().includes(search.toLowerCase()) || (a.alt ?? "").toLowerCase().includes(search.toLowerCase())
+    !search ||
+    a.originalName.toLowerCase().includes(search.toLowerCase()) ||
+    (a.title ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    (a.alt ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    (a.caption ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    (a.description ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
   const formatBytes = (bytes: number) => {

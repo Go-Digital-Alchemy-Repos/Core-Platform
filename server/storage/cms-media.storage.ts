@@ -2,6 +2,11 @@ import { db } from "../db";
 import { cmsMedia, type CmsMediaAsset, type InsertCmsMedia } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
+type CmsMediaMetadataUpdate = Partial<Pick<
+  CmsMediaAsset,
+  "originalName" | "title" | "alt" | "caption" | "description" | "seoTitle" | "seoDescription" | "ogTitle" | "ogDescription"
+>>;
+
 export class CmsMediaStorage {
   async getAllMedia(): Promise<CmsMediaAsset[]> {
     return db.select().from(cmsMedia).orderBy(desc(cmsMedia.createdAt));
@@ -21,6 +26,15 @@ export class CmsMediaStorage {
     const [asset] = await db
       .update(cmsMedia)
       .set({ alt })
+      .where(eq(cmsMedia.id, id))
+      .returning();
+    return asset;
+  }
+
+  async updateMetadata(id: string, data: CmsMediaMetadataUpdate): Promise<CmsMediaAsset | undefined> {
+    const [asset] = await db
+      .update(cmsMedia)
+      .set(data)
       .where(eq(cmsMedia.id, id))
       .returning();
     return asset;

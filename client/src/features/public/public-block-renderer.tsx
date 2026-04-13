@@ -208,7 +208,12 @@ function TwoColumnTextBlock({ props }: { props: Record<string, unknown> }) {
         {columns.map((column, index) => (
           <div key={index} className="space-y-4">
             {column.heading && <h3 className="text-xl font-heading font-semibold">{column.heading}</h3>}
-            {column.body && <p className="text-muted-foreground leading-relaxed">{column.body}</p>}
+            {column.body && (
+              <div
+                className="prose prose-sm max-w-none text-foreground"
+                dangerouslySetInnerHTML={{ __html: column.body }}
+              />
+            )}
             {column.items.length > 0 && (
               <ul className="space-y-2 pl-5 list-disc text-sm text-muted-foreground">
                 {column.items.map((item, itemIndex) => (
@@ -321,7 +326,12 @@ function TextImageBlock({ props }: { props: Record<string, unknown> }) {
     <div className={`flex flex-col ${imageRight ? "md:flex-row" : "md:flex-row-reverse"} gap-8 items-center py-4`}>
       <div className="flex-1 space-y-3">
         {str(props.heading) && <h2 className="text-2xl font-heading font-bold">{str(props.heading)}</h2>}
-        {str(props.body) && <p className="text-muted-foreground leading-relaxed">{str(props.body)}</p>}
+        {str(props.body) && (
+          <div
+            className="prose prose-sm max-w-none text-foreground"
+            dangerouslySetInnerHTML={{ __html: str(props.body) }}
+          />
+        )}
       </div>
       <div className="flex-1">
         {hasImage ? (

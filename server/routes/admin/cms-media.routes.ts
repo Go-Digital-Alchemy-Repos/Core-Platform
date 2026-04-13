@@ -2,6 +2,7 @@ import { Router } from "express";
 import path from "path";
 import fs from "fs";
 import multer from "multer";
+import { z } from "zod";
 import { asyncHandler } from "../../middleware/error-handler";
 import { storage } from "../../storage";
 import * as r2Service from "../../services/r2.service";
@@ -12,6 +13,17 @@ const router = Router();
 
 const CMS_IMAGE_MIMES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
+const updateMediaSchema = z.object({
+  originalName: z.string().trim().min(1).max(255).optional(),
+  title: z.string().trim().max(255).optional(),
+  alt: z.string().trim().max(255).optional(),
+  caption: z.string().trim().max(500).optional(),
+  description: z.string().trim().max(2000).optional(),
+  seoTitle: z.string().trim().max(255).optional(),
+  seoDescription: z.string().trim().max(320).optional(),
+  ogTitle: z.string().trim().max(255).optional(),
+  ogDescription: z.string().trim().max(320).optional(),
+});
 
 const cmsUpload = multer({
   storage: multer.memoryStorage(),
@@ -33,6 +45,40 @@ function ensureCmsDir() {
   }
 }
 
+function stripExtension(filename: string) {
+  return filename.replace(/\.[^.]+$/, "");
+}
+
+function coerceEmptyToNull(value: string | undefined) {
+  if (value === undefined) return undefined;
+  return value.trim() ? value.trim() : null;
+}
+
+function normalizeDisplayName(name: string, extension: string) {
+  const raw = name.trim().replace(/[\\/:"*?<>|]+/g, " ").replace(/\s+/g, " ");
+  const withoutExtension = stripExtension(raw) || "image";
+  const normalizedExtension = extension.startsWith(".") ? extension : `.${extension}`;
+  return `${withoutExtension}${normalizedExtension}`;
+}
+
+function buildUniqueDisplayName(
+  baseName: string,
+  extension: string,
+  existingNames: Iterable<string>
+) {
+  const normalizedExtension = extension.startsWith(".") ? extension : `.${extension}`;
+  const existing = new Set(Array.from(existingNames, (name) => name.toLowerCase()));
+
+  let suffix = 0;
+  let candidate = `${baseName}${normalizedExtension}`;
+  while (existing.has(candidate.toLowerCase())) {
+    suffix += 1;
+    candidate = `${baseName}${suffix}${normalizedExtension}`;
+  }
+
+  return candidate;
+}
+
 router.post(
   "/upload",
   cmsUpload.single("file"),
@@ -46,7 +92,13 @@ router.post(
 
     const optimized = await optimizeImage(req.file.buffer, req.file.mimetype, CMS_OPTIONS);
     const baseName = safeName.replace(/\.[^.]+$/, "");
-    const filename = `${Date.now()}-${baseName}${optimized.extension}`;
+    const existingAssets = await storage.cmsMedia.getAllMedia();
+    const originalName = buildUniqueDisplayName(
+      baseName,
+      optimized.extension,
+      existingAssets.map((asset) => asset.originalName)
+    );
+    const filename = `${Date.now()}-${stripExtension(originalName)}${optimized.extension}`;
     const r2Key = `cms/media/${filename}`;
 
     const r2Configured = await r2Service.isConfigured();
@@ -65,7 +117,8 @@ router.post(
 
     const asset = await storage.cmsMedia.createMedia({
       filename,
-      originalName: req.file.originalname,
+      originalName,
+      title: stripExtension(originalName),
       url: publicUrl,
       mimeType: optimized.mimeType,
       fileSize: optimized.optimizedSize,
@@ -94,6 +147,52 @@ router.get(
 );
 
 router.patch(
+  "/media/:id",
+  asyncHandler(async (req, res) => {
+    const id = paramString(req.params.id);
+    const asset = await storage.cmsMedia.getMedia(id);
+    if (!asset) return res.status(404).json({ error: "Media not found" });
+
+    const parsed = updateMediaSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid media metadata" });
+    }
+
+    const extension = path.extname(asset.filename) || path.extname(asset.originalName) || ".webp";
+    const existingAssets = await storage.cmsMedia.getAllMedia();
+    const existingNames = existingAssets
+      .filter((item) => item.id !== id)
+      .map((item) => item.originalName);
+
+    const nextOriginalName = parsed.data.originalName
+      ? buildUniqueDisplayName(
+          stripExtension(normalizeDisplayName(parsed.data.originalName, extension)),
+          extension,
+          existingNames
+        )
+      : asset.originalName;
+
+    const updated = await storage.cmsMedia.updateMetadata(id, {
+      originalName: nextOriginalName,
+      title: coerceEmptyToNull(parsed.data.title),
+      alt: coerceEmptyToNull(parsed.data.alt),
+      caption: coerceEmptyToNull(parsed.data.caption),
+      description: coerceEmptyToNull(parsed.data.description),
+      seoTitle: coerceEmptyToNull(parsed.data.seoTitle),
+      seoDescription: coerceEmptyToNull(parsed.data.seoDescription),
+      ogTitle: coerceEmptyToNull(parsed.data.ogTitle),
+      ogDescription: coerceEmptyToNull(parsed.data.ogDescription),
+    });
+
+    if (!updated) return res.status(404).json({ error: "Media not found" });
+    res.json({
+      ...updated,
+      url: (await r2Service.normalizePublicUrl(updated.url)) ?? updated.url,
+    });
+  })
+);
+
+router.patch(
   "/media/:id/alt",
   asyncHandler(async (req, res) => {
     const id = paramString(req.params.id);
@@ -103,7 +202,10 @@ router.patch(
     }
     const asset = await storage.cmsMedia.updateAlt(id, alt);
     if (!asset) return res.status(404).json({ error: "Media not found" });
-    res.json(asset);
+    res.json({
+      ...asset,
+      url: (await r2Service.normalizePublicUrl(asset.url)) ?? asset.url,
+    });
   })
 );
 
