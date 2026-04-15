@@ -53,6 +53,15 @@ import {
   Palette,
   MapPin,
   BarChart3,
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
+  List,
+  ListOrdered,
+  Heading2,
+  Pilcrow,
+  Eraser,
+  Code2,
 } from "lucide-react";
 import {
   BRANDING_FONT_OPTIONS,
@@ -1471,7 +1480,36 @@ function TemplateEditor({
   const { toast } = useToast();
   const [subject, setSubject] = useState(template.subject);
   const [htmlBody, setHtmlBody] = useState(template.htmlBody);
+  const [editorTab, setEditorTab] = useState<"visual" | "html">("visual");
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [showLinkPanel, setShowLinkPanel] = useState(false);
+  const visualEditorRef = useRef<HTMLDivElement | null>(null);
+  const isApplyingExternalHtmlRef = useRef(false);
+
+  useEffect(() => {
+    setSubject(template.subject);
+    setHtmlBody(template.htmlBody);
+    setPreviewHtml(null);
+    setEditorTab("visual");
+    setLinkUrl("");
+    setShowLinkPanel(false);
+  }, [template]);
+
+  useEffect(() => {
+    if (!open) return;
+    const editor = visualEditorRef.current;
+    if (!editor) return;
+
+    const current = editor.innerHTML;
+    if (current === htmlBody) return;
+
+    isApplyingExternalHtmlRef.current = true;
+    editor.innerHTML = htmlBody;
+    requestAnimationFrame(() => {
+      isApplyingExternalHtmlRef.current = false;
+    });
+  }, [htmlBody, open]);
 
   const updateMutation = useMutation({
     mutationFn: async () => {
@@ -1527,6 +1565,49 @@ function TemplateEditor({
     },
   });
 
+  useEffect(() => {
+    if (!open) return;
+    const timeout = window.setTimeout(() => {
+      previewMutation.mutate();
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [open, subject, htmlBody]);
+
+  const syncVisualHtml = () => {
+    const editor = visualEditorRef.current;
+    if (!editor || isApplyingExternalHtmlRef.current) return;
+    setHtmlBody(editor.innerHTML);
+  };
+
+  const focusVisualEditor = () => {
+    visualEditorRef.current?.focus();
+  };
+
+  const applyCommand = (command: string, value?: string) => {
+    focusVisualEditor();
+    if (typeof document === "undefined") return;
+    document.execCommand(command, false, value);
+    syncVisualHtml();
+  };
+
+  const insertVariable = (variable: string) => {
+    focusVisualEditor();
+    if (typeof document === "undefined") return;
+    const token = `{{${variable}}}`;
+    document.execCommand("insertText", false, token);
+    syncVisualHtml();
+  };
+
+  const applyLink = () => {
+    const url = linkUrl.trim();
+    if (!url) return;
+    const normalized = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    applyCommand("createLink", normalized);
+    setShowLinkPanel(false);
+    setLinkUrl("");
+  };
+
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="right" size="xl">
@@ -1543,9 +1624,17 @@ function TemplateEditor({
           <div className="flex flex-wrap gap-1.5 mt-2">
             <span className="text-xs text-muted-foreground mr-1">Variables:</span>
             {template.variables.map((v) => (
-              <Badge key={v} variant="secondary" className="text-xs font-mono">
+              <button
+                key={v}
+                type="button"
+                onClick={() => insertVariable(v)}
+                className="inline-flex"
+                data-testid={`button-template-variable-${v}`}
+              >
+                <Badge variant="secondary" className="cursor-pointer text-xs font-mono hover:bg-secondary/80">
                 {`{{${v}}}`}
-              </Badge>
+                </Badge>
+              </button>
             ))}
           </div>
 
@@ -1560,39 +1649,161 @@ function TemplateEditor({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="template-body">HTML Body</Label>
-              <Textarea
-                id="template-body"
-                value={htmlBody}
-                onChange={(e) => setHtmlBody(e.target.value)}
-                rows={16}
-                className="font-mono text-xs"
-                data-testid="input-template-body"
-              />
+              <div className="flex items-center justify-between gap-3">
+                <Label>Email Body</Label>
+                <Tabs value={editorTab} onValueChange={(value) => setEditorTab(value as "visual" | "html")}>
+                  <TabsList className="h-9 rounded-full">
+                    <TabsTrigger value="visual" className="rounded-full px-3 text-xs" data-testid="tab-email-visual">
+                      <Eye className="mr-1.5 h-3.5 w-3.5" />
+                      Visual
+                    </TabsTrigger>
+                    <TabsTrigger value="html" className="rounded-full px-3 text-xs" data-testid="tab-email-html">
+                      <Code2 className="mr-1.5 h-3.5 w-3.5" />
+                      HTML
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Visual mode shows the email the way editors expect to work with it. HTML mode remains available for advanced changes.
+              </p>
+
+              {editorTab === "visual" ? (
+                <div className="overflow-hidden rounded-xl border bg-background shadow-sm">
+                  <div className="flex flex-wrap items-center gap-1 border-b bg-muted/30 px-2 py-2">
+                    <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={() => applyCommand("formatBlock", "<p>")}>
+                      <Pilcrow className="mr-1.5 h-3.5 w-3.5" />
+                      Paragraph
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={() => applyCommand("formatBlock", "<h2>")}>
+                      <Heading2 className="mr-1.5 h-3.5 w-3.5" />
+                      Heading
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => applyCommand("bold")}>
+                      <Bold className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => applyCommand("italic")}>
+                      <Italic className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => applyCommand("underline")}>
+                      <UnderlineIcon className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => applyCommand("insertUnorderedList")}>
+                      <List className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => applyCommand("insertOrderedList")}>
+                      <ListOrdered className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => {
+                        focusVisualEditor();
+                        setShowLinkPanel((current) => !current);
+                      }}
+                    >
+                      <Link2 className="mr-1.5 h-3.5 w-3.5" />
+                      Link
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" className="h-8 px-2" onClick={() => applyCommand("removeFormat")}>
+                      <Eraser className="mr-1.5 h-3.5 w-3.5" />
+                      Clear
+                    </Button>
+                  </div>
+
+                  {showLinkPanel ? (
+                    <div className="border-b bg-muted/15 px-3 py-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                        <div className="flex-1 space-y-1">
+                          <Label htmlFor="template-link-url" className="text-xs">Link URL</Label>
+                          <Input
+                            id="template-link-url"
+                            value={linkUrl}
+                            onChange={(event) => setLinkUrl(event.target.value)}
+                            placeholder="https://example.com"
+                            autoPrependHttps
+                            className="h-9"
+                            data-testid="input-template-link-url"
+                          />
+                        </div>
+                        <Button type="button" onClick={applyLink} data-testid="button-template-apply-link">
+                          Apply Link
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="bg-muted/20 p-4">
+                    <div className="mx-auto max-w-2xl rounded-xl border bg-white shadow-sm">
+                      <div className="border-b px-4 py-3 text-xs uppercase tracking-wide text-slate-500">
+                        Email content editor
+                      </div>
+                      <div
+                        ref={visualEditorRef}
+                        contentEditable
+                        suppressContentEditableWarning
+                        onInput={syncVisualHtml}
+                        onBlur={syncVisualHtml}
+                        className="min-h-[320px] px-6 py-5 text-[15px] leading-7 text-slate-700 outline-none"
+                        data-testid="visual-template-body"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Textarea
+                  id="template-body"
+                  value={htmlBody}
+                  onChange={(e) => setHtmlBody(e.target.value)}
+                  rows={16}
+                  className="font-mono text-xs"
+                  data-testid="input-template-body"
+                />
+              )}
             </div>
           </div>
 
-          {previewHtml && (
-            <div className="mt-4 border rounded-md overflow-hidden">
-              <div className="bg-muted px-3 py-2 text-xs font-medium flex items-center justify-between">
-                <span>Preview</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPreviewHtml(null)}
-                  data-testid="button-close-preview"
-                >
-                  Close
-                </Button>
-              </div>
+          <div className="mt-4 border rounded-md overflow-hidden">
+            <div className="bg-muted px-3 py-2 text-xs font-medium flex items-center justify-between">
+              <span>Published Preview</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => previewMutation.mutate()}
+                disabled={previewMutation.isPending}
+                data-testid="button-refresh-template-preview"
+              >
+                {previewMutation.isPending ? (
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                )}
+                Refresh
+              </Button>
+            </div>
+            {previewHtml ? (
               <iframe
                 srcDoc={previewHtml}
-                className="w-full h-[400px] bg-white"
+                className="w-full h-[420px] bg-white"
                 title="Email preview"
                 data-testid="iframe-email-preview"
               />
-            </div>
-          )}
+            ) : (
+              <div className="flex h-[220px] items-center justify-center bg-white text-sm text-muted-foreground">
+                {previewMutation.isPending ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading preview…
+                  </span>
+                ) : (
+                  "Preview unavailable."
+                )}
+              </div>
+            )}
+          </div>
+
         </SheetBody>
         <SheetFooter>
           <Button
@@ -1618,7 +1829,7 @@ function TemplateEditor({
             ) : (
               <Eye className="h-4 w-4 mr-2" />
             )}
-            Preview
+            Refresh Preview
           </Button>
           <Button
             variant="outline"

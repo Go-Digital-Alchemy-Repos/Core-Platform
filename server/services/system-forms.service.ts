@@ -35,7 +35,11 @@ function settings(overrides: Partial<CmsFormSettings>): CmsFormSettings {
   };
 }
 
-const SYSTEM_FORMS: InsertCmsForm[] = [
+type ManagedSystemForm = InsertCmsForm & {
+  syncMode?: "preserve" | "replace";
+};
+
+const SYSTEM_FORMS: ManagedSystemForm[] = [
   {
     name: "Contact Form",
     slug: "contact-form",
@@ -81,21 +85,65 @@ const SYSTEM_FORMS: InsertCmsForm[] = [
   {
     name: "TCK Interest Form",
     slug: "tck-interest",
-    description: "General interest and learn-more form for future growth flows.",
+    description: "Launch update and early-interest form for people who want to stay informed about TCK Wellness.",
     kind: "interest",
     isSystem: true,
     isActive: true,
     fields: [
-      field("name", "name", "Name", "text", { placeholder: "Your name", required: true, width: "half" }),
-      field("email", "email", "Email", "email", { placeholder: "you@example.com", required: true, width: "half" }),
-      field("message", "message", "Message", "textarea", { placeholder: "What are you interested in?" }),
+      field("intro", "intro", "Introduction", "html", {
+        config: {
+          htmlContent:
+            "<p><strong>We're so excited for the launch of TCK Wellness coming late 2026!</strong></p><p>We envision a world where Third Culture Kids (TCKs) no longer face misunderstanding or misdiagnosis due to the nuances of a globally-mobile upbringing, but have access to professionals providing TCK-informed care.</p><p>Our goal is to do this by developing a database of TCK-informed providers who receive ongoing training after thorough vetting.</p><p>If you'd like to be updated on the launch, please give us your information below.</p>",
+        },
+      }),
+      field("name", "name", "Name", "name", {
+        required: true,
+        config: { nameFormat: "split" },
+      }),
+      field("email", "email", "Email", "email", {
+        placeholder: "example@example.com",
+        required: true,
+      }),
+      field("demographics", "demographics", "What demographic do you fit into? Choose all that apply!", "checkbox", {
+        required: true,
+        options: [
+          { label: "TCK", value: "tck" },
+          { label: "Counselor", value: "counselor" },
+          { label: "TCK Parent", value: "tck-parent" },
+          { label: "TCK Caregiver", value: "tck-caregiver" },
+          { label: "Adult TCK", value: "adult-tck" },
+          { label: "Other", value: "other" },
+        ],
+      }),
+      field("website", "website", "If you are a counselor and would like to give us your website link please do so below.", "website", {
+        placeholder: "https://yourwebsite.com",
+      }),
+      field(
+        "counselor_info",
+        "counselorInfo",
+        "If you're a counselor and you're interested in getting vetted in the future, what would you need to know in order to apply?",
+        "textarea",
+        {
+          placeholder: "Share what information would help you evaluate applying in the future.",
+        }
+      ),
+      field(
+        "testimonial",
+        "testimonial",
+        "We're gathering a few short testimonials for our website about why this initiative feels needed. If you're willing, please share 1-2 sentences answering: \"Why are you excited about the TCK Wellness Initiative?\" Quotes will be shared using first names only.",
+        "textarea",
+        {
+          placeholder: "Share 1-2 sentences if you'd like to contribute a testimonial.",
+        }
+      ),
     ],
     settings: settings({
-      submitButtonText: "Send Interest",
-      successMessage: "Thanks for your interest. We’ll be in touch soon.",
+      submitButtonText: "Keep Me Informed",
+      successMessage: "Thanks for your interest. We'll keep you informed about the TCK Wellness launch.",
       mailchimpEnabled: true,
       mailchimpTag: "TCK Interest",
     }),
+    syncMode: "replace",
   },
   {
     name: "Directory Application Start",
@@ -118,17 +166,28 @@ export async function ensureSystemForms() {
   for (const systemForm of SYSTEM_FORMS) {
     const existing = await storage.forms.getBySlug(systemForm.slug);
     if (existing) {
+      const syncMode = systemForm.syncMode ?? "preserve";
       await storage.forms.update(existing.id, {
-        name: existing.name || systemForm.name,
-        description: existing.description ?? systemForm.description ?? "",
-        kind: existing.kind || systemForm.kind,
+        name: syncMode === "replace" ? systemForm.name : existing.name || systemForm.name,
+        description: syncMode === "replace"
+          ? systemForm.description ?? ""
+          : existing.description ?? systemForm.description ?? "",
+        kind: syncMode === "replace" ? systemForm.kind : existing.kind || systemForm.kind,
         isSystem: true,
         isActive: existing.isActive ?? true,
-        fields: Array.isArray(existing.fields) && existing.fields.length > 0 ? existing.fields : systemForm.fields,
-        settings: {
-          ...systemForm.settings,
-          ...(typeof existing.settings === "object" && existing.settings ? existing.settings : {}),
-        },
+        fields:
+          syncMode === "replace"
+            ? systemForm.fields
+            : Array.isArray(existing.fields) && existing.fields.length > 0
+              ? existing.fields
+              : systemForm.fields,
+        settings:
+          syncMode === "replace"
+            ? systemForm.settings
+            : {
+                ...systemForm.settings,
+                ...(typeof existing.settings === "object" && existing.settings ? existing.settings : {}),
+              },
       });
       continue;
     }
