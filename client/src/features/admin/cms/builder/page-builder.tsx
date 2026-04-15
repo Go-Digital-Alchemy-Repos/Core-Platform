@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -225,6 +226,107 @@ const PREVIEW_DEVICE_FRAME_CLASSES = {
   mobile: "w-full max-w-[430px]",
 } as const;
 
+function FrontendPreviewFrame({
+  previewDevice,
+  blocks,
+}: {
+  previewDevice: "desktop" | "tablet" | "mobile";
+  blocks: BlockInstance[];
+}) {
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [mountNode, setMountNode] = useState<HTMLDivElement | null>(null);
+  const [frameHeight, setFrameHeight] = useState(900);
+
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    const doc = iframe.contentDocument;
+    if (!doc) return;
+
+    doc.open();
+    doc.write("<!doctype html><html><head></head><body></body></html>");
+    doc.close();
+
+    doc.documentElement.lang = document.documentElement.lang || "en";
+    doc.body.style.margin = "0";
+    doc.body.style.background = "transparent";
+    doc.body.style.minHeight = "100vh";
+
+    Array.from(document.head.querySelectorAll('style, link[rel="stylesheet"]')).forEach((node) => {
+      doc.head.appendChild(node.cloneNode(true));
+    });
+
+    const root = doc.createElement("div");
+    root.setAttribute("data-frontend-preview-root", "true");
+    root.style.minHeight = "100vh";
+    doc.body.appendChild(root);
+    setMountNode(root);
+
+    return () => {
+      setMountNode(null);
+    };
+  }, [previewDevice]);
+
+  useEffect(() => {
+    if (!mountNode) return;
+    const doc = mountNode.ownerDocument;
+    const view = doc.defaultView;
+    if (!view) return;
+
+    const updateHeight = () => {
+      const nextHeight = Math.max(
+        mountNode.scrollHeight,
+        doc.body.scrollHeight,
+        doc.documentElement.scrollHeight,
+        900
+      );
+      setFrameHeight(nextHeight);
+    };
+
+    updateHeight();
+
+    const ResizeObserverCtor = view.ResizeObserver;
+    if (!ResizeObserverCtor) {
+      const frame = view.requestAnimationFrame(updateHeight);
+      return () => view.cancelAnimationFrame(frame);
+    }
+
+    const observer = new ResizeObserverCtor(() => updateHeight());
+    observer.observe(mountNode);
+    observer.observe(doc.body);
+    observer.observe(doc.documentElement);
+    const frame = view.requestAnimationFrame(updateHeight);
+
+    return () => {
+      view.cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [mountNode, blocks]);
+
+  return (
+    <>
+      <iframe
+        ref={iframeRef}
+        title={`${PREVIEW_DEVICE_LABELS[previewDevice]} frontend preview`}
+        className={cn(
+          "block overflow-hidden rounded-[28px] border border-border/60 bg-background shadow-[0_20px_70px_rgba(15,23,42,0.08)] transition-[max-width] duration-200",
+          PREVIEW_DEVICE_FRAME_CLASSES[previewDevice],
+        )}
+        style={{ height: `${frameHeight}px` }}
+      />
+      {mountNode
+        ? createPortal(
+            <div className="min-h-screen bg-background">
+              <PublicPageRenderer blocks={blocks} />
+            </div>,
+            mountNode
+          )
+        : null}
+    </>
+  );
+}
+
 function FrontendPreviewDialog({
   open,
   onOpenChange,
@@ -291,13 +393,8 @@ function FrontendPreviewDialog({
         </DialogHeader>
         <div className="min-h-0 flex-1 bg-[radial-gradient(circle_at_top,_rgba(137,205,161,0.10),_transparent_45%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,250,252,0.98))] p-4 sm:p-6">
           <ScrollArea className="h-full">
-            <div
-              className={cn(
-                "mx-auto overflow-hidden rounded-[28px] border border-border/60 bg-background shadow-[0_20px_70px_rgba(15,23,42,0.08)] transition-[max-width] duration-200",
-                PREVIEW_DEVICE_FRAME_CLASSES[previewDevice],
-              )}
-            >
-              <PublicPageRenderer blocks={blocks} />
+            <div className="mx-auto w-full">
+              <FrontendPreviewFrame previewDevice={previewDevice} blocks={blocks} />
             </div>
           </ScrollArea>
         </div>
