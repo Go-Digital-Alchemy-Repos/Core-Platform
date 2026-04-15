@@ -558,17 +558,17 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
   const shouldCarousel = visible.length > 4;
 
   const renderEventCard = (e: { id: string; title: string; date: string; isVirtual: boolean; imageUrl?: string | null; imagePositionX?: number | null; imagePositionY?: number | null }) => (
-    <Link key={e.id} href={`/events/${e.id}`} className="w-full max-w-[18rem]">
-      <Card className="mx-auto h-full w-full max-w-[18rem] overflow-hidden transition-shadow hover:shadow-md cursor-pointer" data-testid={`event-preview-${e.id}`}>
+    <Link key={e.id} href={`/events/${e.id}`} className="w-full max-w-[13.5rem]">
+      <Card className="mx-auto h-full w-full max-w-[13.5rem] overflow-hidden transition-shadow hover:shadow-md cursor-pointer" data-testid={`event-preview-${e.id}`}>
         {e.imageUrl && (
           <div className="aspect-[16/10] overflow-hidden" data-testid={`img-event-preview-${e.id}`}>
             <img src={e.imageUrl} alt={e.title} className="h-full w-full object-cover" style={getImageObjectPositionStyle(e.imagePositionX, e.imagePositionY)} />
           </div>
         )}
-        <CardContent className={e.imageUrl ? "p-4" : "pt-4"}>
+        <CardContent className={e.imageUrl ? "p-3.5" : "pt-3.5"}>
           <p className="mb-1 text-xs font-medium text-accent">{new Date(e.date).toLocaleDateString()}</p>
           <p className="line-clamp-2 text-sm font-semibold public-heading-3">{e.title}</p>
-          <p className="mt-2 text-xs public-meta-text">{e.isVirtual ? "Virtual" : "In Person"}</p>
+          <p className="mt-2 text-[11px] leading-relaxed public-meta-text">{e.isVirtual ? "Virtual" : "In Person"}</p>
         </CardContent>
       </Card>
     </Link>
@@ -593,7 +593,7 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
           >
             <CarouselContent className="-ml-4">
               {visible.map((e) => (
-                <CarouselItem key={e.id} className="pl-4 basis-[85%] sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                <CarouselItem key={e.id} className="pl-4 basis-[70%] sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
                   {renderEventCard(e)}
                 </CarouselItem>
               ))}
