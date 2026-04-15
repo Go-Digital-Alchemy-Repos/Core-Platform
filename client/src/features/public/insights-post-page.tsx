@@ -11,6 +11,7 @@ import type { BlogPost, SeoSettings } from "@shared/schema";
 import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
 import { PublicSidebar } from "@/features/public/public-sidebar";
+import { BlogComments } from "@/components/blog/blog-comments";
 import {
   buildOrganizationLd,
   buildBreadcrumbLd,
@@ -218,6 +219,8 @@ export default function InsightsPostPage() {
                 {post.content}
               </div>
             )}
+
+            <BlogComments slug={post.slug} />
           </article>
           <PublicSidebar sidebarId={post.sidebarId} useDefault />
         </div>

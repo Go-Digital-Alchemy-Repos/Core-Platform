@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
+import { BLOG_COMMENT_STATUSES, blogCommentSettingsSchema } from "@shared/schema";
 import { storage } from "../../storage/index";
 import { asyncHandler } from "../../middleware/error-handler";
 import { insertBlogPostSchema, insertBlogTaxonomySchema, type BlogPost, type BlogTaxonomy } from "@shared/schema";
 import { paramString } from "../../utils/params";
 import * as r2Service from "../../services/r2.service";
+import { getBlogCommentSettings, saveBlogCommentSettings } from "../../services/blog-comments.service";
 
 const router = Router();
 
@@ -123,6 +125,66 @@ router.get(
   "/settings/taxonomies",
   asyncHandler(async (_req, res) => {
     res.json(await getResolvedTaxonomies());
+  })
+);
+
+router.get(
+  "/settings/comments",
+  asyncHandler(async (_req, res) => {
+    const [settings, statusCounts] = await Promise.all([
+      getBlogCommentSettings(),
+      storage.blogComments.countByStatus(),
+    ]);
+
+    res.json({
+      settings,
+      statusCounts,
+    });
+  })
+);
+
+router.put(
+  "/settings/comments",
+  asyncHandler(async (req, res) => {
+    const settings = blogCommentSettingsSchema.parse(req.body);
+    await saveBlogCommentSettings(settings);
+    res.json(await getBlogCommentSettings());
+  })
+);
+
+const blogCommentStatusSchema = z.enum(BLOG_COMMENT_STATUSES);
+
+router.get(
+  "/comments",
+  asyncHandler(async (req, res) => {
+    const status = req.query.status ? blogCommentStatusSchema.parse(String(req.query.status)) : undefined;
+    const comments = await storage.blogComments.getCommentsForModeration(status);
+    res.json(comments);
+  })
+);
+
+router.patch(
+  "/comments/:id/status",
+  asyncHandler(async (req, res) => {
+    const id = paramString(req.params.id);
+    const payload = z.object({
+      status: blogCommentStatusSchema,
+      moderationNote: z.string().optional(),
+    }).parse(req.body);
+
+    const comment = await storage.blogComments.updateCommentStatus(id, payload.status, payload.moderationNote ?? null);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+    res.json(comment);
+  })
+);
+
+router.delete(
+  "/comments/:id",
+  asyncHandler(async (req, res) => {
+    await storage.blogComments.deleteComment(paramString(req.params.id));
+    res.json({ success: true });
   })
 );
 
