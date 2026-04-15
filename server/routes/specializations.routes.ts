@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { storage } from "../storage/index";
 import { asyncHandler } from "../middleware/error-handler";
-import { authenticateToken, requireRole } from "../middleware/auth";
+import { authenticateToken, requireAdminPermission } from "../middleware/auth";
 import { z } from "zod";
 
 const router = Router();
@@ -22,7 +22,7 @@ router.get(
 router.post(
   "/",
   authenticateToken,
-  requireRole("admin"),
+  requireAdminPermission("directory"),
   asyncHandler(async (req, res) => {
     const body = bodySchema.parse(req.body);
     const spec = await storage.specializations.create(body);
@@ -33,7 +33,7 @@ router.post(
 router.put(
   "/:id",
   authenticateToken,
-  requireRole("admin"),
+  requireAdminPermission("directory"),
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
     const body = bodySchema.partial().parse(req.body);
@@ -49,7 +49,7 @@ router.put(
 router.delete(
   "/:id",
   authenticateToken,
-  requireRole("admin"),
+  requireAdminPermission("directory"),
   asyncHandler(async (req, res) => {
     await storage.specializations.delete(Number(req.params.id));
     res.json({ ok: true });

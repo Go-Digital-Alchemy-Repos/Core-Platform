@@ -9,9 +9,17 @@ export type { SortOption as SortOptionType } from "./directory";
 
 export const UserRole = {
   ADMIN: "admin",
+  EDITOR: "editor",
   THERAPIST: "therapist",
 } as const;
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
+
+export const AdminPermission = {
+  DIRECTORY: "directory",
+  CONTENT: "content",
+  DESIGN: "design",
+} as const;
+export type AdminPermission = (typeof AdminPermission)[keyof typeof AdminPermission];
 
 export const PracticeMode = {
   IN_PERSON: "in_person",

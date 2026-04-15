@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction, RequestHandler } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import type { User } from "@shared/schema";
-import type { UserRole } from "@shared/types";
+import { AdminPermission, type UserRole, type AdminPermission as AdminPermissionType } from "@shared/types";
 
 const isDev = process.env.NODE_ENV !== "production";
 const JWT_SECRET = process.env.SESSION_SECRET || (isDev ? "dev-secret-change-me" : "");
@@ -13,6 +13,32 @@ export interface JwtPayload {
   userId: string;
   email: string;
   role: string;
+}
+
+function normalizePermissions(user: User | undefined): AdminPermissionType[] {
+  if (!user) return [];
+  if (user.role === "admin") {
+    return [
+      AdminPermission.DIRECTORY,
+      AdminPermission.CONTENT,
+      AdminPermission.DESIGN,
+    ];
+  }
+
+  if (!Array.isArray(user.adminPermissions)) return [];
+
+  return user.adminPermissions.filter((permission): permission is AdminPermissionType =>
+    permission === AdminPermission.DIRECTORY ||
+    permission === AdminPermission.CONTENT ||
+    permission === AdminPermission.DESIGN
+  );
+}
+
+export function hasAdminPermission(user: User | undefined, permission: AdminPermissionType): boolean {
+  if (!user) return false;
+  if (user.role === "admin") return true;
+  if (user.role !== "editor") return false;
+  return normalizePermissions(user).includes(permission);
 }
 
 declare global {
@@ -106,5 +132,26 @@ export function requireRole(...roles: UserRole[]): RequestHandler {
       return;
     }
     next();
+  };
+}
+
+export function requireAdminPermission(...permissions: AdminPermissionType[]): RequestHandler {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    if (req.user.role !== "admin" && req.user.role !== "editor") {
+      res.status(403).json({ message: "Forbidden" });
+      return;
+    }
+
+    if (permissions.length === 0 || permissions.some((permission) => hasAdminPermission(req.user, permission))) {
+      next();
+      return;
+    }
+
+    res.status(403).json({ message: "Forbidden" });
   };
 }

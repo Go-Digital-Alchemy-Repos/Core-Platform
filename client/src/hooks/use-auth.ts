@@ -1,6 +1,28 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, getQueryFn, queryClient, STALE_TIMES } from "@/lib/queryClient";
 import type { User } from "@shared/schema";
+import { AdminPermission, type AdminPermission as AdminPermissionType } from "@shared/types";
+
+function getAdminPermissions(user: User | null): AdminPermissionType[] {
+  if (!user) return [];
+  if (user.role === "admin") {
+    return [
+      AdminPermission.DIRECTORY,
+      AdminPermission.CONTENT,
+      AdminPermission.DESIGN,
+    ];
+  }
+
+  if (user.role !== "editor" || !Array.isArray(user.adminPermissions)) {
+    return [];
+  }
+
+  return user.adminPermissions.filter((permission): permission is AdminPermissionType =>
+    permission === AdminPermission.DIRECTORY ||
+    permission === AdminPermission.CONTENT ||
+    permission === AdminPermission.DESIGN
+  );
+}
 
 export function useAuth() {
   const { data: user, isLoading } = useQuery<User | null>({
@@ -53,6 +75,9 @@ export function useAuth() {
     register,
     logout,
     isAdmin: user?.role === "admin",
+    isEditor: user?.role === "editor",
     isTherapist: user?.role === "therapist",
+    adminPermissions: getAdminPermissions(user ?? null),
+    hasAdminPermission: (permission: AdminPermissionType) => getAdminPermissions(user ?? null).includes(permission),
   };
 }

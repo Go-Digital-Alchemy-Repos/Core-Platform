@@ -38,6 +38,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
+import type { User as AppUser } from "@shared/schema";
 
 interface NavItem {
   title: string;
@@ -52,14 +53,17 @@ interface NavGroup {
   items: NavItem[];
 }
 
-function buildNavGroups(siteFeatures: SiteFeatures): NavGroup[] {
+function buildNavGroups(siteFeatures: SiteFeatures, user: AppUser | null, hasAdminPermission: (permission: "directory" | "content" | "design") => boolean): NavGroup[] {
   const groups: NavGroup[] = [
     {
       items: [
-        { title: "Dashboard", href: "/admin", icon: LayoutDashboard, iconColor: "text-teal-600" },
+        ...(user?.role === "admin"
+          ? [{ title: "Dashboard", href: "/admin", icon: LayoutDashboard, iconColor: "text-teal-600" } satisfies NavItem]
+          : []),
       ],
     },
-    {
+    ...(hasAdminPermission("content")
+      ? [{
       label: "Content",
       items: [
         { title: "CMS Overview", href: "/admin/cms", icon: Globe, iconColor: "text-violet-600" },
@@ -83,8 +87,10 @@ function buildNavGroups(siteFeatures: SiteFeatures): NavGroup[] {
         { title: "Media", href: "/admin/cms/media", icon: Image, iconColor: "text-violet-400" },
         { title: "SEO", href: "/admin/cms/seo", icon: SearchIcon, iconColor: "text-violet-400" },
       ],
-    },
-    {
+    }] satisfies NavGroup[]
+      : []),
+    ...(hasAdminPermission("design")
+      ? [{
       label: "Design",
       items: [
         { title: "Branding", href: "/admin/design/branding", icon: Image, iconColor: "text-pink-500" },
@@ -94,8 +100,10 @@ function buildNavGroups(siteFeatures: SiteFeatures): NavGroup[] {
         { title: "Sidebars & Widgets", href: "/admin/cms/sidebars", icon: PanelRight, iconColor: "text-emerald-500" },
         { title: "Sections", href: "/admin/cms/sections", icon: Blocks, iconColor: "text-violet-400" },
       ],
-    },
-    {
+    }] satisfies NavGroup[]
+      : []),
+    ...(user?.role === "admin"
+      ? [{
       label: "System",
       items: [
         { title: "Documentation", href: "/admin/docs", icon: FileText, iconColor: "text-indigo-600" },
@@ -103,10 +111,11 @@ function buildNavGroups(siteFeatures: SiteFeatures): NavGroup[] {
         { title: "System Users", href: "/admin/users", icon: Users, iconColor: "text-blue-600" },
         { title: "Settings", href: "/admin/settings", icon: Settings, iconColor: "text-slate-500" },
       ],
-    },
+    }] satisfies NavGroup[]
+      : []),
   ];
 
-  if (siteFeatures.directoryEnabled) {
+  if (siteFeatures.directoryEnabled && hasAdminPermission("directory")) {
     groups[0].items.splice(1, 0, {
       title: "Directory",
       href: "/admin/therapists",
@@ -135,7 +144,7 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ children }: AdminSidebarProps) {
   const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, hasAdminPermission } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const adminLogo = logoIcon;
@@ -144,7 +153,9 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
     staleTime: 60_000,
   });
   const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
-  const navGroups = buildNavGroups(siteFeatures);
+  const navGroups = buildNavGroups(siteFeatures, user, hasAdminPermission).filter(
+    (group) => group.items.length > 0
+  );
 
   const renderNavItem = (item: NavItem) => {
     const exactOnlyRoutes = ["/admin", "/admin/cms"];

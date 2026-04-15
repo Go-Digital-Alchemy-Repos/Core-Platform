@@ -394,7 +394,7 @@ function ToggleCardGroup({
 
 export default function AdminFormsPage() {
   return (
-    <ProtectedRoute roles={["admin"]}>
+    <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
       <AdminSidebar>
         <FormsPageContent />
       </AdminSidebar>

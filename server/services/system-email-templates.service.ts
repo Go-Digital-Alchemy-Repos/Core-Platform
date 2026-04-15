@@ -206,6 +206,23 @@ export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS = [
     </table>`),
   },
   {
+    slug: "managed-form-submission",
+    name: "Managed Form Submission (Admin)",
+    subject: "New Form Submission: {{formName}}",
+    description: "Sent to assigned system users when a managed frontend form receives a submission.",
+    variables: ["formName", "submissionSummary", "dashboardUrl"],
+    htmlBody: baseWrap("New Form Submission", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">A new submission was received for <strong>{{formName}}</strong>.</p>
+    <div style="background:#f3f4f6;border-radius:6px;padding:16px;margin:16px 0;">
+      <p style="margin:0;color:#374151;font-size:14px;white-space:pre-line;">{{submissionSummary}}</p>
+    </div>
+    <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
+      <tr><td style="background:#2d8a7e;border-radius:6px;padding:12px 28px;">
+        <a href="{{dashboardUrl}}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;">View in Admin Dashboard</a>
+      </td></tr>
+    </table>`),
+  },
+  {
     slug: "event-registration-confirmation",
     name: "Event Registration Confirmation",
     subject: "Registration Confirmed: {{eventTitle}}",

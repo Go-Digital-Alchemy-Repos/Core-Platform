@@ -175,7 +175,7 @@ function visibilityLabel(v: string | null | undefined): string {
 
 export default function AdminEventsPage() {
   return (
-    <ProtectedRoute roles={["admin"]}>
+    <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
       <AdminSidebar>
         <EventsContent />
       </AdminSidebar>

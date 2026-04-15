@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import { AdminSidebar } from "./admin-sidebar";
@@ -38,7 +38,17 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import type { User } from "@shared/schema";
+import { AdminPermission } from "@shared/types";
 import {
   Plus,
   Search,
@@ -52,17 +62,64 @@ import {
   ShieldCheck,
   AlertTriangle,
   Shield,
+  PanelsTopLeft,
+  Palette,
+  FolderKanban,
 } from "lucide-react";
 
 type SafeUser = Omit<User, "password"> & { country?: string | null };
+type ActiveForm = {
+  id: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
+  isSystem: boolean;
+};
 
 const ROLE_COLORS: Record<string, string> = {
   admin: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+  editor: "bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300",
 };
+
+const EDITOR_PERMISSION_OPTIONS = [
+  {
+    value: AdminPermission.DIRECTORY,
+    label: "Directory",
+    description: "Profiles, applications, specializations, and directory settings.",
+    icon: PanelsTopLeft,
+  },
+  {
+    value: AdminPermission.CONTENT,
+    label: "Content",
+    description: "Pages, media, forms, events, blog, and SEO tools.",
+    icon: FolderKanban,
+  },
+  {
+    value: AdminPermission.DESIGN,
+    label: "Design",
+    description: "Branding, typography, menus, sidebars, and reusable sections.",
+    icon: Palette,
+  },
+] as const;
 
 function displayRole(role: string): string {
   if (role === "admin") return "System Admin";
+  if (role === "editor") return "Editor";
   return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
+function toggleValue(list: string[], value: string) {
+  return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
+}
+
+function summarizePermissions(user: SafeUser) {
+  if (user.role === "admin") return "Full system access";
+  const permissions = Array.isArray(user.adminPermissions) ? user.adminPermissions : [];
+  if (permissions.length === 0) return "No tool groups assigned";
+
+  return permissions
+    .map((permission) => EDITOR_PERMISSION_OPTIONS.find((option) => option.value === permission)?.label ?? permission)
+    .join(", ");
 }
 
 export default function AdminUsersPage() {
@@ -85,6 +142,17 @@ function UsersContent() {
     staleTime: STALE_TIMES.OPERATIONAL,
     refetchOnWindowFocus: true,
   });
+
+  const { data: forms = [] } = useQuery<ActiveForm[]>({
+    queryKey: ["/api/admin/forms"],
+    staleTime: STALE_TIMES.OPERATIONAL,
+    refetchOnWindowFocus: true,
+  });
+
+  const activeForms = useMemo(
+    () => forms.filter((form) => form.isActive),
+    [forms]
+  );
 
   const filtered = users?.filter((user) => {
     const matchesSearch =
@@ -110,7 +178,7 @@ function UsersContent() {
             System Users
           </h1>
           <p className="text-sm text-muted-foreground">
-            Manage admin accounts used to operate the platform. Directory members are managed separately in the Directory module.
+            Manage admin and editor accounts used to operate the platform. Directory members are managed separately in the Directory module.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} data-testid="button-create-user">
@@ -137,6 +205,7 @@ function UsersContent() {
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Access</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
@@ -162,6 +231,9 @@ function UsersContent() {
                     {displayRole(user.role)}
                   </Badge>
                 </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {summarizePermissions(user)}
+                </TableCell>
                 <TableCell data-testid={`text-user-created-${user.id}`}>
                   {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}
                 </TableCell>
@@ -179,7 +251,7 @@ function UsersContent() {
             ))}
             {(!filtered || filtered.length === 0) && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   {search ? "No system users match your search." : "No system users found."}
                 </TableCell>
               </TableRow>
@@ -188,8 +260,99 @@ function UsersContent() {
         </Table>
       </div>
 
-      <CreateUserSheet open={createOpen} onOpenChange={setCreateOpen} />
-      <UserDetailSheet user={detailUser} onClose={() => setDetailUser(null)} onUserUpdated={setDetailUser} />
+      <CreateUserSheet open={createOpen} onOpenChange={setCreateOpen} activeForms={activeForms} />
+      <UserDetailSheet
+        user={detailUser}
+        onClose={() => setDetailUser(null)}
+        onUserUpdated={setDetailUser}
+        activeForms={activeForms}
+      />
+    </div>
+  );
+}
+
+function EditorPermissionsPanel({
+  permissions,
+  onToggle,
+}: {
+  permissions: string[];
+  onToggle: (permission: string) => void;
+}) {
+  return (
+    <div className="rounded-lg border p-4 space-y-4">
+      <div>
+        <Label className="text-sm font-medium">Editor Permissions</Label>
+        <p className="text-xs text-muted-foreground mt-1">
+          Choose which primary admin tool groups this editor can access.
+        </p>
+      </div>
+      <div className="space-y-3">
+        {EDITOR_PERMISSION_OPTIONS.map((option) => {
+          const Icon = option.icon;
+          return (
+            <label
+              key={option.value}
+              className="flex items-start gap-3 rounded-md border p-3 cursor-pointer hover:bg-muted/30"
+            >
+              <Checkbox
+                checked={permissions.includes(option.value)}
+                onCheckedChange={() => onToggle(option.value)}
+                data-testid={`checkbox-permission-${option.value}`}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <Icon className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">{option.label}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">{option.description}</p>
+              </div>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function FormNotificationPanel({
+  selectedFormIds,
+  onToggle,
+  activeForms,
+}: {
+  selectedFormIds: string[];
+  onToggle: (formId: string) => void;
+  activeForms: ActiveForm[];
+}) {
+  return (
+    <div className="rounded-lg border p-4 space-y-4">
+      <div>
+        <Label className="text-sm font-medium">Email Notification Settings</Label>
+        <p className="text-xs text-muted-foreground mt-1">
+          Select which forms you'd like this user to receive notifications from.
+        </p>
+      </div>
+      {activeForms.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No active forms are available yet.</p>
+      ) : (
+        <div className="space-y-3">
+          {activeForms.map((form) => (
+            <label key={form.id} className="flex items-start gap-3 rounded-md border p-3 cursor-pointer hover:bg-muted/30">
+              <Checkbox
+                checked={selectedFormIds.includes(form.id)}
+                onCheckedChange={() => onToggle(form.id)}
+                data-testid={`checkbox-form-notification-${form.slug}`}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{form.name}</span>
+                  {form.isSystem && <Badge variant="outline" className="text-[10px]">System</Badge>}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Slug: {form.slug}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -197,15 +360,20 @@ function UsersContent() {
 function CreateUserSheet({
   open,
   onOpenChange,
+  activeForms,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  activeForms: ActiveForm[];
 }) {
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [role, setRole] = useState<"admin" | "editor">("editor");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([AdminPermission.CONTENT]);
+  const [formNotificationFormIds, setFormNotificationFormIds] = useState<string[]>([]);
   const [sendWelcome, setSendWelcome] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -214,6 +382,9 @@ function CreateUserSheet({
     setPassword("");
     setFirstName("");
     setLastName("");
+    setRole("editor");
+    setAdminPermissions([AdminPermission.CONTENT]);
+    setFormNotificationFormIds([]);
     setSendWelcome(true);
     setShowPassword(false);
   }
@@ -225,6 +396,9 @@ function CreateUserSheet({
         password,
         firstName,
         lastName,
+        role,
+        adminPermissions,
+        formNotificationFormIds,
         sendWelcomeEmail: sendWelcome,
       });
     },
@@ -246,7 +420,7 @@ function CreateUserSheet({
         <SheetHeader>
           <SheetTitle className="font-heading">Create System User</SheetTitle>
           <SheetDescription>
-            Add a new admin account for platform operations.
+            Add a new admin or editor account for platform operations.
           </SheetDescription>
         </SheetHeader>
         <SheetBody>
@@ -258,16 +432,6 @@ function CreateUserSheet({
             }}
             className="space-y-4"
           >
-            <div className="rounded-lg border bg-muted/20 p-4">
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" />
-                <p className="text-sm font-medium">This account will be created as a System Admin.</p>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Directory professionals are managed separately in the Directory area and are not created from this screen.
-              </p>
-            </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="create-first">First Name</Label>
@@ -309,6 +473,44 @@ function CreateUserSheet({
               </div>
             </div>
 
+            <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
+              <div>
+                <Label htmlFor="create-role" className="text-sm font-medium">System Role</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Admins have full platform access. Editors are limited to the tool groups you choose below.
+                </p>
+              </div>
+              <Select value={role} onValueChange={(value) => setRole(value as "admin" | "editor")}>
+                <SelectTrigger id="create-role" data-testid="select-create-role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">System Admin</SelectItem>
+                  <SelectItem value="editor">Editor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {role === "editor" ? (
+              <EditorPermissionsPanel
+                permissions={adminPermissions}
+                onToggle={(permission) => setAdminPermissions((current) => toggleValue(current, permission))}
+              />
+            ) : (
+              <div className="rounded-lg border bg-muted/20 p-4">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-medium">System Admins can access every admin tool group, including System settings.</p>
+                </div>
+              </div>
+            )}
+
+            <FormNotificationPanel
+              selectedFormIds={formNotificationFormIds}
+              onToggle={(formId) => setFormNotificationFormIds((current) => toggleValue(current, formId))}
+              activeForms={activeForms}
+            />
+
             <div className="rounded-lg border p-4">
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -316,7 +518,7 @@ function CreateUserSheet({
                     Send welcome email
                   </Label>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Email the new admin their login details and a quick start link.
+                    Email the new user their login details and a quick start link.
                   </p>
                 </div>
                 <Switch
@@ -346,10 +548,12 @@ function UserDetailSheet({
   user,
   onClose,
   onUserUpdated,
+  activeForms,
 }: {
   user: SafeUser | null;
   onClose: () => void;
   onUserUpdated: (user: SafeUser | null) => void;
+  activeForms: ActiveForm[];
 }) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
@@ -357,18 +561,24 @@ function UserDetailSheet({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState<"admin" | "editor">("editor");
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
+  const [formNotificationFormIds, setFormNotificationFormIds] = useState<string[]>([]);
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  function handleOpen() {
+  useEffect(() => {
     if (!user) return;
     setFirstName(user.firstName ?? "");
     setLastName(user.lastName ?? "");
     setEmail(user.email);
+    setRole((user.role === "admin" ? "admin" : "editor"));
+    setAdminPermissions(Array.isArray(user.adminPermissions) ? user.adminPermissions : []);
+    setFormNotificationFormIds(Array.isArray(user.formNotificationFormIds) ? user.formNotificationFormIds : []);
     setNewPassword("");
     setShowPassword(false);
     setActiveTab("profile");
-  }
+  }, [user]);
 
   const updateMutation = useMutation({
     mutationFn: async () => {
@@ -376,6 +586,9 @@ function UserDetailSheet({
         firstName: firstName || null,
         lastName: lastName || null,
         email,
+        role,
+        adminPermissions,
+        formNotificationFormIds,
       });
       return response.json();
     },
@@ -451,14 +664,8 @@ function UserDetailSheet({
 
   return (
     <>
-      <Sheet
-        open={!!user}
-        onOpenChange={(open) => {
-          if (!open) onClose();
-          else handleOpen();
-        }}
-      >
-        <SheetContent side="right" size="default" onOpenAutoFocus={handleOpen}>
+      <Sheet open={!!user} onOpenChange={(open) => !open && onClose()}>
+        <SheetContent side="right" size="default">
           <SheetHeader>
             <div className="flex items-start justify-between">
               <div className="space-y-1">
@@ -517,15 +724,44 @@ function UserDetailSheet({
                       <Label htmlFor="detail-email">Email</Label>
                       <Input id="detail-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required data-testid="input-detail-email" />
                     </div>
-                    <div className="rounded-lg border bg-muted/20 p-4">
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-primary" />
-                        <p className="text-sm font-medium">System role: Admin</p>
+
+                    <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
+                      <div>
+                        <Label htmlFor="detail-role" className="text-sm font-medium">System Role</Label>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Editors can only access the tool groups you assign here. System remains admin-only.
+                        </p>
                       </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Directory profiles are managed separately in the Directory module.
-                      </p>
+                      <Select value={role} onValueChange={(value) => setRole(value as "admin" | "editor")}>
+                        <SelectTrigger id="detail-role" data-testid="select-detail-role">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">System Admin</SelectItem>
+                          <SelectItem value="editor">Editor</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    {role === "editor" ? (
+                      <EditorPermissionsPanel
+                        permissions={adminPermissions}
+                        onToggle={(permission) => setAdminPermissions((current) => toggleValue(current, permission))}
+                      />
+                    ) : (
+                      <div className="rounded-lg border bg-muted/20 p-4">
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-primary" />
+                          <p className="text-sm font-medium">System Admins always have full platform access, including the System tool group.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <FormNotificationPanel
+                      selectedFormIds={formNotificationFormIds}
+                      onToggle={(formId) => setFormNotificationFormIds((current) => toggleValue(current, formId))}
+                      activeForms={activeForms}
+                    />
                   </form>
                 )}
               </TabsContent>

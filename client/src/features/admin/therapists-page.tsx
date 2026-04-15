@@ -153,7 +153,7 @@ type EditProfileValues = z.infer<typeof editProfileSchema>;
 
 export default function AdminTherapistsPage() {
   return (
-    <ProtectedRoute roles={["admin"]}>
+    <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["directory"]}>
       <AdminSidebar>
         <TherapistsContent />
       </AdminSidebar>

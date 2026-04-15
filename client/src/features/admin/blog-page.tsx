@@ -35,7 +35,7 @@ import type { BlogPost, InsertBlogPost } from "@shared/schema";
 
 export default function AdminBlogPage() {
   return (
-    <ProtectedRoute roles={["admin"]}>
+    <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
       <AdminSidebar>
         <BlogContent />
       </AdminSidebar>

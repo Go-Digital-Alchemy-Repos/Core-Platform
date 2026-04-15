@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/shared/theme-provider";
 import { BrandingProvider } from "@/components/shared/branding-provider";
 import { ProtectedRoute } from "@/components/shared/protected-route";
+import { useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
 import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
@@ -75,6 +76,32 @@ function PageLoader() {
   );
 }
 
+function AdminIndexRoute() {
+  const { user, hasAdminPermission } = useAuth();
+
+  if (!user) {
+    return <Redirect to="/auth/login" replace />;
+  }
+
+  if (user.role === "admin") {
+    return <AdminDashboardPage />;
+  }
+
+  if (user.role === "editor") {
+    if (hasAdminPermission("directory")) {
+      return <Redirect to="/admin/therapists" replace />;
+    }
+    if (hasAdminPermission("content")) {
+      return <Redirect to="/admin/cms" replace />;
+    }
+    if (hasAdminPermission("design")) {
+      return <Redirect to="/admin/design/branding" replace />;
+    }
+  }
+
+  return <NotFound />;
+}
+
 function Router() {
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
@@ -133,17 +160,17 @@ function Router() {
         </Route>
 
         <Route path="/admin">
-          <ProtectedRoute roles={["admin"]}>
-            <AdminDashboardPage />
+          <ProtectedRoute roles={["admin", "editor"]}>
+            <AdminIndexRoute />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/therapists">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["directory"]}>
             {siteFeatures.directoryEnabled ? <AdminTherapistsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/directory/settings">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["directory"]}>
             {siteFeatures.directoryEnabled ? <AdminDirectorySettingsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
@@ -156,17 +183,17 @@ function Router() {
           <Redirect to="/admin/directory/settings" />
         </Route>
         <Route path="/admin/events">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             {siteFeatures.eventsEnabled ? <AdminEventsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/forms">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             <AdminFormsPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/blog">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             <AdminBlogPage />
           </ProtectedRoute>
         </Route>
@@ -181,7 +208,7 @@ function Router() {
           </ProtectedRoute>
         </Route>
         <Route path="/admin/design/branding">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
             <AdminDesignPage initialSubview="branding" />
           </ProtectedRoute>
         </Route>
@@ -189,17 +216,17 @@ function Router() {
           <Redirect to="/admin/design/branding" />
         </Route>
         <Route path="/admin/design/colors">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
             <AdminDesignPage initialSubview="colors" />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/design/typography">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
             <AdminDesignPage initialSubview="typography" />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/therapists/specializations">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["directory"]}>
             {siteFeatures.directoryEnabled ? <AdminSpecializationsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
@@ -209,87 +236,87 @@ function Router() {
           </ProtectedRoute>
         </Route>
         <Route path="/admin/applications/:id">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["directory"]}>
             {siteFeatures.directoryEnabled ? <AdminApplicationDetailPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/applications">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["directory"]}>
             {siteFeatures.directoryEnabled ? <AdminApplicationsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             <CmsOverviewPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/pages/new">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             <CmsPageEditorPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/pages/:id">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             <CmsPageEditorPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/pages">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             <CmsPagesPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/media">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             <CmsMediaPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/blog/new">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             {siteFeatures.blogEnabled ? <CmsBlogEditorPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/blog/settings">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             {siteFeatures.blogEnabled ? <CmsBlogSettingsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/blog/:id">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             {siteFeatures.blogEnabled ? <CmsBlogEditorPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/blog">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             {siteFeatures.blogEnabled ? <CmsBlogPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/sections/new">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
             <CmsSectionEditorPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/sections/:id">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
             <CmsSectionEditorPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/sections">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
             <CmsSectionsPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/seo">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             <CmsSeoPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/menus">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
             <CmsMenusPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/sidebars">
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
             <CmsSidebarsPage />
           </ProtectedRoute>
         </Route>

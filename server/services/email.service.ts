@@ -404,6 +404,31 @@ export async function sendContactFormEmail(
   }
 }
 
+export async function sendManagedFormSubmissionEmail(
+  recipientEmails: string[],
+  formName: string,
+  submissionSummary: string,
+  dashboardUrl: string
+): Promise<void> {
+  const vars = { formName, submissionSummary, dashboardUrl };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "managed-form-submission",
+    vars,
+    `New Form Submission: ${formName}`,
+    `<p>A new submission was received for ${formName}.</p><p>${submissionSummary}</p>`
+  );
+  if (!isActive) return;
+
+  for (const email of recipientEmails) {
+    sendEmail(email, subject, html).catch((err) => {
+      logger.email.warn("Failed to send managed form submission notification", {
+        recipientEmail: email,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }
+}
+
 export async function testMailgunConnection(): Promise<{
   success: boolean;
   message: string;

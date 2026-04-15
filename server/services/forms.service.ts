@@ -1,12 +1,14 @@
 import type { CmsForm, CmsFormField, InsertCmsFormSubmission } from "@shared/schema";
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
-import { sendContactFormEmail } from "./email.service";
+import { sendContactFormEmail, sendManagedFormSubmissionEmail } from "./email.service";
 import { syncContactToMailchimp } from "./mailchimp.service";
 import { AppError } from "../middleware/error-handler";
 
 function normalizeFormSettings(form: CmsForm) {
-  const settings = typeof form.settings === "object" && form.settings ? form.settings : {};
+  const settings = (typeof form.settings === "object" && form.settings
+    ? form.settings
+    : {}) as Record<string, unknown>;
   return {
     submitButtonText:
       typeof settings.submitButtonText === "string" && settings.submitButtonText.trim()
@@ -55,7 +57,9 @@ function normalizeUrl(value: string) {
 }
 
 function validateField(field: CmsFormField, raw: unknown) {
-  const config = typeof field.config === "object" && field.config ? field.config : {};
+  const config = (typeof field.config === "object" && field.config
+    ? field.config
+    : {}) as Record<string, unknown>;
   const selectionMode = config.selectionMode === "multiple" ? "multiple" : "single";
 
   if (field.type === "html" || field.type === "section" || field.type === "page") {
@@ -314,8 +318,12 @@ async function handleContactFormEffects(form: CmsForm, data: Record<string, unkn
 
   if (!settings.notifyAdmins) return;
 
-  const admins = await storage.users.getUsersByRole("admin");
-  const adminEmails = admins.map((admin) => admin.email).filter(Boolean);
+  const assignedUsers = await storage.users.getFormNotificationUsers(form.id);
+  const recipientEmails = assignedUsers.map((user) => user.email).filter(Boolean);
+  const adminEmails =
+    recipientEmails.length > 0
+      ? recipientEmails
+      : (await storage.users.getUsersByRole("admin")).map((admin) => admin.email).filter(Boolean);
   if (adminEmails.length === 0) return;
 
   sendContactFormEmail(
@@ -326,6 +334,57 @@ async function handleContactFormEffects(form: CmsForm, data: Record<string, unkn
     `${baseUrl ?? process.env.APP_URL ?? ""}/admin`
   ).catch((err) => {
     logger.email.warn("Failed to send contact form notification", {
+      formSlug: form.slug,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
+}
+
+function formatSubmissionValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (Array.isArray(value)) {
+    const normalized = value
+      .map((item) => formatSubmissionValue(item))
+      .filter((item) => item && item !== "—");
+    return normalized.length > 0 ? normalized.join(", ") : "—";
+  }
+  if (typeof value === "object") {
+    const record = objectValue(value);
+    const normalized = Object.values(record)
+      .map((item) => stringValue(item))
+      .filter(Boolean);
+    return normalized.length > 0 ? normalized.join(", ") : "—";
+  }
+  return String(value);
+}
+
+function buildSubmissionSummary(form: CmsForm, data: Record<string, unknown>) {
+  const lines = (Array.isArray(form.fields) ? form.fields : [])
+    .filter((field) => field.type !== "hidden" && field.type !== "html" && field.type !== "section" && field.type !== "page")
+    .map((field) => `${field.label}: ${formatSubmissionValue(data[field.key])}`)
+    .filter(Boolean);
+
+  return lines.join("\n");
+}
+
+async function notifyAssignedUsers(form: CmsForm, data: Record<string, unknown>, baseUrl?: string) {
+  const settings = normalizeFormSettings(form);
+  if (!settings.notifyAdmins || settings.storeAsContactMessage) return;
+
+  const recipients = await storage.users.getFormNotificationUsers(form.id);
+  const recipientEmails = recipients.map((user) => user.email).filter(Boolean);
+  if (recipientEmails.length === 0) return;
+
+  const dashboardUrl = `${baseUrl ?? process.env.APP_URL ?? ""}/admin/forms`;
+  const submissionSummary = buildSubmissionSummary(form, data);
+
+  sendManagedFormSubmissionEmail(
+    recipientEmails,
+    form.name,
+    submissionSummary,
+    dashboardUrl
+  ).catch((err) => {
+    logger.email.warn("Failed to send managed form notification", {
       formSlug: form.slug,
       error: err instanceof Error ? err.message : String(err),
     });
@@ -354,6 +413,7 @@ export async function submitManagedFormBySlug(
 
   await maybeSyncFormToMailchimp(form, validated);
   await handleContactFormEffects(form, validated, options.baseUrl);
+  await notifyAssignedUsers(form, validated, options.baseUrl);
 
   return {
     form,
