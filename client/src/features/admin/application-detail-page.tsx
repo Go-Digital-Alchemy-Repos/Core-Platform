@@ -235,31 +235,47 @@ export default function AdminApplicationDetailPage() {
           </Badge>
         </div>
 
-        <div className="flex gap-1 overflow-x-auto mb-6 border-b">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            let badge = "";
-            if (tab.id === "references") badge = `${completedRefs}/${references.length}`;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  isActive
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
-                }`}
-                data-testid={`tab-${tab.id}`}
-              >
-                <Icon className="w-4 h-4" />
-                {tab.label}
-                {badge && <span className="text-xs ml-1 opacity-70">({badge})</span>}
-              </button>
-            );
-          })}
-        </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+          <aside className="lg:sticky lg:top-6">
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Process</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                {TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  let badge = "";
+                  if (tab.id === "references") badge = `${completedRefs}/${references.length}`;
 
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left text-sm transition-colors ${
+                        isActive
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-transparent text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground"
+                      }`}
+                      data-testid={`tab-${tab.id}`}
+                    >
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                        isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                      }`}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{tab.label}</p>
+                        {badge && <p className="text-xs opacity-75">{badge}</p>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </aside>
+
+          <div className="min-w-0">
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
@@ -1069,6 +1085,8 @@ export default function AdminApplicationDetailPage() {
             </Card>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </AdminSidebar>
   );

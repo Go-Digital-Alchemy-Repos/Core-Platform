@@ -12,7 +12,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -171,6 +170,11 @@ interface PageBuilderProps {
   onChange: (content: BuilderContent) => void;
 }
 
+type LeftRailMode = "structure" | "inserter";
+type InsertPayload =
+  | { kind: "block"; type: string }
+  | { kind: "section"; sectionId: string; blocks: BlockInstance[] };
+
 interface SaveSectionDialogProps {
   block: BlockInstance;
   onClose: () => void;
@@ -187,6 +191,12 @@ interface VisualCanvasProps {
   registerBlockRef: (id: string, node: HTMLDivElement | null) => void;
   previewDevice: "desktop" | "tablet" | "mobile";
   onPreviewDeviceChange: (device: "desktop" | "tablet" | "mobile") => void;
+  draggedBlockId: string | null;
+  hasActiveDragPayload: boolean;
+  dropTarget: { id: string; position: "before" | "after" } | null;
+  onBlockDragOver: (event: DragEvent, targetId: string) => void;
+  onBlockDrop: (event: DragEvent, targetId: string) => void;
+  onBlockDragEnd: () => void;
 }
 
 interface FrontendPreviewDialogProps {
@@ -421,7 +431,15 @@ function SaveSectionDialog({ block, onClose }: SaveSectionDialogProps) {
   );
 }
 
-function SectionsLibrary({ onInsert }: { onInsert: (blocks: BlockInstance[]) => void }) {
+function SectionsLibrary({
+  onInsert,
+  onDragStart,
+  onDragEnd,
+}: {
+  onInsert: (blocks: BlockInstance[]) => void;
+  onDragStart: (event: DragEvent, payload: InsertPayload) => void;
+  onDragEnd: () => void;
+}) {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
@@ -442,10 +460,13 @@ function SectionsLibrary({ onInsert }: { onInsert: (blocks: BlockInstance[]) => 
     return matchesSearch && matchesCategory;
   });
 
-  const insertSection = (section: CmsSection) => {
+  const remapSectionBlocks = (section: CmsSection) => {
     const blocks = Array.isArray(section.blocks) ? (section.blocks as BlockInstance[]) : [];
-    const remappedBlocks = blocks.map((block) => ({ ...block, id: crypto.randomUUID() }));
-    onInsert(remappedBlocks);
+    return blocks.map((block) => ({ ...block, id: crypto.randomUUID() }));
+  };
+
+  const insertSection = (section: CmsSection) => {
+    onInsert(remapSectionBlocks(section));
   };
 
   return (
@@ -494,6 +515,15 @@ function SectionsLibrary({ onInsert }: { onInsert: (blocks: BlockInstance[]) => 
               <button
                 key={section.id}
                 type="button"
+                draggable
+                onDragStart={(event) =>
+                  onDragStart(event, {
+                    kind: "section",
+                    sectionId: section.id,
+                    blocks: remapSectionBlocks(section),
+                  })
+                }
+                onDragEnd={onDragEnd}
                 onClick={() => insertSection(section)}
                 className="group flex items-start gap-2.5 rounded-lg border p-3 text-left transition-colors hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30"
                 data-testid={`insert-section-${section.id}`}
@@ -531,6 +561,12 @@ function CanvasBlockFrame({
   onMove,
   onAddBelow,
   registerBlockRef,
+  draggedBlockId,
+  hasActiveDragPayload,
+  dropTarget,
+  onBlockDragOver,
+  onBlockDrop,
+  onBlockDragEnd,
 }: {
   block: BlockInstance;
   index: number;
@@ -541,17 +577,33 @@ function CanvasBlockFrame({
   onMove: (id: string, direction: "up" | "down") => void;
   onAddBelow: (id: string) => void;
   registerBlockRef: (id: string, node: HTMLDivElement | null) => void;
+  draggedBlockId: string | null;
+  hasActiveDragPayload: boolean;
+  dropTarget: { id: string; position: "before" | "after" } | null;
+  onBlockDragOver: (event: DragEvent, targetId: string) => void;
+  onBlockDrop: (event: DragEvent, targetId: string) => void;
+  onBlockDragEnd: () => void;
 }) {
   const blockDef = getBlockDef(block.type);
   const summary = getBlockSummary(block);
   const isDynamic = isDynamicBlock(block.type);
+  const showDropBefore = dropTarget?.id === block.id && dropTarget.position === "before";
+  const showDropAfter = dropTarget?.id === block.id && dropTarget.position === "after";
 
   return (
     <div
       ref={(node) => {
         registerBlockRef(block.id, node);
       }}
-      className="group relative scroll-mt-24"
+      className={cn(
+        "group relative scroll-mt-24 transition-all",
+        draggedBlockId === block.id && "opacity-60",
+        showDropBefore && "pt-4 before:absolute before:left-6 before:right-6 before:top-1 before:z-30 before:h-1 before:rounded-full before:bg-violet-500",
+        showDropAfter && "pb-4 after:absolute after:left-6 after:right-6 after:bottom-1 after:z-30 after:h-1 after:rounded-full after:bg-violet-500"
+      )}
+      onDragOver={(event) => onBlockDragOver(event, block.id)}
+      onDrop={(event) => onBlockDrop(event, block.id)}
+      onDragEnd={onBlockDragEnd}
       data-testid={`canvas-block-${block.id}`}
     >
       <div
@@ -559,7 +611,8 @@ function CanvasBlockFrame({
           "relative transition-all",
           isSelected
             ? "ring-2 ring-violet-500 ring-offset-4 ring-offset-background"
-            : "hover:ring-2 hover:ring-violet-300/70 hover:ring-offset-2 hover:ring-offset-background"
+            : "hover:ring-2 hover:ring-violet-300/70 hover:ring-offset-2 hover:ring-offset-background",
+          hasActiveDragPayload && !isSelected && "ring-offset-background"
         )}
       >
         <div className="pointer-events-none select-none">
@@ -693,6 +746,12 @@ function VisualCanvas({
   registerBlockRef,
   previewDevice,
   onPreviewDeviceChange,
+  draggedBlockId,
+  hasActiveDragPayload,
+  dropTarget,
+  onBlockDragOver,
+  onBlockDrop,
+  onBlockDragEnd,
 }: VisualCanvasProps) {
   let nonFullWidthIndex = 0;
 
@@ -775,12 +834,18 @@ function VisualCanvas({
                     index={index}
                     isSelected={selectedId === block.id}
                     onSelect={onSelect}
-                  onDuplicate={onDuplicate}
-                  onDelete={onDelete}
-                  onMove={onMove}
-                  onAddBelow={onAddBelow}
-                  registerBlockRef={registerBlockRef}
-                />
+                    onDuplicate={onDuplicate}
+                    onDelete={onDelete}
+                    onMove={onMove}
+                    onAddBelow={onAddBelow}
+                    registerBlockRef={registerBlockRef}
+                    draggedBlockId={draggedBlockId}
+                    hasActiveDragPayload={hasActiveDragPayload}
+                    dropTarget={dropTarget}
+                    onBlockDragOver={onBlockDragOver}
+                    onBlockDrop={onBlockDrop}
+                    onBlockDragEnd={onBlockDragEnd}
+                  />
                 );
 
                 if (hasCustomSectionStyle) {
@@ -829,12 +894,13 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const MIN_DESKTOP_INSPECTOR_HEIGHT = 280;
   const DESKTOP_INSPECTOR_RAIL_PADDING = 12;
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [savingSectionBlockId, setSavingSectionBlockId] = useState<string | null>(null);
   const [navigatorSearch, setNavigatorSearch] = useState("");
   const [addContentSearch, setAddContentSearch] = useState("");
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
+  const [draggedInsertPayload, setDraggedInsertPayload] = useState<InsertPayload | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: string; position: "before" | "after" } | null>(null);
+  const [leftRailMode, setLeftRailMode] = useState<LeftRailMode>("structure");
   const [structurePanelOpen, setStructurePanelOpen] = useState(true);
   const [advancedInspectorOpen, setAdvancedInspectorOpen] = useState(true);
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
@@ -926,6 +992,15 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     if (!selectedId) return;
     scrollBlockIntoView(selectedId);
   }, [scrollBlockIntoView, selectedId]);
+
+  const resolveInsertIndex = useCallback(() => {
+    if (insertAtIndex !== null) return insertAtIndex;
+    if (selectedId) {
+      const selectedIndex = blocks.findIndex((block) => block.id === selectedId);
+      if (selectedIndex >= 0) return selectedIndex + 1;
+    }
+    return blocks.length;
+  }, [blocks, insertAtIndex, selectedId]);
 
   const syncDesktopInspectorPosition = useCallback(() => {
     if (!selectedId || !advancedInspectorOpen) {
@@ -1023,38 +1098,41 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     };
   }, [advancedInspectorOpen, blocks.length, previewDevice, selectedId, syncDesktopInspectorPosition]);
 
-  const addBlock = useCallback((type: string) => {
+  const addBlockAtIndex = useCallback((type: string, index: number) => {
     const block = createBlock(type);
     const nextBlocks = [...blocks];
-    if (insertAtIndex === null) {
-      nextBlocks.push(block);
-    } else {
-      nextBlocks.splice(insertAtIndex, 0, block);
-    }
+    nextBlocks.splice(index, 0, block);
     setBlocks(nextBlocks);
     selectBlock(block.id);
-    setAddDialogOpen(false);
     setInsertAtIndex(null);
-  }, [blocks, insertAtIndex, selectBlock, setBlocks]);
+    setLeftRailMode("structure");
+    setStructurePanelOpen(true);
+  }, [blocks, selectBlock, setBlocks]);
 
-  const insertBlocks = useCallback((insertedBlocks: BlockInstance[]) => {
+  const addBlock = useCallback((type: string) => {
+    addBlockAtIndex(type, resolveInsertIndex());
+  }, [addBlockAtIndex, resolveInsertIndex]);
+
+  const insertBlocksAtIndex = useCallback((insertedBlocks: BlockInstance[], index: number) => {
     const nextBlocks = [...blocks];
-    if (insertAtIndex === null) {
-      nextBlocks.push(...insertedBlocks);
-    } else {
-      nextBlocks.splice(insertAtIndex, 0, ...insertedBlocks);
-    }
+    nextBlocks.splice(index, 0, ...insertedBlocks);
     setBlocks(nextBlocks);
     selectBlock(insertedBlocks[0]?.id ?? null);
-    setAddDialogOpen(false);
     setInsertAtIndex(null);
-  }, [blocks, insertAtIndex, selectBlock, setBlocks]);
+    setLeftRailMode("structure");
+    setStructurePanelOpen(true);
+  }, [blocks, selectBlock, setBlocks]);
+
+  const insertBlocks = useCallback((insertedBlocks: BlockInstance[]) => {
+    insertBlocksAtIndex(insertedBlocks, resolveInsertIndex());
+  }, [insertBlocksAtIndex, resolveInsertIndex]);
 
   const openAddBelow = useCallback((id: string) => {
     const sourceIndex = blocks.findIndex((block) => block.id === id);
     const nextIndex = sourceIndex < 0 ? blocks.length : sourceIndex + 1;
     setInsertAtIndex(nextIndex);
-    setAddDialogOpen(true);
+    setLeftRailMode("inserter");
+    setStructurePanelOpen(true);
   }, [blocks]);
 
   const updateBlockProps = useCallback((id: string, props: Record<string, unknown>) => {
@@ -1114,6 +1192,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
   const clearDragState = useCallback(() => {
     setDraggedBlockId(null);
+    setDraggedInsertPayload(null);
     setDropTarget(null);
   }, []);
 
@@ -1121,14 +1200,24 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", blockId);
     setDraggedBlockId(blockId);
+    setDraggedInsertPayload(null);
+    setDropTarget(null);
+  }, []);
+
+  const handleInserterDragStart = useCallback((event: DragEvent, payload: InsertPayload) => {
+    event.dataTransfer.effectAllowed = "copy";
+    event.dataTransfer.setData("application/x-page-builder-insert", JSON.stringify(payload));
+    setDraggedBlockId(null);
+    setDraggedInsertPayload(payload);
     setDropTarget(null);
   }, []);
 
   const handleDragOver = useCallback((event: DragEvent, targetId: string) => {
-    if (!draggedBlockId || draggedBlockId === targetId) return;
+    if (!draggedBlockId && !draggedInsertPayload) return;
+    if (draggedBlockId && draggedBlockId === targetId) return;
 
     event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
+    event.dataTransfer.dropEffect = draggedInsertPayload ? "copy" : "move";
 
     const bounds = event.currentTarget.getBoundingClientRect();
     const offsetY = event.clientY - bounds.top;
@@ -1139,95 +1228,44 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         ? current
         : { id: targetId, position }
     ));
-  }, [draggedBlockId]);
+  }, [draggedBlockId, draggedInsertPayload]);
 
   const handleDrop = useCallback((event: DragEvent, targetId: string) => {
     event.preventDefault();
 
     const sourceId = draggedBlockId ?? event.dataTransfer.getData("text/plain");
+    const rawInsertPayload = event.dataTransfer.getData("application/x-page-builder-insert");
+    let fallbackInsertPayload: InsertPayload | null = null;
+    if (rawInsertPayload) {
+      try {
+        fallbackInsertPayload = JSON.parse(rawInsertPayload) as InsertPayload;
+      } catch {
+        fallbackInsertPayload = null;
+      }
+    }
+    const insertPayload = draggedInsertPayload ?? fallbackInsertPayload;
     const position = dropTarget?.id === targetId ? dropTarget.position : "after";
+    const targetIndex = blocks.findIndex((block) => block.id === targetId);
+    const insertIndex = position === "before" ? targetIndex : targetIndex + 1;
 
-    if (sourceId && sourceId !== targetId) {
+    if (insertPayload && targetIndex >= 0) {
+      if (insertPayload.kind === "block") {
+        addBlockAtIndex(insertPayload.type, insertIndex);
+      } else {
+        insertBlocksAtIndex(insertPayload.blocks, insertIndex);
+      }
+    } else if (sourceId && sourceId !== targetId) {
       reorderBlocks(sourceId, targetId, position);
     }
 
     clearDragState();
-  }, [clearDragState, draggedBlockId, dropTarget, reorderBlocks]);
+  }, [addBlockAtIndex, blocks, clearDragState, draggedBlockId, draggedInsertPayload, dropTarget, insertBlocksAtIndex, reorderBlocks]);
 
   const savingBlock = savingSectionBlockId
     ? blocks.find((block) => block.id === savingSectionBlockId) ?? null
     : null;
 
-  const addBlockDialogContent = (
-    <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col p-0">
-      <DialogHeader className="px-6 pb-0 pt-6">
-        <DialogTitle>Add Content</DialogTitle>
-      </DialogHeader>
-      <Tabs defaultValue="blocks" className="flex flex-1 flex-col overflow-hidden">
-        <div className="px-6 pt-3">
-          <TabsList className="w-full">
-            <TabsTrigger value="blocks" className="flex-1 gap-1.5">
-              <Layers className="h-3.5 w-3.5" />
-              Block Types
-            </TabsTrigger>
-            <TabsTrigger value="sections" className="flex-1 gap-1.5" data-testid="tab-saved-sections">
-              <Bookmark className="h-3.5 w-3.5" />
-              Saved Sections
-            </TabsTrigger>
-          </TabsList>
-        </div>
-        <TabsContent value="blocks" className="mt-0 flex-1 overflow-y-auto px-6 pb-6 pt-3">
-          <div className="space-y-5">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={addContentSearch}
-                onChange={(event) => setAddContentSearch(event.target.value)}
-                placeholder="Search block types..."
-                className="h-9 pl-8 text-sm"
-                data-testid="input-add-content-search"
-              />
-            </div>
-            {filteredAddContentGroups.length === 0 ? (
-              <div className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
-                No block types match that search.
-              </div>
-            ) : filteredAddContentGroups.map(({ category, label, items }) => (
-              <div key={category}>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {label}
-                </h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {items.map((definition) => (
-                    <button
-                      key={definition.type}
-                      type="button"
-                      onClick={() => addBlock(definition.type)}
-                      className="group flex items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30"
-                      data-testid={`block-type-${definition.type}`}
-                    >
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-violet-100 transition-colors group-hover:bg-violet-200 dark:bg-violet-900/30 dark:group-hover:bg-violet-900/50">
-                        <BlockIcon name={definition.iconName} className="h-4 w-4 text-violet-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium leading-tight">{definition.label}</p>
-                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{definition.description}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-        <TabsContent value="sections" className="mt-0 flex-1 overflow-y-auto px-6 pb-6 pt-3">
-          <SectionsLibrary onInsert={insertBlocks} />
-        </TabsContent>
-      </Tabs>
-    </DialogContent>
-  );
-
-  const navigatorPanel = (
+  const structurePanel = (
     <div className="flex h-full flex-col rounded-2xl border border-border/70 bg-background shadow-sm">
       <div className="space-y-3 border-b border-border/70 px-4 py-4">
         <div className="flex items-start justify-between gap-3">
@@ -1243,31 +1281,18 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           <Badge variant="outline">{blocks.length}</Badge>
         </div>
 
-        <div className="flex gap-2">
-          <Dialog
-            open={addDialogOpen}
-            onOpenChange={(open) => {
-              setAddDialogOpen(open);
-              if (!open) {
-                setInsertAtIndex(null);
-                setAddContentSearch("");
-              }
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button
-                size="sm"
-                className="flex-1"
-                data-testid="button-add-block"
-                onClick={() => setInsertAtIndex(null)}
-              >
-                <Plus className="mr-1.5 h-4 w-4" />
-                Add Content
-              </Button>
-            </DialogTrigger>
-            {addBlockDialogContent}
-          </Dialog>
-        </div>
+        <Button
+          size="sm"
+          className="w-full"
+          data-testid="button-add-block"
+          onClick={() => {
+            setInsertAtIndex(selectedId ? resolveInsertIndex() : null);
+            setLeftRailMode("inserter");
+          }}
+        >
+          <Plus className="mr-1.5 h-4 w-4" />
+          Add Content
+        </Button>
 
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -1420,6 +1445,148 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     </div>
   );
 
+  const inserterPanel = (
+    <div className="flex h-full flex-col rounded-2xl border border-border/70 bg-background shadow-sm">
+      <div className="space-y-3 border-b border-border/70 px-4 py-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Plus className="h-4 w-4 text-violet-500" />
+              <p className="text-sm font-semibold">Add Content</p>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Browse blocks and saved sections here, then click to insert quickly or drag into the exact position you want.
+            </p>
+          </div>
+          {insertAtIndex !== null ? (
+            <Badge variant="secondary">Insert at {insertAtIndex + 1}</Badge>
+          ) : selectedId ? (
+            <Badge variant="outline">After selected block</Badge>
+          ) : (
+            <Badge variant="outline">Add to end</Badge>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Drag blocks or saved sections onto the canvas to place them precisely, or click once to insert at the current target.
+        </p>
+      </div>
+
+      <Tabs defaultValue="blocks" className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="border-b border-border/70 px-4 py-3">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="blocks" className="gap-1.5">
+              <Layers className="h-3.5 w-3.5" />
+              Block Types
+            </TabsTrigger>
+            <TabsTrigger value="sections" className="gap-1.5" data-testid="tab-saved-sections">
+              <Bookmark className="h-3.5 w-3.5" />
+              Saved Sections
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="blocks" className="mt-0 min-h-0 flex-1 overflow-hidden">
+          <div className="flex h-full min-h-0 flex-col px-4 pb-4 pt-3">
+            <div className="relative pb-3">
+              <Search className="absolute left-2.5 top-[calc(50%-6px)] h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={addContentSearch}
+                onChange={(event) => setAddContentSearch(event.target.value)}
+                placeholder="Search block types..."
+                className="h-9 pl-8 text-sm"
+                data-testid="input-add-content-search"
+              />
+            </div>
+            <ScrollArea className="min-h-0 flex-1">
+              <div className="space-y-5 pr-1">
+                {filteredAddContentGroups.length === 0 ? (
+                  <div className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
+                    No block types match that search.
+                  </div>
+                ) : filteredAddContentGroups.map(({ category, label, items }) => (
+                  <div key={category}>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {label}
+                    </h3>
+                    <div className="space-y-2">
+                      {items.map((definition) => (
+                        <button
+                          key={definition.type}
+                          type="button"
+                          draggable
+                          onDragStart={(event) =>
+                            handleInserterDragStart(event, {
+                              kind: "block",
+                              type: definition.type,
+                            })
+                          }
+                          onDragEnd={clearDragState}
+                          onClick={() => addBlock(definition.type)}
+                          className="group flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30"
+                          data-testid={`block-type-${definition.type}`}
+                        >
+                          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-violet-100 transition-colors group-hover:bg-violet-200 dark:bg-violet-900/30 dark:group-hover:bg-violet-900/50">
+                            <BlockIcon name={definition.iconName} className="h-4 w-4 text-violet-600" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium leading-tight">{definition.label}</p>
+                            <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{definition.description}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="sections" className="mt-0 min-h-0 flex-1 overflow-hidden px-4 pb-4 pt-3">
+          <ScrollArea className="h-full">
+            <SectionsLibrary
+              onInsert={insertBlocks}
+              onDragStart={handleInserterDragStart}
+              onDragEnd={clearDragState}
+            />
+          </ScrollArea>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+
+  const leftRailPanel = (
+    <div className="flex h-full flex-col gap-3">
+      <div className="rounded-2xl border border-border/70 bg-background p-2 shadow-sm">
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            variant={leftRailMode === "structure" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setLeftRailMode("structure")}
+            data-testid="button-left-rail-structure"
+          >
+            <ListOrdered className="mr-1.5 h-4 w-4" />
+            Structure
+          </Button>
+          <Button
+            type="button"
+            variant={leftRailMode === "inserter" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setLeftRailMode("inserter")}
+            data-testid="button-left-rail-inserter"
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            Add Content
+          </Button>
+        </div>
+      </div>
+      <div className="min-h-0 flex-1">
+        {leftRailMode === "structure" ? structurePanel : inserterPanel}
+      </div>
+    </div>
+  );
+
   const inspectorPanel = selectedBlock && selectedDef ? (
     <div
       className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm lg:h-auto lg:max-h-[calc(100vh-220px)]"
@@ -1563,31 +1730,24 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             <Monitor className="mr-1.5 h-4 w-4" />
             Frontend Preview
           </Button>
-          <Dialog
-            open={addDialogOpen}
-            onOpenChange={(open) => {
-              setAddDialogOpen(open);
-              if (!open) {
-                setInsertAtIndex(null);
-                setAddContentSearch("");
-              }
+          <Button
+            data-testid="button-add-block-toolbar"
+            onClick={() => {
+              setInsertAtIndex(selectedId ? resolveInsertIndex() : null);
+              setLeftRailMode("inserter");
+              setStructurePanelOpen(true);
             }}
           >
-            <DialogTrigger asChild>
-              <Button data-testid="button-add-block-toolbar" onClick={() => setInsertAtIndex(null)}>
-                <Plus className="mr-1.5 h-4 w-4" />
-                Add Content
-              </Button>
-            </DialogTrigger>
-            {addBlockDialogContent}
-          </Dialog>
+            <Plus className="mr-1.5 h-4 w-4" />
+            Add Content
+          </Button>
         </div>
       </div>
 
       <div className="space-y-4 lg:hidden">
-        {structurePanelOpen ? navigatorPanel : (
+        {structurePanelOpen ? leftRailPanel : (
           <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
-            The Structure panel is hidden. Tap "Show Structure" to bring back the block navigator.
+            The left sidebar is hidden. Tap "Show Structure" to bring back the builder rail.
           </div>
         )}
         <div className="rounded-2xl border border-border/70 bg-background shadow-sm">
@@ -1602,6 +1762,12 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             registerBlockRef={registerBlockRef}
             previewDevice={previewDevice}
             onPreviewDeviceChange={setPreviewDevice}
+            draggedBlockId={draggedBlockId}
+            hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
+            dropTarget={dropTarget}
+            onBlockDragOver={handleDragOver}
+            onBlockDrop={handleDrop}
+            onBlockDragEnd={clearDragState}
           />
         </div>
         {advancedInspectorOpen ? inspectorPanel : (
@@ -1618,7 +1784,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             className="h-[calc(100vh-180px)] min-h-[720px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
           >
             <ResizablePanel defaultSize={20} minSize={16}>
-              <div className="h-full min-h-0 p-3">{navigatorPanel}</div>
+              <div className="h-full min-h-0 p-3">{leftRailPanel}</div>
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={55} minSize={35}>
@@ -1635,6 +1801,12 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     registerBlockRef={registerBlockRef}
                     previewDevice={previewDevice}
                     onPreviewDeviceChange={setPreviewDevice}
+                    draggedBlockId={draggedBlockId}
+                    hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
+                    dropTarget={dropTarget}
+                    onBlockDragOver={handleDragOver}
+                    onBlockDrop={handleDrop}
+                    onBlockDragEnd={clearDragState}
                   />
                 </div>
               </div>
@@ -1650,7 +1822,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             className="h-[calc(100vh-180px)] min-h-[720px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
           >
             <ResizablePanel defaultSize={22} minSize={18}>
-              <div className="h-full min-h-0 p-3">{navigatorPanel}</div>
+              <div className="h-full min-h-0 p-3">{leftRailPanel}</div>
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={78} minSize={50}>
@@ -1670,6 +1842,12 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     registerBlockRef={registerBlockRef}
                     previewDevice={previewDevice}
                     onPreviewDeviceChange={setPreviewDevice}
+                    draggedBlockId={draggedBlockId}
+                    hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
+                    dropTarget={dropTarget}
+                    onBlockDragOver={handleDragOver}
+                    onBlockDrop={handleDrop}
+                    onBlockDragEnd={clearDragState}
                   />
                 </div>
               </div>
@@ -1697,6 +1875,12 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     registerBlockRef={registerBlockRef}
                     previewDevice={previewDevice}
                     onPreviewDeviceChange={setPreviewDevice}
+                    draggedBlockId={draggedBlockId}
+                    hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
+                    dropTarget={dropTarget}
+                    onBlockDragOver={handleDragOver}
+                    onBlockDrop={handleDrop}
+                    onBlockDragEnd={clearDragState}
                   />
                 </div>
               </div>
@@ -1726,6 +1910,12 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                 registerBlockRef={registerBlockRef}
                 previewDevice={previewDevice}
                 onPreviewDeviceChange={setPreviewDevice}
+                draggedBlockId={draggedBlockId}
+                hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
+                dropTarget={dropTarget}
+                onBlockDragOver={handleDragOver}
+                onBlockDrop={handleDrop}
+                onBlockDragEnd={clearDragState}
               />
             </div>
           </div>
