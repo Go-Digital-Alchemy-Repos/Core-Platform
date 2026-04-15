@@ -243,6 +243,38 @@ const INTEGRATIONS: IntegrationConfig[] = [
     ],
   },
   {
+    category: "mailchimp",
+    title: "Mailchimp",
+    description: "Audience sync for directory applicant lifecycle tagging",
+    icon: Tag,
+    fields: [
+      {
+        key: "mailchimp_api_key",
+        label: "API Key",
+        isSecret: true,
+        placeholder: "xxxxxxxxxxxxxxxxxxxx-us6",
+      },
+      {
+        key: "mailchimp_audience_id",
+        label: "Audience ID",
+        isSecret: false,
+        placeholder: "a1b2c3d4e5",
+      },
+      {
+        key: "mailchimp_server_prefix",
+        label: "Server Prefix",
+        isSecret: false,
+        placeholder: "us6",
+      },
+      {
+        key: "mailchimp_applicant_tag",
+        label: "Applicant Tag",
+        isSecret: false,
+        placeholder: "TCK Directory Applicants",
+      },
+    ],
+  },
+  {
     category: "cloudflare_r2",
     title: "Cloudflare R2",
     description: "Object storage for images and file uploads",

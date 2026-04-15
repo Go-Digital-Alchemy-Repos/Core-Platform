@@ -15,6 +15,7 @@ import {
 } from "../services/email.service";
 import * as r2Service from "../services/r2.service";
 import { ensureSystemEmailTemplates } from "../services/system-email-templates.service";
+import { testMailchimpConnection } from "../services/mailchimp.service";
 import { CMS_OPTIONS, isImageMime, optimizeImage } from "../services/image-optimizer";
 
 const router = Router();
@@ -167,7 +168,7 @@ router.delete(
 );
 
 const testConnectionSchema = z.object({
-  integration: z.enum(["stripe", "mailgun", "cloudflare_r2"]),
+  integration: z.enum(["stripe", "mailgun", "mailchimp", "cloudflare_r2"]),
 });
 
 router.post(
@@ -189,6 +190,12 @@ router.post(
 
     if (integration === "mailgun") {
       const result = await testMailgunConnection();
+      res.json(result);
+      return;
+    }
+
+    if (integration === "mailchimp") {
+      const result = await testMailchimpConnection();
       res.json(result);
       return;
     }
