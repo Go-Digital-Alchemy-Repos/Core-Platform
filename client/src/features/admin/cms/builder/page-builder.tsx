@@ -925,7 +925,7 @@ function VisualCanvas({
 }
 
 export function PageBuilder({ content, onChange }: PageBuilderProps) {
-  const MIN_DESKTOP_INSPECTOR_HEIGHT = 220;
+  const MIN_DESKTOP_INSPECTOR_HEIGHT = 360;
   const DESKTOP_INSPECTOR_RAIL_PADDING = 12;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [savingSectionBlockId, setSavingSectionBlockId] = useState<string | null>(null);
@@ -969,6 +969,24 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const scrollBlockIntoView = useCallback((id: string) => {
     const node = blockRefs.current.get(id);
     if (!node) return;
+
+    const viewport = node.closest("[data-radix-scroll-area-viewport]") as HTMLElement | null;
+    if (viewport) {
+      const viewportRect = viewport.getBoundingClientRect();
+      const nodeRect = node.getBoundingClientRect();
+      const lowZoneThreshold = viewportRect.top + viewport.clientHeight * 0.52;
+      const bottomSafetyThreshold = viewportRect.bottom - Math.min(260, viewport.clientHeight * 0.28);
+      const desiredTop = viewportRect.top + Math.min(140, viewport.clientHeight * 0.18);
+
+      if (nodeRect.top > lowZoneThreshold || nodeRect.bottom > bottomSafetyThreshold) {
+        const nextScrollTop = viewport.scrollTop + (nodeRect.top - desiredTop);
+        viewport.scrollTo({
+          top: Math.max(0, nextScrollTop),
+          behavior: "smooth",
+        });
+        return;
+      }
+    }
 
     node.scrollIntoView({
       behavior: "smooth",
@@ -1068,7 +1086,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       0
     );
     const minimumVisibleHeight = Math.min(
-      MIN_DESKTOP_INSPECTOR_HEIGHT,
+      Math.max(MIN_DESKTOP_INSPECTOR_HEIGHT, Math.min(availableRailHeight * 0.72, 560)),
       availableRailHeight || MIN_DESKTOP_INSPECTOR_HEIGHT
     );
 
