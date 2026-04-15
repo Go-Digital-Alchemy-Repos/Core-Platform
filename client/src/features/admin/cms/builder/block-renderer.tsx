@@ -1150,13 +1150,17 @@ function DeliverySetupBlock({ props }: { props: Record<string, unknown> }) {
   return (
     <div className="py-4" data-testid="block-delivery-setup">
       <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
-      <div className="relative max-w-3xl mx-auto mb-8">
-        <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border hidden sm:block" />
+      <div className="max-w-3xl mx-auto mb-8">
         <div className="space-y-6">
           {steps.map((step, i) => (
             <div key={i} className="flex gap-4 sm:gap-6" data-testid={`setup-step-${i}`}>
-              <div className="relative z-10 flex-shrink-0 w-12 h-12 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-sm">
-                {step.step}
+              <div className="relative flex w-12 flex-shrink-0 justify-center">
+                {i < steps.length - 1 ? (
+                  <div className="absolute left-1/2 top-12 h-[calc(100%+1.5rem)] w-0.5 -translate-x-1/2 bg-border hidden sm:block" />
+                ) : null}
+                <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground font-bold text-sm">
+                  {step.step}
+                </div>
               </div>
               <div className="pt-2">
                 <h3 className="font-semibold text-sm sm:text-base mb-1">{step.title}</h3>

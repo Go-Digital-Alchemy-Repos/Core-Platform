@@ -39,13 +39,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import type { User } from "@shared/schema";
 import { AdminPermission } from "@shared/types";
@@ -102,6 +95,21 @@ const EDITOR_PERMISSION_OPTIONS = [
   },
 ] as const;
 
+const SYSTEM_ROLE_OPTIONS = [
+  {
+    value: "admin" as const,
+    label: "System Admin",
+    description: "Full access to every admin tool, including System settings.",
+    icon: ShieldCheck,
+  },
+  {
+    value: "editor" as const,
+    label: "Editor",
+    description: "Access only to the Directory, Content, and Design areas you assign.",
+    icon: FolderKanban,
+  },
+] as const;
+
 function displayRole(role: string): string {
   if (role === "admin") return "System Admin";
   if (role === "editor") return "Editor";
@@ -120,6 +128,58 @@ function summarizePermissions(user: SafeUser) {
   return permissions
     .map((permission) => EDITOR_PERMISSION_OPTIONS.find((option) => option.value === permission)?.label ?? permission)
     .join(", ");
+}
+
+function SystemRoleSelector({
+  role,
+  onChange,
+  testIdPrefix = "role",
+}: {
+  role: "admin" | "editor";
+  onChange: (role: "admin" | "editor") => void;
+  testIdPrefix?: string;
+}) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="System role">
+      {SYSTEM_ROLE_OPTIONS.map((option) => {
+        const Icon = option.icon;
+        const selected = role === option.value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onChange(option.value)}
+            data-testid={`${testIdPrefix}-${option.value}`}
+            className={[
+              "rounded-lg border p-4 text-left transition-colors",
+              selected
+                ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                : "border-border bg-background hover:bg-muted/30",
+            ].join(" ")}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className={[
+                  "mt-0.5 flex h-9 w-9 items-center justify-center rounded-full border",
+                  selected
+                    ? "border-primary/30 bg-primary/10 text-primary"
+                    : "border-border bg-muted/40 text-muted-foreground",
+                ].join(" ")}
+              >
+                <Icon className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-foreground">{option.label}</div>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">{option.description}</p>
+              </div>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function AdminUsersPage() {
@@ -357,7 +417,7 @@ function FormNotificationPanel({
   );
 }
 
-function CreateUserSheet({
+export function CreateUserSheet({
   open,
   onOpenChange,
   activeForms,
@@ -480,15 +540,7 @@ function CreateUserSheet({
                   Admins have full platform access. Editors are limited to the tool groups you choose below.
                 </p>
               </div>
-              <Select value={role} onValueChange={(value) => setRole(value as "admin" | "editor")}>
-                <SelectTrigger id="create-role" data-testid="select-create-role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">System Admin</SelectItem>
-                  <SelectItem value="editor">Editor</SelectItem>
-                </SelectContent>
-              </Select>
+              <SystemRoleSelector role={role} onChange={setRole} testIdPrefix="create-role" />
             </div>
 
             {role === "editor" ? (
@@ -732,15 +784,7 @@ function UserDetailSheet({
                           Editors can only access the tool groups you assign here. System remains admin-only.
                         </p>
                       </div>
-                      <Select value={role} onValueChange={(value) => setRole(value as "admin" | "editor")}>
-                        <SelectTrigger id="detail-role" data-testid="select-detail-role">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">System Admin</SelectItem>
-                          <SelectItem value="editor">Editor</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <SystemRoleSelector role={role} onChange={setRole} testIdPrefix="detail-role" />
                     </div>
 
                     {role === "editor" ? (
