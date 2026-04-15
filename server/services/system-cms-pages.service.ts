@@ -182,6 +182,34 @@ function buildTermsOfServiceContent() {
   };
 }
 
+function buildDisclaimerContent() {
+  return {
+    blocks: [
+      {
+        id: id(),
+        type: "section-header",
+        props: {
+          eyebrow: "Legal",
+          title: "Disclaimer",
+          subtitle:
+            "Review emergency guidance, directory vetting boundaries, and important information to keep in mind when using the TCK Wellness directory and related services.",
+          alignment: "left",
+          headingLevel: "h1",
+        },
+      },
+      {
+        id: id(),
+        type: "rich-text",
+        props: {
+          alignment: "left",
+          content:
+            '<p><strong>If you or someone you know is experiencing a mental health emergency:</strong> In the U.S. please call <strong>988</strong> for the Suicide and Crisis Lifeline. For other emergencies call <strong>911</strong>. Outside the U.S. find international suicide hotlines <a href="https://www.iasp.info/resources/Crisis_Centres/" target="_blank" rel="noopener noreferrer">here</a>. For other emergencies, find help <a href="https://www.who.int/health-topics/emergency-care" target="_blank" rel="noopener noreferrer">here</a>.</p><p>TCK Wellness conducts a vetting process to ensure that each listed provider is TCK-informed. This process includes an application, an interview, and a background check, and approved providers have access to ongoing TCK-informed training opportunities.</p><p>Neither TCK Wellness nor Interaction International evaluates or verifies providers&apos; qualifications, scope of practice, or expertise outside of TCK-informed care. Individuals are encouraged to use their own discernment when determining whether a provider is an appropriate fit for their specific needs. <a href="/about">Learn more about what it means to be vetted</a>.</p>',
+        },
+      },
+    ],
+  };
+}
+
 function buildDefaultBlogSidebarWidgets(): SidebarWidget[] {
   return [
     {
@@ -394,6 +422,29 @@ export async function ensureSystemCmsPages() {
       seoTitle: "Terms of Service | TCK Wellness",
       seoDescription: "Review the TCK Wellness terms of service for use of the website, directory, events, and related services.",
       seoKeywords: "terms of service, terms and conditions, TCK Wellness terms",
+      ogImageUrl: "",
+      canonicalUrl: "",
+      noindex: false,
+      publishedAt: new Date(),
+      scheduledAt: null,
+      createdBy: null,
+      updatedBy: null,
+      sidebarId: null,
+    });
+  }
+
+  const existingDisclaimer = await storage.cmsPages.getPageBySlug("disclaimer");
+  if (!existingDisclaimer) {
+    await storage.cmsPages.createPage({
+      title: "Disclaimer",
+      slug: "disclaimer",
+      pageType: "custom",
+      template: "full-width",
+      status: "published",
+      content: buildDisclaimerContent(),
+      seoTitle: "Disclaimer | TCK Wellness",
+      seoDescription: "Review emergency guidance, directory vetting limitations, and important information about using the TCK Wellness platform.",
+      seoKeywords: "disclaimer, emergency guidance, directory disclaimer, TCK Wellness disclaimer",
       ogImageUrl: "",
       canonicalUrl: "",
       noindex: false,

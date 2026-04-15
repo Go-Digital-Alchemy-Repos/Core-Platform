@@ -43,6 +43,14 @@ function patchLegalItemUrls(items: MenuItem[]): { items: MenuItem[]; changed: bo
       changed = true;
     }
 
+    if (
+      normalizedLabel === "disclaimer" &&
+      (entry.url === "/contact" || entry.url === "" || entry.url === "#")
+    ) {
+      nextUrl = "/disclaimer";
+      changed = true;
+    }
+
     if (nextChildren.changed) {
       changed = true;
     }
@@ -53,6 +61,12 @@ function patchLegalItemUrls(items: MenuItem[]): { items: MenuItem[]; changed: bo
       children: nextChildren.items,
     };
   });
+
+  const hasDisclaimer = nextItems.some((entry) => entry.label.trim().toLowerCase() === "disclaimer");
+  if (!hasDisclaimer) {
+    nextItems.push(item("Disclaimer", "/disclaimer"));
+    changed = true;
+  }
 
   return { items: nextItems, changed };
 }
@@ -114,6 +128,7 @@ const defaultMenus: Array<InsertCmsMenu & { location: StandardMenuLocation }> = 
     items: [
       item("Privacy Policy", "/privacy-policy"),
       item("Terms of Service", "/terms-of-service"),
+      item("Disclaimer", "/disclaimer"),
     ],
   },
 ];
