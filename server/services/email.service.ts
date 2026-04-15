@@ -27,10 +27,17 @@ interface MailgunConfig {
 
 let cachedMailgunConfig: MailgunConfig | null = null;
 let mailgunConfigFetched = false;
+let cachedEmailLogoUrl: string | null = null;
+let emailBrandingFetched = false;
 
 export function resetMailgunConfig(): void {
   cachedMailgunConfig = null;
   mailgunConfigFetched = false;
+}
+
+export function resetEmailBrandingCache(): void {
+  cachedEmailLogoUrl = null;
+  emailBrandingFetched = false;
 }
 
 async function getMailgunConfig(): Promise<MailgunConfig | null> {
@@ -50,6 +57,33 @@ async function getMailgunConfig(): Promise<MailgunConfig | null> {
     logger.email.warn("Failed to load Mailgun configuration", { error: err instanceof Error ? err.message : String(err) });
   }
   return cachedMailgunConfig;
+}
+
+function resolveAbsoluteAssetUrl(url: string | null | undefined) {
+  const value = typeof url === "string" ? url.trim() : "";
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value)) return value;
+  const appUrl = (process.env.APP_URL || "").trim().replace(/\/$/, "");
+  if (!appUrl || !value.startsWith("/")) return value;
+  return `${appUrl}${value}`;
+}
+
+async function getEmailLogoUrl(): Promise<string | null> {
+  if (emailBrandingFetched) return cachedEmailLogoUrl;
+
+  try {
+    const { storage } = await import("../storage/index");
+    const branding = await storage.settings.getDecryptedCategory("branding");
+    cachedEmailLogoUrl = resolveAbsoluteAssetUrl(branding.frontend_logo_url);
+    emailBrandingFetched = true;
+  } catch (err) {
+    logger.email.warn("Failed to load branding for email shell", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    emailBrandingFetched = true;
+  }
+
+  return cachedEmailLogoUrl;
 }
 
 async function sendViaMailgun(
@@ -95,7 +129,11 @@ async function sendViaSmtp(
   }
 }
 
-function baseTemplate(title: string, body: string): string {
+function baseTemplate(title: string, body: string, options: { logoUrl?: string | null } = {}): string {
+  const logoMarkup = options.logoUrl
+    ? `<img src="${options.logoUrl}" alt="TCK Wellness" style="display:block;max-width:220px;max-height:52px;height:auto;width:auto;margin:0 auto;" />`
+    : `<div style="color:#1e3a5f;font-size:22px;font-weight:600;text-align:center;">TCK Wellness</div>`;
+
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
@@ -103,8 +141,8 @@ function baseTemplate(title: string, body: string): string {
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 0;">
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-        <tr><td style="background:#1e3a5f;padding:24px 32px;">
-          <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;">TCK Wellness</h1>
+        <tr><td style="background:#f9fafb;padding:22px 32px;border-bottom:1px solid #e5e7eb;">
+          ${logoMarkup}
         </td></tr>
         <tr><td style="padding:32px;">
           ${title ? `<h2 style="margin:0 0 16px;color:#1e3a5f;font-size:20px;">${title}</h2>` : ""}
@@ -118,6 +156,11 @@ function baseTemplate(title: string, body: string): string {
   </table>
 </body>
 </html>`;
+}
+
+export async function renderEmailShell(title: string, body: string): Promise<string> {
+  const logoUrl = await getEmailLogoUrl();
+  return baseTemplate(title, body, { logoUrl });
 }
 
 function renderTemplate(template: string, vars: Record<string, string | null>): string {
@@ -151,7 +194,7 @@ async function getTemplateHtml(
       const renderedSubject = renderTemplate(template.subject, vars);
       return {
         subject: renderedSubject,
-        html: baseTemplate("", renderedBody),
+        html: await renderEmailShell("", renderedBody),
         isActive: template.isActive,
       };
     }
@@ -160,7 +203,7 @@ async function getTemplateHtml(
   }
   return {
     subject: fallbackTitle,
-    html: baseTemplate(fallbackTitle, fallbackBody),
+    html: await renderEmailShell(fallbackTitle, fallbackBody),
     isActive: true,
   };
 }
@@ -456,7 +499,7 @@ export async function sendNewMessageEmail(
   loginUrl: string
 ): Promise<boolean> {
   const firstName = recipientName || "there";
-  const html = baseTemplate(
+  const html = await renderEmailShell(
     "New Message in Your Message Center",
     `<p>Hi ${firstName},</p>
     <p>You have received a new message from <strong>${senderName}</strong> in your TCK Wellness Message Center.</p>

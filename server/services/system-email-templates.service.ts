@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { emailTemplates } from "@shared/schema";
 import { logger } from "../utils/logger";
@@ -5,6 +6,13 @@ import { logger } from "../utils/logger";
 function baseWrap(title: string, body: string): string {
   return `<h2 style="margin:0 0 16px;color:#1e3a5f;font-size:20px;">${title}</h2>
 ${body}`;
+}
+
+function removeLegacyAdminCta(htmlBody: string) {
+  return htmlBody.replace(
+    /\s*<table cellpadding="0" cellspacing="0" style="margin:24px 0;">[\s\S]*?Admin Dashboard<\/a>\s*<\/td><\/tr>\s*<\/table>/i,
+    ""
+  );
 }
 
 export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS = [
@@ -191,36 +199,26 @@ export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS = [
     name: "Contact Form Submission (Admin)",
     subject: "New Contact Form: {{senderName}}",
     description: "Sent to admin(s) when someone submits the contact form.",
-    variables: ["senderName", "senderEmail", "messageBody", "dashboardUrl"],
+    variables: ["senderName", "senderEmail", "messageBody"],
     htmlBody: baseWrap("New Contact Form Submission", `
     <p style="color:#374151;font-size:15px;line-height:1.6;">A new message has been submitted through the contact form.</p>
     <div style="background:#f3f4f6;border-radius:6px;padding:16px;margin:16px 0;">
       <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>From:</strong> {{senderName}} ({{senderEmail}})</p>
       <p style="margin:8px 0 0;color:#374151;font-size:14px;"><strong>Message:</strong></p>
       <p style="margin:4px 0 0;color:#374151;font-size:14px;">{{messageBody}}</p>
-    </div>
-    <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
-      <tr><td style="background:#2d8a7e;border-radius:6px;padding:12px 28px;">
-        <a href="{{dashboardUrl}}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;">View in Admin Dashboard</a>
-      </td></tr>
-    </table>`),
+    </div>`),
   },
   {
     slug: "managed-form-submission",
     name: "Managed Form Submission (Admin)",
     subject: "New Form Submission: {{formName}}",
     description: "Sent to assigned system users when a managed frontend form receives a submission.",
-    variables: ["formName", "submissionSummary", "dashboardUrl"],
+    variables: ["formName", "submissionSummary"],
     htmlBody: baseWrap("New Form Submission", `
     <p style="color:#374151;font-size:15px;line-height:1.6;">A new submission was received for <strong>{{formName}}</strong>.</p>
     <div style="background:#f3f4f6;border-radius:6px;padding:16px;margin:16px 0;">
       <p style="margin:0;color:#374151;font-size:14px;white-space:pre-line;">{{submissionSummary}}</p>
-    </div>
-    <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
-      <tr><td style="background:#2d8a7e;border-radius:6px;padding:12px 28px;">
-        <a href="{{dashboardUrl}}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;">View in Admin Dashboard</a>
-      </td></tr>
-    </table>`),
+    </div>`),
   },
   {
     slug: "event-registration-confirmation",
@@ -352,6 +350,33 @@ export async function ensureSystemEmailTemplates(refreshExisting = false) {
   let updated = 0;
 
   for (const template of SYSTEM_EMAIL_TEMPLATE_DEFAULTS) {
+    if (!refreshExisting) {
+      const existing = await db.query.emailTemplates.findFirst({
+        where: (emailTemplate, { eq }) => eq(emailTemplate.slug, template.slug),
+      });
+
+      if (
+        existing &&
+        (template.slug === "contact-form-submission" || template.slug === "managed-form-submission")
+      ) {
+        const nextHtmlBody = removeLegacyAdminCta(existing.htmlBody);
+        const nextVariables = template.variables;
+        const variablesChanged = JSON.stringify(existing.variables) !== JSON.stringify(nextVariables);
+
+        if (nextHtmlBody !== existing.htmlBody || variablesChanged) {
+          await db
+            .update(emailTemplates)
+            .set({
+              htmlBody: nextHtmlBody,
+              variables: nextVariables,
+              updatedAt: new Date(),
+            })
+            .where(eq(emailTemplates.slug, template.slug));
+          updated += 1;
+        }
+      }
+    }
+
     if (refreshExisting) {
       await db
         .insert(emailTemplates)

@@ -10,8 +10,9 @@ import { paramString } from "../utils/params";
 import {
   sendEmail,
   testMailgunConnection,
-  baseTemplate,
+  renderEmailShell,
   renderTemplate,
+  resetEmailBrandingCache,
 } from "../services/email.service";
 import * as r2Service from "../services/r2.service";
 import { ensureSystemEmailTemplates } from "../services/system-email-templates.service";
@@ -106,6 +107,10 @@ router.put(
       resetMailgunConfig();
     }
 
+    if (data.category === "branding") {
+      resetEmailBrandingCache();
+    }
+
     storage.settings.invalidateCategory(data.category);
 
     res.json({
@@ -150,6 +155,7 @@ router.post(
 
     await storage.settings.upsertSetting(parsed.data.settingKey, publicUrl, "branding", false);
     storage.settings.invalidateCategory("branding");
+    resetEmailBrandingCache();
     r2Service.resetClient();
 
     res.status(201).json({
@@ -287,7 +293,7 @@ router.post(
     const subject = overrideSubject || template.subject;
     const renderedBody = renderTemplate(body, sampleVars);
     const renderedSubject = renderTemplate(subject, sampleVars);
-    const html = baseTemplate("", renderedBody);
+    const html = await renderEmailShell("", renderedBody);
 
     res.json({ subject: renderedSubject, html });
   })
@@ -321,7 +327,7 @@ router.post(
 
     const renderedBody = renderTemplate(template.htmlBody, sampleVars);
     const renderedSubject = renderTemplate(template.subject, sampleVars);
-    const html = baseTemplate("", renderedBody);
+    const html = await renderEmailShell("", renderedBody);
 
     const sent = await sendEmail(adminEmail, `[TEST] ${renderedSubject}`, html);
     res.json({
