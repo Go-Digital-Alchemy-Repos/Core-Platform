@@ -201,6 +201,7 @@ interface VisualCanvasProps {
   onBlockDragOver: (event: DragEvent, targetId: string) => void;
   onBlockDrop: (event: DragEvent, targetId: string) => void;
   onBlockDragEnd: () => void;
+  desktopFrameClassName?: string;
 }
 
 interface FrontendPreviewDialogProps {
@@ -781,12 +782,13 @@ function VisualCanvas({
   onBlockDragOver,
   onBlockDrop,
   onBlockDragEnd,
+  desktopFrameClassName,
 }: VisualCanvasProps) {
   let nonFullWidthIndex = 0;
 
   return (
     <div className="h-full bg-[radial-gradient(circle_at_top,_rgba(137,205,161,0.12),_transparent_45%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,250,252,0.98))] p-5">
-      <div className={cn("mx-auto flex min-h-full flex-col overflow-hidden rounded-[28px] border border-border/60 bg-background shadow-[0_20px_70px_rgba(15,23,42,0.08)] transition-[max-width] duration-200", PREVIEW_DEVICE_FRAME_CLASSES[previewDevice])}>
+      <div className={cn("mx-auto flex min-h-full flex-col overflow-hidden rounded-[28px] border border-border/60 bg-background shadow-[0_20px_70px_rgba(15,23,42,0.08)] transition-[max-width] duration-200", PREVIEW_DEVICE_FRAME_CLASSES[previewDevice], previewDevice === "desktop" && desktopFrameClassName)}>
         <div className="flex items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-3">
           <div>
             <p className="text-sm font-semibold">Visual Canvas</p>
@@ -913,6 +915,7 @@ function VisualCanvas({
                   </section>
                 );
               })}
+              <div aria-hidden className="h-28 sm:h-40 xl:h-56 2xl:h-72" />
             </div>
           )}
         </ScrollArea>
@@ -922,7 +925,7 @@ function VisualCanvas({
 }
 
 export function PageBuilder({ content, onChange }: PageBuilderProps) {
-  const MIN_DESKTOP_INSPECTOR_HEIGHT = 280;
+  const MIN_DESKTOP_INSPECTOR_HEIGHT = 220;
   const DESKTOP_INSPECTOR_RAIL_PADDING = 12;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [savingSectionBlockId, setSavingSectionBlockId] = useState<string | null>(null);
@@ -1018,6 +1021,12 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       }))
       .filter(({ items }) => items.length > 0);
   }, [addContentSearch]);
+
+  const desktopCanvasFrameClassName = useMemo(() => {
+    if (!structurePanelOpen && !advancedInspectorOpen) return "max-w-[1280px]";
+    if (structurePanelOpen && advancedInspectorOpen) return "max-w-[980px] 2xl:max-w-[1080px]";
+    return "max-w-[1120px] 2xl:max-w-[1200px]";
+  }, [advancedInspectorOpen, structurePanelOpen]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -1732,8 +1741,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       type="button"
       variant="outline"
       size="icon"
-      className="absolute top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-background/95 shadow-md backdrop-blur"
-      style={side === "left" ? { left: -20 } : { right: -20 }}
+      className="absolute top-1/2 z-20 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-all hover:text-foreground hover:shadow-md"
+      style={side === "left" ? { left: -14 } : { right: -14 }}
       onClick={onClick}
       aria-label={label}
       title={label}
@@ -1832,6 +1841,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             onBlockDragOver={handleDragOver}
             onBlockDrop={handleDrop}
             onBlockDragEnd={clearDragState}
+            desktopFrameClassName={desktopCanvasFrameClassName}
           />
         </div>
         {advancedInspectorOpen ? inspectorPanel : (
@@ -1845,9 +1855,9 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         {structurePanelOpen && advancedInspectorOpen ? (
           <ResizablePanelGroup
             direction="horizontal"
-            className="h-[calc(100vh-180px)] min-h-[720px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
+            className="h-[calc(100vh-170px)] min-h-[700px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
           >
-            <ResizablePanel defaultSize={20} minSize={16}>
+            <ResizablePanel defaultSize={18} minSize={14}>
               <div className="h-full min-h-0 p-3">{leftRailPanel}</div>
             </ResizablePanel>
             <ResizableHandle>
@@ -1858,7 +1868,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                 label: "Collapse structure panel",
               })}
             </ResizableHandle>
-            <ResizablePanel defaultSize={55} minSize={35}>
+            <ResizablePanel defaultSize={60} minSize={32}>
               <div className="h-full min-h-0 p-3">
                 <div ref={desktopCanvasPanelRef} className="h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
                   <VisualCanvas
@@ -1880,6 +1890,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     onBlockDragOver={handleDragOver}
                     onBlockDrop={handleDrop}
                     onBlockDragEnd={clearDragState}
+                    desktopFrameClassName={desktopCanvasFrameClassName}
                   />
                 </div>
               </div>
@@ -1892,16 +1903,16 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                 label: "Collapse inspector panel",
               })}
             </ResizableHandle>
-            <ResizablePanel defaultSize={25} minSize={20}>
+            <ResizablePanel defaultSize={22} minSize={18}>
               {renderDesktopInspectorPanel()}
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : structurePanelOpen ? (
           <ResizablePanelGroup
             direction="horizontal"
-            className="h-[calc(100vh-180px)] min-h-[720px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
+            className="h-[calc(100vh-170px)] min-h-[700px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
           >
-            <ResizablePanel defaultSize={22} minSize={18}>
+            <ResizablePanel defaultSize={18} minSize={14}>
               <div className="h-full min-h-0 p-3">{leftRailPanel}</div>
             </ResizablePanel>
             <ResizableHandle>
@@ -1912,7 +1923,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                 label: "Collapse structure panel",
               })}
             </ResizableHandle>
-            <ResizablePanel defaultSize={78} minSize={50}>
+            <ResizablePanel defaultSize={82} minSize={48}>
               <div className="h-full min-h-0 p-3">
                 <div ref={desktopCanvasPanelRef} className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
                   {renderRailToggle({
@@ -1940,6 +1951,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     onBlockDragOver={handleDragOver}
                     onBlockDrop={handleDrop}
                     onBlockDragEnd={clearDragState}
+                    desktopFrameClassName={desktopCanvasFrameClassName}
                   />
                 </div>
               </div>
@@ -1948,9 +1960,9 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         ) : advancedInspectorOpen ? (
           <ResizablePanelGroup
             direction="horizontal"
-            className="h-[calc(100vh-180px)] min-h-[720px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
+            className="h-[calc(100vh-170px)] min-h-[700px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
           >
-            <ResizablePanel defaultSize={72} minSize={45}>
+            <ResizablePanel defaultSize={78} minSize={45}>
               <div className="h-full min-h-0 p-3">
                 <div ref={desktopCanvasPanelRef} className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
                   {renderRailToggle({
@@ -1978,6 +1990,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     onBlockDragOver={handleDragOver}
                     onBlockDrop={handleDrop}
                     onBlockDragEnd={clearDragState}
+                    desktopFrameClassName={desktopCanvasFrameClassName}
                   />
                 </div>
               </div>
@@ -1990,12 +2003,12 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                 label: "Collapse inspector panel",
               })}
             </ResizableHandle>
-            <ResizablePanel defaultSize={28} minSize={20}>
+            <ResizablePanel defaultSize={22} minSize={18}>
               {renderDesktopInspectorPanel()}
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : (
-          <div className="h-[calc(100vh-180px)] min-h-[720px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10 p-3">
+          <div className="h-[calc(100vh-170px)] min-h-[700px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10 p-3">
             <div ref={desktopCanvasPanelRef} className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
               {renderRailToggle({
                 side: "left",
@@ -2028,6 +2041,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                 onBlockDragOver={handleDragOver}
                 onBlockDrop={handleDrop}
                 onBlockDragEnd={clearDragState}
+                desktopFrameClassName={desktopCanvasFrameClassName}
               />
             </div>
           </div>

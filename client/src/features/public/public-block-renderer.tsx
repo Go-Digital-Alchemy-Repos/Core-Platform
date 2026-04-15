@@ -296,7 +296,7 @@ function TextImageBlock({ props }: { props: Record<string, unknown> }) {
   const bodyAlign = align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left";
   return (
     <div className={`flex flex-col ${imageRight ? "md:flex-row" : "md:flex-row-reverse"} gap-8 py-4 md:items-stretch`}>
-      <div className="flex-1 space-y-3">
+      <div className="min-w-0 flex-1 space-y-3">
         <SectionHeading props={props} defaultAlignment={align === "center" ? "center" : align === "right" ? "right" : "left"} className="mb-4" />
         {str(props.body) && (
           <div
@@ -305,7 +305,7 @@ function TextImageBlock({ props }: { props: Record<string, unknown> }) {
           />
         )}
       </div>
-      <div className="flex flex-1 self-stretch flex-col">
+      <div className="flex min-w-0 flex-1 self-stretch flex-col">
         {hasImage ? (
           <div className="flex h-full flex-col">
             <div className="relative min-h-72 md:h-full md:min-h-0 md:flex-1">

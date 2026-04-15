@@ -19,6 +19,7 @@ import {
   FileCode,
   Image,
   SearchIcon,
+  SquarePen,
   Blocks,
   ClipboardList,
   Menu as MenuIcon,
