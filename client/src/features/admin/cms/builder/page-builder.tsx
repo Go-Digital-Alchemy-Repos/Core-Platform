@@ -1776,6 +1776,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       <div className="hidden xl:sticky xl:top-6 xl:block">
         {structurePanelOpen && advancedInspectorOpen ? (
           <ResizablePanelGroup
+            key="desktop-layout-both-open"
             direction="horizontal"
             className="h-[calc(100vh-170px)] min-h-[700px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
           >
@@ -1830,6 +1831,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           </ResizablePanelGroup>
         ) : structurePanelOpen ? (
           <ResizablePanelGroup
+            key="desktop-layout-structure-open"
             direction="horizontal"
             className="h-[calc(100vh-170px)] min-h-[700px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
           >
@@ -1879,6 +1881,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           </ResizablePanelGroup>
         ) : advancedInspectorOpen ? (
           <ResizablePanelGroup
+            key="desktop-layout-inspector-open"
             direction="horizontal"
             className="h-[calc(100vh-170px)] min-h-[700px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
           >
@@ -1927,7 +1930,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : (
-          <div className="h-[calc(100vh-170px)] min-h-[700px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10 p-3">
+          <div key="desktop-layout-canvas-only" className="h-[calc(100vh-170px)] min-h-[700px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10 p-3">
             <div ref={desktopCanvasPanelRef} className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
               {renderRailToggle({
                 side: "left",
