@@ -48,6 +48,18 @@ const PROP_DISPLAY_PRIORITY: Record<string, number> = {
   sectionHeadingAlignment: 42,
   content: 50,
   body: 51,
+  ctaAction: 52,
+  ctaFormSlug: 53,
+  ctaModalTitle: 54,
+  ctaModalDescription: 55,
+  primaryAction: 56,
+  primaryFormSlug: 57,
+  primaryModalTitle: 58,
+  primaryModalDescription: 59,
+  secondaryAction: 60,
+  secondaryFormSlug: 61,
+  secondaryModalTitle: 62,
+  secondaryModalDescription: 63,
 };
 
 const DEFAULT_COLOR_VALUE = "#ffffff";
@@ -180,8 +192,20 @@ const CONTEXTUAL_PRIORITY: Record<string, number> = {
   body: 31,
   ctaText: 40,
   ctaLink: 41,
+  ctaAction: 42,
+  ctaFormSlug: 43,
+  ctaModalTitle: 44,
+  ctaModalDescription: 45,
   ctaSecondaryText: 42,
   ctaSecondaryLink: 43,
+  primaryAction: 46,
+  primaryFormSlug: 47,
+  primaryModalTitle: 48,
+  primaryModalDescription: 49,
+  secondaryAction: 50,
+  secondaryFormSlug: 51,
+  secondaryModalTitle: 52,
+  secondaryModalDescription: 53,
   imageUrl: 50,
   backgroundImageUrl: 51,
   thumbnailUrl: 52,
@@ -271,6 +295,11 @@ function ArrayItemsField({
   onChange: (val: Record<string, unknown>[]) => void;
 }) {
   const schema = propDef.itemSchema ?? [];
+  const { data: forms = [] } = useQuery<CmsForm[]>({
+    queryKey: ["/api/admin/forms"],
+    staleTime: 60_000,
+    enabled: schema.some((field) => field.type === "form-select"),
+  });
 
   const addItem = () => {
     const blank: Record<string, unknown> = {};
@@ -348,6 +377,24 @@ function ArrayItemsField({
                         {opt.label}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              ) : field.type === "form-select" ? (
+                <Select
+                  value={String(item[field.key] ?? "")}
+                  onValueChange={(val) => updateItem(idx, field.key, val)}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Select form…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {forms
+                      .filter((form) => form.kind !== "application")
+                      .map((form) => (
+                        <SelectItem key={form.slug} value={form.slug} className="text-xs">
+                          {form.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               ) : (
