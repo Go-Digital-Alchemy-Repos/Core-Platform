@@ -8,6 +8,7 @@ import {
   type CmsFormFieldType,
   type CmsFormKind,
   type CmsFormListColumn,
+  cmsFormFieldConfigSchema,
 } from "@shared/schema";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import { AdminSidebar } from "./admin-sidebar";
@@ -157,7 +158,7 @@ function createDefaultListColumns(): CmsFormListColumn[] {
   ];
 }
 
-function createDefaultConfig(type: CmsFormFieldType): CmsFormFieldConfig {
+function createDefaultConfig(type: CmsFormFieldType): Partial<CmsFormFieldConfig> {
   switch (type) {
     case "name":
       return { nameFormat: "full" };
@@ -232,10 +233,10 @@ function normalizeField(field: CmsFormField): CmsFormField {
       value: option.value,
       imageUrl: option.imageUrl ?? "",
     })) : createDefaultOptions(field.type),
-    config: {
+    config: cmsFormFieldConfigSchema.parse({
       ...createDefaultConfig(field.type),
       ...(typeof field.config === "object" && field.config ? field.config : {}),
-    },
+    }),
   };
 }
 
@@ -255,7 +256,7 @@ function createField(type: CmsFormFieldType): CmsFormField {
     required: !isStructuralField(type) && type !== "hidden",
     width: isFullWidthField(type) ? "full" : "half",
     options: createDefaultOptions(type),
-    config: createDefaultConfig(type),
+    config: cmsFormFieldConfigSchema.parse(createDefaultConfig(type)),
   });
 }
 
@@ -543,7 +544,7 @@ function FormsPageContent() {
               ...field,
               type,
               options: createDefaultOptions(type),
-              config: createDefaultConfig(type),
+              config: cmsFormFieldConfigSchema.parse(createDefaultConfig(type)),
               width: isFullWidthField(type) ? "full" : "half",
               required: !isStructuralField(type) && type !== "hidden" ? field.required : false,
             })
@@ -1461,7 +1462,6 @@ function FormsPageContent() {
                                     <CmsImageUpload
                                       value={option.imageUrl ?? ""}
                                       onChange={(value) => updateChoice(selectedField.id, option.value, { imageUrl: value ?? "" })}
-                                      onRemove={() => updateChoice(selectedField.id, option.value, { imageUrl: "" })}
                                       label="Choice image"
                                     />
                                   </div>

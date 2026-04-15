@@ -615,7 +615,7 @@ function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
 function ButtonGroupBlock({ props }: { props: Record<string, unknown> }) {
   const align = str(props.alignment) || "center";
   const justifyClass = align === "left" ? "justify-start" : align === "right" ? "justify-end" : "justify-center";
-  const buttons = arr<{ text: string; link: string; variant: string }>(props.buttons);
+  const buttons = arr<{ text: string; link: string; variant: string; action?: string; formSlug?: string; modalTitle?: string; modalDescription?: string }>(props.buttons);
   return (
     <div className="py-4">
       <SectionHeading props={props} defaultAlignment={align === "right" ? "right" : align === "center" ? "center" : "left"} className="mb-6" />

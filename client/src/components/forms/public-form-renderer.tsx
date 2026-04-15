@@ -525,7 +525,7 @@ export function PublicFormRenderer({
 
   const mutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", `/api/forms/${slug}/submit`, values);
+      return await apiRequest("POST", `/api/forms/${slug}/submit`, values);
     },
     onSuccess: async (response) => {
       const payload = (await response.json()) as { message?: string };
