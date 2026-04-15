@@ -377,6 +377,69 @@ function buildSubmissionCsv(submissions: CmsFormSubmission[]) {
   return [headers.map(escapeCsv).join(","), ...rows].join("\n");
 }
 
+function findSubmissionValue(
+  data: Record<string, unknown>,
+  preferredKeys: string[],
+  matcher?: (key: string, value: unknown) => boolean
+) {
+  for (const key of preferredKeys) {
+    const value = data[key];
+    const stringValue = stringifySubmissionValue(value).trim();
+    if (stringValue) return stringValue;
+  }
+
+  if (matcher) {
+    for (const [key, value] of Object.entries(data)) {
+      if (matcher(key, value)) {
+        const stringValue = stringifySubmissionValue(value).trim();
+        if (stringValue) return stringValue;
+      }
+    }
+  }
+
+  return "";
+}
+
+function getSubmissionDisplayName(submission: CmsFormSubmission) {
+  const data = (submission.data ?? {}) as Record<string, unknown>;
+  return (
+    findSubmissionValue(
+      data,
+      ["name", "fullName", "senderName", "firstName", "first_name"],
+      (key, value) =>
+        /name/i.test(key) ||
+        (typeof value === "object" &&
+          value !== null &&
+          ("full" in (value as Record<string, unknown>) ||
+            "first" in (value as Record<string, unknown>) ||
+            "last" in (value as Record<string, unknown>)))
+    ) || "Unknown submitter"
+  );
+}
+
+function getSubmissionEmail(submission: CmsFormSubmission) {
+  const data = (submission.data ?? {}) as Record<string, unknown>;
+  return (
+    findSubmissionValue(
+      data,
+      ["email", "senderEmail", "emailAddress"],
+      (key, value) => /email/i.test(key) || (typeof value === "string" && value.includes("@"))
+    ) || "No email provided"
+  );
+}
+
+function getSubmissionMessageExcerpt(submission: CmsFormSubmission) {
+  const data = (submission.data ?? {}) as Record<string, unknown>;
+  const raw =
+    findSubmissionValue(
+      data,
+      ["message", "messageBody", "body", "comments", "comment", "details", "notes", "subject"],
+      (key) => /message|comment|detail|note|subject/i.test(key)
+    ) || "No message preview available";
+
+  return raw.length > 140 ? `${raw.slice(0, 137).trimEnd()}...` : raw;
+}
+
 function FieldLibraryCard({
   item,
   onAdd,
@@ -455,6 +518,7 @@ function FormsPageContent() {
   const [activeTab, setActiveTab] = useState<"builder" | "entries">("builder");
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const [selectedEntriesFormId, setSelectedEntriesFormId] = useState<string | null>(null);
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EditableForm | null>(null);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [draggingFieldType, setDraggingFieldType] = useState<CmsFormFieldType | null>(null);
@@ -510,13 +574,25 @@ function FormsPageContent() {
   useEffect(() => {
     if (!selectedEntriesFormId && activeForms.length > 0) {
       setSelectedEntriesFormId(activeForms[0].id);
+      setSelectedEntryId(null);
       return;
     }
 
     if (selectedEntriesFormId && !activeForms.some((form) => form.id === selectedEntriesFormId)) {
       setSelectedEntriesFormId(activeForms[0]?.id ?? null);
+      setSelectedEntryId(null);
     }
   }, [activeForms, selectedEntriesFormId]);
+
+  useEffect(() => {
+    setSelectedEntryId(null);
+  }, [selectedEntriesFormId]);
+
+  useEffect(() => {
+    if (selectedEntryId && !submissions.some((submission) => submission.id === selectedEntryId)) {
+      setSelectedEntryId(null);
+    }
+  }, [selectedEntryId, submissions]);
 
   const saveMutation = useMutation({
     mutationFn: async (form: EditableForm) => {
@@ -606,6 +682,10 @@ function FormsPageContent() {
   );
 
   const selectedFieldLibraryItem = selectedField ? getFieldLibraryItem(selectedField.type) : null;
+  const selectedSubmission = useMemo(
+    () => submissions.find((submission) => submission.id === selectedEntryId) ?? null,
+    [selectedEntryId, submissions]
+  );
 
   const updateDraft = (updater: (current: EditableForm) => EditableForm) => {
     setDraft((current) => (current ? updater(current) : current));
@@ -1723,40 +1803,75 @@ function FormsPageContent() {
                   <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
                     No entries have been submitted for this form yet.
                   </div>
-                ) : (
-                  submissions.map((submission) => (
-                    <div key={submission.id} className="rounded-xl border p-4 space-y-4" data-testid={`card-form-entry-${submission.id}`}>
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-medium">Entry {submission.id.slice(0, 8)}</p>
-                            <Badge variant="outline">{formatSubmissionDate(submission.createdAt)}</Badge>
-                            {submission.source ? <Badge variant="secondary">{submission.source}</Badge> : null}
-                          </div>
-                        </div>
+                ) : selectedSubmission ? (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/10 p-4">
+                      <div className="space-y-1">
                         <Button
                           type="button"
-                          variant="outline"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => deleteSubmissionMutation.mutate({ formId: selectedEntriesFormId, submissionId: submission.id })}
-                          disabled={deleteSubmissionMutation.isPending}
-                          data-testid={`button-delete-form-entry-${submission.id}`}
+                          variant="ghost"
+                          className="h-auto px-0 py-0 text-sm font-medium text-primary hover:bg-transparent hover:text-primary/80"
+                          onClick={() => setSelectedEntryId(null)}
+                          data-testid="button-back-to-form-entries"
                         >
-                          <Trash2 className="mr-1.5 h-4 w-4" />
-                          Delete
+                          <ArrowLeft className="mr-2 h-4 w-4" />
+                          Back to Form Entries
                         </Button>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold">{getSubmissionDisplayName(selectedSubmission)}</p>
+                          <Badge variant="outline">{formatSubmissionDate(selectedSubmission.createdAt)}</Badge>
+                          {selectedSubmission.source ? <Badge variant="secondary">{selectedSubmission.source}</Badge> : null}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{getSubmissionEmail(selectedSubmission)}</p>
                       </div>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {Object.entries((submission.data ?? {}) as Record<string, unknown>).map(([key, value]) => (
-                          <div key={key} className="rounded-lg border bg-muted/10 p-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</p>
-                            <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/90">{stringifySubmissionValue(value) || "—"}</p>
-                          </div>
-                        ))}
-                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => deleteSubmissionMutation.mutate({ formId: selectedEntriesFormId, submissionId: selectedSubmission.id })}
+                        disabled={deleteSubmissionMutation.isPending}
+                        data-testid={`button-delete-form-entry-${selectedSubmission.id}`}
+                      >
+                        <Trash2 className="mr-1.5 h-4 w-4" />
+                        Delete
+                      </Button>
                     </div>
-                  ))
+
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {Object.entries((selectedSubmission.data ?? {}) as Record<string, unknown>).map(([key, value]) => (
+                        <div key={key} className="rounded-lg border bg-muted/10 p-3">
+                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</p>
+                          <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/90">{stringifySubmissionValue(value) || "—"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {submissions.map((submission) => (
+                      <button
+                        key={submission.id}
+                        type="button"
+                        onClick={() => setSelectedEntryId(submission.id)}
+                        className="w-full rounded-xl border p-4 text-left transition-colors hover:border-primary hover:bg-primary/5"
+                        data-testid={`card-form-entry-${submission.id}`}
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-medium">{getSubmissionDisplayName(submission)}</p>
+                              <Badge variant="outline">{formatSubmissionDate(submission.createdAt)}</Badge>
+                              {submission.source ? <Badge variant="secondary">{submission.source}</Badge> : null}
+                            </div>
+                            <p className="mt-1 text-sm text-muted-foreground">{getSubmissionEmail(submission)}</p>
+                            <p className="mt-3 text-sm text-foreground/85">{getSubmissionMessageExcerpt(submission)}</p>
+                          </div>
+                          <span className="text-xs font-medium text-primary">Open</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
