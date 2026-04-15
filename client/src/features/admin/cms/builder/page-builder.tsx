@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -885,8 +885,6 @@ function VisualCanvas({
 }
 
 export function PageBuilder({ content, onChange }: PageBuilderProps) {
-  const MIN_DESKTOP_INSPECTOR_HEIGHT = 360;
-  const DESKTOP_INSPECTOR_RAIL_PADDING = 12;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [savingSectionBlockId, setSavingSectionBlockId] = useState<string | null>(null);
   const [navigatorSearch, setNavigatorSearch] = useState("");
@@ -900,12 +898,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [frontendPreviewOpen, setFrontendPreviewOpen] = useState(false);
   const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
-  const [desktopInspectorOffset, setDesktopInspectorOffset] = useState(0);
-  const [desktopInspectorMaxHeight, setDesktopInspectorMaxHeight] = useState<number | null>(null);
   const blockRefs = useRef(new Map<string, HTMLDivElement | null>());
   const desktopCanvasPanelRef = useRef<HTMLDivElement | null>(null);
-  const desktopInspectorRailRef = useRef<HTMLDivElement | null>(null);
-  const desktopInspectorCardRef = useRef<HTMLDivElement | null>(null);
 
   const blocks = content.blocks ?? [];
   const selectedBlock = blocks.find((block) => block.id === selectedId) ?? null;
@@ -1019,110 +1013,6 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     }
     return blocks.length;
   }, [blocks, insertAtIndex, selectedId]);
-
-  const syncDesktopInspectorPosition = useCallback(() => {
-    if (!selectedId || !advancedInspectorOpen) {
-      setDesktopInspectorOffset(0);
-      setDesktopInspectorMaxHeight(null);
-      return;
-    }
-
-    const selectedNode = blockRefs.current.get(selectedId);
-    const canvasPanel = desktopCanvasPanelRef.current;
-    const inspectorRail = desktopInspectorRailRef.current;
-    const inspectorCard = desktopInspectorCardRef.current;
-
-    if (!selectedNode || !canvasPanel || !inspectorRail || !inspectorCard) {
-      setDesktopInspectorOffset(0);
-      setDesktopInspectorMaxHeight(null);
-      return;
-    }
-
-    const canvasRect = canvasPanel.getBoundingClientRect();
-    const blockRect = selectedNode.getBoundingClientRect();
-    const railRect = inspectorRail.getBoundingClientRect();
-    const availableRailHeight = Math.max(
-      railRect.height - DESKTOP_INSPECTOR_RAIL_PADDING * 2,
-      0
-    );
-    const selectedBlockIndex = blocks.findIndex((block) => block.id === selectedId);
-    const shouldBottomAnchor =
-      selectedBlockIndex >= 0 && selectedBlockIndex >= Math.max(blocks.length - 2, 0);
-    const minimumVisibleHeight = Math.min(
-      Math.max(MIN_DESKTOP_INSPECTOR_HEIGHT, Math.min(availableRailHeight * 0.72, 560)),
-      availableRailHeight || MIN_DESKTOP_INSPECTOR_HEIGHT
-    );
-    const inspectorCardHeight = Math.min(
-      Math.max(inspectorCard.offsetHeight, minimumVisibleHeight),
-      availableRailHeight || inspectorCard.offsetHeight || minimumVisibleHeight
-    );
-    const idealTop = shouldBottomAnchor
-      ? blockRect.bottom - canvasRect.top - inspectorCardHeight
-      : blockRect.top - canvasRect.top;
-    const maxTop = Math.max(
-      railRect.height - minimumVisibleHeight - DESKTOP_INSPECTOR_RAIL_PADDING,
-      0
-    );
-    const nextOffset = Math.min(Math.max(idealTop, 0), maxTop);
-    const nextMaxHeight = Math.max(
-      railRect.height - nextOffset - DESKTOP_INSPECTOR_RAIL_PADDING,
-      minimumVisibleHeight
-    );
-
-    setDesktopInspectorOffset((current) => (Math.abs(current - nextOffset) > 1 ? nextOffset : current));
-    setDesktopInspectorMaxHeight((current) => (current === null || Math.abs(current - nextMaxHeight) > 1 ? nextMaxHeight : current));
-  }, [advancedInspectorOpen, blocks, selectedId]);
-
-  useLayoutEffect(() => {
-    syncDesktopInspectorPosition();
-  }, [syncDesktopInspectorPosition, selectedId, previewDevice, blocks.length]);
-
-  useEffect(() => {
-    if (!advancedInspectorOpen) {
-      setDesktopInspectorOffset(0);
-      setDesktopInspectorMaxHeight(null);
-      return;
-    }
-
-    const canvasPanel = desktopCanvasPanelRef.current;
-    const inspectorRail = desktopInspectorRailRef.current;
-    const inspectorCard = desktopInspectorCardRef.current;
-    const selectedNode = selectedId ? blockRefs.current.get(selectedId) : null;
-    const viewport = canvasPanel?.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement | null;
-
-    let frameId: number | null = null;
-    const requestSync = () => {
-      if (frameId !== null) {
-        cancelAnimationFrame(frameId);
-      }
-      frameId = requestAnimationFrame(() => {
-        syncDesktopInspectorPosition();
-        frameId = null;
-      });
-    };
-
-    requestSync();
-
-    viewport?.addEventListener("scroll", requestSync, { passive: true });
-    window.addEventListener("resize", requestSync);
-
-    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(requestSync) : null;
-    if (resizeObserver) {
-      if (canvasPanel) resizeObserver.observe(canvasPanel);
-      if (inspectorRail) resizeObserver.observe(inspectorRail);
-      if (inspectorCard) resizeObserver.observe(inspectorCard);
-      if (selectedNode) resizeObserver.observe(selectedNode);
-    }
-
-    return () => {
-      if (frameId !== null) {
-        cancelAnimationFrame(frameId);
-      }
-      viewport?.removeEventListener("scroll", requestSync);
-      window.removeEventListener("resize", requestSync);
-      resizeObserver?.disconnect();
-    };
-  }, [advancedInspectorOpen, blocks.length, previewDevice, selectedId, syncDesktopInspectorPosition]);
 
   const addBlockAtIndex = useCallback((type: string, index: number) => {
     const block = createBlock(type);
@@ -1626,8 +1516,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
   const inspectorPanel = selectedBlock && selectedDef ? (
     <div
-      className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm xl:h-auto xl:max-h-[calc(100vh-220px)]"
-      style={desktopInspectorMaxHeight ? { maxHeight: `${desktopInspectorMaxHeight}px` } : undefined}
+      className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm"
       data-testid="block-editor-panel"
     >
       <div className="space-y-3 border-b border-border/70 px-4 py-4">
@@ -1699,7 +1588,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       </ScrollArea>
     </div>
   ) : (
-    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-dashed border-border/70 bg-background/70 p-6 text-center shadow-sm xl:h-auto xl:max-h-[calc(100vh-220px)]">
+    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-dashed border-border/70 bg-background/70 p-6 text-center shadow-sm">
       <div className="m-auto max-w-sm">
         <Settings2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground/35" />
         <p className="text-base font-semibold">Select a block to inspect</p>
@@ -1711,15 +1600,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   );
 
   const renderDesktopInspectorPanel = () => (
-    <div ref={desktopInspectorRailRef} className="relative h-full min-h-0 overflow-hidden p-3">
-      <div
-        className="absolute left-3 right-3 top-3 transition-transform duration-200 ease-out"
-        style={{ transform: `translateY(${desktopInspectorOffset}px)` }}
-      >
-        <div ref={desktopInspectorCardRef}>
-          {inspectorPanel}
-        </div>
-      </div>
+    <div className="h-full min-h-0 overflow-hidden p-3">
+      {inspectorPanel}
     </div>
   );
 

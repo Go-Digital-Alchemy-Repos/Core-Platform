@@ -35,7 +35,6 @@ export function CompanyInformationCard({
           <MapPin className="mt-0.5 h-5 w-5 text-accent" />
           <div className="space-y-2">
             <div>
-              <h3 className={cn("mb-1 text-sm font-semibold", titleClassName)}>Location</h3>
               {hasCompanyInfo ? (
                 <div className={cn("space-y-1 text-sm text-muted-foreground", bodyClassName)}>
                   {companyName ? <p className="font-medium text-foreground">{companyName}</p> : null}
