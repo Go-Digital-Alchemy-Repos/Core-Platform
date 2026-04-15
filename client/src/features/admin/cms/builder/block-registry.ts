@@ -778,7 +778,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       title: "Upcoming Events",
       subtitle: "Join our community events and webinars.",
-      limit: 3,
+      limit: 4,
       ctaText: "",
       ctaLink: "",
       ctaAction: "internal-link",
@@ -790,7 +790,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     propDefs: [
       { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
       { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Supporting text" },
-      { key: "limit", label: "Max Events to Show", type: "number", min: 1, max: 9 },
+      { key: "limit", label: "Max Events to Show", type: "number", min: 1, max: 12 },
       { key: "ctaText", label: "Button Text", type: "text", placeholder: "Optional button label" },
       { key: "ctaAction", label: "Button Action", type: "select", options: BUTTON_ACTION_OPTIONS },
       { key: "ctaLink", label: "Button Link", type: "url", placeholder: "/events or https://..." },
@@ -809,13 +809,13 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       title: "Latest Insights",
       subtitle: "Resources and perspectives for the TCK community.",
-      limit: 3,
+      limit: 5,
       enableHoverMotion: true,
     },
     propDefs: [
       { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
       { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Supporting text" },
-      { key: "limit", label: "Max Articles to Show", type: "number", min: 1, max: 9 },
+      { key: "limit", label: "Max Articles to Show", type: "number", min: 1, max: 12 },
       { key: "enableHoverMotion", label: "Enable Hover Motion", type: "boolean" },
     ],
   },
