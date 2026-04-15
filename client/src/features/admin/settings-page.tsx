@@ -51,6 +51,8 @@ import {
   Type,
   Check,
   Palette,
+  MapPin,
+  BarChart3,
 } from "lucide-react";
 import {
   BRANDING_FONT_OPTIONS,
@@ -191,6 +193,7 @@ interface IntegrationConfig {
   icon: typeof CreditCard;
   fields: IntegrationField[];
   replitConnected?: boolean;
+  supportsConnectionTest?: boolean;
 }
 
 const INTEGRATIONS: IntegrationConfig[] = [
@@ -270,6 +273,39 @@ const INTEGRATIONS: IntegrationConfig[] = [
         label: "Server Prefix",
         isSecret: false,
         placeholder: "us6",
+      },
+    ],
+  },
+  {
+    category: "google_analytics",
+    title: "Google Analytics",
+    description: "Reserve the GA4 tracking and reporting configuration used by future public analytics and the planned admin Analytics area.",
+    icon: BarChart3,
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "ga4_measurement_id",
+        label: "GA4 Measurement ID",
+        isSecret: false,
+        placeholder: "G-XXXXXXXXXX",
+      },
+      {
+        key: "ga4_property_id",
+        label: "GA4 Property ID",
+        isSecret: false,
+        placeholder: "123456789",
+      },
+      {
+        key: "ga4_reporting_client_email",
+        label: "Reporting Service Account Email",
+        isSecret: false,
+        placeholder: "ga-reporting@your-project.iam.gserviceaccount.com",
+      },
+      {
+        key: "ga4_reporting_private_key",
+        label: "Reporting Private Key",
+        isSecret: true,
+        placeholder: "-----BEGIN PRIVATE KEY-----",
       },
     ],
   },
@@ -377,6 +413,8 @@ function IntegrationCard({
       toast({ title: "Test failed", description: err.message, variant: "destructive" });
     },
   });
+
+  const supportsConnectionTest = config.supportsConnectionTest !== false;
 
   const Icon = config.icon;
 
@@ -491,6 +529,7 @@ function IntegrationCard({
             variant="outline"
             onClick={() => testMutation.mutate()}
             disabled={testMutation.isPending || !hasAnyValue}
+            className={cn(!supportsConnectionTest && "hidden")}
             data-testid={`button-test-${config.category}`}
           >
             {testMutation.isPending ? (
@@ -501,6 +540,11 @@ function IntegrationCard({
             Test Connection
           </Button>
         </div>
+        {!supportsConnectionTest ? (
+          <p className="text-xs text-muted-foreground">
+            Tracking and reporting values can be saved now. Connection validation will be added when the Analytics feature ships.
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   );

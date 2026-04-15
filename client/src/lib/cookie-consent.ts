@@ -2,6 +2,7 @@ export const COOKIE_CONSENT_STORAGE_KEY = "tck_cookie_consent";
 export const COOKIE_CONSENT_COOKIE_NAME = "tck_cookie_consent";
 export const COOKIE_CONSENT_DURATION_DAYS = 60;
 export const COOKIE_CONSENT_VERSION = 1;
+export const COOKIE_CONSENT_CHANGED_EVENT = "tck:cookie-consent-changed";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -11,6 +12,8 @@ export interface CookieConsentPreferences {
   analytics: boolean;
   marketing: boolean;
 }
+
+export type CookieConsentCategory = keyof CookieConsentPreferences;
 
 export interface CookieConsentRecord {
   version: number;
@@ -86,6 +89,25 @@ export function readCookieConsentRecord(): CookieConsentRecord | null {
   return parseCookieConsentRecord(window.localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY));
 }
 
+export function getCookieConsentPreferences(): CookieConsentPreferences {
+  const stored = readCookieConsentRecord();
+  if (!isCookieConsentRecordActive(stored)) {
+    return DEFAULT_COOKIE_CONSENT_PREFERENCES;
+  }
+  return stored.preferences;
+}
+
+export function hasCookieConsent(category: CookieConsentCategory, record: CookieConsentRecord | null = readCookieConsentRecord()): boolean {
+  if (category === "essential") return true;
+  if (!isCookieConsentRecordActive(record)) return false;
+  return Boolean(record.preferences[category]);
+}
+
+function dispatchCookieConsentChanged(record: CookieConsentRecord) {
+  if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") return;
+  window.dispatchEvent(new CustomEvent<CookieConsentRecord>(COOKIE_CONSENT_CHANGED_EVENT, { detail: record }));
+}
+
 export function writeCookieConsentRecord(record: CookieConsentRecord) {
   if (typeof window === "undefined" || typeof document === "undefined") return;
 
@@ -94,4 +116,19 @@ export function writeCookieConsentRecord(record: CookieConsentRecord) {
 
   const maxAge = COOKIE_CONSENT_DURATION_DAYS * 24 * 60 * 60;
   document.cookie = `${COOKIE_CONSENT_COOKIE_NAME}=${encodeURIComponent(serialized)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  dispatchCookieConsentChanged(record);
+}
+
+export function subscribeToCookieConsent(listener: (record: CookieConsentRecord) => void) {
+  if (typeof window === "undefined" || typeof window.addEventListener !== "function") {
+    return () => undefined;
+  }
+
+  const handler = (event: Event) => {
+    const detail = (event as CustomEvent<CookieConsentRecord>).detail;
+    if (detail) listener(detail);
+  };
+
+  window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, handler);
+  return () => window.removeEventListener(COOKIE_CONSENT_CHANGED_EVENT, handler);
 }
