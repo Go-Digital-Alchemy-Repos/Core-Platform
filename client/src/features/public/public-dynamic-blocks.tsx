@@ -11,6 +11,7 @@ import { SectionHeading } from "@/features/admin/cms/builder/section-heading";
 import { normalizeHexColor } from "@/features/admin/cms/builder/section-style";
 import { getPostCategories, getPrimaryPostCategory, postMatchesCategory } from "@/lib/blog-post-categories";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
+import { CompanyInformationCard } from "@/components/shared/company-information-card";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -99,17 +100,11 @@ export function ContactFormBlock() {
           </Card>
         </div>
         <div className="space-y-4">
-          <Card data-testid="card-contact-location">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-accent mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-sm mb-1 public-heading-3">Location</h3>
-                  <p className="text-sm public-helper-text">Global — serving TCKs worldwide</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <CompanyInformationCard
+            titleClassName="public-heading-3"
+            bodyClassName="public-helper-text"
+            linkClassName="public-text-link hover:text-[hsl(var(--public-text-link-hover))]"
+          />
         </div>
       </div>
     </div>

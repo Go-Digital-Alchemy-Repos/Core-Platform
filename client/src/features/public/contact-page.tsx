@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
+import { CompanyInformationCard } from "@/components/shared/company-information-card";
 
 export default function ContactPage() {
   return (
@@ -38,17 +39,11 @@ export default function ContactPage() {
           </div>
 
           <div className="space-y-4">
-            <Card data-testid="card-contact-location">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-accent mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold text-sm mb-1">Location</h3>
-                    <p className="text-sm text-muted-foreground">Global — serving TCKs worldwide</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <CompanyInformationCard
+              titleClassName="public-heading-3"
+              bodyClassName="public-helper-text"
+              linkClassName="public-text-link hover:text-[hsl(var(--public-text-link-hover))]"
+            />
           </div>
         </div>
       </section>

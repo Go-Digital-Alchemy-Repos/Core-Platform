@@ -1,6 +1,10 @@
 export interface BrandingSettings {
   frontendLogoUrl: string | null;
   faviconUrl: string | null;
+  companyName: string | null;
+  companyAddress: string | null;
+  companyPhoneNumbers: string | null;
+  companyGoogleBusinessUrl: string | null;
   bodyFont: string | null;
   headingFont: string | null;
   primaryColor: string | null;
@@ -59,6 +63,10 @@ export const BRANDING_SERIF_FONT_OPTIONS = BRANDING_FONT_OPTIONS.filter((option)
 export const DEFAULT_BRANDING_SETTINGS: BrandingSettings = {
   frontendLogoUrl: null,
   faviconUrl: null,
+  companyName: null,
+  companyAddress: null,
+  companyPhoneNumbers: null,
+  companyGoogleBusinessUrl: null,
   bodyFont: null,
   headingFont: null,
   primaryColor: null,

@@ -125,8 +125,21 @@ export default function ReferenceFormPage() {
 
   const submitMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/reference/${token}`, form);
-      return res.json();
+      const res = await fetch(`/api/reference/${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(form),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
+            ? payload.message
+            : null) || "Failed to submit. Please try again.",
+        );
+      }
+      return payload;
     },
     onSuccess: () => {
       setSubmitted(true);

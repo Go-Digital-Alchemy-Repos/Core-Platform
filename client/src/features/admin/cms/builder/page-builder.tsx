@@ -1090,12 +1090,20 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       railRect.height - DESKTOP_INSPECTOR_RAIL_PADDING * 2,
       0
     );
+    const selectedBlockIndex = blocks.findIndex((block) => block.id === selectedId);
+    const shouldBottomAnchor =
+      selectedBlockIndex >= 0 && selectedBlockIndex >= Math.max(blocks.length - 2, 0);
     const minimumVisibleHeight = Math.min(
       Math.max(MIN_DESKTOP_INSPECTOR_HEIGHT, Math.min(availableRailHeight * 0.72, 560)),
       availableRailHeight || MIN_DESKTOP_INSPECTOR_HEIGHT
     );
-
-    const idealTop = blockRect.top - canvasRect.top;
+    const inspectorCardHeight = Math.min(
+      Math.max(inspectorCard.offsetHeight, minimumVisibleHeight),
+      availableRailHeight || inspectorCard.offsetHeight || minimumVisibleHeight
+    );
+    const idealTop = shouldBottomAnchor
+      ? blockRect.bottom - canvasRect.top - inspectorCardHeight
+      : blockRect.top - canvasRect.top;
     const maxTop = Math.max(
       railRect.height - minimumVisibleHeight - DESKTOP_INSPECTOR_RAIL_PADDING,
       0
@@ -1108,7 +1116,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
     setDesktopInspectorOffset((current) => (Math.abs(current - nextOffset) > 1 ? nextOffset : current));
     setDesktopInspectorMaxHeight((current) => (current === null || Math.abs(current - nextMaxHeight) > 1 ? nextMaxHeight : current));
-  }, [advancedInspectorOpen, selectedId]);
+  }, [advancedInspectorOpen, blocks, selectedId]);
 
   useLayoutEffect(() => {
     syncDesktopInspectorPosition();

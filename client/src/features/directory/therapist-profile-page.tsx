@@ -70,8 +70,21 @@ export default function TherapistProfilePage() {
 
   const sendEmailMutation = useMutation({
     mutationFn: async (data: { professionalUserId: string; senderName: string; senderEmail: string; message: string; preferredContact: string; phone?: string }) => {
-      const res = await apiRequest("POST", "/api/contact-professional", data);
-      return res.json();
+      const res = await fetch("/api/contact-professional", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
+            ? payload.message
+            : null) || "Something went wrong. Please try again.",
+        );
+      }
+      return payload;
     },
     onSuccess: () => {
       toast({ title: "Message sent", description: "Your message has been emailed to this mental health professional." });

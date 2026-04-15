@@ -69,6 +69,11 @@ type SettingsData = Record<
 >;
 
 type BrandingSettingKey = "frontend_logo_url" | "favicon_url";
+type BrandingCompanyInfoSettingKey =
+  | "company_name"
+  | "company_address"
+  | "company_phone_numbers"
+  | "company_google_business_url";
 
 type BrandingColorSettingKey =
   | "brand_primary_color"
@@ -754,6 +759,12 @@ export function BrandingTab({
   const brandingSettings = settings.branding || {};
   const [bodyFont, setBodyFont] = useState(brandingSettings.frontend_body_font?.value || "__default__");
   const [headingFont, setHeadingFont] = useState(brandingSettings.frontend_heading_font?.value || "__default__");
+  const [companyInfo, setCompanyInfo] = useState<Record<BrandingCompanyInfoSettingKey, string>>({
+    company_name: brandingSettings.company_name?.value || "",
+    company_address: brandingSettings.company_address?.value || "",
+    company_phone_numbers: brandingSettings.company_phone_numbers?.value || "",
+    company_google_business_url: brandingSettings.company_google_business_url?.value || "",
+  });
   const [colorValues, setColorValues] = useState<Record<BrandingColorSettingKey, string>>({
     brand_primary_color: brandingSettings.brand_primary_color?.value || "",
     brand_secondary_color: brandingSettings.brand_secondary_color?.value || "",
@@ -777,6 +788,12 @@ export function BrandingTab({
   useEffect(() => {
     setBodyFont(brandingSettings.frontend_body_font?.value || "__default__");
     setHeadingFont(brandingSettings.frontend_heading_font?.value || "__default__");
+    setCompanyInfo({
+      company_name: brandingSettings.company_name?.value || "",
+      company_address: brandingSettings.company_address?.value || "",
+      company_phone_numbers: brandingSettings.company_phone_numbers?.value || "",
+      company_google_business_url: brandingSettings.company_google_business_url?.value || "",
+    });
     setColorValues({
       brand_primary_color: brandingSettings.brand_primary_color?.value || "",
       brand_secondary_color: brandingSettings.brand_secondary_color?.value || "",
@@ -799,6 +816,10 @@ export function BrandingTab({
   }, [
     brandingSettings.frontend_body_font?.value,
     brandingSettings.frontend_heading_font?.value,
+    brandingSettings.company_name?.value,
+    brandingSettings.company_address?.value,
+    brandingSettings.company_phone_numbers?.value,
+    brandingSettings.company_google_business_url?.value,
     brandingSettings.brand_primary_color?.value,
     brandingSettings.brand_secondary_color?.value,
     brandingSettings.brand_tertiary_color?.value,
@@ -853,6 +874,42 @@ export function BrandingTab({
   const hasFontChanges =
     bodyFont !== (brandingSettings.frontend_body_font?.value || "__default__") ||
     headingFont !== (brandingSettings.frontend_heading_font?.value || "__default__");
+
+  const saveCompanyInfoMutation = useMutation({
+    mutationFn: async () => {
+      const companyFields: BrandingCompanyInfoSettingKey[] = [
+        "company_name",
+        "company_address",
+        "company_phone_numbers",
+        "company_google_business_url",
+      ];
+
+      await Promise.all(
+        companyFields.map((key) =>
+          apiRequest("PUT", "/api/admin/settings", {
+            key,
+            value: companyInfo[key].trim(),
+            category: "branding",
+            isSecret: false,
+          })
+        )
+      );
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/branding"] }),
+      ]);
+      toast({ title: "Company information updated" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Could not save company information", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const hasCompanyInfoChanges = (
+    ["company_name", "company_address", "company_phone_numbers", "company_google_business_url"] as BrandingCompanyInfoSettingKey[]
+  ).some((key) => companyInfo[key] !== (brandingSettings[key]?.value || ""));
 
   const saveColorsMutation = useMutation({
     mutationFn: async () => {
@@ -989,6 +1046,79 @@ export function BrandingTab({
               currentUrl={brandingSettings.favicon_url?.value || ""}
             />
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <MapPin className="h-4 w-4 text-primary" />
+                Company Information
+              </CardTitle>
+              <CardDescription>
+                These details automatically populate the Location card on the Contact page and the live Contact Form block.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="company-name">Business Name</Label>
+                <Input
+                  id="company-name"
+                  value={companyInfo.company_name}
+                  onChange={(event) => setCompanyInfo((current) => ({ ...current, company_name: event.target.value }))}
+                  placeholder="TCK Wellness"
+                  data-testid="input-company-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="company-google-business-url">Google Business Listing URL</Label>
+                <Input
+                  id="company-google-business-url"
+                  value={companyInfo.company_google_business_url}
+                  onChange={(event) => setCompanyInfo((current) => ({ ...current, company_google_business_url: event.target.value }))}
+                  placeholder="https://maps.google.com/..."
+                  autoPrependHttps
+                  data-testid="input-company-google-business-url"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="company-address">Address</Label>
+                <Textarea
+                  id="company-address"
+                  value={companyInfo.company_address}
+                  onChange={(event) => setCompanyInfo((current) => ({ ...current, company_address: event.target.value }))}
+                  placeholder={"123 Example Street\nSuite 100\nAtlanta, GA 30303"}
+                  rows={4}
+                  data-testid="textarea-company-address"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="company-phone-numbers">Phone Number(s)</Label>
+                <Textarea
+                  id="company-phone-numbers"
+                  value={companyInfo.company_phone_numbers}
+                  onChange={(event) => setCompanyInfo((current) => ({ ...current, company_phone_numbers: event.target.value }))}
+                  placeholder={"(555) 123-4567\n(555) 765-4321"}
+                  rows={3}
+                  data-testid="textarea-company-phone-numbers"
+                />
+                <p className="text-xs text-muted-foreground">Add one phone number per line to display multiple phone numbers.</p>
+              </div>
+              <div className="md:col-span-2 flex gap-2">
+                <Button
+                  type="button"
+                  onClick={() => saveCompanyInfoMutation.mutate()}
+                  disabled={!hasCompanyInfoChanges || saveCompanyInfoMutation.isPending}
+                  data-testid="button-save-company-information"
+                >
+                  {saveCompanyInfoMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Save Company Information
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="colors" className="space-y-6">

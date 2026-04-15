@@ -525,10 +525,21 @@ export function PublicFormRenderer({
 
   const mutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", `/api/forms/${slug}/submit`, values);
+      const response = await fetch(`/api/forms/${slug}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(values),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { message?: string; error?: string };
+
+      if (!response.ok) {
+        throw new Error(payload.message || payload.error || "Failed to submit form.");
+      }
+
+      return payload;
     },
-    onSuccess: async (response) => {
-      const payload = (await response.json()) as { message?: string };
+    onSuccess: (payload) => {
       toast({
         title: "Form submitted",
         description: payload.message || "Thanks! Your submission has been received.",

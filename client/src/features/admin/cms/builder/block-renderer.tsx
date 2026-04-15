@@ -26,6 +26,7 @@ import { RecordingArchivesSection } from "@/features/public/recording-archives-p
 import { DirectoryBrowserSection } from "@/features/directory/directory-page";
 import type { BlockInstance } from "./block-registry";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
+import { CompanyInformationCard } from "@/components/shared/company-information-card";
 import { ManagedFormEmbedBlock } from "@/features/public/public-dynamic-blocks";
 import { isDynamicBlock, getBlockDef } from "./block-registry";
 import { mergeJoinHeroBlocks } from "@shared/cms-blocks";
@@ -1739,17 +1740,7 @@ function ContactFormBlock() {
           </Card>
         </div>
         <div className="space-y-4">
-          <Card data-testid="card-contact-location">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-accent mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-sm mb-1">Location</h3>
-                  <p className="text-sm text-muted-foreground">Global — serving TCKs worldwide</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <CompanyInformationCard />
         </div>
       </div>
     </div>

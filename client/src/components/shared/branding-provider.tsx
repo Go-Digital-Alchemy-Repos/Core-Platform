@@ -23,6 +23,10 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
       return {
         frontendLogoUrl: payload?.frontendLogoUrl ?? null,
         faviconUrl: payload?.faviconUrl ?? null,
+        companyName: payload?.companyName ?? null,
+        companyAddress: payload?.companyAddress ?? null,
+        companyPhoneNumbers: payload?.companyPhoneNumbers ?? null,
+        companyGoogleBusinessUrl: payload?.companyGoogleBusinessUrl ?? null,
         bodyFont: payload?.bodyFont ?? null,
         headingFont: payload?.headingFont ?? null,
         primaryColor: payload?.primaryColor ?? null,
@@ -231,6 +235,10 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
 
     return () => window.cancelAnimationFrame(frame);
   }, [
+    branding.companyAddress,
+    branding.companyGoogleBusinessUrl,
+    branding.companyName,
+    branding.companyPhoneNumbers,
     branding.bodyFont,
     branding.headingFont,
     branding.primaryColor,

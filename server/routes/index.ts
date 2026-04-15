@@ -63,6 +63,10 @@ export function registerApiRoutes(app: Express) {
       res.json({
         frontendLogoUrl: branding.frontend_logo_url || null,
         faviconUrl: branding.favicon_url || null,
+        companyName: branding.company_name || null,
+        companyAddress: branding.company_address || null,
+        companyPhoneNumbers: branding.company_phone_numbers || null,
+        companyGoogleBusinessUrl: branding.company_google_business_url || null,
         bodyFont: branding.frontend_body_font || null,
         headingFont: branding.frontend_heading_font || null,
         primaryColor: branding.brand_primary_color || null,
@@ -90,6 +94,10 @@ export function registerApiRoutes(app: Express) {
       res.json({
         frontendLogoUrl: null,
         faviconUrl: null,
+        companyName: null,
+        companyAddress: null,
+        companyPhoneNumbers: null,
+        companyGoogleBusinessUrl: null,
         bodyFont: null,
         headingFont: null,
         primaryColor: null,
