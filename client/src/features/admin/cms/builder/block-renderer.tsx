@@ -553,27 +553,25 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
   return (
     <div className="py-4">
       <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {visible.length === 0 ? (
           <div className="col-span-3 text-center py-8 text-muted-foreground">
             <CalendarDays className="h-8 w-8 mx-auto mb-2 opacity-30" />
             <p className="text-sm">Upcoming events will appear here</p>
           </div>
         ) : visible.map((e) => (
-          <Link key={e.id} href={`/events/${e.id}`}>
-            <Card className="h-full overflow-hidden hover:shadow-md transition-shadow cursor-pointer" data-testid={`event-preview-${e.id}`}>
-              <div className={e.imageUrl ? "flex h-full" : ""}>
-                {e.imageUrl && (
-                  <div className="w-28 min-w-[7rem] shrink-0" data-testid={`img-event-preview-${e.id}`}>
-                    <img src={e.imageUrl} alt={e.title} className="h-full w-full object-cover" style={getImageObjectPositionStyle(e.imagePositionX, e.imagePositionY)} />
-                  </div>
-                )}
-                <CardContent className={e.imageUrl ? "p-4 flex-1" : "pt-4"}>
-                  <p className="text-xs text-accent font-medium mb-1">{new Date(e.date).toLocaleDateString()}</p>
-                  <p className="font-semibold text-sm line-clamp-2">{e.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{e.isVirtual ? "Virtual" : "In Person"}</p>
-                </CardContent>
-              </div>
+          <Link key={e.id} href={`/events/${e.id}`} className="w-full max-w-[18rem]">
+            <Card className="mx-auto h-full w-full max-w-[18rem] overflow-hidden transition-shadow hover:shadow-md cursor-pointer" data-testid={`event-preview-${e.id}`}>
+              {e.imageUrl && (
+                <div className="aspect-[16/10] overflow-hidden" data-testid={`img-event-preview-${e.id}`}>
+                  <img src={e.imageUrl} alt={e.title} className="h-full w-full object-cover" style={getImageObjectPositionStyle(e.imagePositionX, e.imagePositionY)} />
+                </div>
+              )}
+              <CardContent className={e.imageUrl ? "p-4" : "pt-4"}>
+                <p className="mb-1 text-xs font-medium text-accent">{new Date(e.date).toLocaleDateString()}</p>
+                <p className="line-clamp-2 text-sm font-semibold">{e.title}</p>
+                <p className="mt-2 text-xs text-muted-foreground">{e.isVirtual ? "Virtual" : "In Person"}</p>
+              </CardContent>
             </Card>
           </Link>
         ))}
@@ -601,31 +599,59 @@ function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
   const limit = num(props.limit, 3);
   const enableHoverMotion = props.enableHoverMotion !== false;
   const visible = (posts ?? []).filter((p) => p.isPublished).slice(0, limit);
+  const shouldCarousel = visible.length >= 3;
+
+  const renderBlogCard = (p: { id: string; title: string; excerpt: string; slug: string; coverImageUrl?: string | null; coverImagePositionX?: number | null; coverImagePositionY?: number | null }) => (
+    <Link key={p.id} href={`/insights/${p.slug}`} className="w-full max-w-[18rem]">
+      <Card className={`mx-auto h-full w-full max-w-[18rem] overflow-hidden cursor-pointer ${enableHoverMotion ? "blog-card-motion" : ""}`} data-testid={`blog-preview-${p.id}`}>
+        {p.coverImageUrl && (
+          <div className="aspect-[16/10] overflow-hidden">
+            <img src={p.coverImageUrl} alt={p.title} className="h-full w-full object-cover" style={getImageObjectPositionStyle(p.coverImagePositionX, p.coverImagePositionY)} data-blog-card-image data-testid={`img-blog-preview-${p.id}`} />
+          </div>
+        )}
+        <CardContent className={p.coverImageUrl ? "p-4" : "pt-4"}>
+          <p className="mb-1 line-clamp-2 text-sm font-semibold">{p.title}</p>
+          <p className="line-clamp-3 text-xs text-muted-foreground">{p.excerpt}</p>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+
   return (
     <div className="py-4">
       <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {visible.length === 0 ? (
-          <div className="col-span-3 text-center py-8 text-muted-foreground">
-            <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Blog articles will appear here</p>
-          </div>
-        ) : visible.map((p) => (
-          <Link key={p.id} href={`/insights/${p.slug}`}>
-            <Card className={`h-full overflow-hidden cursor-pointer ${enableHoverMotion ? "blog-card-motion" : ""}`} data-testid={`blog-preview-${p.id}`}>
-              {p.coverImageUrl && (
-                <div className="aspect-[16/9] overflow-hidden">
-                  <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" style={getImageObjectPositionStyle(p.coverImagePositionX, p.coverImagePositionY)} data-blog-card-image data-testid={`img-blog-preview-${p.id}`} />
-                </div>
-              )}
-              <CardContent className={p.coverImageUrl ? "p-5" : "pt-4"}>
-                <p className="font-semibold text-sm mb-1 line-clamp-2">{p.title}</p>
-                <p className="text-xs text-muted-foreground line-clamp-3">{p.excerpt}</p>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
+      {visible.length === 0 ? (
+        <div className="py-8 text-center text-muted-foreground">
+          <BookOpen className="mx-auto mb-2 h-8 w-8 opacity-30" />
+          <p className="text-sm">Blog articles will appear here</p>
+        </div>
+      ) : shouldCarousel ? (
+        <div>
+          <Carousel
+            opts={{
+              align: "start",
+              loop: false,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-4">
+              {visible.map((p) => (
+                <CarouselItem key={p.id} className="pl-4 basis-[85%] sm:basis-1/2 lg:basis-1/3">
+                  {renderBlogCard(p)}
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <CarouselPrevious className="static h-9 w-9 translate-x-0 translate-y-0 border-border/70 bg-background/95" />
+              <CarouselNext className="static h-9 w-9 translate-x-0 translate-y-0 border-border/70 bg-background/95" />
+            </div>
+          </Carousel>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {visible.map((p) => renderBlogCard(p))}
+        </div>
+      )}
     </div>
   );
 }
