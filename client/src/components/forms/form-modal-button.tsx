@@ -12,6 +12,7 @@ export interface FormModalButtonProps extends Omit<ButtonProps, "children"> {
   label: string;
   action?: unknown;
   href?: unknown;
+  openInNewTab?: unknown;
   formSlug?: unknown;
   modalTitle?: unknown;
   modalDescription?: unknown;
@@ -22,6 +23,7 @@ export function FormModalButton({
   label,
   action,
   href,
+  openInNewTab,
   formSlug,
   modalTitle,
   modalDescription,
@@ -30,8 +32,15 @@ export function FormModalButton({
 }: FormModalButtonProps) {
   const [open, setOpen] = useState(false);
   const closeTimeoutRef = useRef<number | null>(null);
-  const normalizedAction = text(action) === "form-modal" ? "form-modal" : "url";
+  const rawAction = text(action);
   const normalizedHref = text(href) || "#";
+  const normalizedAction =
+    rawAction === "form-modal" || rawAction === "internal-link" || rawAction === "custom-link"
+      ? rawAction
+      : normalizedHref.startsWith("/") || normalizedHref.startsWith("#") || normalizedHref === "#"
+        ? "internal-link"
+        : "custom-link";
+  const shouldOpenInNewTab = openInNewTab === true;
   const normalizedFormSlug = text(formSlug);
   const resolvedModalTitle = text(modalTitle) || label;
   const resolvedModalDescription = text(modalDescription);
@@ -87,11 +96,25 @@ export function FormModalButton({
     );
   }
 
+  if (normalizedAction === "internal-link") {
+    return (
+      <Link href={normalizedHref}>
+        <Button {...buttonProps} data-testid={testId}>
+          {label}
+        </Button>
+      </Link>
+    );
+  }
+
   return (
-    <Link href={normalizedHref}>
+    <a
+      href={normalizedHref}
+      target={shouldOpenInNewTab ? "_blank" : undefined}
+      rel={shouldOpenInNewTab ? "noopener noreferrer" : undefined}
+    >
       <Button {...buttonProps} data-testid={testId}>
         {label}
       </Button>
-    </Link>
+    </a>
   );
 }

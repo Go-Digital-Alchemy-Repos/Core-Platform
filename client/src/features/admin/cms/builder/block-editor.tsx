@@ -19,7 +19,7 @@ import type { BlockDef, PropDef } from "./block-registry";
 import { CmsImageUpload } from "../components/cms-image-upload";
 import { ImagePositionPicker } from "../components/image-position-picker";
 import { CmsRichTextEditor } from "./cms-rich-text-editor";
-import type { CmsForm } from "@shared/schema";
+import type { CmsForm, CmsPage } from "@shared/schema";
 
 interface BlockEditorProps {
   blockDef: BlockDef;
@@ -49,14 +49,17 @@ const PROP_DISPLAY_PRIORITY: Record<string, number> = {
   content: 50,
   body: 51,
   ctaAction: 52,
+  ctaOpenInNewTab: 52.5,
   ctaFormSlug: 53,
   ctaModalTitle: 54,
   ctaModalDescription: 55,
   primaryAction: 56,
+  primaryOpenInNewTab: 56.5,
   primaryFormSlug: 57,
   primaryModalTitle: 58,
   primaryModalDescription: 59,
   secondaryAction: 60,
+  secondaryOpenInNewTab: 60.5,
   secondaryFormSlug: 61,
   secondaryModalTitle: 62,
   secondaryModalDescription: 63,
@@ -193,16 +196,22 @@ const CONTEXTUAL_PRIORITY: Record<string, number> = {
   ctaText: 40,
   ctaLink: 41,
   ctaAction: 42,
+  ctaOpenInNewTab: 42.5,
   ctaFormSlug: 43,
   ctaModalTitle: 44,
   ctaModalDescription: 45,
   ctaSecondaryText: 42,
   ctaSecondaryLink: 43,
+  ctaSecondaryOpenInNewTab: 43.5,
+  primaryLink: 46.2,
   primaryAction: 46,
+  primaryOpenInNewTab: 46.5,
   primaryFormSlug: 47,
   primaryModalTitle: 48,
   primaryModalDescription: 49,
+  secondaryLink: 50.2,
   secondaryAction: 50,
+  secondaryOpenInNewTab: 50.5,
   secondaryFormSlug: 51,
   secondaryModalTitle: 52,
   secondaryModalDescription: 53,
@@ -226,9 +235,59 @@ function getActionControllerKey(key: string) {
   if (key.endsWith("FormSlug")) return `${key.slice(0, -"FormSlug".length)}Action`;
   if (key.endsWith("ModalTitle")) return `${key.slice(0, -"ModalTitle".length)}Action`;
   if (key.endsWith("ModalDescription")) return `${key.slice(0, -"ModalDescription".length)}Action`;
+  if (key.endsWith("OpenInNewTab")) return `${key.slice(0, -"OpenInNewTab".length)}Action`;
   if (key.endsWith("Link")) return `${key.slice(0, -"Link".length)}Action`;
 
   return null;
+}
+
+function getLinkKeyForActionController(actionControllerKey: string) {
+  if (actionControllerKey === "action") return "link";
+  if (actionControllerKey.endsWith("Action")) {
+    return `${actionControllerKey.slice(0, -"Action".length)}Link`;
+  }
+  return null;
+}
+
+function isInternalHref(value: string) {
+  const trimmed = value.trim();
+  return trimmed.startsWith("/") || trimmed.startsWith("#") || trimmed === "";
+}
+
+function normalizeButtonActionValue(key: string, values: Record<string, unknown>) {
+  const actionControllerKey = key.endsWith("Action") ? key : getActionControllerKey(key);
+  if (!actionControllerKey) return "custom-link";
+
+  const rawAction = String(values[actionControllerKey] ?? "internal-link");
+  if (rawAction === "internal-link" || rawAction === "custom-link" || rawAction === "form-modal") {
+    return rawAction;
+  }
+
+  if (rawAction === "url") {
+    const linkKey = getLinkKeyForActionController(actionControllerKey);
+    const linkValue = linkKey ? String(values[linkKey] ?? "") : "";
+    return isInternalHref(linkValue) ? "internal-link" : "custom-link";
+  }
+
+  return "custom-link";
+}
+
+function isButtonLinkFieldKey(key: string) {
+  return key === "link" || key.endsWith("Link");
+}
+
+function getDynamicPropLabel(propDef: Pick<PropDef, "key" | "label">, values: Record<string, unknown>) {
+  if (isButtonLinkFieldKey(propDef.key)) {
+    const actionValue = normalizeButtonActionValue(propDef.key, values);
+    if (actionValue === "internal-link") {
+      return propDef.label.replace("Link", "Internal Page");
+    }
+    if (actionValue === "custom-link") {
+      return propDef.label.replace("Link", "Custom Link");
+    }
+  }
+
+  return propDef.label;
 }
 
 function shouldRenderConditionalField(
@@ -238,10 +297,14 @@ function shouldRenderConditionalField(
   const actionControllerKey = getActionControllerKey(propDef.key);
   if (!actionControllerKey) return true;
 
-  const actionValue = String(values[actionControllerKey] ?? "url");
+  const actionValue = normalizeButtonActionValue(propDef.key, values);
 
   if (propDef.key === "link" || propDef.key.endsWith("Link")) {
-    return actionValue !== "form-modal";
+    return actionValue === "internal-link" || actionValue === "custom-link";
+  }
+
+  if (propDef.key === "openInNewTab" || propDef.key.endsWith("OpenInNewTab")) {
+    return actionValue === "custom-link";
   }
 
   if (
@@ -284,6 +347,7 @@ function inferInspectorGroup(propDef: PropDef): InspectorGroup {
   const normalizedKey = propDef.key.toLowerCase();
 
   if (SECTION_SETTING_KEYS.has(propDef.key)) return "settings";
+  if (propDef.key.endsWith("Action") || getActionControllerKey(propDef.key)) return "content";
   if (propDef.type === "image-url") return "media";
   if (POSITION_PICKER_KEYS.has(propDef.key)) return "media";
   if (MEDIA_KEY_FRAGMENTS.some((fragment) => normalizedKey.includes(fragment))) return "media";
@@ -340,10 +404,21 @@ function ArrayItemsField({
     staleTime: 60_000,
     enabled: schema.some((field) => field.type === "form-select"),
   });
+  const { data: pages = [] } = useQuery<CmsPage[]>({
+    queryKey: ["/api/admin/cms/pages"],
+    staleTime: 60_000,
+    enabled: schema.some((field) => field.type === "url" && isButtonLinkFieldKey(field.key)),
+  });
 
   const addItem = () => {
     const blank: Record<string, unknown> = {};
-    schema.forEach((s) => (blank[s.key] = s.type === "boolean" ? false : ""));
+    schema.forEach((s) => {
+      if (s.key === "action" || s.key.endsWith("Action")) {
+        blank[s.key] = "internal-link";
+        return;
+      }
+      blank[s.key] = s.type === "boolean" ? false : "";
+    });
     onChange([...value, blank]);
   };
 
@@ -380,7 +455,7 @@ function ArrayItemsField({
           {schema.map((field) =>
             shouldRenderConditionalField(field, item) ? (
             <div key={field.key} className="space-y-1">
-              <Label className="text-[11px] text-muted-foreground">{field.label}</Label>
+              <Label className="text-[11px] text-muted-foreground">{getDynamicPropLabel(field, item)}</Label>
               {field.type === "boolean" ? (
                 <div className="flex items-center gap-2 pt-1">
                   <Switch
@@ -406,7 +481,7 @@ function ArrayItemsField({
                 />
               ) : field.type === "select" ? (
                 <Select
-                  value={String(item[field.key] ?? "")}
+                  value={field.key === "action" || field.key.endsWith("Action") ? normalizeButtonActionValue(field.key, item) : String(item[field.key] ?? "")}
                   onValueChange={(val) => updateItem(idx, field.key, val)}
                 >
                   <SelectTrigger className="h-8 text-xs">
@@ -436,6 +511,25 @@ function ArrayItemsField({
                           {form.name}
                         </SelectItem>
                       ))}
+                  </SelectContent>
+                </Select>
+              ) : field.type === "url" && isButtonLinkFieldKey(field.key) && normalizeButtonActionValue(field.key, item) === "internal-link" ? (
+                <Select
+                  value={String(item[field.key] ?? "")}
+                  onValueChange={(val) => updateItem(idx, field.key, val)}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Select internal page…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pages.map((page) => {
+                      const path = page.slug === "home" || page.slug === "" ? "/" : `/${page.slug}`;
+                      return (
+                        <SelectItem key={page.id} value={path} className="text-xs">
+                          {page.title}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               ) : (
@@ -471,15 +565,22 @@ function PropField({
   propDef,
   value,
   onChange,
+  values,
 }: {
   propDef: PropDef;
   value: unknown;
   onChange: (val: unknown) => void;
+  values: Record<string, unknown>;
 }) {
   const { data: forms = [] } = useQuery<CmsForm[]>({
     queryKey: ["/api/admin/forms"],
     staleTime: 60_000,
     enabled: propDef.type === "form-select",
+  });
+  const { data: pages = [] } = useQuery<CmsPage[]>({
+    queryKey: ["/api/admin/cms/pages"],
+    staleTime: 60_000,
+    enabled: propDef.type === "url" && isButtonLinkFieldKey(propDef.key),
   });
   const strVal = String(value ?? "");
   const numVal = Number(value ?? 0);
@@ -489,6 +590,7 @@ function PropField({
     propDef.key === "subtitle" ||
     propDef.key === "subheading" ||
     propDef.key === "answer";
+  const actionValue = normalizeButtonActionValue(propDef.key, values);
 
   switch (propDef.type) {
     case "text":
@@ -501,6 +603,25 @@ function PropField({
             placeholder={propDef.placeholder}
             data-testid={`prop-richtext-${propDef.key}`}
           />
+        );
+      }
+      if (propDef.type === "url" && isButtonLinkFieldKey(propDef.key) && actionValue === "internal-link") {
+        return (
+          <Select value={strVal} onValueChange={onChange} data-testid={`prop-page-select-${propDef.key}`}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select internal page…" />
+            </SelectTrigger>
+            <SelectContent>
+              {pages.map((page) => {
+                const path = page.slug === "home" || page.slug === "" ? "/" : `/${page.slug}`;
+                return (
+                  <SelectItem key={page.id} value={path}>
+                    {page.title}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
         );
       }
       return (
@@ -554,7 +675,11 @@ function PropField({
     case "select":
     case "form-select":
       return (
-        <Select value={strVal} onValueChange={onChange} data-testid={`prop-select-${propDef.key}`}>
+        <Select
+          value={propDef.key.endsWith("Action") ? normalizeButtonActionValue(propDef.key, values) : strVal}
+          onValueChange={onChange}
+          data-testid={`prop-select-${propDef.key}`}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select…" />
           </SelectTrigger>
@@ -704,10 +829,11 @@ export function BlockEditor({
         <div key={propDef.key}>
           {idx > 0 && propDef.type === "array-items" && <Separator className="mb-4" />}
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">{propDef.label}</Label>
+            <Label className="text-xs font-medium">{getDynamicPropLabel(propDef, props)}</Label>
             <PropField
               propDef={propDef}
               value={props[propDef.key]}
+              values={props}
               onChange={(val) => setProp(propDef.key, val)}
             />
           </div>

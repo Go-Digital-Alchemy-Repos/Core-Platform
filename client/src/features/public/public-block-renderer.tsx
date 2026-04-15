@@ -140,6 +140,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
               label={str(props.ctaText)}
               action={props.ctaAction}
               href={props.ctaLink}
+              openInNewTab={props.ctaOpenInNewTab}
               formSlug={props.ctaFormSlug}
               modalTitle={props.ctaModalTitle}
               modalDescription={props.ctaModalDescription}
@@ -153,6 +154,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
               label={str(props.ctaSecondaryText)}
               action={props.ctaSecondaryAction}
               href={props.ctaSecondaryLink}
+              openInNewTab={props.ctaSecondaryOpenInNewTab}
               formSlug={props.ctaSecondaryFormSlug}
               modalTitle={props.ctaSecondaryModalTitle}
               modalDescription={props.ctaSecondaryModalDescription}
@@ -242,6 +244,7 @@ function CalloutBoxBlock({ props }: { props: Record<string, unknown> }) {
               label={str(props.ctaText)}
               action={props.ctaAction}
               href={props.ctaLink}
+              openInNewTab={props.ctaOpenInNewTab}
               formSlug={props.ctaFormSlug}
               modalTitle={props.ctaModalTitle}
               modalDescription={props.ctaModalDescription}
@@ -375,6 +378,7 @@ function CtaBlock({ props }: { props: Record<string, unknown> }) {
             label={str(props.primaryText)}
             action={props.primaryAction}
             href={props.primaryLink}
+            openInNewTab={props.primaryOpenInNewTab}
             formSlug={props.primaryFormSlug}
             modalTitle={props.primaryModalTitle}
             modalDescription={props.primaryModalDescription}
@@ -389,6 +393,7 @@ function CtaBlock({ props }: { props: Record<string, unknown> }) {
             label={str(props.secondaryText)}
             action={props.secondaryAction}
             href={props.secondaryLink}
+            openInNewTab={props.secondaryOpenInNewTab}
             formSlug={props.secondaryFormSlug}
             modalTitle={props.secondaryModalTitle}
             modalDescription={props.secondaryModalDescription}
@@ -582,6 +587,7 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
             label={ctaText}
             action={props.ctaAction}
             href={ctaLink}
+            openInNewTab={props.ctaOpenInNewTab}
             formSlug={props.ctaFormSlug}
             modalTitle={props.ctaModalTitle}
             modalDescription={props.ctaModalDescription}
@@ -659,7 +665,7 @@ function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
 function ButtonGroupBlock({ props }: { props: Record<string, unknown> }) {
   const align = str(props.alignment) || "center";
   const justifyClass = align === "left" ? "justify-start" : align === "right" ? "justify-end" : "justify-center";
-  const buttons = arr<{ text: string; link: string; variant: string; action?: string; formSlug?: string; modalTitle?: string; modalDescription?: string }>(props.buttons);
+  const buttons = arr<{ text: string; link: string; variant: string; action?: string; openInNewTab?: boolean; formSlug?: string; modalTitle?: string; modalDescription?: string }>(props.buttons);
   return (
     <div className="py-4">
       <SectionHeading props={props} defaultAlignment={align === "right" ? "right" : align === "center" ? "center" : "left"} className="mb-6" />
@@ -672,6 +678,7 @@ function ButtonGroupBlock({ props }: { props: Record<string, unknown> }) {
             label={btn.text}
             action={btn.action}
             href={btn.link}
+            openInNewTab={btn.openInNewTab}
             formSlug={btn.formSlug}
             modalTitle={btn.modalTitle}
             modalDescription={btn.modalDescription}
@@ -1174,6 +1181,7 @@ function GuaranteeWarrantyBlock({ props }: { props: Record<string, unknown> }) {
             label={str(props.ctaText)}
             action={props.ctaAction}
             href={props.ctaLink}
+            openInNewTab={props.ctaOpenInNewTab}
             formSlug={props.ctaFormSlug}
             modalTitle={props.ctaModalTitle}
             modalDescription={props.ctaModalDescription}
