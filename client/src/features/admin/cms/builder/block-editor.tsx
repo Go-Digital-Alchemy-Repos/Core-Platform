@@ -218,6 +218,46 @@ const CONTEXTUAL_PRIORITY: Record<string, number> = {
   imagePosition: 65,
 };
 
+function getActionControllerKey(key: string) {
+  if (key === "link" || key === "formSlug" || key === "modalTitle" || key === "modalDescription") {
+    return "action";
+  }
+
+  if (key.endsWith("FormSlug")) return `${key.slice(0, -"FormSlug".length)}Action`;
+  if (key.endsWith("ModalTitle")) return `${key.slice(0, -"ModalTitle".length)}Action`;
+  if (key.endsWith("ModalDescription")) return `${key.slice(0, -"ModalDescription".length)}Action`;
+  if (key.endsWith("Link")) return `${key.slice(0, -"Link".length)}Action`;
+
+  return null;
+}
+
+function shouldRenderConditionalField(
+  propDef: Pick<PropDef, "key">,
+  values: Record<string, unknown>,
+) {
+  const actionControllerKey = getActionControllerKey(propDef.key);
+  if (!actionControllerKey) return true;
+
+  const actionValue = String(values[actionControllerKey] ?? "url");
+
+  if (propDef.key === "link" || propDef.key.endsWith("Link")) {
+    return actionValue !== "form-modal";
+  }
+
+  if (
+    propDef.key === "formSlug" ||
+    propDef.key === "modalTitle" ||
+    propDef.key === "modalDescription" ||
+    propDef.key.endsWith("FormSlug") ||
+    propDef.key.endsWith("ModalTitle") ||
+    propDef.key.endsWith("ModalDescription")
+  ) {
+    return actionValue === "form-modal";
+  }
+
+  return true;
+}
+
 function defaultColorValueForKey(key: string) {
   if (key === "overlayColor" || key === "sectionBackgroundOverlayColor") return "#000000";
   return key === "sectionRadialGradientColor" ? DEFAULT_RADIAL_GRADIENT_COLOR : DEFAULT_COLOR_VALUE;
@@ -337,7 +377,8 @@ function ArrayItemsField({
               <Trash2 className="h-3 w-3" />
             </Button>
           </div>
-          {schema.map((field) => (
+          {schema.map((field) =>
+            shouldRenderConditionalField(field, item) ? (
             <div key={field.key} className="space-y-1">
               <Label className="text-[11px] text-muted-foreground">{field.label}</Label>
               {field.type === "boolean" ? (
@@ -407,7 +448,8 @@ function ArrayItemsField({
                 />
               )}
             </div>
-          ))}
+            ) : null
+          )}
         </div>
       ))}
       <Button
@@ -620,6 +662,7 @@ export function BlockEditor({
 
   const renderPropList = (propDefs: PropDef[]) =>
     propDefs.map((propDef, idx) => {
+      if (!shouldRenderConditionalField(propDef, props)) return null;
       if (POSITION_PICKER_KEYS.has(propDef.key)) return null;
 
       const imagePositionFieldGroup = IMAGE_POSITION_FIELD_GROUPS.find(

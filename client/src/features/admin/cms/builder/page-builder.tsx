@@ -193,8 +193,6 @@ interface VisualCanvasProps {
   registerBlockRef: (id: string, node: HTMLDivElement | null) => void;
   onCanvasDragStart: (event: DragEvent, blockId: string) => void;
   onCanvasDragEnd: () => void;
-  previewDevice: "desktop" | "tablet" | "mobile";
-  onPreviewDeviceChange: (device: "desktop" | "tablet" | "mobile") => void;
   draggedBlockId: string | null;
   hasActiveDragPayload: boolean;
   dropTarget: { id: string; position: "before" | "after" } | null;
@@ -779,8 +777,6 @@ function VisualCanvas({
   registerBlockRef,
   onCanvasDragStart,
   onCanvasDragEnd,
-  previewDevice,
-  onPreviewDeviceChange,
   draggedBlockId,
   hasActiveDragPayload,
   dropTarget,
@@ -793,54 +789,13 @@ function VisualCanvas({
 
   return (
     <div className="h-full bg-[radial-gradient(circle_at_top,_rgba(137,205,161,0.12),_transparent_45%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,250,252,0.98))] p-5">
-      <div className={cn("mx-auto flex min-h-full flex-col overflow-hidden rounded-[28px] border border-border/60 bg-background shadow-[0_20px_70px_rgba(15,23,42,0.08)] transition-[max-width] duration-200", PREVIEW_DEVICE_FRAME_CLASSES[previewDevice], previewDevice === "desktop" && desktopFrameClassName)}>
+      <div className={cn("mx-auto flex min-h-full max-w-full flex-col overflow-hidden rounded-[28px] border border-border/60 bg-background shadow-[0_20px_70px_rgba(15,23,42,0.08)] transition-[max-width] duration-200", desktopFrameClassName)}>
         <div className="flex items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-3">
           <div>
             <p className="text-sm font-semibold">Visual Canvas</p>
             <p className="text-xs text-muted-foreground">
               This editing surface uses the published page renderer, then layers selection and editing tools on top.
             </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="gap-1">
-              <Monitor className="h-3 w-3" />
-              {PREVIEW_DEVICE_LABELS[previewDevice]} preview
-            </Badge>
-            <div className="flex items-center rounded-lg border border-border/70 bg-background p-1">
-              <Button
-                type="button"
-                variant={previewDevice === "desktop" ? "secondary" : "ghost"}
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => onPreviewDeviceChange("desktop")}
-                data-testid="button-preview-desktop"
-                title="Desktop preview"
-              >
-                <Monitor className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                type="button"
-                variant={previewDevice === "tablet" ? "secondary" : "ghost"}
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => onPreviewDeviceChange("tablet")}
-                data-testid="button-preview-tablet"
-                title="Tablet preview"
-              >
-                <Tablet className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                type="button"
-                variant={previewDevice === "mobile" ? "secondary" : "ghost"}
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => onPreviewDeviceChange("mobile")}
-                data-testid="button-preview-mobile"
-                title="Mobile preview"
-              >
-                <Smartphone className="h-3.5 w-3.5" />
-              </Button>
-            </div>
           </div>
         </div>
 
@@ -1524,7 +1479,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const inserterPanel = (
     <div className="flex h-full flex-col rounded-2xl border border-border/70 bg-background shadow-sm">
       <div className="space-y-3 border-b border-border/70 px-4 py-4">
-        <div className="flex items-start justify-between gap-3">
+        <div className="space-y-2">
           <div>
             <div className="flex items-center gap-2">
               <Plus className="h-4 w-4 text-violet-500" />
@@ -1535,11 +1490,17 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             </p>
           </div>
           {insertAtIndex !== null ? (
-            <Badge variant="secondary">Insert at {insertAtIndex + 1}</Badge>
+            <Badge variant="secondary" className="w-fit">
+              Insert at {insertAtIndex + 1}
+            </Badge>
           ) : selectedId ? (
-            <Badge variant="outline">After selected block</Badge>
+            <Badge variant="outline" className="w-fit">
+              After selected block
+            </Badge>
           ) : (
-            <Badge variant="outline">Add to end</Badge>
+            <Badge variant="outline" className="w-fit">
+              Add to end
+            </Badge>
           )}
         </div>
         <p className="text-xs text-muted-foreground">
@@ -1549,13 +1510,11 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
       <Tabs defaultValue="blocks" className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="border-b border-border/70 px-4 py-3">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="blocks" className="gap-1.5">
-              <Layers className="h-3.5 w-3.5" />
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-1">
+            <TabsTrigger value="blocks" className="h-auto px-2 py-2 text-xs leading-tight">
               Block Types
             </TabsTrigger>
-            <TabsTrigger value="sections" className="gap-1.5" data-testid="tab-saved-sections">
-              <Bookmark className="h-3.5 w-3.5" />
+            <TabsTrigger value="sections" className="h-auto px-2 py-2 text-xs leading-tight" data-testid="tab-saved-sections">
               Saved Sections
             </TabsTrigger>
           </TabsList>
@@ -1639,21 +1598,23 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             type="button"
             variant={leftRailMode === "structure" ? "secondary" : "ghost"}
             size="sm"
+            className="min-w-0 px-2 text-xs sm:text-sm"
             onClick={() => setLeftRailMode("structure")}
             data-testid="button-left-rail-structure"
           >
-            <ListOrdered className="mr-1.5 h-4 w-4" />
-            Structure
+            <ListOrdered className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">Structure</span>
           </Button>
           <Button
             type="button"
             variant={leftRailMode === "inserter" ? "secondary" : "ghost"}
             size="sm"
+            className="min-w-0 px-2 text-xs sm:text-sm"
             onClick={() => setLeftRailMode("inserter")}
             data-testid="button-left-rail-inserter"
           >
-            <Plus className="mr-1.5 h-4 w-4" />
-            Add Content
+            <Plus className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">Add Content</span>
           </Button>
         </div>
       </div>
@@ -1773,22 +1734,21 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     onClick: () => void;
     label: string;
   }) => (
-    <Button
+    <button
       type="button"
-      variant="outline"
-      size="icon"
       className="absolute top-1/2 z-20 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-all hover:text-foreground hover:shadow-md"
       style={side === "left" ? { left: -14 } : { right: -14 }}
       onClick={onClick}
       aria-label={label}
       title={label}
+      data-testid={side === "left" ? "button-toggle-structure-panel" : "button-toggle-inspector-panel"}
     >
       {side === "left" ? (
         collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />
       ) : (
         collapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
       )}
-    </Button>
+    </button>
   );
 
   return (
@@ -1869,8 +1829,6 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             registerBlockRef={registerBlockRef}
             onCanvasDragStart={handleDragStart}
             onCanvasDragEnd={clearDragState}
-            previewDevice={previewDevice}
-            onPreviewDeviceChange={setPreviewDevice}
             draggedBlockId={draggedBlockId}
             hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
             dropTarget={dropTarget}
@@ -1918,8 +1876,6 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     registerBlockRef={registerBlockRef}
                     onCanvasDragStart={handleDragStart}
                     onCanvasDragEnd={clearDragState}
-                    previewDevice={previewDevice}
-                    onPreviewDeviceChange={setPreviewDevice}
                     draggedBlockId={draggedBlockId}
                     hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
                     dropTarget={dropTarget}
@@ -1979,8 +1935,6 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     registerBlockRef={registerBlockRef}
                     onCanvasDragStart={handleDragStart}
                     onCanvasDragEnd={clearDragState}
-                    previewDevice={previewDevice}
-                    onPreviewDeviceChange={setPreviewDevice}
                     draggedBlockId={draggedBlockId}
                     hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
                     dropTarget={dropTarget}
@@ -2018,8 +1972,6 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     registerBlockRef={registerBlockRef}
                     onCanvasDragStart={handleDragStart}
                     onCanvasDragEnd={clearDragState}
-                    previewDevice={previewDevice}
-                    onPreviewDeviceChange={setPreviewDevice}
                     draggedBlockId={draggedBlockId}
                     hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
                     dropTarget={dropTarget}
@@ -2069,8 +2021,6 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                 registerBlockRef={registerBlockRef}
                 onCanvasDragStart={handleDragStart}
                 onCanvasDragEnd={clearDragState}
-                previewDevice={previewDevice}
-                onPreviewDeviceChange={setPreviewDevice}
                 draggedBlockId={draggedBlockId}
                 hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
                 dropTarget={dropTarget}
