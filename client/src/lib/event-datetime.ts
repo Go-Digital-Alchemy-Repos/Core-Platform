@@ -1,6 +1,10 @@
 const DEFAULT_FALLBACK_TIME_ZONE = "America/New_York";
 
 type DateLike = string | Date | null | undefined;
+type EventListDateLine = {
+  label?: string;
+  text: string;
+};
 
 function isValidDate(value: Date): boolean {
   return !Number.isNaN(value.getTime());
@@ -55,6 +59,20 @@ function getTimeZoneDateTimeParts(date: Date, timeZone: string) {
     hour: parts.find((part) => part.type === "hour")?.value ?? "00",
     minute: parts.find((part) => part.type === "minute")?.value ?? "00",
   };
+}
+
+function getCalendarDateKey(value: DateLike, timeZone?: string | null): string | null {
+  if (!value) return null;
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (!isValidDate(date)) return null;
+
+  const resolvedTimeZone = resolveTimeZone(timeZone);
+  const parts = resolvedTimeZone
+    ? getTimeZoneDateTimeParts(date, resolvedTimeZone)
+    : getLocalDateTimeParts(date);
+
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
 function getTimeZoneOffsetMilliseconds(date: Date, timeZone: string): number {
@@ -200,4 +218,47 @@ export function formatEventTime(
     ...(resolvedTimeZone ? { timeZone: resolvedTimeZone } : {}),
     ...options,
   }).format(date);
+}
+
+export function isSameEventDay(
+  start: DateLike,
+  end: DateLike,
+  timeZone?: string | null,
+): boolean {
+  const startKey = getCalendarDateKey(start, timeZone);
+  const endKey = getCalendarDateKey(end, timeZone);
+  return Boolean(startKey && endKey && startKey === endKey);
+}
+
+export function formatEventListDateLines(
+  start: DateLike,
+  end: DateLike,
+  timeZone?: string | null,
+): EventListDateLine[] {
+  if (!start) return [];
+
+  const dateOptions: Intl.DateTimeFormatOptions = {
+    weekday: "short",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  };
+
+  const startDate = formatEventDate(start, timeZone, dateOptions);
+  const startTime = formatEventTime(start, timeZone);
+
+  if (!end) {
+    return [{ text: `${startDate} at ${startTime}` }];
+  }
+
+  const endTime = formatEventTime(end, timeZone);
+  if (isSameEventDay(start, end, timeZone)) {
+    return [{ text: `${startDate} · ${startTime} — ${endTime}` }];
+  }
+
+  const endDate = formatEventDate(end, timeZone, dateOptions);
+  return [
+    { label: "Starts", text: `${startDate} at ${startTime}` },
+    { label: "Ends", text: `${endDate} at ${endTime}` },
+  ];
 }

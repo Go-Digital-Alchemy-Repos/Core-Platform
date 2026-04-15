@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatEventDate, formatEventTime } from "@/lib/event-datetime";
+import { formatEventDate, formatEventListDateLines } from "@/lib/event-datetime";
 import {
   Tooltip,
   TooltipTrigger,
@@ -64,6 +64,7 @@ function EventCard({ event }: { event: Event }) {
   const isHybrid = event.isVirtual && !!(event.location || event.locationName || event.locationAddress);
   const registrationStatus = getRegistrationStatus(event);
   const displayLocation = event.locationName || event.locationAddress || event.location;
+  const dateLines = formatEventListDateLines(event.date, event.endDate, event.timezone);
 
   return (
     <Link href={`/events/${event.id}`} className="block">
@@ -88,14 +89,17 @@ function EventCard({ event }: { event: Event }) {
                 <CardTitle className="text-base sm:text-lg break-words" data-testid={`text-event-title-${event.id}`}>
                   {event.title}
                 </CardTitle>
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
                   <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-                  <span data-testid={`text-event-date-${event.id}`}>
-                    {formatEventDate(event.date, event.timezone)}
-                    {event.endDate && ` — ${formatEventDate(event.endDate, event.timezone)}`}
-                    {" at "}
-                    {formatEventTime(event.date, event.timezone)}
-                  </span>
+                  <div data-testid={`text-event-date-${event.id}`} className="space-y-0.5">
+                    {dateLines.map((line, index) => (
+                      <div key={`${event.id}-date-line-${index}`} className="leading-relaxed">
+                        {line.label ? <span className="font-medium text-foreground">{line.label}:</span> : null}
+                        {line.label ? " " : ""}
+                        <span>{line.text}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
