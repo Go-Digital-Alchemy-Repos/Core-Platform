@@ -558,14 +558,14 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
   const shouldCarousel = visible.length > 4;
 
   const renderEventCard = (e: { id: string; title: string; date: string; isVirtual: boolean; imageUrl?: string | null; imagePositionX?: number | null; imagePositionY?: number | null }) => (
-    <Link key={e.id} href={`/events/${e.id}`} className="w-full max-w-[13.5rem]">
-      <Card className="mx-auto h-full w-full max-w-[13.5rem] overflow-hidden transition-shadow hover:shadow-md cursor-pointer" data-testid={`event-preview-${e.id}`}>
+    <Link key={e.id} href={`/events/${e.id}`} className="w-full max-w-[16.2rem]">
+      <Card className="mx-auto h-full w-full max-w-[16.2rem] overflow-hidden transition-shadow hover:shadow-md cursor-pointer" data-testid={`event-preview-${e.id}`}>
         {e.imageUrl && (
           <div className="aspect-[16/10] overflow-hidden" data-testid={`img-event-preview-${e.id}`}>
             <img src={e.imageUrl} alt={e.title} className="h-full w-full object-cover" style={getImageObjectPositionStyle(e.imagePositionX, e.imagePositionY)} />
           </div>
         )}
-        <CardContent className={e.imageUrl ? "p-3.5" : "pt-3.5"}>
+        <CardContent className={e.imageUrl ? "p-4" : "pt-4"}>
           <p className="mb-1 text-xs font-medium text-accent">{new Date(e.date).toLocaleDateString()}</p>
           <p className="line-clamp-2 text-sm font-semibold public-heading-3">{e.title}</p>
           <p className="mt-2 text-[11px] leading-relaxed public-meta-text">{e.isVirtual ? "Virtual" : "In Person"}</p>
