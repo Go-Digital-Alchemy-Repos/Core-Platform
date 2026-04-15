@@ -34,17 +34,32 @@ import {
 import { Plus, Pencil } from "lucide-react";
 import type { MembershipTier } from "@shared/schema";
 
+const currencyInputSchema = z
+  .string()
+  .trim()
+  .regex(/^\d+(\.\d{1,2})?$/, "Enter a valid US dollar amount")
+  .transform((value) => Number.parseFloat(value));
+
 const tierFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  monthlyPrice: z.coerce.number().min(0),
-  annualPrice: z.coerce.number().min(0),
+  monthlyPrice: currencyInputSchema,
+  annualPrice: currencyInputSchema,
   features: z.string().optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.coerce.number().optional(),
 });
 
-type TierFormValues = z.infer<typeof tierFormSchema>;
+type TierFormValues = z.input<typeof tierFormSchema>;
+type TierFormSubmitValues = z.output<typeof tierFormSchema>;
+
+function centsToDollars(cents: number) {
+  return (cents / 100).toFixed(2);
+}
+
+function dollarsToCents(dollars: number) {
+  return Math.round(dollars * 100);
+}
 
 export default function AdminMembershipTiersPage() {
   return (
@@ -70,8 +85,8 @@ function TiersContent() {
     defaultValues: {
       name: "",
       description: "",
-      monthlyPrice: 0,
-      annualPrice: 0,
+      monthlyPrice: "0.00",
+      annualPrice: "0.00",
       features: "",
       isActive: true,
       sortOrder: 0,
@@ -79,9 +94,11 @@ function TiersContent() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: TierFormValues) => {
+    mutationFn: async (data: TierFormSubmitValues) => {
       const payload = {
         ...data,
+        monthlyPrice: dollarsToCents(data.monthlyPrice),
+        annualPrice: dollarsToCents(data.annualPrice),
         features: data.features
           ? data.features.split("\n").filter((f) => f.trim())
           : [],
@@ -97,9 +114,11 @@ function TiersContent() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: TierFormValues }) => {
+    mutationFn: async ({ id, data }: { id: string; data: TierFormSubmitValues }) => {
       const payload = {
         ...data,
+        monthlyPrice: dollarsToCents(data.monthlyPrice),
+        annualPrice: dollarsToCents(data.annualPrice),
         features: data.features
           ? data.features.split("\n").filter((f) => f.trim())
           : [],
@@ -120,8 +139,8 @@ function TiersContent() {
     form.reset({
       name: "",
       description: "",
-      monthlyPrice: 0,
-      annualPrice: 0,
+      monthlyPrice: "0.00",
+      annualPrice: "0.00",
       features: "",
       isActive: true,
       sortOrder: 0,
@@ -134,8 +153,8 @@ function TiersContent() {
     form.reset({
       name: tier.name,
       description: tier.description ?? "",
-      monthlyPrice: tier.monthlyPrice,
-      annualPrice: tier.annualPrice,
+      monthlyPrice: centsToDollars(tier.monthlyPrice),
+      annualPrice: centsToDollars(tier.annualPrice),
       features: tier.features?.join("\n") ?? "",
       isActive: tier.isActive ?? true,
       sortOrder: tier.sortOrder ?? 0,
@@ -143,7 +162,7 @@ function TiersContent() {
     setDialogOpen(true);
   }
 
-  function onSubmit(values: TierFormValues) {
+  function onSubmit(values: TierFormSubmitValues) {
     if (editingTier) {
       updateMutation.mutate({ id: editingTier.id, data: values });
     } else {
@@ -186,12 +205,17 @@ function TiersContent() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="flex items-baseline gap-2 mb-2 flex-wrap">
-                <span className="text-2xl font-bold" data-testid={`text-tier-price-${tier.id}`}>
-                  ${(tier.monthlyPrice / 100).toFixed(2)}
-                </span>
-                <span className="text-sm text-muted-foreground">/month</span>
-              </div>
+                  <div className="flex items-baseline gap-2 mb-2 flex-wrap">
+                    <span className="text-2xl font-bold" data-testid={`text-tier-price-${tier.id}`}>
+                  ${centsToDollars(tier.monthlyPrice)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">/month</span>
+                  </div>
+              {tier.annualPrice > 0 && (
+                <p className="mb-3 text-sm text-muted-foreground">
+                  ${centsToDollars(tier.annualPrice)}/year
+                </p>
+              )}
               {tier.description && (
                 <p className="text-sm text-muted-foreground mb-3" data-testid={`text-tier-desc-${tier.id}`}>
                   {tier.description}
@@ -261,10 +285,19 @@ function TiersContent() {
                     name="monthlyPrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Monthly Price (cents)</FormLabel>
+                        <FormLabel>Monthly Price (USD)</FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} data-testid="input-tier-monthly-price" />
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            data-testid="input-tier-monthly-price"
+                          />
                         </FormControl>
+                        <p className="text-xs text-muted-foreground">$ per month</p>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -274,10 +307,19 @@ function TiersContent() {
                     name="annualPrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Annual Price (cents)</FormLabel>
+                        <FormLabel>Annual Price (USD)</FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} data-testid="input-tier-annual-price" />
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            data-testid="input-tier-annual-price"
+                          />
                         </FormControl>
+                        <p className="text-xs text-muted-foreground">$ per year</p>
                         <FormMessage />
                       </FormItem>
                     )}

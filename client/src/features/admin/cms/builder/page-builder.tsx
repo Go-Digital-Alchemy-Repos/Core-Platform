@@ -35,6 +35,8 @@ import {
   Blocks,
   CalendarDays,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ClipboardCheck,
   Copy,
   FileText,
@@ -189,6 +191,8 @@ interface VisualCanvasProps {
   onMove: (id: string, direction: "up" | "down") => void;
   onAddBelow: (id: string) => void;
   registerBlockRef: (id: string, node: HTMLDivElement | null) => void;
+  onCanvasDragStart: (event: DragEvent, blockId: string) => void;
+  onCanvasDragEnd: () => void;
   previewDevice: "desktop" | "tablet" | "mobile";
   onPreviewDeviceChange: (device: "desktop" | "tablet" | "mobile") => void;
   draggedBlockId: string | null;
@@ -561,6 +565,8 @@ function CanvasBlockFrame({
   onMove,
   onAddBelow,
   registerBlockRef,
+  onCanvasDragStart,
+  onCanvasDragEnd,
   draggedBlockId,
   hasActiveDragPayload,
   dropTarget,
@@ -577,6 +583,8 @@ function CanvasBlockFrame({
   onMove: (id: string, direction: "up" | "down") => void;
   onAddBelow: (id: string) => void;
   registerBlockRef: (id: string, node: HTMLDivElement | null) => void;
+  onCanvasDragStart: (event: DragEvent, blockId: string) => void;
+  onCanvasDragEnd: () => void;
   draggedBlockId: string | null;
   hasActiveDragPayload: boolean;
   dropTarget: { id: string; position: "before" | "after" } | null;
@@ -652,6 +660,25 @@ function CanvasBlockFrame({
           isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         )}
       >
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          className="h-8 w-8 cursor-grab shadow-sm active:cursor-grabbing"
+          draggable
+          onDragStart={(event) => {
+            event.stopPropagation();
+            onCanvasDragStart(event, block.id);
+          }}
+          onDragEnd={(event) => {
+            event.stopPropagation();
+            onCanvasDragEnd();
+          }}
+          data-testid={`canvas-drag-${block.id}`}
+          title="Drag to move"
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </Button>
         <Button
           type="button"
           variant="secondary"
@@ -744,6 +771,8 @@ function VisualCanvas({
   onMove,
   onAddBelow,
   registerBlockRef,
+  onCanvasDragStart,
+  onCanvasDragEnd,
   previewDevice,
   onPreviewDeviceChange,
   draggedBlockId,
@@ -839,6 +868,8 @@ function VisualCanvas({
                     onMove={onMove}
                     onAddBelow={onAddBelow}
                     registerBlockRef={registerBlockRef}
+                    onCanvasDragStart={onCanvasDragStart}
+                    onCanvasDragEnd={onCanvasDragEnd}
                     draggedBlockId={draggedBlockId}
                     hasActiveDragPayload={hasActiveDragPayload}
                     dropTarget={dropTarget}
@@ -1589,7 +1620,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
   const inspectorPanel = selectedBlock && selectedDef ? (
     <div
-      className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm lg:h-auto lg:max-h-[calc(100vh-220px)]"
+      className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm xl:h-auto xl:max-h-[calc(100vh-220px)]"
       style={desktopInspectorMaxHeight ? { maxHeight: `${desktopInspectorMaxHeight}px` } : undefined}
       data-testid="block-editor-panel"
     >
@@ -1662,7 +1693,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       </ScrollArea>
     </div>
   ) : (
-    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-dashed border-border/70 bg-background/70 p-6 text-center shadow-sm lg:h-auto lg:max-h-[calc(100vh-220px)]">
+    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-dashed border-border/70 bg-background/70 p-6 text-center shadow-sm xl:h-auto xl:max-h-[calc(100vh-220px)]">
       <div className="m-auto max-w-sm">
         <Settings2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground/35" />
         <p className="text-base font-semibold">Select a block to inspect</p>
@@ -1686,6 +1717,35 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     </div>
   );
 
+  const renderRailToggle = ({
+    side,
+    collapsed,
+    onClick,
+    label,
+  }: {
+    side: "left" | "right";
+    collapsed: boolean;
+    onClick: () => void;
+    label: string;
+  }) => (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      className="absolute top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-background/95 shadow-md backdrop-blur"
+      style={side === "left" ? { left: -20 } : { right: -20 }}
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+    >
+      {side === "left" ? (
+        collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />
+      ) : (
+        collapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+      )}
+    </Button>
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1707,6 +1767,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           <Button
             variant="outline"
             size="sm"
+            className="xl:hidden"
             onClick={() => setStructurePanelOpen((current) => !current)}
           >
             <ListOrdered className="mr-1.5 h-4 w-4" />
@@ -1715,6 +1776,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           <Button
             variant="outline"
             size="sm"
+            className="xl:hidden"
             onClick={() => setAdvancedInspectorOpen((current) => !current)}
             disabled={!selectedBlock}
           >
@@ -1744,7 +1806,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         </div>
       </div>
 
-      <div className="space-y-4 lg:hidden">
+      <div className="space-y-4 xl:hidden">
         {structurePanelOpen ? leftRailPanel : (
           <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
             The left sidebar is hidden. Tap "Show Structure" to bring back the builder rail.
@@ -1760,6 +1822,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             onMove={moveBlock}
             onAddBelow={openAddBelow}
             registerBlockRef={registerBlockRef}
+            onCanvasDragStart={handleDragStart}
+            onCanvasDragEnd={clearDragState}
             previewDevice={previewDevice}
             onPreviewDeviceChange={setPreviewDevice}
             draggedBlockId={draggedBlockId}
@@ -1777,7 +1841,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         )}
       </div>
 
-      <div className="hidden lg:sticky lg:top-6 lg:block">
+      <div className="hidden xl:sticky xl:top-6 xl:block">
         {structurePanelOpen && advancedInspectorOpen ? (
           <ResizablePanelGroup
             direction="horizontal"
@@ -1786,7 +1850,14 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             <ResizablePanel defaultSize={20} minSize={16}>
               <div className="h-full min-h-0 p-3">{leftRailPanel}</div>
             </ResizablePanel>
-            <ResizableHandle withHandle />
+            <ResizableHandle>
+              {renderRailToggle({
+                side: "left",
+                collapsed: false,
+                onClick: () => setStructurePanelOpen(false),
+                label: "Collapse structure panel",
+              })}
+            </ResizableHandle>
             <ResizablePanel defaultSize={55} minSize={35}>
               <div className="h-full min-h-0 p-3">
                 <div ref={desktopCanvasPanelRef} className="h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
@@ -1799,6 +1870,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     onMove={moveBlock}
                     onAddBelow={openAddBelow}
                     registerBlockRef={registerBlockRef}
+                    onCanvasDragStart={handleDragStart}
+                    onCanvasDragEnd={clearDragState}
                     previewDevice={previewDevice}
                     onPreviewDeviceChange={setPreviewDevice}
                     draggedBlockId={draggedBlockId}
@@ -1811,7 +1884,14 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                 </div>
               </div>
             </ResizablePanel>
-            <ResizableHandle withHandle />
+            <ResizableHandle>
+              {renderRailToggle({
+                side: "right",
+                collapsed: false,
+                onClick: () => setAdvancedInspectorOpen(false),
+                label: "Collapse inspector panel",
+              })}
+            </ResizableHandle>
             <ResizablePanel defaultSize={25} minSize={20}>
               {renderDesktopInspectorPanel()}
             </ResizablePanel>
@@ -1824,13 +1904,23 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             <ResizablePanel defaultSize={22} minSize={18}>
               <div className="h-full min-h-0 p-3">{leftRailPanel}</div>
             </ResizablePanel>
-            <ResizableHandle withHandle />
+            <ResizableHandle>
+              {renderRailToggle({
+                side: "left",
+                collapsed: false,
+                onClick: () => setStructurePanelOpen(false),
+                label: "Collapse structure panel",
+              })}
+            </ResizableHandle>
             <ResizablePanel defaultSize={78} minSize={50}>
               <div className="h-full min-h-0 p-3">
                 <div ref={desktopCanvasPanelRef} className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
-                  <div className="absolute right-4 top-4 z-20 rounded-full border border-border/70 bg-background/95 px-3 py-1 text-xs text-muted-foreground shadow-sm">
-                    Docked inspector hidden
-                  </div>
+                  {renderRailToggle({
+                    side: "right",
+                    collapsed: true,
+                    onClick: () => setAdvancedInspectorOpen(true),
+                    label: "Show inspector panel",
+                  })}
                   <VisualCanvas
                     blocks={blocks}
                     selectedId={selectedId}
@@ -1840,6 +1930,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     onMove={moveBlock}
                     onAddBelow={openAddBelow}
                     registerBlockRef={registerBlockRef}
+                    onCanvasDragStart={handleDragStart}
+                    onCanvasDragEnd={clearDragState}
                     previewDevice={previewDevice}
                     onPreviewDeviceChange={setPreviewDevice}
                     draggedBlockId={draggedBlockId}
@@ -1861,9 +1953,12 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             <ResizablePanel defaultSize={72} minSize={45}>
               <div className="h-full min-h-0 p-3">
                 <div ref={desktopCanvasPanelRef} className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
-                  <div className="absolute left-4 top-4 z-20 rounded-full border border-border/70 bg-background/95 px-3 py-1 text-xs text-muted-foreground shadow-sm">
-                    Structure hidden
-                  </div>
+                  {renderRailToggle({
+                    side: "left",
+                    collapsed: true,
+                    onClick: () => setStructurePanelOpen(true),
+                    label: "Show structure panel",
+                  })}
                   <VisualCanvas
                     blocks={blocks}
                     selectedId={selectedId}
@@ -1873,6 +1968,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     onMove={moveBlock}
                     onAddBelow={openAddBelow}
                     registerBlockRef={registerBlockRef}
+                    onCanvasDragStart={handleDragStart}
+                    onCanvasDragEnd={clearDragState}
                     previewDevice={previewDevice}
                     onPreviewDeviceChange={setPreviewDevice}
                     draggedBlockId={draggedBlockId}
@@ -1885,7 +1982,14 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                 </div>
               </div>
             </ResizablePanel>
-            <ResizableHandle withHandle />
+            <ResizableHandle>
+              {renderRailToggle({
+                side: "right",
+                collapsed: false,
+                onClick: () => setAdvancedInspectorOpen(false),
+                label: "Collapse inspector panel",
+              })}
+            </ResizableHandle>
             <ResizablePanel defaultSize={28} minSize={20}>
               {renderDesktopInspectorPanel()}
             </ResizablePanel>
@@ -1893,12 +1997,18 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         ) : (
           <div className="h-[calc(100vh-180px)] min-h-[720px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10 p-3">
             <div ref={desktopCanvasPanelRef} className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
-              <div className="absolute left-4 top-4 z-20 rounded-full border border-border/70 bg-background/95 px-3 py-1 text-xs text-muted-foreground shadow-sm">
-                Structure hidden
-              </div>
-              <div className="absolute right-4 top-4 z-20 rounded-full border border-border/70 bg-background/95 px-3 py-1 text-xs text-muted-foreground shadow-sm">
-                Docked inspector hidden
-              </div>
+              {renderRailToggle({
+                side: "left",
+                collapsed: true,
+                onClick: () => setStructurePanelOpen(true),
+                label: "Show structure panel",
+              })}
+              {renderRailToggle({
+                side: "right",
+                collapsed: true,
+                onClick: () => setAdvancedInspectorOpen(true),
+                label: "Show inspector panel",
+              })}
               <VisualCanvas
                 blocks={blocks}
                 selectedId={selectedId}
@@ -1908,6 +2018,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                 onMove={moveBlock}
                 onAddBelow={openAddBelow}
                 registerBlockRef={registerBlockRef}
+                onCanvasDragStart={handleDragStart}
+                onCanvasDragEnd={clearDragState}
                 previewDevice={previewDevice}
                 onPreviewDeviceChange={setPreviewDevice}
                 draggedBlockId={draggedBlockId}
