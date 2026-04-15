@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatEventDate, formatEventListDateLines } from "@/lib/event-datetime";
+import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import {
   Tooltip,
   TooltipTrigger,
@@ -80,6 +81,7 @@ function EventCard({ event }: { event: Event }) {
                 src={event.imageUrl}
                 alt={event.title}
                 className="h-48 sm:h-full w-full object-cover"
+                style={getImageObjectPositionStyle(event.imagePositionX, event.imagePositionY)}
               />
             </div>
           )}
@@ -404,8 +406,7 @@ export function EventsArchiveSection({
 
   return (
     <>
-      <section className="relative bg-muted/30 overflow-hidden" data-testid="section-events-hero">
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
+      <section data-testid="section-events-hero">
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 py-14 sm:py-20 md:py-24">
           <div className="text-center mb-6 sm:mb-8">
             <h1

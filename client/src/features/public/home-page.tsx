@@ -21,6 +21,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { getQueryFn } from "@/lib/queryClient";
+import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 
@@ -237,6 +238,7 @@ function FeaturedArticlesCarousel({ articles }: { articles: any[] }) {
                             src={post.coverImageUrl}
                             alt={post.title}
                             className="w-full h-full object-cover"
+                            style={getImageObjectPositionStyle(post.coverImagePositionX, post.coverImagePositionY)}
                           />
                         </div>
                       )}

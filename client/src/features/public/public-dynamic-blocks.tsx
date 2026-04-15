@@ -10,6 +10,7 @@ import { MapView } from "@/components/directory/map-view";
 import { SectionHeading } from "@/features/admin/cms/builder/section-heading";
 import { normalizeHexColor } from "@/features/admin/cms/builder/section-style";
 import { getPostCategories, getPrimaryPostCategory, postMatchesCategory } from "@/lib/blog-post-categories";
+import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
 import { CompanyInformationCard } from "@/components/shared/company-information-card";
 
@@ -232,6 +233,8 @@ interface BlogPost {
   categories?: string[] | null;
   tags?: string[];
   coverImageUrl?: string;
+  coverImagePositionX?: number | null;
+  coverImagePositionY?: number | null;
   postType?: string | null;
   externalUrl?: string | null;
   isPublished: boolean;
@@ -258,7 +261,7 @@ function FeaturedBlogCard({
       <div className={layout === "stacked" ? "grid grid-cols-1" : "grid grid-cols-1 md:grid-cols-2"}>
         {post.coverImageUrl && (
           <div className="aspect-[16/9] md:aspect-auto overflow-hidden">
-            <img src={post.coverImageUrl} alt={post.title} className="w-full h-full object-cover" data-blog-card-image />
+            <img src={post.coverImageUrl} alt={post.title} className="w-full h-full object-cover" style={getImageObjectPositionStyle(post.coverImagePositionX, post.coverImagePositionY)} data-blog-card-image />
           </div>
         )}
         <CardContent className="p-6 flex flex-col justify-center">
@@ -406,7 +409,7 @@ function BlogFeedGrid({
             <Card className={`h-full cursor-pointer ${getBlogCardMotionClass(enableHoverMotion)}`} data-testid={`blog-feed-card-${p.id}`}>
               {p.coverImageUrl && (
                 <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
-                  <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" data-blog-card-image />
+                  <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" style={getImageObjectPositionStyle(p.coverImagePositionX, p.coverImagePositionY)} data-blog-card-image />
                 </div>
               )}
               <CardContent className="p-4">

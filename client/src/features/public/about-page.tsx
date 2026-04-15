@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
+import { getImageObjectPositionStyle } from "@/lib/image-focus";
 
 const stats = [
   { value: "60%", label: "of TCKs experienced symptoms of", highlight: "anxiety" },
@@ -379,6 +380,7 @@ export default function AboutPage() {
                           src={post.coverImageUrl}
                           alt={post.title}
                           className="w-full h-full object-cover"
+                          style={getImageObjectPositionStyle(post.coverImagePositionX, post.coverImagePositionY)}
                         />
                       </div>
                     )}

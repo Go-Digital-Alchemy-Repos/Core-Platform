@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, BookOpen, Headphones, ExternalLink } from "lucide-react";
 import { getPrimaryPostCategory, postMatchesCategory } from "@/lib/blog-post-categories";
+import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import type { BlogPost } from "@shared/schema";
 import { PublicSidebar } from "@/features/public/public-sidebar";
 
@@ -73,7 +74,7 @@ export default function InsightsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2">
                       {featuredPost.coverImageUrl && (
                         <div className="aspect-[16/9] md:aspect-auto md:min-h-[320px] overflow-hidden">
-                          <img src={featuredPost.coverImageUrl} alt={featuredPost.title} className="w-full h-full object-cover" data-blog-card-image data-testid={`img-blog-cover-${featuredPost.id}`} />
+                          <img src={featuredPost.coverImageUrl} alt={featuredPost.title} className="w-full h-full object-cover" style={getImageObjectPositionStyle(featuredPost.coverImagePositionX, featuredPost.coverImagePositionY)} data-blog-card-image data-testid={`img-blog-cover-${featuredPost.id}`} />
                         </div>
                       )}
                       <CardContent className="p-6 sm:p-8 flex flex-col justify-center">
@@ -98,7 +99,7 @@ export default function InsightsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2">
                       {featuredPost.coverImageUrl && (
                         <div className="aspect-[16/9] md:aspect-auto md:min-h-[320px] overflow-hidden">
-                          <img src={featuredPost.coverImageUrl} alt={featuredPost.title} className="w-full h-full object-cover" data-blog-card-image data-testid={`img-blog-cover-${featuredPost.id}`} />
+                          <img src={featuredPost.coverImageUrl} alt={featuredPost.title} className="w-full h-full object-cover" style={getImageObjectPositionStyle(featuredPost.coverImagePositionX, featuredPost.coverImagePositionY)} data-blog-card-image data-testid={`img-blog-cover-${featuredPost.id}`} />
                         </div>
                       )}
                       <CardContent className="p-6 sm:p-8 flex flex-col justify-center">
@@ -133,7 +134,7 @@ export default function InsightsPage() {
                       <Card className="h-full cursor-pointer hover-elevate blog-card-motion" data-testid={`card-blog-${post.id}`}>
                         {post.coverImageUrl && (
                           <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
-                            <img src={post.coverImageUrl} alt={post.title} className="w-full h-full object-cover" data-blog-card-image data-testid={`img-blog-cover-${post.id}`} />
+                            <img src={post.coverImageUrl} alt={post.title} className="w-full h-full object-cover" style={getImageObjectPositionStyle(post.coverImagePositionX, post.coverImagePositionY)} data-blog-card-image data-testid={`img-blog-cover-${post.id}`} />
                           </div>
                         )}
                         <CardContent className={post.coverImageUrl ? "p-5" : "p-6"}>

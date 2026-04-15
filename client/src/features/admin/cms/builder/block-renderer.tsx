@@ -28,6 +28,7 @@ import type { BlockInstance } from "./block-registry";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
 import { CompanyInformationCard } from "@/components/shared/company-information-card";
 import { ManagedFormEmbedBlock } from "@/features/public/public-dynamic-blocks";
+import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import { isDynamicBlock, getBlockDef } from "./block-registry";
 import { mergeJoinHeroBlocks } from "@shared/cms-blocks";
 import {
@@ -542,7 +543,7 @@ function FeaturedProfessionalsBlock({ props }: { props: Record<string, unknown> 
 }
 
 function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
-  const { data: events } = useQuery<{ id: string; title: string; date: string; isVirtual: boolean; imageUrl?: string | null }[]>({
+  const { data: events } = useQuery<{ id: string; title: string; date: string; isVirtual: boolean; imageUrl?: string | null; imagePositionX?: number | null; imagePositionY?: number | null }[]>({
     queryKey: ["/api/events"],
   });
   const limit = num(props.limit, 3);
@@ -564,7 +565,7 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
               <div className={e.imageUrl ? "flex h-full" : ""}>
                 {e.imageUrl && (
                   <div className="w-28 min-w-[7rem] shrink-0" data-testid={`img-event-preview-${e.id}`}>
-                    <img src={e.imageUrl} alt={e.title} className="h-full w-full object-cover" />
+                    <img src={e.imageUrl} alt={e.title} className="h-full w-full object-cover" style={getImageObjectPositionStyle(e.imagePositionX, e.imagePositionY)} />
                   </div>
                 )}
                 <CardContent className={e.imageUrl ? "p-4 flex-1" : "pt-4"}>
@@ -594,7 +595,7 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
 }
 
 function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
-  const { data: posts } = useQuery<{ id: string; title: string; excerpt: string; slug: string; coverImageUrl?: string | null; isPublished: boolean }[]>({
+  const { data: posts } = useQuery<{ id: string; title: string; excerpt: string; slug: string; coverImageUrl?: string | null; coverImagePositionX?: number | null; coverImagePositionY?: number | null; isPublished: boolean }[]>({
     queryKey: ["/api/blog"],
   });
   const limit = num(props.limit, 3);
@@ -614,7 +615,7 @@ function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
             <Card className={`h-full overflow-hidden cursor-pointer ${enableHoverMotion ? "blog-card-motion" : ""}`} data-testid={`blog-preview-${p.id}`}>
               {p.coverImageUrl && (
                 <div className="aspect-[16/9] overflow-hidden">
-                  <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" data-blog-card-image data-testid={`img-blog-preview-${p.id}`} />
+                  <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" style={getImageObjectPositionStyle(p.coverImagePositionX, p.coverImagePositionY)} data-blog-card-image data-testid={`img-blog-preview-${p.id}`} />
                 </div>
               )}
               <CardContent className={p.coverImageUrl ? "p-5" : "pt-4"}>
@@ -1268,6 +1269,8 @@ interface BlogPost {
   categories?: string[] | null;
   tags?: string[];
   coverImageUrl?: string;
+  coverImagePositionX?: number | null;
+  coverImagePositionY?: number | null;
   postType?: string | null;
   externalUrl?: string | null;
   isPublished: boolean;
@@ -1290,7 +1293,7 @@ function FeaturedBlogCard({
       <div className={layout === "stacked" ? "grid grid-cols-1" : "grid grid-cols-1 md:grid-cols-2"}>
         {post.coverImageUrl && (
           <div className="aspect-[16/9] md:aspect-auto overflow-hidden">
-            <img src={post.coverImageUrl} alt={post.title} className="w-full h-full object-cover" data-blog-card-image />
+            <img src={post.coverImageUrl} alt={post.title} className="w-full h-full object-cover" style={getImageObjectPositionStyle(post.coverImagePositionX, post.coverImagePositionY)} data-blog-card-image />
           </div>
         )}
         <CardContent className="p-6 flex flex-col justify-center">
@@ -1438,7 +1441,7 @@ function BlogFeedGrid({
             <Card className={`h-full cursor-pointer ${enableHoverMotion ? "blog-card-motion" : ""}`} data-testid={`blog-feed-card-${p.id}`}>
               {p.coverImageUrl && (
                 <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
-                  <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" data-blog-card-image />
+                  <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" style={getImageObjectPositionStyle(p.coverImagePositionX, p.coverImagePositionY)} data-blog-card-image />
                 </div>
               )}
               <CardContent className="p-4">

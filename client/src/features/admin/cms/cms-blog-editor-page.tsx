@@ -58,6 +58,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { CmsImageUpload } from "./components/cms-image-upload";
 import { SeoPreview } from "@/components/shared/seo-preview";
 import { StructuredDataStatus } from "@/components/shared/structured-data-status";
+import { ImagePositionPicker } from "./components/image-position-picker";
 import type { BlogPost, BlogTaxonomy, CmsSidebar } from "@shared/schema";
 
 function generateSlug(title: string): string {
@@ -105,6 +106,8 @@ const postFormSchema = z.object({
   excerpt: z.string().optional(),
   content: z.string().optional().default(""),
   coverImageUrl: z.string().optional(),
+  coverImagePositionX: z.number().default(50),
+  coverImagePositionY: z.number().default(50),
   postType: z.enum(["article", "podcast", "external"]).default("article"),
   podcastUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   externalUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
@@ -155,6 +158,8 @@ export default function CmsBlogEditorPage() {
       excerpt: "",
       content: "",
       coverImageUrl: "",
+      coverImagePositionX: 50,
+      coverImagePositionY: 50,
       postType: "article",
       podcastUrl: "",
       externalUrl: "",
@@ -178,6 +183,8 @@ export default function CmsBlogEditorPage() {
         excerpt: post.excerpt ?? "",
         content: post.content,
         coverImageUrl: post.coverImageUrl ?? "",
+        coverImagePositionX: post.coverImagePositionX ?? 50,
+        coverImagePositionY: post.coverImagePositionY ?? 50,
         postType: (post.postType as "article" | "podcast" | "external") ?? "article",
         podcastUrl: post.podcastUrl ?? "",
         externalUrl: post.externalUrl ?? "",
@@ -223,6 +230,8 @@ export default function CmsBlogEditorPage() {
       excerpt: data.excerpt || null,
       content: data.content || "",
       coverImageUrl: data.coverImageUrl || null,
+      coverImagePositionX: data.coverImagePositionX ?? 50,
+      coverImagePositionY: data.coverImagePositionY ?? 50,
       authorName: data.authorName,
       postType: data.postType || "article",
       podcastUrl: data.podcastUrl || null,
@@ -309,6 +318,8 @@ export default function CmsBlogEditorPage() {
   const watchSeoDescription = form.watch("seoDescription");
   const watchOgImageUrl = form.watch("ogImageUrl");
   const watchCoverImageUrl = form.watch("coverImageUrl");
+  const watchCoverImagePositionX = form.watch("coverImagePositionX");
+  const watchCoverImagePositionY = form.watch("coverImagePositionY");
   const watchBlogTitle = form.watch("title");
   const watchAuthorName = form.watch("authorName");
   const watchNoindex = form.watch("noindex");
@@ -756,7 +767,7 @@ export default function CmsBlogEditorPage() {
                   <CardHeader>
                     <CardTitle className="text-sm text-muted-foreground font-medium">Cover Image</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
                     <FormField
                       control={form.control}
                       name="coverImageUrl"
@@ -773,6 +784,17 @@ export default function CmsBlogEditorPage() {
                         </FormItem>
                       )}
                     />
+                    {watchCoverImageUrl && (
+                      <ImagePositionPicker
+                        imageUrl={watchCoverImageUrl}
+                        positionX={watchCoverImagePositionX ?? 50}
+                        positionY={watchCoverImagePositionY ?? 50}
+                        onPositionChange={(x, y) => {
+                          form.setValue("coverImagePositionX", x, { shouldDirty: true });
+                          form.setValue("coverImagePositionY", y, { shouldDirty: true });
+                        }}
+                      />
+                    )}
                   </CardContent>
                 </Card>
 

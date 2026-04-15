@@ -27,6 +27,10 @@ function normalizeSlug(slug: string): string {
   return slug.toLowerCase().trim().replace(/\s+/g, "-");
 }
 
+async function resolvePage(identifier: string) {
+  return storage.cmsPages.getPageByIdOrSlug(identifier);
+}
+
 router.get("/pages", async (req, res) => {
   try {
     const pages = await storage.cmsPages.getAllPages();
@@ -82,7 +86,7 @@ router.post("/pages", async (req, res) => {
 router.get("/pages/:id", async (req, res) => {
   try {
     const id = paramString(req.params.id);
-    const page = await storage.cmsPages.getPage(id);
+    const page = await resolvePage(id);
     if (!page) return res.status(404).json({ error: "Page not found" });
     res.json(page);
   } catch (error) {
@@ -94,7 +98,7 @@ router.get("/pages/:id", async (req, res) => {
 router.get("/pages/:id/preview-link", async (req, res) => {
   try {
     const id = paramString(req.params.id);
-    const page = await storage.cmsPages.getPage(id);
+    const page = await resolvePage(id);
     if (!page) return res.status(404).json({ error: "Page not found" });
 
     const token = createCmsPreviewToken(page);
@@ -119,7 +123,7 @@ router.get("/pages/:id/preview-link", async (req, res) => {
 router.put("/pages/:id", async (req, res) => {
   try {
     const id = paramString(req.params.id);
-    const page = await storage.cmsPages.getPage(id);
+    const page = await resolvePage(id);
     if (!page) return res.status(404).json({ error: "Page not found" });
 
     const parsed = updatePageSchema.safeParse(req.body);
@@ -134,7 +138,7 @@ router.put("/pages/:id", async (req, res) => {
     if (data.slug) {
       data.slug = normalizeSlug(data.slug);
       const existing = await storage.cmsPages.getPageBySlug(data.slug);
-      if (existing && existing.id !== id) {
+      if (existing && existing.id !== page.id) {
         return res.status(409).json({ error: "A page with this slug already exists" });
       }
     }
@@ -142,7 +146,7 @@ router.put("/pages/:id", async (req, res) => {
     const adminId = (req as any).user?.id;
 
     await storage.cmsPageRevisions.createRevision({
-      pageId: id,
+      pageId: page.id,
       title: page.title,
       content: page.content as Record<string, unknown>,
       status: page.status,
@@ -150,7 +154,7 @@ router.put("/pages/:id", async (req, res) => {
       changeNote: "Updated",
     });
 
-    const updated = await storage.cmsPages.updatePage(id, { ...data, updatedBy: adminId });
+    const updated = await storage.cmsPages.updatePage(page.id, { ...data, updatedBy: adminId });
     res.json(updated);
   } catch (error) {
     logger.cms.error("Failed to update page", error, { requestId: req.requestId });
@@ -161,7 +165,7 @@ router.put("/pages/:id", async (req, res) => {
 router.delete("/pages/:id", async (req, res) => {
   try {
     const id = paramString(req.params.id);
-    const page = await storage.cmsPages.getPage(id);
+    const page = await resolvePage(id);
     if (!page) return res.status(404).json({ error: "Page not found" });
 
     const force = req.query.force === "true";
@@ -169,7 +173,7 @@ router.delete("/pages/:id", async (req, res) => {
       return res.status(400).json({ error: "Cannot delete a published page. Unpublish it first or use ?force=true" });
     }
 
-    await storage.cmsPages.deletePage(id);
+    await storage.cmsPages.deletePage(page.id);
     res.json({ success: true });
   } catch (error) {
     logger.cms.error("Failed to delete page", error, { requestId: req.requestId });
@@ -181,7 +185,9 @@ router.post("/pages/:id/publish", async (req, res) => {
   try {
     const id = paramString(req.params.id);
     const adminId = (req as any).user?.id;
-    const page = await storage.cmsPages.publishPage(id, adminId);
+    const existingPage = await resolvePage(id);
+    if (!existingPage) return res.status(404).json({ error: "Page not found" });
+    const page = await storage.cmsPages.publishPage(existingPage.id, adminId);
     if (!page) return res.status(404).json({ error: "Page not found" });
     res.json(page);
   } catch (error) {
@@ -202,7 +208,9 @@ router.post("/pages/:id/schedule", async (req, res) => {
     if (isNaN(date.getTime()) || date <= new Date()) {
       return res.status(400).json({ error: "scheduledAt must be a valid future date" });
     }
-    const page = await storage.cmsPages.schedulePage(id, date, adminId);
+    const existingPage = await resolvePage(id);
+    if (!existingPage) return res.status(404).json({ error: "Page not found" });
+    const page = await storage.cmsPages.schedulePage(existingPage.id, date, adminId);
     if (!page) return res.status(404).json({ error: "Page not found" });
     res.json(page);
   } catch (error) {
@@ -215,7 +223,9 @@ router.post("/pages/:id/unpublish", async (req, res) => {
   try {
     const id = paramString(req.params.id);
     const adminId = (req as any).user?.id;
-    const page = await storage.cmsPages.unpublishPage(id, adminId);
+    const existingPage = await resolvePage(id);
+    if (!existingPage) return res.status(404).json({ error: "Page not found" });
+    const page = await storage.cmsPages.unpublishPage(existingPage.id, adminId);
     if (!page) return res.status(404).json({ error: "Page not found" });
     res.json(page);
   } catch (error) {
@@ -227,9 +237,9 @@ router.post("/pages/:id/unpublish", async (req, res) => {
 router.get("/pages/:id/revisions", async (req, res) => {
   try {
     const id = paramString(req.params.id);
-    const page = await storage.cmsPages.getPage(id);
+    const page = await resolvePage(id);
     if (!page) return res.status(404).json({ error: "Page not found" });
-    const revisions = await storage.cmsPageRevisions.getRevisions(id);
+    const revisions = await storage.cmsPageRevisions.getRevisions(page.id);
     res.json(revisions);
   } catch (error) {
     logger.cms.error("Failed to fetch revisions", error, { requestId: req.requestId });
@@ -243,16 +253,16 @@ router.post("/pages/:pageId/revisions/:revisionId/restore", async (req, res) => 
     const revisionId = paramString(req.params.revisionId);
     const adminId = (req as any).user?.id;
 
-    const page = await storage.cmsPages.getPage(pageId);
+    const page = await resolvePage(pageId);
     if (!page) return res.status(404).json({ error: "Page not found" });
 
     const revision = await storage.cmsPageRevisions.getRevision(revisionId);
-    if (!revision || revision.pageId !== pageId) {
+    if (!revision || revision.pageId !== page.id) {
       return res.status(404).json({ error: "Revision not found" });
     }
 
     await storage.cmsPageRevisions.createRevision({
-      pageId,
+      pageId: page.id,
       title: page.title,
       content: page.content as Record<string, unknown>,
       status: page.status,
@@ -260,14 +270,14 @@ router.post("/pages/:pageId/revisions/:revisionId/restore", async (req, res) => 
       changeNote: "Before restore",
     });
 
-    const restored = await storage.cmsPages.updatePage(pageId, {
+    const restored = await storage.cmsPages.updatePage(page.id, {
       title: revision.title,
       content: revision.content as Record<string, unknown>,
       updatedBy: adminId,
     });
 
     await storage.cmsPageRevisions.createRevision({
-      pageId,
+      pageId: page.id,
       title: revision.title,
       content: revision.content as Record<string, unknown>,
       status: page.status,

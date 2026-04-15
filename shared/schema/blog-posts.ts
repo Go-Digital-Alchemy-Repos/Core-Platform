@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, index, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -10,6 +10,8 @@ export const blogPosts = pgTable("blog_posts", {
   excerpt: text("excerpt"),
   content: text("content").notNull(),
   coverImageUrl: text("cover_image_url"),
+  coverImagePositionX: integer("cover_image_position_x").default(50),
+  coverImagePositionY: integer("cover_image_position_y").default(50),
   authorName: text("author_name").notNull(),
   category: varchar("category", { length: 100 }),
   categories: text("categories").array(),

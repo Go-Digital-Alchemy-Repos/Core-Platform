@@ -14,6 +14,8 @@ export const events = pgTable("events", {
   zoomLink: text("zoom_link"),
   memberOnly: boolean("member_only").default(false),
   imageUrl: text("image_url"),
+  imagePositionX: integer("image_position_x").default(50),
+  imagePositionY: integer("image_position_y").default(50),
   createdAt: timestamp("created_at").defaultNow(),
 
   virtualJoinUrl: text("virtual_join_url"),

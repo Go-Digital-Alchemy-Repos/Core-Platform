@@ -12,6 +12,7 @@ import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
 import { PublicSidebar } from "@/features/public/public-sidebar";
 import { BlogComments } from "@/components/blog/blog-comments";
+import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import {
   buildOrganizationLd,
   buildBreadcrumbLd,
@@ -165,6 +166,7 @@ export default function InsightsPostPage() {
                   src={post.coverImageUrl}
                   alt={post.title}
                   className="w-full h-full object-cover"
+                  style={getImageObjectPositionStyle(post.coverImagePositionX, post.coverImagePositionY)}
                   data-testid="img-post-cover"
                 />
               </div>

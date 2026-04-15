@@ -58,8 +58,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, CalendarDays, MapPin, Users, Download, MoreHorizontal, CheckCircle, Clock, XCircle, Copy, BarChart3, Bell, Square, CheckSquare, Video, Repeat, DollarSign, Globe } from "lucide-react";
 import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
+import { ImagePositionPicker } from "@/features/admin/cms/components/image-position-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { StructuredDataStatus } from "@/components/shared/structured-data-status";
+import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import {
   formatEventDate,
   fromDateTimeLocalValue,
@@ -78,6 +80,8 @@ const eventFormSchema = z.object({
   zoomLink: z.string().optional(),
   memberOnly: z.boolean().optional(),
   imageUrl: z.string().optional(),
+  imagePositionX: z.number().default(50),
+  imagePositionY: z.number().default(50),
   status: z.string().optional(),
   visibility: z.string().optional(),
   timezone: z.string().optional(),
@@ -122,6 +126,8 @@ const defaultFormValues: EventFormValues = {
   zoomLink: "",
   memberOnly: false,
   imageUrl: "",
+  imagePositionX: 50,
+  imagePositionY: 50,
   status: "published",
   visibility: "public",
   timezone: getDefaultEventTimeZone(),
@@ -313,6 +319,9 @@ function EventsContent() {
   const watchRegistrationType = form.watch("registrationType");
   const watchEventTitle = form.watch("title");
   const watchEventDescription = form.watch("description");
+  const watchEventImageUrl = form.watch("imageUrl");
+  const watchEventImagePositionX = form.watch("imagePositionX");
+  const watchEventImagePositionY = form.watch("imagePositionY");
   const watchEventDate = form.watch("date");
   const watchEventLocation = form.watch("location");
   const watchEventRecordingUrl = form.watch("recordingUrl");
@@ -478,6 +487,8 @@ function EventsContent() {
       zoomLink: event.zoomLink ?? "",
       memberOnly: event.memberOnly ?? false,
       imageUrl: event.imageUrl ?? "",
+      imagePositionX: event.imagePositionX ?? 50,
+      imagePositionY: event.imagePositionY ?? 50,
       status: event.status ?? "published",
       visibility: event.visibility ?? "public",
       timezone: eventTimeZone,
@@ -551,6 +562,7 @@ function EventsContent() {
                   src={event.imageUrl}
                   alt={event.title}
                   className="h-32 sm:h-full w-full object-cover"
+                  style={getImageObjectPositionStyle(event.imagePositionX, event.imagePositionY)}
                 />
               </div>
             )}
@@ -801,6 +813,17 @@ function EventsContent() {
                                 </FormItem>
                               )}
                             />
+                            {watchEventImageUrl && (
+                              <ImagePositionPicker
+                                imageUrl={watchEventImageUrl}
+                                positionX={watchEventImagePositionX ?? 50}
+                                positionY={watchEventImagePositionY ?? 50}
+                                onPositionChange={(x, y) => {
+                                  form.setValue("imagePositionX", x, { shouldDirty: true });
+                                  form.setValue("imagePositionY", y, { shouldDirty: true });
+                                }}
+                              />
+                            )}
                             <div className="grid grid-cols-2 gap-4">
                               <FormField
                                 control={form.control}

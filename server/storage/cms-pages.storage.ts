@@ -17,6 +17,12 @@ export class CmsPagesStorage {
     return page;
   }
 
+  async getPageByIdOrSlug(identifier: string): Promise<CmsPage | undefined> {
+    const byId = await this.getPage(identifier);
+    if (byId) return byId;
+    return this.getPageBySlug(identifier);
+  }
+
   async createPage(data: InsertCmsPage): Promise<CmsPage> {
     const [page] = await db.insert(cmsPages).values(data).returning();
     return page;
