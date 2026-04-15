@@ -410,6 +410,7 @@ function FormsPageContent() {
   const [draggingFieldType, setDraggingFieldType] = useState<CmsFormFieldType | null>(null);
   const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const [formSettingsOpen, setFormSettingsOpen] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<"standard" | "advanced", boolean>>({
     standard: true,
     advanced: true,
@@ -424,6 +425,7 @@ function FormsPageContent() {
     if (draft) return;
     if (!selectedFormId && forms.length > 0) {
       setSelectedFormId(forms[0].id);
+      setFormSettingsOpen(true);
       setDraft(normalizeEditableForm(forms[0]));
       return;
     }
@@ -675,18 +677,27 @@ function FormsPageContent() {
             Build reusable forms, wire them to Mailchimp tags, and assign them to blocks, widgets, and system workflows.
           </p>
         </div>
-        <Button
-          onClick={() => {
-            const blank = createBlankForm();
-            setSelectedFormId(blank.id);
-            setSelectedFieldId(null);
-            setDraft(blank);
-          }}
-          data-testid="button-create-form"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          New Form
-        </Button>
+        <div className="flex items-center gap-2">
+          {draft ? (
+            <Button onClick={() => saveMutation.mutate(draft)} disabled={saveMutation.isPending}>
+              <Save className="mr-2 h-4 w-4" />
+              Save Form
+            </Button>
+          ) : null}
+          <Button
+            onClick={() => {
+              const blank = createBlankForm();
+              setSelectedFormId(blank.id);
+              setSelectedFieldId(null);
+              setFormSettingsOpen(true);
+              setDraft(blank);
+            }}
+            data-testid="button-create-form"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            New Form
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
@@ -708,6 +719,7 @@ function FormsPageContent() {
                     onClick={() => {
                       setSelectedFormId(form.id);
                       setSelectedFieldId(null);
+                      setFormSettingsOpen(true);
                       setDraft(normalizeEditableForm(form));
                     }}
                     className={cn(
@@ -754,13 +766,12 @@ function FormsPageContent() {
                         Delete
                       </Button>
                     ) : null}
-                    <Button onClick={() => saveMutation.mutate(draft)} disabled={saveMutation.isPending}>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Form
+                    <Button type="button" variant="outline" size="icon" onClick={() => setFormSettingsOpen((current) => !current)}>
+                      {formSettingsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-5">
+                {formSettingsOpen ? <CardContent className="space-y-5">
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-1.5">
                       <Label>Name</Label>
@@ -919,7 +930,7 @@ function FormsPageContent() {
                       </div>
                     </div>
                   </div>
-                </CardContent>
+                </CardContent> : null}
               </Card>
               <Card>
                 <CardHeader>
@@ -1065,7 +1076,11 @@ function FormsPageContent() {
               <CardContent className="space-y-4">
                 {selectedField ? (
                   <>
-                    <div className="flex items-start justify-between gap-3 rounded-xl border bg-muted/20 p-3">
+                    <Button type="button" variant="outline" className="w-full justify-center" onClick={() => setSelectedFieldId(null)}>
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back to Fields
+                    </Button>
+                    <div className="flex items-start gap-3 rounded-xl border bg-muted/20 p-3">
                       <div className="flex items-start gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                           {selectedFieldLibraryItem ? <selectedFieldLibraryItem.icon className="h-4.5 w-4.5" /> : <PanelTopOpen className="h-4.5 w-4.5" />}
@@ -1075,10 +1090,6 @@ function FormsPageContent() {
                           <p className="mt-1 text-xs text-muted-foreground">{selectedFieldLibraryItem?.label ?? selectedField.type}</p>
                         </div>
                       </div>
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedFieldId(null)}>
-                        <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-                        Fields
-                      </Button>
                     </div>
                     <div className="space-y-1.5">
                       <Label>Label</Label>
