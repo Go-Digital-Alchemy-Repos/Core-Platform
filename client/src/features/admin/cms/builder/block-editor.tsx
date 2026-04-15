@@ -483,7 +483,7 @@ function PropField({
   });
   const strVal = String(value ?? "");
   const numVal = Number(value ?? 0);
-  const boolVal = Boolean(value);
+  const boolVal = propDef.key === "isActive" ? value !== false : Boolean(value);
   const useRichTextEditor =
     propDef.type === "richtext" ||
     propDef.key === "subtitle" ||
