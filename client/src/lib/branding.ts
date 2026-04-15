@@ -10,6 +10,7 @@ export interface BrandingSettings {
   primaryColor: string | null;
   secondaryColor: string | null;
   tertiaryColor: string | null;
+  quaternaryColor: string | null;
   h1Color: string | null;
   h2Color: string | null;
   h3ToH6Color: string | null;
@@ -72,6 +73,7 @@ export const DEFAULT_BRANDING_SETTINGS: BrandingSettings = {
   primaryColor: null,
   secondaryColor: null,
   tertiaryColor: null,
+  quaternaryColor: "#A8623A",
   h1Color: null,
   h2Color: null,
   h3ToH6Color: null,

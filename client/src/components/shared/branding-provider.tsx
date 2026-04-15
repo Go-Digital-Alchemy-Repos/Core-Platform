@@ -32,6 +32,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         primaryColor: payload?.primaryColor ?? null,
         secondaryColor: payload?.secondaryColor ?? null,
         tertiaryColor: payload?.tertiaryColor ?? null,
+        quaternaryColor: payload?.quaternaryColor ?? "#A8623A",
         h1Color: payload?.h1Color ?? null,
         h2Color: payload?.h2Color ?? null,
         h3ToH6Color: payload?.h3ToH6Color ?? null,
@@ -65,6 +66,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     const primaryColor = hexToHslToken(branding.primaryColor);
     const secondaryColor = hexToHslToken(branding.secondaryColor);
     const tertiaryColor = hexToHslToken(branding.tertiaryColor);
+    const quaternaryColor = hexToHslToken(branding.quaternaryColor);
     const h1Color = hexToHslToken(branding.h1Color);
     const h2Color = hexToHslToken(branding.h2Color);
     const h3ToH6Color = hexToHslToken(branding.h3ToH6Color);
@@ -87,6 +89,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         root.style.removeProperty("--secondary");
         root.style.removeProperty("--accent");
         root.style.removeProperty("--ring");
+        root.style.removeProperty("--quaternary");
         root.style.removeProperty("--foreground");
         root.style.removeProperty("--card-foreground");
         root.style.removeProperty("--popover-foreground");
@@ -138,6 +141,12 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
       } else {
         root.style.removeProperty("--accent");
         root.style.removeProperty("--ring");
+      }
+
+      if (quaternaryColor) {
+        root.style.setProperty("--quaternary", quaternaryColor);
+      } else {
+        root.style.removeProperty("--quaternary");
       }
 
       if (bodyTextColor) {
@@ -244,6 +253,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     branding.primaryColor,
     branding.secondaryColor,
     branding.tertiaryColor,
+    branding.quaternaryColor,
     branding.h1Color,
     branding.h2Color,
     branding.h3ToH6Color,

@@ -90,6 +90,7 @@ type BrandingColorSettingKey =
   | "brand_primary_color"
   | "brand_secondary_color"
   | "brand_tertiary_color"
+  | "brand_quaternary_color"
   | "text_h1_color"
   | "text_h2_color"
   | "text_h3_h6_color"
@@ -118,6 +119,7 @@ const BRANDING_CORE_COLOR_FIELDS: Array<{
   { key: "brand_primary_color", label: "Primary Color", description: "Main brand and button color." },
   { key: "brand_secondary_color", label: "Secondary Color", description: "Support color for secondary UI states." },
   { key: "brand_tertiary_color", label: "Tertiary Color", description: "Accent color used across highlights and links." },
+  { key: "brand_quaternary_color", label: "Quaternary Color", description: "Fourth core brand color for additional featured accents and visual variety." },
 ];
 
 const BRANDING_TYPOGRAPHY_COLOR_FIELDS: Array<{
@@ -822,6 +824,7 @@ export function BrandingTab({
     brand_primary_color: brandingSettings.brand_primary_color?.value || "",
     brand_secondary_color: brandingSettings.brand_secondary_color?.value || "",
     brand_tertiary_color: brandingSettings.brand_tertiary_color?.value || "",
+    brand_quaternary_color: brandingSettings.brand_quaternary_color?.value || "#A8623A",
     text_h1_color: brandingSettings.text_h1_color?.value || "",
     text_h2_color: brandingSettings.text_h2_color?.value || "",
     text_h3_h6_color: brandingSettings.text_h3_h6_color?.value || "",
@@ -851,6 +854,7 @@ export function BrandingTab({
       brand_primary_color: brandingSettings.brand_primary_color?.value || "",
       brand_secondary_color: brandingSettings.brand_secondary_color?.value || "",
       brand_tertiary_color: brandingSettings.brand_tertiary_color?.value || "",
+      brand_quaternary_color: brandingSettings.brand_quaternary_color?.value || "#A8623A",
       text_h1_color: brandingSettings.text_h1_color?.value || "",
       text_h2_color: brandingSettings.text_h2_color?.value || "",
       text_h3_h6_color: brandingSettings.text_h3_h6_color?.value || "",
@@ -876,6 +880,7 @@ export function BrandingTab({
     brandingSettings.brand_primary_color?.value,
     brandingSettings.brand_secondary_color?.value,
     brandingSettings.brand_tertiary_color?.value,
+    brandingSettings.brand_quaternary_color?.value,
     brandingSettings.text_h1_color?.value,
     brandingSettings.text_h2_color?.value,
     brandingSettings.text_h3_h6_color?.value,
@@ -1259,6 +1264,15 @@ export function BrandingTab({
                     }}
                   >
                     Tertiary Action
+                  </div>
+                  <div
+                    className="rounded-lg px-4 py-2 text-sm font-medium"
+                    style={{
+                      backgroundColor: colorValues.brand_quaternary_color || "#A8623A",
+                      color: colorValues.text_inverse_color || colorValues.text_primary_foreground_color || undefined,
+                    }}
+                  >
+                    Quaternary Action
                   </div>
                 </div>
                 <div className="mt-5 rounded-xl border bg-background p-5 space-y-3">
