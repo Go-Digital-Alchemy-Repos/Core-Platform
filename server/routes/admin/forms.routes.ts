@@ -34,6 +34,23 @@ router.get(
   })
 );
 
+router.delete(
+  "/forms/:id/submissions/:submissionId",
+  asyncHandler(async (req, res) => {
+    const form = await storage.forms.getById(req.params.id);
+    if (!form) {
+      return res.status(404).json({ message: "Form not found" });
+    }
+
+    const deleted = await storage.forms.deleteSubmission(req.params.id, req.params.submissionId);
+    if (!deleted) {
+      return res.status(404).json({ message: "Submission not found" });
+    }
+
+    res.json({ success: true });
+  })
+);
+
 router.post(
   "/forms",
   asyncHandler(async (req, res) => {

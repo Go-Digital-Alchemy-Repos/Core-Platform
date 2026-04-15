@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,20 +35,25 @@ import {
   Search,
   ExternalLink,
   CalendarClock,
-  Settings2,
+  MessageSquare,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { getPostCategories, getPrimaryPostCategory } from "@/lib/blog-post-categories";
 import type { BlogPost } from "@shared/schema";
 import { format } from "date-fns";
+import { BlogSettingsPanel, CommentSettingsPanel } from "./cms-blog-settings-page";
 
 export default function CmsBlogPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const activeTab = useMemo<"settings" | "comments">(() => {
+    const params = new URLSearchParams(location.split("?")[1] ?? "");
+    return params.get("tab") === "comments" ? "comments" : "settings";
+  }, [location]);
 
   const { data: posts = [], isLoading } = useQuery<BlogPost[]>({
     queryKey: ["/api/admin/blog"],
@@ -87,19 +93,13 @@ export default function CmsBlogPage() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-heading font-semibold" data-testid="text-cms-blog-title">
-              Posts
+              Blog
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage articles and posts published at /insights
+              Manage articles, editorial settings, and community conversation around /insights.
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Button asChild variant="outline" data-testid="button-blog-settings">
-              <Link href="/admin/cms/blog/settings">
-                <Settings2 className="h-4 w-4 mr-2" />
-                Blog Settings
-              </Link>
-            </Button>
             <Button asChild data-testid="button-new-post">
               <Link href="/admin/cms/blog/new">
                 <Plus className="h-4 w-4 mr-2" />
@@ -108,6 +108,33 @@ export default function CmsBlogPage() {
             </Button>
           </div>
         </div>
+
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => {
+            const nextTab = value === "comments" ? "comments" : "settings";
+            navigate(`/admin/cms/blog?tab=${nextTab}`);
+          }}
+          className="space-y-4"
+        >
+          <TabsList>
+            <TabsTrigger value="settings" data-testid="tab-blog-settings">
+              Blog Settings
+            </TabsTrigger>
+            <TabsTrigger value="comments" data-testid="tab-blog-comments">
+              <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
+              Comments
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="settings" className="mt-0">
+            <BlogSettingsPanel />
+          </TabsContent>
+
+          <TabsContent value="comments" className="mt-0">
+            <CommentSettingsPanel />
+          </TabsContent>
+        </Tabs>
 
         <div className="flex gap-3 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">

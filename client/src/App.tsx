@@ -46,10 +46,8 @@ const DocsPage = lazy(() => import("@/features/admin/docs-page"));
 const AdminSettingsPage = lazy(() => import("@/features/admin/settings-page"));
 const AdminDesignPage = lazy(() => import("@/features/admin/design-page"));
 const AdminSpecializationsPage = lazy(() => import("@/features/admin/specializations-page"));
-const AdminBlogPage = lazy(() => import("@/features/admin/blog-page"));
 const CmsBlogPage = lazy(() => import("@/features/admin/cms/cms-blog-page"));
 const CmsBlogEditorPage = lazy(() => import("@/features/admin/cms/cms-blog-editor-page"));
-const CmsBlogSettingsPage = lazy(() => import("@/features/admin/cms/cms-blog-settings-page"));
 
 const AdminApplicationsPage = lazy(() => import("@/features/admin/applications-page"));
 const AdminApplicationDetailPage = lazy(() => import("@/features/admin/application-detail-page"));
@@ -194,9 +192,7 @@ function Router() {
           </ProtectedRoute>
         </Route>
         <Route path="/admin/blog">
-          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
-            <AdminBlogPage />
-          </ProtectedRoute>
+          <Redirect to="/admin/cms/blog" />
         </Route>
         <Route path="/admin/docs">
           <ProtectedRoute roles={["admin"]}>
@@ -277,9 +273,7 @@ function Router() {
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/blog/settings">
-          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
-            {siteFeatures.blogEnabled ? <CmsBlogSettingsPage /> : <NotFound />}
-          </ProtectedRoute>
+          <Redirect to="/admin/cms/blog?tab=settings" />
         </Route>
         <Route path="/admin/cms/blog/:id">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>

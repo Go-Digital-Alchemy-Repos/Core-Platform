@@ -74,11 +74,12 @@ function formatAdminCommentDate(value: string | null) {
   }).format(new Date(value));
 }
 
-function CommentSettingsPanel() {
+export function CommentSettingsPanel() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<BlogCommentSettings>(DEFAULT_COMMENT_SETTINGS);
   const [statusFilter, setStatusFilter] = useState<"all" | BlogCommentStatus>("pending");
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, { body: string; moderationNote: string }>>({});
 
   const { data: commentsData, isLoading: isSettingsLoading } = useQuery<{
     settings: BlogCommentSettings;
@@ -104,6 +105,19 @@ function CommentSettingsPanel() {
       setDraft(commentsData.settings);
     }
   }, [commentsData]);
+
+  useEffect(() => {
+    setCommentDrafts((current) => {
+      const next: Record<string, { body: string; moderationNote: string }> = {};
+      for (const comment of comments) {
+        next[comment.id] = current[comment.id] ?? {
+          body: comment.body,
+          moderationNote: comment.moderationNote ?? "",
+        };
+      }
+      return next;
+    });
+  }, [comments]);
 
   const saveMutation = useMutation({
     mutationFn: async (payload: BlogCommentSettings) => {
@@ -145,6 +159,23 @@ function CommentSettingsPanel() {
     },
     onError: (error: Error) => {
       toast({ title: error.message || "Failed to delete comment", variant: "destructive" });
+    },
+  });
+
+  const updateCommentMutation = useMutation({
+    mutationFn: async ({ id, body, moderationNote }: { id: string; body: string; moderationNote: string }) => {
+      const response = await apiRequest("PUT", `/api/admin/blog/comments/${id}`, {
+        body,
+        moderationNote: moderationNote.trim() || null,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog/comments"] });
+      toast({ title: "Comment updated" });
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message || "Failed to update comment", variant: "destructive" });
     },
   });
 
@@ -479,15 +510,68 @@ function CommentSettingsPanel() {
                     >
                       Delete
                     </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        const currentDraft = commentDrafts[comment.id] ?? {
+                          body: comment.body,
+                          moderationNote: comment.moderationNote ?? "",
+                        };
+                        updateCommentMutation.mutate({
+                          id: comment.id,
+                          body: currentDraft.body,
+                          moderationNote: currentDraft.moderationNote,
+                        });
+                      }}
+                      disabled={
+                        updateCommentMutation.isPending ||
+                        ((commentDrafts[comment.id]?.body ?? comment.body) === comment.body &&
+                          (commentDrafts[comment.id]?.moderationNote ?? comment.moderationNote ?? "") === (comment.moderationNote ?? ""))
+                      }
+                      data-testid={`button-save-comment-${comment.id}`}
+                    >
+                      Save Edit
+                    </Button>
                   </div>
                 </div>
 
-                <Textarea value={comment.body} readOnly className="min-h-[120px] bg-muted/20" />
-                {comment.moderationNote ? (
-                  <p className="text-xs text-muted-foreground">
-                    Moderation note: {comment.moderationNote}
-                  </p>
-                ) : null}
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`comment-body-${comment.id}`}>Comment Body</Label>
+                    <Textarea
+                      id={`comment-body-${comment.id}`}
+                      value={commentDrafts[comment.id]?.body ?? comment.body}
+                      onChange={(event) =>
+                        setCommentDrafts((current) => ({
+                          ...current,
+                          [comment.id]: {
+                            body: event.target.value,
+                            moderationNote: current[comment.id]?.moderationNote ?? comment.moderationNote ?? "",
+                          },
+                        }))
+                      }
+                      className="min-h-[120px] bg-muted/20"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`comment-note-${comment.id}`}>Moderation Note</Label>
+                    <Textarea
+                      id={`comment-note-${comment.id}`}
+                      value={commentDrafts[comment.id]?.moderationNote ?? comment.moderationNote ?? ""}
+                      onChange={(event) =>
+                        setCommentDrafts((current) => ({
+                          ...current,
+                          [comment.id]: {
+                            body: current[comment.id]?.body ?? comment.body,
+                            moderationNote: event.target.value,
+                          },
+                        }))
+                      }
+                      className="min-h-[88px] bg-muted/10"
+                    />
+                  </div>
+                </div>
               </div>
             ))
           )}
@@ -705,11 +789,36 @@ function TaxonomyManager({
   );
 }
 
-export default function CmsBlogSettingsPage() {
+export function BlogSettingsPanel() {
   const { data: taxonomies = [], isLoading } = useQuery<BlogTaxonomy[]>({
     queryKey: ["/api/admin/blog/settings/taxonomies"],
   });
 
+  return (
+    <div className="space-y-4">
+      {isLoading ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Skeleton className="h-80 w-full" />
+          <Skeleton className="h-80 w-full" />
+        </div>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <TaxonomyManager type="category" taxonomies={taxonomies} />
+          <TaxonomyManager type="tag" taxonomies={taxonomies} />
+        </div>
+      )}
+
+      <Card className="border-dashed">
+        <CardContent className="pt-6 text-sm text-muted-foreground flex items-center gap-2">
+          <Plus className="h-4 w-4 text-violet-500" />
+          Your editorial taxonomy lives here, while engagement and moderation rules can now stay in the Comments tab.
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function CmsBlogSettingsPage() {
   return (
     <AdminSidebar>
       <div className="p-6 max-w-6xl mx-auto space-y-6">
@@ -740,24 +849,7 @@ export default function CmsBlogSettingsPage() {
           </TabsList>
 
           <TabsContent value="taxonomy" className="mt-0 space-y-4">
-            {isLoading ? (
-              <div className="grid gap-4 lg:grid-cols-2">
-                <Skeleton className="h-80 w-full" />
-                <Skeleton className="h-80 w-full" />
-              </div>
-            ) : (
-              <div className="grid gap-4 lg:grid-cols-2">
-                <TaxonomyManager type="category" taxonomies={taxonomies} />
-                <TaxonomyManager type="tag" taxonomies={taxonomies} />
-              </div>
-            )}
-
-            <Card className="border-dashed">
-              <CardContent className="pt-6 text-sm text-muted-foreground flex items-center gap-2">
-                <Plus className="h-4 w-4 text-violet-500" />
-                Your editorial taxonomy lives here, while engagement and moderation rules can now stay in the Comments tab.
-              </CardContent>
-            </Card>
+            <BlogSettingsPanel />
           </TabsContent>
 
           <TabsContent value="comments" className="mt-0">

@@ -64,6 +64,27 @@ export class BlogCommentsStorage {
     return comment;
   }
 
+  async updateComment(id: string, updates: { body?: string; moderationNote?: string | null }): Promise<BlogComment | undefined> {
+    const nextValues: Partial<typeof blogComments.$inferInsert> = {
+      updatedAt: new Date(),
+    };
+
+    if (typeof updates.body === "string") {
+      nextValues.body = updates.body;
+    }
+
+    if (updates.moderationNote !== undefined) {
+      nextValues.moderationNote = updates.moderationNote;
+    }
+
+    const [comment] = await db
+      .update(blogComments)
+      .set(nextValues)
+      .where(eq(blogComments.id, id))
+      .returning();
+    return comment;
+  }
+
   async deleteComment(id: string): Promise<boolean> {
     await db.delete(blogComments).where(eq(blogComments.id, id));
     return true;

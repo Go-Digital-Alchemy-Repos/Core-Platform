@@ -91,6 +91,7 @@ router.post(
         message: settings.requireApproval
           ? "Your comment has been submitted for review."
           : "Your comment has been posted.",
+        comment: null,
       });
     }
 
@@ -144,7 +145,7 @@ router.post(
       moderationNote = "Automatically flagged for excessive links.";
     }
 
-    await storage.blogComments.createComment({
+    const createdComment = await storage.blogComments.createComment({
       postId: post.id,
       userId: commenter?.id ?? null,
       authorName,
@@ -164,6 +165,12 @@ router.post(
           : status === "pending"
             ? "Your comment has been submitted for review."
             : "Your comment has been received.",
+      comment: {
+        id: createdComment.id,
+        authorName: createdComment.authorName,
+        body: createdComment.body,
+        createdAt: createdComment.createdAt,
+      },
     });
   })
 );

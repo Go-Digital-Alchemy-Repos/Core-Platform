@@ -8,6 +8,7 @@ import {
   type CmsFormFieldType,
   type CmsFormKind,
   type CmsFormListColumn,
+  type CmsFormSubmission,
   cmsFormFieldConfigSchema,
 } from "@shared/schema";
 import { ProtectedRoute } from "@/components/shared/protected-route";
@@ -23,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -60,6 +62,9 @@ import {
   ChevronUp,
   LayoutTemplate,
   ArrowLeft,
+  Download,
+  Inbox,
+  FileText,
 } from "lucide-react";
 
 type EditableForm = Omit<CmsForm, "createdAt" | "updatedAt">;
@@ -329,6 +334,49 @@ function fieldSubtitle(field: CmsFormField) {
   return field.required ? "Required field" : "Optional field";
 }
 
+function stringifySubmissionValue(value: unknown): string {
+  if (value == null) return "";
+  if (Array.isArray(value)) {
+    return value.map((entry) => stringifySubmissionValue(entry)).filter(Boolean).join(", ");
+  }
+  if (typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([key, entry]) => `${key}: ${stringifySubmissionValue(entry)}`)
+      .filter((entry) => !entry.endsWith(": "))
+      .join(" | ");
+  }
+  return String(value);
+}
+
+function formatSubmissionDate(value: string | null | undefined) {
+  if (!value) return "Unknown";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function buildSubmissionCsv(submissions: CmsFormSubmission[]) {
+  const fieldKeys = Array.from(
+    new Set(submissions.flatMap((submission) => Object.keys((submission.data ?? {}) as Record<string, unknown>)))
+  );
+  const headers = ["Submission ID", "Submitted At", "Source", ...fieldKeys];
+  const escapeCsv = (value: string) => `"${value.replace(/"/g, '""')}"`;
+  const rows = submissions.map((submission) => {
+    const values = [
+      submission.id,
+      submission.createdAt ? new Date(submission.createdAt).toISOString() : "",
+      submission.source ?? "",
+      ...fieldKeys.map((key) => stringifySubmissionValue((submission.data ?? {})[key])),
+    ];
+    return values.map((value) => escapeCsv(String(value))).join(",");
+  });
+  return [headers.map(escapeCsv).join(","), ...rows].join("\n");
+}
+
 function FieldLibraryCard({
   item,
   onAdd,
@@ -404,7 +452,9 @@ export default function AdminFormsPage() {
 
 function FormsPageContent() {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<"builder" | "entries">("builder");
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
+  const [selectedEntriesFormId, setSelectedEntriesFormId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EditableForm | null>(null);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [draggingFieldType, setDraggingFieldType] = useState<CmsFormFieldType | null>(null);
@@ -419,6 +469,25 @@ function FormsPageContent() {
   const { data: forms = [], isLoading } = useQuery<CmsForm[]>({
     queryKey: ["/api/admin/forms"],
     staleTime: 60_000,
+  });
+
+  const activeForms = useMemo(
+    () => forms.filter((form) => form.isActive),
+    [forms]
+  );
+
+  const { data: submissions = [], isLoading: isSubmissionsLoading } = useQuery<CmsFormSubmission[]>({
+    queryKey: ["/api/admin/forms", selectedEntriesFormId, "submissions"],
+    enabled: Boolean(selectedEntriesFormId),
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/forms/${selectedEntriesFormId}/submissions`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to load form entries.");
+      }
+      return response.json();
+    },
   });
 
   useEffect(() => {
@@ -437,6 +506,17 @@ function FormsPageContent() {
       }
     }
   }, [forms, selectedFormId, draft]);
+
+  useEffect(() => {
+    if (!selectedEntriesFormId && activeForms.length > 0) {
+      setSelectedEntriesFormId(activeForms[0].id);
+      return;
+    }
+
+    if (selectedEntriesFormId && !activeForms.some((form) => form.id === selectedEntriesFormId)) {
+      setSelectedEntriesFormId(activeForms[0]?.id ?? null);
+    }
+  }, [activeForms, selectedEntriesFormId]);
 
   const saveMutation = useMutation({
     mutationFn: async (form: EditableForm) => {
@@ -488,6 +568,23 @@ function FormsPageContent() {
     onError: (error: Error) => {
       toast({
         title: "Unable to delete form",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteSubmissionMutation = useMutation({
+    mutationFn: async ({ formId, submissionId }: { formId: string; submissionId: string }) => {
+      await apiRequest("DELETE", `/api/admin/forms/${formId}/submissions/${submissionId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/forms", selectedEntriesFormId, "submissions"] });
+      toast({ title: "Entry deleted" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to delete entry",
         description: error.message,
         variant: "destructive",
       });
@@ -678,7 +775,7 @@ function FormsPageContent() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {draft ? (
+          {activeTab === "builder" && draft ? (
             <Button onClick={() => saveMutation.mutate(draft)} disabled={saveMutation.isPending}>
               <Save className="mr-2 h-4 w-4" />
               Save Form
@@ -700,7 +797,18 @@ function FormsPageContent() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value === "entries" ? "entries" : "builder")} className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="builder" data-testid="tab-forms-builder">
+            Form Builder
+          </TabsTrigger>
+          <TabsTrigger value="entries" data-testid="tab-forms-entries">
+            Form Entries
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="builder" className="mt-0">
+          <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
         <Card className="h-fit">
           <CardHeader>
             <CardTitle className="text-base">Form Library</CardTitle>
@@ -1525,7 +1633,136 @@ function FormsPageContent() {
             </CardContent>
           </Card>
         )}
-      </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="entries" className="mt-0">
+          <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+            <Card className="h-fit">
+              <CardHeader>
+                <CardTitle className="text-base">Active Forms</CardTitle>
+                <CardDescription>
+                  Choose a live form to review everything submitted through the site.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {activeForms.length === 0 ? (
+                  <div className="rounded-lg border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+                    No active forms are available yet.
+                  </div>
+                ) : (
+                  activeForms.map((form) => (
+                    <button
+                      key={form.id}
+                      type="button"
+                      onClick={() => setSelectedEntriesFormId(form.id)}
+                      className={cn(
+                        "w-full rounded-lg border px-3 py-3 text-left transition-colors",
+                        selectedEntriesFormId === form.id ? "border-primary bg-primary/5" : "hover:bg-muted/40"
+                      )}
+                      data-testid={`button-select-form-entries-${form.id}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">{form.name}</p>
+                          <p className="mt-1 truncate text-xs text-muted-foreground">{form.slug}</p>
+                        </div>
+                        <Badge variant="outline">{form.kind}</Badge>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Inbox className="h-4 w-4 text-primary" />
+                    Form Entries
+                  </CardTitle>
+                  <CardDescription>
+                    Stored submissions remain here even after notification emails are sent.
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (!selectedEntriesFormId || submissions.length === 0) return;
+                      const selectedForm = activeForms.find((form) => form.id === selectedEntriesFormId);
+                      const csv = buildSubmissionCsv(submissions);
+                      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                      const url = URL.createObjectURL(blob);
+                      const anchor = document.createElement("a");
+                      anchor.href = url;
+                      anchor.download = `${selectedForm?.slug ?? "form"}-entries.csv`;
+                      anchor.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    disabled={!selectedEntriesFormId || submissions.length === 0}
+                    data-testid="button-export-form-entries"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Export CSV
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!selectedEntriesFormId ? (
+                  <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
+                    Select an active form to view its entries.
+                  </div>
+                ) : isSubmissionsLoading ? (
+                  <div className="space-y-3">
+                    <Card className="border-dashed"><CardContent className="py-8 text-center text-sm text-muted-foreground">Loading form entries…</CardContent></Card>
+                  </div>
+                ) : submissions.length === 0 ? (
+                  <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
+                    No entries have been submitted for this form yet.
+                  </div>
+                ) : (
+                  submissions.map((submission) => (
+                    <div key={submission.id} className="rounded-xl border p-4 space-y-4" data-testid={`card-form-entry-${submission.id}`}>
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-medium">Entry {submission.id.slice(0, 8)}</p>
+                            <Badge variant="outline">{formatSubmissionDate(submission.createdAt)}</Badge>
+                            {submission.source ? <Badge variant="secondary">{submission.source}</Badge> : null}
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => deleteSubmissionMutation.mutate({ formId: selectedEntriesFormId, submissionId: submission.id })}
+                          disabled={deleteSubmissionMutation.isPending}
+                          data-testid={`button-delete-form-entry-${submission.id}`}
+                        >
+                          <Trash2 className="mr-1.5 h-4 w-4" />
+                          Delete
+                        </Button>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {Object.entries((submission.data ?? {}) as Record<string, unknown>).map(([key, value]) => (
+                          <div key={key} className="rounded-lg border bg-muted/10 p-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</p>
+                            <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/90">{stringifySubmissionValue(value) || "—"}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

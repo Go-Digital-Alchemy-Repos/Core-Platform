@@ -153,6 +153,10 @@ router.put(
 );
 
 const blogCommentStatusSchema = z.enum(BLOG_COMMENT_STATUSES);
+const blogCommentUpdateSchema = z.object({
+  body: z.string().trim().min(2, "Comment is required").max(5000, "Comment is too long"),
+  moderationNote: z.string().trim().max(500).optional().nullable(),
+});
 
 router.get(
   "/comments",
@@ -173,6 +177,22 @@ router.patch(
     }).parse(req.body);
 
     const comment = await storage.blogComments.updateCommentStatus(id, payload.status, payload.moderationNote ?? null);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+    res.json(comment);
+  })
+);
+
+router.put(
+  "/comments/:id",
+  asyncHandler(async (req, res) => {
+    const id = paramString(req.params.id);
+    const payload = blogCommentUpdateSchema.parse(req.body);
+    const comment = await storage.blogComments.updateComment(id, {
+      body: payload.body,
+      moderationNote: payload.moderationNote ?? null,
+    });
     if (!comment) {
       return res.status(404).json({ message: "Comment not found" });
     }

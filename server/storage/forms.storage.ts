@@ -87,4 +87,12 @@ export class FormsStorage {
       .where(eq(cmsFormSubmissions.formId, formId))
       .orderBy(desc(cmsFormSubmissions.createdAt));
   }
+
+  async deleteSubmission(formId: string, submissionId: string): Promise<boolean> {
+    const deleted = await db
+      .delete(cmsFormSubmissions)
+      .where(and(eq(cmsFormSubmissions.formId, formId), eq(cmsFormSubmissions.id, submissionId)))
+      .returning({ id: cmsFormSubmissions.id });
+    return deleted.length > 0;
+  }
 }

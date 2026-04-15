@@ -1618,9 +1618,17 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   }) => (
     <button
       type="button"
-      className="absolute top-1/2 z-20 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-all hover:text-foreground hover:shadow-md"
+      className="absolute top-6 z-20 flex h-7 w-7 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-all hover:text-foreground hover:shadow-md"
       style={side === "left" ? { left: -14 } : { right: -14 }}
-      onClick={onClick}
+      onMouseDown={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
+      }}
       aria-label={label}
       title={label}
       data-testid={side === "left" ? "button-toggle-structure-panel" : "button-toggle-inspector-panel"}

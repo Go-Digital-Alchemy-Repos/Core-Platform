@@ -75,10 +75,6 @@ function buildNavGroups(siteFeatures: SiteFeatures, user: AppUser | null, hasAdm
               href: "/admin/cms/blog",
               icon: BookOpen,
               iconColor: "text-purple-600",
-              children: [
-                { title: "Posts", href: "/admin/cms/blog", icon: BookOpen, iconColor: "text-purple-600" },
-                { title: "Blog Settings", href: "/admin/cms/blog/settings", icon: Settings, iconColor: "text-slate-500" },
-              ],
             } satisfies NavItem]
           : []),
         ...(siteFeatures.eventsEnabled
