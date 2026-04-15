@@ -248,7 +248,9 @@ export default function CmsOverviewPage() {
                     <tr
                       key={page.id}
                       className="border-b last:border-0 hover:bg-muted/30 cursor-pointer"
-                      onClick={() => navigate(`/admin/cms/pages/${page.id}`)}
+                      onClick={() =>
+                        navigate(page.slug === "directory" ? "/admin/cms/pages/directory" : `/admin/cms/pages/${page.id}`)
+                      }
                       data-testid={`row-recent-page-${page.id}`}
                     >
                       <td className="py-2 font-medium">{page.title}</td>

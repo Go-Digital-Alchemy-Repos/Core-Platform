@@ -276,6 +276,9 @@ function Router() {
         <Route path="/admin/cms/blog/settings">
           <Redirect to="/admin/cms/blog?tab=settings" />
         </Route>
+        <Route path="/admin/cms/blog/comments">
+          <Redirect to="/admin/cms/blog?tab=comments" />
+        </Route>
         <Route path="/admin/cms/blog/:id">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             {siteFeatures.blogEnabled ? <CmsBlogEditorPage /> : <NotFound />}

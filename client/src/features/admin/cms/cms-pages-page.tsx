@@ -67,6 +67,9 @@ export default function CmsPagesPage() {
     onError: () => toast({ title: "Failed to delete page", variant: "destructive" }),
   });
 
+  const getEditorHref = (page: CmsPage) =>
+    page.slug === "directory" ? "/admin/cms/pages/directory" : `/admin/cms/pages/${page.id}`;
+
   return (
     <AdminSidebar>
       <div className="p-6 max-w-6xl mx-auto space-y-6">
@@ -120,7 +123,7 @@ export default function CmsPagesPage() {
                 </thead>
                 <tbody>
                   {pages.map((page) => (
-                    <tr key={page.id} className="border-b last:border-0 hover:bg-muted/20 cursor-pointer" onClick={() => navigate(`/admin/cms/pages/${page.id}`)} data-testid={`row-page-${page.id}`}>
+                    <tr key={page.id} className="border-b last:border-0 hover:bg-muted/20 cursor-pointer" onClick={() => navigate(getEditorHref(page))} data-testid={`row-page-${page.id}`}>
                       <td className="py-3 px-2 font-medium">{page.title}</td>
                       <td className="py-3 px-2 text-muted-foreground font-mono text-xs hidden md:table-cell">{page.slug}</td>
                       <td className="py-3 px-2 hidden lg:table-cell">
@@ -154,7 +157,7 @@ export default function CmsPagesPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => navigate(`/admin/cms/pages/${page.id}`)}
+                            onClick={() => navigate(getEditorHref(page))}
                             data-testid={`button-edit-${page.id}`}
                           >
                             <Pencil className="h-4 w-4" />

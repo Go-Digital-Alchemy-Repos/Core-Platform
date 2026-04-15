@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
@@ -31,6 +31,7 @@ import {
   Trash2,
   Eye,
   EyeOff,
+  BookOpen,
   Search,
   ExternalLink,
   CalendarClock,
@@ -50,13 +51,20 @@ export default function CmsBlogPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const activeTab = useMemo<"posts" | "settings" | "comments">(() => {
+  const locationTab = useMemo<"posts" | "settings" | "comments">(() => {
     const params = new URLSearchParams(location.split("?")[1] ?? "");
     const tab = params.get("tab");
     if (tab === "settings") return "settings";
     if (tab === "comments") return "comments";
     return "posts";
   }, [location]);
+  const [activeTab, setActiveTab] = useState<"posts" | "settings" | "comments">(locationTab);
+
+  useEffect(() => {
+    if (activeTab !== locationTab) {
+      setActiveTab(locationTab);
+    }
+  }, [locationTab, activeTab]);
 
   const { data: posts = [], isLoading } = useQuery<BlogPost[]>({
     queryKey: ["/api/admin/blog"],
@@ -90,6 +98,20 @@ export default function CmsBlogPage() {
     return matchSearch && matchStatus;
   });
 
+  const handleTabChange = (value: string) => {
+    const nextTab = value === "settings" || value === "comments" ? value : "posts";
+    setActiveTab(nextTab);
+
+    const params = new URLSearchParams(location.split("?")[1] ?? "");
+    if (nextTab === "posts") {
+      params.delete("tab");
+    } else {
+      params.set("tab", nextTab);
+    }
+    const nextQuery = params.toString();
+    window.history.replaceState({}, "", `/admin/cms/blog${nextQuery ? `?${nextQuery}` : ""}`);
+  };
+
   return (
     <AdminSidebar>
       <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -112,10 +134,7 @@ export default function CmsBlogPage() {
 
         <Tabs
           value={activeTab}
-          onValueChange={(value) => {
-            const nextTab = value === "settings" || value === "comments" ? value : "posts";
-            navigate(`/admin/cms/blog?tab=${nextTab}`);
-          }}
+          onValueChange={handleTabChange}
           className="space-y-4"
         >
           <TabsList>
