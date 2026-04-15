@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, type ReactElement } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { FormModalButton } from "@/components/forms/form-modal-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Input } from "@/components/ui/input";
@@ -129,18 +130,31 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
         )}
         <div className={`flex flex-wrap gap-3 ${isSplit ? "justify-start" : "justify-center"}`}>
           {str(props.ctaText) && (
-            <Link href={str(props.ctaLink) || "#"}>
-              <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90" data-testid="hero-cta-primary">
-                {str(props.ctaText)}
-              </Button>
-            </Link>
+            <FormModalButton
+              label={str(props.ctaText)}
+              action={props.ctaAction}
+              href={props.ctaLink}
+              formSlug={props.ctaFormSlug}
+              modalTitle={props.ctaModalTitle}
+              modalDescription={props.ctaModalDescription}
+              size="lg"
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              testId="hero-cta-primary"
+            />
           )}
           {str(props.ctaSecondaryText) && (
-            <Link href={str(props.ctaSecondaryLink) || "#"}>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10" data-testid="hero-cta-secondary">
-                {str(props.ctaSecondaryText)}
-              </Button>
-            </Link>
+            <FormModalButton
+              label={str(props.ctaSecondaryText)}
+              action={props.ctaSecondaryAction}
+              href={props.ctaSecondaryLink}
+              formSlug={props.ctaSecondaryFormSlug}
+              modalTitle={props.ctaSecondaryModalTitle}
+              modalDescription={props.ctaSecondaryModalDescription}
+              size="lg"
+              variant="outline"
+              className="border-white text-white hover:bg-white/10"
+              testId="hero-cta-secondary"
+            />
           )}
         </div>
       </div>
@@ -218,9 +232,14 @@ function CalloutBoxBlock({ props }: { props: Record<string, unknown> }) {
         />
         {str(props.ctaText) && (
           <div className="mt-6">
-            <Link href={str(props.ctaLink) || "#"}>
-              <Button>{str(props.ctaText)}</Button>
-            </Link>
+            <FormModalButton
+              label={str(props.ctaText)}
+              action={props.ctaAction}
+              href={props.ctaLink}
+              formSlug={props.ctaFormSlug}
+              modalTitle={props.ctaModalTitle}
+              modalDescription={props.ctaModalDescription}
+            />
           </div>
         )}
       </div>
@@ -340,18 +359,30 @@ function CtaBlock({ props }: { props: Record<string, unknown> }) {
       {str(props.subheading) && <p className={`mb-8 max-w-xl mx-auto ${variant === "light" ? "text-muted-foreground" : "opacity-80"}`}>{str(props.subheading)}</p>}
       <div className="flex flex-wrap gap-3 justify-center">
         {str(props.primaryText) && (
-          <Link href={str(props.primaryLink) || "#"}>
-            <Button size="lg" variant={variant === "dark" ? "secondary" : "default"} data-testid="cta-primary">
-              {str(props.primaryText)}
-            </Button>
-          </Link>
+          <FormModalButton
+            label={str(props.primaryText)}
+            action={props.primaryAction}
+            href={props.primaryLink}
+            formSlug={props.primaryFormSlug}
+            modalTitle={props.primaryModalTitle}
+            modalDescription={props.primaryModalDescription}
+            size="lg"
+            variant={variant === "dark" ? "secondary" : "default"}
+            testId="cta-primary"
+          />
         )}
         {str(props.secondaryText) && (
-          <Link href={str(props.secondaryLink) || "#"}>
-            <Button size="lg" variant="outline" data-testid="cta-secondary">
-              {str(props.secondaryText)}
-            </Button>
-          </Link>
+          <FormModalButton
+            label={str(props.secondaryText)}
+            action={props.secondaryAction}
+            href={props.secondaryLink}
+            formSlug={props.secondaryFormSlug}
+            modalTitle={props.secondaryModalTitle}
+            modalDescription={props.secondaryModalDescription}
+            size="lg"
+            variant="outline"
+            testId="cta-secondary"
+          />
         )}
       </div>
     </div>
@@ -530,13 +561,14 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
       </div>
       {ctaText && (
         <div className="mt-6 flex justify-center">
-          {ctaLink ? (
-            <Link href={ctaLink}>
-              <Button>{ctaText}</Button>
-            </Link>
-          ) : (
-            <Button>{ctaText}</Button>
-          )}
+          <FormModalButton
+            label={ctaText}
+            action={props.ctaAction}
+            href={ctaLink}
+            formSlug={props.ctaFormSlug}
+            modalTitle={props.ctaModalTitle}
+            modalDescription={props.ctaModalDescription}
+          />
         </div>
       )}
     </div>
@@ -590,13 +622,32 @@ function ButtonGroupBlock({ props }: { props: Record<string, unknown> }) {
         {buttons.length === 0 ? (
           <p className="text-muted-foreground text-sm">Add buttons to display here</p>
         ) : buttons.map((btn, i) => (
-          <Link key={i} href={btn.link || "#"}>
-            <Button variant={(btn.variant === "outline" || btn.variant === "secondary" || btn.variant === "ghost" || btn.variant === "destructive") ? btn.variant : "default"} size="lg" data-testid={`button-group-${i}`}>
-              {btn.text}
-            </Button>
-          </Link>
+          <FormModalButton
+            key={i}
+            label={btn.text}
+            action={btn.action}
+            href={btn.link}
+            formSlug={btn.formSlug}
+            modalTitle={btn.modalTitle}
+            modalDescription={btn.modalDescription}
+            variant={(btn.variant === "outline" || btn.variant === "secondary" || btn.variant === "ghost" || btn.variant === "destructive") ? btn.variant : "default"}
+            size="lg"
+            testId={`button-group-${i}`}
+          />
         ))}
       </div>
+    </div>
+  );
+}
+
+function RawHtmlBlock({ props }: { props: Record<string, unknown> }) {
+  return (
+    <div className="py-4">
+      <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
+      <div
+        className="prose prose-sm max-w-none text-foreground"
+        dangerouslySetInnerHTML={{ __html: str(props.html) || "" }}
+      />
     </div>
   );
 }
@@ -1067,13 +1118,15 @@ function GuaranteeWarrantyBlock({ props }: { props: Record<string, unknown> }) {
           })}
         </ul>
         {str(props.ctaText) && (
-          str(props.ctaLink) ? (
-            <Link href={str(props.ctaLink)}>
-              <Button className="bg-accent text-accent-foreground">{str(props.ctaText)}</Button>
-            </Link>
-          ) : (
-            <Button className="bg-accent text-accent-foreground">{str(props.ctaText)}</Button>
-          )
+          <FormModalButton
+            label={str(props.ctaText)}
+            action={props.ctaAction}
+            href={props.ctaLink}
+            formSlug={props.ctaFormSlug}
+            modalTitle={props.ctaModalTitle}
+            modalDescription={props.ctaModalDescription}
+            className="bg-accent text-accent-foreground"
+          />
         )}
       </div>
     </div>
@@ -1833,6 +1886,7 @@ const RENDERERS: Record<string, React.ComponentType<{ props: Record<string, unkn
   "button-group": ButtonGroupBlock,
   "image-block": ImageBlockRenderer,
   "video-embed": VideoEmbedBlock,
+  "raw-html": RawHtmlBlock,
   "contact-info": ContactInfoBlock,
   divider: DividerBlock,
   "feature-list": FeatureListBlock,

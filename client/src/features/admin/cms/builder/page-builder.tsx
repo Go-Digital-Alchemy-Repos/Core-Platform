@@ -625,7 +625,7 @@ function CanvasBlockFrame({
         )}
       >
         <div className="pointer-events-none select-none">
-          <PublicBlockRenderer block={block} disableSectionStyleWrap />
+          <PublicBlockRenderer block={block} disableSectionStyleWrap renderInactive />
         </div>
       </div>
 
@@ -646,6 +646,11 @@ function CanvasBlockFrame({
           <Badge variant="outline" className="border-amber-300 bg-amber-50/90 text-amber-800 backdrop-blur dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
             <Lock className="mr-1 h-2.5 w-2.5" />
             Dynamic
+          </Badge>
+        )}
+        {block.props.isActive === false && (
+          <Badge variant="outline" className="border-slate-300 bg-slate-50/90 text-slate-700 backdrop-blur dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-300">
+            Inactive
           </Badge>
         )}
         {summary && (
@@ -1434,6 +1439,11 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                         {isDynamic && (
                           <Badge variant="outline" className="px-1 py-0 text-[9px]">
                             Dynamic
+                          </Badge>
+                        )}
+                        {block.props.isActive === false && (
+                          <Badge variant="outline" className="px-1 py-0 text-[9px]">
+                            Inactive
                           </Badge>
                         )}
                         {FULL_WIDTH_BLOCK_TYPES.has(block.type) && (

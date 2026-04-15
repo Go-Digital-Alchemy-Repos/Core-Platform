@@ -248,6 +248,14 @@ const SHARED_SECTION_HEADING_PROP_DEFS: PropDef[] = [
   { key: "sectionHeadingAlignment", label: "Heading Alignment", type: "select", options: ALIGN_OPTIONS },
 ];
 
+const SHARED_VISIBILITY_DEFAULTS = {
+  isActive: true,
+};
+
+const SHARED_VISIBILITY_PROP_DEFS: PropDef[] = [
+  { key: "isActive", label: "Active on Public Site", type: "boolean" },
+];
+
 const SHARED_MOBILE_IMAGE_DEFAULTS = {
   mobileImageFit: "cover",
   mobileImageHeight: "auto",
@@ -334,6 +342,17 @@ function withSharedSectionHeading(block: BlockDef): BlockDef {
       ...OPTIONAL_SECTION_HEADING_PROP_DEFS,
       ...SHARED_SECTION_HEADING_PROP_DEFS,
     ]),
+  };
+}
+
+function withSharedVisibility(block: BlockDef): BlockDef {
+  return {
+    ...block,
+    defaultProps: {
+      ...SHARED_VISIBILITY_DEFAULTS,
+      ...block.defaultProps,
+    },
+    propDefs: mergePropDefs(block.propDefs, SHARED_VISIBILITY_PROP_DEFS),
   };
 }
 
@@ -1446,12 +1465,12 @@ const FULL_WIDTH_BLOCK_TYPES = new Set([
 export const BLOCK_REGISTRY: BlockDef[] = BASE_BLOCK_REGISTRY.map((block) => {
   const blockWithHeading = withSharedSectionHeading(block);
   if (block.type === "hero") {
-    return blockWithHeading;
+    return withSharedVisibility(blockWithHeading);
   }
-  return withSharedSectionStyles(blockWithHeading, {
+  return withSharedVisibility(withSharedSectionStyles(blockWithHeading, {
     includeImageControls: true,
     includePaddingControls: !FULL_WIDTH_BLOCK_TYPES.has(block.type),
-  });
+  }));
 });
 
 const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
@@ -1726,9 +1745,9 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
 ];
 
 export const DYNAMIC_BLOCK_TYPES: BlockDef[] = BASE_DYNAMIC_BLOCK_TYPES.map((block) =>
-  withSharedSectionStyles(withSharedSectionHeading(block), {
+  withSharedVisibility(withSharedSectionStyles(withSharedSectionHeading(block), {
     includePaddingControls: !FULL_WIDTH_BLOCK_TYPES.has(block.type),
-  })
+  }))
 );
 
 export const ALL_BLOCKS: BlockDef[] = [...BLOCK_REGISTRY, ...DYNAMIC_BLOCK_TYPES];

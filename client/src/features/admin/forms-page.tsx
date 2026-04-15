@@ -58,6 +58,7 @@ import {
   ChevronDown,
   ChevronUp,
   LayoutTemplate,
+  ArrowLeft,
 } from "lucide-react";
 
 type EditableForm = Omit<CmsForm, "createdAt" | "updatedAt">;
@@ -307,7 +308,8 @@ function normalizeEditableForm(form: CmsForm): EditableForm {
 function moveItem<T>(items: T[], fromIndex: number, toIndex: number) {
   const next = [...items];
   const [item] = next.splice(fromIndex, 1);
-  next.splice(toIndex, 0, item);
+  const adjustedIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
+  next.splice(Math.max(0, adjustedIndex), 0, item);
   return next;
 }
 
@@ -338,26 +340,26 @@ function FieldLibraryCard({
   onDragEnd: () => void;
 }) {
   const Icon = item.icon;
+
   return (
     <button
       type="button"
       draggable
+      onClick={() => onAdd(item.type)}
       onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = "copyMove";
         event.dataTransfer.setData("text/plain", item.type);
         onDragStart(item.type);
       }}
       onDragEnd={onDragEnd}
-      onClick={() => onAdd(item.type)}
-      className="rounded-xl border bg-background px-4 py-4 text-left transition-colors hover:border-primary/50 hover:bg-muted/30"
+      className="flex w-full items-start gap-3 rounded-xl border bg-background px-3 py-3 text-left transition-colors hover:border-primary hover:bg-primary/5"
     >
-      <div className="space-y-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Icon className="h-4 w-4" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold">{item.label}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
-        </div>
+      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <Icon className="h-4.5 w-4.5" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold leading-tight">{item.label}</p>
+        <p className="mt-1 text-xs leading-snug text-muted-foreground">{item.description}</p>
       </div>
     </button>
   );
@@ -502,6 +504,8 @@ function FormsPageContent() {
       })),
     []
   );
+
+  const selectedFieldLibraryItem = selectedField ? getFieldLibraryItem(selectedField.type) : null;
 
   const updateDraft = (updater: (current: EditableForm) => EditableForm) => {
     setDraft((current) => (current ? updater(current) : current));
@@ -650,6 +654,7 @@ function FormsPageContent() {
           ...current,
           fields: moveItem(current.fields, currentIndex, index),
         }));
+        setSelectedFieldId(draggingFieldId);
       }
     }
 
@@ -915,40 +920,27 @@ function FormsPageContent() {
                   </div>
                 </CardContent>
               </Card>
-
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Form Builder</CardTitle>
+                  <CardTitle className="text-base">Form Canvas</CardTitle>
                   <CardDescription>
-                    Add standard and advanced fields, then drag them into order on the form canvas.
+                    Drag fields into order here. Select a field to edit its settings in the right sidebar.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  {groupedFieldLibrary.map((group) => (
-                    <ToggleCardGroup
-                      key={group.key}
-                      title={group.label}
-                      open={openGroups[group.key]}
-                      onToggle={() => setOpenGroups((current) => ({ ...current, [group.key]: !current[group.key] }))}
-                    >
-                      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                        {group.items.map((item) => (
-                          <FieldLibraryCard
-                            key={item.type}
-                            item={item}
-                            onAdd={addField}
-                            onDragStart={setDraggingFieldType}
-                            onDragEnd={() => {
-                              setDraggingFieldType(null);
-                              setDropIndex(null);
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </ToggleCardGroup>
-                  ))}
-
-                  <div className="rounded-xl border bg-muted/10 p-4">
+                <CardContent className="space-y-4">
+                  <div
+                    className="rounded-xl border bg-muted/10 p-4"
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      if (draft.fields.length > 0 && dropIndex === null) {
+                        setDropIndex(draft.fields.length);
+                      }
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      onDropFieldAtIndex(dropIndex ?? draft.fields.length);
+                    }}
+                  >
                     {draft.fields.length === 0 ? (
                       <div
                         className="rounded-lg border border-dashed px-6 py-12 text-center text-sm text-muted-foreground"
@@ -961,7 +953,7 @@ function FormsPageContent() {
                           onDropFieldAtIndex(0);
                         }}
                       >
-                        Drop a field here or click a field from the library to start building this form.
+                        Drag a field from the right sidebar or click one there to start building this form.
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -984,10 +976,22 @@ function FormsPageContent() {
                               />
                               <div
                                 draggable
-                                onDragStart={() => setDraggingFieldId(field.id)}
+                                onDragStart={(event) => {
+                                  event.dataTransfer.effectAllowed = "move";
+                                  event.dataTransfer.setData("text/plain", field.id);
+                                  setDraggingFieldId(field.id);
+                                }}
                                 onDragEnd={() => {
                                   setDraggingFieldId(null);
                                   setDropIndex(null);
+                                }}
+                                onDragOver={(event) => {
+                                  event.preventDefault();
+                                  setDropIndex(index);
+                                }}
+                                onDrop={(event) => {
+                                  event.preventDefault();
+                                  onDropFieldAtIndex(index);
                                 }}
                                 onClick={() => setSelectedFieldId(field.id)}
                                 className={cn(
@@ -1048,16 +1052,33 @@ function FormsPageContent() {
               </Card>
             </div>
 
-            <Card className="h-fit">
+            <Card className="h-fit 2xl:sticky 2xl:top-24">
               <CardHeader>
-                <CardTitle className="text-base">Field Settings</CardTitle>
+                <CardTitle className="text-base">{selectedField ? "Field Settings" : "Add Fields"}</CardTitle>
                 <CardDescription>
-                  Select a field on the canvas to control labels, validation, structure, and advanced behavior.
+                  {selectedField
+                    ? "Update the selected field’s labels, behavior, and advanced configuration here."
+                    : "Standard and advanced fields live here. Click or drag them into the form canvas."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {selectedField ? (
                   <>
+                    <div className="flex items-start justify-between gap-3 rounded-xl border bg-muted/20 p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          {selectedFieldLibraryItem ? <selectedFieldLibraryItem.icon className="h-4.5 w-4.5" /> : <PanelTopOpen className="h-4.5 w-4.5" />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold leading-tight">{selectedField.label || "Untitled Field"}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{selectedFieldLibraryItem?.label ?? selectedField.type}</p>
+                        </div>
+                      </div>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedFieldId(null)}>
+                        <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+                        Fields
+                      </Button>
+                    </div>
                     <div className="space-y-1.5">
                       <Label>Label</Label>
                       <Input value={selectedField.label} onChange={(event) => updateField(selectedField.id, { label: event.target.value })} />
@@ -1457,8 +1478,30 @@ function FormsPageContent() {
                     ) : null}
                   </>
                 ) : (
-                  <div className="rounded-lg border border-dashed px-4 py-8 text-sm text-muted-foreground">
-                    Choose a field from the canvas to edit its labels, validation, structural behavior, and advanced settings.
+                  <div className="space-y-5">
+                    {groupedFieldLibrary.map((group) => (
+                      <ToggleCardGroup
+                        key={group.key}
+                        title={group.label}
+                        open={openGroups[group.key]}
+                        onToggle={() => setOpenGroups((current) => ({ ...current, [group.key]: !current[group.key] }))}
+                      >
+                        <div className="space-y-2">
+                          {group.items.map((item) => (
+                            <FieldLibraryCard
+                              key={item.type}
+                              item={item}
+                              onAdd={addField}
+                              onDragStart={setDraggingFieldType}
+                              onDragEnd={() => {
+                                setDraggingFieldType(null);
+                                setDropIndex(null);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </ToggleCardGroup>
+                    ))}
                   </div>
                 )}
               </CardContent>

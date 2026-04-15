@@ -1119,13 +1119,15 @@ function GuaranteeWarrantyBlock({ props }: { props: Record<string, unknown> }) {
           })}
         </ul>
         {str(props.ctaText) && (
-          str(props.ctaLink) ? (
-            <Link href={str(props.ctaLink)}>
-              <Button className="bg-accent text-accent-foreground">{str(props.ctaText)}</Button>
-            </Link>
-          ) : (
-            <Button className="bg-accent text-accent-foreground">{str(props.ctaText)}</Button>
-          )
+          <FormModalButton
+            label={str(props.ctaText)}
+            action={props.ctaAction}
+            href={props.ctaLink}
+            formSlug={props.ctaFormSlug}
+            modalTitle={props.ctaModalTitle}
+            modalDescription={props.ctaModalDescription}
+            className="bg-accent text-accent-foreground"
+          />
         )}
       </div>
     </div>
@@ -1248,6 +1250,7 @@ const RENDERERS: Record<string, React.ComponentType<{ props: Record<string, unkn
   "button-group": ButtonGroupBlock,
   "image-block": ImageBlockRenderer,
   "video-embed": VideoEmbedBlock,
+  "raw-html": RawHtmlBlock,
   "contact-info": ContactInfoBlock,
   divider: DividerBlock,
   "feature-list": FeatureListBlock,
@@ -1286,10 +1289,16 @@ const DYNAMIC_BLOCK_TYPES = new Set([
 export function PublicBlockRenderer({
   block,
   disableSectionStyleWrap = false,
+  renderInactive = false,
 }: {
   block: BlockInstance;
   disableSectionStyleWrap?: boolean;
+  renderInactive?: boolean;
 }) {
+  if (!renderInactive && block.props.isActive === false) {
+    return null;
+  }
+
   let renderedBlock: ReactElement | null = null;
 
   if (DYNAMIC_BLOCK_TYPES.has(block.type)) {
