@@ -5,15 +5,72 @@ import { z } from "zod";
 export const CMS_FORM_KINDS = ["contact", "newsletter", "interest", "application", "custom"] as const;
 export type CmsFormKind = (typeof CMS_FORM_KINDS)[number];
 
-export const CMS_FORM_FIELD_TYPES = ["text", "email", "textarea", "tel", "select"] as const;
+export const CMS_FORM_FIELD_TYPES = [
+  "text",
+  "textarea",
+  "email",
+  "tel",
+  "website",
+  "number",
+  "select",
+  "multiselect",
+  "checkbox",
+  "radio",
+  "hidden",
+  "html",
+  "section",
+  "page",
+  "image-choice",
+  "name",
+  "date",
+  "time",
+  "address",
+  "consent",
+  "list",
+] as const;
 export type CmsFormFieldType = (typeof CMS_FORM_FIELD_TYPES)[number];
 
 export const cmsFormFieldOptionSchema = z.object({
   label: z.string().min(1, "Option label is required"),
   value: z.string().min(1, "Option value is required"),
+  imageUrl: z.string().optional().default(""),
 });
 
 export type CmsFormFieldOption = z.infer<typeof cmsFormFieldOptionSchema>;
+
+export const cmsFormListColumnSchema = z.object({
+  id: z.string().min(1, "Column id is required"),
+  label: z.string().min(1, "Column label is required"),
+  placeholder: z.string().optional().default(""),
+});
+
+export type CmsFormListColumn = z.infer<typeof cmsFormListColumnSchema>;
+
+export const cmsFormFieldConfigSchema = z.object({
+  nameFormat: z.enum(["full", "split"]).optional().default("full"),
+  sectionTitle: z.string().optional().default(""),
+  sectionSubtitle: z.string().optional().default(""),
+  showDivider: z.boolean().optional().default(true),
+  dividerColor: z.string().optional().default("#e2e8f0"),
+  htmlContent: z.string().optional().default(""),
+  pageTitle: z.string().optional().default(""),
+  pageDescription: z.string().optional().default(""),
+  nextButtonText: z.string().optional().default("Next"),
+  previousButtonText: z.string().optional().default("Previous"),
+  choiceLayout: z.enum(["stacked", "inline", "grid"]).optional().default("stacked"),
+  selectionMode: z.enum(["single", "multiple"]).optional().default("single"),
+  consentCheckboxLabel: z.string().optional().default("I agree"),
+  consentDescription: z.string().optional().default(""),
+  defaultValue: z.union([z.string(), z.boolean()]).optional(),
+  timeFormat: z.enum(["12", "24"]).optional().default("12"),
+  showStreet2: z.boolean().optional().default(false),
+  showCountry: z.boolean().optional().default(true),
+  addressLayout: z.enum(["stacked", "compact"]).optional().default("stacked"),
+  listColumns: z.array(cmsFormListColumnSchema).optional().default([]),
+  maxRows: z.number().optional().default(10),
+}).passthrough();
+
+export type CmsFormFieldConfig = z.infer<typeof cmsFormFieldConfigSchema>;
 
 export const cmsFormFieldSchema = z.object({
   id: z.string().min(1),
@@ -25,6 +82,7 @@ export const cmsFormFieldSchema = z.object({
   required: z.boolean().optional().default(false),
   width: z.enum(["full", "half"]).optional().default("full"),
   options: z.array(cmsFormFieldOptionSchema).optional().default([]),
+  config: cmsFormFieldConfigSchema.optional().default({}),
 });
 
 export type CmsFormField = z.infer<typeof cmsFormFieldSchema>;
