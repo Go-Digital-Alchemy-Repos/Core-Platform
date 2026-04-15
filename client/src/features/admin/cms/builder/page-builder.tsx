@@ -826,7 +826,7 @@ function VisualCanvas({
 }
 
 export function PageBuilder({ content, onChange }: PageBuilderProps) {
-  const MIN_DESKTOP_INSPECTOR_HEIGHT = 480;
+  const MIN_DESKTOP_INSPECTOR_HEIGHT = 280;
   const DESKTOP_INSPECTOR_RAIL_PADDING = 12;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -948,13 +948,16 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     const canvasRect = canvasPanel.getBoundingClientRect();
     const blockRect = selectedNode.getBoundingClientRect();
     const railRect = inspectorRail.getBoundingClientRect();
-    const inspectorHeight = inspectorCard.getBoundingClientRect().height;
+    const availableRailHeight = Math.max(
+      railRect.height - DESKTOP_INSPECTOR_RAIL_PADDING * 2,
+      0
+    );
+    const minimumVisibleHeight = Math.min(
+      MIN_DESKTOP_INSPECTOR_HEIGHT,
+      availableRailHeight || MIN_DESKTOP_INSPECTOR_HEIGHT
+    );
 
     const idealTop = blockRect.top - canvasRect.top;
-    const minimumVisibleHeight = Math.min(
-      railRect.height - DESKTOP_INSPECTOR_RAIL_PADDING,
-      Math.max(MIN_DESKTOP_INSPECTOR_HEIGHT, Math.round(railRect.height * 0.68))
-    );
     const maxTop = Math.max(
       railRect.height - minimumVisibleHeight - DESKTOP_INSPECTOR_RAIL_PADDING,
       0

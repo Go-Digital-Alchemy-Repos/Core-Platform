@@ -9,6 +9,7 @@ import { BrandingProvider } from "@/components/shared/branding-provider";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
+import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
 
 const HomePage = lazy(() => import("@/features/public/home-page"));
 const AboutPage = lazy(() => import("@/features/public/about-page"));
@@ -74,6 +75,12 @@ function PageLoader() {
 }
 
 function Router() {
+  const { data: siteFeaturesData } = useQuery<SiteFeatures>({
+    queryKey: ["/api/site-config"],
+    staleTime: 60_000,
+  });
+  const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
+
   return (
     <Suspense fallback={<PageLoader />}>
       <Switch>
@@ -82,15 +89,15 @@ function Router() {
         <Route path="/contact" component={() => <CmsHybridPage slug="contact" fallback={<ContactPage />} />} />
         <Route path="/preview/cms/:id" component={CmsPreviewPage} />
         <Route path="/join" component={() => <CmsHybridPage slug="join" fallback={<JoinNetworkPage />} />} />
-        <Route path="/events" component={() => <CmsHybridPage slug="events" fallback={<EventsPage />} />} />
-        <Route path="/events/:id" component={EventDetailPage} />
+        <Route path="/events" component={() => siteFeatures.eventsEnabled ? <CmsHybridPage slug="events" fallback={<EventsPage />} /> : <NotFound />} />
+        <Route path="/events/:id" component={() => siteFeatures.eventsEnabled ? <EventDetailPage /> : <NotFound />} />
         <Route path="/recordings" component={() => <CmsHybridPage slug="recordings" fallback={<RecordingArchivesPage />} />} />
-        <Route path="/insights" component={() => <CmsHybridPage slug="insights" fallback={<InsightsPage />} />} />
-        <Route path="/insights/:slug" component={InsightsPostPage} />
-        <Route path="/directory" component={() => <CmsHybridPage slug="directory" fallback={<DirectoryPage />} />} />
+        <Route path="/insights" component={() => siteFeatures.blogEnabled ? <CmsHybridPage slug="insights" fallback={<InsightsPage />} /> : <NotFound />} />
+        <Route path="/insights/:slug" component={() => siteFeatures.blogEnabled ? <InsightsPostPage /> : <NotFound />} />
+        <Route path="/directory" component={() => siteFeatures.directoryEnabled ? <CmsHybridPage slug="directory" fallback={<DirectoryPage />} /> : <NotFound />} />
         <Route path="/privacy-policy" component={() => <CmsHybridPage slug="privacy-policy" fallback={<LegalFallbackPage title="Privacy Policy" subtitle="Review how TCK Wellness collects, uses, stores, and protects information across the website and related services." />} />} />
         <Route path="/terms-of-service" component={() => <CmsHybridPage slug="terms-of-service" fallback={<LegalFallbackPage title="Terms of Service" subtitle="Review the terms governing use of the TCK Wellness website, directory, events, and related services." />} />} />
-        <Route path="/directory/:id" component={TherapistProfilePage} />
+        <Route path="/directory/:id" component={() => siteFeatures.directoryEnabled ? <TherapistProfilePage /> : <NotFound />} />
         <Route path="/reference/:token" component={ReferenceFormPage} />
         <Route path="/auth/login" component={LoginPage} />
         <Route path="/auth/register"><Redirect to="/join" replace /></Route>
@@ -131,7 +138,7 @@ function Router() {
         </Route>
         <Route path="/admin/therapists">
           <ProtectedRoute roles={["admin"]}>
-            <AdminTherapistsPage />
+            {siteFeatures.directoryEnabled ? <AdminTherapistsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/users">
@@ -146,7 +153,7 @@ function Router() {
         </Route>
         <Route path="/admin/events">
           <ProtectedRoute roles={["admin"]}>
-            <AdminEventsPage />
+            {siteFeatures.eventsEnabled ? <AdminEventsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/blog">
@@ -184,7 +191,7 @@ function Router() {
         </Route>
         <Route path="/admin/therapists/specializations">
           <ProtectedRoute roles={["admin"]}>
-            <AdminSpecializationsPage />
+            {siteFeatures.directoryEnabled ? <AdminSpecializationsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/system/backups">
@@ -229,22 +236,22 @@ function Router() {
         </Route>
         <Route path="/admin/cms/blog/new">
           <ProtectedRoute roles={["admin"]}>
-            <CmsBlogEditorPage />
+            {siteFeatures.blogEnabled ? <CmsBlogEditorPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/blog/settings">
           <ProtectedRoute roles={["admin"]}>
-            <CmsBlogSettingsPage />
+            {siteFeatures.blogEnabled ? <CmsBlogSettingsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/blog/:id">
           <ProtectedRoute roles={["admin"]}>
-            <CmsBlogEditorPage />
+            {siteFeatures.blogEnabled ? <CmsBlogEditorPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/blog">
           <ProtectedRoute roles={["admin"]}>
-            <CmsBlogPage />
+            {siteFeatures.blogEnabled ? <CmsBlogPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/sections/new">

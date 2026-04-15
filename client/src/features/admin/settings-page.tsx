@@ -61,6 +61,7 @@ import {
   type BrandingFontOption,
 } from "@/lib/branding";
 import { cn } from "@/lib/utils";
+import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
 
 type SettingsData = Record<
   string,
@@ -87,6 +88,11 @@ type BrandingColorSettingKey =
   | "text_primary_foreground_color"
   | "text_secondary_foreground_color"
   | "text_tertiary_foreground_color";
+
+type SystemConfigurationSettingKey =
+  | "enable_directory"
+  | "enable_blog"
+  | "enable_events";
 
 const BRANDING_CORE_COLOR_FIELDS: Array<{
   key: BrandingColorSettingKey;
@@ -131,6 +137,28 @@ const BRANDING_COLOR_FIELDS = [
   ...BRANDING_TYPOGRAPHY_COLOR_FIELDS,
   ...BRANDING_UI_TEXT_COLOR_FIELDS,
 ] as const;
+
+const SYSTEM_CONFIGURATION_FIELDS: Array<{
+  key: SystemConfigurationSettingKey;
+  label: string;
+  description: string;
+}> = [
+  {
+    key: "enable_directory",
+    label: "Enable Directory",
+    description: "Turns the directory module on or off for this site, including admin navigation and directory routes.",
+  },
+  {
+    key: "enable_blog",
+    label: "Enable Blog",
+    description: "Controls blog and insights entry points so sites can ship without the publishing module when needed.",
+  },
+  {
+    key: "enable_events",
+    label: "Enable Events",
+    description: "Controls events administration and public events routes for sites that do not run an events program.",
+  },
+];
 
 interface EmailTemplate {
   id: string;
@@ -461,6 +489,119 @@ function IntegrationsTab({ settings }: { settings: SettingsData }) {
       {INTEGRATIONS.map((config) => (
         <IntegrationCard key={config.category} config={config} settings={settings} />
       ))}
+    </div>
+  );
+}
+
+function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
+  const { toast } = useToast();
+  const systemConfig = settings.system_configuration || {};
+  const getStoredValue = (key: SystemConfigurationSettingKey) => {
+    if (key === "enable_directory") {
+      return normalizeBooleanSetting(systemConfig.enable_directory?.value, DEFAULT_SITE_FEATURES.directoryEnabled);
+    }
+    if (key === "enable_blog") {
+      return normalizeBooleanSetting(systemConfig.enable_blog?.value, DEFAULT_SITE_FEATURES.blogEnabled);
+    }
+    return normalizeBooleanSetting(systemConfig.enable_events?.value, DEFAULT_SITE_FEATURES.eventsEnabled);
+  };
+  const [values, setValues] = useState<Record<SystemConfigurationSettingKey, boolean>>({
+    enable_directory: getStoredValue("enable_directory"),
+    enable_blog: getStoredValue("enable_blog"),
+    enable_events: getStoredValue("enable_events"),
+  });
+
+  useEffect(() => {
+    setValues({
+      enable_directory: getStoredValue("enable_directory"),
+      enable_blog: getStoredValue("enable_blog"),
+      enable_events: getStoredValue("enable_events"),
+    });
+  }, [
+    systemConfig.enable_directory?.value,
+    systemConfig.enable_blog?.value,
+    systemConfig.enable_events?.value,
+  ]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      await Promise.all(
+        SYSTEM_CONFIGURATION_FIELDS.map((field) =>
+          apiRequest("PUT", "/api/admin/settings", {
+            key: field.key,
+            value: values[field.key] ? "true" : "false",
+            category: "system_configuration",
+            isSecret: false,
+          })
+        )
+      );
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/site-config"] }),
+      ]);
+      toast({ title: "System configuration updated" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Could not save system configuration", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const hasChanges = SYSTEM_CONFIGURATION_FIELDS.some(
+    (field) => values[field.key] !== getStoredValue(field.key)
+  );
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold" data-testid="text-system-configuration-heading">
+          System Configuration
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Control which major site modules are active so this platform can be reused across projects without carrying unnecessary features.
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Feature Modules</CardTitle>
+          <CardDescription>
+            These toggles hide or reveal major admin navigation and public entry routes. Existing data is preserved when a module is turned off.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {SYSTEM_CONFIGURATION_FIELDS.map((field) => (
+            <div key={field.key} className="flex items-start justify-between gap-4 rounded-xl border p-4">
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">{field.label}</Label>
+                <p className="text-xs text-muted-foreground">{field.description}</p>
+              </div>
+              <Switch
+                checked={values[field.key]}
+                onCheckedChange={(checked) => setValues((current) => ({ ...current, [field.key]: checked }))}
+                data-testid={`switch-${field.key}`}
+              />
+            </div>
+          ))}
+
+          <div className="flex gap-2 pt-2">
+            <Button
+              type="button"
+              onClick={() => saveMutation.mutate()}
+              disabled={!hasChanges || saveMutation.isPending}
+              data-testid="button-save-system-configuration"
+            >
+              {saveMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Save Configuration
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -1689,13 +1830,16 @@ export default function AdminSettingsPage() {
           System Settings
         </h1>
         <p className="text-muted-foreground mb-6">
-          Manage integrations and system email templates.
+          Manage integrations, system configuration, and system email templates.
         </p>
 
         <Tabs defaultValue="integrations">
           <TabsList data-testid="tabs-settings">
             <TabsTrigger value="integrations" data-testid="tab-integrations">
               Integrations
+            </TabsTrigger>
+            <TabsTrigger value="configuration" data-testid="tab-system-configuration">
+              System Configuration
             </TabsTrigger>
             <TabsTrigger value="templates" data-testid="tab-templates">
               Email Templates
@@ -1714,6 +1858,16 @@ export default function AdminSettingsPage() {
 
           <TabsContent value="templates" className="mt-6">
             <EmailTemplatesTab />
+          </TabsContent>
+
+          <TabsContent value="configuration" className="mt-6">
+            {isLoading ? (
+              <div className="flex items-center justify-center p-12">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : (
+              <SystemConfigurationTab settings={settings || {}} />
+            )}
           </TabsContent>
         </Tabs>
       </div>

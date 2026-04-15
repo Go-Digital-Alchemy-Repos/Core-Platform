@@ -32,7 +32,8 @@ router.get(
         country: therapistProfiles.country,
       })
       .from(users)
-      .leftJoin(therapistProfiles, eq(therapistProfiles.userId, users.id));
+      .leftJoin(therapistProfiles, eq(therapistProfiles.userId, users.id))
+      .where(eq(users.role, "admin"));
     res.json(
       await Promise.all(
         rows.map(async (row) => ({
@@ -44,22 +45,12 @@ router.get(
   })
 );
 
-const profileSchema = z.object({
-  title: z.string().optional(),
-  credentials: z.string().optional(),
-  bio: z.string().optional(),
-  specializations: z.array(z.string()).optional(),
-  languages: z.array(z.string()).optional(),
-}).optional();
-
 const createUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  role: z.enum(["admin", "therapist"]),
   sendWelcomeEmail: z.boolean().optional(),
-  profile: profileSchema,
 });
 
 router.post(
@@ -79,20 +70,8 @@ router.post(
       password: hashedPassword,
       firstName: data.firstName,
       lastName: data.lastName,
-      role: data.role,
+      role: "admin",
     });
-
-    if (data.role === "therapist") {
-      await storage.therapists.createProfile({
-        userId: user.id,
-        isApproved: true,
-        ...(data.profile?.title && { title: data.profile.title }),
-        ...(data.profile?.credentials && { credentials: data.profile.credentials }),
-        ...(data.profile?.bio && { bio: data.profile.bio }),
-        ...(data.profile?.specializations && { specializations: data.profile.specializations }),
-        ...(data.profile?.languages && { languages: data.profile.languages }),
-      });
-    }
 
     if (data.sendWelcomeEmail) {
       const baseUrl = getBaseUrl(req);
@@ -108,7 +87,6 @@ const updateUserSchema = z.object({
   firstName: z.string().optional().nullable(),
   lastName: z.string().optional().nullable(),
   email: z.string().email().optional(),
-  role: z.enum(["admin", "therapist"]).optional(),
 });
 
 router.put(
@@ -125,6 +103,10 @@ router.put(
     const user = await storage.users.updateUser(paramString(req.params.id), data);
     if (!user) {
       notFound(res, "User");
+      return;
+    }
+    if (user.role !== "admin") {
+      notFound(res, "System user");
       return;
     }
     const { password, ...safeUser } = user;
@@ -148,6 +130,10 @@ router.delete(
       notFound(res, "User");
       return;
     }
+    if (user.role !== "admin") {
+      notFound(res, "System user");
+      return;
+    }
     await storage.users.deleteUser(userId);
     res.json({ message: "User deleted" });
   })
@@ -166,6 +152,10 @@ router.patch(
       notFound(res, "User");
       return;
     }
+    if (user.role !== "admin") {
+      notFound(res, "System user");
+      return;
+    }
     const updated = await storage.users.updateUser(userId, { isSuspended: !user.isSuspended } as any);
     const { password, ...safeUser } = updated!;
     res.json({
@@ -181,6 +171,10 @@ router.post(
     const user = await storage.users.getUser(paramString(req.params.id));
     if (!user) {
       notFound(res, "User");
+      return;
+    }
+    if (user.role !== "admin") {
+      notFound(res, "System user");
       return;
     }
 
