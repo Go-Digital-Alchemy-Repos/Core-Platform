@@ -38,6 +38,8 @@ function getStatusBadge(status: string | undefined) {
       return <Badge data-testid="badge-subscription-status" variant="secondary"><Clock className="w-3 h-3 mr-1" /> Trial</Badge>;
     case "past_due":
       return <Badge data-testid="badge-subscription-status" variant="destructive"><AlertCircle className="w-3 h-3 mr-1" /> Past Due</Badge>;
+    case "suspended":
+      return <Badge data-testid="badge-subscription-status" variant="destructive"><AlertCircle className="w-3 h-3 mr-1" /> Suspended</Badge>;
     case "canceled":
       return <Badge data-testid="badge-subscription-status" variant="outline"><AlertCircle className="w-3 h-3 mr-1" /> Canceled</Badge>;
     default:
@@ -91,9 +93,7 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
         <AlertDescription data-testid="text-approval-message" className="space-y-2">
           <p>Your application was not approved.</p>
           {decisionReason && <p className="font-medium" data-testid="text-rejection-reason">Reason: {decisionReason}</p>}
-          {application.refundStatus === "eligible" && application.refundEligibleAmount && (
-            <p className="text-sm">A refund of ${(application.refundEligibleAmount / 100).toFixed(2)} has been marked for processing.</p>
-          )}
+          <p className="text-sm">The application fee is non-refundable when an application is denied.</p>
           <Link href="/contact">
             <Button variant="outline" size="sm" data-testid="link-contact-support" className="mt-1">
               <AlertTriangle className="w-4 h-4 mr-2" />
@@ -299,7 +299,13 @@ export default function TherapistDashboardPage() {
             <div>
               <CardTitle className="text-base">Subscription</CardTitle>
               <CardDescription>
-                {subscription?.status === "active" ? "Your listing is live" : "Subscribe to get listed"}
+                {subscription?.status === "active"
+                  ? "Your listing is live"
+                  : subscription?.status === "past_due"
+                    ? "Renewal payment needs attention"
+                    : subscription?.status === "suspended"
+                      ? "Membership suspended until payment is resolved"
+                      : "Subscribe to get listed"}
               </CardDescription>
             </div>
             <CreditCard className="h-5 w-5 text-muted-foreground" />
@@ -326,7 +332,9 @@ export default function TherapistDashboardPage() {
             <Link href="/therapist/subscription">
               <Button variant="outline" className="w-full" data-testid="button-manage-subscription">
                 <CreditCard className="w-4 h-4 mr-2" />
-                {subscription?.status === "active" ? "Manage Subscription" : "View Subscription Options"}
+                {["active", "past_due", "suspended"].includes(subscription?.status ?? "")
+                  ? "Manage Subscription"
+                  : "View Subscription Options"}
               </Button>
             </Link>
           </CardContent>

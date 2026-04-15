@@ -42,7 +42,7 @@ function statusDescription(status: ApplicationStatus) {
     interview_completed: "Your interview is complete. A decision will be made soon.",
     approved_pending_subscription: "Congratulations! You've been approved. Activate your membership subscription to be listed in our directory.",
     active_member: "You are an active member of the TCK Wellness counselor network!",
-    denied: "We appreciate your interest, but we are unable to approve your application at this time. If you paid the application fee, the $100 refundable portion will be returned within 5–10 business days.",
+    denied: "We appreciate your interest, but we are unable to approve your application at this time. The application fee is non-refundable.",
     withdrawn: "You have withdrawn your application.",
   };
   return map[status] || "";
@@ -202,8 +202,8 @@ function WhatHappensNext({ status }: { status: ApplicationStatus }) {
     },
     {
       icon: CreditCard,
-      title: "Refund Policy",
-      description: "If your application is not approved, the $100 refundable portion of your application fee will be returned within 5–10 business days.",
+      title: "Membership Billing",
+      description: "Once approved, you will activate a membership subscription before your profile can go live in the directory. If your application is denied, the application fee is non-refundable.",
       highlight: false,
     },
   ];
@@ -435,12 +435,16 @@ export default function ApplicationStatusPage() {
                 <p className="font-medium">{new Date(application.paidAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">Non-Refundable Portion</p>
-                <p className="font-medium">$50.00</p>
+                <p className="text-muted-foreground">Fee Policy</p>
+                <p className="font-medium">Non-refundable</p>
               </div>
               <div>
-                <p className="text-muted-foreground">Refundable Deposit</p>
-                <p className="font-medium">${((application.refundEligibleAmount || 10000) / 100).toFixed(2)}</p>
+                <p className="text-muted-foreground">Approval Credit</p>
+                <p className="font-medium">
+                  {application.refundEligibleAmount
+                    ? `$${(application.refundEligibleAmount / 100).toFixed(2)} toward first membership invoice`
+                    : "Not configured"}
+                </p>
               </div>
               {application.stripePaymentIntentId && (
                 <div className="col-span-2">

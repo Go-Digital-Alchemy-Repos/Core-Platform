@@ -20,6 +20,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 
 interface FormData {
+  feeAcknowledgment?: boolean;
   readyAcknowledgment?: boolean;
   fullName?: string;
   email?: string;
@@ -41,7 +42,18 @@ interface FormData {
   termsStatementOfFaith?: boolean;
 }
 
+interface DirectorySettings {
+  applicationFeeAmountCents: number;
+  applicationFeeNoticeTitle: string;
+  applicationFeeNoticeBody: string;
+  applicationFeePolicySummary: string;
+  applicationFeeCreditOnApproval: boolean;
+  applicationFeeCreditAmountCents: number;
+}
+
 const WIZARD_STEPS = [
+  { id: "fee-notice", label: "Fee Notice", icon: DollarSign },
+  { id: "payment", label: "Payment", icon: CreditCard },
   { id: "before-you-begin", label: "Before You Begin", icon: FileText },
   { id: "contact", label: "Contact Info", icon: User },
   { id: "professional", label: "Professional Info", icon: Briefcase },
@@ -161,6 +173,125 @@ function AutosaveIndicator({ status }: { status: "idle" | "saving" | "saved" | "
   );
 }
 
+function formatUsd(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+function ApplicationFeeNoticeStep({
+  directorySettings,
+  formData,
+  onChange,
+}: {
+  directorySettings: DirectorySettings;
+  formData: FormData;
+  onChange: (data: Partial<FormData>) => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold" data-testid="text-step-title">
+          {directorySettings.applicationFeeNoticeTitle}
+        </h3>
+        <p className="text-muted-foreground mt-1">
+          Review the fee policy before moving into payment and the remainder of your membership application.
+        </p>
+      </div>
+
+      <Card className="border-emerald-200 dark:border-emerald-800">
+        <CardContent className="p-5 space-y-3">
+          <div className="flex items-start gap-3">
+            <DollarSign className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Application Fee: {formatUsd(directorySettings.applicationFeeAmountCents)}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {directorySettings.applicationFeeNoticeBody}
+              </p>
+            </div>
+          </div>
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <p className="text-sm text-muted-foreground">{directorySettings.applicationFeePolicySummary}</p>
+            {directorySettings.applicationFeeCreditOnApproval && (
+              <p className="text-sm text-muted-foreground mt-2">
+                If approved, up to {formatUsd(directorySettings.applicationFeeCreditAmountCents)} can be applied to your first membership invoice.
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+        <input
+          type="checkbox"
+          checked={!!formData.feeAcknowledgment}
+          onChange={(e) => onChange({ feeAcknowledgment: e.target.checked })}
+          className="mt-0.5 h-4 w-4 rounded border-gray-300"
+          data-testid="checkbox-fee-acknowledgment"
+        />
+        <span className="text-sm font-medium leading-snug">
+          I understand the application fee policy and I am ready to continue to payment.
+        </span>
+      </label>
+    </div>
+  );
+}
+
+function ApplicationPaymentStep({
+  directorySettings,
+  isPaid,
+  paymentPending,
+  paymentProcessing,
+  onPayNow,
+}: {
+  directorySettings: DirectorySettings;
+  isPaid: boolean;
+  paymentPending: boolean;
+  paymentProcessing: boolean;
+  onPayNow: () => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold" data-testid="text-step-title">Application Payment</h3>
+        <p className="text-muted-foreground mt-1">
+          Secure your place in the review queue by paying the application fee before continuing.
+        </p>
+      </div>
+
+      <Card className="border-primary/30">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-3">
+            <CreditCard className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <p className="font-medium">Fee due now: {formatUsd(directorySettings.applicationFeeAmountCents)}</p>
+              <p className="text-sm text-muted-foreground">{directorySettings.applicationFeePolicySummary}</p>
+              {isPaid ? (
+                <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-900 dark:bg-green-950/40 dark:text-green-300">
+                  Your application fee has been processed. You can continue with the rest of the application.
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground italic">
+                    You will be redirected to Stripe to complete payment securely.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={onPayNow}
+                    disabled={paymentPending || paymentProcessing}
+                    data-testid="button-pay-application-fee"
+                  >
+                    {paymentPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
+                    Pay {formatUsd(directorySettings.applicationFeeAmountCents)}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function BeforeYouBeginStep({ formData, onChange }: { formData: FormData; onChange: (data: Partial<FormData>) => void }) {
   return (
     <div className="space-y-6">
@@ -186,20 +317,6 @@ function BeforeYouBeginStep({ formData, onChange }: { formData: FormData; onChan
             <div>
               <p className="font-medium">Have 3 References Ready</p>
               <p className="text-sm text-muted-foreground">You will need to provide contact information for 3 professional references. They will receive a confidential reference form after your application is submitted.</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-emerald-200 dark:border-emerald-800">
-          <CardContent className="p-4 flex items-start gap-3">
-            <DollarSign className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-medium">Application Fee: $150</p>
-              <ul className="text-sm text-muted-foreground mt-1 space-y-1">
-                <li>$50 is non-refundable and covers administrative processing</li>
-                <li>$100 will be refunded if your application is not approved</li>
-              </ul>
-              <p className="text-xs text-muted-foreground mt-2 italic">Payment will be collected at the end of the application process.</p>
             </div>
           </CardContent>
         </Card>
@@ -857,34 +974,40 @@ function TermsStep({ formData, onChange }: { formData: FormData; onChange: (data
 function getStepValidation(step: number, formData: FormData, application: any): { valid: boolean; message?: string } {
   switch (step) {
     case 0:
-      if (!formData.readyAcknowledgment) return { valid: false, message: "Please acknowledge you have reviewed the information." };
+      if (!formData.feeAcknowledgment) return { valid: false, message: "Please acknowledge the application fee policy." };
       return { valid: true };
     case 1:
+      if (application?.paymentStatus !== "paid") return { valid: false, message: "Please complete payment before continuing." };
+      return { valid: true };
+    case 2:
+      if (!formData.readyAcknowledgment) return { valid: false, message: "Please acknowledge you have reviewed the information." };
+      return { valid: true };
+    case 3:
       if (!formData.fullName) return { valid: false, message: "Full name is required." };
       if (!formData.email) return { valid: false, message: "Email is required." };
       if (!formData.phone) return { valid: false, message: "Phone number is required." };
       if (!formData.city) return { valid: false, message: "City is required." };
       if (!formData.country) return { valid: false, message: "Country is required." };
       return { valid: true };
-    case 2:
+    case 4:
       if (!formData.applyingAs) return { valid: false, message: "Please select what you're applying as." };
       if (!formData.professionalTitle) return { valid: false, message: "Professional title is required." };
       if ((application?.credentials?.length ?? 0) === 0) return { valid: false, message: "At least one credential is required." };
       return { valid: true };
-    case 3: {
+    case 5: {
       const questions = formData.tckQuestions || {};
       const answered = TCK_QUESTIONS.filter((q) => (questions[q.id] || "").trim().length > 0);
       if (answered.length < TCK_QUESTIONS.length) return { valid: false, message: `Please answer all ${TCK_QUESTIONS.length} questions.` };
       return { valid: true };
     }
-    case 4:
+    case 6:
       if ((application?.references?.length ?? 0) < 3) return { valid: false, message: "Please add all 3 references." };
       return { valid: true };
-    case 5:
+    case 7:
       if (!formData.accessibilityStartingFee) return { valid: false, message: "Starting fee is required." };
       if (!formData.accessibilitySlidingScale) return { valid: false, message: "Please indicate if you offer sliding-scale sessions." };
       return { valid: true };
-    case 6:
+    case 8:
       if (!formData.termsAccepted) return { valid: false, message: "You must accept the terms and conditions." };
       if (!formData.termsInsuranceAgreement) return { valid: false, message: "Insurance agreement is required." };
       if (!formData.termsLicensureProof) return { valid: false, message: "Licensure proof agreement is required." };
@@ -911,6 +1034,10 @@ export default function ApplicationPage() {
 
   const { data: application, isLoading } = useQuery<any>({
     queryKey: ["/api/therapist/application"],
+  });
+
+  const { data: directorySettings } = useQuery<DirectorySettings>({
+    queryKey: ["/api/directory-settings"],
   });
 
   const createApplication = useMutation({
@@ -960,7 +1087,7 @@ export default function ApplicationPage() {
     onSuccess: (data: { paid: boolean }) => {
       if (data.paid) {
         queryClient.invalidateQueries({ queryKey: ["/api/therapist/application"] });
-        toast({ title: "Payment confirmed!", description: "Your application fee has been processed. You can now submit your application." });
+        toast({ title: "Payment confirmed!", description: "Your application fee has been processed. You can continue with the remaining application steps." });
         setPaymentProcessing(false);
       } else {
         toast({ title: "Payment not confirmed", description: "We couldn't verify your payment. Please try again.", variant: "destructive" });
@@ -991,7 +1118,14 @@ export default function ApplicationPage() {
   useEffect(() => {
     if (application && !initialized) {
       setFormData((application.formData as FormData) || {});
-      setCurrentStep(application.currentStep || 0);
+      const savedStep = application.currentStep || 0;
+      const clampedStep =
+        application.paymentStatus === "paid"
+          ? savedStep
+          : savedStep > 1
+            ? 1
+            : savedStep;
+      setCurrentStep(clampedStep);
       setInitialized(true);
     }
   }, [application, initialized]);
@@ -1017,13 +1151,13 @@ export default function ApplicationPage() {
     if (params.get("payment") === "success") {
       paymentChecked.current = true;
       setPaymentProcessing(true);
-      setCurrentStep(6);
+      setCurrentStep(1);
       confirmPaymentMutation.mutate();
       window.history.replaceState({}, "", "/therapist/apply");
     } else if (params.get("payment") === "canceled") {
       paymentChecked.current = true;
       toast({ title: "Payment canceled", description: "You can try again when you're ready." });
-      setCurrentStep(6);
+      setCurrentStep(1);
       window.history.replaceState({}, "", "/therapist/apply");
     }
   }, [searchString]);
@@ -1046,11 +1180,21 @@ export default function ApplicationPage() {
   }, [currentStep, triggerAutosave]);
 
   const handleStepChange = useCallback((step: number) => {
+    if (step > currentStep) {
+      for (let i = 0; i < step; i++) {
+        const validation = getStepValidation(i, formData, application);
+        if (!validation.valid) {
+          setCurrentStep(i);
+          setValidationError(validation.message || "Please complete this step before continuing.");
+          return;
+        }
+      }
+    }
     setCurrentStep(step);
     setValidationError(null);
     triggerAutosave(formData, step);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [formData, triggerAutosave]);
+  }, [application, currentStep, formData, triggerAutosave]);
 
   const handleNext = useCallback(() => {
     const validation = getStepValidation(currentStep, formData, application);
@@ -1065,7 +1209,7 @@ export default function ApplicationPage() {
 
   const submittingRef = useRef(false);
 
-  const handlePayAndSubmit = useCallback(() => {
+  const handleSubmitApplication = useCallback(() => {
     if (submittingRef.current) return;
 
     for (let i = 0; i < WIZARD_STEPS.length; i++) {
@@ -1080,21 +1224,12 @@ export default function ApplicationPage() {
     submittingRef.current = true;
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
 
-    if (application?.paymentStatus === "paid") {
-      autosaveMutation.mutate({ formData, currentStep }, {
-        onSuccess: () => submitApplication.mutate(undefined, {
-          onSettled: () => { submittingRef.current = false; },
-        }),
-        onError: () => { submittingRef.current = false; },
-      });
-    } else {
-      autosaveMutation.mutate({ formData, currentStep }, {
-        onSuccess: () => paymentMutation.mutate(undefined, {
-          onSettled: () => { submittingRef.current = false; },
-        }),
-        onError: () => { submittingRef.current = false; },
-      });
-    }
+    autosaveMutation.mutate({ formData, currentStep }, {
+      onSuccess: () => submitApplication.mutate(undefined, {
+        onSettled: () => { submittingRef.current = false; },
+      }),
+      onError: () => { submittingRef.current = false; },
+    });
   }, [formData, application, currentStep]);
 
   const completedSteps = new Set<number>();
@@ -1105,6 +1240,16 @@ export default function ApplicationPage() {
   }
 
   const isPaid = application?.paymentStatus === "paid";
+  const effectiveDirectorySettings = directorySettings ?? {
+    applicationFeeAmountCents: 15000,
+    applicationFeeNoticeTitle: "Application Fee",
+    applicationFeeNoticeBody:
+      "Before your application can move into review, the application fee must be paid.",
+    applicationFeePolicySummary:
+      "If approved, the application fee can be credited toward your first membership invoice. If denied, the fee is non-refundable.",
+    applicationFeeCreditOnApproval: true,
+    applicationFeeCreditAmountCents: 15000,
+  };
 
   useEffect(() => {
     if (application && application.status !== "draft") {
@@ -1186,13 +1331,29 @@ export default function ApplicationPage() {
 
       <Card>
         <CardContent className="p-6">
-          {currentStep === 0 && <BeforeYouBeginStep formData={formData} onChange={handleFormChange} />}
-          {currentStep === 1 && <ContactInfoStep formData={formData} onChange={handleFormChange} />}
-          {currentStep === 2 && <ProfessionalInfoStep formData={formData} onChange={handleFormChange} application={application} />}
-          {currentStep === 3 && <TckQuestionsStep formData={formData} onChange={handleFormChange} />}
-          {currentStep === 4 && <ReferencesStep application={application} />}
-          {currentStep === 5 && <AccessibilityStep formData={formData} onChange={handleFormChange} />}
-          {currentStep === 6 && <TermsStep formData={formData} onChange={handleFormChange} />}
+          {currentStep === 0 && (
+            <ApplicationFeeNoticeStep
+              directorySettings={effectiveDirectorySettings}
+              formData={formData}
+              onChange={handleFormChange}
+            />
+          )}
+          {currentStep === 1 && (
+            <ApplicationPaymentStep
+              directorySettings={effectiveDirectorySettings}
+              isPaid={isPaid}
+              paymentPending={paymentMutation.isPending}
+              paymentProcessing={paymentProcessing}
+              onPayNow={() => paymentMutation.mutate()}
+            />
+          )}
+          {currentStep === 2 && <BeforeYouBeginStep formData={formData} onChange={handleFormChange} />}
+          {currentStep === 3 && <ContactInfoStep formData={formData} onChange={handleFormChange} />}
+          {currentStep === 4 && <ProfessionalInfoStep formData={formData} onChange={handleFormChange} application={application} />}
+          {currentStep === 5 && <TckQuestionsStep formData={formData} onChange={handleFormChange} />}
+          {currentStep === 6 && <ReferencesStep application={application} />}
+          {currentStep === 7 && <AccessibilityStep formData={formData} onChange={handleFormChange} />}
+          {currentStep === 8 && <TermsStep formData={formData} onChange={handleFormChange} />}
         </CardContent>
       </Card>
 
@@ -1200,24 +1361,12 @@ export default function ApplicationPage() {
         <Card className="mt-4 border-primary/30">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <CreditCard className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+              <Send className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1">
-                {isPaid ? (
-                  <div>
-                    <p className="font-medium text-green-700 dark:text-green-400">Application fee paid</p>
-                    <p className="text-sm text-muted-foreground mt-1">Your $150.00 application fee has been processed. Click below to submit your application for review.</p>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="font-medium">Application Fee: $150.00</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      A one-time application fee is required to submit. $50 is non-refundable (processing). $100 will be refunded if your application is not approved.
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1 italic">
-                      You will be redirected to a secure payment page. Your application data is saved automatically.
-                    </p>
-                  </div>
-                )}
+                <p className="font-medium">Ready to submit for review</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Your payment has been completed and all required application steps are filled in. Submit now to send your application into the review workflow.
+                </p>
               </div>
             </div>
           </CardContent>
@@ -1236,26 +1385,15 @@ export default function ApplicationPage() {
         </Button>
         <div className="flex gap-2">
           {isLastStep && allComplete ? (
-            isPaid ? (
-              <Button
-                onClick={handlePayAndSubmit}
-                disabled={submitApplication.isPending || autosaveMutation.isPending || paymentProcessing}
-                className="bg-green-600 hover:bg-green-700"
-                data-testid="button-submit-application"
-              >
-                {submitApplication.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-                Submit Application
-              </Button>
-            ) : (
-              <Button
-                onClick={handlePayAndSubmit}
-                disabled={paymentMutation.isPending || autosaveMutation.isPending || paymentProcessing}
-                data-testid="button-pay-and-submit"
-              >
-                {paymentMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
-                Pay & Submit — $150.00
-              </Button>
-            )
+            <Button
+              onClick={handleSubmitApplication}
+              disabled={submitApplication.isPending || autosaveMutation.isPending || paymentProcessing}
+              className="bg-green-600 hover:bg-green-700"
+              data-testid="button-submit-application"
+            >
+              {submitApplication.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+              Submit Application
+            </Button>
           ) : (
             <Button
               onClick={handleNext}

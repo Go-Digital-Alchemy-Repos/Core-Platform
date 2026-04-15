@@ -3,6 +3,7 @@ import { logger } from "../utils/logger";
 import { getUncachableStripeClient } from "../config/stripe";
 import { sendReferenceRequestEmail } from "./email.service";
 import { createBackgroundCheckRecord } from "./background-check.service";
+import { DEFAULT_DIRECTORY_SETTINGS, getDirectorySettings } from "./directory-settings.service";
 import {
   APPLICATION_STATUS,
   type ApplicationStatus,
@@ -17,8 +18,8 @@ import type {
   ProviderBackgroundCheck,
 } from "@shared/schema";
 
-export const APPLICATION_FEE_CENTS = 15000;
-export const REFUND_ELIGIBLE_CENTS = 10000;
+export const APPLICATION_FEE_CENTS = DEFAULT_DIRECTORY_SETTINGS.applicationFeeAmountCents;
+export const REFUND_ELIGIBLE_CENTS = DEFAULT_DIRECTORY_SETTINGS.applicationFeeCreditAmountCents;
 export const RESEND_COOLDOWN_MS = 5 * 60 * 1000;
 
 export type { StatusTransitionResult, SubmitApplicationResult, PaymentConfirmationResult };
@@ -126,7 +127,7 @@ export async function autosaveApplication(userId: string, formData: unknown, cur
   if (formData !== undefined && typeof formData === "object" && formData !== null) {
     updateData.formData = formData;
   }
-  if (currentStep !== undefined && typeof currentStep === "number" && currentStep >= 0 && currentStep <= 6) {
+  if (currentStep !== undefined && typeof currentStep === "number" && currentStep >= 0 && currentStep <= 8) {
     updateData.currentStep = currentStep;
   }
 
@@ -136,20 +137,6 @@ export async function autosaveApplication(userId: string, formData: unknown, cur
 
   const updated = await storage.applications.update(application.id, updateData as any);
   return { success: true, application: updated } as const;
-}
-
-function validateApplicationCompleteness(application: ProviderApplication, credentials: ProviderApplicationCredential[], references: ProviderApplicationReference[]) {
-  if (credentials.length === 0) {
-    return "At least one credential is required";
-  }
-  if (references.length < 3) {
-    return "Three professional references are required";
-  }
-  const formData = (application.formData ?? {}) as Record<string, unknown>;
-  if (!formData.termsAccepted || !formData.termsSignature) {
-    return "Terms and conditions must be accepted and signed";
-  }
-  return null;
 }
 
 export async function createPaymentSession(userId: string, userEmail: string, hostname: string) {
@@ -166,13 +153,6 @@ export async function createPaymentSession(userId: string, userEmail: string, ho
     return { error: "Application fee has already been paid", status: 400 } as const;
   }
 
-  const credentials = await storage.applications.getCredentials(application.id);
-  const references = await storage.applications.getReferences(application.id);
-  const completenessError = validateApplicationCompleteness(application, credentials, references);
-  if (completenessError) {
-    return { error: completenessError, status: 400 } as const;
-  }
-
   if (application.stripeCheckoutSessionId) {
     try {
       const stripe = await getUncachableStripeClient();
@@ -186,6 +166,7 @@ export async function createPaymentSession(userId: string, userEmail: string, ho
   }
 
   const stripe = await getUncachableStripeClient();
+  const directorySettings = await getDirectorySettings();
   const host = process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || hostname}`;
 
   const session = await stripe.checkout.sessions.create({
@@ -197,9 +178,9 @@ export async function createPaymentSession(userId: string, userEmail: string, ho
           currency: "usd",
           product_data: {
             name: "TCK Wellness — Counselor Application Fee",
-            description: "$50 non-refundable processing fee + $100 refundable deposit",
+            description: directorySettings.applicationFeePolicySummary,
           },
-          unit_amount: APPLICATION_FEE_CENTS,
+          unit_amount: directorySettings.applicationFeeAmountCents,
         },
         quantity: 1,
       },
@@ -244,6 +225,7 @@ export async function confirmPayment(userId: string): Promise<PaymentConfirmatio
   }
 
   try {
+    const directorySettings = await getDirectorySettings();
     const stripe = await getUncachableStripeClient();
     const session = await stripe.checkout.sessions.retrieve(application.stripeCheckoutSessionId);
 
@@ -251,15 +233,17 @@ export async function confirmPayment(userId: string): Promise<PaymentConfirmatio
       const updated = await storage.applications.update(application.id, {
         paymentStatus: "paid",
         paidAt: new Date(),
-        amountPaid: APPLICATION_FEE_CENTS,
-        refundEligibleAmount: REFUND_ELIGIBLE_CENTS,
+        amountPaid: directorySettings.applicationFeeAmountCents,
+        refundEligibleAmount: directorySettings.applicationFeeCreditOnApproval
+          ? directorySettings.applicationFeeCreditAmountCents
+          : 0,
         stripePaymentIntentId: session.payment_intent as string,
       } as any);
 
       await storage.applications.addTimelineEntry({
         applicationId: application.id,
         action: "payment_completed",
-        note: `Application fee of $${(APPLICATION_FEE_CENTS / 100).toFixed(2)} paid`,
+        note: `Application fee of $${(directorySettings.applicationFeeAmountCents / 100).toFixed(2)} paid`,
         performedBy: userId,
       });
 
@@ -512,15 +496,11 @@ async function handleDenial(application: ProviderApplication, note: string | und
     await storage.therapists.updateProfile(deniedProfile.id, { isApproved: false });
   }
 
-  if (application.paymentStatus === "paid" && application.refundEligibleAmount && application.refundStatus !== "refunded") {
-    await storage.applications.update(application.id, {
-      refundStatus: "eligible",
-    } as any);
-
+  if (application.paymentStatus === "paid") {
     await storage.applications.addTimelineEntry({
       applicationId: application.id,
-      action: "refund_eligible",
-      note: `Refundable amount of $${(application.refundEligibleAmount / 100).toFixed(2)} marked as eligible for refund`,
+      action: "application_fee_retained",
+      note: "Application fee remains non-refundable because the application was denied.",
       performedBy: decidedBy,
     });
   }

@@ -71,7 +71,7 @@ export default function AdminMembershipTiersPage() {
   );
 }
 
-function TiersContent() {
+export function TiersContent({ embedded = false }: { embedded?: boolean } = {}) {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTier, setEditingTier] = useState<MembershipTier | null>(null);
@@ -179,11 +179,18 @@ function TiersContent() {
   }
 
   return (
-    <div className="p-6">
+    <div className={embedded ? "space-y-6" : "p-6"}>
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-        <h1 className="text-2xl font-heading font-semibold" data-testid="text-admin-tiers-title">
-          Membership Tiers
-        </h1>
+        <div>
+          <h1 className="text-2xl font-heading font-semibold" data-testid="text-admin-tiers-title">
+            Membership Tiers
+          </h1>
+          {embedded && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Create and maintain the subscription plans that control directory access and membership billing.
+            </p>
+          )}
+        </div>
         <Button onClick={openCreate} data-testid="button-create-tier">
           <Plus className="h-4 w-4 mr-2" />
           Create Tier

@@ -2,6 +2,11 @@ import { getStripeClient } from "../config/stripe";
 import { storage } from "../storage/index";
 import { logger } from "../utils/logger";
 import { sendPaymentConfirmationEmail } from "../services/email.service";
+import { getDirectorySettings } from "../services/directory-settings.service";
+import {
+  handleMembershipRecovered,
+  notifyMembershipPaymentFailed,
+} from "../services/directory-membership-lifecycle.service";
 
 export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string) {
@@ -33,11 +38,14 @@ export class WebhookHandlers {
           if (applicationId && session.metadata?.type === "application_fee") {
             const application = await storage.applications.getById(applicationId);
             if (application && application.paymentStatus !== "paid") {
+              const directorySettings = await getDirectorySettings();
               await storage.applications.update(application.id, {
                 paymentStatus: "paid",
                 paidAt: new Date(),
-                amountPaid: session.amount_total || 15000,
-                refundEligibleAmount: 10000,
+                amountPaid: session.amount_total || directorySettings.applicationFeeAmountCents,
+                refundEligibleAmount: directorySettings.applicationFeeCreditOnApproval
+                  ? directorySettings.applicationFeeCreditAmountCents
+                  : 0,
                 stripePaymentIntentId: session.payment_intent as string,
               } as any);
 
@@ -184,6 +192,10 @@ export class WebhookHandlers {
         case "invoice.payment_succeeded": {
           const invoice = event.data.object;
           if (invoice.subscription) {
+            const previousSub = await storage.subscriptions.getByStripeSubscriptionId(
+              invoice.subscription as string,
+            );
+            const hadBillingIssue = ["past_due", "suspended"].includes(previousSub?.status || "");
             const updatedSub = await storage.subscriptions.updateByStripeSubscriptionId(
               invoice.subscription as string,
               { status: "active" }
@@ -192,6 +204,12 @@ export class WebhookHandlers {
 
             if (updatedSub?.therapistId) {
               try {
+                await handleMembershipRecovered(
+                  updatedSub.id,
+                  updatedSub.therapistId,
+                  hadBillingIssue,
+                );
+
                 const application = await storage.applications.getByUserId(updatedSub.therapistId);
                 if (application && application.status === "approved_pending_subscription") {
                   await storage.applications.update(application.id, {
@@ -226,11 +244,26 @@ export class WebhookHandlers {
         case "invoice.payment_failed": {
           const invoice = event.data.object;
           if (invoice.subscription) {
-            await storage.subscriptions.updateByStripeSubscriptionId(
+            const previousSub = await storage.subscriptions.getByStripeSubscriptionId(
               invoice.subscription as string,
-              { status: "past_due" }
+            );
+            const updatedSub = await storage.subscriptions.updateByStripeSubscriptionId(
+              invoice.subscription as string,
+              {
+                status: "past_due",
+                lastFailedInvoiceId: invoice.id,
+                lastPaymentFailedAt: new Date(),
+              }
             );
             logger.stripe.warn("Invoice payment failed", { subscriptionId: invoice.subscription });
+
+            if (
+              updatedSub?.therapistId &&
+              previousSub?.status !== "past_due" &&
+              previousSub?.status !== "suspended"
+            ) {
+              await notifyMembershipPaymentFailed(updatedSub.id, updatedSub.therapistId);
+            }
           }
           break;
         }

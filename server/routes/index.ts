@@ -22,6 +22,7 @@ import applicationRoutes from "./application.routes";
 import referenceRoutes from "./reference.routes";
 import { storage } from "../storage/index";
 import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
+import { DEFAULT_DIRECTORY_SETTINGS, getDirectorySettings } from "../services/directory-settings.service";
 
 function escapeXml(str: string): string {
   return str
@@ -129,6 +130,17 @@ export function registerApiRoutes(app: Express) {
   app.get("/api/membership-tiers", async (_req, res) => {
     const tiers = await storage.tiers.getActiveTiers();
     res.json(tiers);
+  });
+
+  app.get("/api/directory-settings", async (_req, res) => {
+    try {
+      res.json(await getDirectorySettings());
+    } catch (err) {
+      logger.app.warn("Failed to retrieve directory settings, returning defaults", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      res.json(DEFAULT_DIRECTORY_SETTINGS);
+    }
   });
 
   app.get("/api/seo/global", async (_req, res) => {

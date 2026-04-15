@@ -37,7 +37,7 @@ const ReferenceFormPage = lazy(() => import("@/features/public/reference-form-pa
 const AdminDashboardPage = lazy(() => import("@/features/admin/dashboard-page"));
 const AdminTherapistsPage = lazy(() => import("@/features/admin/therapists-page"));
 const AdminUsersPage = lazy(() => import("@/features/admin/users-page"));
-const AdminMembershipTiersPage = lazy(() => import("@/features/admin/membership-tiers-page"));
+const AdminDirectorySettingsPage = lazy(() => import("@/features/admin/directory-settings-page"));
 const AdminEventsPage = lazy(() => import("@/features/admin/events-page"));
 const DocsPage = lazy(() => import("@/features/admin/docs-page"));
 const AdminSettingsPage = lazy(() => import("@/features/admin/settings-page"));
@@ -117,17 +117,17 @@ function Router() {
         </Route>
         <Route path="/therapist/subscription">
           <ProtectedRoute roles={["therapist"]}>
-            <SubscriptionPage />
+            {siteFeatures.directoryEnabled ? <SubscriptionPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/therapist/apply">
           <ProtectedRoute roles={["therapist"]}>
-            <ApplicationPage />
+            {siteFeatures.directoryEnabled ? <ApplicationPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/therapist/application/status">
           <ProtectedRoute roles={["therapist"]}>
-            <ApplicationStatusPage />
+            {siteFeatures.directoryEnabled ? <ApplicationStatusPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
 
@@ -141,15 +141,18 @@ function Router() {
             {siteFeatures.directoryEnabled ? <AdminTherapistsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
+        <Route path="/admin/directory/settings">
+          <ProtectedRoute roles={["admin"]}>
+            {siteFeatures.directoryEnabled ? <AdminDirectorySettingsPage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
         <Route path="/admin/users">
           <ProtectedRoute roles={["admin"]}>
             <AdminUsersPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/membership-tiers">
-          <ProtectedRoute roles={["admin"]}>
-            <AdminMembershipTiersPage />
-          </ProtectedRoute>
+          <Redirect to="/admin/directory/settings" />
         </Route>
         <Route path="/admin/events">
           <ProtectedRoute roles={["admin"]}>
@@ -201,12 +204,12 @@ function Router() {
         </Route>
         <Route path="/admin/applications/:id">
           <ProtectedRoute roles={["admin"]}>
-            <AdminApplicationDetailPage />
+            {siteFeatures.directoryEnabled ? <AdminApplicationDetailPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/applications">
           <ProtectedRoute roles={["admin"]}>
-            <AdminApplicationsPage />
+            {siteFeatures.directoryEnabled ? <AdminApplicationsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms">

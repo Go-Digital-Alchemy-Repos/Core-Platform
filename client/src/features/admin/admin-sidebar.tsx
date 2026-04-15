@@ -56,8 +56,6 @@ function buildNavGroups(siteFeatures: SiteFeatures): NavGroup[] {
     {
       items: [
         { title: "Dashboard", href: "/admin", icon: LayoutDashboard, iconColor: "text-teal-600" },
-        { title: "Membership Tiers", href: "/admin/membership-tiers", icon: CreditCard, iconColor: "text-amber-600" },
-        { title: "Applications", href: "/admin/applications", icon: ClipboardList, iconColor: "text-orange-600" },
       ],
     },
     {
@@ -115,7 +113,14 @@ function buildNavGroups(siteFeatures: SiteFeatures): NavGroup[] {
       children: [
         { title: "Profiles", href: "/admin/therapists", icon: UserCheck, iconColor: "text-emerald-600" },
         { title: "Specializations", href: "/admin/therapists/specializations", icon: Tag, iconColor: "text-emerald-500" },
+        { title: "Settings", href: "/admin/directory/settings", icon: CreditCard, iconColor: "text-amber-600" },
       ],
+    });
+    groups[0].items.push({
+      title: "Applications",
+      href: "/admin/applications",
+      icon: ClipboardList,
+      iconColor: "text-orange-600",
     });
   }
 

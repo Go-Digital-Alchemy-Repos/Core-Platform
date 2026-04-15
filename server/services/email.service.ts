@@ -221,6 +221,92 @@ export async function sendRejectionEmail(
   return sendEmail(email, subject, html);
 }
 
+export async function sendMembershipRenewalReminderEmail(
+  email: string,
+  firstName: string | null,
+  renewalDate: string,
+  planName: string | null,
+  manageBillingUrl: string,
+): Promise<boolean> {
+  const vars = {
+    firstName: firstName || "there",
+    renewalDate,
+    planName,
+    manageBillingUrl,
+  };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "membership-renewal-reminder",
+    vars,
+    `Your membership renews on ${renewalDate}`,
+    `<p>Hi ${vars.firstName}, your membership renews on ${renewalDate}. Manage billing here: ${manageBillingUrl}</p>`,
+  );
+  if (!isActive) return false;
+  return sendEmail(email, subject, html);
+}
+
+export async function sendMembershipPaymentFailedEmail(
+  email: string,
+  firstName: string | null,
+  graceDeadline: string,
+  manageBillingUrl: string,
+  retryPaymentUrl: string,
+): Promise<boolean> {
+  const vars = {
+    firstName: firstName || "there",
+    graceDeadline,
+    manageBillingUrl,
+    retryPaymentUrl,
+  };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "membership-payment-failed",
+    vars,
+    "Action needed: your membership payment did not go through",
+    `<p>Hi ${vars.firstName}, we couldn't process your membership renewal. Please update billing and retry payment before ${graceDeadline}.</p>`,
+  );
+  if (!isActive) return false;
+  return sendEmail(email, subject, html);
+}
+
+export async function sendMembershipSuspendedEmail(
+  email: string,
+  firstName: string | null,
+  manageBillingUrl: string,
+  retryPaymentUrl: string,
+): Promise<boolean> {
+  const vars = {
+    firstName: firstName || "there",
+    manageBillingUrl,
+    retryPaymentUrl,
+  };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "membership-suspended",
+    vars,
+    "Your membership has been suspended",
+    `<p>Hi ${vars.firstName}, your membership is suspended until the outstanding payment is resolved.</p>`,
+  );
+  if (!isActive) return false;
+  return sendEmail(email, subject, html);
+}
+
+export async function sendMembershipReactivatedEmail(
+  email: string,
+  firstName: string | null,
+  dashboardUrl: string,
+): Promise<boolean> {
+  const vars = {
+    firstName: firstName || "there",
+    dashboardUrl,
+  };
+  const { subject, html, isActive } = await getTemplateHtml(
+    "membership-reactivated",
+    vars,
+    "Your membership has been restored",
+    `<p>Hi ${vars.firstName}, your membership has been restored. Open your dashboard: ${dashboardUrl}</p>`,
+  );
+  if (!isActive) return false;
+  return sendEmail(email, subject, html);
+}
+
 export async function sendPasswordResetEmail(
   email: string,
   firstName: string | null,

@@ -5,6 +5,7 @@ import { logger } from "../utils/logger";
 import { authenticateToken, requireRole } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
 import type { Event } from "@shared/schema/events";
+import { getDirectorySettings } from "../services/directory-settings.service";
 
 const router = Router();
 
@@ -164,6 +165,7 @@ router.post(
     }
 
     const stripe = await getUncachableStripeClient();
+    const directorySettings = await getDirectorySettings();
 
     let subscription = await storage.subscriptions.getSubscriptionByTherapist(user.id);
     let customerId = subscription?.stripeCustomerId;
@@ -184,6 +186,31 @@ router.post(
       } else {
         await storage.subscriptions.updateSubscription(subscription.id, {
           stripeCustomerId: customerId,
+        });
+      }
+    }
+
+    if (
+      subscription &&
+      directorySettings.applicationFeeCreditOnApproval &&
+      application.paymentStatus === "paid" &&
+      (subscription.applicationFeeCreditAppliedAt == null) &&
+      directorySettings.applicationFeeCreditAmountCents > 0
+    ) {
+      try {
+        await stripe.customers.createBalanceTransaction(customerId, {
+          amount: -directorySettings.applicationFeeCreditAmountCents,
+          currency: "usd",
+          description: "Application fee credit applied toward first membership invoice",
+        });
+
+        subscription = await storage.subscriptions.updateSubscription(subscription.id, {
+          applicationFeeCreditAmount: directorySettings.applicationFeeCreditAmountCents,
+          applicationFeeCreditAppliedAt: new Date(),
+        });
+      } catch (err) {
+        logger.stripe.error("Failed to apply application fee credit before subscription checkout", err, {
+          therapistId: user.id,
         });
       }
     }
@@ -223,6 +250,24 @@ router.post(
 
     res.json({ url: session.url });
   })
+);
+
+router.post(
+  "/retry-latest-invoice",
+  authenticateToken,
+  requireRole("therapist"),
+  asyncHandler(async (req, res) => {
+    const subscription = await storage.subscriptions.getSubscriptionByTherapist(req.user!.id);
+    if (!subscription?.lastFailedInvoiceId) {
+      res.status(400).json({ message: "No failed renewal payment is available to retry." });
+      return;
+    }
+
+    const stripe = await getUncachableStripeClient();
+    await stripe.invoices.pay(subscription.lastFailedInvoiceId);
+
+    res.json({ success: true });
+  }),
 );
 
 router.get(

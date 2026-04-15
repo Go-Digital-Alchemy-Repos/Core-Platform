@@ -47,6 +47,72 @@ export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS = [
     <p style="color:#6b7280;font-size:14px;margin-top:24px;">We appreciate your interest in TCK Wellness and wish you the best.</p>`),
   },
   {
+    slug: "membership-renewal-reminder",
+    name: "Membership Renewal Reminder",
+    subject: "Your membership renews on {{renewalDate}}",
+    description: "Sent before an active directory membership automatically renews.",
+    variables: ["firstName", "renewalDate", "planName", "manageBillingUrl"],
+    htmlBody: baseWrap("Upcoming Membership Renewal", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">This is a reminder that your {{#planName}}<strong>{{planName}}</strong> {{/planName}}membership will automatically renew on <strong>{{renewalDate}}</strong>.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">If you need to update your payment method or review your subscription before renewal, use the billing link below.</p>
+    <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
+      <tr><td style="background:#2d8a7e;border-radius:6px;padding:12px 28px;">
+        <a href="{{manageBillingUrl}}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;">Manage Billing</a>
+      </td></tr>
+    </table>`),
+  },
+  {
+    slug: "membership-payment-failed",
+    name: "Membership Payment Failed",
+    subject: "Action needed: your membership payment did not go through",
+    description: "Sent when a membership renewal payment fails and the member enters a grace period.",
+    variables: ["firstName", "graceDeadline", "manageBillingUrl", "retryPaymentUrl"],
+    htmlBody: baseWrap("Payment Failed", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">We were unable to process your membership renewal payment.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Please update your card and retry payment before <strong>{{graceDeadline}}</strong>. If the payment is not resolved in time, your directory listing and membership account will be suspended.</p>
+    <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
+      <tr>
+        <td style="padding-right:8px;"><a href="{{manageBillingUrl}}" style="display:inline-block;background:#2d8a7e;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-size:15px;font-weight:600;">Update Billing</a></td>
+        <td><a href="{{retryPaymentUrl}}" style="display:inline-block;background:#1e3a5f;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-size:15px;font-weight:600;">Retry Payment</a></td>
+      </tr>
+    </table>`),
+  },
+  {
+    slug: "membership-suspended",
+    name: "Membership Suspended",
+    subject: "Your membership has been suspended",
+    description: "Sent when a past-due directory membership passes its grace window and is suspended.",
+    variables: ["firstName", "manageBillingUrl", "retryPaymentUrl"],
+    htmlBody: baseWrap("Membership Suspended", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Because we still have not received payment for your membership renewal, your membership and public directory listing have been suspended.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">You can restore access by updating your billing information and retrying the outstanding payment.</p>
+    <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
+      <tr>
+        <td style="padding-right:8px;"><a href="{{manageBillingUrl}}" style="display:inline-block;background:#2d8a7e;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-size:15px;font-weight:600;">Manage Billing</a></td>
+        <td><a href="{{retryPaymentUrl}}" style="display:inline-block;background:#1e3a5f;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-size:15px;font-weight:600;">Retry Payment</a></td>
+      </tr>
+    </table>`),
+  },
+  {
+    slug: "membership-reactivated",
+    name: "Membership Reactivated",
+    subject: "Your membership has been restored",
+    description: "Sent when a previously past-due or suspended membership becomes active again.",
+    variables: ["firstName", "dashboardUrl"],
+    htmlBody: baseWrap("Membership Restored", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Your membership payment has been received and your account has been restored.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Your directory listing is active again, and you can review your account anytime from your dashboard.</p>
+    <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
+      <tr><td style="background:#2d8a7e;border-radius:6px;padding:12px 28px;">
+        <a href="{{dashboardUrl}}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;">Open Dashboard</a>
+      </td></tr>
+    </table>`),
+  },
+  {
     slug: "password-reset",
     name: "Password Reset",
     subject: "Reset Your TCK Wellness Password",

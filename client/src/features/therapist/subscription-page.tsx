@@ -19,6 +19,8 @@ function getStatusBadge(status: string | undefined) {
       return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" /> Trial</Badge>;
     case "past_due":
       return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" /> Past Due</Badge>;
+    case "suspended":
+      return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" /> Suspended</Badge>;
     case "canceled":
       return <Badge variant="outline"><AlertCircle className="w-3 h-3 mr-1" /> Canceled</Badge>;
     default:
@@ -73,6 +75,20 @@ export default function SubscriptionPage() {
     },
   });
 
+  const retryPaymentMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/stripe/retry-latest-invoice");
+      return await res.json();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/stripe/subscription-status"] });
+      toast({ title: "Payment retry started", description: "Stripe is retrying your latest renewal payment now." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Retry failed", description: error.message, variant: "destructive" });
+    },
+  });
+
   if (subLoading || tiersLoading) {
     return (
       <TherapistLayout>
@@ -108,7 +124,11 @@ export default function SubscriptionPage() {
             <CardDescription>
               {subscription?.status === "active"
                 ? "Your subscription is active"
-                : "No active subscription"}
+                : subscription?.status === "past_due"
+                  ? "Your renewal payment needs attention"
+                  : subscription?.status === "suspended"
+                    ? "Your membership is suspended until payment is resolved"
+                    : "No active subscription"}
             </CardDescription>
           </div>
           <CreditCard className="h-5 w-5 text-muted-foreground" />
@@ -123,22 +143,58 @@ export default function SubscriptionPage() {
             )}
           </div>
           {subscription?.stripeCustomerId && (
-            <Button
-              variant="outline"
-              onClick={() => portalMutation.mutate()}
-              disabled={portalMutation.isPending}
-              data-testid="button-manage-billing"
-            >
-              {portalMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <ExternalLink className="w-4 h-4 mr-2" />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={() => portalMutation.mutate()}
+                disabled={portalMutation.isPending}
+                data-testid="button-manage-billing"
+              >
+                {portalMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                )}
+                Manage Billing
+              </Button>
+              {["past_due", "suspended"].includes(subscription.status) && (
+                <Button
+                  onClick={() => retryPaymentMutation.mutate()}
+                  disabled={retryPaymentMutation.isPending}
+                  data-testid="button-retry-payment"
+                >
+                  {retryPaymentMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <CreditCard className="w-4 h-4 mr-2" />
+                  )}
+                  Retry Payment
+                </Button>
               )}
-              Manage Billing
-            </Button>
+            </div>
           )}
         </CardContent>
       </Card>
+
+      {subscription?.status === "past_due" && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Payment failed</AlertTitle>
+          <AlertDescription>
+            Your latest renewal charge did not go through. Please update your billing details and retry the payment within the grace window to avoid suspension.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {subscription?.status === "suspended" && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Membership suspended</AlertTitle>
+          <AlertDescription>
+            Your directory listing is currently suspended because the renewal payment is still unresolved. Update billing and retry the payment to restore access.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {!isApprovedForSubscription && (
         <Alert data-testid="alert-subscription-gated">

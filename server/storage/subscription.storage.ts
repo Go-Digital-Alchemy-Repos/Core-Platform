@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db";
 import { therapistSubscriptions, type TherapistSubscription, type InsertSubscription } from "@shared/schema";
 
@@ -21,7 +21,7 @@ export class SubscriptionStorage {
     return sub;
   }
 
-  async updateSubscription(id: string, data: Partial<InsertSubscription>): Promise<TherapistSubscription | undefined> {
+  async updateSubscription(id: string, data: Partial<TherapistSubscription>): Promise<TherapistSubscription | undefined> {
     const [sub] = await db
       .update(therapistSubscriptions)
       .set({ ...data, updatedAt: new Date() })
@@ -30,12 +30,20 @@ export class SubscriptionStorage {
     return sub;
   }
 
-  async updateByStripeSubscriptionId(stripeSubId: string, data: Partial<InsertSubscription>): Promise<TherapistSubscription | undefined> {
+  async updateByStripeSubscriptionId(stripeSubId: string, data: Partial<TherapistSubscription>): Promise<TherapistSubscription | undefined> {
     const [sub] = await db
       .update(therapistSubscriptions)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(therapistSubscriptions.stripeSubscriptionId, stripeSubId))
       .returning();
+    return sub;
+  }
+
+  async getByStripeSubscriptionId(stripeSubId: string): Promise<TherapistSubscription | undefined> {
+    const [sub] = await db
+      .select()
+      .from(therapistSubscriptions)
+      .where(eq(therapistSubscriptions.stripeSubscriptionId, stripeSubId));
     return sub;
   }
 
@@ -52,6 +60,14 @@ export class SubscriptionStorage {
       .select()
       .from(therapistSubscriptions)
       .where(eq(therapistSubscriptions.status, "active"));
+  }
+
+  async getSubscriptionsByStatuses(statuses: string[]): Promise<TherapistSubscription[]> {
+    if (statuses.length === 0) return [];
+    return db
+      .select()
+      .from(therapistSubscriptions)
+      .where(inArray(therapistSubscriptions.status, statuses));
   }
 
   async countByStatus(status: string): Promise<number> {
