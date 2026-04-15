@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button, type ButtonProps } from "@/components/ui/button";
@@ -27,15 +28,34 @@ export function FormModalButton({
   testId,
   ...buttonProps
 }: FormModalButtonProps) {
+  const [open, setOpen] = useState(false);
+  const closeTimeoutRef = useRef<number | null>(null);
   const normalizedAction = text(action) === "form-modal" ? "form-modal" : "url";
   const normalizedHref = text(href) || "#";
   const normalizedFormSlug = text(formSlug);
   const resolvedModalTitle = text(modalTitle) || label;
   const resolvedModalDescription = text(modalDescription);
 
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current !== null) {
+        window.clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
+
   if (normalizedAction === "form-modal" && normalizedFormSlug) {
     return (
-      <Dialog>
+      <Dialog
+        open={open}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen && closeTimeoutRef.current !== null) {
+            window.clearTimeout(closeTimeoutRef.current);
+            closeTimeoutRef.current = null;
+          }
+          setOpen(nextOpen);
+        }}
+      >
         <DialogTrigger asChild>
           <Button {...buttonProps} data-testid={testId}>
             {label}
@@ -52,6 +72,15 @@ export function FormModalButton({
             slug={normalizedFormSlug}
             showHeader={false}
             descriptionOverride={resolvedModalDescription || undefined}
+            onSubmitSuccess={() => {
+              if (closeTimeoutRef.current !== null) {
+                window.clearTimeout(closeTimeoutRef.current);
+              }
+              closeTimeoutRef.current = window.setTimeout(() => {
+                setOpen(false);
+                closeTimeoutRef.current = null;
+              }, 1200);
+            }}
           />
         </DialogContent>
       </Dialog>

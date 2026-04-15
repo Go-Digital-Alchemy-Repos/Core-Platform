@@ -25,6 +25,7 @@ interface PublicFormRendererProps {
   descriptionOverride?: string;
   buttonTextOverride?: string;
   compact?: boolean;
+  onSubmitSuccess?: () => void;
 }
 
 type FormValues = Record<string, unknown>;
@@ -484,6 +485,7 @@ export function PublicFormRenderer({
   descriptionOverride,
   buttonTextOverride,
   compact = false,
+  onSubmitSuccess,
 }: PublicFormRendererProps) {
   const { toast } = useToast();
   const [values, setValues] = useState<FormValues>({});
@@ -546,6 +548,7 @@ export function PublicFormRenderer({
       });
       setValues(buildInitialValues(fields));
       setCurrentPageIndex(0);
+      onSubmitSuccess?.();
     },
     onError: (error: Error) => {
       toast({

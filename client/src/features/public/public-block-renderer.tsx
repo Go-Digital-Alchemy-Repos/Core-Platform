@@ -1461,6 +1461,10 @@ export function PublicPageRenderer({ blocks }: { blocks: BlockInstance[] }) {
   return (
     <div>
       {normalizedBlocks.map((block) => {
+        if (block.props.isActive === false) {
+          return null;
+        }
+
         const isFullWidth = FULL_WIDTH_BLOCK_TYPES.has(block.type);
         const sectionStyleConfig = getSectionStyleConfig(block.props, { resolveAssetUrl: resolveCmsAssetUrl });
         const hasCustomSectionStyle = block.type !== "hero" && hasSectionStyleConfig(sectionStyleConfig);
