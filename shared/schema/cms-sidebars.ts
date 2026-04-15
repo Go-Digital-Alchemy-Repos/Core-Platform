@@ -6,6 +6,7 @@ import { z } from "zod";
 export const SIDEBAR_WIDGET_TYPES = [
   "recent-posts",
   "newsletter",
+  "form",
   "callout",
   "search",
   "categories",

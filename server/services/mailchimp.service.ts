@@ -6,7 +6,6 @@ interface MailchimpConfig {
   apiKey: string;
   audienceId: string;
   serverPrefix: string;
-  applicantTag: string;
 }
 
 function normalizeServerPrefix(value: string): string {
@@ -37,7 +36,6 @@ async function getMailchimpConfig(): Promise<MailchimpConfig | null> {
     apiKey,
     audienceId,
     serverPrefix,
-    applicantTag: settings.mailchimp_applicant_tag?.trim() || "TCK Directory Applicants",
   };
 }
 
@@ -99,14 +97,15 @@ export async function testMailchimpConnection(): Promise<{ success: boolean; mes
   }
 }
 
-export async function syncDirectoryApplicantToMailchimp(input: {
+export async function syncContactToMailchimp(input: {
   email: string;
   firstName?: string | null;
   lastName?: string | null;
+  tags?: string[];
 }): Promise<void> {
   const config = await getMailchimpConfig();
   if (!config) {
-    logger.email.info("[mailchimp] Skipping applicant sync because Mailchimp is not configured");
+    logger.email.info("[mailchimp] Skipping contact sync because Mailchimp is not configured");
     return;
   }
 
@@ -127,15 +126,16 @@ export async function syncDirectoryApplicantToMailchimp(input: {
     }),
   });
 
-  await mailchimpRequest(config, `/lists/${config.audienceId}/members/${subscriberHash}/tags`, {
-    method: "POST",
-    body: JSON.stringify({
-      tags: [
-        {
-          name: config.applicantTag,
+  const tags = (input.tags ?? []).filter(Boolean);
+  if (tags.length > 0) {
+    await mailchimpRequest(config, `/lists/${config.audienceId}/members/${subscriberHash}/tags`, {
+      method: "POST",
+      body: JSON.stringify({
+        tags: tags.map((tag) => ({
+          name: tag,
           status: "active",
-        },
-      ],
-    }),
-  });
+        })),
+      }),
+    });
+  }
 }

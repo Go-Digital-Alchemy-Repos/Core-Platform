@@ -63,6 +63,7 @@ function buildNavGroups(siteFeatures: SiteFeatures): NavGroup[] {
       items: [
         { title: "CMS Overview", href: "/admin/cms", icon: Globe, iconColor: "text-violet-600" },
         { title: "Pages", href: "/admin/cms/pages", icon: FileCode, iconColor: "text-violet-500" },
+        { title: "Forms", href: "/admin/forms", icon: SquarePen, iconColor: "text-violet-500" },
         ...(siteFeatures.blogEnabled
           ? [{
               title: "Blog",

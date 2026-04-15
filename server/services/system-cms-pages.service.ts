@@ -215,7 +215,7 @@ function buildDefaultBlogSidebarWidgets(): SidebarWidget[] {
       settings: {
         description: "Get TCK-informed articles, events, and resources in your inbox.",
         buttonText: "Sign Up",
-        actionUrl: "",
+        formSlug: "newsletter-signup",
       },
     },
   ];

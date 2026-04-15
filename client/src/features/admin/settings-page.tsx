@@ -245,7 +245,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
   {
     category: "mailchimp",
     title: "Mailchimp",
-    description: "Audience sync for directory applicant lifecycle tagging",
+    description: "Audience sync used by managed forms and lifecycle tagging",
     icon: Tag,
     fields: [
       {
@@ -265,12 +265,6 @@ const INTEGRATIONS: IntegrationConfig[] = [
         label: "Server Prefix",
         isSecret: false,
         placeholder: "us6",
-      },
-      {
-        key: "mailchimp_applicant_tag",
-        label: "Applicant Tag",
-        isSecret: false,
-        placeholder: "TCK Directory Applicants",
       },
     ],
   },

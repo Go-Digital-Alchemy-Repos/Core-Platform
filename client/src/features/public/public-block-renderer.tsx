@@ -53,6 +53,7 @@ function LucideIcon({ name, className }: { name: string; className?: string }) {
 
 const LazyTherapistMapBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.TherapistMapBlock })));
 const LazyContactFormBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.ContactFormBlock })));
+const LazyManagedFormEmbedBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.ManagedFormEmbedBlock })));
 const LazyJoinHeroBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.JoinHeroBlock })));
 const LazyJoinRegistrationFormBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.JoinRegistrationFormBlock })));
 const LazyBlogPostFeedBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.BlogPostFeedBlock })));
@@ -291,13 +292,15 @@ function TextImageBlock({ props }: { props: Record<string, unknown> }) {
   const imageRight = str(props.imagePosition) !== "left";
   const hasImage = !!str(props.imageUrl);
   const mobileImageStyles = getMobileImageStyles(props);
+  const align = str(props.alignment) || "left";
+  const bodyAlign = align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left";
   return (
     <div className={`flex flex-col ${imageRight ? "md:flex-row" : "md:flex-row-reverse"} gap-8 py-4 md:items-stretch`}>
       <div className="flex-1 space-y-3">
-        {str(props.heading) && <h2 className="text-2xl font-heading font-bold">{str(props.heading)}</h2>}
+        <SectionHeading props={props} defaultAlignment={align === "center" ? "center" : align === "right" ? "right" : "left"} className="mb-4" />
         {str(props.body) && (
           <div
-            className="prose prose-sm max-w-none text-foreground"
+            className={`prose prose-sm max-w-none text-foreground ${bodyAlign}`}
             dangerouslySetInnerHTML={{ __html: str(props.body) }}
           />
         )}
@@ -1218,6 +1221,7 @@ const RENDERERS: Record<string, React.ComponentType<{ props: Record<string, unkn
 const DYNAMIC_BLOCK_TYPES = new Set([
   "therapist-map",
   "contact-form",
+  "form-embed",
   "join-hero",
   "join-registration-form",
   "blog-post-feed",
@@ -1270,6 +1274,13 @@ export function PublicBlockRenderer({
       renderedBlock = (
         <Suspense fallback={<DynamicFallback />}>
           <LazyContactFormBlock />
+        </Suspense>
+      );
+    }
+    if (block.type === "form-embed") {
+      renderedBlock = (
+        <Suspense fallback={<DynamicFallback />}>
+          <LazyManagedFormEmbedBlock props={block.props} />
         </Suspense>
       );
     }

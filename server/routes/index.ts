@@ -20,6 +20,7 @@ import contactProfessionalRoutes from "./contact-professional.routes";
 import setupRoutes from "./setup.routes";
 import applicationRoutes from "./application.routes";
 import referenceRoutes from "./reference.routes";
+import formsRoutes from "./forms.routes";
 import { storage } from "../storage/index";
 import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
 import { DEFAULT_DIRECTORY_SETTINGS, getDirectorySettings } from "../services/directory-settings.service";
@@ -42,6 +43,7 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/admin", settingsRoutes);
   app.use("/api/events", eventsRoutes);
   app.use("/api/contact", contactRoutes);
+  app.use("/api/forms", formsRoutes);
   app.use("/api/admin/docs", docsRoutes);
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/notifications", notificationsRoutes);

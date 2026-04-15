@@ -38,6 +38,7 @@ const AdminDashboardPage = lazy(() => import("@/features/admin/dashboard-page"))
 const AdminTherapistsPage = lazy(() => import("@/features/admin/therapists-page"));
 const AdminUsersPage = lazy(() => import("@/features/admin/users-page"));
 const AdminDirectorySettingsPage = lazy(() => import("@/features/admin/directory-settings-page"));
+const AdminFormsPage = lazy(() => import("@/features/admin/forms-page"));
 const AdminEventsPage = lazy(() => import("@/features/admin/events-page"));
 const DocsPage = lazy(() => import("@/features/admin/docs-page"));
 const AdminSettingsPage = lazy(() => import("@/features/admin/settings-page"));
@@ -157,6 +158,11 @@ function Router() {
         <Route path="/admin/events">
           <ProtectedRoute roles={["admin"]}>
             {siteFeatures.eventsEnabled ? <AdminEventsPage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/forms">
+          <ProtectedRoute roles={["admin"]}>
+            <AdminFormsPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/blog">

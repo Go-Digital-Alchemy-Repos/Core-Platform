@@ -35,8 +35,8 @@ export function SectionHeading({
   fallbackTitle,
 }: SectionHeadingProps) {
   const eyebrow = str(props.sectionEyebrow) || str(props.eyebrow);
-  const title = str(props.title) || fallbackTitle || "";
-  const subtitle = str(props.subtitle);
+  const title = str(props.title) || str(props.heading) || fallbackTitle || "";
+  const subtitle = str(props.subtitle) || str(props.subheading);
   const level = headingLevel(props.sectionHeadingLevel ?? props.headingLevel);
   const alignment = headingAlignment(props.sectionHeadingAlignment ?? props.alignment, defaultAlignment);
 

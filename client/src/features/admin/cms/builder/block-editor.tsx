@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +19,7 @@ import type { BlockDef, PropDef } from "./block-registry";
 import { CmsImageUpload } from "../components/cms-image-upload";
 import { ImagePositionPicker } from "../components/image-position-picker";
 import { CmsRichTextEditor } from "./cms-rich-text-editor";
+import type { CmsForm } from "@shared/schema";
 
 interface BlockEditorProps {
   blockDef: BlockDef;
@@ -385,6 +387,11 @@ function PropField({
   value: unknown;
   onChange: (val: unknown) => void;
 }) {
+  const { data: forms = [] } = useQuery<CmsForm[]>({
+    queryKey: ["/api/admin/forms"],
+    staleTime: 60_000,
+    enabled: propDef.type === "form-select",
+  });
   const strVal = String(value ?? "");
   const numVal = Number(value ?? 0);
   const boolVal = Boolean(value);
@@ -431,13 +438,19 @@ function PropField({
         />
       );
     case "select":
+    case "form-select":
       return (
         <Select value={strVal} onValueChange={onChange} data-testid={`prop-select-${propDef.key}`}>
           <SelectTrigger>
             <SelectValue placeholder="Select…" />
           </SelectTrigger>
           <SelectContent>
-            {(propDef.options ?? []).map((opt) => (
+            {(propDef.type === "form-select"
+              ? forms
+                  .filter((form) => form.kind !== "application")
+                  .map((form) => ({ label: form.name, value: form.slug }))
+              : propDef.options ?? []
+            ).map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>

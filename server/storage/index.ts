@@ -26,6 +26,7 @@ import { RecordingPurchaseStorage } from "./recording-purchase.storage";
 import { ApplicationStorage } from "./application.storage";
 import { CmsMenusStorage } from "./cms-menus.storage";
 import { CmsSidebarsStorage } from "./cms-sidebars.storage";
+import { FormsStorage } from "./forms.storage";
 export const storage = {
   users: new UserStorage(),
   therapists: new TherapistStorage(),
@@ -55,6 +56,7 @@ export const storage = {
   applications: new ApplicationStorage(),
   cmsMenus: new CmsMenusStorage(),
   cmsSidebars: new CmsSidebarsStorage(),
+  forms: new FormsStorage(),
 };
 
 export type { TherapistWithUser, PaginatedTherapists, DirectoryFilterOptions, TherapistSearchParams } from "@shared/types/directory";

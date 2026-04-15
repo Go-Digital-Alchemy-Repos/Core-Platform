@@ -5,6 +5,7 @@ export type PropType =
   | "image-url"
   | "url"
   | "select"
+  | "form-select"
   | "boolean"
   | "number"
   | "color"
@@ -424,8 +425,12 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     description: "Side-by-side text and image with configurable position",
     category: "content",
     defaultProps: {
+      eyebrow: "Our Story",
       heading: "About Our Mission",
+      subtitle: "Use this supporting introduction to frame the section before the main body copy begins.",
       body: "<p>We provide access to culturally informed mental health professionals who understand what it means to grow up between worlds.</p>",
+      alignment: "left",
+      headingLevel: "h2",
       imageUrl: "",
       imageAlt: "About TCK Wellness",
       imageCaption: "",
@@ -433,7 +438,11 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ...SHARED_MOBILE_IMAGE_DEFAULTS,
     },
     propDefs: [
-      { key: "heading", label: "Heading", type: "text", placeholder: "Section heading" },
+      { key: "eyebrow", label: "Eyebrow Label", type: "text", placeholder: "Small label above title" },
+      { key: "heading", label: "Section Title", type: "text", placeholder: "Section heading" },
+      { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Supporting description" },
+      { key: "alignment", label: "Alignment", type: "select", options: ALIGN_OPTIONS },
+      { key: "headingLevel", label: "Heading Level", type: "select", options: HEADING_LEVEL_OPTIONS },
       { key: "body", label: "Body Text", type: "richtext", placeholder: "Main text content" },
       { key: "imageUrl", label: "Image", type: "image-url", placeholder: "Upload or select image" },
       { key: "imageAlt", label: "Image Alt Text", type: "text", placeholder: "Descriptive alt text" },
@@ -1561,6 +1570,20 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     category: "dynamic",
     defaultProps: {},
     propDefs: [],
+  },
+  {
+    type: "form-embed",
+    label: "Form Embed",
+    iconName: "FileText",
+    description: "Reusable form selected from the Forms library, embeddable in pages and widgets",
+    isDynamic: true,
+    category: "dynamic",
+    defaultProps: {
+      formSlug: "contact-form",
+    },
+    propDefs: [
+      { key: "formSlug", label: "Assigned Form", type: "form-select" },
+    ],
   },
   {
     type: "join-hero",

@@ -1,11 +1,12 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Search, Tag, ArrowRight } from "lucide-react";
+import { Search, Tag, ArrowRight } from "lucide-react";
+import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { BlogPost, CmsSidebar, SidebarWidget } from "@shared/schema";
 
 function text(value: unknown, fallback = "") {
@@ -74,41 +75,44 @@ function RecentPostsWidget({ widget }: { widget: SidebarWidget }) {
 }
 
 function NewsletterWidget({ widget }: { widget: SidebarWidget }) {
-  const [email, setEmail] = useState("");
   const heading = widget.title || "Stay Connected";
   const description = text(
     widget.settings.description,
     "Get TCK-informed articles, events, and resources in your inbox."
   );
   const buttonText = text(widget.settings.buttonText, "Sign Up");
-  const actionUrl = text(widget.settings.actionUrl);
-
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (actionUrl) {
-      window.location.href = actionUrl.replace("{email}", encodeURIComponent(email));
-      return;
-    }
-    window.location.href = `mailto:hello@tckwellness.org?subject=Newsletter signup&body=${encodeURIComponent(email)}`;
-  };
+  const formSlug = text(widget.settings.formSlug, "newsletter-signup");
 
   return (
     <WidgetCard title={heading}>
-      <form className="space-y-3" onSubmit={handleSubmit} data-testid="sidebar-newsletter-form">
-        <p className="text-sm public-supporting-copy">{description}</p>
-        <Input
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="you@example.com"
-          required
-          data-testid="sidebar-newsletter-email"
-        />
-        <Button type="submit" className="w-full">
-          <Mail className="mr-2 h-4 w-4" />
-          {buttonText}
-        </Button>
-      </form>
+      <PublicFormRenderer
+        slug={formSlug}
+        showHeader={false}
+        descriptionOverride={description}
+        buttonTextOverride={buttonText}
+        compact
+        className="space-y-3"
+      />
+    </WidgetCard>
+  );
+}
+
+function FormWidget({ widget }: { widget: SidebarWidget }) {
+  const heading = widget.title || "Form";
+  const formSlug = text(widget.settings.formSlug, "contact-form");
+  const description = text(widget.settings.description);
+  const buttonText = text(widget.settings.buttonText);
+
+  return (
+    <WidgetCard title={heading}>
+      <PublicFormRenderer
+        slug={formSlug}
+        showHeader={false}
+        descriptionOverride={description || undefined}
+        buttonTextOverride={buttonText || undefined}
+        compact
+        className="space-y-3"
+      />
     </WidgetCard>
   );
 }
@@ -237,6 +241,7 @@ function HtmlWidget({ widget }: { widget: SidebarWidget }) {
 function SidebarWidgetRenderer({ widget }: { widget: SidebarWidget }) {
   if (widget.type === "recent-posts") return <RecentPostsWidget widget={widget} />;
   if (widget.type === "newsletter") return <NewsletterWidget widget={widget} />;
+  if (widget.type === "form") return <FormWidget widget={widget} />;
   if (widget.type === "callout") return <CalloutWidget widget={widget} />;
   if (widget.type === "search") return <SearchWidget widget={widget} />;
   if (widget.type === "categories") return <CategoriesWidget widget={widget} />;

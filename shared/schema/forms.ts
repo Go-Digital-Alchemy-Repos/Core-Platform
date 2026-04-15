@@ -1,0 +1,100 @@
+import { sql } from "drizzle-orm";
+import { pgTable, text, varchar, timestamp, jsonb, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { z } from "zod";
+
+export const CMS_FORM_KINDS = ["contact", "newsletter", "interest", "application", "custom"] as const;
+export type CmsFormKind = (typeof CMS_FORM_KINDS)[number];
+
+export const CMS_FORM_FIELD_TYPES = ["text", "email", "textarea", "tel", "select"] as const;
+export type CmsFormFieldType = (typeof CMS_FORM_FIELD_TYPES)[number];
+
+export const cmsFormFieldOptionSchema = z.object({
+  label: z.string().min(1, "Option label is required"),
+  value: z.string().min(1, "Option value is required"),
+});
+
+export type CmsFormFieldOption = z.infer<typeof cmsFormFieldOptionSchema>;
+
+export const cmsFormFieldSchema = z.object({
+  id: z.string().min(1),
+  key: z.string().min(1),
+  label: z.string().min(1),
+  type: z.enum(CMS_FORM_FIELD_TYPES),
+  placeholder: z.string().optional().default(""),
+  helpText: z.string().optional().default(""),
+  required: z.boolean().optional().default(false),
+  width: z.enum(["full", "half"]).optional().default("full"),
+  options: z.array(cmsFormFieldOptionSchema).optional().default([]),
+});
+
+export type CmsFormField = z.infer<typeof cmsFormFieldSchema>;
+
+export const cmsFormSettingsSchema = z.object({
+  submitButtonText: z.string().optional().default("Submit"),
+  successMessage: z.string().optional().default("Thanks! Your submission has been received."),
+  mailchimpEnabled: z.boolean().optional().default(false),
+  mailchimpTag: z.string().optional().default(""),
+  notifyAdmins: z.boolean().optional().default(false),
+  storeAsContactMessage: z.boolean().optional().default(false),
+});
+
+export type CmsFormSettings = z.infer<typeof cmsFormSettingsSchema>;
+
+export const cmsForms = pgTable(
+  "cms_forms",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    description: text("description"),
+    kind: text("kind").$type<CmsFormKind>().default("custom").notNull(),
+    isSystem: boolean("is_system").default(false).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    fields: jsonb("fields").$type<CmsFormField[]>().default(sql`'[]'::jsonb`).notNull(),
+    settings: jsonb("settings").$type<CmsFormSettings>().default(sql`'{}'::jsonb`).notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_cms_forms_slug_unique").on(table.slug),
+    index("idx_cms_forms_kind").on(table.kind),
+    index("idx_cms_forms_updated_at").on(table.updatedAt),
+  ]
+);
+
+export const cmsFormSubmissions = pgTable(
+  "cms_form_submissions",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    formId: varchar("form_id").references(() => cmsForms.id, { onDelete: "cascade" }).notNull(),
+    data: jsonb("data").$type<Record<string, unknown>>().default(sql`'{}'::jsonb`).notNull(),
+    source: text("source"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    index("idx_cms_form_submissions_form_id").on(table.formId),
+    index("idx_cms_form_submissions_created_at").on(table.createdAt),
+  ]
+);
+
+export const insertCmsFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  slug: z.string().min(1, "Slug is required"),
+  description: z.string().optional().nullable(),
+  kind: z.enum(CMS_FORM_KINDS).default("custom"),
+  isSystem: z.boolean().optional().default(false),
+  isActive: z.boolean().optional().default(true),
+  fields: z.array(cmsFormFieldSchema).default([]),
+  settings: cmsFormSettingsSchema.default({}),
+});
+
+export const insertCmsFormSubmissionSchema = z.object({
+  formId: z.string().min(1),
+  data: z.record(z.unknown()).default({}),
+  source: z.string().optional().nullable(),
+});
+
+export type InsertCmsForm = z.infer<typeof insertCmsFormSchema>;
+export type CmsForm = typeof cmsForms.$inferSelect;
+export type InsertCmsFormSubmission = z.infer<typeof insertCmsFormSubmissionSchema>;
+export type CmsFormSubmission = typeof cmsFormSubmissions.$inferSelect;

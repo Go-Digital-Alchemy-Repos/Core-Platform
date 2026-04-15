@@ -1,23 +1,11 @@
 import { useState, useMemo, useEffect, type ReactElement } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import {
   Globe, Heart, Users, MapPin, Mail, Phone, Star, CheckCircle,
   Sparkles, FileText, LayoutTemplate, Megaphone, LayoutGrid,
@@ -35,9 +23,9 @@ import { MapView } from "@/components/directory/map-view";
 import { EventsArchiveSection } from "@/features/public/events-page";
 import { RecordingArchivesSection } from "@/features/public/recording-archives-page";
 import { DirectoryBrowserSection } from "@/features/directory/directory-page";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import type { BlockInstance } from "./block-registry";
+import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
+import { ManagedFormEmbedBlock } from "@/features/public/public-dynamic-blocks";
 import { isDynamicBlock, getBlockDef } from "./block-registry";
 import { mergeJoinHeroBlocks } from "@shared/cms-blocks";
 import {
@@ -303,13 +291,15 @@ function TextImageBlock({ props }: { props: Record<string, unknown> }) {
   const imageRight = str(props.imagePosition) !== "left";
   const hasImage = !!str(props.imageUrl);
   const mobileImageStyles = getMobileImageStyles(props);
+  const align = str(props.alignment) || "left";
+  const bodyAlign = align === "center" ? "text-center" : align === "right" ? "text-right" : "text-left";
   return (
     <div className={`flex flex-col ${imageRight ? "md:flex-row" : "md:flex-row-reverse"} gap-8 py-4 md:items-stretch`}>
       <div className="flex-1 space-y-3">
-        {str(props.heading) && <h2 className="text-2xl font-heading font-bold">{str(props.heading)}</h2>}
+        <SectionHeading props={props} defaultAlignment={align === "center" ? "center" : align === "right" ? "right" : "left"} className="mb-4" />
         {str(props.body) && (
           <div
-            className="prose prose-sm max-w-none text-foreground"
+            className={`prose prose-sm max-w-none text-foreground ${bodyAlign}`}
             dangerouslySetInnerHTML={{ __html: str(props.body) }}
           />
         )}
@@ -1618,15 +1608,6 @@ function StandardBlogPageBlock({ props }: { props: Record<string, unknown> }) {
   );
 }
 
-const contactFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Please enter a valid email"),
-  subject: z.string().min(1, "Subject is required"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-});
-
-type ContactFormValues = z.infer<typeof contactFormSchema>;
-
 function TherapistMapBlock({ props }: { props: Record<string, unknown> }) {
   const { data: allTherapistsData, isLoading } = useQuery<any>({
     queryKey: ["/api/therapists", "pageSize=500"],
@@ -1688,26 +1669,6 @@ function TherapistMapBlock({ props }: { props: Record<string, unknown> }) {
 }
 
 function ContactFormBlock() {
-  const { toast } = useToast();
-
-  const form = useForm<ContactFormValues>({
-    resolver: zodResolver(contactFormSchema),
-    defaultValues: { name: "", email: "", subject: "", message: "" },
-  });
-
-  const mutation = useMutation({
-    mutationFn: async (data: ContactFormValues) => {
-      await apiRequest("POST", "/api/contact", data);
-    },
-    onSuccess: () => {
-      toast({ title: "Message sent", description: "Thank you for reaching out. We'll get back to you soon." });
-      form.reset();
-    },
-    onError: (error: Error) => {
-      toast({ title: "Failed to send message", description: error.message, variant: "destructive" });
-    },
-  });
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8" data-testid="dynamic-contact-form">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1720,66 +1681,7 @@ function ContactFormBlock() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your name" {...field} data-testid="input-contact-name" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="you@example.com" {...field} data-testid="input-contact-email" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="subject"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Subject</FormLabel>
-                        <FormControl>
-                          <Input placeholder="What is this about?" {...field} data-testid="input-contact-subject" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="message"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Message</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Tell us more..." className="resize-none min-h-[120px]" {...field} data-testid="input-contact-message" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" disabled={mutation.isPending} data-testid="button-submit-contact">
-                    {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Send Message
-                  </Button>
-                </form>
-              </Form>
+              <PublicFormRenderer slug="contact-form" showHeader={false} />
             </CardContent>
           </Card>
         </div>
@@ -1969,6 +1871,7 @@ export function BlockRenderer({
     }
     if (!renderedBlock && block.type === "therapist-map") renderedBlock = <TherapistMapBlock props={block.props} />;
     if (!renderedBlock && block.type === "contact-form") renderedBlock = <ContactFormBlock />;
+    if (!renderedBlock && block.type === "form-embed") renderedBlock = <ManagedFormEmbedBlock props={block.props} />;
     if (!renderedBlock && block.type === "join-hero") renderedBlock = <JoinHeroBlock props={block.props} />;
     if (!renderedBlock && block.type === "join-registration-form") renderedBlock = <JoinRegistrationFormBlock props={block.props} />;
     if (!renderedBlock && block.type === "blog-post-feed") renderedBlock = <BlogPostFeedBlock props={block.props} />;

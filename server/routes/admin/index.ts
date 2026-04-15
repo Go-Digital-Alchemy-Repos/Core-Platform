@@ -17,6 +17,7 @@ import applicationsRoutes from "./applications.routes";
 import cmsMenusRoutes from "./cms-menus.routes";
 import cmsSidebarsRoutes from "./cms-sidebars.routes";
 import systemBackupsRoutes from "./system-backups.routes";
+import formsRoutes from "./forms.routes";
 
 const router = Router();
 
@@ -38,6 +39,7 @@ router.use("/cms", cmsRedirectsRoutes);
 router.use("/cms", cmsAuditRoutes);
 router.use("/cms", cmsMenusRoutes);
 router.use("/cms", cmsSidebarsRoutes);
+router.use("/", formsRoutes);
 router.use("/", systemBackupsRoutes);
 router.use("/applications", applicationsRoutes);
 

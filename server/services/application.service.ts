@@ -3,7 +3,7 @@ import { logger } from "../utils/logger";
 import { getUncachableStripeClient } from "../config/stripe";
 import { sendReferenceRequestEmail } from "./email.service";
 import { createBackgroundCheckRecord } from "./background-check.service";
-import { syncDirectoryApplicantToMailchimp } from "./mailchimp.service";
+import { syncSystemFormToMailchimp } from "./forms.service";
 import { DEFAULT_DIRECTORY_SETTINGS, getDirectorySettings } from "./directory-settings.service";
 import {
   APPLICATION_STATUS,
@@ -113,12 +113,12 @@ export async function createApplication(userId: string) {
 
   const user = await storage.users.getUser(userId);
   if (user?.email) {
-    syncDirectoryApplicantToMailchimp({
+    syncSystemFormToMailchimp("directory-application-start", {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
     }).catch((err) => {
-      logger.email.warn("Failed to sync directory applicant to Mailchimp", {
+      logger.email.warn("Failed to sync directory application start to Mailchimp", {
         userId,
         error: err instanceof Error ? err.message : String(err),
       });

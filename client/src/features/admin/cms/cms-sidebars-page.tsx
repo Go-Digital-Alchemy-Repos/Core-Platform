@@ -41,11 +41,12 @@ import {
   Trash2,
   Type,
 } from "lucide-react";
-import { SIDEBAR_WIDGET_TYPES, type CmsSidebar, type SidebarWidget, type SidebarWidgetType } from "@shared/schema";
+import { SIDEBAR_WIDGET_TYPES, type CmsForm, type CmsSidebar, type SidebarWidget, type SidebarWidgetType } from "@shared/schema";
 
 const WIDGET_LABELS: Record<SidebarWidgetType, string> = {
   "recent-posts": "Recent Blog Posts",
   newsletter: "Newsletter Signup",
+  form: "Form",
   callout: "Callout / CTA",
   search: "Search",
   categories: "Categories",
@@ -56,6 +57,7 @@ const WIDGET_LABELS: Record<SidebarWidgetType, string> = {
 const WIDGET_ICONS: Record<SidebarWidgetType, ElementType> = {
   "recent-posts": PanelRight,
   newsletter: Mail,
+  form: Mail,
   callout: Star,
   search: Search,
   categories: Type,
@@ -79,7 +81,19 @@ function defaultWidget(type: SidebarWidgetType): SidebarWidget {
       settings: {
         description: "Get TCK-informed articles, events, and resources in your inbox.",
         buttonText: "Sign Up",
-        actionUrl: "",
+        formSlug: "newsletter-signup",
+      },
+    };
+  }
+  if (type === "form") {
+    return {
+      id: generateId(),
+      type,
+      title: "Form",
+      settings: {
+        formSlug: "contact-form",
+        description: "",
+        buttonText: "",
       },
     };
   }
@@ -108,6 +122,10 @@ function WidgetSettings({
   widget: SidebarWidget;
   onChange: (updates: Partial<SidebarWidget>) => void;
 }) {
+  const { data: forms = [] } = useQuery<CmsForm[]>({
+    queryKey: ["/api/admin/forms"],
+    staleTime: 60_000,
+  });
   const updateSetting = (key: string, value: unknown) => {
     onChange({ settings: { ...widget.settings, [key]: value } });
   };
@@ -179,12 +197,65 @@ function WidgetSettings({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Action URL <span className="text-xs text-muted-foreground">(optional)</span></Label>
+              <Label>Assigned Form</Label>
+              <Select
+                value={String(widget.settings.formSlug ?? "newsletter-signup")}
+                onValueChange={(value) => updateSetting("formSlug", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a form" />
+                </SelectTrigger>
+                <SelectContent>
+                  {forms
+                    .filter((form) => form.kind === "newsletter" || form.slug === "newsletter-signup")
+                    .map((form) => (
+                      <SelectItem key={form.id} value={form.slug}>
+                        {form.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {widget.type === "form" && (
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>Assigned Form</Label>
+            <Select
+              value={String(widget.settings.formSlug ?? "contact-form")}
+              onValueChange={(value) => updateSetting("formSlug", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a form" />
+              </SelectTrigger>
+              <SelectContent>
+                {forms
+                  .filter((form) => form.kind !== "application")
+                  .map((form) => (
+                    <SelectItem key={form.id} value={form.slug}>
+                      {form.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Button Text Override <span className="text-xs text-muted-foreground">(optional)</span></Label>
               <Input
-                value={String(widget.settings.actionUrl ?? "")}
-                onChange={(event) => updateSetting("actionUrl", event.target.value)}
-                placeholder="https://... or leave blank for email signup"
-                autoPrependHttps
+                value={String(widget.settings.buttonText ?? "")}
+                onChange={(event) => updateSetting("buttonText", event.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Description Override <span className="text-xs text-muted-foreground">(optional)</span></Label>
+              <Textarea
+                value={String(widget.settings.description ?? "")}
+                onChange={(event) => updateSetting("description", event.target.value)}
+                rows={2}
               />
             </div>
           </div>

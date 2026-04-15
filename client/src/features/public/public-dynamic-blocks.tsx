@@ -1,29 +1,16 @@
 import { useEffect, useState, useMemo } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { MapPin, Send, Loader2, ArrowRight, Clock, Search, BookOpen, ExternalLink } from "lucide-react";
 import { LoginDialog } from "@/components/auth/login-dialog";
 import { MapView } from "@/components/directory/map-view";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { SectionHeading } from "@/features/admin/cms/builder/section-heading";
 import { normalizeHexColor } from "@/features/admin/cms/builder/section-style";
 import { getPostCategories, getPrimaryPostCategory, postMatchesCategory } from "@/lib/blog-post-categories";
+import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -94,36 +81,7 @@ export function TherapistMapBlock({ props }: { props: Record<string, unknown> })
   );
 }
 
-const contactFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Please enter a valid email"),
-  subject: z.string().min(1, "Subject is required"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-});
-
-type ContactFormValues = z.infer<typeof contactFormSchema>;
-
 export function ContactFormBlock() {
-  const { toast } = useToast();
-
-  const form = useForm<ContactFormValues>({
-    resolver: zodResolver(contactFormSchema),
-    defaultValues: { name: "", email: "", subject: "", message: "" },
-  });
-
-  const mutation = useMutation({
-    mutationFn: async (data: ContactFormValues) => {
-      await apiRequest("POST", "/api/contact", data);
-    },
-    onSuccess: () => {
-      toast({ title: "Message sent", description: "Thank you for reaching out. We'll get back to you soon." });
-      form.reset();
-    },
-    onError: (error: Error) => {
-      toast({ title: "Failed to send message", description: error.message, variant: "destructive" });
-    },
-  });
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8" data-testid="dynamic-contact-form">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -136,66 +94,7 @@ export function ContactFormBlock() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your name" {...field} data-testid="input-contact-name" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="you@example.com" {...field} data-testid="input-contact-email" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="subject"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Subject</FormLabel>
-                        <FormControl>
-                          <Input placeholder="What is this about?" {...field} data-testid="input-contact-subject" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="message"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Message</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Tell us more..." className="resize-none min-h-[120px]" {...field} data-testid="input-contact-message" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" disabled={mutation.isPending} data-testid="button-submit-contact">
-                    {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Send Message
-                  </Button>
-                </form>
-              </Form>
+              <PublicFormRenderer slug="contact-form" showHeader={false} />
             </CardContent>
           </Card>
         </div>
@@ -213,6 +112,16 @@ export function ContactFormBlock() {
           </Card>
         </div>
       </div>
+    </div>
+  );
+}
+
+export function ManagedFormEmbedBlock({ props }: { props: Record<string, unknown> }) {
+  const formSlug = str(props.formSlug) || "contact-form";
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8" data-testid={`dynamic-form-embed-${formSlug}`}>
+      <PublicFormRenderer slug={formSlug} />
     </div>
   );
 }
