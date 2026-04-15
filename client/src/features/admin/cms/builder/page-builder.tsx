@@ -40,6 +40,8 @@ import {
   ClipboardCheck,
   Copy,
   FileText,
+  Eye,
+  EyeOff,
   FlaskConical,
   GalleryHorizontal,
   Globe,
@@ -186,6 +188,7 @@ interface VisualCanvasProps {
   blocks: BlockInstance[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onToggleActive: (id: string) => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
   onMove: (id: string, direction: "up" | "down") => void;
@@ -559,6 +562,7 @@ function CanvasBlockFrame({
   index,
   isSelected,
   onSelect,
+  onToggleActive,
   onDuplicate,
   onDelete,
   onMove,
@@ -577,6 +581,7 @@ function CanvasBlockFrame({
   index: number;
   isSelected: boolean;
   onSelect: (id: string) => void;
+  onToggleActive: (id: string) => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
   onMove: (id: string, direction: "up" | "down") => void;
@@ -690,6 +695,20 @@ function CanvasBlockFrame({
           className="h-8 w-8 shadow-sm"
           onClick={(event) => {
             event.stopPropagation();
+            onToggleActive(block.id);
+          }}
+          data-testid={`canvas-toggle-active-${block.id}`}
+          title={block.props.isActive === false ? "Show on public site" : "Hide from public site"}
+        >
+          {block.props.isActive === false ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          className="h-8 w-8 shadow-sm"
+          onClick={(event) => {
+            event.stopPropagation();
             onSelect(block.id);
           }}
           data-testid={`canvas-edit-${block.id}`}
@@ -770,6 +789,7 @@ function VisualCanvas({
   blocks,
   selectedId,
   onSelect,
+  onToggleActive,
   onDuplicate,
   onDelete,
   onMove,
@@ -825,6 +845,7 @@ function VisualCanvas({
                     index={index}
                     isSelected={selectedId === block.id}
                     onSelect={onSelect}
+                    onToggleActive={onToggleActive}
                     onDuplicate={onDuplicate}
                     onDelete={onDelete}
                     onMove={onMove}
@@ -1053,6 +1074,22 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
   const updateBlockProps = useCallback((id: string, props: Record<string, unknown>) => {
     setBlocks(blocks.map((block) => (block.id === id ? { ...block, props } : block)));
+  }, [blocks, setBlocks]);
+
+  const toggleBlockActive = useCallback((id: string) => {
+    setBlocks(
+      blocks.map((block) =>
+        block.id === id
+          ? {
+              ...block,
+              props: {
+                ...block.props,
+                isActive: block.props.isActive === false,
+              },
+            }
+          : block
+      )
+    );
   }, [blocks, setBlocks]);
 
   const removeBlock = useCallback((id: string) => {
@@ -1712,6 +1749,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
             blocks={blocks}
             selectedId={selectedId}
             onSelect={selectBlock}
+            onToggleActive={toggleBlockActive}
             onDuplicate={duplicateBlock}
             onDelete={removeBlock}
             onMove={moveBlock}
@@ -1759,6 +1797,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     blocks={blocks}
                     selectedId={selectedId}
                     onSelect={selectBlock}
+                    onToggleActive={toggleBlockActive}
                     onDuplicate={duplicateBlock}
                     onDelete={removeBlock}
                     onMove={moveBlock}
@@ -1818,6 +1857,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     blocks={blocks}
                     selectedId={selectedId}
                     onSelect={selectBlock}
+                    onToggleActive={toggleBlockActive}
                     onDuplicate={duplicateBlock}
                     onDelete={removeBlock}
                     onMove={moveBlock}
@@ -1851,12 +1891,13 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                     onClick: () => setStructurePanelOpen(true),
                     label: "Show structure panel",
                   })}
-                  <VisualCanvas
-                    blocks={blocks}
-                    selectedId={selectedId}
-                    onSelect={selectBlock}
-                    onDuplicate={duplicateBlock}
-                    onDelete={removeBlock}
+                <VisualCanvas
+                  blocks={blocks}
+                  selectedId={selectedId}
+                  onSelect={selectBlock}
+                  onToggleActive={toggleBlockActive}
+                  onDuplicate={duplicateBlock}
+                  onDelete={removeBlock}
                     onMove={moveBlock}
                     onAddBelow={openAddBelow}
                     registerBlockRef={registerBlockRef}
@@ -1904,6 +1945,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
                 blocks={blocks}
                 selectedId={selectedId}
                 onSelect={selectBlock}
+                onToggleActive={toggleBlockActive}
                 onDuplicate={duplicateBlock}
                 onDelete={removeBlock}
                 onMove={moveBlock}
