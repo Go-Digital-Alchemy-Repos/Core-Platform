@@ -226,9 +226,9 @@ function CalloutBoxBlock({ props }: { props: Record<string, unknown> }) {
   return (
     <div className="py-4">
       <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
-      <div className={`rounded-2xl p-6 sm:p-8 ${variantClass}`}>
+      <div className={`rounded-2xl p-5 sm:p-8 ${variantClass}`}>
         <div
-          className="prose prose-sm max-w-none text-foreground"
+          className="prose prose-sm max-w-none break-words text-foreground"
           dangerouslySetInnerHTML={{ __html: str(props.content) || "<p>Add callout content.</p>" }}
         />
         {str(props.ctaText) && (
@@ -240,6 +240,7 @@ function CalloutBoxBlock({ props }: { props: Record<string, unknown> }) {
               formSlug={props.ctaFormSlug}
               modalTitle={props.ctaModalTitle}
               modalDescription={props.ctaModalDescription}
+              className="w-full sm:w-auto"
             />
           </div>
         )}
@@ -263,13 +264,13 @@ function LinkListBlock({ props }: { props: Record<string, unknown> }) {
             <a
               key={index}
               href={link.url || "#"}
-              className="rounded-xl border p-5 hover:shadow-md transition-shadow group"
+              className="group rounded-xl border p-4 transition-shadow hover:shadow-md sm:p-5"
               data-testid={`link-list-item-${index}`}
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="font-semibold group-hover:text-accent transition-colors">{link.label || "Untitled link"}</h3>
-                  {link.description && <p className="mt-2 text-sm text-muted-foreground">{link.description}</p>}
+                <div className="min-w-0">
+                  <h3 className="font-semibold break-words transition-colors group-hover:text-accent">{link.label || "Untitled link"}</h3>
+                  {link.description && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{link.description}</p>}
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors flex-shrink-0 mt-1" />
               </div>
@@ -355,10 +356,10 @@ function CtaBlock({ props }: { props: Record<string, unknown> }) {
     ? "bg-accent text-accent-foreground"
     : "bg-muted/40 border";
   return (
-    <div className={`px-8 py-14 text-center ${bgClass}`}>
-      <h2 className="text-3xl font-heading font-bold mb-3">{str(props.heading) || "Ready to Get Started?"}</h2>
-      {str(props.subheading) && <p className={`mb-8 max-w-xl mx-auto ${variant === "light" ? "text-muted-foreground" : "opacity-80"}`}>{str(props.subheading)}</p>}
-      <div className="flex flex-wrap gap-3 justify-center">
+    <div className={`px-4 py-10 text-center sm:px-8 sm:py-14 ${bgClass}`}>
+      <h2 className="mb-3 text-2xl font-heading font-bold leading-tight sm:text-3xl md:text-4xl">{str(props.heading) || "Ready to Get Started?"}</h2>
+      {str(props.subheading) && <p className={`mb-8 mx-auto max-w-xl text-sm leading-relaxed sm:text-base ${variant === "light" ? "text-muted-foreground" : "opacity-80"}`}>{str(props.subheading)}</p>}
+      <div className="flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap">
         {str(props.primaryText) && (
           <FormModalButton
             label={str(props.primaryText)}
@@ -369,6 +370,7 @@ function CtaBlock({ props }: { props: Record<string, unknown> }) {
             modalDescription={props.primaryModalDescription}
             size="lg"
             variant={variant === "dark" ? "secondary" : "default"}
+            className="w-full sm:w-auto"
             testId="cta-primary"
           />
         )}
@@ -382,6 +384,7 @@ function CtaBlock({ props }: { props: Record<string, unknown> }) {
             modalDescription={props.secondaryModalDescription}
             size="lg"
             variant="outline"
+            className="w-full sm:w-auto"
             testId="cta-secondary"
           />
         )}
@@ -397,17 +400,17 @@ function CardsGridBlock({ props }: { props: Record<string, unknown> }) {
   return (
     <div className="py-4">
       <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
-      <div className={`grid grid-cols-1 ${colsClass} gap-6`}>
+      <div className={`grid grid-cols-1 ${colsClass} gap-4 sm:gap-6`}>
         {cards.length === 0 ? (
           <div className="col-span-full text-center text-muted-foreground py-8">Add cards to display here</div>
         ) : cards.map((card, i) => (
-          <Card key={i} className="text-center hover:shadow-md transition-shadow">
-            <CardContent className="pt-8 pb-6">
+          <Card key={i} className="h-full overflow-hidden text-center transition-shadow hover:shadow-md">
+            <CardContent className="px-4 pb-5 pt-6 sm:px-6 sm:pb-6 sm:pt-8">
               <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
                 <LucideIcon name={card.icon || "Globe"} className="h-6 w-6 text-accent" />
               </div>
-              <h3 className="font-semibold mb-2">{card.title}</h3>
-              <p className="text-sm text-muted-foreground">{card.description}</p>
+              <h3 className="mb-2 text-base font-semibold leading-snug break-words">{card.title}</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">{card.description}</p>
             </CardContent>
           </Card>
         ))}
@@ -742,7 +745,7 @@ function ContactInfoBlock({ props }: { props: Record<string, unknown> }) {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">{item.label}</p>
-              <p className="font-medium text-sm">{item.value}</p>
+              <p className="break-words font-medium text-sm">{item.value}</p>
             </div>
           </div>
         ))}
@@ -773,7 +776,7 @@ function FeatureListBlock({ props }: { props: Record<string, unknown> }) {
   return (
     <div className="py-4" data-testid="block-feature-list">
       <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
-      <div className={`grid grid-cols-1 ${colsClass} gap-8`}>
+      <div className={`grid grid-cols-1 ${colsClass} gap-6 sm:gap-8`}>
         {features.map((f, i) => (
           <div key={i} className="flex items-start gap-4" data-testid={`feature-item-${i}`}>
             <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
@@ -983,9 +986,9 @@ function StatsBarBlock({ props }: { props: Record<string, unknown> }) {
   return (
     <div className="py-6 bg-muted/30 rounded-xl" data-testid="block-stats-bar">
       <SectionHeading props={props} defaultAlignment="center" className="mb-6 px-4" />
-      <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 px-4">
+      <div className="grid grid-cols-1 gap-4 px-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
         {items.map((item, i) => (
-          <div key={i} className="flex items-center gap-3" data-testid={`stats-bar-item-${i}`}>
+          <div key={i} className="flex items-center justify-center gap-3 rounded-xl border border-border/50 bg-background/70 px-4 py-4 text-center sm:justify-start" data-testid={`stats-bar-item-${i}`}>
             <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
               <LucideIcon name={item.icon || "Star"} className="h-5 w-5 text-accent" />
             </div>
@@ -1002,18 +1005,25 @@ function StatsBarBlock({ props }: { props: Record<string, unknown> }) {
 
 function IconGridBlock({ props }: { props: Record<string, unknown> }) {
   const cols = str(props.columns) || "4";
-  const colsClass = cols === "2" ? "md:grid-cols-2" : cols === "3" ? "md:grid-cols-3" : cols === "5" ? "md:grid-cols-5" : "md:grid-cols-4";
+  const colsClass =
+    cols === "2"
+      ? "sm:grid-cols-2"
+      : cols === "3"
+        ? "sm:grid-cols-2 lg:grid-cols-3"
+        : cols === "5"
+          ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+          : "sm:grid-cols-2 lg:grid-cols-4";
   const items = arr<{ icon: string; title: string }>(props.items);
   return (
     <div className="py-4" data-testid="block-icon-grid">
       <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
-      <div className={`grid grid-cols-2 ${colsClass} gap-4`}>
+      <div className={`grid grid-cols-1 ${colsClass} gap-4`}>
         {items.map((item, i) => (
-          <div key={i} className="flex flex-col items-center gap-2 p-4 rounded-xl border hover:shadow-sm transition-shadow" data-testid={`icon-grid-item-${i}`}>
-            <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center">
+          <div key={i} className="flex min-w-0 flex-col items-center gap-3 rounded-xl border p-4 text-center transition-shadow hover:shadow-sm sm:p-5" data-testid={`icon-grid-item-${i}`}>
+            <div className="flex h-12 w-12 rounded-xl bg-accent/10 items-center justify-center">
               <LucideIcon name={item.icon || "Globe"} className="h-6 w-6 text-accent" />
             </div>
-            <p className="text-sm font-medium text-center">{item.title}</p>
+            <p className="text-sm font-medium leading-snug break-words">{item.title}</p>
           </div>
         ))}
       </div>

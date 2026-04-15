@@ -47,8 +47,8 @@ export function SectionHeading({
   const itemsAlign = alignment === "left" ? "items-start" : alignment === "right" ? "items-end" : "items-center";
   const defaultTitleClass =
     level === "h1"
-      ? "text-3xl md:text-4xl font-heading font-bold public-heading-1"
-      : "text-2xl font-heading font-bold public-heading-2";
+      ? "text-3xl sm:text-4xl md:text-5xl font-heading font-bold leading-tight public-heading-1"
+      : "text-2xl sm:text-3xl md:text-4xl font-heading font-bold leading-tight public-heading-2";
 
   return (
     <div className={cn("flex flex-col gap-2", itemsAlign, textAlign, className)}>
@@ -63,7 +63,7 @@ export function SectionHeading({
         </HeadingTag>
       )}
       {subtitle && (
-        <p className={cn("public-heading-subtext max-w-2xl", subtitleClassName)}>
+        <p className={cn("public-heading-subtext max-w-2xl text-sm leading-relaxed sm:text-base", subtitleClassName)}>
           {subtitle}
         </p>
       )}

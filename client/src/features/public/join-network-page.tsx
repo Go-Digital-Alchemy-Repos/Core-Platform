@@ -75,7 +75,7 @@ export default function JoinNetworkPage() {
 
         <Button
           size="lg"
-          className="bg-accent text-accent-foreground border-accent-border text-base px-8 py-6 opacity-60 cursor-not-allowed"
+          className="w-full bg-accent px-8 py-6 text-base text-accent-foreground border-accent-border opacity-60 cursor-not-allowed sm:w-auto"
           disabled
           data-testid="button-apply-member"
         >
@@ -102,9 +102,9 @@ export default function JoinNetworkPage() {
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-10 sm:mb-14" data-testid="text-membership-heading">
             What Does Membership Include?
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4 lg:gap-8">
             {membershipBenefits.map((benefit, idx) => (
-              <div key={idx} className="text-center" data-testid={`card-benefit-${idx}`}>
+              <div key={idx} className="rounded-2xl border border-border/60 bg-background/85 p-6 text-center shadow-sm" data-testid={`card-benefit-${idx}`}>
                 <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
                   <benefit.icon className="h-7 w-7 text-accent" />
                 </div>
@@ -147,7 +147,7 @@ export default function JoinNetworkPage() {
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-8">
             We offer TCK-informed training programs for mental health professionals who want to deepen their cross-cultural competency. Whether you're just beginning to explore the TCK space or want to sharpen your skills, our training equips you with the frameworks and lived-experience insights to better serve globally-mobile clients.
           </p>
-          <Button size="lg" className="bg-accent text-accent-foreground border-accent-border" data-testid="button-learn-more-training">
+          <Button size="lg" className="w-full bg-accent text-accent-foreground border-accent-border sm:w-auto" data-testid="button-learn-more-training">
             Learn More
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
