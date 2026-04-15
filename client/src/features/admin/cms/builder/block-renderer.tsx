@@ -127,7 +127,11 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
           )}
         </h1>
         {str(props.subheading) && (
-          <p className={`text-lg text-white/80 mb-8 ${isSplit ? "" : "max-w-xl mx-auto"}`} style={subheadingTextStyle}>{str(props.subheading)}</p>
+          <div
+            className={`text-lg text-white/80 mb-8 [&_a]:text-white [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-white/80 [&_p]:m-0 ${isSplit ? "" : "max-w-xl mx-auto"}`}
+            style={subheadingTextStyle}
+            dangerouslySetInnerHTML={{ __html: str(props.subheading) }}
+          />
         )}
         <div className={`flex flex-wrap gap-3 ${isSplit ? "justify-start" : "justify-center"}`}>
           {str(props.ctaText) && (
@@ -358,7 +362,12 @@ function CtaBlock({ props }: { props: Record<string, unknown> }) {
   return (
     <div className={`px-4 py-10 text-center sm:px-8 sm:py-14 ${bgClass}`}>
       <h2 className="mb-3 text-2xl font-heading font-bold leading-tight sm:text-3xl md:text-4xl">{str(props.heading) || "Ready to Get Started?"}</h2>
-      {str(props.subheading) && <p className={`mb-8 mx-auto max-w-xl text-sm leading-relaxed sm:text-base ${variant === "light" ? "text-muted-foreground" : "opacity-80"}`}>{str(props.subheading)}</p>}
+      {str(props.subheading) && (
+        <div
+          className={`mb-8 mx-auto max-w-xl text-sm leading-relaxed sm:text-base [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:opacity-80 [&_p]:m-0 ${variant === "light" ? "text-muted-foreground [&_a]:text-primary" : "opacity-80 [&_a]:text-current"}`}
+          dangerouslySetInnerHTML={{ __html: str(props.subheading) }}
+        />
+      )}
       <div className="flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap">
         {str(props.primaryText) && (
           <FormModalButton
@@ -430,7 +439,12 @@ function FaqBlock({ props }: { props: Record<string, unknown> }) {
         ) : items.map((item, i) => (
           <AccordionItem key={i} value={`faq-${i}`} className="border rounded-lg px-4">
             <AccordionTrigger className="font-medium text-left">{item.question}</AccordionTrigger>
-            <AccordionContent className="text-muted-foreground">{item.answer}</AccordionContent>
+            <AccordionContent>
+              <div
+                className="text-muted-foreground [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-primary/80 [&_p]:m-0"
+                dangerouslySetInnerHTML={{ __html: item.answer }}
+              />
+            </AccordionContent>
           </AccordionItem>
         ))}
       </Accordion>
@@ -1793,9 +1807,12 @@ function JoinRegistrationFormBlock({ props }: { props: Record<string, unknown> }
             )}
           </h1>
           {subheading && (
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8" data-testid="text-join-subheading" style={subheadingTextStyle}>
-              {subheading}
-            </p>
+            <div
+              className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-primary/80 [&_p]:m-0"
+              data-testid="text-join-subheading"
+              style={subheadingTextStyle}
+              dangerouslySetInnerHTML={{ __html: subheading }}
+            />
           )}
         </>
       )}
@@ -1845,9 +1862,12 @@ function JoinHeroBlock({ props }: { props: Record<string, unknown> }) {
         )}
       </h1>
       {subheading && (
-        <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-join-hero-subheading" style={subheadingTextStyle}>
-          {subheading}
-        </p>
+        <div
+          className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-primary/80 [&_p]:m-0"
+          data-testid="text-join-hero-subheading"
+          style={subheadingTextStyle}
+          dangerouslySetInnerHTML={{ __html: subheading }}
+        />
       )}
     </div>
   );

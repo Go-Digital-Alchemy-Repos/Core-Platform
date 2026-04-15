@@ -153,9 +153,12 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
             )}
           </h1>
           {subheading && (
-            <p className="text-base sm:text-lg public-heading-subtext max-w-2xl mx-auto mb-8" data-testid="text-join-subheading" style={subheadingTextStyle}>
-              {subheading}
-            </p>
+            <div
+              className="text-base sm:text-lg public-heading-subtext max-w-2xl mx-auto mb-8 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-primary/80 [&_p]:m-0"
+              data-testid="text-join-subheading"
+              style={subheadingTextStyle}
+              dangerouslySetInnerHTML={{ __html: subheading }}
+            />
           )}
         </>
       )}
@@ -205,9 +208,12 @@ export function JoinHeroBlock({ props = {} }: { props?: Record<string, unknown> 
         )}
       </h1>
       {subheading && (
-        <p className="text-base sm:text-lg public-heading-subtext max-w-2xl mx-auto" data-testid="text-join-hero-subheading" style={subheadingTextStyle}>
-          {subheading}
-        </p>
+        <div
+          className="text-base sm:text-lg public-heading-subtext max-w-2xl mx-auto [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-primary/80 [&_p]:m-0"
+          data-testid="text-join-hero-subheading"
+          style={subheadingTextStyle}
+          dangerouslySetInnerHTML={{ __html: subheading }}
+        />
       )}
     </div>
   );

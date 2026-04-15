@@ -484,10 +484,25 @@ function PropField({
   const strVal = String(value ?? "");
   const numVal = Number(value ?? 0);
   const boolVal = Boolean(value);
+  const useRichTextEditor =
+    propDef.type === "richtext" ||
+    propDef.key === "subtitle" ||
+    propDef.key === "subheading" ||
+    propDef.key === "answer";
 
   switch (propDef.type) {
     case "text":
     case "url":
+      if (useRichTextEditor && propDef.type !== "url") {
+        return (
+          <CmsRichTextEditor
+            value={strVal}
+            onChange={onChange}
+            placeholder={propDef.placeholder}
+            data-testid={`prop-richtext-${propDef.key}`}
+          />
+        );
+      }
       return (
         <Input
           value={strVal}
@@ -499,6 +514,16 @@ function PropField({
         />
       );
     case "textarea":
+      if (useRichTextEditor) {
+        return (
+          <CmsRichTextEditor
+            value={strVal}
+            onChange={onChange}
+            placeholder={propDef.placeholder}
+            data-testid={`prop-richtext-${propDef.key}`}
+          />
+        );
+      }
       return (
         <Textarea
           value={strVal}

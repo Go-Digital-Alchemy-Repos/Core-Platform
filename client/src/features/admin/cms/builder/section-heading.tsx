@@ -63,9 +63,13 @@ export function SectionHeading({
         </HeadingTag>
       )}
       {subtitle && (
-        <p className={cn("public-heading-subtext max-w-2xl text-sm leading-relaxed sm:text-base", subtitleClassName)}>
-          {subtitle}
-        </p>
+        <div
+          className={cn(
+            "public-heading-subtext max-w-2xl text-sm leading-relaxed sm:text-base [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-primary/80 [&_p]:m-0",
+            subtitleClassName
+          )}
+          dangerouslySetInnerHTML={{ __html: subtitle }}
+        />
       )}
     </div>
   );

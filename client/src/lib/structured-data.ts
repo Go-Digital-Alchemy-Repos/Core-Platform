@@ -263,6 +263,10 @@ interface BuilderContent {
   blocks?: FaqBlock[];
 }
 
+function stripHtml(value: string): string {
+  return value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+
 export function extractFaqItems(pageContent: unknown): FaqItem[] {
   if (!pageContent || typeof pageContent !== "object") return [];
   const content = pageContent as BuilderContent;
@@ -273,7 +277,7 @@ export function extractFaqItems(pageContent: unknown): FaqItem[] {
     if (block.type === "faq" && Array.isArray(block.props?.items)) {
       for (const item of block.props.items) {
         if (item.question && item.answer) {
-          items.push({ question: item.question, answer: item.answer });
+          items.push({ question: stripHtml(item.question), answer: stripHtml(item.answer) });
         }
       }
     }
