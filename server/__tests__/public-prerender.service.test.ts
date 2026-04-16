@@ -210,4 +210,20 @@ describe("public-prerender.service", () => {
     expect(headHtml).toBe('<meta name="custom-test" content="enabled" />');
     expect(html).toContain('<meta name="custom-test" content="enabled" />');
   });
+
+  it("repairs malformed closing script tags in custom head additions", async () => {
+    mockGetSetting.mockResolvedValue(
+      [
+        '<script async src="https://www.googletagmanager.com/gtag/js?id=G-TEST"></script',
+        '<script>window.dataLayer = window.dataLayer || [];</script',
+      ].join("\n"),
+    );
+    const { getPublicHeadAdditions } = await import("../services/public-prerender.service");
+
+    const headHtml = await getPublicHeadAdditions();
+
+    expect(headHtml).toContain('</script>');
+    expect(headHtml).not.toContain('</script\n');
+    expect(headHtml).not.toContain('</script<');
+  });
 });

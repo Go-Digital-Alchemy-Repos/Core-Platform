@@ -201,8 +201,17 @@ function buildOrganizationSchema(seo: SeoSettings | null, siteUrl: string) {
 
 export async function getPublicHeadAdditions(): Promise<string | null> {
   const headHtml = await storage.settings.getSetting("public_head_html");
-  const normalized = headHtml?.trim();
+  const normalized = normalizeHeadMarkup(headHtml);
   return normalized ? normalized : null;
+}
+
+function normalizeHeadMarkup(value?: string | null) {
+  if (!value) return null;
+
+  return value
+    .trim()
+    // Repair a common paste mistake where </script is missing its closing angle bracket.
+    .replace(/<\/script(?!>)(?=(\s*<)|\s*$)/gi, "</script>");
 }
 
 function buildWebsiteSchema(seo: SeoSettings | null, siteUrl: string) {
