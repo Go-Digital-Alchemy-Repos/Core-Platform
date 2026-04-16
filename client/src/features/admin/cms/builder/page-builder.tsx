@@ -1160,8 +1160,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     }
 
     const blockAnchorRelative = blockRect.top - viewportRect.top + blockRect.height * 0.42;
-    const desiredTopAnchor = Math.max(140, Math.min(260, shellHeight * 0.3));
-    const minInspectorHeight = Math.min(380, Math.max(240, shellHeight * 0.34));
+    const desiredTopAnchor = Math.max(150, Math.min(250, shellHeight * 0.3));
+    const minInspectorHeight = Math.min(560, Math.max(440, shellHeight * 0.62));
     const maxOffset = Math.max(0, shellHeight - minInspectorHeight);
     const nextOffset = Math.max(0, Math.min(maxOffset, blockAnchorRelative - desiredTopAnchor));
 
@@ -1815,13 +1815,10 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const renderDesktopInspectorPanel = () => (
     <div ref={desktopInspectorShellRef} className="h-full min-h-0 overflow-hidden p-3">
       <div
-        className="h-full min-h-0 transition-[padding-top] duration-200 ease-out"
+        className="flex h-full min-h-0 flex-col transition-[padding-top] duration-200 ease-out"
         style={{ paddingTop: `${desktopInspectorOffset}px` }}
       >
-        <div
-          className="min-h-0"
-          style={{ height: `calc(100% - ${desktopInspectorOffset}px)` }}
-        >
+        <div className="min-h-0 flex-1">
           {inspectorPanel}
         </div>
       </div>
