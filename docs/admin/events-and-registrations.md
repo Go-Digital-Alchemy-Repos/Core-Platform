@@ -13,6 +13,12 @@ Before publishing an event, confirm:
 - event image if applicable
 - description and registration information
 
+## Event Editor Notes
+
+- The event description now uses the rich text editor instead of plain text.
+- Cover images support image focus-point selection, just like other CMS image workflows.
+- If an event spans multiple days, confirm both the start and end date/time display correctly in the public list view.
+
 ## Date And Time Handling
 
 Be especially careful when editing dates and times. Always review the saved event after publishing to confirm the final date and time are correct.
@@ -27,6 +33,15 @@ Events can appear in:
 
 If an event image exists, preview blocks and cards should display it on the left side of the event card.
 
+Single-day events now show one date with a time range in list view, while multi-day events show separate `Starts` and `Ends` lines.
+
 ## Registration
 
 Event registration availability and open dates should be reviewed on the frontend after changes. This is especially important for member-only or time-sensitive events.
+
+## Editing Safety
+
+The event editor uses the shared live lock system.
+
+- Only one admin or editor can actively edit an event at a time.
+- A second user may still review the event in read-only mode.

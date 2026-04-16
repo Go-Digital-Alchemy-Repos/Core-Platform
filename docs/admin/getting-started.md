@@ -6,14 +6,16 @@ This documentation area is the operating manual for TCK Wellness. It combines sy
 
 1. Review the CMS and visual builder guides before editing public pages.
 2. Review the media library guide before replacing images or documents.
-3. Review the blog and events guides before publishing new content.
-4. Review the integrations and backups guides before changing infrastructure or credentials.
+3. Review the forms guide before publishing, sharing, or embedding managed forms.
+4. Review the blog and events guides before publishing new content.
+5. Review the integrations and backups guides before changing infrastructure or credentials.
 
 ## Admin Workflow Principles
 
 - Make draft changes first whenever the workflow supports it.
 - Use preview and device checks before publishing page changes.
 - Prefer the media library and structured CMS fields over raw links or pasted embed code.
+- If you open an editor and see it in read-only mode, another admin or editor already holds the live edit lock for that item.
 - Use the documentation library as the source of truth for operational processes.
 
 ## Core Areas
@@ -25,6 +27,10 @@ The CMS manages public landing pages, structured sections, menus, sidebars, widg
 ### Blog
 
 Insights & Articles uses the managed blog system, categories, tags, featured layouts, and sidebar support.
+
+### Forms
+
+Forms includes both the builder and the stored form-entry inbox. It also controls standalone form links and Mailchimp form tagging.
 
 ### Events
 

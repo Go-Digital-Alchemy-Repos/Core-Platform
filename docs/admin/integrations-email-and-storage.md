@@ -19,6 +19,22 @@ Mailgun is used for transactional email and test-connection workflows. Unauthori
 - wrong domain
 - mismatched region/domain pairing
 
+## Mailchimp
+
+Mailchimp is configured as a shared audience integration.
+
+- Store the API key, audience ID, and server prefix in Integrations.
+- Form-specific Mailchimp tags are controlled in the Forms system rather than in global settings.
+- The directory application flow can tag applicants separately from newsletter or inquiry forms.
+
+## Analytics And Consent Readiness
+
+The public consent system now stores essential, preferences, analytics, and marketing choices for 60 days.
+
+- Essential cookies stay on.
+- Non-essential scripts should only load after the relevant consent has been granted.
+- The integration area now has a clean home for future direct GA4 configuration, but public tracking should remain gated by consent.
+
 ## Operational Advice
 
 - Update credentials in admin settings carefully and verify them immediately.
