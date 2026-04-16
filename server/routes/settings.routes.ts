@@ -17,7 +17,7 @@ import {
 import * as r2Service from "../services/r2.service";
 import { ensureSystemEmailTemplates } from "../services/system-email-templates.service";
 import { testMailchimpConnection } from "../services/mailchimp.service";
-import { CMS_OPTIONS, isImageMime, optimizeImage } from "../services/image-optimizer";
+import { BRANDING_OPTIONS, isImageMime, optimizeImage } from "../services/image-optimizer";
 
 const router = Router();
 
@@ -135,7 +135,7 @@ router.post(
 
     const safeName = buildSafeBrandingFilename(req.file.originalname);
     const baseName = stripExtension(safeName) || "branding-image";
-    const optimized = await optimizeImage(req.file.buffer, req.file.mimetype, CMS_OPTIONS);
+    const optimized = await optimizeImage(req.file.buffer, req.file.mimetype, BRANDING_OPTIONS);
     const filename = `${Date.now()}-${baseName}${optimized.extension}`;
     const r2Key = `branding/${filename}`;
 

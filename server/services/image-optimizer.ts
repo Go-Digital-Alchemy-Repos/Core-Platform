@@ -5,6 +5,7 @@ interface OptimizeOptions {
   maxWidth?: number;
   maxHeight?: number;
   quality?: number;
+  format?: "webp" | "preserve";
 }
 
 const IMAGE_MIMES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
@@ -13,6 +14,7 @@ const DEFAULTS: Required<OptimizeOptions> = {
   maxWidth: 1920,
   maxHeight: 1920,
   quality: 80,
+  format: "webp",
 };
 
 export interface OptimizedImage {
@@ -42,7 +44,7 @@ export async function optimizeImage(
   inputMime: string,
   opts: OptimizeOptions = {}
 ): Promise<OptimizedImage> {
-  const { maxWidth, maxHeight, quality } = { ...DEFAULTS, ...opts };
+  const { maxWidth, maxHeight, quality, format } = { ...DEFAULTS, ...opts };
   const originalSize = inputBuffer.length;
 
   try {
@@ -63,9 +65,27 @@ export async function optimizeImage(
       });
     }
 
-    const outputBuffer = await pipeline
-      .webp({ quality })
-      .toBuffer();
+    let outputBuffer: Buffer;
+    let outputMimeType: string;
+    let outputExtension: string;
+
+    if (format === "preserve") {
+      if (inputMime === "image/png") {
+        outputBuffer = await pipeline.png().toBuffer();
+      } else if (inputMime === "image/jpeg") {
+        outputBuffer = await pipeline.jpeg({ quality }).toBuffer();
+      } else if (inputMime === "image/gif") {
+        outputBuffer = inputBuffer;
+      } else {
+        outputBuffer = await pipeline.webp({ quality }).toBuffer();
+      }
+      outputMimeType = inputMime;
+      outputExtension = mimeToExtension(inputMime);
+    } else {
+      outputBuffer = await pipeline.webp({ quality }).toBuffer();
+      outputMimeType = "image/webp";
+      outputExtension = ".webp";
+    }
 
     logger.app.info(
       `Image optimized: ${(originalSize / 1024).toFixed(0)}KB → ${(outputBuffer.length / 1024).toFixed(0)}KB (${Math.round((1 - outputBuffer.length / originalSize) * 100)}% reduction)`
@@ -73,8 +93,8 @@ export async function optimizeImage(
 
     return {
       buffer: outputBuffer,
-      mimeType: "image/webp",
-      extension: ".webp",
+      mimeType: outputMimeType,
+      extension: outputExtension,
       originalSize,
       optimizedSize: outputBuffer.length,
     };
@@ -102,6 +122,13 @@ export const CMS_OPTIONS: OptimizeOptions = {
   maxWidth: 1920,
   maxHeight: 1920,
   quality: 80,
+};
+
+export const BRANDING_OPTIONS: OptimizeOptions = {
+  maxWidth: 1920,
+  maxHeight: 1920,
+  quality: 80,
+  format: "preserve",
 };
 
 export const ATTACHMENT_OPTIONS: OptimizeOptions = {
