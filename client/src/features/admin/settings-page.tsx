@@ -694,6 +694,104 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
   );
 }
 
+function HeadTagAdditionsTab({ settings }: { settings: SettingsData }) {
+  const { toast } = useToast();
+  const storedValue = settings.head_tag_additions?.public_head_html?.value || "";
+  const [headHtml, setHeadHtml] = useState(storedValue);
+
+  useEffect(() => {
+    setHeadHtml(storedValue);
+  }, [storedValue]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("PUT", "/api/admin/settings", {
+        key: "public_head_html",
+        value: headHtml,
+        category: "head_tag_additions",
+        isSecret: false,
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
+      toast({ title: "Head tag additions updated" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Could not save head tag additions",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const hasChanges = headHtml !== storedValue;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold" data-testid="text-head-tag-additions-heading">
+          Head Tag Additions
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Add raw third-party tags that should be inserted into the public site&apos;s {"<head>"}.
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Code2 className="h-4 w-4 text-primary" />
+            Public Head Markup
+          </CardTitle>
+          <CardDescription>
+            Use this for custom meta tags, verification tags, or vendor scripts that must be added globally to the public website.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <p className="font-medium">A quick note on Google Analytics</p>
+            <p className="mt-1">
+              The existing <span className="font-medium">Integrations &gt; Google Analytics</span> card is still the right place for your structured GA4 configuration. Use this area when you specifically need to paste a raw vendor head tag.
+            </p>
+            <p className="mt-2">
+              Tags pasted here load directly on the public site and are not automatically gated by cookie-consent preferences.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="public-head-html">Head tag markup</Label>
+            <Textarea
+              id="public-head-html"
+              value={headHtml}
+              onChange={(event) => setHeadHtml(event.target.value)}
+              placeholder={`<!-- Example -->\n<meta name="google-site-verification" content="..." />\n<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>`}
+              className="min-h-[280px] font-mono text-xs"
+              data-testid="textarea-public-head-html"
+            />
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button
+              type="button"
+              onClick={() => saveMutation.mutate()}
+              disabled={!hasChanges || saveMutation.isPending}
+              data-testid="button-save-head-tag-additions"
+            >
+              {saveMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Save Head Tags
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function BrandingImageCard({
   settingKey,
   title,
@@ -2275,13 +2373,16 @@ export default function AdminSettingsPage() {
           System Settings
         </h1>
         <p className="text-muted-foreground mb-6">
-          Manage integrations, system configuration, and system email templates.
+          Manage integrations, head markup, system configuration, and system email templates.
         </p>
 
         <Tabs defaultValue="integrations">
           <TabsList data-testid="tabs-settings">
             <TabsTrigger value="integrations" data-testid="tab-integrations">
               Integrations
+            </TabsTrigger>
+            <TabsTrigger value="head-tags" data-testid="tab-head-tag-additions">
+              Head Tag Additions
             </TabsTrigger>
             <TabsTrigger value="configuration" data-testid="tab-system-configuration">
               System Configuration
@@ -2303,6 +2404,16 @@ export default function AdminSettingsPage() {
 
           <TabsContent value="templates" className="mt-6">
             <EmailTemplatesTab />
+          </TabsContent>
+
+          <TabsContent value="head-tags" className="mt-6">
+            {isLoading ? (
+              <div className="flex items-center justify-center p-12">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : (
+              <HeadTagAdditionsTab settings={settings || {}} />
+            )}
           </TabsContent>
 
           <TabsContent value="configuration" className="mt-6">

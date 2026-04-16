@@ -199,6 +199,12 @@ function buildOrganizationSchema(seo: SeoSettings | null, siteUrl: string) {
   };
 }
 
+export async function getPublicHeadAdditions(): Promise<string | null> {
+  const headHtml = await storage.settings.getSetting("public_head_html");
+  const normalized = headHtml?.trim();
+  return normalized ? normalized : null;
+}
+
 function buildWebsiteSchema(seo: SeoSettings | null, siteUrl: string) {
   return {
     "@context": "https://schema.org",
@@ -525,7 +531,11 @@ export async function getPublicHtmlSnapshot(
   return buildFallbackSnapshot(pathname, seo, siteUrl);
 }
 
-export function injectPublicHtmlSnapshot(template: string, snapshot: PublicHtmlSnapshot | null) {
+export function injectPublicHtmlSnapshot(
+  template: string,
+  snapshot: PublicHtmlSnapshot | null,
+  customHeadHtml?: string | null,
+) {
   const normalizedTemplate = template
     .replace(/\s*<meta name="description"[^>]*>\s*/i, "\n")
     .replace(/\s*<meta property="og:title"[^>]*>\s*/i, "\n")
@@ -540,7 +550,7 @@ export function injectPublicHtmlSnapshot(template: string, snapshot: PublicHtmlS
 
   if (!snapshot) {
     return normalizedTemplate
-      .replace("<!--APP_DYNAMIC_HEAD-->", "")
+      .replace("<!--APP_DYNAMIC_HEAD-->", customHeadHtml || "")
       .replace("<!--APP_PRERENDER_CONTENT-->", "");
   }
 
@@ -557,6 +567,7 @@ export function injectPublicHtmlSnapshot(template: string, snapshot: PublicHtmlS
     snapshot.ogImageUrl
       ? `<meta property="og:image" content="${escapeHtml(snapshot.ogImageUrl)}" />`
       : "",
+    customHeadHtml || "",
     ...(snapshot.jsonLd ?? []).map(
       (schema) =>
         `<script type="application/ld+json">${JSON.stringify(schema).replace(/</g, "\\u003c")}</script>`,

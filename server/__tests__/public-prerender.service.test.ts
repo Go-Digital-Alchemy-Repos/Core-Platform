@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BlogPost, CmsPage, Event, SeoSettings } from "@shared/schema";
 
 const mockGetSeo = vi.fn();
+const mockGetSetting = vi.fn();
 const mockGetPageBySlug = vi.fn();
 const mockGetPostBySlug = vi.fn();
 const mockGetEvent = vi.fn();
@@ -11,6 +12,9 @@ vi.mock("../storage", () => ({
   storage: {
     seoSettings: {
       get: mockGetSeo,
+    },
+    settings: {
+      getSetting: mockGetSetting,
     },
     cmsPages: {
       getPageBySlug: mockGetPageBySlug,
@@ -151,6 +155,7 @@ describe("public-prerender.service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetSeo.mockResolvedValue(seoSettings);
+    mockGetSetting.mockResolvedValue(null);
     mockGetPageBySlug.mockResolvedValue(undefined);
     mockGetPostBySlug.mockResolvedValue(undefined);
     mockGetEvent.mockResolvedValue(undefined);
@@ -189,5 +194,20 @@ describe("public-prerender.service", () => {
 
     expect(html).toContain('meta name="robots" content="noindex,follow"');
     expect(html).toContain("Search Results for &quot;application process&quot;");
+  });
+
+  it("retrieves and injects custom public head additions", async () => {
+    mockGetSetting.mockResolvedValue('<meta name="custom-test" content="enabled" />');
+    const { getPublicHeadAdditions, injectPublicHtmlSnapshot } = await import(
+      "../services/public-prerender.service"
+    );
+    const template =
+      "<html><head><title>Default</title><!--APP_DYNAMIC_HEAD--></head><body><!--APP_PRERENDER_CONTENT--><div id=\"root\"></div></body></html>";
+
+    const headHtml = await getPublicHeadAdditions();
+    const html = injectPublicHtmlSnapshot(template, null, headHtml);
+
+    expect(headHtml).toBe('<meta name="custom-test" content="enabled" />');
+    expect(html).toContain('<meta name="custom-test" content="enabled" />');
   });
 });
