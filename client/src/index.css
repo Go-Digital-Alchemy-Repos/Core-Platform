@@ -50,7 +50,6 @@
   cursor: pointer;
 }
 
-/* LIGHT MODE — TCK Wellness brand palette */
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
@@ -151,82 +150,6 @@
 
   --destructive-border: hsl(var(--destructive));
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
-}
-
-.dark {
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
-
-  --opaque-button-border-intensity: 9;
-
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
-
-  --background: 222 30% 10%;
-  --foreground: 40 15% 90%;
-
-  --border: 222 18% 22%;
-
-  --card: 222 28% 14%;
-  --card-foreground: 40 15% 90%;
-  --card-border: 222 18% 20%;
-
-  --sidebar: 222 32% 8%;
-  --sidebar-foreground: 40 15% 88%;
-  --sidebar-border: 222 18% 16%;
-  --sidebar-primary: 153 20% 65%;
-  --sidebar-primary-foreground: 222 38% 10%;
-  --sidebar-accent: 175 37% 40%;
-  --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 175 37% 40%;
-
-  --popover: 222 28% 14%;
-  --popover-foreground: 40 15% 90%;
-  --popover-border: 222 18% 20%;
-
-  --primary: 153 20% 71%;
-  --primary-foreground: 222 38% 12%;
-
-  --secondary: 222 20% 22%;
-  --secondary-foreground: 40 15% 85%;
-
-  --muted: 222 20% 18%;
-  --muted-foreground: 222 10% 55%;
-
-  --accent: 175 37% 40%;
-  --accent-foreground: 0 0% 100%;
-
-  --destructive: 0 62% 55%;
-  --destructive-foreground: 0 0% 100%;
-
-  --input: 222 18% 28%;
-  --ring: 175 37% 40%;
-  --chart-1: 153 20% 71%;
-  --chart-2: 175 37% 45%;
-  --chart-3: 22 48% 50%;
-  --chart-4: 222 25% 50%;
-  --chart-5: 153 15% 55%;
-
-  --public-text-h1: var(--foreground);
-  --public-text-h2: var(--foreground);
-  --public-text-h3: var(--foreground);
-  --public-text-body: var(--foreground);
-  --public-text-heading-subtext: var(--muted-foreground);
-  --public-text-supporting-copy: var(--muted-foreground);
-  --public-text-helper: var(--muted-foreground);
-  --public-text-meta: var(--muted-foreground);
-  --public-text-link: var(--accent);
-  --public-text-link-hover: var(--primary);
-  --public-text-inverse: 40 15% 90%;
-
-  --shadow-2xs: 0px 1px 2px 0px rgba(0,0,0, 0.15);
-  --shadow-xs: 0px 1px 3px 0px rgba(0,0,0, 0.20);
-  --shadow-sm: 0px 1px 3px 0px rgba(0,0,0, 0.20), 0px 1px 2px -1px rgba(0,0,0, 0.15);
-  --shadow: 0px 2px 4px 0px rgba(0,0,0, 0.20), 0px 1px 2px -1px rgba(0,0,0, 0.15);
-  --shadow-md: 0px 4px 6px -1px rgba(0,0,0, 0.25), 0px 2px 4px -1px rgba(0,0,0, 0.15);
-  --shadow-lg: 0px 10px 15px -3px rgba(0,0,0, 0.25), 0px 4px 6px -1px rgba(0,0,0, 0.15);
-  --shadow-xl: 0px 20px 25px -5px rgba(0,0,0, 0.30), 0px 8px 10px -1px rgba(0,0,0, 0.15);
-  --shadow-2xl: 0px 25px 50px -12px rgba(0,0,0, 0.45);
 }
 
 :root.admin-mode {
