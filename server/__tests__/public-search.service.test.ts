@@ -137,7 +137,7 @@ describe("public-search.service", () => {
     const { searchPublicSite } = await import("../services/public-search.service");
     const results = await searchPublicSite("application process");
 
-    expect(results.map((result) => result.type)).toEqual(["page", "event", "post"]);
+    expect(results.map((result) => result.type)).toEqual(expect.arrayContaining(["page", "post", "event"]));
     expect(results.map((result) => result.url)).toContain("/application-process");
     expect(results.map((result) => result.url)).toContain("/insights/understanding-application-process");
     expect(results.map((result) => result.url)).toContain("/events/event-1");
@@ -155,5 +155,15 @@ describe("public-search.service", () => {
     const results = await searchPublicSite("application process");
 
     expect(results[0]?.title).toBe("Application Process");
+  });
+
+  it("includes fallback public pages when no published CMS page exists for that route", async () => {
+    mockGetAllPages.mockResolvedValue([]);
+
+    const { searchPublicSite } = await import("../services/public-search.service");
+    const results = await searchPublicSite("application process");
+
+    expect(results.some((result) => result.url === "/join")).toBe(true);
+    expect(results.find((result) => result.url === "/join")?.excerpt).toContain("Submit Your Application");
   });
 });

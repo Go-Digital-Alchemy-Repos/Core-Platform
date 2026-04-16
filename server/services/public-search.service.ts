@@ -2,6 +2,16 @@ import type { BlogPost, CmsPage, Event } from "@shared/schema";
 import type { PublicSearchResult } from "@shared/types/public-search";
 import { storage } from "../storage";
 
+interface SearchDocument {
+  type: PublicSearchResult["type"];
+  id: string;
+  title: string;
+  url: string;
+  metadata?: string | null;
+  searchableText: string;
+  excerptSource: string;
+}
+
 function stripHtml(value: string): string {
   return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -29,30 +39,58 @@ function normalizeQuery(query: string) {
   };
 }
 
-function scoreSearchMatch(query: string, terms: string[], title: string, body: string) {
+function scoreSearchMatch(query: string, terms: string[], title: string, body: string, path = "") {
   if (!query) return 0;
   const lowerTitle = title.toLowerCase();
   const lowerBody = body.toLowerCase();
+  const lowerPath = path.toLowerCase();
 
   let score = 0;
 
-  if (lowerTitle.includes(query)) score += 100;
-  if (lowerBody.includes(query)) score += 35;
+  if (lowerTitle === query) score += 180;
+  if (lowerTitle.includes(query)) score += 120;
+  if (lowerPath.includes(query)) score += 45;
+  if (lowerBody.includes(query)) score += 55;
 
   const matchedTitleTerms = terms.filter((term) => lowerTitle.includes(term)).length;
   const matchedBodyTerms = terms.filter((term) => lowerBody.includes(term)).length;
+  const matchedPathTerms = terms.filter((term) => lowerPath.includes(term)).length;
 
-  if (matchedTitleTerms === terms.length) score += 50;
-  else score += matchedTitleTerms * 12;
+  if (matchedTitleTerms === terms.length) score += 70;
+  else score += matchedTitleTerms * 18;
 
-  if (matchedBodyTerms === terms.length) score += 20;
-  else score += matchedBodyTerms * 5;
+  if (matchedBodyTerms === terms.length) score += 35;
+  else score += matchedBodyTerms * 8;
+
+  score += matchedPathTerms * 8;
 
   return score;
 }
 
 function pageUrlForSlug(slug: string) {
   return slug === "home" ? "/" : `/${slug}`;
+}
+
+function buildExcerpt(source: string, query: string, terms: string[], maxLength = 180) {
+  const plainText = stripHtml(source);
+  if (!plainText) return "";
+
+  const lower = plainText.toLowerCase();
+  const matchIndex = [query, ...terms]
+    .filter(Boolean)
+    .map((term) => lower.indexOf(term.toLowerCase()))
+    .filter((index) => index >= 0)
+    .sort((a, b) => a - b)[0];
+
+  if (matchIndex === undefined) {
+    return truncate(plainText, maxLength);
+  }
+
+  const start = Math.max(0, matchIndex - 60);
+  const end = Math.min(plainText.length, matchIndex + maxLength - 20);
+  const prefix = start > 0 ? "..." : "";
+  const suffix = end < plainText.length ? "..." : "";
+  return `${prefix}${plainText.slice(start, end).trim()}${suffix}`;
 }
 
 function buildPageText(page: CmsPage) {
@@ -94,6 +132,112 @@ function buildEventText(event: Event) {
     .join(" ");
 }
 
+const FALLBACK_PAGE_DOCUMENTS: Array<Omit<SearchDocument, "id"> & { slug: string }> = [
+  {
+    slug: "home",
+    type: "page",
+    title: "Home",
+    url: "/",
+    metadata: "Page",
+    searchableText: [
+      "TCK Wellness",
+      "Find a Mental Health Professional",
+      "Applications open in June",
+      "Why TCK Informed",
+      "Culturally Informed Care",
+      "Specialized Support",
+      "Global Community",
+      "Featured Articles",
+      "Upcoming Events",
+    ].join(" "),
+    excerptSource: "Explore TCK-informed mental health support, featured articles, and upcoming events.",
+  },
+  {
+    slug: "about",
+    type: "page",
+    title: "About",
+    url: "/about",
+    metadata: "Page",
+    searchableText: [
+      "About TCK Wellness",
+      "What is a Third Culture Kid",
+      "What does it mean to be vetted",
+      "Every mental health professional completes a detailed application process",
+      "Credentials and licensure are verified",
+      "Training or lived experience with TCK cross-cultural populations is required",
+    ].join(" "),
+    excerptSource: "Learn what it means for a provider to be vetted and how TCK Wellness supports cross-cultural mental health care.",
+  },
+  {
+    slug: "contact",
+    type: "page",
+    title: "Contact Us",
+    url: "/contact",
+    metadata: "Page",
+    searchableText: [
+      "Contact Us",
+      "Send a Message",
+      "Have a question or feedback",
+      "Company Information",
+    ].join(" "),
+    excerptSource: "Get in touch with TCK Wellness through the contact form and company information.",
+  },
+  {
+    slug: "join",
+    type: "page",
+    title: "Join the Network",
+    url: "/join",
+    metadata: "Page",
+    searchableText: [
+      "Are you a TCK-Informed Mental Health Professional Join the Network",
+      "What Does Membership Include",
+      "Directory Listing",
+      "Client Connections",
+      "Profile Analytics",
+      "Community Access",
+      "The Application Process",
+      "Submit Your Application",
+      "Credential Verification",
+      "TCK Competency Review",
+      "Profile Setup",
+      "Go Live in the Directory",
+      "Interested in Training but Not a Member",
+      "Applications open in June",
+    ].join(" "),
+    excerptSource:
+      "The Application Process includes Submit Your Application, Credential Verification, TCK Competency Review, Profile Setup, and Go Live in the Directory.",
+  },
+  {
+    slug: "directory",
+    type: "page",
+    title: "Find a Mental Health Professional",
+    url: "/directory",
+    metadata: "Page",
+    searchableText: [
+      "Find a Mental Health Professional",
+      "Search by specialty location language or session format",
+      "Why TCK Informed",
+      "What does it mean to be vetted",
+      "Every mental health professional completes a detailed application process",
+    ].join(" "),
+    excerptSource: "Search for TCK-informed care by specialty, location, language, or session format.",
+  },
+];
+
+function buildFallbackPageDocuments(publishedPageSlugs: Set<string>): SearchDocument[] {
+  return FALLBACK_PAGE_DOCUMENTS
+    .filter((doc) => !publishedPageSlugs.has(doc.slug))
+    .map((doc) => ({
+      id: `fallback:${doc.slug}`,
+      type: doc.type,
+      title: doc.title,
+      url: doc.url,
+      metadata: doc.metadata,
+      searchableText: doc.searchableText,
+      excerptSource: doc.excerptSource,
+    }));
+}
+
 export async function searchPublicSite(query: string): Promise<PublicSearchResult[]> {
   const normalized = normalizeQuery(query);
   if (!normalized.raw) return [];
@@ -104,68 +248,65 @@ export async function searchPublicSite(query: string): Promise<PublicSearchResul
     storage.events.getPublishedEvents(),
   ]);
 
-  const pageResults = pages
-    .filter((page) => page.status === "published")
-    .map((page) => {
-      const searchText = buildPageText(page);
-      const score = scoreSearchMatch(normalized.raw, normalized.terms, page.title, searchText);
+  const publishedPages = pages.filter((page) => page.status === "published");
+  const publishedPageSlugs = new Set(publishedPages.map((page) => page.slug));
+
+  const documents: SearchDocument[] = [
+    ...publishedPages.map((page) => ({
+      type: "page" as const,
+      id: page.id,
+      title: page.title,
+      url: pageUrlForSlug(page.slug),
+      metadata: "Page",
+      searchableText: buildPageText(page),
+      excerptSource: page.seoDescription || collectContentText(page.content),
+    })),
+    ...buildFallbackPageDocuments(publishedPageSlugs),
+    ...posts.map((post) => ({
+      type: "post" as const,
+      id: post.id,
+      title: post.title,
+      url: `/insights/${post.slug}`,
+      metadata: post.category || post.authorName || "Article",
+      searchableText: buildPostText(post),
+      excerptSource: post.excerpt || post.content,
+    })),
+    ...events.map((event) => ({
+      type: "event" as const,
+      id: event.id,
+      title: event.title,
+      url: `/events/${event.id}`,
+      metadata: event.locationName || event.location || "Event",
+      searchableText: buildEventText(event),
+      excerptSource: event.description || buildEventText(event),
+    })),
+  ];
+
+  return documents
+    .map((document) => {
+      const score = scoreSearchMatch(
+        normalized.raw,
+        normalized.terms,
+        document.title,
+        document.searchableText,
+        document.url,
+      );
+
       return score > 0
-        ? ({
+        ? {
             score,
             result: {
-              type: "page",
-              id: page.id,
-              title: page.title,
-              url: pageUrlForSlug(page.slug),
-              excerpt: truncate(stripHtml(page.seoDescription || collectContentText(page.content) || "")),
-              metadata: "Page",
+              type: document.type,
+              id: document.id,
+              title: document.title,
+              url: document.url,
+              excerpt: buildExcerpt(document.excerptSource || document.searchableText, normalized.raw, normalized.terms),
+              metadata: document.metadata,
             } satisfies PublicSearchResult,
-          })
+          }
         : null;
     })
-    .filter((entry): entry is { score: number; result: PublicSearchResult } => Boolean(entry));
-
-  const postResults = posts
-    .map((post) => {
-      const searchText = buildPostText(post);
-      const score = scoreSearchMatch(normalized.raw, normalized.terms, post.title, searchText);
-      return score > 0
-        ? ({
-            score,
-            result: {
-              type: "post",
-              id: post.id,
-              title: post.title,
-              url: `/insights/${post.slug}`,
-              excerpt: truncate(stripHtml(post.excerpt || post.content || "")),
-              metadata: post.category || post.authorName || "Article",
-            } satisfies PublicSearchResult,
-          })
-        : null;
-    })
-    .filter((entry): entry is { score: number; result: PublicSearchResult } => Boolean(entry));
-
-  const eventResults = events
-    .map((event) => {
-      const searchText = buildEventText(event);
-      const score = scoreSearchMatch(normalized.raw, normalized.terms, event.title, searchText);
-      return score > 0
-        ? ({
-            score,
-            result: {
-              type: "event",
-              id: event.id,
-              title: event.title,
-              url: `/events/${event.id}`,
-              excerpt: truncate(stripHtml(event.description || "")),
-              metadata: event.locationName || event.location || "Event",
-            } satisfies PublicSearchResult,
-          })
-        : null;
-    })
-    .filter((entry): entry is { score: number; result: PublicSearchResult } => Boolean(entry));
-
-  return [...pageResults, ...postResults, ...eventResults]
+    .filter((entry): entry is { score: number; result: PublicSearchResult } => Boolean(entry))
     .sort((a, b) => b.score - a.score || a.result.title.localeCompare(b.result.title))
     .map((entry) => entry.result);
 }
