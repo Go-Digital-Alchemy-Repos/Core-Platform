@@ -1,4 +1,5 @@
 import type { SeoSettings, BlogPost, CmsPage, Event } from "@shared/schema";
+import { stripHtml } from "@/lib/html";
 
 export type JsonLdObject = Record<string, unknown>;
 
@@ -261,10 +262,6 @@ interface FaqBlock {
 
 interface BuilderContent {
   blocks?: FaqBlock[];
-}
-
-function stripHtml(value: string): string {
-  return value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
 export function extractFaqItems(pageContent: unknown): FaqItem[] {

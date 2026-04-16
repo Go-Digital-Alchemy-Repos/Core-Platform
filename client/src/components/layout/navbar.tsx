@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, Search, X, ChevronDown, Bell } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, ChevronDown, Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
@@ -17,6 +17,7 @@ import { useBranding } from "@/components/shared/branding-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { NotificationBell } from "@/components/shared/notification-bell";
+import { NavbarSearchPopover } from "@/components/layout/navbar-search-popover";
 import type { CmsMenu, MenuItem, PublicMenuLocation } from "@shared/schema";
 
 const defaultNavLinks = [
@@ -101,11 +102,6 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-  const [, navigate] = useLocation();
 
   const { data: publicMenus } = useQuery<Partial<Record<PublicMenuLocation, CmsMenu>>>({
     queryKey: ["/api/cms/menus"],
@@ -128,38 +124,6 @@ export function Navbar() {
   const resourceLinks = allResourceLinks.filter(
     (link) => !(link.hideFromClients && isClient)
   );
-
-  useEffect(() => {
-    if (searchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [searchOpen]);
-
-  useEffect(() => {
-    if (!searchOpen) return;
-
-    const handlePointerDown = (event: MouseEvent) => {
-      if (!searchContainerRef.current?.contains(event.target as Node)) {
-        setSearchOpen(false);
-        setSearchQuery("");
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setSearchOpen(false);
-        setSearchQuery("");
-      }
-    };
-
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [searchOpen]);
 
   const unreadNotifCount = useUnreadNotificationCount();
   const brandLogo = frontendLogoUrl || logoImg;
@@ -248,51 +212,7 @@ export function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-3 flex-wrap">
-          <div ref={searchContainerRef} className="relative flex items-center">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => setSearchOpen((current) => !current)}
-              data-testid="button-search-open"
-              aria-expanded={searchOpen}
-              aria-label={searchOpen ? "Close search" : "Open search"}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-            {searchOpen && (
-              <form
-                className="absolute right-0 top-full z-[1205] mt-2 flex w-80 max-w-[calc(100vw-2rem)] items-center gap-1 rounded-xl border bg-background p-2 shadow-xl"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (searchQuery.trim()) {
-                    navigate(`/directory?search=${encodeURIComponent(searchQuery.trim())}`);
-                    setSearchOpen(false);
-                    setSearchQuery("");
-                  }
-                }}
-              >
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search..."
-                  className="h-9 flex-1 rounded-md border bg-background px-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 transition-all"
-                  data-testid="input-search"
-                />
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="h-9 w-9 shrink-0"
-                  onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
-                  data-testid="button-search-close"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </form>
-            )}
-          </div>
+          <NavbarSearchPopover />
           {isLoading ? null : user ? (
             <>
               <DropdownMenu>

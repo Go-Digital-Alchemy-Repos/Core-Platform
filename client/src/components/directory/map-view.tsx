@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import { Link } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getFirstSentence } from "@/lib/html";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
 import type { User } from "@shared/schema/users";
 
@@ -44,13 +45,6 @@ interface MapViewProps {
   zoom?: number;
   center?: [number, number];
   highlightedId?: string | null;
-}
-
-function stripHtml(value: string): string {
-  return value
-    .replace(/<[^>]*>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 function MapSizeInvalidator() {
@@ -164,7 +158,7 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
                     )}
                     {t.profile.bio && (
                       <span className="text-xs text-gray-600 leading-snug mt-0.5 line-clamp-2">
-                        {`${stripHtml(t.profile.bio).split(".")[0]?.trim() ?? ""}.`}
+                        {getFirstSentence(t.profile.bio)}
                       </span>
                     )}
                     <Link
