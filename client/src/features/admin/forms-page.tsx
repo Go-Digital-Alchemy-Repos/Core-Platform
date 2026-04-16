@@ -343,7 +343,20 @@ function stringifySubmissionValue(value: unknown): string {
     return value.map((entry) => stringifySubmissionValue(entry)).filter(Boolean).join(", ");
   }
   if (typeof value === "object") {
-    return Object.entries(value as Record<string, unknown>)
+    const record = value as Record<string, unknown>;
+    const firstName = typeof record.firstName === "string" ? record.firstName.trim() : "";
+    const lastName = typeof record.lastName === "string" ? record.lastName.trim() : "";
+    const fullName = typeof record.fullName === "string" ? record.fullName.trim() : "";
+
+    if (fullName) {
+      return fullName;
+    }
+
+    if (firstName || lastName) {
+      return [firstName, lastName].filter(Boolean).join(" ");
+    }
+
+    return Object.entries(record)
       .map(([key, entry]) => `${key}: ${stringifySubmissionValue(entry)}`)
       .filter((entry) => !entry.endsWith(": "))
       .join(" | ");
@@ -405,10 +418,17 @@ function findSubmissionValue(
 
 function getSubmissionDisplayName(submission: CmsFormSubmission) {
   const data = (submission.data ?? {}) as Record<string, unknown>;
+  const explicitFirstName = stringifySubmissionValue(data.firstName).trim();
+  const explicitLastName = stringifySubmissionValue(data.lastName).trim();
+
+  if (explicitFirstName || explicitLastName) {
+    return [explicitFirstName, explicitLastName].filter(Boolean).join(" ");
+  }
+
   return (
     findSubmissionValue(
       data,
-      ["name", "fullName", "senderName", "firstName", "first_name"],
+      ["name", "fullName", "senderName", "first_name"],
       (key, value) =>
         /name/i.test(key) ||
         (typeof value === "object" &&

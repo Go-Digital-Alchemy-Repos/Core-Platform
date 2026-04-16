@@ -100,6 +100,7 @@ import {
   type BuilderContent,
 } from "./block-registry";
 import { BlockEditor } from "./block-editor";
+import { BlockRenderer as AdminBlockRenderer } from "./block-renderer";
 import {
   getSectionPaddingClasses,
   getSectionStyleConfig,
@@ -474,8 +475,12 @@ function SaveSectionDialog({ block, onClose }: SaveSectionDialogProps) {
       toast({ title: "Saved as reusable section" });
       onClose();
     },
-    onError: () => {
-      toast({ title: "Failed to save section", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to save section",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -725,7 +730,7 @@ function CanvasBlockFrame({
         )}
       >
         <div className="pointer-events-none select-none">
-          <PublicBlockRenderer block={block} disableSectionStyleWrap renderInactive />
+          <AdminBlockRenderer block={block} isAdminPreview disableSectionStyleWrap />
         </div>
       </div>
 

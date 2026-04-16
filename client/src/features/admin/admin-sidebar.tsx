@@ -81,6 +81,7 @@ function buildNavGroups(siteFeatures: SiteFeatures, user: AppUser | null, hasAdm
           ? [{ title: "Events", href: "/admin/events", icon: CalendarDays, iconColor: "text-purple-600" } satisfies NavItem]
           : []),
         { title: "Media", href: "/admin/cms/media", icon: Image, iconColor: "text-violet-400" },
+        { title: "Sections", href: "/admin/cms/sections", icon: Blocks, iconColor: "text-violet-400" },
         { title: "SEO", href: "/admin/cms/seo", icon: SearchIcon, iconColor: "text-violet-400" },
       ],
     }] satisfies NavGroup[]
@@ -94,7 +95,6 @@ function buildNavGroups(siteFeatures: SiteFeatures, user: AppUser | null, hasAdm
         { title: "Typography", href: "/admin/design/typography", icon: Type, iconColor: "text-sky-600" },
         { title: "Menus", href: "/admin/cms/menus", icon: MenuIcon, iconColor: "text-violet-500" },
         { title: "Sidebars & Widgets", href: "/admin/cms/sidebars", icon: PanelRight, iconColor: "text-emerald-500" },
-        { title: "Sections", href: "/admin/cms/sections", icon: Blocks, iconColor: "text-violet-400" },
       ],
     }] satisfies NavGroup[]
       : []),

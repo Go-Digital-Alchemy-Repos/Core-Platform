@@ -292,17 +292,17 @@ function Router() {
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/sections/new">
-          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content", "design"]}>
             <CmsSectionEditorPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/sections/:id">
-          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content", "design"]}>
             <CmsSectionEditorPage />
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/sections">
-          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content", "design"]}>
             <CmsSectionsPage />
           </ProtectedRoute>
         </Route>

@@ -33,7 +33,7 @@ router.use("/blog", requireAdminPermission("content"), blogRoutes);
 router.use("/", requireAdminPermission("content"), registrationRoutes);
 router.use("/cms", requireAdminPermission("content"), cmsRoutes);
 router.use("/cms", requireAdminPermission("content"), cmsMediaRoutes);
-router.use("/cms", requireAdminPermission("design"), cmsSectionsRoutes);
+router.use("/cms", requireAdminPermission("content", "design"), cmsSectionsRoutes);
 router.use("/cms", requireAdminPermission("content"), cmsSeoRoutes);
 router.use("/cms", requireAdminPermission("content"), cmsRedirectsRoutes);
 router.use("/cms", requireAdminPermission("content"), cmsAuditRoutes);
