@@ -10,7 +10,6 @@ import {
   getEditorLock,
   heartbeatEditorLock,
   releaseEditorLock,
-  takeoverEditorLock,
 } from "../../services/editor-locks.service";
 
 const router = Router();
@@ -49,22 +48,6 @@ router.post(
   asyncHandler(async (req, res) => {
     const { resourceType, resourceId } = editorLockRequestSchema.parse(req.body);
     res.json(await releaseEditorLock(resourceType, resourceId, req.user));
-  }),
-);
-
-router.post(
-  "/takeover",
-  asyncHandler(async (req, res) => {
-    const { resourceType, resourceId } = editorLockRequestSchema.parse(req.body);
-    try {
-      res.json(await takeoverEditorLock(resourceType, resourceId, req.user));
-    } catch (error) {
-      if (error instanceof Error && error.message === "Locked") {
-        res.status(423).json({ message: "This item is already checked out by another editor. Please try again later." });
-        return;
-      }
-      throw error;
-    }
   }),
 );
 

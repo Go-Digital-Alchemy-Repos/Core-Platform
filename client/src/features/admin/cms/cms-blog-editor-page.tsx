@@ -348,15 +348,13 @@ export default function CmsBlogEditorPage() {
     <AdminSidebar>
       <div className="p-6 max-w-4xl mx-auto space-y-6">
         {editorLock.summary ? (
-          <EditorLockBanner
-            variant={editorLock.summary.variant}
-            title={editorLock.summary.title}
-            description={editorLock.summary.description}
-            isLoading={editorLock.isLoading}
-            canTakeOver={editorLock.canTakeOver}
-            onRefresh={editorLock.acquire}
-            onTakeOver={editorLock.takeOver}
-          />
+            <EditorLockBanner
+              variant={editorLock.summary.variant}
+              title={editorLock.summary.title}
+              description={editorLock.summary.description}
+              isLoading={editorLock.isLoading}
+              onRefresh={editorLock.acquire}
+            />
         ) : null}
 
         <div className="flex items-center justify-between flex-wrap gap-3">

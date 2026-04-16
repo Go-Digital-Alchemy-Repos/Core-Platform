@@ -38,7 +38,6 @@ describe("EditorLockBanner", () => {
       variant: "locked-by-other",
       title: "Checked out by Alex Admin",
       description: "Alex Admin is already editing this item. Please try again later.",
-      canTakeOver: true,
       onRefresh: vi.fn(),
     });
     expect(container.textContent).toContain("Checked out by Alex Admin");

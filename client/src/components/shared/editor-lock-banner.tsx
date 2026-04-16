@@ -7,9 +7,7 @@ type EditorLockBannerProps = {
   title: string;
   description: string;
   isLoading?: boolean;
-  canTakeOver?: boolean;
   onRefresh?: () => void;
-  onTakeOver?: () => void;
 };
 
 const VARIANT_STYLES: Record<EditorLockBannerProps["variant"], string> = {

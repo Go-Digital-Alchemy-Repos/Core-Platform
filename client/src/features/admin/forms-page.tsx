@@ -885,9 +885,7 @@ function FormsPageContent() {
           title={editorLock.summary.title}
           description={editorLock.summary.description}
           isLoading={editorLock.isLoading}
-          canTakeOver={editorLock.canTakeOver}
           onRefresh={editorLock.acquire}
-          onTakeOver={editorLock.takeOver}
         />
       ) : null}
 

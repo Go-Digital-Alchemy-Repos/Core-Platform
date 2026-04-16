@@ -231,7 +231,7 @@ function HtmlWidget({ widget }: { widget: SidebarWidget }) {
   return (
     <WidgetCard title={widget.title}>
       <div
-        className="prose prose-sm prose-neutral dark:prose-invert max-w-none"
+        className="prose prose-sm prose-neutral max-w-none"
         dangerouslySetInnerHTML={{ __html: text(widget.settings.html, "") }}
       />
     </WidgetCard>

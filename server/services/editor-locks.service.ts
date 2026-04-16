@@ -47,7 +47,6 @@ function buildResponse(
     resourceType,
     resourceId,
     ownedByCurrentUser: Boolean(lockOwnerId && lockOwnerId === user.id),
-    canTakeOver: false,
     lock: lockPayload(lock),
   };
 }
@@ -181,26 +180,4 @@ export async function releaseEditorLock(
 
   await storage.editorLocks.deleteById(lock.id);
   return buildResponse(user, resourceType, resourceId, "expired_available", null);
-}
-
-export async function takeoverEditorLock(
-  resourceType: EditorLockResourceType,
-  resourceId: string,
-  user: User | undefined,
-): Promise<EditorLockResponse> {
-  if (!canUseEditorLocks(user)) {
-    throw new Error("Unauthorized");
-  }
-
-  const now = new Date();
-  const existing = await getFreshLock(resourceType, resourceId, now);
-
-  if (!existing) {
-    return acquireEditorLock(resourceType, resourceId, user);
-  }
-  if (existing.lockedByUserId === user.id) {
-    const refreshed = (await refreshOwnedLock(existing, now)) ?? existing;
-    return buildResponse(user, resourceType, resourceId, "acquired", refreshed);
-  }
-  throw new Error("Locked");
 }

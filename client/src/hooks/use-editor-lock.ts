@@ -10,7 +10,7 @@ type UseEditorLockOptions = {
   enabled?: boolean;
 };
 
-type LockAction = "acquire" | "heartbeat" | "release" | "takeover";
+type LockAction = "acquire" | "heartbeat" | "release";
 
 async function postLockAction(
   action: LockAction,
@@ -80,7 +80,6 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
       setLockState(nextState);
       setHasLoaded(true);
       setLostLock((current) => {
-        if (action === "takeover" && nextState.ownedByCurrentUser) return false;
         if (action === "acquire" && nextState.ownedByCurrentUser) return false;
         if (nextState.status === "locked_by_other" && current) return true;
         if (nextState.status === "acquired" && nextState.ownedByCurrentUser) return false;
@@ -104,15 +103,6 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
   const refresh = useCallback(async () => {
     if (!isEnabled) return null;
     return runAction("status");
-  }, [isEnabled, runAction]);
-
-  const takeOver = useCallback(async () => {
-    if (!isEnabled) return null;
-    const nextState = await runAction("takeover");
-    if (nextState?.ownedByCurrentUser) {
-      setLostLock(false);
-    }
-    return nextState;
   }, [isEnabled, runAction]);
 
   useEffect(() => {
@@ -218,10 +208,8 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
     isOwned,
     isReadOnly,
     isLockedByOther,
-    canTakeOver: false,
     lostLock,
     acquire,
     refresh,
-    takeOver,
   };
 }

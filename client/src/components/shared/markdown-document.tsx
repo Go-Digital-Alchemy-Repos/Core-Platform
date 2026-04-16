@@ -12,7 +12,7 @@ export function MarkdownDocument({ content, className, ...props }: MarkdownDocum
   return (
     <div
       {...props}
-      className={cn("prose prose-sm max-w-none dark:prose-invert", className)}
+      className={cn("prose prose-sm max-w-none", className)}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

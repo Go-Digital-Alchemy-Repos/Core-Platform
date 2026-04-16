@@ -951,7 +951,7 @@ export default function EventDetailPage() {
             )}
 
             {isPast && event.recordingUrl && (
-              <Card className="mb-8 border-blue-200 dark:border-blue-800" data-testid="section-recording">
+              <Card className="mb-8 border-blue-200" data-testid="section-recording">
                 <CardContent className="p-5 sm:p-6">
                   <h2 className="font-heading text-lg font-semibold mb-2">Recording Available</h2>
                   <p className="text-sm text-muted-foreground mb-4">

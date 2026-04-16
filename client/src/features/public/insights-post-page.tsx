@@ -34,11 +34,11 @@ function PodcastPlayer({ podcastUrl }: { podcastUrl: string }) {
   };
 
   return (
-    <Card className="border-purple-200 dark:border-purple-800/40 bg-purple-50/40 dark:bg-purple-950/20 mb-8" data-testid="card-podcast-player">
+    <Card className="mb-8 border-purple-200 bg-purple-50/40" data-testid="card-podcast-player">
       <CardContent className="p-5">
         <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
-            <Headphones className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-purple-100">
+            <Headphones className="h-6 w-6 text-purple-600" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-sm mb-1 public-heading-3">Listen to this episode</h3>
@@ -209,13 +209,13 @@ export default function InsightsPostPage() {
 
             {post.content && post.content.trim().startsWith("<") ? (
               <div
-                className="prose prose-neutral dark:prose-invert max-w-none public-prose"
+                className="prose prose-neutral max-w-none public-prose"
                 data-testid="div-post-content"
                 dangerouslySetInnerHTML={{ __html: post.content }}
               />
             ) : (
               <div
-                className="prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap public-prose"
+                className="prose prose-neutral max-w-none whitespace-pre-wrap public-prose"
                 data-testid="div-post-content"
               >
                 {post.content}

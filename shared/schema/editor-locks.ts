@@ -61,7 +61,6 @@ export const editorLockResponseSchema = z.object({
   resourceType: editorLockResourceTypeSchema,
   resourceId: z.string().min(1),
   ownedByCurrentUser: z.boolean(),
-  canTakeOver: z.boolean(),
   lock: z.object({
     id: z.string(),
     lockedByUserId: z.string(),
