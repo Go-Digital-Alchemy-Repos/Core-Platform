@@ -25,6 +25,7 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import {
   Select,
   SelectContent,
@@ -60,6 +61,8 @@ import { SeoPreview } from "@/components/shared/seo-preview";
 import { StructuredDataStatus } from "@/components/shared/structured-data-status";
 import { ImagePositionPicker } from "./components/image-position-picker";
 import type { BlogPost, BlogTaxonomy, CmsSidebar } from "@shared/schema";
+import { cn } from "@/lib/utils";
+import { useEditorLock } from "@/hooks/use-editor-lock";
 
 function generateSlug(title: string): string {
   return title
@@ -145,6 +148,12 @@ export default function CmsBlogEditorPage() {
   });
   const { data: taxonomies = [] } = useQuery<BlogTaxonomy[]>({
     queryKey: ["/api/admin/blog/settings/taxonomies"],
+  });
+
+  const editorLock = useEditorLock({
+    resourceType: "blog_post",
+    resourceId: isNew ? null : (post?.id ?? id ?? null),
+    enabled: !isNew,
   });
 
   const form = useForm<PostForm>({
@@ -338,6 +347,18 @@ export default function CmsBlogEditorPage() {
   return (
     <AdminSidebar>
       <div className="p-6 max-w-4xl mx-auto space-y-6">
+        {editorLock.summary ? (
+          <EditorLockBanner
+            variant={editorLock.summary.variant}
+            title={editorLock.summary.title}
+            description={editorLock.summary.description}
+            isLoading={editorLock.isLoading}
+            canTakeOver={editorLock.canTakeOver}
+            onRefresh={editorLock.acquire}
+            onTakeOver={editorLock.takeOver}
+          />
+        ) : null}
+
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <Button asChild variant="ghost" size="sm" className="gap-1.5">
@@ -389,13 +410,14 @@ export default function CmsBlogEditorPage() {
                 </Button>
               )
             )}
-            <Button onClick={onSave} disabled={isSaving} data-testid="button-save-post">
+            <Button onClick={onSave} disabled={isSaving || editorLock.isReadOnly} data-testid="button-save-post">
               <Save className="h-4 w-4 mr-2" />
               {isSaving ? "Saving…" : "Save"}
             </Button>
           </div>
         </div>
 
+        <div className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
         <Form {...form}>
           <form onSubmit={(e) => { e.preventDefault(); onSave(); }}>
             <Tabs defaultValue="content" className="space-y-4">
@@ -1178,9 +1200,10 @@ export default function CmsBlogEditorPage() {
             </Tabs>
           </form>
         </Form>
+        </div>
 
         <div className="flex justify-end pb-8">
-          <Button onClick={onSave} disabled={isSaving} data-testid="button-save-post-bottom">
+          <Button onClick={onSave} disabled={isSaving || editorLock.isReadOnly} data-testid="button-save-post-bottom">
             <Save className="h-4 w-4 mr-2" />
             {isSaving ? "Saving…" : "Save Post"}
           </Button>

@@ -12,6 +12,7 @@ import {
   cmsFormFieldConfigSchema,
 } from "@shared/schema";
 import { ProtectedRoute } from "@/components/shared/protected-route";
+import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { AdminSidebar } from "./admin-sidebar";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -67,6 +68,7 @@ import {
   Inbox,
   FileText,
 } from "lucide-react";
+import { useEditorLock } from "@/hooks/use-editor-lock";
 
 type EditableForm = Omit<CmsForm, "createdAt" | "updatedAt">;
 
@@ -693,6 +695,12 @@ function FormsPageContent() {
       ? `${window.location.origin}/forms/${draft.slug}`
       : "";
 
+  const editorLock = useEditorLock({
+    resourceType: "form",
+    resourceId: activeTab === "builder" && draft && !draft.id.startsWith("draft-") ? draft.id : null,
+    enabled: activeTab === "builder" && Boolean(draft) && !(draft?.id.startsWith("draft-")),
+  });
+
   const updateDraft = (updater: (current: EditableForm) => EditableForm) => {
     setDraft((current) => (current ? updater(current) : current));
   };
@@ -851,6 +859,18 @@ function FormsPageContent() {
 
   return (
     <div className="space-y-6 p-6">
+      {activeTab === "builder" && editorLock.summary ? (
+        <EditorLockBanner
+          variant={editorLock.summary.variant}
+          title={editorLock.summary.title}
+          description={editorLock.summary.description}
+          isLoading={editorLock.isLoading}
+          canTakeOver={editorLock.canTakeOver}
+          onRefresh={editorLock.acquire}
+          onTakeOver={editorLock.takeOver}
+        />
+      ) : null}
+
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-heading font-semibold" data-testid="text-admin-forms-title">
@@ -862,7 +882,7 @@ function FormsPageContent() {
         </div>
         <div className="flex items-center gap-2">
           {activeTab === "builder" && draft ? (
-            <Button onClick={() => saveMutation.mutate(draft)} disabled={saveMutation.isPending}>
+            <Button onClick={() => saveMutation.mutate(draft)} disabled={saveMutation.isPending || editorLock.isReadOnly}>
               <Save className="mr-2 h-4 w-4" />
               Save Form
             </Button>
@@ -894,7 +914,7 @@ function FormsPageContent() {
         </TabsList>
 
         <TabsContent value="builder" className="mt-0">
-          <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+          <div className={cn("grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]", editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
         <Card className="h-fit">
           <CardHeader>
             <CardTitle className="text-base">Form Library</CardTitle>
@@ -975,7 +995,7 @@ function FormsPageContent() {
                         variant="outline"
                         className="text-destructive"
                         onClick={() => deleteMutation.mutate(draft.id)}
-                        disabled={deleteMutation.isPending || draft.id.startsWith("draft-")}
+                        disabled={deleteMutation.isPending || draft.id.startsWith("draft-") || editorLock.isReadOnly}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete

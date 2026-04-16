@@ -34,6 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { SeoPreview } from "@/components/shared/seo-preview";
 import { StructuredDataStatus } from "@/components/shared/structured-data-status";
+import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
@@ -67,6 +68,7 @@ import { mergeJoinHeroBlocks } from "@shared/cms-blocks";
 import { TemplatePicker } from "./components/template-picker";
 import { LandingPageWizard } from "./components/landing-page-wizard";
 import { analyzeCmsPageQuality } from "@/lib/cms-page-quality";
+import { useEditorLock } from "@/hooks/use-editor-lock";
 
 const editorSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -133,6 +135,12 @@ export default function CmsPageEditorPage() {
 
   const { data: sidebars = [] } = useQuery<CmsSidebar[]>({
     queryKey: ["/api/admin/cms/sidebars"],
+  });
+
+  const editorLock = useEditorLock({
+    resourceType: "cms_page",
+    resourceId: isNew ? null : (page?.id ?? id ?? null),
+    enabled: !isNew,
   });
 
   const form = useForm<EditorForm>({
@@ -416,6 +424,18 @@ export default function CmsPageEditorPage() {
           activeTab === "builder" ? "max-w-[1800px]" : "max-w-6xl"
         )}
       >
+        {editorLock.summary ? (
+          <EditorLockBanner
+            variant={editorLock.summary.variant}
+            title={editorLock.summary.title}
+            description={editorLock.summary.description}
+            isLoading={editorLock.isLoading}
+            canTakeOver={editorLock.canTakeOver}
+            onRefresh={editorLock.acquire}
+            onTakeOver={editorLock.takeOver}
+          />
+        ) : null}
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
@@ -502,7 +522,7 @@ export default function CmsPageEditorPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => unpublishMutation.mutate()}
-                  disabled={unpublishMutation.isPending}
+                  disabled={unpublishMutation.isPending || editorLock.isReadOnly}
                   data-testid="button-unpublish"
                 >
                   {unpublishMutation.isPending ? (
@@ -529,7 +549,7 @@ export default function CmsPageEditorPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => unpublishMutation.mutate()}
-                  disabled={unpublishMutation.isPending}
+                  disabled={unpublishMutation.isPending || editorLock.isReadOnly}
                   data-testid="button-cancel-schedule"
                 >
                   {unpublishMutation.isPending ? (
@@ -546,7 +566,7 @@ export default function CmsPageEditorPage() {
                 <Button
                   variant="outline"
                   onClick={() => publishMutation.mutate()}
-                  disabled={publishMutation.isPending}
+                  disabled={publishMutation.isPending || editorLock.isReadOnly}
                   data-testid="button-publish"
                 >
                   {publishMutation.isPending ? (
@@ -580,7 +600,7 @@ export default function CmsPageEditorPage() {
                       <Button
                         className="w-full"
                         size="sm"
-                        disabled={!scheduleDate || scheduleMutation.isPending}
+                        disabled={!scheduleDate || scheduleMutation.isPending || editorLock.isReadOnly}
                         onClick={() => scheduleMutation.mutate(new Date(scheduleDate).toISOString())}
                         data-testid="button-confirm-schedule"
                       >
@@ -598,7 +618,7 @@ export default function CmsPageEditorPage() {
             )}
             <Button
               onClick={onSave}
-              disabled={isPending}
+              disabled={isPending || editorLock.isReadOnly}
               data-testid="button-save"
               className={
                 saveStatus === "success"
@@ -653,11 +673,13 @@ export default function CmsPageEditorPage() {
           </TabsList>
 
           <TabsContent value="builder" className="mt-0">
-            <PageBuilder content={builderContent} onChange={handleBuilderChange} />
+            <div className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
+              <PageBuilder content={builderContent} onChange={handleBuilderChange} />
+            </div>
           </TabsContent>
 
           <TabsContent value="settings" className="mt-0">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className={cn("grid grid-cols-1 lg:grid-cols-3 gap-6", editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
               <div className="lg:col-span-2">
                 <Form {...form}>
                   <form className="space-y-6">
@@ -888,7 +910,7 @@ export default function CmsPageEditorPage() {
           </TabsContent>
 
           <TabsContent value="seo" className="mt-0">
-            <div className="max-w-2xl space-y-5">
+            <div className={cn("max-w-2xl space-y-5", editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
               <Form {...form}>
                 <form className="space-y-5">
                   <Card>
@@ -1054,7 +1076,7 @@ export default function CmsPageEditorPage() {
           </TabsContent>
 
           <TabsContent value="quality" className="mt-0">
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <div className={cn("grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]", editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Publication Checklist</CardTitle>

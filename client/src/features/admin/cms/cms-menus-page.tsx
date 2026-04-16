@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
+import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +40,7 @@ import {
   LayoutTemplate,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import {
   MENU_LOCATION_LABELS,
   STANDARD_MENU_LOCATIONS,
@@ -47,6 +49,7 @@ import {
   type MenuItem,
   type MenuLocation,
 } from "@shared/schema";
+import { useEditorLock } from "@/hooks/use-editor-lock";
 
 function generateId() {
   return Math.random().toString(36).substring(2, 10);
@@ -273,6 +276,11 @@ function MenuEditor({
   const [name, setName] = useState(menu?.name || draft?.name || "");
   const [location, setLocation] = useState<MenuLocation>((menu?.location as MenuLocation) || (draft?.location as MenuLocation) || "unassigned");
   const [items, setItems] = useState<MenuItem[]>((menu?.items as MenuItem[]) || []);
+  const editorLock = useEditorLock({
+    resourceType: "cms_menu",
+    resourceId: isNew ? null : menu?.id ?? null,
+    enabled: !isNew,
+  });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -395,6 +403,18 @@ function MenuEditor({
 
   return (
     <div className="space-y-6">
+      {editorLock.summary ? (
+        <EditorLockBanner
+          variant={editorLock.summary.variant}
+          title={editorLock.summary.title}
+          description={editorLock.summary.description}
+          isLoading={editorLock.isLoading}
+          canTakeOver={editorLock.canTakeOver}
+          onRefresh={editorLock.acquire}
+          onTakeOver={editorLock.takeOver}
+        />
+      ) : null}
+
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold" data-testid="text-menu-editor-title">
           {isNew ? "Create Menu" : `Edit: ${menu!.name}`}
@@ -405,7 +425,7 @@ function MenuEditor({
           </Button>
           <Button
             onClick={() => saveMutation.mutate()}
-            disabled={!name.trim() || saveMutation.isPending}
+            disabled={!name.trim() || saveMutation.isPending || editorLock.isReadOnly}
             data-testid="button-save-menu"
           >
             {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -414,7 +434,7 @@ function MenuEditor({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-4", editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
         <div className="space-y-2">
           <Label htmlFor="menu-name">Menu Name</Label>
           <Input
@@ -453,7 +473,7 @@ function MenuEditor({
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className={cn("space-y-3", editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
         <div className="flex items-center justify-between">
           <Label>Menu Items</Label>
           <Button variant="outline" size="sm" onClick={addItem} data-testid="button-add-menu-item">

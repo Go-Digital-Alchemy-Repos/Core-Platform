@@ -5,9 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import { AdminSidebar } from "./admin-sidebar";
+import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { apiRequest, queryClient, STALE_TIMES } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +71,7 @@ import {
   toDateTimeLocalValue,
 } from "@/lib/event-datetime";
 import type { Event, EventRegistration } from "@shared/schema";
+import { useEditorLock } from "@/hooks/use-editor-lock";
 
 const eventFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -303,6 +306,11 @@ function EventsContent() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Event | null>(null);
   const [activeTab, setActiveTab] = useState("details");
+  const editorLock = useEditorLock({
+    resourceType: "event",
+    resourceId: dialogOpen && editingEvent?.id ? editingEvent.id : null,
+    enabled: dialogOpen && Boolean(editingEvent?.id),
+  });
 
   const { data: events, isLoading } = useQuery<Event[]>({
     queryKey: ["/api/admin/events"],
@@ -740,6 +748,20 @@ function EventsContent() {
             </SheetDescription>
           </SheetHeader>
           <SheetBody>
+            {editorLock.summary ? (
+              <div className="mb-4">
+                <EditorLockBanner
+                  variant={editorLock.summary.variant}
+                  title={editorLock.summary.title}
+                  description={editorLock.summary.description}
+                  isLoading={editorLock.isLoading}
+                  canTakeOver={editorLock.canTakeOver}
+                  onRefresh={editorLock.acquire}
+                  onTakeOver={editorLock.takeOver}
+                />
+              </div>
+            ) : null}
+            <div className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
             <Form {...form}>
               <form id="event-form" onSubmit={form.handleSubmit(onSubmit)}>
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -1808,13 +1830,14 @@ function EventsContent() {
                 </Tabs>
               </form>
             </Form>
+            </div>
           </SheetBody>
           <SheetFooter>
             <Button
               type="submit"
               form="event-form"
               className="w-full"
-              disabled={createMutation.isPending || updateMutation.isPending}
+              disabled={createMutation.isPending || updateMutation.isPending || editorLock.isReadOnly}
               data-testid="button-submit-event"
             >
               {createMutation.isPending || updateMutation.isPending

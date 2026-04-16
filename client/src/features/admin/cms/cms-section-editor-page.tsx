@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
+import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +33,8 @@ import { apiRequest, queryClient as qc } from "@/lib/queryClient";
 import type { CmsSection } from "@shared/schema";
 import { PageBuilder } from "./builder/page-builder";
 import type { BuilderContent } from "./builder/block-registry";
+import { cn } from "@/lib/utils";
+import { useEditorLock } from "@/hooks/use-editor-lock";
 
 const EMPTY_CONTENT: BuilderContent = { blocks: [] };
 
@@ -54,6 +57,12 @@ export default function CmsSectionEditorPage() {
 
   const [builderContent, setBuilderContent] = useState<BuilderContent>(EMPTY_CONTENT);
   const [initialized, setInitialized] = useState(false);
+
+  const editorLock = useEditorLock({
+    resourceType: "cms_section",
+    resourceId: isNew ? null : (section?.id ?? id ?? null),
+    enabled: !isNew,
+  });
 
   const { data: section, isLoading: sectionLoading } = useQuery<CmsSection>({
     queryKey: ["/api/admin/cms/sections", id],
@@ -141,6 +150,18 @@ export default function CmsSectionEditorPage() {
   return (
     <AdminSidebar>
       <div className="p-6 max-w-5xl mx-auto space-y-6">
+        {editorLock.summary ? (
+          <EditorLockBanner
+            variant={editorLock.summary.variant}
+            title={editorLock.summary.title}
+            description={editorLock.summary.description}
+            isLoading={editorLock.isLoading}
+            canTakeOver={editorLock.canTakeOver}
+            onRefresh={editorLock.acquire}
+            onTakeOver={editorLock.takeOver}
+          />
+        ) : null}
+
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <Button asChild variant="ghost" size="sm" className="gap-1.5">
@@ -158,7 +179,7 @@ export default function CmsSectionEditorPage() {
           </div>
           <Button
             onClick={onSave}
-            disabled={isSaving}
+            disabled={isSaving || editorLock.isReadOnly}
             data-testid="button-save-section"
           >
             <Save className="h-4 w-4 mr-2" />
@@ -166,7 +187,7 @@ export default function CmsSectionEditorPage() {
           </Button>
         </div>
 
-        <Card>
+        <Card className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
           <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">Section Details</CardTitle>
           </CardHeader>
@@ -241,7 +262,7 @@ export default function CmsSectionEditorPage() {
 
         <div className="space-y-2">
           <h2 className="text-sm font-medium text-muted-foreground">Blocks</h2>
-          <Card>
+          <Card className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
             <CardContent className="pt-4">
               <PageBuilder
                 content={builderContent}
@@ -254,7 +275,7 @@ export default function CmsSectionEditorPage() {
         <div className="flex justify-end">
           <Button
             onClick={onSave}
-            disabled={isSaving}
+            disabled={isSaving || editorLock.isReadOnly}
             data-testid="button-save-section-bottom"
           >
             <Save className="h-4 w-4 mr-2" />

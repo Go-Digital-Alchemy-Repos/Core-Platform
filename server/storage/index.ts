@@ -28,6 +28,7 @@ import { ApplicationStorage } from "./application.storage";
 import { CmsMenusStorage } from "./cms-menus.storage";
 import { CmsSidebarsStorage } from "./cms-sidebars.storage";
 import { FormsStorage } from "./forms.storage";
+import { EditorLocksStorage } from "./editor-locks.storage";
 export const storage = {
   users: new UserStorage(),
   therapists: new TherapistStorage(),
@@ -59,6 +60,7 @@ export const storage = {
   cmsMenus: new CmsMenusStorage(),
   cmsSidebars: new CmsSidebarsStorage(),
   forms: new FormsStorage(),
+  editorLocks: new EditorLocksStorage(),
 };
 
 export type { TherapistWithUser, PaginatedTherapists, DirectoryFilterOptions, TherapistSearchParams } from "@shared/types/directory";

@@ -3,6 +3,7 @@ import type { ElementType } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
+import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import {
   ArrowDown,
   ArrowUp,
@@ -42,6 +44,7 @@ import {
   Type,
 } from "lucide-react";
 import { SIDEBAR_WIDGET_TYPES, type CmsForm, type CmsSidebar, type SidebarWidget, type SidebarWidgetType } from "@shared/schema";
+import { useEditorLock } from "@/hooks/use-editor-lock";
 
 const WIDGET_LABELS: Record<SidebarWidgetType, string> = {
   "recent-posts": "Recent Blog Posts",
@@ -310,6 +313,11 @@ function SidebarEditor({ sidebar, onClose }: { sidebar: CmsSidebar | null; onClo
   const [widgets, setWidgets] = useState<SidebarWidget[]>(
     Array.isArray(sidebar?.widgets) ? (sidebar!.widgets as SidebarWidget[]) : []
   );
+  const editorLock = useEditorLock({
+    resourceType: "cms_sidebar",
+    resourceId: isNew ? null : sidebar?.id ?? null,
+    enabled: !isNew,
+  });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -349,6 +357,18 @@ function SidebarEditor({ sidebar, onClose }: { sidebar: CmsSidebar | null; onClo
 
   return (
     <div className="space-y-6">
+      {editorLock.summary ? (
+        <EditorLockBanner
+          variant={editorLock.summary.variant}
+          title={editorLock.summary.title}
+          description={editorLock.summary.description}
+          isLoading={editorLock.isLoading}
+          canTakeOver={editorLock.canTakeOver}
+          onRefresh={editorLock.acquire}
+          onTakeOver={editorLock.takeOver}
+        />
+      ) : null}
+
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-heading font-semibold">{isNew ? "Create Sidebar" : `Edit ${sidebar.name}`}</h1>
@@ -356,14 +376,14 @@ function SidebarEditor({ sidebar, onClose }: { sidebar: CmsSidebar | null; onClo
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => saveMutation.mutate()} disabled={!name.trim() || saveMutation.isPending} data-testid="button-save-sidebar">
+          <Button onClick={() => saveMutation.mutate()} disabled={!name.trim() || saveMutation.isPending || editorLock.isReadOnly} data-testid="button-save-sidebar">
             {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isNew ? "Create Sidebar" : "Save Sidebar"}
           </Button>
         </div>
       </div>
 
-      <Card>
+      <Card className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
         <CardHeader>
           <CardTitle className="text-base">Sidebar Details</CardTitle>
         </CardHeader>
@@ -388,7 +408,7 @@ function SidebarEditor({ sidebar, onClose }: { sidebar: CmsSidebar | null; onClo
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
             <div>

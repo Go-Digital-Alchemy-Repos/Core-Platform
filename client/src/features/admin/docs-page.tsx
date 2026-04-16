@@ -21,8 +21,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { MarkdownDocument } from "@/components/shared/markdown-document";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useEditorLock } from "@/hooks/use-editor-lock";
 import { markdownToExcerpt } from "@/lib/markdown";
 import {
   BookOpenText,
@@ -80,6 +83,12 @@ export default function DocsPage() {
   const [editingDoc, setEditingDoc] = useState<Partial<Doc> | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  const editorLock = useEditorLock({
+    resourceType: "doc",
+    resourceId: sheetOpen && editingDoc?.id ? editingDoc.id : null,
+    enabled: sheetOpen && Boolean(editingDoc?.id),
+  });
 
   const { data: allDocs = [], isLoading } = useQuery<Doc[]>({
     queryKey: ["/api/admin/docs"],
@@ -445,8 +454,22 @@ export default function DocsPage() {
             </SheetDescription>
           </SheetHeader>
           <SheetBody>
+            {editorLock.summary ? (
+              <div className="mb-4">
+                <EditorLockBanner
+                  variant={editorLock.summary.variant}
+                  title={editorLock.summary.title}
+                  description={editorLock.summary.description}
+                  isLoading={editorLock.isLoading}
+                  canTakeOver={editorLock.canTakeOver}
+                  onRefresh={editorLock.acquire}
+                  onTakeOver={editorLock.takeOver}
+                />
+              </div>
+            ) : null}
+
             {editingDoc && (
-              <div className="space-y-4">
+              <div className={cn("space-y-4", editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Title</Label>
@@ -550,7 +573,7 @@ export default function DocsPage() {
             </Button>
             <Button
               onClick={handleSave}
-              disabled={createMutation.isPending || updateMutation.isPending}
+              disabled={createMutation.isPending || updateMutation.isPending || editorLock.isReadOnly}
               data-testid="button-save-doc"
             >
               {(createMutation.isPending || updateMutation.isPending) && <LoadingSpinner />}

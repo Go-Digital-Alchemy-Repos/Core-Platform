@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { AdminSidebar } from "./admin-sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -72,6 +73,7 @@ import {
   type BrandingFontOption,
 } from "@/lib/branding";
 import { cn } from "@/lib/utils";
+import { useEditorLock } from "@/hooks/use-editor-lock";
 import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
 
 type SettingsData = Record<
@@ -1500,6 +1502,11 @@ function TemplateEditor({
   const [showLinkPanel, setShowLinkPanel] = useState(false);
   const visualEditorRef = useRef<HTMLDivElement | null>(null);
   const isApplyingExternalHtmlRef = useRef(false);
+  const editorLock = useEditorLock({
+    resourceType: "email_template",
+    resourceId: open ? template.slug : null,
+    enabled: open,
+  });
 
   useEffect(() => {
     setSubject(template.subject);
@@ -1633,6 +1640,20 @@ function TemplateEditor({
           <SheetDescription className="sr-only">Edit email template</SheetDescription>
         </SheetHeader>
         <SheetBody>
+          {editorLock.summary ? (
+            <div className="mb-4">
+              <EditorLockBanner
+                variant={editorLock.summary.variant}
+                title={editorLock.summary.title}
+                description={editorLock.summary.description}
+                isLoading={editorLock.isLoading}
+                canTakeOver={editorLock.canTakeOver}
+                onRefresh={editorLock.acquire}
+                onTakeOver={editorLock.takeOver}
+              />
+            </div>
+          ) : null}
+          <div className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
           <p className="text-sm text-muted-foreground">{template.description}</p>
 
           <div className="flex flex-wrap gap-1.5 mt-2">
@@ -1817,12 +1838,13 @@ function TemplateEditor({
               </div>
             )}
           </div>
+          </div>
 
         </SheetBody>
         <SheetFooter>
           <Button
             onClick={() => updateMutation.mutate()}
-            disabled={updateMutation.isPending}
+            disabled={updateMutation.isPending || editorLock.isReadOnly}
             data-testid="button-save-template"
           >
             {updateMutation.isPending ? (

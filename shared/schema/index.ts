@@ -42,6 +42,21 @@ export {
   type CmsMediaLibraryAsset,
 } from "./cms-media";
 export { cmsSections, insertCmsSectionSchema, type InsertCmsSection, type CmsSection } from "./cms-sections";
+export {
+  editorLocks,
+  EDITOR_LOCK_RESOURCE_TYPES,
+  EDITOR_LOCK_STATUSES,
+  editorLockResourceTypeSchema,
+  editorLockStatusSchema,
+  insertEditorLockSchema,
+  editorLockRequestSchema,
+  editorLockResponseSchema,
+  type EditorLock,
+  type EditorLockResourceType,
+  type EditorLockStatus,
+  type InsertEditorLock,
+  type EditorLockResponse,
+} from "./editor-locks";
 export { seoSettings, insertSeoSettingsSchema, type InsertSeoSettings, type SeoSettings } from "./seo-settings";
 export { redirects, insertRedirectSchema, type InsertRedirect, type Redirect } from "./redirects";
 export { recordingPurchases, insertRecordingPurchaseSchema, type InsertRecordingPurchase, type RecordingPurchase } from "./recording-purchases";
