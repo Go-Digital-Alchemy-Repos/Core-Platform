@@ -200,8 +200,10 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export function DirectoryBrowserSection({
   props = {},
+  syncUrl = true,
 }: {
   props?: Record<string, unknown>;
+  syncUrl?: boolean;
 }) {
   const queryString = useSearch();
   const [, navigate] = useLocation();
@@ -209,7 +211,7 @@ export function DirectoryBrowserSection({
   const subheading = str(props.subheading);
   const showCategoryChips = bool(props.showCategoryChips, true);
   const showMap = bool(props.showMap, true);
-  const initParams = useMemo(() => new URLSearchParams(queryString), []);
+  const initParams = useMemo(() => new URLSearchParams(syncUrl ? queryString : ""), [queryString, syncUrl]);
 
   const [search, setSearch] = useState(initParams.get("search") || "");
   const [sessionFormat, setSessionFormat] = useState(initParams.get("practiceMode") || "all");
@@ -230,6 +232,7 @@ export function DirectoryBrowserSection({
   const isInternalUpdate = useRef(false);
 
   useEffect(() => {
+    if (!syncUrl) return;
     if (isInternalUpdate.current) {
       isInternalUpdate.current = false;
       return;
@@ -246,13 +249,14 @@ export function DirectoryBrowserSection({
     if (searchParam !== search) setSearch(searchParam);
     const pageParam = parseInt(sp.get("page") || "1") || 1;
     setPage(pageParam);
-  }, [queryString]);
+  }, [queryString, syncUrl]);
 
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, sessionFormat, specializations, language, country, acceptingClients, willingToTravel]);
 
   useEffect(() => {
+    if (!syncUrl) return;
     const p = new URLSearchParams();
     if (debouncedSearch) p.set("search", debouncedSearch);
     if (specializations.length > 0) p.set("specialization", specializations.join(","));
@@ -266,7 +270,7 @@ export function DirectoryBrowserSection({
     const newPath = qs ? `/directory?${qs}` : "/directory";
     isInternalUpdate.current = true;
     navigate(newPath, { replace: true });
-  }, [debouncedSearch, specializations, sessionFormat, language, country, acceptingClients, willingToTravel, page]);
+  }, [debouncedSearch, specializations, sessionFormat, language, country, acceptingClients, willingToTravel, page, navigate, syncUrl]);
 
   const { specializations: specList } = useSpecializations();
 

@@ -2032,7 +2032,7 @@ export function BlockRenderer({
     if (!renderedBlock && block.type === "standard-blog-page") renderedBlock = <StandardBlogPageBlock props={block.props} />;
     if (!renderedBlock && block.type === "events-archive") renderedBlock = <EventsArchiveSection props={block.props} />;
     if (!renderedBlock && block.type === "video-archives") renderedBlock = <RecordingArchivesSection props={block.props} />;
-    if (!renderedBlock && block.type === "directory-browser") renderedBlock = <DirectoryBrowserSection props={block.props} />;
+    if (!renderedBlock && block.type === "directory-browser") renderedBlock = <DirectoryBrowserSection props={block.props} syncUrl={false} />;
   }
 
   if (!renderedBlock) {
