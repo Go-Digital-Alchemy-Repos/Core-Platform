@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatEventDate, formatEventListDateLines } from "@/lib/event-datetime";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
+import { stripHtml } from "@/lib/html";
 import {
   Tooltip,
   TooltipTrigger,
@@ -163,7 +164,7 @@ function EventCard({ event }: { event: Event }) {
                   className="text-sm text-muted-foreground line-clamp-2"
                   data-testid={`text-event-description-${event.id}`}
                 >
-                  {event.description}
+                  {stripHtml(event.description)}
                 </p>
               )}
               {event.speakerName && (
@@ -363,7 +364,7 @@ function CalendarView({ events }: { events: Event[] }) {
                                   </p>
                                   {event.description && (
                                     <p className="text-xs text-muted-foreground line-clamp-2">
-                                      {event.description}
+                                      {stripHtml(event.description)}
                                     </p>
                                   )}
                                   <span className="inline-flex items-center justify-center rounded-md bg-primary px-3 h-7 text-xs font-medium text-primary-foreground" data-testid={`button-learn-more-${event.id}`}>

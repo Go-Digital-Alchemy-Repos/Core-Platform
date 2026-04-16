@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { getQueryFn } from "@/lib/queryClient";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
+import { stripHtml } from "@/lib/html";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 
@@ -472,7 +473,7 @@ export default function HomePage() {
                       {event.memberOnly && <Badge variant="outline" className="text-xs">Members Only</Badge>}
                     </div>
                     <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">{event.description}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">{stripHtml(event.description)}</p>
                   </CardContent>
                 </Card>
               </Link>

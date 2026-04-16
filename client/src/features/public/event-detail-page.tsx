@@ -19,6 +19,7 @@ import { useState, useEffect } from "react";
 import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
 import { formatEventDate, formatEventTime } from "@/lib/event-datetime";
+import { stripHtml } from "@/lib/html";
 import {
   buildOrganizationLd,
   buildBreadcrumbLd,
@@ -551,7 +552,9 @@ function EventSeo({ event, globalSeo }: { event: Event; globalSeo?: SeoSettings 
   const titleSuffix = globalSeo?.titleSuffix ?? " | TCK Wellness";
   const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
   const effectiveTitle = `${event.title}${titleSuffix}`;
-  const effectiveDescription = event.description || globalSeo?.defaultMetaDescription || undefined;
+  const effectiveDescription = event.description
+    ? stripHtml(event.description)
+    : globalSeo?.defaultMetaDescription || undefined;
   const effectiveOgImage = event.imageUrl || globalSeo?.defaultOgImageUrl || undefined;
   const canonical = `${siteUrl}/events/${event.id}`;
 
@@ -859,9 +862,11 @@ export default function EventDetailPage() {
             {event.description && (
               <>
                 <h2 className="font-heading text-xl font-semibold mb-3">About This Event</h2>
-                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed whitespace-pre-wrap" data-testid="text-event-detail-description">
-                  {event.description}
-                </p>
+                <div
+                  className="prose prose-sm sm:prose-base max-w-none text-muted-foreground"
+                  data-testid="text-event-detail-description"
+                  dangerouslySetInnerHTML={{ __html: event.description }}
+                />
               </>
             )}
 

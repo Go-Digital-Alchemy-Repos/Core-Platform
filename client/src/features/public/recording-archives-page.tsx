@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Event } from "@shared/schema/events";
 import type { RecordingPurchase } from "@shared/schema/recording-purchases";
 import { PageLayout } from "@/components/layout/page-layout";
+import { stripHtml } from "@/lib/html";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -160,7 +161,7 @@ function RecordingCard({
           </div>
         )}
         <p className="line-clamp-2" data-testid={`text-recording-description-${event.id}`}>
-          {event.description}
+          {stripHtml(event.description)}
         </p>
       </CardContent>
       <CardFooter className="flex-none p-4 pt-0">

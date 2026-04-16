@@ -60,10 +60,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, CalendarDays, MapPin, Users, Download, MoreHorizontal, CheckCircle, Clock, XCircle, Copy, BarChart3, Bell, Square, CheckSquare, Video, Repeat, DollarSign, Globe } from "lucide-react";
 import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
+import { CmsRichTextEditor } from "@/features/admin/cms/builder/cms-rich-text-editor";
 import { ImagePositionPicker } from "@/features/admin/cms/components/image-position-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { StructuredDataStatus } from "@/components/shared/structured-data-status";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
+import { stripHtml } from "@/lib/html";
 import {
   formatEventDate,
   fromDateTimeLocalValue,
@@ -669,7 +671,7 @@ function EventsContent() {
               <CardContent>
                 {event.description && (
                   <p className="text-sm text-muted-foreground mb-2 line-clamp-2" data-testid={`text-event-desc-${event.id}`}>
-                    {event.description}
+                    {stripHtml(event.description)}
                   </p>
                 )}
                 <div className="flex gap-2 flex-wrap">
@@ -814,7 +816,12 @@ function EventsContent() {
                                 <FormItem>
                                   <FormLabel>Description</FormLabel>
                                   <FormControl>
-                                    <Textarea {...field} rows={4} data-testid="input-event-description" />
+                                    <CmsRichTextEditor
+                                      value={field.value ?? ""}
+                                      onChange={field.onChange}
+                                      placeholder="Add the event overview, key details, and any helpful registration notes..."
+                                      data-testid="input-event-description"
+                                    />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
