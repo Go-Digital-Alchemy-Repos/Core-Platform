@@ -11,3 +11,4 @@
 [75038938ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://tck-wellness-production.up.railway.app/api/branding:0
 [75038938ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://tck-wellness-production.up.railway.app/api/setup/status:0
 [75038938ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://tck-wellness-production.up.railway.app/api/site-config:0
+[79162402ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://tck-wellness-production.up.railway.app/api/auth/me:0

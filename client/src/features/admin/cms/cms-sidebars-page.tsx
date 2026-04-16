@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ElementType } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -307,6 +307,7 @@ function WidgetSettings({
 function SidebarEditor({ sidebar, onClose }: { sidebar: CmsSidebar | null; onClose: () => void }) {
   const { toast } = useToast();
   const isNew = !sidebar;
+  const lockDismissedSidebarIdRef = useRef<string | null>(null);
   const [name, setName] = useState(sidebar?.name ?? "");
   const [description, setDescription] = useState(sidebar?.description ?? "");
   const [isDefault, setIsDefault] = useState(Boolean(sidebar?.isDefault));
@@ -335,6 +336,35 @@ function SidebarEditor({ sidebar, onClose }: { sidebar: CmsSidebar | null; onClo
       toast({ title: "Failed to save sidebar", description: error.message, variant: "destructive" });
     },
   });
+
+  useEffect(() => {
+    if (!sidebar?.id) {
+      lockDismissedSidebarIdRef.current = null;
+    }
+  }, [sidebar?.id]);
+
+  useEffect(() => {
+    if (
+      isNew ||
+      !sidebar?.id ||
+      !editorLock.hasLocking ||
+      !editorLock.hasLoaded ||
+      !editorLock.isLockedByOther ||
+      lockDismissedSidebarIdRef.current === sidebar.id
+    ) {
+      return;
+    }
+
+    lockDismissedSidebarIdRef.current = sidebar.id;
+    toast({
+      title: "Sidebar already checked out",
+      description: editorLock.lockState?.lock
+        ? `${editorLock.lockState.lock.lockedByName} is already editing this sidebar. Please try again after they leave the editor or the lock expires.`
+        : "Another user is already editing this sidebar. Please try again later.",
+      variant: "destructive",
+    });
+    onClose();
+  }, [editorLock.hasLoaded, editorLock.hasLocking, editorLock.isLockedByOther, editorLock.lockState, isNew, onClose, sidebar?.id, toast]);
 
   const updateWidget = useCallback((id: string, updates: Partial<SidebarWidget>) => {
     setWidgets((current) => current.map((widget) => widget.id === id ? { ...widget, ...updates } : widget));

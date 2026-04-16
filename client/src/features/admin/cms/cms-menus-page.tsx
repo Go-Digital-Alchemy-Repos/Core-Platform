@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
@@ -273,6 +273,7 @@ function MenuEditor({
 }) {
   const { toast } = useToast();
   const isNew = !menu;
+  const lockDismissedMenuIdRef = useRef<string | null>(null);
   const [name, setName] = useState(menu?.name || draft?.name || "");
   const [location, setLocation] = useState<MenuLocation>((menu?.location as MenuLocation) || (draft?.location as MenuLocation) || "unassigned");
   const [items, setItems] = useState<MenuItem[]>((menu?.items as MenuItem[]) || []);
@@ -300,6 +301,35 @@ function MenuEditor({
       toast({ title: "Error", description: err.message, variant: "destructive" });
     },
   });
+
+  useEffect(() => {
+    if (!menu?.id) {
+      lockDismissedMenuIdRef.current = null;
+    }
+  }, [menu?.id]);
+
+  useEffect(() => {
+    if (
+      isNew ||
+      !menu?.id ||
+      !editorLock.hasLocking ||
+      !editorLock.hasLoaded ||
+      !editorLock.isLockedByOther ||
+      lockDismissedMenuIdRef.current === menu.id
+    ) {
+      return;
+    }
+
+    lockDismissedMenuIdRef.current = menu.id;
+    toast({
+      title: "Menu already checked out",
+      description: editorLock.lockState?.lock
+        ? `${editorLock.lockState.lock.lockedByName} is already editing this menu. Please try again after they leave the editor or the lock expires.`
+        : "Another user is already editing this menu. Please try again later.",
+      variant: "destructive",
+    });
+    onClose();
+  }, [editorLock.hasLoaded, editorLock.hasLocking, editorLock.isLockedByOther, editorLock.lockState, isNew, menu?.id, onClose, toast]);
 
   const updateItem = useCallback((id: string, updates: Partial<MenuItem>) => {
     setItems((prev) =>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -54,6 +54,7 @@ export default function CmsSectionEditorPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isNew = !id || id === "new";
+  const lockRedirectedRef = useRef(false);
 
   const [builderContent, setBuilderContent] = useState<BuilderContent>(EMPTY_CONTENT);
   const [initialized, setInitialized] = useState(false);
@@ -91,6 +92,22 @@ export default function CmsSectionEditorPage() {
       setInitialized(true);
     }
   }, [section, initialized, form]);
+
+  useEffect(() => {
+    if (!editorLock.hasLocking || !editorLock.hasLoaded || !editorLock.isLockedByOther || lockRedirectedRef.current) {
+      return;
+    }
+
+    lockRedirectedRef.current = true;
+    toast({
+      title: "Section already checked out",
+      description: editorLock.lockState?.lock
+        ? `${editorLock.lockState.lock.lockedByName} is already editing this saved section. Please try again after they leave the editor or the lock expires.`
+        : "Another user is already editing this saved section. Please try again later.",
+      variant: "destructive",
+    });
+    navigate("/admin/cms/sections");
+  }, [editorLock.hasLoaded, editorLock.hasLocking, editorLock.isLockedByOther, editorLock.lockState, navigate, toast]);
 
   const createMutation = useMutation({
     mutationFn: async (data: SectionForm) => {

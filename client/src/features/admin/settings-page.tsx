@@ -1592,6 +1592,7 @@ function TemplateEditor({
   onClose: () => void;
 }) {
   const { toast } = useToast();
+  const lockDismissedTemplateRef = useRef<string | null>(null);
   const [subject, setSubject] = useState(template.subject);
   const [htmlBody, setHtmlBody] = useState(template.htmlBody);
   const [editorTab, setEditorTab] = useState<"visual" | "html">("visual");
@@ -1614,6 +1615,34 @@ function TemplateEditor({
     setLinkUrl("");
     setShowLinkPanel(false);
   }, [template]);
+
+  useEffect(() => {
+    if (!open) {
+      lockDismissedTemplateRef.current = null;
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (
+      !open ||
+      !editorLock.hasLocking ||
+      !editorLock.hasLoaded ||
+      !editorLock.isLockedByOther ||
+      lockDismissedTemplateRef.current === template.slug
+    ) {
+      return;
+    }
+
+    lockDismissedTemplateRef.current = template.slug;
+    toast({
+      title: "Template already checked out",
+      description: editorLock.lockState?.lock
+        ? `${editorLock.lockState.lock.lockedByName} is already editing this email template. Please try again after they leave the editor or the lock expires.`
+        : "Another user is already editing this email template. Please try again later.",
+      variant: "destructive",
+    });
+    onClose();
+  }, [editorLock.hasLoaded, editorLock.hasLocking, editorLock.isLockedByOther, editorLock.lockState, onClose, open, template.slug, toast]);
 
   useEffect(() => {
     if (!open) return;

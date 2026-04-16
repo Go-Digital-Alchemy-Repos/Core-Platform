@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { AdminSidebar } from "./admin-sidebar";
@@ -83,12 +83,19 @@ export default function DocsPage() {
   const [editingDoc, setEditingDoc] = useState<Partial<Doc> | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const lockDismissedDocIdRef = useRef<string | null>(null);
 
   const editorLock = useEditorLock({
     resourceType: "doc",
     resourceId: sheetOpen && editingDoc?.id ? editingDoc.id : null,
     enabled: sheetOpen && Boolean(editingDoc?.id),
   });
+
+  useEffect(() => {
+    if (!sheetOpen || !editingDoc?.id) {
+      lockDismissedDocIdRef.current = null;
+    }
+  }, [editingDoc?.id, sheetOpen]);
 
   const { data: allDocs = [], isLoading } = useQuery<Doc[]>({
     queryKey: ["/api/admin/docs"],
@@ -109,6 +116,31 @@ export default function DocsPage() {
       });
     },
   });
+
+  useEffect(() => {
+    if (
+      !sheetOpen ||
+      !editingDoc?.id ||
+      !editorLock.hasLocking ||
+      !editorLock.hasLoaded ||
+      !editorLock.isLockedByOther ||
+      lockDismissedDocIdRef.current === editingDoc.id
+    ) {
+      return;
+    }
+
+    lockDismissedDocIdRef.current = editingDoc.id;
+    toast({
+      title: "Document already checked out",
+      description: editorLock.lockState?.lock
+        ? `${editorLock.lockState.lock.lockedByName} is already editing this document. Please try again after they leave the editor or the lock expires.`
+        : "Another user is already editing this document. Please try again later.",
+      variant: "destructive",
+    });
+    setSheetOpen(false);
+    setEditingDoc(null);
+    setShowPreview(false);
+  }, [editingDoc?.id, editorLock.hasLoaded, editorLock.hasLocking, editorLock.isLockedByOther, editorLock.lockState, sheetOpen, toast]);
 
   const createMutation = useMutation({
     mutationFn: async (data: Partial<Doc>) => {
