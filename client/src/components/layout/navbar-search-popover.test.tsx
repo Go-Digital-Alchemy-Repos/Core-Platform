@@ -53,13 +53,15 @@ describe("NavbarSearchPopover", () => {
 
     await act(async () => {
       if (input) {
-        input.value = "Application Process";
+        const valueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+        valueSetter?.call(input, "Application Process");
+        input.dispatchEvent(new Event("change", { bubbles: true }));
         input.dispatchEvent(new Event("input", { bubbles: true }));
       }
     });
 
     await act(async () => {
-      form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      form?.requestSubmit();
     });
 
     expect(navigate).toHaveBeenCalledWith("/search?query=Application%20Process");

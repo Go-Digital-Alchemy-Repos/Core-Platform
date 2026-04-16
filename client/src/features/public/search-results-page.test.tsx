@@ -84,7 +84,7 @@ describe("SearchResultsPage", () => {
     });
 
     await act(async () => {
-      await Promise.resolve();
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     expect(fetch).toHaveBeenCalledWith("/api/search?q=application%20process");

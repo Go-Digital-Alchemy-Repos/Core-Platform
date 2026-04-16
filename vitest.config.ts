@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["server/**/*.test.ts", "shared/**/*.test.ts", "client/**/*.test.ts"],
+    include: ["server/**/*.test.ts", "shared/**/*.test.ts", "client/**/*.test.ts", "client/**/*.test.tsx"],
     exclude: ["node_modules", "dist", "build", ".cache"],
     typecheck: {
       tsconfig: "./tsconfig.test.json",
