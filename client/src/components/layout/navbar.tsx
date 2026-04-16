@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, Search, X, ChevronDown, Bell, Moon, Sun, Clock } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, Search, X, ChevronDown, Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
@@ -13,7 +13,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ThemeToggle, useTheme } from "@/components/shared/theme-provider";
 import { useBranding } from "@/components/shared/branding-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
@@ -98,7 +97,6 @@ function DynamicDropdown({ item, location: currentPath }: { item: MenuItem; loca
 export function Navbar() {
   const [location] = useLocation();
   const { user, isLoading, logout, isAdmin, isTherapist } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const { frontendLogoUrl } = useBranding();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -143,7 +141,7 @@ export function Navbar() {
     <nav className="sticky top-0 z-[999] bg-background/95 backdrop-blur-sm border-b" data-testid="navbar">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 py-3 sm:py-4">
         <Link href="/" data-testid="link-brand">
-          <img src={brandLogo} alt="TCK Wellness" className="h-8 sm:h-10 w-auto dark:brightness-[1.8] dark:contrast-[0.9]" />
+          <img src={brandLogo} alt="TCK Wellness" className="h-8 sm:h-10 w-auto" />
         </Link>
 
         <div className="hidden md:flex items-center gap-2 flex-wrap">
@@ -327,13 +325,6 @@ export function Navbar() {
                     <UserCog className="mr-2 h-4 w-4" />
                     My Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={toggleTheme}
-                    data-testid="button-theme-toggle-menu"
-                  >
-                    {theme === "light" ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
-                    {theme === "light" ? "Dark Mode" : "Light Mode"}
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => logout.mutate()}
@@ -347,21 +338,11 @@ export function Navbar() {
             </>
           ) : (
             <>
-              <ThemeToggle />
               <Link href="/auth/login">
                 <Button variant="ghost" data-testid="link-login">
                   Login
                 </Button>
               </Link>
-              <Button
-                variant="outline"
-                disabled
-                className="opacity-60 cursor-not-allowed text-xs gap-1.5"
-                data-testid="button-register"
-              >
-                <Clock className="h-3.5 w-3.5" />
-                Applications open in June
-              </Button>
             </>
           )}
         </div>
@@ -376,7 +357,7 @@ export function Navbar() {
             <SheetContent side="right" className="w-72">
               <SheetHeader>
                 <SheetTitle>
-                  <img src={brandLogo} alt="TCK Wellness" className="h-8 w-auto dark:brightness-[1.8] dark:contrast-[0.9]" />
+                  <img src={brandLogo} alt="TCK Wellness" className="h-8 w-auto" />
                 </SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-1 mt-6">
@@ -508,17 +489,6 @@ export function Navbar() {
                       <UserCog className="mr-2 h-4 w-4" />
                       My Profile
                     </Button>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start"
-                      onClick={() => {
-                        toggleTheme();
-                      }}
-                      data-testid="button-mobile-theme-toggle"
-                    >
-                      {theme === "light" ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
-                      {theme === "light" ? "Dark Mode" : "Light Mode"}
-                    </Button>
                     <div className="my-1 border-t" />
                     <Button
                       variant="ghost"
@@ -535,32 +505,11 @@ export function Navbar() {
                   </>
                 ) : (
                   <>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start"
-                      onClick={() => {
-                        toggleTheme();
-                      }}
-                      data-testid="button-mobile-theme-toggle-loggedout"
-                    >
-                      {theme === "light" ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
-                      {theme === "light" ? "Dark Mode" : "Light Mode"}
-                    </Button>
-                    <div className="my-1 border-t" />
                     <Link href="/auth/login" onClick={() => setMobileOpen(false)}>
                       <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-login">
                         Login
                       </Button>
                     </Link>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start opacity-60 cursor-not-allowed text-xs gap-1.5"
-                      disabled
-                      data-testid="button-mobile-register"
-                    >
-                      <Clock className="h-3.5 w-3.5" />
-                      Applications open in June
-                    </Button>
                   </>
                 )}
               </div>

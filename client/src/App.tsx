@@ -4,7 +4,6 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/components/shared/theme-provider";
 import { BrandingProvider } from "@/components/shared/branding-provider";
 import { CookieConsentBanner } from "@/components/shared/cookie-consent-banner";
 import { ProtectedRoute } from "@/components/shared/protected-route";
@@ -422,19 +421,17 @@ function RouteAdminModeManager() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <BrandingProvider>
-          <TooltipProvider>
-            <Toaster />
-            <SetupGuard>
-              <RouteAdminModeManager />
-              <RouteScrollManager />
-              <Router />
-              <CookieConsentBanner />
-            </SetupGuard>
-          </TooltipProvider>
-        </BrandingProvider>
-      </ThemeProvider>
+      <BrandingProvider>
+        <TooltipProvider>
+          <Toaster />
+          <SetupGuard>
+            <RouteAdminModeManager />
+            <RouteScrollManager />
+            <Router />
+            <CookieConsentBanner />
+          </SetupGuard>
+        </TooltipProvider>
+      </BrandingProvider>
     </QueryClientProvider>
   );
 }

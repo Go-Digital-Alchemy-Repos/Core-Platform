@@ -203,7 +203,7 @@ export function Footer() {
             <img
               src={brandLogo}
               alt="TCK Wellness"
-              className="h-8 sm:h-9 w-auto mb-3 sm:mb-4 dark:brightness-[1.8] dark:contrast-[0.9]"
+              className="h-8 sm:h-9 w-auto mb-3 sm:mb-4"
             />
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               Connecting Third Culture Kids with culturally informed mental health professionals worldwide. Find support that understands your unique journey.
