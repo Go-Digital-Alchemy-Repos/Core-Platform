@@ -11,6 +11,9 @@ type UseEditorLockOptions = {
 };
 
 type LockAction = "acquire" | "heartbeat" | "release";
+type RunActionOptions = {
+  background?: boolean;
+};
 
 async function postLockAction(
   action: LockAction,
@@ -71,9 +74,11 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
   const isEnabled = Boolean(enabled && user && resourceId);
   const resolvedResourceId = resourceId ?? null;
 
-  const runAction = useCallback(async (action: LockAction | "status") => {
+  const runAction = useCallback(async (action: LockAction | "status", options: RunActionOptions = {}) => {
     if (!resolvedResourceId) return null;
-    setIsLoading(true);
+    if (!options.background) {
+      setIsLoading(true);
+    }
     try {
       const nextState = action === "status"
         ? await getLockStatus(resourceType, resolvedResourceId)
@@ -88,7 +93,9 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
       });
       return nextState;
     } finally {
-      setIsLoading(false);
+      if (!options.background) {
+        setIsLoading(false);
+      }
     }
   }, [resolvedResourceId, resourceType]);
 
@@ -104,6 +111,40 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
   const refresh = useCallback(async () => {
     if (!isEnabled) return null;
     return runAction("status");
+  }, [isEnabled, runAction]);
+
+  const refreshOrRecover = useCallback(async () => {
+    if (!isEnabled) return null;
+
+    try {
+      const nextState = await runAction("heartbeat", { background: true });
+      if (!nextState) return null;
+
+      if (nextState.status === "acquired" && nextState.ownedByCurrentUser) {
+        setLostLock(false);
+        return nextState;
+      }
+
+      if (nextState.status === "expired_available") {
+        const recoveredState = await runAction("acquire", { background: true });
+        if (recoveredState?.status === "acquired" && recoveredState.ownedByCurrentUser) {
+          setLostLock(false);
+          return recoveredState;
+        }
+        if (recoveredState?.status === "locked_by_other") {
+          setLostLock(true);
+        }
+        return recoveredState;
+      }
+
+      if (nextState.status === "locked_by_other") {
+        setLostLock(true);
+      }
+
+      return nextState;
+    } catch {
+      return null;
+    }
   }, [isEnabled, runAction]);
 
   useEffect(() => {
@@ -137,15 +178,33 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
     }
 
     const heartbeat = window.setInterval(async () => {
-      const nextState = await runAction("heartbeat");
-      if (!nextState) return;
-      if (nextState.status !== "acquired" || !nextState.ownedByCurrentUser) {
-        setLostLock(true);
-      }
+      await refreshOrRecover();
     }, EDITOR_LOCK_HEARTBEAT_MS);
 
     return () => window.clearInterval(heartbeat);
-  }, [isEnabled, lockState, resolvedResourceId, runAction]);
+  }, [isEnabled, lockState, refreshOrRecover, resolvedResourceId]);
+
+  useEffect(() => {
+    if (!isEnabled) {
+      return;
+    }
+
+    const handleResync = () => {
+      if (!activeRef.current) return;
+      if (document.visibilityState && document.visibilityState !== "visible") return;
+      void refreshOrRecover();
+    };
+
+    window.addEventListener("focus", handleResync);
+    window.addEventListener("online", handleResync);
+    document.addEventListener("visibilitychange", handleResync);
+
+    return () => {
+      window.removeEventListener("focus", handleResync);
+      window.removeEventListener("online", handleResync);
+      document.removeEventListener("visibilitychange", handleResync);
+    };
+  }, [isEnabled, refreshOrRecover]);
 
   useEffect(() => {
     if (!isEnabled || !resolvedResourceId) {

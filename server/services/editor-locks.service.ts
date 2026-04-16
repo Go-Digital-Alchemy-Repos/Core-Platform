@@ -2,7 +2,7 @@ import { type EditorLock, type EditorLockResourceType, type EditorLockResponse, 
 import { storage } from "../storage";
 
 export const EDITOR_LOCK_HEARTBEAT_MS = 30_000;
-export const EDITOR_LOCK_EXPIRY_MS = 2 * 60_000;
+export const EDITOR_LOCK_EXPIRY_MS = 5 * 60_000;
 
 function toIso(value: Date | string | null | undefined): string {
   if (!value) return new Date(0).toISOString();

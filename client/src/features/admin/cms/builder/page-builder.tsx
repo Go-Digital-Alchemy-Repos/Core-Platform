@@ -1053,11 +1053,12 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     if (viewport) {
       const viewportRect = viewport.getBoundingClientRect();
       const nodeRect = node.getBoundingClientRect();
-      const lowZoneThreshold = viewportRect.top + viewport.clientHeight * 0.52;
-      const bottomSafetyThreshold = viewportRect.bottom - Math.min(260, viewport.clientHeight * 0.28);
-      const desiredTop = viewportRect.top + Math.min(140, viewport.clientHeight * 0.18);
+      const highZoneThreshold = viewportRect.top + viewport.clientHeight * 0.14;
+      const lowZoneThreshold = viewportRect.top + viewport.clientHeight * 0.68;
+      const bottomSafetyThreshold = viewportRect.bottom - Math.min(180, viewport.clientHeight * 0.18);
+      const desiredTop = viewportRect.top + Math.min(240, viewport.clientHeight * 0.34);
 
-      if (nodeRect.top > lowZoneThreshold || nodeRect.bottom > bottomSafetyThreshold) {
+      if (nodeRect.top < highZoneThreshold || nodeRect.top > lowZoneThreshold || nodeRect.bottom > bottomSafetyThreshold) {
         const nextScrollTop = viewport.scrollTop + (nodeRect.top - desiredTop);
         viewport.scrollTo({
           top: Math.max(0, nextScrollTop),
@@ -1156,11 +1157,11 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       return;
     }
 
-    const blockTopRelative = blockRect.top - viewportRect.top;
-    const desiredTopAnchor = Math.max(92, Math.min(132, shellHeight * 0.16));
-    const minInspectorHeight = Math.min(520, Math.max(380, shellHeight * 0.58));
+    const blockAnchorRelative = blockRect.top - viewportRect.top + blockRect.height * 0.24;
+    const desiredTopAnchor = Math.max(120, Math.min(210, shellHeight * 0.24));
+    const minInspectorHeight = Math.min(460, Math.max(300, shellHeight * 0.44));
     const maxOffset = Math.max(0, shellHeight - minInspectorHeight);
-    const nextOffset = Math.max(0, Math.min(maxOffset, blockTopRelative - desiredTopAnchor));
+    const nextOffset = Math.max(0, Math.min(maxOffset, blockAnchorRelative - desiredTopAnchor));
 
     setDesktopInspectorOffset((current) =>
       Math.abs(current - nextOffset) > 2 ? nextOffset : current

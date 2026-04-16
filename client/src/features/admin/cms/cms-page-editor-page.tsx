@@ -116,6 +116,7 @@ export default function CmsPageEditorPage() {
   const titleRef = useRef<string>("");
   const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slugManuallyEdited = useRef(false);
+  const lockRedirectedRef = useRef(false);
   const [builderContent, setBuilderContent] = useState<BuilderContent>(EMPTY_CONTENT);
   const [activeTab, setActiveTab] = useState("builder");
   const [templatePickerOpen, setTemplatePickerOpen] = useState(isNew);
@@ -180,6 +181,22 @@ export default function CmsPageEditorPage() {
       setBuilderContent(parseBuilderContent(page.content));
     }
   }, [page, form]);
+
+  useEffect(() => {
+    if (!editorLock.hasLocking || !editorLock.hasLoaded || !editorLock.isLockedByOther || lockRedirectedRef.current) {
+      return;
+    }
+
+    lockRedirectedRef.current = true;
+    toast({
+      title: "Page already checked out",
+      description: editorLock.lockState?.lock
+        ? `${editorLock.lockState.lock.lockedByName} is already editing this page. Please try again after they leave the editor or the lock expires.`
+        : "Another user is already editing this page. Please try again later.",
+      variant: "destructive",
+    });
+    navigate("/admin/cms/pages");
+  }, [editorLock.hasLoaded, editorLock.hasLocking, editorLock.isLockedByOther, editorLock.lockState, navigate, toast]);
 
   const watchTitle = form.watch("title");
   const watchSlug = form.watch("slug");
