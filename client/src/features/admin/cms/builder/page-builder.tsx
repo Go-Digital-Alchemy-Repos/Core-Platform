@@ -95,11 +95,10 @@ import {
   getBlockDef,
   isDynamicBlock,
   type BlockCategory,
-  type BlockDef,
   type BlockInstance,
   type BuilderContent,
 } from "./block-registry";
-import { BlockEditor } from "./block-editor";
+import { ResilientBlockEditor, createFallbackBlockDef } from "./block-editor";
 import { BlockRenderer as AdminBlockRenderer } from "./block-renderer";
 import {
   getSectionPaddingClasses,
@@ -1029,6 +1028,9 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const blocks = content.blocks ?? [];
   const selectedBlock = blocks.find((block) => block.id === selectedId) ?? null;
   const selectedDef = selectedBlock ? getBlockDef(selectedBlock.type) : null;
+  const selectedEditorDef = selectedBlock
+    ? (selectedDef ?? createFallbackBlockDef(selectedBlock.type, selectedBlock.props))
+    : null;
 
   const selectBlock = useCallback((id: string | null) => {
     setSelectedId(id);
@@ -1724,7 +1726,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     </div>
   );
 
-  const inspectorPanel = selectedBlock && selectedDef ? (
+  const inspectorPanel = selectedBlock && selectedEditorDef ? (
     <div
       className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm"
       data-testid="block-editor-panel"
@@ -1775,11 +1777,11 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
         <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 px-3 py-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-violet-100 dark:bg-violet-900/30">
-            <BlockIcon name={selectedDef.iconName} className="h-4 w-4 text-violet-600" />
+            <BlockIcon name={selectedEditorDef.iconName} className="h-4 w-4 text-violet-600" />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{selectedDef.label}</p>
-            <p className="truncate text-xs text-muted-foreground">{selectedDef.description}</p>
+            <p className="truncate text-sm font-medium">{selectedEditorDef.label}</p>
+            <p className="truncate text-xs text-muted-foreground">{selectedEditorDef.description}</p>
           </div>
           <Badge variant="outline" className="ml-auto shrink-0">
             Block {blocks.findIndex((block) => block.id === selectedBlock.id) + 1}
@@ -1789,8 +1791,9 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
       <ScrollArea className="min-h-0 flex-1">
         <div className="p-4 pb-12">
-          <BlockEditor
-            blockDef={selectedDef}
+          <ResilientBlockEditor
+            blockDef={selectedEditorDef}
+            blockType={selectedBlock.type}
             props={selectedBlock.props}
             onChange={(props) => updateBlockProps(selectedBlock.id, props)}
           />

@@ -46,6 +46,17 @@ export interface BuilderContent {
   blocks: BlockInstance[];
 }
 
+const LEGACY_BLOCK_TYPE_ALIASES: Record<string, string> = {
+  "call-to-action": "cta",
+  "cta-banner": "cta",
+  "blog-feed": "blog-post-feed",
+  "blog-archive": "blog-post-feed",
+  "featured-articles": "blog-preview",
+  "articles-preview": "blog-preview",
+  "events-feed": "events-preview",
+  "upcoming-events": "events-preview",
+};
+
 const ALIGN_OPTIONS = [
   { label: "Left", value: "left" },
   { label: "Center", value: "center" },
@@ -1769,8 +1780,13 @@ export const DYNAMIC_BLOCK_TYPES: BlockDef[] = BASE_DYNAMIC_BLOCK_TYPES.map((blo
 
 export const ALL_BLOCKS: BlockDef[] = [...BLOCK_REGISTRY, ...DYNAMIC_BLOCK_TYPES];
 
+export function normalizeBlockType(type: string): string {
+  return LEGACY_BLOCK_TYPE_ALIASES[type] ?? type;
+}
+
 export function getBlockDef(type: string): BlockDef | undefined {
-  return ALL_BLOCKS.find((b) => b.type === type);
+  const normalizedType = normalizeBlockType(type);
+  return ALL_BLOCKS.find((b) => b.type === normalizedType);
 }
 
 export function isDynamicBlock(type: string): boolean {

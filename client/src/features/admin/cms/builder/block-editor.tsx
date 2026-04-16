@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { Component, useMemo, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import type { CmsForm, CmsPage } from "@shared/schema";
 
 interface BlockEditorProps {
   blockDef: BlockDef;
+  blockType?: string;
   props: Record<string, unknown>;
   onChange: (props: Record<string, unknown>) => void;
   mode?: "full" | "contextual";
@@ -226,6 +227,59 @@ const CONTEXTUAL_PRIORITY: Record<string, number> = {
   imageWidth: 64,
   imagePosition: 65,
 };
+
+function humanizeBlockType(type: string) {
+  return type
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function inferFallbackPropDef(key: string, value: unknown): PropDef | null {
+  if (typeof value === "boolean") {
+    return { key, label: humanizeBlockType(key), type: "boolean" };
+  }
+
+  if (typeof value === "number") {
+    return { key, label: humanizeBlockType(key), type: "number" };
+  }
+
+  if (typeof value === "string") {
+    const normalizedKey = key.toLowerCase();
+    const label = humanizeBlockType(key);
+
+    if (normalizedKey.includes("image") && normalizedKey.includes("url")) {
+      return { key, label, type: "image-url", placeholder: "Upload or select image" };
+    }
+
+    if (normalizedKey.endsWith("link") || normalizedKey.endsWith("url") || normalizedKey.includes("link")) {
+      return { key, label, type: "url", placeholder: "Enter a link" };
+    }
+
+    if (value.includes("<") || value.includes("\n") || value.length > 140) {
+      return { key, label, type: "textarea", placeholder: `Enter ${label.toLowerCase()}` };
+    }
+
+    return { key, label, type: "text", placeholder: `Enter ${label.toLowerCase()}` };
+  }
+
+  return null;
+}
+
+export function createFallbackBlockDef(blockType: string, values: Record<string, unknown>): BlockDef {
+  const propDefs = Object.entries(values)
+    .map(([key, value]) => inferFallbackPropDef(key, value))
+    .filter((propDef): propDef is PropDef => Boolean(propDef));
+
+  return {
+    type: blockType,
+    label: `${humanizeBlockType(blockType)} (Compatibility Mode)`,
+    iconName: "Settings2",
+    description: "This block is using a compatibility editor because its normal inspector fields could not be loaded.",
+    category: "content",
+    defaultProps: values,
+    propDefs,
+  };
+}
 
 function getActionControllerKey(key: string) {
   if (key === "link" || key === "formSlug" || key === "modalTitle" || key === "modalDescription") {
@@ -784,6 +838,7 @@ function PropField({
 
 export function BlockEditor({
   blockDef,
+  blockType,
   props,
   onChange,
   mode = "full",
@@ -962,5 +1017,83 @@ export function BlockEditor({
         </Tabs>
       )}
     </div>
+  );
+}
+
+type BlockEditorBoundaryProps = {
+  blockKey: string;
+  fallback: ReactNode;
+  children: ReactNode;
+};
+
+type BlockEditorBoundaryState = {
+  hasError: boolean;
+};
+
+class BlockEditorBoundary extends Component<BlockEditorBoundaryProps, BlockEditorBoundaryState> {
+  state: BlockEditorBoundaryState = {
+    hasError: false,
+  };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidUpdate(prevProps: BlockEditorBoundaryProps) {
+    if (prevProps.blockKey !== this.props.blockKey && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+
+    return this.props.children;
+  }
+}
+
+export function ResilientBlockEditor({
+  blockDef,
+  blockType,
+  props,
+  onChange,
+  mode = "full",
+  onOpenAdvanced,
+}: BlockEditorProps) {
+  const resolvedBlockType = blockType ?? blockDef.type;
+  const fallbackDef = useMemo(
+    () => createFallbackBlockDef(resolvedBlockType, props),
+    [resolvedBlockType, props],
+  );
+
+  const fallbackEditor = (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-amber-300/70 bg-amber-50/70 px-3 py-3 text-sm text-amber-900">
+        Some inspector controls for this block could not be loaded, so we’ve switched to compatibility mode for this section.
+      </div>
+      <BlockEditor
+        blockDef={fallbackDef}
+        blockType={resolvedBlockType}
+        props={props}
+        onChange={onChange}
+        mode={mode}
+        onOpenAdvanced={onOpenAdvanced}
+      />
+    </div>
+  );
+
+  return (
+    <BlockEditorBoundary blockKey={`${resolvedBlockType}:${Object.keys(props).join("|")}`} fallback={fallbackEditor}>
+      <BlockEditor
+        blockDef={blockDef}
+        blockType={resolvedBlockType}
+        props={props}
+        onChange={onChange}
+        mode={mode}
+        onOpenAdvanced={onOpenAdvanced}
+      />
+    </BlockEditorBoundary>
   );
 }
