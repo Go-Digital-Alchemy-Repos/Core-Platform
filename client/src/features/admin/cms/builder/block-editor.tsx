@@ -389,6 +389,15 @@ function getContextualPropDefs(propDefs: PropDef[]) {
   return propDefs.filter((propDef) => !SECTION_SETTING_KEYS.has(propDef.key)).slice(0, 6);
 }
 
+function shouldUseRichTextEditor(propDef: Pick<PropDef, "type" | "key">) {
+  return (
+    propDef.type === "richtext" ||
+    propDef.key === "subtitle" ||
+    propDef.key === "subheading" ||
+    propDef.key === "answer"
+  );
+}
+
 function ArrayItemsField({
   propDef,
   value,
@@ -472,12 +481,28 @@ function ArrayItemsField({
                   data-testid={`array-item-${idx}-${field.key}`}
                 />
               ) : field.type === "textarea" ? (
-                <Textarea
+                shouldUseRichTextEditor(field) ? (
+                  <CmsRichTextEditor
+                    value={String(item[field.key] ?? "")}
+                    onChange={(val) => updateItem(idx, field.key, val)}
+                    placeholder={field.placeholder}
+                    data-testid={`array-item-${idx}-${field.key}-richtext`}
+                  />
+                ) : (
+                  <Textarea
+                    value={String(item[field.key] ?? "")}
+                    onChange={(e) => updateItem(idx, field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                    rows={2}
+                    className="text-xs"
+                  />
+                )
+              ) : field.type === "richtext" ? (
+                <CmsRichTextEditor
                   value={String(item[field.key] ?? "")}
-                  onChange={(e) => updateItem(idx, field.key, e.target.value)}
+                  onChange={(val) => updateItem(idx, field.key, val)}
                   placeholder={field.placeholder}
-                  rows={2}
-                  className="text-xs"
+                  data-testid={`array-item-${idx}-${field.key}-richtext`}
                 />
               ) : field.type === "select" ? (
                 <Select
@@ -585,11 +610,7 @@ function PropField({
   const strVal = String(value ?? "");
   const numVal = Number(value ?? 0);
   const boolVal = propDef.key === "isActive" ? value !== false : Boolean(value);
-  const useRichTextEditor =
-    propDef.type === "richtext" ||
-    propDef.key === "subtitle" ||
-    propDef.key === "subheading" ||
-    propDef.key === "answer";
+  const useRichTextEditor = shouldUseRichTextEditor(propDef);
   const actionValue = normalizeButtonActionValue(propDef.key, values);
 
   switch (propDef.type) {
