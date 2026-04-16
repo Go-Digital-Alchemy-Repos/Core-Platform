@@ -126,6 +126,7 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url={tileUrl}
+          referrerPolicy="strict-origin-when-cross-origin"
         />
         {markered.map((t) => {
           const fullName =

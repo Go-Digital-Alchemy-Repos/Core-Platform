@@ -30,6 +30,7 @@ export function enforceRequiredSecrets() {
 
 export function securityHeaders(): RequestHandler {
   return helmet({
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
