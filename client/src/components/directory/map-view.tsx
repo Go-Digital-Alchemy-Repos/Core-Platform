@@ -46,6 +46,13 @@ interface MapViewProps {
   highlightedId?: string | null;
 }
 
+function stripHtml(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function MapSizeInvalidator() {
   const map = useMap();
 
@@ -156,7 +163,7 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
                     )}
                     {t.profile.bio && (
                       <span className="text-xs text-gray-600 leading-snug mt-0.5 line-clamp-2">
-                        {t.profile.bio.split('.')[0]}.
+                        {`${stripHtml(t.profile.bio).split(".")[0]?.trim() ?? ""}.`}
                       </span>
                     )}
                     <Link

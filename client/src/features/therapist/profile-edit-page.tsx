@@ -12,7 +12,6 @@ import { useSpecializations } from "@/hooks/use-specializations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -26,6 +25,7 @@ import { AvatarUpload } from "@/components/shared/avatar-upload";
 import { PhoneInput } from "@/components/shared/phone-input";
 import { phoneSchema } from "@/lib/phone-utils";
 import { useAuth } from "@/hooks/use-auth";
+import { CmsRichTextEditor } from "@/features/admin/cms/builder/cms-rich-text-editor";
 
 const profileFormSchema = z.object({
   title: z.string().optional(),
@@ -226,7 +226,12 @@ export default function ProfileEditPage() {
                   <FormItem>
                     <FormLabel>Bio</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Tell clients about your practice and approach..." className="min-h-[120px]" {...field} data-testid="input-bio" />
+                      <CmsRichTextEditor
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        placeholder="Tell clients about your practice and approach..."
+                        data-testid="input-bio"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

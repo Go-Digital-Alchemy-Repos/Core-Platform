@@ -46,6 +46,7 @@ import { Plus, Search, Loader2, Trash2, CheckCircle, ThumbsDown, Pencil, Camera,
 import { SiInstagram, SiFacebook, SiX, SiLinkedin, SiYoutube, SiTiktok } from "react-icons/si";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { CmsRichTextEditor } from "@/features/admin/cms/builder/cms-rich-text-editor";
 
 interface TherapistWithUser {
   id: string;
@@ -698,7 +699,14 @@ function AddTherapistSheet({
               <FormField control={form.control} name="bio" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Bio</FormLabel>
-                  <FormControl><Textarea placeholder="About the mental health professional..." className="min-h-[80px]" {...field} data-testid="input-add-bio" /></FormControl>
+                  <FormControl>
+                    <CmsRichTextEditor
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      placeholder="About the mental health professional..."
+                      data-testid="input-add-bio"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -1234,7 +1242,13 @@ function OverviewTab({
           <FormField control={form.control} name="bio" render={({ field }) => (
             <FormItem>
               <FormLabel>Bio</FormLabel>
-              <FormControl><Textarea className="min-h-[100px]" {...field} data-testid="input-edit-bio" /></FormControl>
+              <FormControl>
+                <CmsRichTextEditor
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  data-testid="input-edit-bio"
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )} />

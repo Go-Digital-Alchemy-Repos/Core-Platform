@@ -231,9 +231,11 @@ export default function TherapistProfilePage() {
                   <h2 className="text-lg font-semibold">About</h2>
                 </CardHeader>
                 <CardContent>
-                  <p className="whitespace-pre-wrap text-muted-foreground leading-relaxed" data-testid="text-bio">
-                    {therapist.bio}
-                  </p>
+                  <div
+                    className="prose prose-sm max-w-none text-muted-foreground leading-relaxed"
+                    data-testid="text-bio"
+                    dangerouslySetInnerHTML={{ __html: therapist.bio }}
+                  />
                 </CardContent>
               </Card>
             )}
