@@ -1,1 +1,4 @@
 [     345ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://tck-wellness-production.up.railway.app/api/auth/me:0
+[36907931ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://tck-wellness-production.up.railway.app/api/auth/me:0
+[47349852ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://tck-wellness-production.up.railway.app/api/auth/me:0
+[49976000ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://tck-wellness-production.up.railway.app/api/auth/me:0
