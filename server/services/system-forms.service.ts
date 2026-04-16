@@ -35,9 +35,7 @@ function settings(overrides: Partial<CmsFormSettings>): CmsFormSettings {
   };
 }
 
-type ManagedSystemForm = InsertCmsForm & {
-  syncMode?: "preserve" | "replace";
-};
+type ManagedSystemForm = InsertCmsForm;
 
 const SYSTEM_FORMS: ManagedSystemForm[] = [
   {
@@ -143,7 +141,6 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
       mailchimpEnabled: true,
       mailchimpTag: "TCK Interest",
     }),
-    syncMode: "replace",
   },
   {
     name: "Directory Application Start",
@@ -166,28 +163,21 @@ export async function ensureSystemForms() {
   for (const systemForm of SYSTEM_FORMS) {
     const existing = await storage.forms.getBySlug(systemForm.slug);
     if (existing) {
-      const syncMode = systemForm.syncMode ?? "preserve";
       await storage.forms.update(existing.id, {
-        name: syncMode === "replace" ? systemForm.name : existing.name || systemForm.name,
-        description: syncMode === "replace"
-          ? systemForm.description ?? ""
-          : existing.description ?? systemForm.description ?? "",
-        kind: syncMode === "replace" ? systemForm.kind : existing.kind || systemForm.kind,
+        name: existing.name || systemForm.name,
+        description: existing.description ?? systemForm.description ?? "",
+        kind: existing.kind || systemForm.kind,
         isSystem: true,
         isActive: existing.isActive ?? true,
         fields:
-          syncMode === "replace"
-            ? systemForm.fields
-            : Array.isArray(existing.fields) && existing.fields.length > 0
-              ? existing.fields
-              : systemForm.fields,
+          Array.isArray(existing.fields) && existing.fields.length > 0
+            ? existing.fields
+            : systemForm.fields,
         settings:
-          syncMode === "replace"
-            ? systemForm.settings
-            : {
-                ...systemForm.settings,
-                ...(typeof existing.settings === "object" && existing.settings ? existing.settings : {}),
-              },
+          {
+            ...systemForm.settings,
+            ...(typeof existing.settings === "object" && existing.settings ? existing.settings : {}),
+          },
       });
       continue;
     }
