@@ -69,6 +69,7 @@ import {
   FileText,
 } from "lucide-react";
 import { useEditorLock } from "@/hooks/use-editor-lock";
+import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 
 type EditableForm = Omit<CmsForm, "createdAt" | "updatedAt">;
 
@@ -544,7 +545,6 @@ function FormsPageContent() {
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EditableForm | null>(null);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
-  const lockDismissedFormIdRef = useRef<string | null>(null);
   const [draggingFieldType, setDraggingFieldType] = useState<CmsFormFieldType | null>(null);
   const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
@@ -722,39 +722,19 @@ function FormsPageContent() {
     enabled: activeTab === "builder" && Boolean(draft) && !(draft?.id.startsWith("draft-")),
   });
 
-  useEffect(() => {
-    if (activeTab !== "builder" || !draft?.id || draft.id.startsWith("draft-")) {
-      lockDismissedFormIdRef.current = null;
-    }
-  }, [activeTab, draft?.id]);
-
-  useEffect(() => {
-    if (
-      activeTab !== "builder" ||
-      !draft?.id ||
-      draft.id.startsWith("draft-") ||
-      !editorLock.hasLocking ||
-      !editorLock.hasLoaded ||
-      !editorLock.isLockedByOther ||
-      lockDismissedFormIdRef.current === draft.id
-    ) {
-      return;
-    }
-
-    lockDismissedFormIdRef.current = draft.id;
-    toast({
-      title: "Form already checked out",
-      description: editorLock.lockState?.lock
-        ? `${editorLock.lockState.lock.lockedByName} is already editing this form. Please try again after they leave the editor or the lock expires.`
-        : "Another user is already editing this form. Please try again later.",
-      variant: "destructive",
-    });
-    setActiveTab("entries");
-    setSelectedFormId(null);
-    setSelectedFieldId(null);
-    setFormSettingsOpen(false);
-    setDraft(null);
-  }, [activeTab, draft, editorLock.hasLoaded, editorLock.hasLocking, editorLock.isLockedByOther, editorLock.lockState, toast]);
+  useLockConflictGuard({
+    active: activeTab === "builder" && Boolean(draft?.id) && !(draft?.id?.startsWith("draft-")),
+    resourceId: activeTab === "builder" && draft && !draft.id.startsWith("draft-") ? draft.id : null,
+    resourceLabel: "form",
+    editorLock,
+    onConflict: () => {
+      setActiveTab("entries");
+      setSelectedFormId(null);
+      setSelectedFieldId(null);
+      setFormSettingsOpen(false);
+      setDraft(null);
+    },
+  });
 
   const updateDraft = (updater: (current: EditableForm) => EditableForm) => {
     setDraft((current) => (current ? updater(current) : current));

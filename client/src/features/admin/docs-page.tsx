@@ -26,6 +26,7 @@ import { MarkdownDocument } from "@/components/shared/markdown-document";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
+import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { markdownToExcerpt } from "@/lib/markdown";
 import {
   BookOpenText,
@@ -83,7 +84,6 @@ export default function DocsPage() {
   const [editingDoc, setEditingDoc] = useState<Partial<Doc> | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const lockDismissedDocIdRef = useRef<string | null>(null);
 
   const editorLock = useEditorLock({
     resourceType: "doc",
@@ -91,11 +91,17 @@ export default function DocsPage() {
     enabled: sheetOpen && Boolean(editingDoc?.id),
   });
 
-  useEffect(() => {
-    if (!sheetOpen || !editingDoc?.id) {
-      lockDismissedDocIdRef.current = null;
-    }
-  }, [editingDoc?.id, sheetOpen]);
+  useLockConflictGuard({
+    active: sheetOpen && Boolean(editingDoc?.id),
+    resourceId: sheetOpen && editingDoc?.id ? editingDoc.id : null,
+    resourceLabel: "document",
+    editorLock,
+    onConflict: () => {
+      setSheetOpen(false);
+      setEditingDoc(null);
+      setShowPreview(false);
+    },
+  });
 
   const { data: allDocs = [], isLoading } = useQuery<Doc[]>({
     queryKey: ["/api/admin/docs"],
@@ -116,31 +122,6 @@ export default function DocsPage() {
       });
     },
   });
-
-  useEffect(() => {
-    if (
-      !sheetOpen ||
-      !editingDoc?.id ||
-      !editorLock.hasLocking ||
-      !editorLock.hasLoaded ||
-      !editorLock.isLockedByOther ||
-      lockDismissedDocIdRef.current === editingDoc.id
-    ) {
-      return;
-    }
-
-    lockDismissedDocIdRef.current = editingDoc.id;
-    toast({
-      title: "Document already checked out",
-      description: editorLock.lockState?.lock
-        ? `${editorLock.lockState.lock.lockedByName} is already editing this document. Please try again after they leave the editor or the lock expires.`
-        : "Another user is already editing this document. Please try again later.",
-      variant: "destructive",
-    });
-    setSheetOpen(false);
-    setEditingDoc(null);
-    setShowPreview(false);
-  }, [editingDoc?.id, editorLock.hasLoaded, editorLock.hasLocking, editorLock.isLockedByOther, editorLock.lockState, sheetOpen, toast]);
 
   const createMutation = useMutation({
     mutationFn: async (data: Partial<Doc>) => {

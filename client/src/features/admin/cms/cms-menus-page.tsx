@@ -50,6 +50,7 @@ import {
   type MenuLocation,
 } from "@shared/schema";
 import { useEditorLock } from "@/hooks/use-editor-lock";
+import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 
 function generateId() {
   return Math.random().toString(36).substring(2, 10);
@@ -273,7 +274,6 @@ function MenuEditor({
 }) {
   const { toast } = useToast();
   const isNew = !menu;
-  const lockDismissedMenuIdRef = useRef<string | null>(null);
   const [name, setName] = useState(menu?.name || draft?.name || "");
   const [location, setLocation] = useState<MenuLocation>((menu?.location as MenuLocation) || (draft?.location as MenuLocation) || "unassigned");
   const [items, setItems] = useState<MenuItem[]>((menu?.items as MenuItem[]) || []);
@@ -302,34 +302,13 @@ function MenuEditor({
     },
   });
 
-  useEffect(() => {
-    if (!menu?.id) {
-      lockDismissedMenuIdRef.current = null;
-    }
-  }, [menu?.id]);
-
-  useEffect(() => {
-    if (
-      isNew ||
-      !menu?.id ||
-      !editorLock.hasLocking ||
-      !editorLock.hasLoaded ||
-      !editorLock.isLockedByOther ||
-      lockDismissedMenuIdRef.current === menu.id
-    ) {
-      return;
-    }
-
-    lockDismissedMenuIdRef.current = menu.id;
-    toast({
-      title: "Menu already checked out",
-      description: editorLock.lockState?.lock
-        ? `${editorLock.lockState.lock.lockedByName} is already editing this menu. Please try again after they leave the editor or the lock expires.`
-        : "Another user is already editing this menu. Please try again later.",
-      variant: "destructive",
-    });
-    onClose();
-  }, [editorLock.hasLoaded, editorLock.hasLocking, editorLock.isLockedByOther, editorLock.lockState, isNew, menu?.id, onClose, toast]);
+  useLockConflictGuard({
+    active: !isNew && Boolean(menu?.id),
+    resourceId: isNew ? null : menu?.id ?? null,
+    resourceLabel: "menu",
+    editorLock,
+    onConflict: onClose,
+  });
 
   const updateItem = useCallback((id: string, updates: Partial<MenuItem>) => {
     setItems((prev) =>

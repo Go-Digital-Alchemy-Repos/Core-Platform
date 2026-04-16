@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { AdminSidebar } from "./admin-sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -1592,7 +1593,6 @@ function TemplateEditor({
   onClose: () => void;
 }) {
   const { toast } = useToast();
-  const lockDismissedTemplateRef = useRef<string | null>(null);
   const [subject, setSubject] = useState(template.subject);
   const [htmlBody, setHtmlBody] = useState(template.htmlBody);
   const [editorTab, setEditorTab] = useState<"visual" | "html">("visual");
@@ -1616,33 +1616,13 @@ function TemplateEditor({
     setShowLinkPanel(false);
   }, [template]);
 
-  useEffect(() => {
-    if (!open) {
-      lockDismissedTemplateRef.current = null;
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (
-      !open ||
-      !editorLock.hasLocking ||
-      !editorLock.hasLoaded ||
-      !editorLock.isLockedByOther ||
-      lockDismissedTemplateRef.current === template.slug
-    ) {
-      return;
-    }
-
-    lockDismissedTemplateRef.current = template.slug;
-    toast({
-      title: "Template already checked out",
-      description: editorLock.lockState?.lock
-        ? `${editorLock.lockState.lock.lockedByName} is already editing this email template. Please try again after they leave the editor or the lock expires.`
-        : "Another user is already editing this email template. Please try again later.",
-      variant: "destructive",
-    });
-    onClose();
-  }, [editorLock.hasLoaded, editorLock.hasLocking, editorLock.isLockedByOther, editorLock.lockState, onClose, open, template.slug, toast]);
+  useLockConflictGuard({
+    active: open,
+    resourceId: open ? template.slug : null,
+    resourceLabel: "email template",
+    editorLock,
+    onConflict: onClose,
+  });
 
   useEffect(() => {
     if (!open) return;

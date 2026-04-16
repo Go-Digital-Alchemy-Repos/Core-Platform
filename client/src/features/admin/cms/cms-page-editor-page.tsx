@@ -69,6 +69,7 @@ import { TemplatePicker } from "./components/template-picker";
 import { LandingPageWizard } from "./components/landing-page-wizard";
 import { analyzeCmsPageQuality } from "@/lib/cms-page-quality";
 import { useEditorLock } from "@/hooks/use-editor-lock";
+import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 
 const editorSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -116,7 +117,6 @@ export default function CmsPageEditorPage() {
   const titleRef = useRef<string>("");
   const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slugManuallyEdited = useRef(false);
-  const lockRedirectedRef = useRef(false);
   const [builderContent, setBuilderContent] = useState<BuilderContent>(EMPTY_CONTENT);
   const [activeTab, setActiveTab] = useState("builder");
   const [templatePickerOpen, setTemplatePickerOpen] = useState(isNew);
@@ -182,21 +182,13 @@ export default function CmsPageEditorPage() {
     }
   }, [page, form]);
 
-  useEffect(() => {
-    if (!editorLock.hasLocking || !editorLock.hasLoaded || !editorLock.isLockedByOther || lockRedirectedRef.current) {
-      return;
-    }
-
-    lockRedirectedRef.current = true;
-    toast({
-      title: "Page already checked out",
-      description: editorLock.lockState?.lock
-        ? `${editorLock.lockState.lock.lockedByName} is already editing this page. Please try again after they leave the editor or the lock expires.`
-        : "Another user is already editing this page. Please try again later.",
-      variant: "destructive",
-    });
-    navigate("/admin/cms/pages");
-  }, [editorLock.hasLoaded, editorLock.hasLocking, editorLock.isLockedByOther, editorLock.lockState, navigate, toast]);
+  useLockConflictGuard({
+    active: !isNew,
+    resourceId: isNew ? null : (page?.id ?? id ?? null),
+    resourceLabel: "page",
+    editorLock,
+    onConflict: () => navigate("/admin/cms/pages"),
+  });
 
   const watchTitle = form.watch("title");
   const watchSlug = form.watch("slug");

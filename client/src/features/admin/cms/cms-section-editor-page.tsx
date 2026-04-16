@@ -35,6 +35,7 @@ import { PageBuilder } from "./builder/page-builder";
 import type { BuilderContent } from "./builder/block-registry";
 import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
+import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 
 const EMPTY_CONTENT: BuilderContent = { blocks: [] };
 
@@ -54,7 +55,6 @@ export default function CmsSectionEditorPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isNew = !id || id === "new";
-  const lockRedirectedRef = useRef(false);
 
   const [builderContent, setBuilderContent] = useState<BuilderContent>(EMPTY_CONTENT);
   const [initialized, setInitialized] = useState(false);
@@ -93,21 +93,13 @@ export default function CmsSectionEditorPage() {
     }
   }, [section, initialized, form]);
 
-  useEffect(() => {
-    if (!editorLock.hasLocking || !editorLock.hasLoaded || !editorLock.isLockedByOther || lockRedirectedRef.current) {
-      return;
-    }
-
-    lockRedirectedRef.current = true;
-    toast({
-      title: "Section already checked out",
-      description: editorLock.lockState?.lock
-        ? `${editorLock.lockState.lock.lockedByName} is already editing this saved section. Please try again after they leave the editor or the lock expires.`
-        : "Another user is already editing this saved section. Please try again later.",
-      variant: "destructive",
-    });
-    navigate("/admin/cms/sections");
-  }, [editorLock.hasLoaded, editorLock.hasLocking, editorLock.isLockedByOther, editorLock.lockState, navigate, toast]);
+  useLockConflictGuard({
+    active: !isNew,
+    resourceId: isNew ? null : (section?.id ?? id ?? null),
+    resourceLabel: "saved section",
+    editorLock,
+    onConflict: () => navigate("/admin/cms/sections"),
+  });
 
   const createMutation = useMutation({
     mutationFn: async (data: SectionForm) => {

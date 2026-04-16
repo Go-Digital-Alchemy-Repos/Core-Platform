@@ -63,6 +63,7 @@ import { ImagePositionPicker } from "./components/image-position-picker";
 import type { BlogPost, BlogTaxonomy, CmsSidebar } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
+import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 
 function generateSlug(title: string): string {
   return title
@@ -131,7 +132,6 @@ export default function CmsBlogEditorPage() {
   const queryClient = useQueryClient();
   const isNew = !id || id === "new";
   const slugManuallyEdited = useRef(false);
-  const lockRedirectedRef = useRef(false);
   const [initialized, setInitialized] = useState(false);
 
   const { data: post, isLoading } = useQuery<BlogPost>({
@@ -210,21 +210,13 @@ export default function CmsBlogEditorPage() {
     }
   }, [post, initialized, form]);
 
-  useEffect(() => {
-    if (!editorLock.hasLocking || !editorLock.hasLoaded || !editorLock.isLockedByOther || lockRedirectedRef.current) {
-      return;
-    }
-
-    lockRedirectedRef.current = true;
-    toast({
-      title: "Post already checked out",
-      description: editorLock.lockState?.lock
-        ? `${editorLock.lockState.lock.lockedByName} is already editing this post. Please try again after they leave the editor or the lock expires.`
-        : "Another user is already editing this post. Please try again later.",
-      variant: "destructive",
-    });
-    navigate("/admin/cms/blog");
-  }, [editorLock.hasLoaded, editorLock.hasLocking, editorLock.isLockedByOther, editorLock.lockState, navigate, toast]);
+  useLockConflictGuard({
+    active: !isNew,
+    resourceId: isNew ? null : (post?.id ?? id ?? null),
+    resourceLabel: "post",
+    editorLock,
+    onConflict: () => navigate("/admin/cms/blog"),
+  });
 
   const watchTitle = form.watch("title");
   useEffect(() => {

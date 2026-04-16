@@ -74,6 +74,7 @@ import {
 } from "@/lib/event-datetime";
 import type { Event, EventRegistration } from "@shared/schema";
 import { useEditorLock } from "@/hooks/use-editor-lock";
+import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 
 const eventFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -308,7 +309,6 @@ function EventsContent() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Event | null>(null);
   const [activeTab, setActiveTab] = useState("details");
-  const lockDismissedEventIdRef = useRef<string | null>(null);
   const editorLock = useEditorLock({
     resourceType: "event",
     resourceId: dialogOpen && editingEvent?.id ? editingEvent.id : null,
@@ -341,11 +341,17 @@ function EventsContent() {
   const watchIsRecurring = form.watch("isRecurring");
   const watchRecurrencePattern = form.watch("recurrencePattern");
 
-  useEffect(() => {
-    if (!dialogOpen || !editingEvent) {
-      lockDismissedEventIdRef.current = null;
-    }
-  }, [dialogOpen, editingEvent]);
+  useLockConflictGuard({
+    active: dialogOpen && Boolean(editingEvent?.id),
+    resourceId: dialogOpen && editingEvent?.id ? editingEvent.id : null,
+    resourceLabel: "event",
+    editorLock,
+    onConflict: () => {
+      setDialogOpen(false);
+      setEditingEvent(null);
+      form.reset(defaultFormValues);
+    },
+  });
 
   const { data: registrations, isLoading: registrantsLoading } = useQuery<EventRegistration[]>({
     queryKey: ["/api/admin/events", editingEvent?.id, "registrations"],
@@ -365,31 +371,6 @@ function EventsContent() {
       toast({ title: "Error duplicating event", description: err.message, variant: "destructive" });
     },
   });
-
-  useEffect(() => {
-    if (
-      !dialogOpen ||
-      !editingEvent?.id ||
-      !editorLock.hasLocking ||
-      !editorLock.hasLoaded ||
-      !editorLock.isLockedByOther ||
-      lockDismissedEventIdRef.current === editingEvent.id
-    ) {
-      return;
-    }
-
-    lockDismissedEventIdRef.current = editingEvent.id;
-    toast({
-      title: "Event already checked out",
-      description: editorLock.lockState?.lock
-        ? `${editorLock.lockState.lock.lockedByName} is already editing this event. Please try again after they leave the editor or the lock expires.`
-        : "Another user is already editing this event. Please try again later.",
-      variant: "destructive",
-    });
-    setDialogOpen(false);
-    setEditingEvent(null);
-    form.reset(defaultFormValues);
-  }, [dialogOpen, editingEvent, editorLock.hasLoaded, editorLock.hasLocking, editorLock.isLockedByOther, editorLock.lockState, form, toast]);
 
   const notifyMutation = useMutation({
     mutationFn: async ({ id, type }: { id: string; type: "reminder" | "recording" }) => {
