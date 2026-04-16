@@ -141,6 +141,10 @@ describe("useEditorLock", () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => createLockResponse("acquired"),
+      })
+      .mockResolvedValue({
+        ok: true,
+        json: async () => createLockResponse("acquired"),
       });
 
     vi.stubGlobal("fetch", fetchMock);
@@ -175,6 +179,13 @@ describe("useEditorLock", () => {
         json: async () => createLockResponse("acquired"),
       })
       .mockResolvedValueOnce({
+        ok: true,
+        json: async () => createLockResponse("locked_by_other", {
+          ownedByCurrentUser: false,
+          lockedByName: "Jamie Editor",
+        }),
+      })
+      .mockResolvedValue({
         ok: true,
         json: async () => createLockResponse("locked_by_other", {
           ownedByCurrentUser: false,
