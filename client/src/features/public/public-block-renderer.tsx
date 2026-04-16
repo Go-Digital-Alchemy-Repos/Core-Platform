@@ -686,6 +686,15 @@ function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
           {visible.map((p) => renderBlogCard(p))}
         </div>
       )}
+      {visible.length > 0 && (
+        <div className="mt-6 flex justify-center">
+          <Link href="/insights">
+            <Button variant="outline" size="lg">
+              Read More Articles
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
