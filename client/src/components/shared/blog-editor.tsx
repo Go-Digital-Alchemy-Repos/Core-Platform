@@ -6,6 +6,7 @@ import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -68,6 +69,7 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
   const [showLinkPanel, setShowLinkPanel] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkText, setLinkText] = useState("");
+  const [linkOpenInNewTab, setLinkOpenInNewTab] = useState(false);
   const [showImagePanel, setShowImagePanel] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [imageTab, setImageTab] = useState<"url" | "upload">("url");
@@ -84,7 +86,7 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
       Underline,
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: { class: "text-primary underline cursor-pointer", target: "_blank", rel: "noopener noreferrer" },
+        HTMLAttributes: { class: "text-primary underline cursor-pointer" },
       }),
       Image.configure({
         HTMLAttributes: { class: "max-w-full rounded-lg my-4" },
@@ -129,12 +131,36 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
     if (!/^https?:\/\//.test(url)) url = "https://" + url;
     const { from, to } = editor.state.selection;
     if (from === to && linkText.trim()) {
-      editor.chain().focus().insertContent(`<a href="${url}">${linkText.trim()}</a>`).run();
+      editor
+        .chain()
+        .focus()
+        .insertContent({
+          type: "text",
+          text: linkText.trim(),
+          marks: [{
+            type: "link",
+            attrs: {
+              href: url,
+              target: linkOpenInNewTab ? "_blank" : null,
+              rel: linkOpenInNewTab ? "noopener noreferrer" : null,
+            },
+          }],
+        })
+        .run();
     } else {
-      editor.chain().focus().setLink({ href: url }).run();
+      editor
+        .chain()
+        .focus()
+        .setLink({
+          href: url,
+          target: linkOpenInNewTab ? "_blank" : null,
+          rel: linkOpenInNewTab ? "noopener noreferrer" : null,
+        })
+        .run();
     }
     setLinkUrl("");
     setLinkText("");
+    setLinkOpenInNewTab(false);
     setShowLinkPanel(false);
   };
 
@@ -292,7 +318,9 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
           onClick={() => {
             if (showLinkPanel) { setShowLinkPanel(false); return; }
             const existing = editor.getAttributes("link").href as string | undefined;
+            const existingTarget = editor.getAttributes("link").target as string | undefined;
             if (existing) setLinkUrl(existing);
+            setLinkOpenInNewTab(existingTarget === "_blank");
             setShowLinkPanel(true);
             setShowImagePanel(false);
             setShowEmoji(false);
@@ -376,6 +404,16 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
               data-testid="input-link-text"
             />
           </div>
+          <div className="flex items-center gap-2 pb-0.5 min-w-[150px]">
+            <Checkbox
+              id={`${testId ?? "blog-editor"}-link-new-tab`}
+              checked={linkOpenInNewTab}
+              onCheckedChange={(checked) => setLinkOpenInNewTab(checked === true)}
+            />
+            <Label htmlFor={`${testId ?? "blog-editor"}-link-new-tab`} className="text-xs font-normal">
+              Open in new tab
+            </Label>
+          </div>
           <div className="flex items-center gap-1.5 pb-0.5">
             <Button type="button" size="sm" className="h-8 text-xs" onClick={insertLink} disabled={!linkUrl.trim()} data-testid="button-insert-link">
               {editor.isActive("link") ? "Update" : "Insert"}
@@ -386,13 +424,28 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
                 variant="outline"
                 size="sm"
                 className="h-8 text-xs"
-                onClick={() => { editor.chain().focus().unsetLink().run(); setShowLinkPanel(false); }}
+                onClick={() => {
+                  editor.chain().focus().unsetLink().run();
+                  setLinkOpenInNewTab(false);
+                  setShowLinkPanel(false);
+                }}
                 data-testid="button-remove-link"
               >
                 Remove
               </Button>
             )}
-            <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setShowLinkPanel(false); setLinkUrl(""); setLinkText(""); }}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => {
+                setShowLinkPanel(false);
+                setLinkUrl("");
+                setLinkText("");
+                setLinkOpenInNewTab(false);
+              }}
+            >
               <X className="w-3.5 h-3.5" />
             </Button>
           </div>

@@ -9,6 +9,7 @@ import {
   acquireEditorLock,
   getEditorLock,
   heartbeatEditorLock,
+  listActiveEditorLocks,
   releaseEditorLock,
 } from "../../services/editor-locks.service";
 
@@ -18,6 +19,14 @@ const lockParamsSchema = z.object({
   resourceType: editorLockResourceTypeSchema,
   resourceId: z.string().min(1),
 });
+
+router.get(
+  "/resource/:resourceType",
+  asyncHandler(async (req, res) => {
+    const resourceType = editorLockResourceTypeSchema.parse(req.params.resourceType);
+    res.json(await listActiveEditorLocks(resourceType, req.user));
+  }),
+);
 
 router.get(
   "/:resourceType/:resourceId",

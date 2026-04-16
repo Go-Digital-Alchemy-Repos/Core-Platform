@@ -21,6 +21,7 @@ import { Plus, Pencil, Trash2, Eye, EyeOff, Globe, FileCode, CalendarClock } fro
 import type { CmsPage } from "@shared/schema";
 import { format } from "date-fns";
 import { useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
 
 const PAGE_TYPE_COLORS: Record<string, string> = {
   home: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
@@ -33,11 +34,25 @@ const PAGE_TYPE_COLORS: Record<string, string> = {
 export default function CmsPagesPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [deleteTarget, setDeleteTarget] = useState<CmsPage | null>(null);
 
   const { data: pages = [], isLoading } = useQuery<CmsPage[]>({
     queryKey: ["/api/admin/cms/pages"],
   });
+
+  const { data: pageLocks = [] } = useQuery<Array<{ resourceId: string; lock: { lockedByUserId: string; lockedByName: string } }>>({
+    queryKey: ["/api/admin/editor-locks/resource", "cms_page"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/editor-locks/resource/cms_page", { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to load page lock status");
+      return response.json();
+    },
+    refetchInterval: 15000,
+    staleTime: 5000,
+  });
+
+  const pageLocksById = new Map(pageLocks.map((entry) => [entry.resourceId, entry.lock] as const));
 
   const publishMutation = useMutation({
     mutationFn: (id: string) => apiRequest("POST", `/api/admin/cms/pages/${id}/publish`),
@@ -122,9 +137,29 @@ export default function CmsPagesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {pages.map((page) => (
-                    <tr key={page.id} className="border-b last:border-0 hover:bg-muted/20 cursor-pointer" onClick={() => navigate(getEditorHref(page))} data-testid={`row-page-${page.id}`}>
-                      <td className="py-3 px-2 font-medium">{page.title}</td>
+                  {pages.map((page) => {
+                    const activeLock = pageLocksById.get(page.id);
+                    const isLockedByOther = Boolean(activeLock && activeLock.lockedByUserId !== user?.id);
+                    const isOwnedByCurrentUser = Boolean(activeLock && activeLock.lockedByUserId === user?.id);
+                    return (
+                    <tr
+                      key={page.id}
+                      className={`border-b last:border-0 ${isLockedByOther ? "bg-muted/10 cursor-not-allowed opacity-80" : "hover:bg-muted/20 cursor-pointer"}`}
+                      onClick={() => {
+                        if (!isLockedByOther) navigate(getEditorHref(page));
+                      }}
+                      data-testid={`row-page-${page.id}`}
+                    >
+                      <td className="py-3 px-2 font-medium">
+                        <div className="flex flex-col gap-1">
+                          <span>{page.title}</span>
+                          {activeLock ? (
+                            <Badge variant={isOwnedByCurrentUser ? "default" : "outline"} className="w-fit text-[10px]" data-testid={`badge-lock-${page.id}`}>
+                              {isOwnedByCurrentUser ? "You’re editing" : `Being edited by ${activeLock.lockedByName}`}
+                            </Badge>
+                          ) : null}
+                        </div>
+                      </td>
                       <td className="py-3 px-2 text-muted-foreground font-mono text-xs hidden md:table-cell">{page.slug}</td>
                       <td className="py-3 px-2 hidden lg:table-cell">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${PAGE_TYPE_COLORS[page.pageType] ?? PAGE_TYPE_COLORS.custom}`}>
@@ -158,6 +193,7 @@ export default function CmsPagesPage() {
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => navigate(getEditorHref(page))}
+                            disabled={isLockedByOther}
                             data-testid={`button-edit-${page.id}`}
                           >
                             <Pencil className="h-4 w-4" />
@@ -167,8 +203,8 @@ export default function CmsPagesPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-amber-600"
-                              onClick={() => unpublishMutation.mutate(page.id)}
-                              disabled={unpublishMutation.isPending}
+                            onClick={() => unpublishMutation.mutate(page.id)}
+                            disabled={unpublishMutation.isPending || isLockedByOther}
                               data-testid={`button-unpublish-${page.id}`}
                               title={page.status === "scheduled" ? "Cancel schedule" : "Move to draft"}
                             >
@@ -179,8 +215,8 @@ export default function CmsPagesPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-green-600"
-                              onClick={() => publishMutation.mutate(page.id)}
-                              disabled={publishMutation.isPending}
+                            onClick={() => publishMutation.mutate(page.id)}
+                            disabled={publishMutation.isPending || isLockedByOther}
                               data-testid={`button-publish-${page.id}`}
                               title="Publish page"
                             >
@@ -192,6 +228,7 @@ export default function CmsPagesPage() {
                             size="icon"
                             className="h-8 w-8 text-destructive"
                             onClick={() => setDeleteTarget(page)}
+                            disabled={isLockedByOther}
                             data-testid={`button-delete-${page.id}`}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -199,7 +236,7 @@ export default function CmsPagesPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             )}

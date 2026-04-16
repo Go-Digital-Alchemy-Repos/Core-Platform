@@ -33,6 +33,7 @@ const mockDeleteExpiredForResource = vi.fn(async (_type: EditorLockResourceType,
   }
   return 0;
 });
+const mockListActiveByResourceType = vi.fn(async () => (currentLock ? [currentLock] : []));
 
 vi.mock("../storage", () => ({
   storage: {
@@ -42,6 +43,7 @@ vi.mock("../storage", () => ({
       update: mockUpdate,
       deleteById: mockDeleteById,
       deleteExpiredForResource: mockDeleteExpiredForResource,
+      listActiveByResourceType: mockListActiveByResourceType,
     },
   },
 }));
@@ -129,5 +131,24 @@ describe("editor-locks.service", () => {
     expect(mockDeleteExpiredForResource).toHaveBeenCalled();
     expect(acquired.status).toBe("acquired");
     expect(acquired.lock?.lockedByUserId).toBe(editorUser.id);
+  });
+
+  it("does not let another admin release someone else's active lock", async () => {
+    const secondAdmin: User = {
+      ...adminUser,
+      id: "admin-2",
+      email: "second-admin@example.com",
+      firstName: "Sam",
+      lastName: "Supervisor",
+    };
+
+    const service = await import("../services/editor-locks.service");
+    await service.acquireEditorLock("cms_page", "page-1", adminUser);
+
+    const releaseAttempt = await service.releaseEditorLock("cms_page", "page-1", secondAdmin);
+
+    expect(releaseAttempt.status).toBe("locked_by_other");
+    expect(releaseAttempt.lock?.lockedByUserId).toBe(adminUser.id);
+    expect(mockDeleteById).not.toHaveBeenCalled();
   });
 });

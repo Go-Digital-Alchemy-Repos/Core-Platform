@@ -26,10 +26,6 @@ function canUseEditorLocks(user: User | undefined): user is User {
   return user.role === "admin" || user.role === "editor";
 }
 
-function canReleaseOtherUserLock(user: User | undefined): boolean {
-  return user?.role === "admin";
-}
-
 function isExpired(lock: EditorLock, now: Date) {
   return new Date(lock.expiresAt).getTime() <= now.getTime();
 }
@@ -90,6 +86,22 @@ export async function getEditorLock(
   }
 
   return buildResponse(user, resourceType, resourceId, "locked_by_other", lock);
+}
+
+export async function listActiveEditorLocks(
+  resourceType: EditorLockResourceType,
+  user: User | undefined,
+): Promise<Array<{ resourceId: string; lock: NonNullable<EditorLockResponse["lock"]> }>> {
+  if (!canUseEditorLocks(user)) {
+    throw new Error("Unauthorized");
+  }
+
+  const now = new Date();
+  const locks = await storage.editorLocks.listActiveByResourceType(resourceType, now);
+  return locks.map((lock) => ({
+    resourceId: lock.resourceId,
+    lock: lockPayload(lock)!,
+  }));
 }
 
 export async function acquireEditorLock(
@@ -174,7 +186,7 @@ export async function releaseEditorLock(
     return buildResponse(user, resourceType, resourceId, "expired_available", null);
   }
 
-  if (lock.lockedByUserId !== user.id && !canReleaseOtherUserLock(user)) {
+  if (lock.lockedByUserId !== user.id) {
     return buildResponse(user, resourceType, resourceId, "locked_by_other", lock);
   }
 

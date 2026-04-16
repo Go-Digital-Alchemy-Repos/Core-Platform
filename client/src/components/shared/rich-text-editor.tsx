@@ -4,7 +4,9 @@ import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Bold,
   Italic,
@@ -76,6 +78,7 @@ export function RichTextEditor({ onSend, disabled, placeholder, sendRef }: RichT
   const [showEmoji, setShowEmoji] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
+  const [linkOpenInNewTab, setLinkOpenInNewTab] = useState(false);
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -193,12 +196,32 @@ export function RichTextEditor({ onSend, disabled, placeholder, sendRef }: RichT
       editor
         .chain()
         .focus()
-        .insertContent(`<a href="${url}">${url}</a>`)
+        .insertContent({
+          type: "text",
+          text: url,
+          marks: [{
+            type: "link",
+            attrs: {
+              href: url,
+              target: linkOpenInNewTab ? "_blank" : null,
+              rel: linkOpenInNewTab ? "noopener noreferrer" : null,
+            },
+          }],
+        })
         .run();
     } else {
-      editor.chain().focus().setLink({ href: url }).run();
+      editor
+        .chain()
+        .focus()
+        .setLink({
+          href: url,
+          target: linkOpenInNewTab ? "_blank" : null,
+          rel: linkOpenInNewTab ? "noopener noreferrer" : null,
+        })
+        .run();
     }
     setLinkUrl("");
+    setLinkOpenInNewTab(false);
     setShowLinkInput(false);
   };
 
@@ -275,7 +298,20 @@ export function RichTextEditor({ onSend, disabled, placeholder, sendRef }: RichT
             variant="ghost"
             size="sm"
             className={`h-7 w-7 p-0 ${showLinkInput ? "bg-accent" : ""}`}
-            onClick={() => { setShowLinkInput(!showLinkInput); setShowEmoji(false); }}
+            onClick={() => {
+              const nextOpen = !showLinkInput;
+              if (nextOpen) {
+                const existingUrl = editor.getAttributes("link").href as string | undefined;
+                const existingTarget = editor.getAttributes("link").target as string | undefined;
+                setLinkUrl(existingUrl ?? "");
+                setLinkOpenInNewTab(existingTarget === "_blank");
+              } else {
+                setLinkUrl("");
+                setLinkOpenInNewTab(false);
+              }
+              setShowLinkInput(nextOpen);
+              setShowEmoji(false);
+            }}
             data-testid="button-format-link"
             title="Insert Link"
           >
@@ -345,17 +381,27 @@ export function RichTextEditor({ onSend, disabled, placeholder, sendRef }: RichT
         </div>
 
         {showLinkInput && (
-          <div className="flex items-center gap-2 px-3 py-1.5 border-b bg-muted/20">
+          <div className="flex flex-wrap items-center gap-2 px-3 py-1.5 border-b bg-muted/20">
             <Input
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               placeholder="Enter URL..."
               autoPrependHttps
-              className="h-7 text-xs flex-1"
+              className="h-7 text-xs flex-1 min-w-[180px]"
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); insertLink(); } }}
               autoFocus
               data-testid="input-link-url"
             />
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="message-link-new-tab"
+                checked={linkOpenInNewTab}
+                onCheckedChange={(checked) => setLinkOpenInNewTab(checked === true)}
+              />
+              <Label htmlFor="message-link-new-tab" className="text-xs font-normal">
+                Open in new tab
+              </Label>
+            </div>
             <Button
               type="button"
               size="sm"
@@ -371,7 +417,11 @@ export function RichTextEditor({ onSend, disabled, placeholder, sendRef }: RichT
               variant="ghost"
               size="sm"
               className="h-7 w-7 p-0"
-              onClick={() => { setShowLinkInput(false); setLinkUrl(""); }}
+              onClick={() => {
+                setShowLinkInput(false);
+                setLinkUrl("");
+                setLinkOpenInNewTab(false);
+              }}
             >
               <X className="w-3 h-3" />
             </Button>

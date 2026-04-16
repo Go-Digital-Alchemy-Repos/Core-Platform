@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -77,6 +78,7 @@ export function CmsRichTextEditor({
   const [showLinkPanel, setShowLinkPanel] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkText, setLinkText] = useState("");
+  const [linkOpenInNewTab, setLinkOpenInNewTab] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -88,8 +90,6 @@ export function CmsRichTextEditor({
         openOnClick: false,
         HTMLAttributes: {
           class: "text-primary underline underline-offset-2",
-          target: "_blank",
-          rel: "noopener noreferrer",
         },
       }),
       Placeholder.configure({
@@ -129,15 +129,32 @@ export function CmsRichTextEditor({
         .insertContent({
           type: "text",
           text: linkText.trim(),
-          marks: [{ type: "link", attrs: { href: url } }],
+          marks: [{
+            type: "link",
+            attrs: {
+              href: url,
+              target: linkOpenInNewTab ? "_blank" : null,
+              rel: linkOpenInNewTab ? "noopener noreferrer" : null,
+            },
+          }],
         })
         .run();
     } else {
-      editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+      editor
+        .chain()
+        .focus()
+        .extendMarkRange("link")
+        .setLink({
+          href: url,
+          target: linkOpenInNewTab ? "_blank" : null,
+          rel: linkOpenInNewTab ? "noopener noreferrer" : null,
+        })
+        .run();
     }
 
     setLinkUrl("");
     setLinkText("");
+    setLinkOpenInNewTab(false);
     setShowLinkPanel(false);
   };
 
@@ -207,7 +224,9 @@ export function CmsRichTextEditor({
               active={showLinkPanel || editor.isActive("link")}
               onClick={() => {
                 const existingUrl = editor.getAttributes("link").href as string | undefined;
+                const existingTarget = editor.getAttributes("link").target as string | undefined;
                 setLinkUrl(existingUrl ?? "");
+                setLinkOpenInNewTab(existingTarget === "_blank");
                 setShowLinkPanel((open) => !open);
               }}
               title="Insert or edit link"
@@ -259,6 +278,18 @@ export function CmsRichTextEditor({
                     data-testid={`${testId}-link-text`}
                   />
                 </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <div className="flex items-center gap-2 pt-1">
+                    <Checkbox
+                      id={`${testId ?? "cms-richtext"}-link-new-tab`}
+                      checked={linkOpenInNewTab}
+                      onCheckedChange={(checked) => setLinkOpenInNewTab(checked === true)}
+                    />
+                    <Label htmlFor={`${testId ?? "cms-richtext"}-link-new-tab`} className="text-xs font-normal">
+                      Open in new tab
+                    </Label>
+                  </div>
+                </div>
                 <div className="flex items-center gap-1">
                   <Button type="button" size="sm" className="h-8 text-xs" onClick={insertLink} disabled={!linkUrl.trim()}>
                     {editor.isActive("link") ? "Update" : "Insert"}
@@ -271,6 +302,7 @@ export function CmsRichTextEditor({
                       className="h-8 text-xs"
                       onClick={() => {
                         editor.chain().focus().unsetLink().run();
+                        setLinkOpenInNewTab(false);
                         setShowLinkPanel(false);
                       }}
                     >
@@ -286,6 +318,7 @@ export function CmsRichTextEditor({
                       setShowLinkPanel(false);
                       setLinkUrl("");
                       setLinkText("");
+                      setLinkOpenInNewTab(false);
                     }}
                   >
                     <X className="h-3.5 w-3.5" />

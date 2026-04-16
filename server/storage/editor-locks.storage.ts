@@ -1,4 +1,4 @@
-import { and, eq, lt } from "drizzle-orm";
+import { and, eq, gt, lt } from "drizzle-orm";
 import { db } from "../db";
 import { editorLocks, type EditorLock, type EditorLockResourceType, type InsertEditorLock } from "@shared/schema";
 
@@ -51,5 +51,12 @@ export class EditorLocksStorage {
       )
       .returning({ id: editorLocks.id });
     return deleted.length;
+  }
+
+  async listActiveByResourceType(resourceType: EditorLockResourceType, now: Date): Promise<EditorLock[]> {
+    return db
+      .select()
+      .from(editorLocks)
+      .where(and(eq(editorLocks.resourceType, resourceType), gt(editorLocks.expiresAt, now)));
   }
 }
