@@ -33,27 +33,16 @@ describe("EditorLockBanner", () => {
     });
   }
 
-  it("shows takeover controls for admins when another user holds the lock", async () => {
-    const onTakeOver = vi.fn();
+  it("does not show takeover controls even when another user holds the lock", async () => {
     await renderBanner({
       variant: "locked-by-other",
-      title: "Editing locked by Alex Admin",
-      description: "Read-only until the lock is released.",
+      title: "Checked out by Alex Admin",
+      description: "Alex Admin is already editing this item. Please try again later.",
       canTakeOver: true,
       onRefresh: vi.fn(),
-      onTakeOver,
     });
-
-    const takeoverButton = Array.from(container.querySelectorAll("button")).find((button) =>
-      button.textContent?.includes("Take Over")
-    );
-    expect(takeoverButton).toBeTruthy();
-
-    await act(async () => {
-      takeoverButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
-
-    expect(onTakeOver).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toContain("Checked out by Alex Admin");
+    expect(container.textContent).not.toContain("Take Over");
   });
 
   it("does not show takeover controls on the owned-state banner", async () => {

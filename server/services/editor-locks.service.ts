@@ -1,7 +1,5 @@
 import { type EditorLock, type EditorLockResourceType, type EditorLockResponse, User } from "@shared/schema";
 import { storage } from "../storage";
-import { hasAdminPermission } from "../middleware/auth";
-import { AdminPermission } from "@shared/types";
 
 export const EDITOR_LOCK_HEARTBEAT_MS = 30_000;
 export const EDITOR_LOCK_EXPIRY_MS = 2 * 60_000;
@@ -28,10 +26,6 @@ function canUseEditorLocks(user: User | undefined): user is User {
   return user.role === "admin" || user.role === "editor";
 }
 
-function canTakeOver(user: User | undefined): boolean {
-  return user?.role === "admin";
-}
-
 function canReleaseOtherUserLock(user: User | undefined): boolean {
   return user?.role === "admin";
 }
@@ -53,7 +47,7 @@ function buildResponse(
     resourceType,
     resourceId,
     ownedByCurrentUser: Boolean(lockOwnerId && lockOwnerId === user.id),
-    canTakeOver: status === "locked_by_other" && canTakeOver(user),
+    canTakeOver: false,
     lock: lockPayload(lock),
   };
 }
@@ -198,29 +192,15 @@ export async function takeoverEditorLock(
     throw new Error("Unauthorized");
   }
 
-  if (!canTakeOver(user) && !hasAdminPermission(user, AdminPermission.CONTENT) && !hasAdminPermission(user, AdminPermission.DESIGN)) {
-    throw new Error("Forbidden");
-  }
-
-  if (user.role !== "admin") {
-    throw new Error("Forbidden");
-  }
-
   const now = new Date();
   const existing = await getFreshLock(resourceType, resourceId, now);
 
   if (!existing) {
     return acquireEditorLock(resourceType, resourceId, user);
   }
-
-  const updated = await storage.editorLocks.update(existing.id, {
-    lockedByUserId: user.id,
-    lockedByName: displayNameForUser(user),
-    lockedAt: now,
-    lastHeartbeatAt: now,
-    expiresAt: new Date(now.getTime() + EDITOR_LOCK_EXPIRY_MS),
-    updatedAt: now,
-  } as never);
-
-  return buildResponse(user, resourceType, resourceId, "acquired", updated ?? existing);
+  if (existing.lockedByUserId === user.id) {
+    const refreshed = (await refreshOwnedLock(existing, now)) ?? existing;
+    return buildResponse(user, resourceType, resourceId, "acquired", refreshed);
+  }
+  throw new Error("Locked");
 }

@@ -29,9 +29,7 @@ export function EditorLockBanner({
   title,
   description,
   isLoading = false,
-  canTakeOver = false,
   onRefresh,
-  onTakeOver,
 }: EditorLockBannerProps) {
   const Icon = VARIANT_ICONS[variant];
 
@@ -53,11 +51,6 @@ export function EditorLockBanner({
             <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoading}>
               <RefreshCw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
               Check Again
-            </Button>
-          ) : null}
-          {canTakeOver && onTakeOver ? (
-            <Button size="sm" onClick={onTakeOver} disabled={isLoading}>
-              Take Over
             </Button>
           ) : null}
         </div>

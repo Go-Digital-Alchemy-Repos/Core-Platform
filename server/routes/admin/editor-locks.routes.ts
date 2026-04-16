@@ -59,8 +59,8 @@ router.post(
     try {
       res.json(await takeoverEditorLock(resourceType, resourceId, req.user));
     } catch (error) {
-      if (error instanceof Error && error.message === "Forbidden") {
-        res.status(403).json({ message: "Forbidden" });
+      if (error instanceof Error && error.message === "Locked") {
+        res.status(423).json({ message: "This item is already checked out by another editor. Please try again later." });
         return;
       }
       throw error;

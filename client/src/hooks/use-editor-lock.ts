@@ -60,7 +60,7 @@ function releaseLockKeepAlive(resourceType: EditorLockResourceType, resourceId: 
 }
 
 export function useEditorLock({ resourceType, resourceId, enabled = true }: UseEditorLockOptions) {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const [lockState, setLockState] = useState<EditorLockResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -178,7 +178,7 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
       return {
         variant: "lost-lock" as const,
         title: "Editing access changed",
-        description: "Someone else now holds this lock. We’ve switched this editor into read-only mode to protect your work.",
+        description: "This item was checked out by someone else after your lock stopped refreshing. We’ve switched this editor into read-only mode to protect your work.",
       };
     }
     if (!lockState) {
@@ -198,8 +198,8 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
     if (lockState.lock) {
       return {
         variant: "locked-by-other" as const,
-        title: `Editing locked by ${lockState.lock.lockedByName}`,
-        description: "You can review the content here, but editing actions are disabled until the lock is released or expires.",
+        title: `Checked out by ${lockState.lock.lockedByName}`,
+        description: `${lockState.lock.lockedByName} is already editing this item. Please try again after they leave the editor or the lock expires.`,
       };
     }
     return {
@@ -218,7 +218,7 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
     isOwned,
     isReadOnly,
     isLockedByOther,
-    canTakeOver: Boolean(isAdmin && lockState?.canTakeOver),
+    canTakeOver: false,
     lostLock,
     acquire,
     refresh,

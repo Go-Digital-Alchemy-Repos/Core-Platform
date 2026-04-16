@@ -19,6 +19,7 @@ import { useState, useEffect } from "react";
 import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
 import { formatEventDate, formatEventTime } from "@/lib/event-datetime";
+import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import { stripHtml } from "@/lib/html";
 import {
   buildOrganizationLd,
@@ -683,6 +684,7 @@ export default function EventDetailPage() {
                   src={event.imageUrl}
                   alt={event.title}
                   className="w-full h-full object-cover"
+                  style={getImageObjectPositionStyle(event.imagePositionX, event.imagePositionY)}
                   data-testid="img-event-cover"
                 />
               </div>

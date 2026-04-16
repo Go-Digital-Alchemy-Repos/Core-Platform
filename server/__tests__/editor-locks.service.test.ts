@@ -109,15 +109,12 @@ describe("editor-locks.service", () => {
     expect(new Date(String(currentLock?.expiresAt)).getTime()).toBeGreaterThan(new Date("2026-04-15T20:31:00.000Z").getTime());
   });
 
-  it("allows admins to take over a lock and rejects editors", async () => {
+  it("does not allow active locks to be taken over by another user", async () => {
     const service = await import("../services/editor-locks.service");
     await service.acquireEditorLock("event", "event-1", editorUser);
 
-    await expect(service.takeoverEditorLock("event", "event-1", editorUser)).rejects.toThrow("Forbidden");
-
-    const takeover = await service.takeoverEditorLock("event", "event-1", adminUser);
-    expect(takeover.status).toBe("acquired");
-    expect(takeover.lock?.lockedByUserId).toBe(adminUser.id);
+    await expect(service.takeoverEditorLock("event", "event-1", adminUser)).rejects.toThrow("Locked");
+    expect(currentLock?.lockedByUserId).toBe(editorUser.id);
   });
 
   it("treats expired locks as available and lets a new user reacquire", async () => {
