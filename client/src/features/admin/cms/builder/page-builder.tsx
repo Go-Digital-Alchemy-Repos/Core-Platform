@@ -1157,9 +1157,9 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       return;
     }
 
-    const blockAnchorRelative = blockRect.top - viewportRect.top + blockRect.height * 0.24;
-    const desiredTopAnchor = Math.max(120, Math.min(210, shellHeight * 0.24));
-    const minInspectorHeight = Math.min(460, Math.max(300, shellHeight * 0.44));
+    const blockAnchorRelative = blockRect.top - viewportRect.top + blockRect.height * 0.42;
+    const desiredTopAnchor = Math.max(140, Math.min(260, shellHeight * 0.3));
+    const minInspectorHeight = Math.min(380, Math.max(240, shellHeight * 0.34));
     const maxOffset = Math.max(0, shellHeight - minInspectorHeight);
     const nextOffset = Math.max(0, Math.min(maxOffset, blockAnchorRelative - desiredTopAnchor));
 
