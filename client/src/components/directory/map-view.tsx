@@ -99,6 +99,9 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
   const tileUrl = interactive
     ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
     : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+  const tileAttribution = interactive
+    ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
   const hasPercentHeight = typeof height === "string" && height.includes("%");
 
@@ -118,7 +121,7 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
       >
         <MapSizeInvalidator />
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          attribution={tileAttribution}
           url={tileUrl}
           referrerPolicy="strict-origin-when-cross-origin"
         />

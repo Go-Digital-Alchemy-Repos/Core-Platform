@@ -21,6 +21,7 @@ import setupRoutes from "./setup.routes";
 import applicationRoutes from "./application.routes";
 import referenceRoutes from "./reference.routes";
 import formsRoutes from "./forms.routes";
+import { searchPublicSite } from "../services/public-search.service";
 import { storage } from "../storage/index";
 import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
 import { DEFAULT_DIRECTORY_SETTINGS, getDirectorySettings } from "../services/directory-settings.service";
@@ -56,6 +57,16 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/setup", setupRoutes);
   app.use("/api/therapist/application", applicationRoutes);
   app.use("/api/reference", referenceRoutes);
+
+  app.get("/api/search", async (req, res) => {
+    try {
+      const query = typeof req.query.q === "string" ? req.query.q : "";
+      res.json(await searchPublicSite(query));
+    } catch (err) {
+      logger.app.error("Failed to execute public site search", err);
+      res.status(500).json({ message: "Search failed" });
+    }
+  });
 
   app.get("/api/branding", async (_req, res) => {
     try {

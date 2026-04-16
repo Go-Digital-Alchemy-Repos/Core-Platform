@@ -4,6 +4,7 @@ export type {
   DirectoryFilterOptions,
   TherapistSearchParams,
 } from "./directory";
+export type { PublicSearchResult, PublicSearchResultType } from "./public-search";
 export { therapistSearchSchema, SortOption } from "./directory";
 export type { SortOption as SortOptionType } from "./directory";
 

@@ -63,7 +63,7 @@ export function NavbarSearchPopover() {
           onSubmit={(e) => {
             e.preventDefault();
             if (searchQuery.trim()) {
-              navigate(`/directory?search=${encodeURIComponent(searchQuery.trim())}`);
+              navigate(`/search?query=${encodeURIComponent(searchQuery.trim())}`);
               closeSearch();
             }
           }}
@@ -73,7 +73,7 @@ export function NavbarSearchPopover() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search..."
+            placeholder="Search the site..."
             className="h-9 flex-1 rounded-md border bg-background px-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 transition-all"
             data-testid="input-search"
           />

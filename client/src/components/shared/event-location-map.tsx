@@ -35,10 +35,13 @@ export function EventLocationMap({ latitude, longitude, locationName }: EventLoc
         scrollWheelZoom={false}
         dragging={false}
         zoomControl={false}
-        attributionControl={false}
         style={{ height: "100%", width: "100%" }}
       >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
         <Marker position={[lat, lng]} icon={pinIcon}>
           {locationName && (
             <Popup>

@@ -65,6 +65,7 @@ const SystemBackupsPage = lazy(() => import("@/features/admin/system-backups-pag
 const InsightsPage = lazy(() => import("@/features/public/insights-page"));
 const InsightsPostPage = lazy(() => import("@/features/public/insights-post-page"));
 const RecordingArchivesPage = lazy(() => import("@/features/public/recording-archives-page"));
+const SearchResultsPage = lazy(() => import("@/features/public/search-results-page"));
 const LegalFallbackPage = lazy(() => import("@/features/public/legal-fallback-page"));
 
 function PageLoader() {
@@ -119,6 +120,7 @@ function Router() {
         <Route path="/events" component={() => siteFeatures.eventsEnabled ? <CmsHybridPage slug="events" fallback={<EventsPage />} /> : <NotFound />} />
         <Route path="/events/:id" component={() => siteFeatures.eventsEnabled ? <EventDetailPage /> : <NotFound />} />
         <Route path="/recordings" component={() => <CmsHybridPage slug="recordings" fallback={<RecordingArchivesPage />} />} />
+        <Route path="/search" component={SearchResultsPage} />
         <Route path="/insights" component={() => siteFeatures.blogEnabled ? <CmsHybridPage slug="insights" fallback={<InsightsPage />} /> : <NotFound />} />
         <Route path="/insights/:slug" component={() => siteFeatures.blogEnabled ? <InsightsPostPage /> : <NotFound />} />
         <Route path="/directory" component={() => siteFeatures.directoryEnabled ? <CmsHybridPage slug="directory" fallback={<DirectoryPage />} /> : <NotFound />} />

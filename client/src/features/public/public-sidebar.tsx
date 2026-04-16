@@ -149,11 +149,11 @@ function SearchWidget({ widget }: { widget: SidebarWidget }) {
         className="flex gap-2"
         onSubmit={(event) => {
           event.preventDefault();
-          navigate(query.trim() ? `/insights?search=${encodeURIComponent(query.trim())}` : "/insights");
+          navigate(query.trim() ? `/search?query=${encodeURIComponent(query.trim())}` : "/search");
         }}
         data-testid="sidebar-search-form"
       >
-        <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search insights..." />
+        <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search articles and site content..." />
         <Button type="submit" size="icon" aria-label="Search">
           <Search className="h-4 w-4" />
         </Button>
