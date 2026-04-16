@@ -19,6 +19,8 @@ if (typeof window !== "undefined") {
   });
 
   window.sessionStorage.removeItem(VITE_PRELOAD_RECOVERY_KEY);
+
+  document.getElementById("seo-prerender")?.remove();
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

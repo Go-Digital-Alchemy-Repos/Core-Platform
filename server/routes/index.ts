@@ -22,6 +22,7 @@ import applicationRoutes from "./application.routes";
 import referenceRoutes from "./reference.routes";
 import formsRoutes from "./forms.routes";
 import { searchPublicSite } from "../services/public-search.service";
+import { buildRobotsTxtPayload } from "../services/robots-txt.service";
 import { storage } from "../storage/index";
 import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
 import { DEFAULT_DIRECTORY_SETTINGS, getDirectorySettings } from "../services/directory-settings.service";
@@ -190,25 +191,11 @@ export function registerApiRoutes(app: Express) {
   app.get("/robots.txt", async (_req, res) => {
     try {
       const seoSettings = await storage.seoSettings.get();
-      const siteUrl = seoSettings?.siteUrl?.replace(/\/$/, "") || "";
-      const noindexAll = seoSettings?.defaultRobotsNoindex ?? false;
-
-      const lines: string[] = [];
-      lines.push("User-agent: *");
-      if (noindexAll) {
-        lines.push("Disallow: /");
-      } else {
-        lines.push("Disallow: /admin");
-        lines.push("Disallow: /api");
-        if (siteUrl) {
-          lines.push("");
-          lines.push(`Sitemap: ${siteUrl}/sitemap.xml`);
-        }
-      }
+      const { effectiveContent } = buildRobotsTxtPayload(seoSettings);
 
       res.setHeader("Content-Type", "text/plain; charset=utf-8");
       res.setHeader("Cache-Control", "public, max-age=3600");
-      res.send(lines.join("\n") + "\n");
+      res.send(effectiveContent);
     } catch {
       res.status(500).send("Error generating robots.txt");
     }

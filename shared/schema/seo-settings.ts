@@ -17,6 +17,7 @@ export const seoSettings = pgTable("seo_settings", {
   linkedinUrl: text("linkedin_url"),
   instagramUrl: text("instagram_url"),
   defaultRobotsNoindex: boolean("default_robots_noindex").default(false),
+  customRobotsTxt: text("custom_robots_txt"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

@@ -1,9 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, FileCode2, Globe, BookOpen, CalendarDays, FileText, CheckCircle2, EyeOff, ShieldOff } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { ExternalLink, FileCode2, Globe, BookOpen, CalendarDays, FileText, CheckCircle2, EyeOff, ShieldOff, Save, RotateCcw } from "lucide-react";
 import type { SeoSettings, CmsPage, BlogPost, Event } from "@shared/schema";
 
 interface SitemapEntry {
@@ -14,6 +19,12 @@ interface SitemapEntry {
   noindex?: boolean;
   excluded: boolean;
   reason?: string;
+}
+
+interface RobotsTxtPayload {
+  generatedContent: string;
+  effectiveContent: string;
+  customContent: string | null;
 }
 
 function EntryRow({ entry }: { entry: SitemapEntry }) {
@@ -52,10 +63,26 @@ function EntryRow({ entry }: { entry: SitemapEntry }) {
 }
 
 export function CmsSitemapTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [robotsDialogOpen, setRobotsDialogOpen] = useState(false);
+  const [robotsDraft, setRobotsDraft] = useState("");
+
   const { data: globalSeo } = useQuery<SeoSettings>({
     queryKey: ["/api/admin/cms/seo"],
     staleTime: 5 * 60 * 1000,
   });
+
+  const { data: robotsTxt, isLoading: robotsLoading } = useQuery<RobotsTxtPayload>({
+    queryKey: ["/api/admin/cms/seo/robots-txt"],
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (robotsDialogOpen && robotsTxt) {
+      setRobotsDraft(robotsTxt.customContent ?? robotsTxt.generatedContent);
+    }
+  }, [robotsDialogOpen, robotsTxt]);
 
   const { data: pages, isLoading: pagesLoading } = useQuery<CmsPage[]>({
     queryKey: ["/api/admin/cms/pages"],
@@ -128,6 +155,35 @@ export function CmsSitemapTab() {
   const includedCount = allEntries.filter((e) => !e.excluded).length;
   const excludedCount = allEntries.filter((e) => e.excluded).length;
 
+  const saveRobotsMutation = useMutation({
+    mutationFn: async (customContent: string | null) => {
+      const res = await apiRequest("PUT", "/api/admin/cms/seo/robots-txt", { customContent });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/seo/robots-txt"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/seo"] });
+      toast({ title: "robots.txt saved" });
+      setRobotsDialogOpen(false);
+    },
+    onError: () => {
+      toast({ title: "Failed to save robots.txt", variant: "destructive" });
+    },
+  });
+
+  const handleSaveRobots = () => {
+    saveRobotsMutation.mutate(robotsDraft.trim() ? robotsDraft : null);
+  };
+
+  const handleResetRobots = () => {
+    if (!robotsTxt) return;
+    setRobotsDraft(robotsTxt.generatedContent);
+  };
+
+  const handleUseGeneratedVersion = () => {
+    saveRobotsMutation.mutate(null);
+  };
+
   return (
     <div className="space-y-5 mt-5">
       <Card>
@@ -149,12 +205,15 @@ export function CmsSitemapTab() {
                 View sitemap.xml
               </Button>
             </a>
-            <a href="/robots.txt" target="_blank" rel="noopener noreferrer">
-              <Button size="sm" variant="outline" data-testid="button-view-robots">
-                <ExternalLink className="h-3.5 w-3.5 mr-2" />
-                View robots.txt
-              </Button>
-            </a>
+            <Button
+              size="sm"
+              variant="outline"
+              data-testid="button-view-robots"
+              onClick={() => setRobotsDialogOpen(true)}
+            >
+              <FileText className="h-3.5 w-3.5 mr-2" />
+              View robots.txt
+            </Button>
             {siteUrl && (
               <code className="text-xs bg-muted px-2 py-1 rounded text-muted-foreground">
                 {siteUrl}/sitemap.xml
@@ -262,6 +321,76 @@ export function CmsSitemapTab() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={robotsDialogOpen} onOpenChange={setRobotsDialogOpen}>
+        <DialogContent className="max-w-3xl" data-testid="dialog-robots-txt-editor">
+          <DialogHeader>
+            <DialogTitle>Edit robots.txt</DialogTitle>
+            <DialogDescription>
+              Review the generated default file and customize it when needed. Leave this blank to fall back to the generated version.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+              <p className="font-medium text-foreground mb-1">Serving mode</p>
+              <p>
+                {robotsTxt?.customContent
+                  ? "A custom robots.txt file is currently live."
+                  : "The system-generated robots.txt file is currently live."}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-medium">Editable robots.txt</p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleResetRobots}
+                  disabled={!robotsTxt || robotsLoading}
+                >
+                  <RotateCcw className="h-3.5 w-3.5 mr-2" />
+                  Reset to Generated Default
+                </Button>
+              </div>
+              <Textarea
+                value={robotsDraft}
+                onChange={(event) => setRobotsDraft(event.target.value)}
+                className="min-h-[320px] font-mono text-xs"
+                placeholder="User-agent: *&#10;Disallow: /admin"
+                data-testid="textarea-robots-txt"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Current generated default</p>
+              <pre className="max-h-48 overflow-auto rounded-md border bg-muted/20 p-3 text-xs whitespace-pre-wrap break-words" data-testid="generated-robots-preview">
+                {robotsTxt?.generatedContent ?? "Loading generated robots.txt..."}
+              </pre>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={() => setRobotsDialogOpen(false)}>
+              Close
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleUseGeneratedVersion}
+              disabled={saveRobotsMutation.isPending || robotsLoading || !robotsTxt?.customContent}
+            >
+              Use Generated Version
+            </Button>
+            <Button type="button" onClick={handleSaveRobots} disabled={saveRobotsMutation.isPending || robotsLoading}>
+              <Save className="h-3.5 w-3.5 mr-2" />
+              Save robots.txt
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
