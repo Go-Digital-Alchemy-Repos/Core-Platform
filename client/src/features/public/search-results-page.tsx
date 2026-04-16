@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, FileText, Newspaper, CalendarDays, ArrowRight } from "lucide-react";
+import { Search, FileText, Newspaper, CalendarDays, ArrowRight, AlertTriangle } from "lucide-react";
 import type { PublicSearchResult } from "@shared/types/public-search";
+
+function getActiveQuery(searchString: string) {
+  const params = new URLSearchParams(searchString);
+  return (params.get("query") || params.get("q") || "").trim();
+}
 
 function ResultSection({
   title,
@@ -53,16 +58,16 @@ function ResultSection({
 }
 
 export default function SearchResultsPage() {
-  const [location, navigate] = useLocation();
-  const searchParams = new URLSearchParams(location.split("?")[1] ?? "");
-  const activeQuery = searchParams.get("query")?.trim() ?? "";
+  const [, navigate] = useLocation();
+  const search = useSearch();
+  const activeQuery = getActiveQuery(search);
   const [draftQuery, setDraftQuery] = useState(activeQuery);
 
   useEffect(() => {
     setDraftQuery(activeQuery);
   }, [activeQuery]);
 
-  const { data: results = [], isLoading } = useQuery<PublicSearchResult[]>({
+  const { data: results = [], isLoading, error } = useQuery<PublicSearchResult[]>({
     queryKey: ["/api/search", activeQuery],
     queryFn: async () => {
       const response = await fetch(`/api/search?q=${encodeURIComponent(activeQuery)}`);
@@ -111,7 +116,11 @@ export default function SearchResultsPage() {
           </form>
           {activeQuery ? (
             <p className="text-sm public-meta-text" data-testid="text-site-search-summary">
-              {isLoading ? "Searching..." : `${results.length} result${results.length === 1 ? "" : "s"} for "${activeQuery}"`}
+              {isLoading
+                ? "Searching..."
+                : error
+                  ? `We couldn't complete the search for "${activeQuery}".`
+                  : `${results.length} result${results.length === 1 ? "" : "s"} for "${activeQuery}"`}
             </p>
           ) : null}
         </div>
@@ -138,6 +147,16 @@ export default function SearchResultsPage() {
               </Card>
             ))}
           </div>
+        ) : error ? (
+          <Card>
+            <CardContent className="p-8 text-center space-y-2">
+              <AlertTriangle className="mx-auto h-10 w-10 text-destructive" />
+              <h2 className="font-semibold text-lg">Search is temporarily unavailable</h2>
+              <p className="public-helper-text">
+                We couldn&apos;t complete that search just now. Please try again in a moment.
+              </p>
+            </CardContent>
+          </Card>
         ) : results.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center space-y-2">

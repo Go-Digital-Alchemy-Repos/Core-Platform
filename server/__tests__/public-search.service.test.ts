@@ -50,6 +50,15 @@ const draftPage: CmsPage = {
   status: "draft",
 };
 
+const joinCmsPage: CmsPage = {
+  ...samplePage,
+  id: "page-join",
+  title: "Join the Network",
+  slug: "join",
+  seoDescription: null,
+  content: [{ title: "Membership", body: "Grow your practice with TCK Wellness." }],
+};
+
 const samplePost: BlogPost = {
   id: "post-1",
   title: "Understanding the Application Process",
@@ -165,5 +174,14 @@ describe("public-search.service", () => {
 
     expect(results.some((result) => result.url === "/join")).toBe(true);
     expect(results.find((result) => result.url === "/join")?.excerpt).toContain("Submit Your Application");
+  });
+
+  it("retains fallback system-page search terms even when a CMS version of that page exists", async () => {
+    mockGetAllPages.mockResolvedValue([joinCmsPage]);
+
+    const { searchPublicSite } = await import("../services/public-search.service");
+    const results = await searchPublicSite("application process");
+
+    expect(results.some((result) => result.url === "/join")).toBe(true);
   });
 });

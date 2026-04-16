@@ -12,6 +12,10 @@ interface SearchDocument {
   excerptSource: string;
 }
 
+interface FallbackPageDocument extends Omit<SearchDocument, "id"> {
+  slug: string;
+}
+
 function stripHtml(value: string): string {
   return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -23,7 +27,7 @@ function truncate(value: string, maxLength = 180): string {
 
 function collectContentText(value: unknown): string {
   if (!value) return "";
-  if (typeof value === "string") return value;
+  if (typeof value === "string") return stripHtml(value);
   if (Array.isArray(value)) return value.map(collectContentText).filter(Boolean).join(" ");
   if (typeof value === "object") {
     return Object.values(value as Record<string, unknown>).map(collectContentText).filter(Boolean).join(" ");
@@ -93,46 +97,11 @@ function buildExcerpt(source: string, query: string, terms: string[], maxLength 
   return `${prefix}${plainText.slice(start, end).trim()}${suffix}`;
 }
 
-function buildPageText(page: CmsPage) {
-  return [
-    page.title,
-    page.slug,
-    page.seoTitle,
-    page.seoDescription,
-    collectContentText(page.content),
-  ]
-    .filter(Boolean)
-    .join(" ");
+function joinFragments(values: Array<string | null | undefined>) {
+  return values.filter(Boolean).join(" ");
 }
 
-function buildPostText(post: BlogPost) {
-  return [
-    post.title,
-    post.excerpt,
-    post.content,
-    post.authorName,
-    post.category,
-    ...(post.categories ?? []),
-    ...(post.tags ?? []),
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
-function buildEventText(event: Event) {
-  return [
-    event.title,
-    event.description,
-    event.speakerName,
-    event.location,
-    event.locationName,
-    event.locationAddress,
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
-const FALLBACK_PAGE_DOCUMENTS: Array<Omit<SearchDocument, "id"> & { slug: string }> = [
+const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
   {
     slug: "home",
     type: "page",
@@ -222,7 +191,91 @@ const FALLBACK_PAGE_DOCUMENTS: Array<Omit<SearchDocument, "id"> & { slug: string
     ].join(" "),
     excerptSource: "Search for TCK-informed care by specialty, location, language, or session format.",
   },
+  {
+    slug: "privacy-policy",
+    type: "page",
+    title: "Privacy Policy",
+    url: "/privacy-policy",
+    metadata: "Page",
+    searchableText: [
+      "Privacy Policy",
+      "how TCK Wellness collects uses stores and protects information",
+    ].join(" "),
+    excerptSource: "Review how TCK Wellness collects, uses, stores, and protects information across the website and related services.",
+  },
+  {
+    slug: "terms-of-service",
+    type: "page",
+    title: "Terms of Service",
+    url: "/terms-of-service",
+    metadata: "Page",
+    searchableText: [
+      "Terms of Service",
+      "terms governing use of the TCK Wellness website directory events and services",
+    ].join(" "),
+    excerptSource: "Review the terms governing use of the TCK Wellness website, directory, events, and related services.",
+  },
+  {
+    slug: "disclaimer",
+    type: "page",
+    title: "Disclaimer",
+    url: "/disclaimer",
+    metadata: "Page",
+    searchableText: [
+      "Disclaimer",
+      "mental health emergency",
+      "suicide and crisis lifeline",
+      "TCK Wellness conducts a vetting process",
+    ].join(" "),
+    excerptSource: "Review emergency guidance, directory vetting limitations, and important information about using the TCK Wellness directory and related services.",
+  },
 ];
+
+const FALLBACK_PAGE_DOCUMENTS_BY_SLUG = new Map(
+  FALLBACK_PAGE_DOCUMENTS.map((document) => [document.slug, document] as const),
+);
+
+function buildPageText(page: CmsPage) {
+  const fallbackDocument = FALLBACK_PAGE_DOCUMENTS_BY_SLUG.get(page.slug);
+  return [
+    page.title,
+    page.slug,
+    page.seoTitle,
+    page.seoDescription,
+    page.seoKeywords,
+    collectContentText(page.content),
+    fallbackDocument?.searchableText,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildPostText(post: BlogPost) {
+  return [
+    post.title,
+    post.excerpt,
+    post.content,
+    post.authorName,
+    post.category,
+    ...(post.categories ?? []),
+    ...(post.tags ?? []),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildEventText(event: Event) {
+  return [
+    event.title,
+    event.description,
+    event.speakerName,
+    event.location,
+    event.locationName,
+    event.locationAddress,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
 
 function buildFallbackPageDocuments(publishedPageSlugs: Set<string>): SearchDocument[] {
   return FALLBACK_PAGE_DOCUMENTS
@@ -248,7 +301,7 @@ export async function searchPublicSite(query: string): Promise<PublicSearchResul
     storage.events.getPublishedEvents(),
   ]);
 
-  const publishedPages = pages.filter((page) => page.status === "published");
+  const publishedPages = pages.filter((page) => page.status === "published" && !page.noindex);
   const publishedPageSlugs = new Set(publishedPages.map((page) => page.slug));
 
   const documents: SearchDocument[] = [
@@ -259,10 +312,16 @@ export async function searchPublicSite(query: string): Promise<PublicSearchResul
       url: pageUrlForSlug(page.slug),
       metadata: "Page",
       searchableText: buildPageText(page),
-      excerptSource: page.seoDescription || collectContentText(page.content),
+      excerptSource: joinFragments([
+        page.seoDescription,
+        collectContentText(page.content),
+        FALLBACK_PAGE_DOCUMENTS_BY_SLUG.get(page.slug)?.excerptSource,
+      ]),
     })),
     ...buildFallbackPageDocuments(publishedPageSlugs),
-    ...posts.map((post) => ({
+    ...posts
+      .filter((post) => !post.noindex)
+      .map((post) => ({
       type: "post" as const,
       id: post.id,
       title: post.title,
@@ -270,7 +329,7 @@ export async function searchPublicSite(query: string): Promise<PublicSearchResul
       metadata: post.category || post.authorName || "Article",
       searchableText: buildPostText(post),
       excerptSource: post.excerpt || post.content,
-    })),
+      })),
     ...events.map((event) => ({
       type: "event" as const,
       id: event.id,
