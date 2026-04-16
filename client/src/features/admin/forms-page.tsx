@@ -39,6 +39,7 @@ import {
   Trash2,
   Mail,
   Save,
+  Copy,
   PanelTopOpen,
   Type,
   Pilcrow,
@@ -687,6 +688,11 @@ function FormsPageContent() {
     [selectedEntryId, submissions]
   );
 
+  const publicFormLink =
+    typeof window !== "undefined" && draft?.slug
+      ? `${window.location.origin}/forms/${draft.slug}`
+      : "";
+
   const updateDraft = (updater: (current: EditableForm) => EditableForm) => {
     setDraft((current) => (current ? updater(current) : current));
   };
@@ -942,6 +948,27 @@ function FormsPageContent() {
                     <CardDescription>Control the form identity, success behavior, and Mailchimp mapping.</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={async () => {
+                        if (!draft.isActive || !publicFormLink) return;
+                        try {
+                          await navigator.clipboard.writeText(publicFormLink);
+                          toast({ title: "Form link copied" });
+                        } catch {
+                          toast({
+                            title: "Unable to copy link",
+                            description: "Please copy the public form URL manually.",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      disabled={!draft.isActive || !publicFormLink}
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copy Form Link
+                    </Button>
                     {!draft.isSystem ? (
                       <Button
                         type="button"
@@ -977,13 +1004,24 @@ function FormsPageContent() {
                         }
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label>Slug</Label>
-                      <Input
-                        value={draft.slug}
-                        onChange={(event) => updateDraft((current) => ({ ...current, slug: slugify(event.target.value) }))}
-                      />
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label>Slug</Label>
+                    <Input
+                      value={draft.slug}
+                      onChange={(event) => updateDraft((current) => ({ ...current, slug: slugify(event.target.value) }))}
+                    />
+                  </div>
+                </div>
+
+                  <div className="space-y-1.5">
+                    <Label>Public Form Link</Label>
+                    <Input
+                      value={draft.isActive ? publicFormLink : "Activate this form to generate a shareable public link."}
+                      readOnly
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Shared links open a minimal standalone form page with the company logo and no site navigation.
+                    </p>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">

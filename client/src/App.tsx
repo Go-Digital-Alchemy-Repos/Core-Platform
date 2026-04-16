@@ -36,6 +36,7 @@ const SubscriptionPage = lazy(() => import("@/features/therapist/subscription-pa
 const ApplicationPage = lazy(() => import("@/features/therapist/application-page"));
 const ApplicationStatusPage = lazy(() => import("@/features/therapist/application-status-page"));
 const ReferenceFormPage = lazy(() => import("@/features/public/reference-form-page"));
+const StandaloneFormPage = lazy(() => import("@/features/public/standalone-form-page"));
 const AdminDashboardPage = lazy(() => import("@/features/admin/dashboard-page"));
 const AdminTherapistsPage = lazy(() => import("@/features/admin/therapists-page"));
 const AdminUsersPage = lazy(() => import("@/features/admin/users-page"));
@@ -127,6 +128,7 @@ function Router() {
         <Route path="/disclaimer" component={() => <CmsHybridPage slug="disclaimer" fallback={<LegalFallbackPage title="Disclaimer" subtitle="Review emergency guidance, directory vetting limitations, and important information about using the TCK Wellness directory and related services." />} />} />
         <Route path="/directory/:id" component={() => siteFeatures.directoryEnabled ? <TherapistProfilePage /> : <NotFound />} />
         <Route path="/reference/:token" component={ReferenceFormPage} />
+        <Route path="/forms/:slug" component={StandaloneFormPage} />
         <Route path="/auth/login" component={LoginPage} />
         <Route path="/auth/register"><Redirect to="/join" replace /></Route>
         <Route path="/auth/forgot-password" component={ForgotPasswordPage} />
