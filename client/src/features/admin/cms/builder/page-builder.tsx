@@ -1023,6 +1023,8 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
   const blockRefs = useRef(new Map<string, HTMLDivElement | null>());
   const desktopCanvasPanelRef = useRef<HTMLDivElement | null>(null);
+  const desktopInspectorShellRef = useRef<HTMLDivElement | null>(null);
+  const [desktopInspectorOffset, setDesktopInspectorOffset] = useState(0);
 
   const blocks = content.blocks ?? [];
   const selectedBlock = blocks.find((block) => block.id === selectedId) ?? null;
@@ -1127,6 +1129,74 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     if (!selectedId) return;
     scrollBlockIntoView(selectedId);
   }, [scrollBlockIntoView, selectedId]);
+
+  const updateDesktopInspectorAlignment = useCallback(() => {
+    if (!advancedInspectorOpen || !selectedId) {
+      setDesktopInspectorOffset(0);
+      return;
+    }
+
+    const selectedNode = blockRefs.current.get(selectedId);
+    const canvasViewport = desktopCanvasPanelRef.current?.querySelector(
+      "[data-radix-scroll-area-viewport]"
+    ) as HTMLElement | null;
+    const inspectorShell = desktopInspectorShellRef.current;
+
+    if (!selectedNode || !canvasViewport || !inspectorShell) {
+      setDesktopInspectorOffset(0);
+      return;
+    }
+
+    const viewportRect = canvasViewport.getBoundingClientRect();
+    const blockRect = selectedNode.getBoundingClientRect();
+    const shellHeight = inspectorShell.clientHeight;
+
+    if (shellHeight <= 0) {
+      setDesktopInspectorOffset(0);
+      return;
+    }
+
+    const blockTopRelative = blockRect.top - viewportRect.top;
+    const desiredTopAnchor = Math.max(92, Math.min(132, shellHeight * 0.16));
+    const minInspectorHeight = Math.min(520, Math.max(380, shellHeight * 0.58));
+    const maxOffset = Math.max(0, shellHeight - minInspectorHeight);
+    const nextOffset = Math.max(0, Math.min(maxOffset, blockTopRelative - desiredTopAnchor));
+
+    setDesktopInspectorOffset((current) =>
+      Math.abs(current - nextOffset) > 2 ? nextOffset : current
+    );
+  }, [advancedInspectorOpen, selectedId]);
+
+  useEffect(() => {
+    updateDesktopInspectorAlignment();
+  }, [updateDesktopInspectorAlignment, selectedId, blocks]);
+
+  useEffect(() => {
+    if (!advancedInspectorOpen || !selectedId) return;
+
+    const canvasViewport = desktopCanvasPanelRef.current?.querySelector(
+      "[data-radix-scroll-area-viewport]"
+    ) as HTMLElement | null;
+
+    if (!canvasViewport) return;
+
+    let frame = 0;
+    const queueAlignment = () => {
+      cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(updateDesktopInspectorAlignment);
+    };
+
+    canvasViewport.addEventListener("scroll", queueAlignment, { passive: true });
+    window.addEventListener("resize", queueAlignment);
+
+    queueAlignment();
+
+    return () => {
+      cancelAnimationFrame(frame);
+      canvasViewport.removeEventListener("scroll", queueAlignment);
+      window.removeEventListener("resize", queueAlignment);
+    };
+  }, [advancedInspectorOpen, selectedId, updateDesktopInspectorAlignment]);
 
   const resolveInsertIndex = useCallback(() => {
     if (insertAtIndex !== null) return insertAtIndex;
@@ -1739,8 +1809,18 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   );
 
   const renderDesktopInspectorPanel = () => (
-    <div className="h-full min-h-0 overflow-hidden p-3">
-      {inspectorPanel}
+    <div ref={desktopInspectorShellRef} className="h-full min-h-0 overflow-hidden p-3">
+      <div
+        className="h-full min-h-0 transition-[padding-top] duration-200 ease-out"
+        style={{ paddingTop: `${desktopInspectorOffset}px` }}
+      >
+        <div
+          className="min-h-0"
+          style={{ height: `calc(100% - ${desktopInspectorOffset}px)` }}
+        >
+          {inspectorPanel}
+        </div>
+      </div>
     </div>
   );
 
