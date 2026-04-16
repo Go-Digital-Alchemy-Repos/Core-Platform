@@ -1,0 +1,3 @@
+[75068991ms] [ERROR] Failed to load resource: net::ERR_NETWORK_CHANGED @ https://tck-wellness-production.up.railway.app/api/branding:0
+[75069017ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://tck-wellness-production.up.railway.app/api/setup/status:0
+[75069018ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://tck-wellness-production.up.railway.app/api/site-config:0
