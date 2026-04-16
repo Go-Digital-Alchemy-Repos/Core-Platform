@@ -2,6 +2,8 @@ import { eq, and, ilike, or, sql, type SQL, desc } from "drizzle-orm";
 import { db } from "../db";
 import { therapistProfiles, type TherapistProfile, type InsertTherapistProfile } from "@shared/schema";
 import { users } from "@shared/schema";
+import { savedProfessionals } from "@shared/schema/saved-professionals";
+import { profileViews } from "@shared/schema/profile-views";
 import { MemoryCache } from "../lib/cache";
 import { isSearchIndexReady } from "../lib/search-index";
 import type {
@@ -137,6 +139,20 @@ export class TherapistStorage {
       .returning();
     filterOptionsCache.invalidate();
     return profile;
+  }
+
+  async deleteProfile(id: string): Promise<boolean> {
+    const deleted = await db.transaction(async (tx) => {
+      await tx.delete(savedProfessionals).where(eq(savedProfessionals.profileId, id));
+      await tx.delete(profileViews).where(eq(profileViews.profileId, id));
+      const [profile] = await tx
+        .delete(therapistProfiles)
+        .where(eq(therapistProfiles.id, id))
+        .returning({ id: therapistProfiles.id });
+      return Boolean(profile);
+    });
+    filterOptionsCache.invalidate();
+    return deleted;
   }
 
   async listProfilesPaginated(params: InternalSearchParams = {}): Promise<PaginatedTherapists> {

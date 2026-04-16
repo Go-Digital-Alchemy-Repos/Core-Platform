@@ -587,7 +587,7 @@ function TherapistsContent() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Mental Health Professional</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove {deleteTarget?.user?.firstName} {deleteTarget?.user?.lastName}? This action will deactivate their profile.
+              Are you sure you want to permanently delete {deleteTarget?.user?.firstName} {deleteTarget?.user?.lastName}? This is only available for rejected or inactive profiles and will remove the profile from the directory system.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

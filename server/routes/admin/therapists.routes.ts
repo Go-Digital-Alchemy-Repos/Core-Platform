@@ -227,15 +227,24 @@ router.put(
 router.delete(
   "/:id",
   asyncHandler(async (req, res) => {
-    const profile = await storage.therapists.updateProfile(paramString(req.params.id), {
-      isActive: false,
-      isApproved: false,
-    });
+    const profile = await storage.therapists.getProfile(paramString(req.params.id));
     if (!profile) {
       notFound(res, "Profile");
       return;
     }
-    res.json({ message: "Therapist removed" });
+
+    if (profile.isApproved && profile.isActive) {
+      res.status(400).json({ message: "Only rejected or inactive mental health professional profiles can be permanently deleted." });
+      return;
+    }
+
+    const deleted = await storage.therapists.deleteProfile(profile.id);
+    if (!deleted) {
+      notFound(res, "Profile");
+      return;
+    }
+
+    res.json({ message: "Mental health professional deleted" });
   })
 );
 
