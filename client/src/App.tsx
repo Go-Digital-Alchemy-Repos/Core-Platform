@@ -18,7 +18,11 @@ const ContactPage = lazy(() => import("@/features/public/contact-page"));
 const EventsPage = lazy(() => import("@/features/public/events-page"));
 const EventDetailPage = lazy(() => import("@/features/public/event-detail-page"));
 const JoinNetworkPage = lazy(() => import("@/features/public/join-network-page"));
-import { CmsHybridPage } from "@/features/public/cms-hybrid-page";
+const CmsHybridPage = lazy(() =>
+  import("@/features/public/cms-hybrid-page").then((module) => ({
+    default: module.CmsHybridPage,
+  }))
+);
 const CmsPreviewPage = lazy(() => import("@/features/public/cms-preview-page"));
 
 const LoginPage = lazy(() => import("@/features/auth/login-page"));

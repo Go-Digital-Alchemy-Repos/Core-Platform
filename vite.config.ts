@@ -48,6 +48,87 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+
+          if (
+            id.includes("/react/") ||
+            id.includes("/react-dom/") ||
+            id.includes("/scheduler/") ||
+            id.includes("/wouter/")
+          ) {
+            return "framework";
+          }
+
+          if (id.includes("/@tanstack/react-query/")) {
+            return "query";
+          }
+
+          if (
+            id.includes("/@tiptap/") ||
+            id.includes("/prosemirror-") ||
+            id.includes("/orderedmap/") ||
+            id.includes("/rope-sequence/")
+          ) {
+            return "editor";
+          }
+
+          if (
+            id.includes("/leaflet/") ||
+            id.includes("/react-leaflet/") ||
+            id.includes("/@fullcalendar/")
+          ) {
+            return "maps";
+          }
+
+          if (
+            id.includes("/@radix-ui/") ||
+            id.includes("/cmdk/") ||
+            id.includes("/vaul/") ||
+            id.includes("/input-otp/") ||
+            id.includes("/react-resizable-panels/")
+          ) {
+            return "ui";
+          }
+
+          if (
+            id.includes("/lucide-react/") ||
+            id.includes("/react-icons/")
+          ) {
+            return "icons";
+          }
+
+          if (
+            id.includes("/react-hook-form/") ||
+            id.includes("/@hookform/resolvers/") ||
+            id.includes("/zod/")
+          ) {
+            return "forms";
+          }
+
+          if (
+            id.includes("/date-fns/") ||
+            id.includes("/sanitize-html/") ||
+            id.includes("/browser-image-compression/")
+          ) {
+            return "utils";
+          }
+
+          if (
+            id.includes("/recharts/") ||
+            id.includes("/framer-motion/") ||
+            id.includes("/embla-carousel") ||
+            id.includes("/react-day-picker/")
+          ) {
+            return "visuals";
+          }
+
+          return "vendor";
+        },
+      },
+    },
   },
   server: {
     fs: {
