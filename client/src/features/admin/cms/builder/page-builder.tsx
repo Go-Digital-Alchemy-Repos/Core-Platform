@@ -11,6 +11,7 @@ import {
   Bookmark,
   ListOrdered,
   Monitor,
+  Plus,
   Settings2,
   Sparkles,
 } from "lucide-react";
