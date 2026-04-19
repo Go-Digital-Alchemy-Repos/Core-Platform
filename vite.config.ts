@@ -57,7 +57,18 @@ export default defineConfig({
             id.includes("/react/") ||
             id.includes("/react-dom/") ||
             id.includes("/scheduler/") ||
-            id.includes("/wouter/")
+            id.includes("/wouter/") ||
+            // Keep the React overlay stack in the framework chunk.
+            // Splitting it separately created a runtime cycle where
+            // framework -> overlays -> framework left React undefined
+            // in downstream chunks like maps on production boot.
+            id.includes("/@floating-ui/") ||
+            id.includes("/react-remove-scroll/") ||
+            id.includes("/react-remove-scroll-bar/") ||
+            id.includes("/react-style-singleton/") ||
+            id.includes("/aria-hidden/") ||
+            id.includes("/use-callback-ref/") ||
+            id.includes("/use-sidecar/")
           ) {
             return "framework";
           }
@@ -94,18 +105,6 @@ export default defineConfig({
             id.includes("/react-resizable-panels/")
           ) {
             return "ui";
-          }
-
-          if (
-            id.includes("/@floating-ui/") ||
-            id.includes("/react-remove-scroll/") ||
-            id.includes("/react-remove-scroll-bar/") ||
-            id.includes("/react-style-singleton/") ||
-            id.includes("/aria-hidden/") ||
-            id.includes("/use-callback-ref/") ||
-            id.includes("/use-sidecar/")
-          ) {
-            return "overlays";
           }
 
           if (
