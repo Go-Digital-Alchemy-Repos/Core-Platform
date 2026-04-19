@@ -66,13 +66,16 @@ export default defineConfig({
             return "query";
           }
 
+          if (id.includes("/@tiptap/")) {
+            return "tiptap";
+          }
+
           if (
-            id.includes("/@tiptap/") ||
             id.includes("/prosemirror-") ||
             id.includes("/orderedmap/") ||
             id.includes("/rope-sequence/")
           ) {
-            return "editor";
+            return "prosemirror";
           }
 
           if (
@@ -116,13 +119,20 @@ export default defineConfig({
             return "utils";
           }
 
-          if (
-            id.includes("/recharts/") ||
-            id.includes("/framer-motion/") ||
-            id.includes("/embla-carousel") ||
-            id.includes("/react-day-picker/")
-          ) {
-            return "visuals";
+          if (id.includes("/recharts/")) {
+            return "charts";
+          }
+
+          if (id.includes("/embla-carousel")) {
+            return "carousel";
+          }
+
+          if (id.includes("/react-day-picker/")) {
+            return "calendar";
+          }
+
+          if (id.includes("/framer-motion/")) {
+            return "motion";
           }
 
           return "vendor";
