@@ -25,6 +25,7 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { EditorSaveIndicator } from "@/components/shared/editor-save-indicator";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import {
   Select,
@@ -64,6 +65,7 @@ import type { BlogPost, BlogTaxonomy, CmsSidebar } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
+import { useEditorSaveState } from "@/hooks/use-editor-save-state";
 
 function generateSlug(title: string): string {
   return title
@@ -273,13 +275,18 @@ export default function CmsBlogEditorPage() {
       const res = await apiRequest("POST", "/api/admin/blog", buildPayload(data));
       return res.json();
     },
-    onSuccess: (created: BlogPost) => {
+    onSuccess: (created: BlogPost, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/blog"] });
       queryClient.invalidateQueries({ queryKey: ["/api/blog"] });
       toast({ title: "Post created" });
+      form.reset(variables);
+      saveState.markSaved();
       navigate(`/admin/cms/blog/${created.id}`);
     },
-    onError: () => toast({ title: "Failed to create post", variant: "destructive" }),
+    onError: () => {
+      toast({ title: "Failed to create post", variant: "destructive" });
+      saveState.markError();
+    },
   });
 
   const updateMutation = useMutation({
@@ -287,13 +294,18 @@ export default function CmsBlogEditorPage() {
       const res = await apiRequest("PUT", `/api/admin/blog/${id}`, buildPayload(data));
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/blog"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/blog", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/blog"] });
       toast({ title: "Post saved" });
+      form.reset(variables);
+      saveState.markSaved();
     },
-    onError: () => toast({ title: "Failed to save post", variant: "destructive" }),
+    onError: () => {
+      toast({ title: "Failed to save post", variant: "destructive" });
+      saveState.markError();
+    },
   });
 
   const onSave = () => {
@@ -329,6 +341,10 @@ export default function CmsBlogEditorPage() {
   });
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
+  const saveState = useEditorSaveState({
+    isDirty: form.formState.isDirty,
+    isSaving,
+  });
   const isPublished = form.watch("isPublished");
   const watchPostType = form.watch("postType");
   const currentSlug = form.watch("slug");
@@ -400,6 +416,7 @@ export default function CmsBlogEditorPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <EditorSaveIndicator state={saveState.state} />
             {!isNew && isPublished && (
               watchPostType === "external" && form.watch("externalUrl") ? (
                 <Button variant="outline" size="sm" asChild>
@@ -419,7 +436,7 @@ export default function CmsBlogEditorPage() {
             )}
             <Button onClick={onSave} disabled={isSaving || editorLock.isReadOnly} data-testid="button-save-post">
               <Save className="h-4 w-4 mr-2" />
-              {isSaving ? "Saving…" : "Save"}
+              {isSaving ? "Saving…" : "Save Post"}
             </Button>
           </div>
         </div>

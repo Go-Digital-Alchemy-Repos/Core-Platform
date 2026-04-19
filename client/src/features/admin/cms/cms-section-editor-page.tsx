@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
+import { EditorSaveIndicator } from "@/components/shared/editor-save-indicator";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ import type { BuilderContent } from "./builder/block-registry";
 import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
+import { useEditorSaveState } from "@/hooks/use-editor-save-state";
 
 const EMPTY_CONTENT: BuilderContent = { blocks: [] };
 
@@ -58,6 +60,9 @@ export default function CmsSectionEditorPage() {
 
   const [builderContent, setBuilderContent] = useState<BuilderContent>(EMPTY_CONTENT);
   const [initialized, setInitialized] = useState(false);
+  const [savedBuilderSnapshot, setSavedBuilderSnapshot] = useState(() =>
+    JSON.stringify(EMPTY_CONTENT)
+  );
 
   const { data: section, isLoading: sectionLoading } = useQuery<CmsSection>({
     queryKey: ["/api/admin/cms/sections", id],
@@ -89,6 +94,7 @@ export default function CmsSectionEditorPage() {
       });
       const blocks = Array.isArray(section.blocks) ? section.blocks : [];
       setBuilderContent({ blocks: blocks as any });
+      setSavedBuilderSnapshot(JSON.stringify({ blocks }));
       setInitialized(true);
     }
   }, [section, initialized, form]);
@@ -101,48 +107,88 @@ export default function CmsSectionEditorPage() {
     onConflict: () => navigate("/admin/cms/sections"),
   });
 
+  const applySavedState = (data: SectionForm, content: BuilderContent) => {
+    form.reset(data);
+    setBuilderContent(content);
+    setSavedBuilderSnapshot(JSON.stringify(content));
+  };
+
   const createMutation = useMutation({
-    mutationFn: async (data: SectionForm) => {
+    mutationFn: async (payload: SectionForm & { content: BuilderContent }) => {
       return apiRequest("POST", "/api/admin/cms/sections", {
-        ...data,
-        blocks: builderContent.blocks,
+        ...payload,
+        blocks: payload.content.blocks,
       });
     },
-    onSuccess: async (res) => {
+    onSuccess: async (res, variables) => {
       const created: CmsSection = await res.json();
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/sections"] });
       toast({ title: "Section created" });
+      applySavedState(
+        {
+          name: variables.name,
+          description: variables.description,
+          category: variables.category,
+        },
+        variables.content
+      );
+      saveState.markSaved();
       navigate(`/admin/cms/sections/${created.id}`);
     },
-    onError: () => toast({ title: "Failed to create section", variant: "destructive" }),
+    onError: () => {
+      toast({ title: "Failed to create section", variant: "destructive" });
+      saveState.markError();
+    },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: SectionForm) => {
+    mutationFn: async (payload: SectionForm & { content: BuilderContent }) => {
       return apiRequest("PUT", `/api/admin/cms/sections/${id}`, {
-        ...data,
-        blocks: builderContent.blocks,
+        ...payload,
+        blocks: payload.content.blocks,
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/sections"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/sections", id] });
       toast({ title: "Section saved" });
+      applySavedState(
+        {
+          name: variables.name,
+          description: variables.description,
+          category: variables.category,
+        },
+        variables.content
+      );
+      saveState.markSaved();
     },
-    onError: () => toast({ title: "Failed to save section", variant: "destructive" }),
+    onError: () => {
+      toast({ title: "Failed to save section", variant: "destructive" });
+      saveState.markError();
+    },
   });
 
   const onSave = () => {
     form.handleSubmit((data) => {
+      const payload = {
+        ...data,
+        content: builderContent,
+      };
       if (isNew) {
-        createMutation.mutate(data);
+        createMutation.mutate(payload);
       } else {
-        updateMutation.mutate(data);
+        updateMutation.mutate(payload);
       }
     })();
   };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
+  const builderDirty =
+    JSON.stringify(builderContent) !== savedBuilderSnapshot;
+  const saveState = useEditorSaveState({
+    isDirty: form.formState.isDirty || builderDirty,
+    isSaving,
+  });
 
   if (!isNew && sectionLoading) {
     return (
@@ -184,14 +230,17 @@ export default function CmsSectionEditorPage() {
               </h1>
             </div>
           </div>
-          <Button
-            onClick={onSave}
-            disabled={isSaving || editorLock.isReadOnly}
-            data-testid="button-save-section"
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {isSaving ? "Saving…" : "Save Section"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <EditorSaveIndicator state={saveState.state} />
+            <Button
+              onClick={onSave}
+              disabled={isSaving || editorLock.isReadOnly}
+              data-testid="button-save-section"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {isSaving ? "Saving…" : "Save Section"}
+            </Button>
+          </div>
         </div>
 
         <Card className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>

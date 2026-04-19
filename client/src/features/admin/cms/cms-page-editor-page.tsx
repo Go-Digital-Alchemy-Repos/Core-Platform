@@ -34,6 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { SeoPreview } from "@/components/shared/seo-preview";
 import { StructuredDataStatus } from "@/components/shared/structured-data-status";
+import { EditorSaveIndicator } from "@/components/shared/editor-save-indicator";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -70,6 +71,7 @@ import { LandingPageWizard } from "./components/landing-page-wizard";
 import { analyzeCmsPageQuality } from "@/lib/cms-page-quality";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
+import { useEditorSaveState } from "@/hooks/use-editor-save-state";
 
 const editorSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -118,6 +120,9 @@ export default function CmsPageEditorPage() {
   const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slugManuallyEdited = useRef(false);
   const [builderContent, setBuilderContent] = useState<BuilderContent>(EMPTY_CONTENT);
+  const [savedBuilderSnapshot, setSavedBuilderSnapshot] = useState(() =>
+    JSON.stringify(EMPTY_CONTENT)
+  );
   const [activeTab, setActiveTab] = useState("builder");
   const [templatePickerOpen, setTemplatePickerOpen] = useState(isNew);
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -178,7 +183,9 @@ export default function CmsPageEditorPage() {
         canonicalUrl: page.canonicalUrl ?? "",
         noindex: page.noindex ?? false,
       });
-      setBuilderContent(parseBuilderContent(page.content));
+      const parsedContent = parseBuilderContent(page.content);
+      setBuilderContent(parsedContent);
+      setSavedBuilderSnapshot(JSON.stringify(parsedContent));
     }
   }, [page, form]);
 
@@ -212,39 +219,82 @@ export default function CmsPageEditorPage() {
     setBuilderContent(content);
   }, []);
 
+  const applySavedState = useCallback(
+    (data: EditorForm, content: BuilderContent) => {
+      form.reset(data);
+      setBuilderContent(content);
+      setSavedBuilderSnapshot(JSON.stringify(content));
+    },
+    [form]
+  );
+
   const createMutation = useMutation({
     mutationFn: (data: EditorForm & { content: BuilderContent }) =>
       apiRequest("POST", "/api/admin/cms/pages", data),
-    onSuccess: async (res) => {
+    onSuccess: async (res, variables) => {
       const created: CmsPage = await res.json();
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages"] });
       toast({ title: "Page created successfully" });
       setDraftPreviewUrl("");
-      setSaveStatus("success");
+      applySavedState(
+        {
+          title: variables.title,
+          slug: variables.slug,
+          pageType: variables.pageType,
+          template: variables.template,
+          sidebarId: variables.sidebarId ?? "",
+          status: variables.status,
+          seoTitle: variables.seoTitle ?? "",
+          seoDescription: variables.seoDescription ?? "",
+          seoKeywords: variables.seoKeywords ?? "",
+          ogImageUrl: variables.ogImageUrl ?? "",
+          canonicalUrl: variables.canonicalUrl ?? "",
+          noindex: variables.noindex ?? false,
+        },
+        variables.content
+      );
+      saveState.markSaved();
       navTimerRef.current = setTimeout(() => navigate(`/admin/cms/pages/${created.id}`), 1500);
     },
     onError: async (err: any) => {
       const msg = await err?.response?.json?.().catch(() => null);
       toast({ title: msg?.error || "Failed to create page", variant: "destructive" });
-      setSaveStatus("error");
+      saveState.markError();
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: EditorForm & { content: BuilderContent }) =>
       apiRequest("PUT", `/api/admin/cms/pages/${id}`, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id, "revisions"] });
       toast({ title: "Page saved" });
       setDraftPreviewUrl("");
-      setSaveStatus("success");
+      applySavedState(
+        {
+          title: variables.title,
+          slug: variables.slug,
+          pageType: variables.pageType,
+          template: variables.template,
+          sidebarId: variables.sidebarId ?? "",
+          status: variables.status,
+          seoTitle: variables.seoTitle ?? "",
+          seoDescription: variables.seoDescription ?? "",
+          seoKeywords: variables.seoKeywords ?? "",
+          ogImageUrl: variables.ogImageUrl ?? "",
+          canonicalUrl: variables.canonicalUrl ?? "",
+          noindex: variables.noindex ?? false,
+        },
+        variables.content
+      );
+      saveState.markSaved();
     },
     onError: async (err: any) => {
       const msg = await err?.response?.json?.().catch(() => null);
       toast({ title: msg?.error || "Failed to save page", variant: "destructive" });
-      setSaveStatus("error");
+      saveState.markError();
     },
   });
 
@@ -361,15 +411,14 @@ export default function CmsPageEditorPage() {
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
-
-  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
-
-  useEffect(() => {
-    if (saveStatus !== "idle") {
-      const timer = setTimeout(() => setSaveStatus("idle"), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [saveStatus]);
+  const builderDirty = useMemo(
+    () => JSON.stringify(builderContent) !== savedBuilderSnapshot,
+    [builderContent, savedBuilderSnapshot]
+  );
+  const saveState = useEditorSaveState({
+    isDirty: form.formState.isDirty || builderDirty,
+    isSaving: isPending,
+  });
 
   useEffect(() => {
     return () => {
@@ -508,6 +557,7 @@ export default function CmsPageEditorPage() {
                 Ready to publish
               </Badge>
             )}
+            <EditorSaveIndicator state={saveState.state} />
             {isNew && (
               <Button
                 variant="outline"
@@ -627,33 +677,16 @@ export default function CmsPageEditorPage() {
               onClick={onSave}
               disabled={isPending || editorLock.isReadOnly}
               data-testid="button-save"
-              className={
-                saveStatus === "success"
-                  ? "bg-green-600 hover:bg-green-600 text-white"
-                  : saveStatus === "error"
-                  ? "bg-red-600 hover:bg-red-600 text-white"
-                  : ""
-              }
             >
               {isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Saving…
                 </>
-              ) : saveStatus === "success" ? (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  Saved!
-                </>
-              ) : saveStatus === "error" ? (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save failed
-                </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Save
+                  Save Page
                 </>
               )}
             </Button>
