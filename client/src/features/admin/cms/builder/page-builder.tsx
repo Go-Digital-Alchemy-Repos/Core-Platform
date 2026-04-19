@@ -1,28 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
-import { createPortal } from "react-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -32,69 +19,32 @@ import {
   ArrowDown,
   ArrowUp,
   Bookmark,
-  BookOpen,
   Blocks,
-  CalendarDays,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ClipboardCheck,
   Copy,
-  FileText,
   Eye,
   EyeOff,
-  FlaskConical,
-  GalleryHorizontal,
-  Globe,
-  Grid2X2,
-  Grid3X3,
   GripVertical,
-  Heading,
-  HelpCircle,
-  Image,
   Layers,
-  LayoutGrid,
-  LayoutTemplate,
-  List,
-  ListChecks,
   ListOrdered,
   LocateFixed,
   Lock,
-  Map as MapIcon,
-  Megaphone,
-  Minus,
   Monitor,
-  MousePointerClick,
-  Newspaper,
   Pencil,
-  Phone,
-  Play,
   Plus,
-  Quote,
-  Rss,
   Search,
   Settings2,
-  Shield,
-  ShieldCheck,
   Sparkles,
-  TrendingUp,
   Trash2,
-  Tablet,
-  UserCheck,
   Users,
-  Workflow,
-  ArrowRight,
-  BadgeCheck,
-  BarChart3,
-  Smartphone,
-  UserPlus2,
 } from "lucide-react";
 import {
   ALL_BLOCKS,
   createBlock,
   getBlockDef,
   isDynamicBlock,
-  type BlockCategory,
   type BlockInstance,
   type BuilderContent,
 } from "./block-registry";
@@ -106,69 +56,17 @@ import {
   hasSectionStyleConfig,
   SectionStyleWrapper,
 } from "./section-style";
-import { PublicBlockRenderer, PublicPageRenderer, FULL_WIDTH_BLOCK_TYPES } from "@/features/public/public-block-renderer";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { FULL_WIDTH_BLOCK_TYPES } from "@/features/public/public-block-renderer";
 import { cn } from "@/lib/utils";
-import type { CmsSection } from "@shared/schema";
-
-const ICON_MAP: Record<string, React.ElementType> = {
-  Sparkles,
-  FileText,
-  LayoutTemplate,
-  Megaphone,
-  LayoutGrid,
-  HelpCircle,
-  Quote,
-  UserCheck,
-  CalendarDays,
-  BookOpen,
-  MousePointerClick,
-  Image,
-  Play,
-  Minus,
-  Heading,
-  Globe,
-  Phone,
-  Map: MapIcon,
-  Mail: Globe,
-  UserPlus: UserPlus2,
-  Lock,
-  List,
-  ShieldCheck,
-  ArrowRight,
-  Shield,
-  Newspaper,
-  TrendingUp,
-  Grid3X3,
-  GalleryHorizontal,
-  BarChart3,
-  Grid2X2,
-  ListChecks,
-  FlaskConical,
-  ClipboardCheck,
-  BadgeCheck,
-  Workflow,
-  ListOrdered,
-  Rss,
-  Users,
-};
-
-const SECTION_CATEGORIES = ["general", "hero", "cta", "testimonials", "faq", "features", "content", "team"];
-
-const BLOCK_CATEGORY_LABELS: Record<BlockCategory, string> = {
-  hero: "Hero",
-  layout: "Layout",
-  content: "Content",
-  media: "Media",
-  "social-proof": "Social Proof",
-  conversion: "Conversion",
-  data: "Data / Live",
-  dynamic: "Dynamic / Interactive",
-};
-
-const BLOCK_CATEGORY_ORDER: BlockCategory[] = ["hero", "layout", "content", "media", "social-proof", "conversion", "data", "dynamic"];
-const SYSTEM_SECTION_NAME_PREFIX = "Starter - ";
+import { FrontendPreviewDialog, type PreviewDevice } from "./page-builder-preview";
+import {
+  BlockIcon,
+  duplicateBlockInstance,
+  getBlockSummary,
+  groupBlocksByCategory,
+  SaveSectionDialog,
+  SectionsLibrary,
+} from "./page-builder-support";
 
 interface PageBuilderProps {
   content: BuilderContent;
@@ -179,11 +77,6 @@ type LeftRailMode = "structure" | "inserter";
 type InsertPayload =
   | { kind: "block"; type: string }
   | { kind: "section"; sectionId: string; blocks: BlockInstance[] };
-
-interface SaveSectionDialogProps {
-  block: BlockInstance;
-  onClose: () => void;
-}
 
 interface VisualCanvasProps {
   blocks: BlockInstance[];
@@ -204,458 +97,6 @@ interface VisualCanvasProps {
   onBlockDrop: (event: DragEvent, targetId: string) => void;
   onBlockDragEnd: () => void;
   desktopFrameClassName?: string;
-}
-
-interface FrontendPreviewDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  blocks: BlockInstance[];
-  previewDevice: "desktop" | "tablet" | "mobile";
-  onPreviewDeviceChange: (device: "desktop" | "tablet" | "mobile") => void;
-}
-
-const PREVIEW_DEVICE_LABELS = {
-  desktop: "Desktop",
-  tablet: "Tablet",
-  mobile: "Mobile",
-} as const;
-
-const PREVIEW_DEVICE_FRAME_CLASSES = {
-  desktop: "w-full max-w-[1280px]",
-  tablet: "w-full max-w-[834px]",
-  mobile: "w-full max-w-[430px]",
-} as const;
-
-function FrontendPreviewFrame({
-  previewDevice,
-  blocks,
-}: {
-  previewDevice: "desktop" | "tablet" | "mobile";
-  blocks: BlockInstance[];
-}) {
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const [mountNode, setMountNode] = useState<HTMLDivElement | null>(null);
-  const [frameHeight, setFrameHeight] = useState(900);
-
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-
-    const doc = iframe.contentDocument;
-    if (!doc) return;
-
-    doc.open();
-    doc.write("<!doctype html><html><head></head><body></body></html>");
-    doc.close();
-
-    doc.documentElement.lang = document.documentElement.lang || "en";
-    doc.body.style.margin = "0";
-    doc.body.style.background = "transparent";
-    doc.body.style.minHeight = "100vh";
-
-    Array.from(document.head.querySelectorAll('style, link[rel="stylesheet"]')).forEach((node) => {
-      doc.head.appendChild(node.cloneNode(true));
-    });
-
-    const root = doc.createElement("div");
-    root.setAttribute("data-frontend-preview-root", "true");
-    root.style.minHeight = "100vh";
-    doc.body.appendChild(root);
-    setMountNode(root);
-
-    return () => {
-      setMountNode(null);
-    };
-  }, [previewDevice]);
-
-  useEffect(() => {
-    if (!mountNode) return;
-    const doc = mountNode.ownerDocument;
-    const view = doc.defaultView;
-    if (!view) return;
-
-    const updateHeight = () => {
-      const nextHeight = Math.max(
-        mountNode.scrollHeight,
-        doc.body.scrollHeight,
-        doc.documentElement.scrollHeight,
-        900
-      );
-      setFrameHeight(nextHeight);
-    };
-
-    updateHeight();
-
-    const ResizeObserverCtor = view.ResizeObserver;
-    if (!ResizeObserverCtor) {
-      const frame = view.requestAnimationFrame(updateHeight);
-      return () => view.cancelAnimationFrame(frame);
-    }
-
-    const observer = new ResizeObserverCtor(() => updateHeight());
-    observer.observe(mountNode);
-    observer.observe(doc.body);
-    observer.observe(doc.documentElement);
-    const frame = view.requestAnimationFrame(updateHeight);
-
-    return () => {
-      view.cancelAnimationFrame(frame);
-      observer.disconnect();
-    };
-  }, [mountNode, blocks]);
-
-  return (
-    <>
-      <iframe
-        ref={iframeRef}
-        title={`${PREVIEW_DEVICE_LABELS[previewDevice]} frontend preview`}
-        className={cn(
-          "block overflow-hidden rounded-[28px] border border-border/60 bg-background shadow-[0_20px_70px_rgba(15,23,42,0.08)] transition-[max-width] duration-200",
-          PREVIEW_DEVICE_FRAME_CLASSES[previewDevice],
-        )}
-        style={{ height: `${frameHeight}px` }}
-      />
-      {mountNode
-        ? createPortal(
-            <div className="min-h-screen bg-background">
-              <PublicPageRenderer blocks={blocks} />
-            </div>,
-            mountNode
-          )
-        : null}
-    </>
-  );
-}
-
-function FrontendPreviewDialog({
-  open,
-  onOpenChange,
-  blocks,
-  previewDevice,
-  onPreviewDeviceChange,
-}: FrontendPreviewDialogProps) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[calc(100vh-2rem)] w-[min(1440px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] flex-col overflow-hidden p-0">
-        <DialogHeader className="shrink-0 border-b border-border/60 px-6 py-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-1">
-              <DialogTitle className="flex items-center gap-2">
-                <Monitor className="h-4 w-4 text-primary" />
-                Frontend Preview
-              </DialogTitle>
-              <DialogDescription>
-                Review the current page content with the published renderer only, without builder chrome, before you publish.
-              </DialogDescription>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="gap-1">
-                <Monitor className="h-3 w-3" />
-                {PREVIEW_DEVICE_LABELS[previewDevice]}
-              </Badge>
-              <div className="flex items-center rounded-lg border border-border/70 bg-background p-1">
-                <Button
-                  type="button"
-                  variant={previewDevice === "desktop" ? "secondary" : "ghost"}
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => onPreviewDeviceChange("desktop")}
-                  data-testid="button-frontend-preview-desktop"
-                  title="Desktop preview"
-                >
-                  <Monitor className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant={previewDevice === "tablet" ? "secondary" : "ghost"}
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => onPreviewDeviceChange("tablet")}
-                  data-testid="button-frontend-preview-tablet"
-                  title="Tablet preview"
-                >
-                  <Tablet className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant={previewDevice === "mobile" ? "secondary" : "ghost"}
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => onPreviewDeviceChange("mobile")}
-                  data-testid="button-frontend-preview-mobile"
-                  title="Mobile preview"
-                >
-                  <Smartphone className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </DialogHeader>
-        <div className="min-h-0 flex-1 bg-[radial-gradient(circle_at_top,_rgba(137,205,161,0.10),_transparent_45%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,250,252,0.98))] p-4 sm:p-6">
-          <ScrollArea className="h-full">
-            <div className="mx-auto w-full">
-              <FrontendPreviewFrame previewDevice={previewDevice} blocks={blocks} />
-            </div>
-          </ScrollArea>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function groupBlocksByCategory(blocks: BlockDef[]): { category: BlockCategory; label: string; items: BlockDef[] }[] {
-  const grouped = new Map<BlockCategory, BlockDef[]>();
-  for (const block of blocks) {
-    const category = block.category;
-    if (!grouped.has(category)) grouped.set(category, []);
-    grouped.get(category)!.push(block);
-  }
-
-  return BLOCK_CATEGORY_ORDER
-    .filter((category) => grouped.has(category))
-    .map((category) => ({
-      category,
-      label: BLOCK_CATEGORY_LABELS[category],
-      items: grouped.get(category)!,
-    }));
-}
-
-function BlockIcon({ name, className }: { name: string; className?: string }) {
-  const Icon = ICON_MAP[name] ?? Layers;
-  return <Icon className={className} />;
-}
-
-function cloneProps<T>(value: T): T {
-  if (typeof structuredClone === "function") {
-    return structuredClone(value);
-  }
-  return JSON.parse(JSON.stringify(value)) as T;
-}
-
-function duplicateBlockInstance(block: BlockInstance): BlockInstance {
-  return {
-    id: crypto.randomUUID(),
-    type: block.type,
-    props: cloneProps(block.props),
-  };
-}
-
-function getBlockSummary(block: BlockInstance) {
-  const candidates = [
-    block.props.title,
-    block.props.heading,
-    block.props.sectionEyebrow,
-    block.props.badge,
-    block.props.ctaText,
-  ];
-  const summary = candidates.find((candidate) => typeof candidate === "string" && candidate.trim().length > 0);
-  return typeof summary === "string" ? summary : "";
-}
-
-function SaveSectionDialog({ block, onClose }: SaveSectionDialogProps) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("general");
-
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/admin/cms/sections", {
-        name,
-        description,
-        category,
-        blocks: [block],
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/sections"] });
-      toast({ title: "Saved as reusable section" });
-      onClose();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to save section",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  return (
-    <div className="space-y-4 pt-2">
-      <div className="space-y-1.5">
-        <Label>Section Name</Label>
-        <Input
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="e.g. Homepage Hero"
-          data-testid="input-save-section-name"
-          autoFocus
-        />
-      </div>
-      <div className="space-y-1.5">
-        <Label>Category</Label>
-        <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger data-testid="select-save-section-category">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {SECTION_CATEGORIES.map((value) => (
-              <SelectItem key={value} value={value} className="capitalize">
-                {value}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-1.5">
-        <Label>
-          Description <span className="text-xs font-normal text-muted-foreground">(optional)</span>
-        </Label>
-        <Textarea
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          placeholder="When to use this section..."
-          rows={2}
-          data-testid="input-save-section-description"
-        />
-      </div>
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button
-          onClick={() => saveMutation.mutate()}
-          disabled={!name.trim() || saveMutation.isPending}
-          data-testid="button-confirm-save-section"
-        >
-          {saveMutation.isPending ? "Saving..." : "Save Section"}
-        </Button>
-      </DialogFooter>
-    </div>
-  );
-}
-
-function SectionsLibrary({
-  onInsert,
-  onDragStart,
-  onDragEnd,
-}: {
-  onInsert: (blocks: BlockInstance[]) => void;
-  onDragStart: (event: DragEvent, payload: InsertPayload) => void;
-  onDragEnd: () => void;
-}) {
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-
-  const { data: sections = [], isLoading } = useQuery<CmsSection[]>({
-    queryKey: ["/api/admin/cms/sections"],
-  });
-
-  const filteredSections = sections.filter((section) => {
-    const sectionBlocks = Array.isArray(section.blocks) ? (section.blocks as BlockInstance[]) : [];
-    const containsDynamicStarterBlock =
-      section.name.startsWith(SYSTEM_SECTION_NAME_PREFIX) &&
-      sectionBlocks.some((block) => getBlockDef(block.type)?.isDynamic);
-
-    if (containsDynamicStarterBlock) return false;
-
-    const matchesSearch = !search || section.name.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || section.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
-
-  const remapSectionBlocks = (section: CmsSection) => {
-    const blocks = Array.isArray(section.blocks) ? (section.blocks as BlockInstance[]) : [];
-    return blocks.map((block) => ({ ...block, id: crypto.randomUUID() }));
-  };
-
-  const insertSection = (section: CmsSection) => {
-    onInsert(remapSectionBlocks(section));
-  };
-
-  return (
-    <div className="space-y-3">
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search saved sections..."
-            className="h-8 pl-8 text-sm"
-            data-testid="input-library-search"
-          />
-        </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="h-8 w-32 text-xs" data-testid="select-library-category">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all" className="text-xs">All</SelectItem>
-            {SECTION_CATEGORIES.map((value) => (
-              <SelectItem key={value} value={value} className="text-xs capitalize">
-                {value}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {isLoading ? (
-        <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">Loading...</div>
-      ) : filteredSections.length === 0 ? (
-        <div className="flex h-32 flex-col items-center justify-center gap-2 text-muted-foreground">
-          <Blocks className="h-8 w-8 opacity-30" />
-          <p className="text-sm font-medium">{search ? "No sections match" : "No saved sections yet"}</p>
-          <p className="text-xs">
-            {search ? "Try a different search" : "Save a block as a reusable section from the visual builder"}
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-2">
-          {filteredSections.map((section) => {
-            const blockCount = Array.isArray(section.blocks) ? section.blocks.length : 0;
-            return (
-              <button
-                key={section.id}
-                type="button"
-                draggable
-                onDragStart={(event) =>
-                  onDragStart(event, {
-                    kind: "section",
-                    sectionId: section.id,
-                    blocks: remapSectionBlocks(section),
-                  })
-                }
-                onDragEnd={onDragEnd}
-                onClick={() => insertSection(section)}
-                className="group flex items-start gap-2.5 rounded-lg border p-3 text-left transition-colors hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30"
-                data-testid={`insert-section-${section.id}`}
-              >
-                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-violet-100 dark:bg-violet-900/30">
-                  <Layers className="h-3.5 w-3.5 text-violet-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium leading-tight">{section.name}</p>
-                  <div className="mt-0.5 flex items-center gap-1.5">
-                    <Badge variant="secondary" className="px-1 py-0 text-[9px] capitalize">
-                      {section.category ?? "general"}
-                    </Badge>
-                    <span className="text-[10px] text-muted-foreground">
-                      {blockCount} block{blockCount !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
 }
 
 function CanvasBlockFrame({
@@ -1017,7 +458,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [leftRailMode, setLeftRailMode] = useState<LeftRailMode>("structure");
   const [structurePanelOpen, setStructurePanelOpen] = useState(true);
   const [advancedInspectorOpen, setAdvancedInspectorOpen] = useState(true);
-  const [previewDevice, setPreviewDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [previewDevice, setPreviewDevice] = useState<PreviewDevice>("desktop");
   const [frontendPreviewOpen, setFrontendPreviewOpen] = useState(false);
   const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
   const blockRefs = useRef(new Map<string, HTMLDivElement | null>());
