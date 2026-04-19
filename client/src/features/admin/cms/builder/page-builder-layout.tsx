@@ -275,3 +275,37 @@ export function DesktopBuilderLayout({
     </div>
   );
 }
+
+interface MobileBuilderLayoutProps {
+  structurePanelOpen: boolean;
+  advancedInspectorOpen: boolean;
+  leftRailPanel: ReactNode;
+  inspectorPanel: ReactNode;
+  canvasProps: VisualCanvasProps;
+}
+
+export function MobileBuilderLayout({
+  structurePanelOpen,
+  advancedInspectorOpen,
+  leftRailPanel,
+  inspectorPanel,
+  canvasProps,
+}: MobileBuilderLayoutProps) {
+  return (
+    <div className="space-y-4 xl:hidden">
+      {structurePanelOpen ? leftRailPanel : (
+        <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
+          The left sidebar is hidden. Tap "Show Structure" to bring back the builder rail.
+        </div>
+      )}
+      <div className="rounded-2xl border border-border/70 bg-background shadow-sm">
+        <VisualCanvas {...canvasProps} />
+      </div>
+      {advancedInspectorOpen ? inspectorPanel : (
+        <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
+          The docked inspector is hidden. Use the section toolbar to select content, then tap "Show Inspector" for the full editing form.
+        </div>
+      )}
+    </div>
+  );
+}

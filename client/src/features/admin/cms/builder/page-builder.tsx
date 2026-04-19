@@ -23,9 +23,9 @@ import {
 } from "./block-registry";
 import { createFallbackBlockDef } from "./block-editor";
 import { FrontendPreviewDialog, type PreviewDevice } from "./page-builder-preview";
-import { VisualCanvas, type VisualCanvasProps } from "./page-builder-canvas";
+import type { VisualCanvasProps } from "./page-builder-canvas";
 import { BlockInspectorPanel } from "./page-builder-inspector";
-import { BuilderLeftRail, DesktopBuilderLayout } from "./page-builder-layout";
+import { BuilderLeftRail, DesktopBuilderLayout, MobileBuilderLayout } from "./page-builder-layout";
 import { InserterPanel, StructurePanel } from "./page-builder-panels";
 import {
   BLOCK_CATEGORY_LABELS,
@@ -574,40 +574,13 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         </div>
       </div>
 
-      <div className="space-y-4 xl:hidden">
-        {structurePanelOpen ? leftRailPanel : (
-          <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
-            The left sidebar is hidden. Tap "Show Structure" to bring back the builder rail.
-          </div>
-        )}
-        <div className="rounded-2xl border border-border/70 bg-background shadow-sm">
-          <VisualCanvas
-            blocks={blocks}
-            selectedId={selectedId}
-            onSelect={selectBlock}
-            onToggleActive={toggleBlockActive}
-            onDuplicate={duplicateBlock}
-            onDelete={removeBlock}
-            onMove={moveBlock}
-            onAddBelow={openAddBelow}
-            registerBlockRef={registerBlockRef}
-            onCanvasDragStart={handleDragStart}
-            onCanvasDragEnd={clearDragState}
-            draggedBlockId={draggedBlockId}
-            hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
-            dropTarget={dropTarget}
-            onBlockDragOver={handleDragOver}
-            onBlockDrop={handleDrop}
-            onBlockDragEnd={clearDragState}
-            desktopFrameClassName={desktopCanvasFrameClassName}
-          />
-        </div>
-        {advancedInspectorOpen ? inspectorPanel : (
-          <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
-            The docked inspector is hidden. Use the section toolbar to select content, then tap "Show Inspector" for the full editing form.
-          </div>
-        )}
-      </div>
+      <MobileBuilderLayout
+        structurePanelOpen={structurePanelOpen}
+        advancedInspectorOpen={advancedInspectorOpen}
+        leftRailPanel={leftRailPanel}
+        inspectorPanel={inspectorPanel}
+        canvasProps={canvasProps}
+      />
 
       <DesktopBuilderLayout
         structurePanelOpen={structurePanelOpen}
