@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, type ReactElement } from "react";
+import { lazy, Suspense, useState, useMemo, useEffect, type ReactElement } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -21,13 +21,9 @@ import {
 } from "lucide-react";
 import { LoginDialog } from "@/components/auth/login-dialog";
 import { MapView } from "@/components/directory/map-view";
-import { EventsArchiveSection } from "@/features/public/events-page";
-import { RecordingArchivesSection } from "@/features/public/recording-archives-page";
-import { DirectoryBrowserSection } from "@/features/directory/directory-page";
 import type { BlockInstance } from "./block-registry";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
 import { CompanyInformationCard } from "@/components/shared/company-information-card";
-import { ManagedFormEmbedBlock } from "@/features/public/public-dynamic-blocks";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import { isDynamicBlock, getBlockDef } from "./block-registry";
 import { mergeJoinHeroBlocks } from "@shared/cms-blocks";
@@ -71,6 +67,38 @@ const LUCIDE_MAP: Record<string, React.ElementType> = {
 function LucideIcon({ name, className }: { name: string; className?: string }) {
   const Icon = LUCIDE_MAP[name] ?? Globe;
   return <Icon className={className} />;
+}
+
+const LazyManagedFormEmbedBlock = lazy(() =>
+  import("@/features/public/public-dynamic-blocks").then((module) => ({
+    default: module.ManagedFormEmbedBlock,
+  }))
+);
+
+const LazyEventsArchiveSection = lazy(() =>
+  import("@/features/public/events-page").then((module) => ({
+    default: module.EventsArchiveSection,
+  }))
+);
+
+const LazyRecordingArchivesSection = lazy(() =>
+  import("@/features/public/recording-archives-page").then((module) => ({
+    default: module.RecordingArchivesSection,
+  }))
+);
+
+const LazyDirectoryBrowserSection = lazy(() =>
+  import("@/features/directory/directory-page").then((module) => ({
+    default: module.DirectoryBrowserSection,
+  }))
+);
+
+function DynamicPreviewFallback() {
+  return (
+    <div className="flex justify-center py-10">
+      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+    </div>
+  );
 }
 
 function HeroBlock({ props }: { props: Record<string, unknown> }) {
@@ -2024,15 +2052,39 @@ export function BlockRenderer({
     }
     if (!renderedBlock && block.type === "therapist-map") renderedBlock = <TherapistMapBlock props={block.props} />;
     if (!renderedBlock && block.type === "contact-form") renderedBlock = <ContactFormBlock />;
-    if (!renderedBlock && block.type === "form-embed") renderedBlock = <ManagedFormEmbedBlock props={block.props} />;
+    if (!renderedBlock && block.type === "form-embed") {
+      renderedBlock = (
+        <Suspense fallback={<DynamicPreviewFallback />}>
+          <LazyManagedFormEmbedBlock props={block.props} />
+        </Suspense>
+      );
+    }
     if (!renderedBlock && block.type === "join-hero") renderedBlock = <JoinHeroBlock props={block.props} />;
     if (!renderedBlock && block.type === "join-registration-form") renderedBlock = <JoinRegistrationFormBlock props={block.props} />;
     if (!renderedBlock && block.type === "blog-post-feed") renderedBlock = <BlogPostFeedBlock props={block.props} />;
     if (!renderedBlock && block.type === "blog-featured-post") renderedBlock = <BlogFeaturedPostBlock props={block.props} />;
     if (!renderedBlock && block.type === "standard-blog-page") renderedBlock = <StandardBlogPageBlock props={block.props} />;
-    if (!renderedBlock && block.type === "events-archive") renderedBlock = <EventsArchiveSection props={block.props} />;
-    if (!renderedBlock && block.type === "video-archives") renderedBlock = <RecordingArchivesSection props={block.props} />;
-    if (!renderedBlock && block.type === "directory-browser") renderedBlock = <DirectoryBrowserSection props={block.props} syncUrl={false} />;
+    if (!renderedBlock && block.type === "events-archive") {
+      renderedBlock = (
+        <Suspense fallback={<DynamicPreviewFallback />}>
+          <LazyEventsArchiveSection props={block.props} />
+        </Suspense>
+      );
+    }
+    if (!renderedBlock && block.type === "video-archives") {
+      renderedBlock = (
+        <Suspense fallback={<DynamicPreviewFallback />}>
+          <LazyRecordingArchivesSection props={block.props} />
+        </Suspense>
+      );
+    }
+    if (!renderedBlock && block.type === "directory-browser") {
+      renderedBlock = (
+        <Suspense fallback={<DynamicPreviewFallback />}>
+          <LazyDirectoryBrowserSection props={block.props} syncUrl={false} />
+        </Suspense>
+      );
+    }
   }
 
   if (!renderedBlock) {

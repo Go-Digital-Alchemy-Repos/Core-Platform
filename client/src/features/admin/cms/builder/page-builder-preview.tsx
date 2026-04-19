@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,13 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Monitor, Smartphone, Tablet } from "lucide-react";
-import { PublicPageRenderer } from "@/features/public/public-block-renderer";
 import type { BlockInstance } from "./block-registry";
+
+const LazyPublicPageRenderer = lazy(() =>
+  import("@/features/public/public-block-renderer").then((module) => ({
+    default: module.PublicPageRenderer,
+  }))
+);
 
 export type PreviewDevice = "desktop" | "tablet" | "mobile";
 
@@ -121,7 +126,9 @@ function FrontendPreviewFrame({
       {mountNode
         ? createPortal(
             <div className="min-h-screen bg-background">
-              <PublicPageRenderer blocks={blocks} />
+              <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                <LazyPublicPageRenderer blocks={blocks} />
+              </Suspense>
             </div>,
             mountNode,
           )

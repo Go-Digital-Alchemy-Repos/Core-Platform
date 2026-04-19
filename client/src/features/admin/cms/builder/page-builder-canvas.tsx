@@ -23,9 +23,9 @@ import {
   hasSectionStyleConfig,
   SectionStyleWrapper,
 } from "./section-style";
-import { FULL_WIDTH_BLOCK_TYPES } from "@/features/public/public-block-renderer";
 import { cn } from "@/lib/utils";
 import { getBlockSummary } from "./page-builder-support";
+import { FULL_WIDTH_BLOCK_TYPES } from "./page-builder-constants";
 
 interface CanvasBlockFrameProps {
   block: BlockInstance;

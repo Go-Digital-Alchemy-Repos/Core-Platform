@@ -38,6 +38,7 @@ import {
 import type { BlockInstance, BuilderContent } from "@/features/admin/cms/builder/block-registry";
 import { mergeJoinHeroBlocks } from "@shared/cms-blocks";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
+import { FULL_WIDTH_BLOCK_TYPES } from "@/features/admin/cms/builder/page-builder-constants";
 
 export type { BlockInstance, BuilderContent };
 
@@ -1511,20 +1512,6 @@ export function PublicBlockRenderer({
     </SectionStyleWrapper>
   );
 }
-
-export const FULL_WIDTH_BLOCK_TYPES = new Set([
-  "hero",
-  "join-hero",
-  "join-registration-form",
-  "events-archive",
-  "video-archives",
-  "directory-browser",
-  "cta",
-  "trust-bar",
-  "divider",
-  "slider",
-  "stats-bar",
-]);
 
 export function PublicPageRenderer({ blocks }: { blocks: BlockInstance[] }) {
   let nonFullWidthIndex = 0;

@@ -14,7 +14,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FULL_WIDTH_BLOCK_TYPES } from "@/features/public/public-block-renderer";
 import { getBlockDef, isDynamicBlock, type BlockDef, type BlockInstance } from "./block-registry";
 import {
   BlockIcon,
@@ -22,6 +21,7 @@ import {
   groupBlocksByCategory,
   SectionsLibrary,
 } from "./page-builder-support";
+import { FULL_WIDTH_BLOCK_TYPES } from "./page-builder-constants";
 
 interface StructurePanelProps {
   blocks: BlockInstance[];
