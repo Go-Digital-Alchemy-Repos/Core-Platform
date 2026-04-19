@@ -97,6 +97,18 @@ export default defineConfig({
           }
 
           if (
+            id.includes("/@floating-ui/") ||
+            id.includes("/react-remove-scroll/") ||
+            id.includes("/react-remove-scroll-bar/") ||
+            id.includes("/react-style-singleton/") ||
+            id.includes("/aria-hidden/") ||
+            id.includes("/use-callback-ref/") ||
+            id.includes("/use-sidecar/")
+          ) {
+            return "overlays";
+          }
+
+          if (
             id.includes("/lucide-react/") ||
             id.includes("/react-icons/")
           ) {
@@ -117,6 +129,18 @@ export default defineConfig({
             id.includes("/browser-image-compression/")
           ) {
             return "utils";
+          }
+
+          if (
+            id.includes("/class-variance-authority/") ||
+            id.includes("/clsx/") ||
+            id.includes("/tailwind-merge/")
+          ) {
+            return "styling";
+          }
+
+          if (id.includes("/react-image-crop/")) {
+            return "media";
           }
 
           if (id.includes("/recharts/")) {
