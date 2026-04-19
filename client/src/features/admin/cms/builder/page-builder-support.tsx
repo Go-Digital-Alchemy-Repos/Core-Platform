@@ -107,7 +107,7 @@ const ICON_MAP: Record<string, ElementType> = {
 const SECTION_CATEGORIES = ["general", "hero", "cta", "testimonials", "faq", "features", "content", "team"];
 const SYSTEM_SECTION_NAME_PREFIX = "Starter - ";
 
-const BLOCK_CATEGORY_LABELS: Record<BlockCategory, string> = {
+export const BLOCK_CATEGORY_LABELS: Record<BlockCategory, string> = {
   hero: "Hero",
   layout: "Layout",
   content: "Content",
