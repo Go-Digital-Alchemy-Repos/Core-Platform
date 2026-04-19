@@ -59,12 +59,6 @@ export default function CmsSectionEditorPage() {
   const [builderContent, setBuilderContent] = useState<BuilderContent>(EMPTY_CONTENT);
   const [initialized, setInitialized] = useState(false);
 
-  const editorLock = useEditorLock({
-    resourceType: "cms_section",
-    resourceId: isNew ? null : (section?.id ?? id ?? null),
-    enabled: !isNew,
-  });
-
   const { data: section, isLoading: sectionLoading } = useQuery<CmsSection>({
     queryKey: ["/api/admin/cms/sections", id],
     queryFn: async () => {
@@ -72,6 +66,12 @@ export default function CmsSectionEditorPage() {
       if (!res.ok) throw new Error("Section not found");
       return res.json();
     },
+    enabled: !isNew,
+  });
+
+  const editorLock = useEditorLock({
+    resourceType: "cms_section",
+    resourceId: isNew ? null : (section?.id ?? id ?? null),
     enabled: !isNew,
   });
 

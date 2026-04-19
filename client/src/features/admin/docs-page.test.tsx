@@ -1,0 +1,151 @@
+// @vitest-environment jsdom
+
+import React, { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createRoot, type Root } from "react-dom/client";
+import DocsPage from "@/features/admin/docs-page";
+
+const useQueryMock = vi.fn();
+const useMutationMock = vi.fn();
+const lockGuardMock = vi.fn();
+const editorLockState = {
+  hasLocking: true,
+  hasLoaded: true,
+  isReadOnly: true,
+  isLoading: false,
+  acquire: vi.fn(),
+  summary: {
+    variant: "warning" as const,
+    title: "Document already checked out",
+    description: "Jamie Editor is already editing this document.",
+  },
+};
+
+const mockDocs = [
+  {
+    id: "doc-1",
+    title: "Editor Workflow",
+    slug: "editor-workflow",
+    category: "Getting Started",
+    content: "# Editor Workflow",
+    isPublished: true,
+    sortOrder: 1,
+  },
+];
+
+vi.mock("@tanstack/react-query", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tanstack/react-query")>();
+  return {
+    ...actual,
+    useQuery: (options: unknown) => useQueryMock(options),
+    useMutation: (options: unknown) => useMutationMock(options),
+  };
+});
+
+vi.mock("@/features/admin/admin-sidebar", () => ({
+  AdminSidebar: ({ children }: { children: React.ReactNode }) =>
+    React.createElement("div", { "data-testid": "admin-sidebar" }, children),
+}));
+
+vi.mock("@/components/shared/editor-lock-banner", () => ({
+  EditorLockBanner: ({ title }: { title: string }) =>
+    React.createElement("div", { "data-testid": "editor-lock-banner" }, title),
+}));
+
+vi.mock("@/components/shared/loading-spinner", () => ({
+  LoadingSpinner: () => React.createElement("div", { "data-testid": "loading-spinner" }, "Loading"),
+}));
+
+vi.mock("@/components/shared/markdown-document", () => ({
+  MarkdownDocument: ({ content }: { content: string }) =>
+    React.createElement("div", { "data-testid": "markdown-document" }, content),
+}));
+
+vi.mock("@/hooks/use-toast", () => ({
+  useToast: () => ({
+    toast: vi.fn(),
+  }),
+}));
+
+vi.mock("@/hooks/use-editor-lock", () => ({
+  useEditorLock: () => editorLockState,
+}));
+
+vi.mock("@/hooks/use-lock-conflict-guard", () => ({
+  useLockConflictGuard: (args: unknown) => lockGuardMock(args),
+}));
+
+describe("DocsPage", () => {
+  let container: HTMLDivElement;
+  let root: Root | null = null;
+
+  beforeEach(() => {
+    lockGuardMock.mockReset();
+    useQueryMock.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
+      if (queryKey[0] === "/api/admin/docs") {
+        return { data: mockDocs, isLoading: false };
+      }
+
+      return { data: [], isLoading: false };
+    });
+    useMutationMock.mockReturnValue({
+      mutate: vi.fn(),
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+    vi.stubGlobal(
+      "ResizeObserver",
+      class ResizeObserver {
+        observe() {}
+        disconnect() {}
+        unobserve() {}
+      },
+    );
+    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
+    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    container = document.createElement("div");
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    act(() => {
+      root?.unmount();
+    });
+    root = null;
+    vi.unstubAllGlobals();
+    container.remove();
+    document.body.innerHTML = "";
+  });
+
+  it("closes the document sheet when a lock conflict is detected", async () => {
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(DocsPage));
+    });
+
+    const editButton = document.body.querySelector('[data-testid="button-edit-doc"]') as HTMLButtonElement | null;
+    expect(editButton).not.toBeNull();
+
+    await act(async () => {
+      editButton?.click();
+    });
+
+    expect(document.body.querySelector('[data-testid="input-doc-title"]')).not.toBeNull();
+    expect(lockGuardMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        resourceId: "doc-1",
+        resourceLabel: "document",
+        editorLock: editorLockState,
+      }),
+    );
+
+    const guardArgs = lockGuardMock.mock.calls.at(-1)?.[0] as { onConflict: () => void };
+
+    await act(async () => {
+      guardArgs.onConflict();
+    });
+
+    expect(document.body.querySelector('[data-testid="input-doc-title"]')).toBeNull();
+  });
+});

@@ -12,3 +12,17 @@
 [75038938ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://tck-wellness-production.up.railway.app/api/setup/status:0
 [75038938ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://tck-wellness-production.up.railway.app/api/site-config:0
 [79162402ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://tck-wellness-production.up.railway.app/api/auth/me:0
+[248831512ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://tck-wellness-production.up.railway.app/api/auth/me:0
+[249369447ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://tck-wellness-production.up.railway.app/api/auth/me:0
+[256543314ms] [ERROR] Failed to load resource: net::ERR_ADDRESS_UNREACHABLE @ https://tck-wellness-production.up.railway.app/api/seo/global:0
+[256543320ms] [ERROR] Failed to load resource: net::ERR_ADDRESS_UNREACHABLE @ https://tck-wellness-production.up.railway.app/api/auth/me:0
+[256543320ms] [ERROR] Failed to load resource: net::ERR_ADDRESS_UNREACHABLE @ https://tck-wellness-production.up.railway.app/api/cms/menus:0
+[256543320ms] [ERROR] Failed to load resource: net::ERR_ADDRESS_UNREACHABLE @ https://tck-wellness-production.up.railway.app/api/events:0
+[256543321ms] [ERROR] Failed to load resource: net::ERR_ADDRESS_UNREACHABLE @ https://tck-wellness-production.up.railway.app/api/blog:0
+[256543321ms] [ERROR] Failed to load resource: net::ERR_ADDRESS_UNREACHABLE @ https://tck-wellness-production.up.railway.app/api/branding:0
+[256543321ms] [ERROR] Failed to load resource: net::ERR_ADDRESS_UNREACHABLE @ https://tck-wellness-production.up.railway.app/api/setup/status:0
+[256543321ms] [ERROR] Failed to load resource: net::ERR_ADDRESS_UNREACHABLE @ https://tck-wellness-production.up.railway.app/api/site-config:0
+[256543321ms] [ERROR] Failed to load resource: net::ERR_ADDRESS_UNREACHABLE @ https://tck-wellness-production.up.railway.app/api/cms/pages/by-slug/home:0
+[256544327ms] [ERROR] Failed to load resource: net::ERR_ADDRESS_UNREACHABLE @ https://tck-wellness-production.up.railway.app/api/setup/status:0
+[256544335ms] [ERROR] Failed to load resource: net::ERR_ADDRESS_UNREACHABLE @ https://tck-wellness-production.up.railway.app/api/cms/pages/by-slug/home:0
+[266493663ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://tck-wellness-production.up.railway.app/api/auth/me:0
