@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   ArrowDown,
   ArrowUp,
+  Bookmark,
   Blocks,
   ChevronDown,
   Copy,
