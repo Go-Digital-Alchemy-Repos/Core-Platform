@@ -11,17 +11,10 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import {
   ArrowDown,
   ArrowUp,
   Blocks,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Copy,
   Eye,
   EyeOff,
@@ -50,7 +43,8 @@ import { createFallbackBlockDef } from "./block-editor";
 import { cn } from "@/lib/utils";
 import { FrontendPreviewDialog, type PreviewDevice } from "./page-builder-preview";
 import { VisualCanvas, type VisualCanvasProps } from "./page-builder-canvas";
-import { BlockInspectorPanel, DesktopInspectorPanel } from "./page-builder-inspector";
+import { BlockInspectorPanel } from "./page-builder-inspector";
+import { BuilderLeftRail, DesktopBuilderLayout } from "./page-builder-layout";
 import {
   BLOCK_CATEGORY_LABELS,
   BlockIcon,
@@ -760,37 +754,12 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   );
 
   const leftRailPanel = (
-    <div className="flex h-full flex-col gap-3">
-      <div className="rounded-2xl border border-border/70 bg-background p-2 shadow-sm">
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            variant={leftRailMode === "structure" ? "secondary" : "ghost"}
-            size="sm"
-            className="min-w-0 px-2 text-xs sm:text-sm"
-            onClick={() => setLeftRailMode("structure")}
-            data-testid="button-left-rail-structure"
-          >
-            <ListOrdered className="mr-1.5 h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">Structure</span>
-          </Button>
-          <Button
-            type="button"
-            variant={leftRailMode === "inserter" ? "secondary" : "ghost"}
-            size="sm"
-            className="min-w-0 px-2 text-xs sm:text-sm"
-            onClick={() => setLeftRailMode("inserter")}
-            data-testid="button-left-rail-inserter"
-          >
-            <Plus className="mr-1.5 h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">Add Content</span>
-          </Button>
-        </div>
-      </div>
-      <div className="min-h-0 flex-1">
-        {leftRailMode === "structure" ? structurePanel : inserterPanel}
-      </div>
-    </div>
+    <BuilderLeftRail
+      leftRailMode={leftRailMode}
+      onLeftRailModeChange={setLeftRailMode}
+      structurePanel={structurePanel}
+      inserterPanel={inserterPanel}
+    />
   );
 
   const inspectorPanel = (
@@ -805,41 +774,26 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     />
   );
 
-  const renderRailToggle = ({
-    side,
-    collapsed,
-    onClick,
-    label,
-  }: {
-    side: "left" | "right";
-    collapsed: boolean;
-    onClick: () => void;
-    label: string;
-  }) => (
-    <button
-      type="button"
-      className="absolute top-6 z-20 flex h-7 w-7 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-all hover:text-foreground hover:shadow-md"
-      style={side === "left" ? { left: -14 } : { right: -14 }}
-      onMouseDown={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-      }}
-      onClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        onClick();
-      }}
-      aria-label={label}
-      title={label}
-      data-testid={side === "left" ? "button-toggle-structure-panel" : "button-toggle-inspector-panel"}
-    >
-      {side === "left" ? (
-        collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />
-      ) : (
-        collapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
-      )}
-    </button>
-  );
+  const canvasProps: VisualCanvasProps = {
+    blocks,
+    selectedId,
+    onSelect: selectBlock,
+    onToggleActive: toggleBlockActive,
+    onDuplicate: duplicateBlock,
+    onDelete: removeBlock,
+    onMove: moveBlock,
+    onAddBelow: openAddBelow,
+    registerBlockRef,
+    onCanvasDragStart: handleDragStart,
+    onCanvasDragEnd: clearDragState,
+    draggedBlockId,
+    hasActiveDragPayload: !!draggedBlockId || !!draggedInsertPayload,
+    dropTarget,
+    onBlockDragOver: handleDragOver,
+    onBlockDrop: handleDrop,
+    onBlockDragEnd: clearDragState,
+    desktopFrameClassName: desktopCanvasFrameClassName,
+  };
 
   return (
     <div className="space-y-4">
@@ -936,205 +890,18 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
         )}
       </div>
 
-      <div className="hidden xl:sticky xl:top-6 xl:block">
-        {structurePanelOpen && advancedInspectorOpen ? (
-          <ResizablePanelGroup
-            key="desktop-layout-both-open"
-            direction="horizontal"
-            className="h-[calc(100vh-170px)] min-h-[700px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
-          >
-            <ResizablePanel defaultSize={18} minSize={14}>
-              <div className="h-full min-h-0 p-3">{leftRailPanel}</div>
-            </ResizablePanel>
-            <ResizableHandle>
-              {renderRailToggle({
-                side: "left",
-                collapsed: false,
-                onClick: () => setStructurePanelOpen(false),
-                label: "Collapse structure panel",
-              })}
-            </ResizableHandle>
-            <ResizablePanel defaultSize={60} minSize={32}>
-              <div className="h-full min-h-0 p-3">
-                <div ref={desktopCanvasPanelRef} className="h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
-                  <VisualCanvas
-                    blocks={blocks}
-                    selectedId={selectedId}
-                    onSelect={selectBlock}
-                    onToggleActive={toggleBlockActive}
-                    onDuplicate={duplicateBlock}
-                    onDelete={removeBlock}
-                    onMove={moveBlock}
-                    onAddBelow={openAddBelow}
-                    registerBlockRef={registerBlockRef}
-                    onCanvasDragStart={handleDragStart}
-                    onCanvasDragEnd={clearDragState}
-                    draggedBlockId={draggedBlockId}
-                    hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
-                    dropTarget={dropTarget}
-                    onBlockDragOver={handleDragOver}
-                    onBlockDrop={handleDrop}
-                    onBlockDragEnd={clearDragState}
-                    desktopFrameClassName={desktopCanvasFrameClassName}
-                  />
-                </div>
-              </div>
-            </ResizablePanel>
-            <ResizableHandle>
-              {renderRailToggle({
-                side: "right",
-                collapsed: false,
-                onClick: () => setAdvancedInspectorOpen(false),
-                label: "Collapse inspector panel",
-              })}
-            </ResizableHandle>
-            <ResizablePanel defaultSize={22} minSize={18}>
-              <DesktopInspectorPanel shellRef={desktopInspectorShellRef} offset={desktopInspectorOffset}>
-                {inspectorPanel}
-              </DesktopInspectorPanel>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        ) : structurePanelOpen ? (
-          <ResizablePanelGroup
-            key="desktop-layout-structure-open"
-            direction="horizontal"
-            className="h-[calc(100vh-170px)] min-h-[700px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
-          >
-            <ResizablePanel defaultSize={18} minSize={14}>
-              <div className="h-full min-h-0 p-3">{leftRailPanel}</div>
-            </ResizablePanel>
-            <ResizableHandle>
-              {renderRailToggle({
-                side: "left",
-                collapsed: false,
-                onClick: () => setStructurePanelOpen(false),
-                label: "Collapse structure panel",
-              })}
-            </ResizableHandle>
-            <ResizablePanel defaultSize={82} minSize={48}>
-              <div className="h-full min-h-0 p-3">
-                <div ref={desktopCanvasPanelRef} className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
-                  {renderRailToggle({
-                    side: "right",
-                    collapsed: true,
-                    onClick: () => setAdvancedInspectorOpen(true),
-                    label: "Show inspector panel",
-                  })}
-                  <VisualCanvas
-                    blocks={blocks}
-                    selectedId={selectedId}
-                    onSelect={selectBlock}
-                    onToggleActive={toggleBlockActive}
-                    onDuplicate={duplicateBlock}
-                    onDelete={removeBlock}
-                    onMove={moveBlock}
-                    onAddBelow={openAddBelow}
-                    registerBlockRef={registerBlockRef}
-                    onCanvasDragStart={handleDragStart}
-                    onCanvasDragEnd={clearDragState}
-                    draggedBlockId={draggedBlockId}
-                    hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
-                    dropTarget={dropTarget}
-                    onBlockDragOver={handleDragOver}
-                    onBlockDrop={handleDrop}
-                    onBlockDragEnd={clearDragState}
-                    desktopFrameClassName={desktopCanvasFrameClassName}
-                  />
-                </div>
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        ) : advancedInspectorOpen ? (
-          <ResizablePanelGroup
-            key="desktop-layout-inspector-open"
-            direction="horizontal"
-            className="h-[calc(100vh-170px)] min-h-[700px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10"
-          >
-            <ResizablePanel defaultSize={78} minSize={45}>
-              <div className="h-full min-h-0 p-3">
-                <div ref={desktopCanvasPanelRef} className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
-                  {renderRailToggle({
-                    side: "left",
-                    collapsed: true,
-                    onClick: () => setStructurePanelOpen(true),
-                    label: "Show structure panel",
-                  })}
-                <VisualCanvas
-                  blocks={blocks}
-                  selectedId={selectedId}
-                  onSelect={selectBlock}
-                  onToggleActive={toggleBlockActive}
-                  onDuplicate={duplicateBlock}
-                  onDelete={removeBlock}
-                    onMove={moveBlock}
-                    onAddBelow={openAddBelow}
-                    registerBlockRef={registerBlockRef}
-                    onCanvasDragStart={handleDragStart}
-                    onCanvasDragEnd={clearDragState}
-                    draggedBlockId={draggedBlockId}
-                    hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
-                    dropTarget={dropTarget}
-                    onBlockDragOver={handleDragOver}
-                    onBlockDrop={handleDrop}
-                    onBlockDragEnd={clearDragState}
-                    desktopFrameClassName={desktopCanvasFrameClassName}
-                  />
-                </div>
-              </div>
-            </ResizablePanel>
-            <ResizableHandle>
-              {renderRailToggle({
-                side: "right",
-                collapsed: false,
-                onClick: () => setAdvancedInspectorOpen(false),
-                label: "Collapse inspector panel",
-              })}
-            </ResizableHandle>
-            <ResizablePanel defaultSize={22} minSize={18}>
-              <DesktopInspectorPanel shellRef={desktopInspectorShellRef} offset={desktopInspectorOffset}>
-                {inspectorPanel}
-              </DesktopInspectorPanel>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        ) : (
-          <div key="desktop-layout-canvas-only" className="h-[calc(100vh-170px)] min-h-[700px] overflow-hidden rounded-2xl border border-border/60 bg-muted/10 p-3">
-            <div ref={desktopCanvasPanelRef} className="relative h-full overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
-              {renderRailToggle({
-                side: "left",
-                collapsed: true,
-                onClick: () => setStructurePanelOpen(true),
-                label: "Show structure panel",
-              })}
-              {renderRailToggle({
-                side: "right",
-                collapsed: true,
-                onClick: () => setAdvancedInspectorOpen(true),
-                label: "Show inspector panel",
-              })}
-              <VisualCanvas
-                blocks={blocks}
-                selectedId={selectedId}
-                onSelect={selectBlock}
-                onToggleActive={toggleBlockActive}
-                onDuplicate={duplicateBlock}
-                onDelete={removeBlock}
-                onMove={moveBlock}
-                onAddBelow={openAddBelow}
-                registerBlockRef={registerBlockRef}
-                onCanvasDragStart={handleDragStart}
-                onCanvasDragEnd={clearDragState}
-                draggedBlockId={draggedBlockId}
-                hasActiveDragPayload={!!draggedBlockId || !!draggedInsertPayload}
-                dropTarget={dropTarget}
-                onBlockDragOver={handleDragOver}
-                onBlockDrop={handleDrop}
-                onBlockDragEnd={clearDragState}
-                desktopFrameClassName={desktopCanvasFrameClassName}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+      <DesktopBuilderLayout
+        structurePanelOpen={structurePanelOpen}
+        advancedInspectorOpen={advancedInspectorOpen}
+        leftRailPanel={leftRailPanel}
+        inspectorPanel={inspectorPanel}
+        canvasPanelRef={desktopCanvasPanelRef}
+        inspectorShellRef={desktopInspectorShellRef}
+        desktopInspectorOffset={desktopInspectorOffset}
+        onSetStructurePanelOpen={setStructurePanelOpen}
+        onSetAdvancedInspectorOpen={setAdvancedInspectorOpen}
+        canvasProps={canvasProps}
+      />
 
       <Dialog
         open={!!savingSectionBlockId}
