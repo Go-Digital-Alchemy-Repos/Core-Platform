@@ -90,14 +90,6 @@ export default defineConfig({
           }
 
           if (
-            id.includes("/leaflet/") ||
-            id.includes("/react-leaflet/") ||
-            id.includes("/@fullcalendar/")
-          ) {
-            return "maps";
-          }
-
-          if (
             id.includes("/@radix-ui/") ||
             id.includes("/cmdk/") ||
             id.includes("/vaul/") ||
