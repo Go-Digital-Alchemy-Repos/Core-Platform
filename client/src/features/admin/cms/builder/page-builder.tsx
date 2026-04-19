@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowDown,
@@ -42,6 +42,7 @@ import {
 } from "./block-registry";
 import { createFallbackBlockDef } from "./block-editor";
 import { cn } from "@/lib/utils";
+import { FULL_WIDTH_BLOCK_TYPES } from "@/features/public/public-block-renderer";
 import { FrontendPreviewDialog, type PreviewDevice } from "./page-builder-preview";
 import { VisualCanvas, type VisualCanvasProps } from "./page-builder-canvas";
 import { BlockInspectorPanel } from "./page-builder-inspector";
