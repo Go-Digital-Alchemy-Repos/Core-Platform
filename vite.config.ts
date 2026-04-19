@@ -53,30 +53,6 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;
 
-          if (
-            id.includes("/react/") ||
-            id.includes("/react-dom/") ||
-            id.includes("/scheduler/") ||
-            id.includes("/wouter/") ||
-            // Keep the React overlay stack in the framework chunk.
-            // Splitting it separately created a runtime cycle where
-            // framework -> overlays -> framework left React undefined
-            // in downstream chunks like maps on production boot.
-            id.includes("/@floating-ui/") ||
-            id.includes("/react-remove-scroll/") ||
-            id.includes("/react-remove-scroll-bar/") ||
-            id.includes("/react-style-singleton/") ||
-            id.includes("/aria-hidden/") ||
-            id.includes("/use-callback-ref/") ||
-            id.includes("/use-sidecar/")
-          ) {
-            return "framework";
-          }
-
-          if (id.includes("/@tanstack/react-query/")) {
-            return "query";
-          }
-
           if (id.includes("/@tiptap/")) {
             return "tiptap";
           }
@@ -89,57 +65,12 @@ export default defineConfig({
             return "prosemirror";
           }
 
-          if (
-            id.includes("/@radix-ui/") ||
-            id.includes("/cmdk/") ||
-            id.includes("/vaul/") ||
-            id.includes("/input-otp/") ||
-            id.includes("/react-resizable-panels/")
-          ) {
-            return "ui";
-          }
-
-          if (
-            id.includes("/lucide-react/") ||
-            id.includes("/react-icons/")
-          ) {
-            return "icons";
-          }
-
-          if (
-            id.includes("/date-fns/") ||
-            id.includes("/sanitize-html/") ||
-            id.includes("/browser-image-compression/")
-          ) {
-            return "utils";
-          }
-
-          if (
-            id.includes("/class-variance-authority/") ||
-            id.includes("/clsx/") ||
-            id.includes("/tailwind-merge/")
-          ) {
-            return "styling";
-          }
-
-          if (id.includes("/react-image-crop/")) {
-            return "media";
-          }
-
           if (id.includes("/recharts/")) {
             return "charts";
           }
 
           if (id.includes("/embla-carousel")) {
             return "carousel";
-          }
-
-          if (id.includes("/react-day-picker/")) {
-            return "calendar";
-          }
-
-          if (id.includes("/framer-motion/")) {
-            return "motion";
           }
 
           return "vendor";
