@@ -6,6 +6,7 @@ import { z } from "zod";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import { AdminSidebar } from "./admin-sidebar";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
+import { EditorSaveIndicator } from "@/components/shared/editor-save-indicator";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { apiRequest, queryClient, STALE_TIMES } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -75,6 +76,7 @@ import {
 import type { Event, EventRegistration } from "@shared/schema";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
+import { useEditorSaveState } from "@/hooks/use-editor-save-state";
 
 const eventFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -309,6 +311,11 @@ function EventsContent() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Event | null>(null);
   const [activeTab, setActiveTab] = useState("details");
+  const saveFeedbackRef = useRef({
+    markSaved: () => {},
+    markError: () => {},
+    clearFeedback: () => {},
+  });
   const editorLock = useEditorLock({
     resourceType: "event",
     resourceId: dialogOpen && editingEvent?.id ? editingEvent.id : null,
@@ -436,10 +443,12 @@ function EventsContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/events"] });
       toast({ title: "Event created" });
+      saveFeedbackRef.current.markSaved();
       setDialogOpen(false);
       form.reset(defaultFormValues);
     },
     onError: (error: Error) => {
+      saveFeedbackRef.current.markError();
       toast({ title: "Failed to create event", description: error.message, variant: "destructive" });
     },
   });
@@ -452,11 +461,13 @@ function EventsContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/events"] });
       toast({ title: "Event saved" });
+      saveFeedbackRef.current.markSaved();
       setDialogOpen(false);
       setEditingEvent(null);
       form.reset(defaultFormValues);
     },
     onError: (error: Error) => {
+      saveFeedbackRef.current.markError();
       toast({ title: "Failed to save event", description: error.message, variant: "destructive" });
     },
   });
@@ -493,6 +504,7 @@ function EventsContent() {
       ...defaultFormValues,
       timezone: getDefaultEventTimeZone(),
     });
+    saveFeedbackRef.current.clearFeedback();
     setActiveTab("details");
     setDialogOpen(true);
   }
@@ -543,9 +555,17 @@ function EventsContent() {
       recurrenceEndDate: toDateTimeLocalValue(event.recurrenceEndDate, eventTimeZone),
       recurrenceCount: event.recurrenceCount ?? undefined,
     });
+    saveFeedbackRef.current.clearFeedback();
     setActiveTab("details");
     setDialogOpen(true);
   }
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+  const saveState = useEditorSaveState({
+    isDirty: dialogOpen && form.formState.isDirty,
+    isSaving,
+  });
+  saveFeedbackRef.current = saveState;
 
   function onSubmit(values: EventFormValues) {
     if (editingEvent) {
@@ -1851,19 +1871,22 @@ function EventsContent() {
             </div>
           </SheetBody>
           <SheetFooter>
-            <Button
-              type="submit"
-              form="event-form"
-              className="w-full"
-              disabled={createMutation.isPending || updateMutation.isPending || editorLock.isReadOnly}
-              data-testid="button-submit-event"
-            >
-              {createMutation.isPending || updateMutation.isPending
-                ? "Saving..."
-                : editingEvent
-                  ? "Save Event"
-                  : "Create Event"}
-            </Button>
+            <div className="flex w-full items-center justify-between gap-3">
+              <EditorSaveIndicator state={saveState.state} />
+              <Button
+                type="submit"
+                form="event-form"
+                className="min-w-[160px]"
+                disabled={isSaving || editorLock.isReadOnly}
+                data-testid="button-submit-event"
+              >
+                {isSaving
+                  ? "Saving..."
+                  : editingEvent
+                    ? "Save Event"
+                    : "Create Event"}
+              </Button>
+            </div>
           </SheetFooter>
         </SheetContent>
       </Sheet>

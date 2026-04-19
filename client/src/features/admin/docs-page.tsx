@@ -22,11 +22,13 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
+import { EditorSaveIndicator } from "@/components/shared/editor-save-indicator";
 import { MarkdownDocument } from "@/components/shared/markdown-document";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
+import { useEditorSaveState } from "@/hooks/use-editor-save-state";
 import { markdownToExcerpt } from "@/lib/markdown";
 import {
   BookOpenText,
@@ -82,8 +84,14 @@ export default function DocsPage() {
   const [selectedDoc, setSelectedDoc] = useState<Doc | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingDoc, setEditingDoc] = useState<Partial<Doc> | null>(null);
+  const [savedDocSnapshot, setSavedDocSnapshot] = useState("");
   const [showPreview, setShowPreview] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const saveFeedbackRef = useRef({
+    markSaved: () => {},
+    markError: () => {},
+    clearFeedback: () => {},
+  });
 
   const editorLock = useEditorLock({
     resourceType: "doc",
@@ -130,9 +138,15 @@ export default function DocsPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/docs"] });
+      saveFeedbackRef.current.markSaved();
       setSheetOpen(false);
       setEditingDoc(null);
+      setSavedDocSnapshot("");
       toast({ title: "Document created" });
+    },
+    onError: (error: Error) => {
+      saveFeedbackRef.current.markError();
+      toast({ title: "Failed to create document", description: error.message, variant: "destructive" });
     },
   });
 
@@ -143,12 +157,18 @@ export default function DocsPage() {
     },
     onSuccess: async (updated: Doc) => {
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/docs"] });
+      saveFeedbackRef.current.markSaved();
       setSheetOpen(false);
       setEditingDoc(null);
+      setSavedDocSnapshot("");
       if (selectedDoc?.id === updated.id) {
         setSelectedDoc(updated);
       }
       toast({ title: "Document updated" });
+    },
+    onError: (error: Error) => {
+      saveFeedbackRef.current.markError();
+      toast({ title: "Failed to update document", description: error.message, variant: "destructive" });
     },
   });
 
@@ -222,21 +242,34 @@ export default function DocsPage() {
     }
   };
 
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+  const saveState = useEditorSaveState({
+    isDirty: sheetOpen && !!editingDoc && JSON.stringify(editingDoc) !== savedDocSnapshot,
+    isSaving,
+  });
+  saveFeedbackRef.current = saveState;
+
   const openCreate = () => {
-    setEditingDoc({
+    const blankDoc = {
       title: "",
       slug: "",
       category: categoryOptions[0] ?? "Getting Started",
       content: "",
       isPublished: true,
       sortOrder: allDocs.length + 1,
-    });
+    };
+    setEditingDoc(blankDoc);
+    setSavedDocSnapshot(JSON.stringify(blankDoc));
+    saveFeedbackRef.current.clearFeedback();
     setShowPreview(false);
     setSheetOpen(true);
   };
 
   const openEdit = (doc: Doc) => {
-    setEditingDoc({ ...doc });
+    const nextDoc = { ...doc };
+    setEditingDoc(nextDoc);
+    setSavedDocSnapshot(JSON.stringify(nextDoc));
+    saveFeedbackRef.current.clearFeedback();
     setShowPreview(false);
     setSheetOpen(true);
   };
@@ -579,17 +612,22 @@ export default function DocsPage() {
             )}
           </SheetBody>
           <SheetFooter>
-            <Button variant="outline" onClick={() => setSheetOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={createMutation.isPending || updateMutation.isPending || editorLock.isReadOnly}
-              data-testid="button-save-doc"
-            >
-              {(createMutation.isPending || updateMutation.isPending) && <LoadingSpinner />}
-              Save
-            </Button>
+            <div className="flex w-full items-center justify-between gap-3">
+              <EditorSaveIndicator state={saveState.state} />
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => setSheetOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving || editorLock.isReadOnly}
+                  data-testid="button-save-doc"
+                >
+                  {isSaving && <LoadingSpinner />}
+                  {editingDoc?.id ? "Save Document" : "Create Document"}
+                </Button>
+              </div>
+            </div>
           </SheetFooter>
         </SheetContent>
       </Sheet>

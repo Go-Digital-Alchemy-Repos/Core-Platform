@@ -13,6 +13,7 @@ import {
 } from "@shared/schema";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
+import { EditorSaveIndicator } from "@/components/shared/editor-save-indicator";
 import { AdminSidebar } from "./admin-sidebar";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -70,6 +71,7 @@ import {
 } from "lucide-react";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
+import { useEditorSaveState } from "@/hooks/use-editor-save-state";
 
 type EditableForm = Omit<CmsForm, "createdAt" | "updatedAt">;
 
@@ -315,6 +317,10 @@ function normalizeEditableForm(form: CmsForm): EditableForm {
   };
 }
 
+function serializeEditableForm(form: EditableForm | null) {
+  return form ? JSON.stringify(form) : "";
+}
+
 function moveItem<T>(items: T[], fromIndex: number, toIndex: number) {
   const next = [...items];
   const [item] = next.splice(fromIndex, 1);
@@ -544,6 +550,12 @@ function FormsPageContent() {
   const [selectedEntriesFormId, setSelectedEntriesFormId] = useState<string | null>(null);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EditableForm | null>(null);
+  const [savedDraftSnapshot, setSavedDraftSnapshot] = useState("");
+  const saveFeedbackRef = useRef({
+    markSaved: () => {},
+    markError: () => {},
+    clearFeedback: () => {},
+  });
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [draggingFieldType, setDraggingFieldType] = useState<CmsFormFieldType | null>(null);
   const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null);
@@ -581,16 +593,20 @@ function FormsPageContent() {
   useEffect(() => {
     if (draft) return;
     if (!selectedFormId && forms.length > 0) {
+      const normalized = normalizeEditableForm(forms[0]);
       setSelectedFormId(forms[0].id);
       setFormSettingsOpen(true);
-      setDraft(normalizeEditableForm(forms[0]));
+      setDraft(normalized);
+      setSavedDraftSnapshot(serializeEditableForm(normalized));
       return;
     }
 
     if (selectedFormId) {
       const match = forms.find((form) => form.id === selectedFormId);
       if (match) {
-        setDraft(normalizeEditableForm(match));
+        const normalized = normalizeEditableForm(match);
+        setDraft(normalized);
+        setSavedDraftSnapshot(serializeEditableForm(normalized));
       }
     }
   }, [forms, selectedFormId, draft]);
@@ -641,11 +657,15 @@ function FormsPageContent() {
     },
     onSuccess: (saved) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/forms"] });
+      const normalized = normalizeEditableForm(saved);
       setSelectedFormId(saved.id);
-      setDraft(normalizeEditableForm(saved));
+      setDraft(normalized);
+      setSavedDraftSnapshot(serializeEditableForm(normalized));
+      saveFeedbackRef.current.markSaved();
       toast({ title: "Form saved" });
     },
     onError: (error: Error) => {
+      saveFeedbackRef.current.markError();
       toast({
         title: "Unable to save form",
         description: error.message,
@@ -653,6 +673,13 @@ function FormsPageContent() {
       });
     },
   });
+
+  const isSaving = saveMutation.isPending;
+  const saveState = useEditorSaveState({
+    isDirty: !!draft && serializeEditableForm(draft) !== savedDraftSnapshot,
+    isSaving,
+  });
+  saveFeedbackRef.current = saveState;
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -663,6 +690,7 @@ function FormsPageContent() {
       setSelectedFieldId(null);
       setSelectedFormId(null);
       setDraft(null);
+      setSavedDraftSnapshot("");
       toast({ title: "Form deleted" });
     },
     onError: (error: Error) => {
@@ -733,6 +761,7 @@ function FormsPageContent() {
       setSelectedFieldId(null);
       setFormSettingsOpen(false);
       setDraft(null);
+      setSavedDraftSnapshot("");
     },
   });
 
@@ -915,10 +944,13 @@ function FormsPageContent() {
         </div>
         <div className="flex items-center gap-2">
           {activeTab === "builder" && draft ? (
-            <Button onClick={() => saveMutation.mutate(draft)} disabled={saveMutation.isPending || editorLock.isReadOnly}>
-              <Save className="mr-2 h-4 w-4" />
-              Save Form
-            </Button>
+            <>
+              <EditorSaveIndicator state={saveState.state} />
+              <Button onClick={() => saveMutation.mutate(draft)} disabled={saveMutation.isPending || editorLock.isReadOnly}>
+                <Save className="mr-2 h-4 w-4" />
+                {saveMutation.isPending ? "Saving…" : "Save Form"}
+              </Button>
+            </>
           ) : null}
           <Button
             onClick={() => {
@@ -927,6 +959,8 @@ function FormsPageContent() {
               setSelectedFieldId(null);
               setFormSettingsOpen(true);
               setDraft(blank);
+              setSavedDraftSnapshot(serializeEditableForm(blank));
+              saveFeedbackRef.current.clearFeedback();
             }}
             data-testid="button-create-form"
           >
@@ -964,10 +998,13 @@ function FormsPageContent() {
                     key={form.id}
                     type="button"
                     onClick={() => {
+                      const normalized = normalizeEditableForm(form);
                       setSelectedFormId(form.id);
                       setSelectedFieldId(null);
                       setFormSettingsOpen(true);
-                      setDraft(normalizeEditableForm(form));
+                      setDraft(normalized);
+                      setSavedDraftSnapshot(serializeEditableForm(normalized));
+                      saveFeedbackRef.current.clearFeedback();
                     }}
                     className={cn(
                       "w-full rounded-lg border px-3 py-3 text-left transition-colors",
