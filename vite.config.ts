@@ -107,14 +107,6 @@ export default defineConfig({
           }
 
           if (
-            id.includes("/react-hook-form/") ||
-            id.includes("/@hookform/resolvers/") ||
-            id.includes("/zod/")
-          ) {
-            return "forms";
-          }
-
-          if (
             id.includes("/date-fns/") ||
             id.includes("/sanitize-html/") ||
             id.includes("/browser-image-compression/")
