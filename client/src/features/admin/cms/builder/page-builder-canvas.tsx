@@ -24,6 +24,7 @@ import {
   SectionStyleWrapper,
 } from "./section-style";
 import { cn } from "@/lib/utils";
+import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { getBlockSummary } from "./page-builder-support";
 import { FULL_WIDTH_BLOCK_TYPES } from "./page-builder-constants";
 
@@ -46,6 +47,29 @@ interface CanvasBlockFrameProps {
   onBlockDragOver: (event: DragEvent, targetId: string) => void;
   onBlockDrop: (event: DragEvent, targetId: string) => void;
   onBlockDragEnd: () => void;
+}
+
+function BlockPreviewFallback({
+  blockType,
+  summary,
+}: {
+  blockType: string;
+  summary: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/80 p-6 text-left dark:border-amber-700 dark:bg-amber-950/20">
+      <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+        This block preview could not be rendered in the builder.
+      </p>
+      <p className="mt-2 text-sm text-amber-800/90 dark:text-amber-300/90">
+        The section is still available for editing. You can adjust its settings in the inspector and keep working.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2 text-xs text-amber-900/80 dark:text-amber-200/80">
+        <span className="rounded-full bg-background/80 px-2 py-1">Type: {blockType}</span>
+        {summary ? <span className="rounded-full bg-background/80 px-2 py-1">{summary}</span> : null}
+      </div>
+    </div>
+  );
 }
 
 function CanvasBlockFrame({
@@ -100,7 +124,16 @@ function CanvasBlockFrame({
         )}
       >
         <div className="pointer-events-none select-none">
-          <AdminBlockRenderer block={block} isAdminPreview disableSectionStyleWrap />
+          <ErrorBoundary
+            fallback={
+              <BlockPreviewFallback
+                blockType={blockDef?.label ?? block.type}
+                summary={summary}
+              />
+            }
+          >
+            <AdminBlockRenderer block={block} isAdminPreview disableSectionStyleWrap />
+          </ErrorBoundary>
         </div>
       </div>
 

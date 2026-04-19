@@ -34,6 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { SeoPreview } from "@/components/shared/seo-preview";
 import { StructuredDataStatus } from "@/components/shared/structured-data-status";
+import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { EditorSaveIndicator } from "@/components/shared/editor-save-indicator";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { useToast } from "@/hooks/use-toast";
@@ -714,7 +715,20 @@ export default function CmsPageEditorPage() {
 
           <TabsContent value="builder" className="mt-0">
             <div className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
-              <PageBuilder content={builderContent} onChange={handleBuilderChange} />
+              <ErrorBoundary
+                fallback={
+                  <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/80 p-6 text-left dark:border-amber-700 dark:bg-amber-950/20">
+                    <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                      The visual page builder hit a rendering problem.
+                    </h3>
+                    <p className="mt-2 text-sm text-amber-800/90 dark:text-amber-300/90">
+                      The page content is still loaded, but one builder surface failed to render. Reload after deploying this patch. If a single section preview is the issue, the builder will now isolate that section instead of blanking the whole editor.
+                    </p>
+                  </div>
+                }
+              >
+                <PageBuilder content={builderContent} onChange={handleBuilderChange} />
+              </ErrorBoundary>
             </div>
           </TabsContent>
 
