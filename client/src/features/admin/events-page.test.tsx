@@ -20,6 +20,11 @@ const editorLockState = {
     description: "Jamie Editor is already editing this event.",
   },
 };
+let mutationStates: Array<{
+  mutate: ReturnType<typeof vi.fn>;
+  mutateAsync: ReturnType<typeof vi.fn>;
+  isPending: boolean;
+}> = [];
 
 const mockEvents = [
   {
@@ -110,6 +115,8 @@ describe("AdminEventsPage", () => {
 
   beforeEach(() => {
     lockGuardMock.mockReset();
+    editorLockState.isReadOnly = true;
+    mutationStates = [];
     useQueryMock.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
       if (queryKey[0] === "/api/admin/events") {
         return { data: mockEvents, isLoading: false };
@@ -121,10 +128,14 @@ describe("AdminEventsPage", () => {
 
       return { data: [], isLoading: false };
     });
-    useMutationMock.mockReturnValue({
-      mutate: vi.fn(),
-      mutateAsync: vi.fn(),
-      isPending: false,
+    useMutationMock.mockImplementation(() => {
+      const state = {
+        mutate: vi.fn(),
+        mutateAsync: vi.fn(),
+        isPending: false,
+      };
+      mutationStates.push(state);
+      return state;
     });
     vi.stubGlobal(
       "ResizeObserver",
@@ -180,5 +191,39 @@ describe("AdminEventsPage", () => {
     });
 
     expect(document.body.querySelector('[data-testid="input-event-title"]')).toBeNull();
+  });
+
+  it("submits the edited event through the update mutation", async () => {
+    editorLockState.isReadOnly = false;
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(AdminEventsPage));
+    });
+
+    const editButton = document.body.querySelector('[data-testid="button-edit-event-event-1"]') as HTMLButtonElement | null;
+    expect(editButton).not.toBeNull();
+
+    await act(async () => {
+      editButton?.click();
+    });
+
+    const submitButton = document.body.querySelector('[data-testid="button-submit-event"]') as HTMLButtonElement | null;
+    expect(submitButton).not.toBeNull();
+
+    await act(async () => {
+      submitButton?.click();
+    });
+
+    const calledPayload = mutationStates.flatMap((state) => state.mutate.mock.calls).at(-1)?.[0];
+    expect(calledPayload).toEqual(
+      expect.objectContaining({
+        id: "event-1",
+        data: expect.objectContaining({
+          title: "Counselor Training",
+          location: "Zoom",
+        }),
+      })
+    );
   });
 });

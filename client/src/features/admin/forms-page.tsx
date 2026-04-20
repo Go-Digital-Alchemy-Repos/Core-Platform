@@ -72,6 +72,7 @@ import {
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { useEditorSaveState } from "@/hooks/use-editor-save-state";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 
 type EditableForm = Omit<CmsForm, "createdAt" | "updatedAt">;
 
@@ -675,9 +676,14 @@ function FormsPageContent() {
   });
 
   const isSaving = saveMutation.isPending;
+  const isDirty = !!draft && serializeEditableForm(draft) !== savedDraftSnapshot;
   const saveState = useEditorSaveState({
-    isDirty: !!draft && serializeEditableForm(draft) !== savedDraftSnapshot,
+    isDirty,
     isSaving,
+  });
+  const unsavedChangesGuard = useUnsavedChangesGuard({
+    isDirty: activeTab === "builder" && isDirty,
+    message: "You have unsaved changes to this form. Leave without saving?",
   });
   saveFeedbackRef.current = saveState;
 
@@ -921,6 +927,41 @@ function FormsPageContent() {
     setDropIndex(null);
   };
 
+  const switchToDraft = (nextDraft: EditableForm) => {
+    setSelectedFormId(nextDraft.id);
+    setSelectedFieldId(null);
+    setFormSettingsOpen(true);
+    setDraft(nextDraft);
+    setSavedDraftSnapshot(serializeEditableForm(nextDraft));
+    saveFeedbackRef.current.clearFeedback();
+  };
+
+  const handleCreateForm = () => {
+    unsavedChangesGuard.confirmDiscardChanges(() => {
+      const blank = createBlankForm();
+      switchToDraft(blank);
+    });
+  };
+
+  const handleSelectForm = (form: CmsForm) => {
+    if (selectedFormId === form.id) return;
+    unsavedChangesGuard.confirmDiscardChanges(() => {
+      switchToDraft(normalizeEditableForm(form));
+    });
+  };
+
+  const handleTabChange = (value: string) => {
+    const nextTab = value === "entries" ? "entries" : "builder";
+    if (nextTab === activeTab) return;
+
+    if (nextTab === "entries") {
+      unsavedChangesGuard.confirmDiscardChanges(() => setActiveTab("entries"));
+      return;
+    }
+
+    setActiveTab("builder");
+  };
+
   return (
     <div className="space-y-6 p-6">
       {activeTab === "builder" && editorLock.summary ? (
@@ -953,15 +994,7 @@ function FormsPageContent() {
             </>
           ) : null}
           <Button
-            onClick={() => {
-              const blank = createBlankForm();
-              setSelectedFormId(blank.id);
-              setSelectedFieldId(null);
-              setFormSettingsOpen(true);
-              setDraft(blank);
-              setSavedDraftSnapshot(serializeEditableForm(blank));
-              saveFeedbackRef.current.clearFeedback();
-            }}
+            onClick={handleCreateForm}
             data-testid="button-create-form"
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -970,7 +1003,7 @@ function FormsPageContent() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value === "entries" ? "entries" : "builder")} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList>
           <TabsTrigger value="builder" data-testid="tab-forms-builder">
             Form Builder
@@ -997,15 +1030,7 @@ function FormsPageContent() {
                   <button
                     key={form.id}
                     type="button"
-                    onClick={() => {
-                      const normalized = normalizeEditableForm(form);
-                      setSelectedFormId(form.id);
-                      setSelectedFieldId(null);
-                      setFormSettingsOpen(true);
-                      setDraft(normalized);
-                      setSavedDraftSnapshot(serializeEditableForm(normalized));
-                      saveFeedbackRef.current.clearFeedback();
-                    }}
+                    onClick={() => handleSelectForm(form)}
                     className={cn(
                       "w-full rounded-lg border px-3 py-3 text-left transition-colors",
                       active ? "border-primary bg-primary/5" : "hover:bg-muted/40"

@@ -20,6 +20,11 @@ const editorLockState = {
     description: "Jamie Editor is already editing this form.",
   },
 };
+let mutationStates: Array<{
+  mutate: ReturnType<typeof vi.fn>;
+  mutateAsync: ReturnType<typeof vi.fn>;
+  isPending: boolean;
+}> = [];
 
 const mockForms = [
   {
@@ -82,6 +87,8 @@ describe("AdminFormsPage", () => {
 
   beforeEach(() => {
     lockGuardMock.mockReset();
+    editorLockState.isReadOnly = true;
+    mutationStates = [];
     useQueryMock.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
       if (queryKey[0] === "/api/admin/forms") {
         return { data: mockForms, isLoading: false };
@@ -93,10 +100,14 @@ describe("AdminFormsPage", () => {
 
       return { data: [], isLoading: false };
     });
-    useMutationMock.mockReturnValue({
-      mutate: vi.fn(),
-      mutateAsync: vi.fn(),
-      isPending: false,
+    useMutationMock.mockImplementation(() => {
+      const state = {
+        mutate: vi.fn(),
+        mutateAsync: vi.fn(),
+        isPending: false,
+      };
+      mutationStates.push(state);
+      return state;
     });
     vi.stubGlobal(
       "ResizeObserver",
@@ -154,5 +165,32 @@ describe("AdminFormsPage", () => {
 
     expect(document.body.textContent).not.toContain("Save Form");
     expect(document.body.textContent).toContain("Form Entries");
+  });
+
+  it("submits the active draft through the form save mutation", async () => {
+    editorLockState.isReadOnly = false;
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(AdminFormsPage));
+    });
+
+    const saveButton = Array.from(document.body.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Save Form")
+    ) as HTMLButtonElement | undefined;
+    expect(saveButton).toBeTruthy();
+
+    await act(async () => {
+      saveButton?.click();
+    });
+
+    const calledPayload = mutationStates.flatMap((state) => state.mutate.mock.calls).at(-1)?.[0];
+    expect(calledPayload).toEqual(
+      expect.objectContaining({
+        id: "form-1",
+        name: "Contact Form",
+        slug: "contact-form",
+      })
+    );
   });
 });

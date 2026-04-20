@@ -77,6 +77,7 @@ import type { Event, EventRegistration } from "@shared/schema";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { useEditorSaveState } from "@/hooks/use-editor-save-state";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 
 const eventFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -561,11 +562,25 @@ function EventsContent() {
   }
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
+  const isDirty = dialogOpen && form.formState.isDirty;
   const saveState = useEditorSaveState({
-    isDirty: dialogOpen && form.formState.isDirty,
+    isDirty,
     isSaving,
   });
+  const unsavedChangesGuard = useUnsavedChangesGuard({
+    isDirty,
+    message: "You have unsaved changes to this event. Close without saving?",
+  });
   saveFeedbackRef.current = saveState;
+
+  const handleDialogOpenChange = (open: boolean) => {
+    if (open) {
+      setDialogOpen(true);
+      return;
+    }
+
+    unsavedChangesGuard.confirmDiscardChanges(() => setDialogOpen(false));
+  };
 
   function onSubmit(values: EventFormValues) {
     if (editingEvent) {
@@ -772,7 +787,7 @@ function EventsContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Sheet open={dialogOpen} onOpenChange={handleDialogOpenChange}>
         <SheetContent side="right" size="full">
           <SheetHeader>
             <SheetTitle data-testid="text-event-dialog-title">

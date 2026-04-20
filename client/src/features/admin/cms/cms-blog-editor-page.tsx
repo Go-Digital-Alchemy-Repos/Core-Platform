@@ -66,6 +66,7 @@ import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { useEditorSaveState } from "@/hooks/use-editor-save-state";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 
 function generateSlug(title: string): string {
   return title
@@ -341,9 +342,14 @@ export default function CmsBlogEditorPage() {
   });
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
+  const isDirty = form.formState.isDirty;
   const saveState = useEditorSaveState({
-    isDirty: form.formState.isDirty,
+    isDirty,
     isSaving,
+  });
+  const unsavedChangesGuard = useUnsavedChangesGuard({
+    isDirty,
+    message: "You have unsaved changes to this post. Leave without saving?",
   });
   const isPublished = form.watch("isPublished");
   const watchPostType = form.watch("postType");
@@ -384,11 +390,16 @@ export default function CmsBlogEditorPage() {
 
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <Button asChild variant="ghost" size="sm" className="gap-1.5">
-              <Link href="/admin/cms/blog">
-                <ArrowLeft className="h-4 w-4" />
-                Blog
-              </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5"
+              onClick={() =>
+                unsavedChangesGuard.confirmDiscardChanges(() => navigate("/admin/cms/blog"))
+              }
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Blog
             </Button>
             <div className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-orange-500" />

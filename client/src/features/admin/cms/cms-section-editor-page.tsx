@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Save, Layers } from "lucide-react";
-import { Link } from "wouter";
 import { apiRequest, queryClient as qc } from "@/lib/queryClient";
 import type { CmsSection } from "@shared/schema";
 import { PageBuilder } from "./builder/page-builder";
@@ -38,6 +37,7 @@ import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { useEditorSaveState } from "@/hooks/use-editor-save-state";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 
 const EMPTY_CONTENT: BuilderContent = { blocks: [] };
 
@@ -185,9 +185,14 @@ export default function CmsSectionEditorPage() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const builderDirty =
     JSON.stringify(builderContent) !== savedBuilderSnapshot;
+  const isDirty = form.formState.isDirty || builderDirty;
   const saveState = useEditorSaveState({
-    isDirty: form.formState.isDirty || builderDirty,
+    isDirty,
     isSaving,
+  });
+  const unsavedChangesGuard = useUnsavedChangesGuard({
+    isDirty,
+    message: "You have unsaved changes to this saved section. Leave without saving?",
   });
 
   if (!isNew && sectionLoading) {
@@ -217,11 +222,16 @@ export default function CmsSectionEditorPage() {
 
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <Button asChild variant="ghost" size="sm" className="gap-1.5">
-              <Link href="/admin/cms/sections">
-                <ArrowLeft className="h-4 w-4" />
-                Sections
-              </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5"
+              onClick={() =>
+                unsavedChangesGuard.confirmDiscardChanges(() => navigate("/admin/cms/sections"))
+              }
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Sections
             </Button>
             <div className="flex items-center gap-2">
               <Layers className="h-5 w-5 text-violet-500" />

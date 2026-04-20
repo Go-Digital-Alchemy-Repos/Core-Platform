@@ -21,6 +21,11 @@ const editorLockState = {
     description: "Jamie Editor is already editing this post.",
   },
 };
+let mutationStates: Array<{
+  mutate: ReturnType<typeof vi.fn>;
+  mutateAsync: ReturnType<typeof vi.fn>;
+  isPending: boolean;
+}> = [];
 
 vi.mock("wouter", () => ({
   Link: ({ href, children }: { href: string; children: React.ReactNode }) =>
@@ -92,6 +97,8 @@ describe("CmsBlogEditorPage", () => {
   beforeEach(() => {
     navigateMock.mockReset();
     lockGuardMock.mockReset();
+    editorLockState.isReadOnly = true;
+    mutationStates = [];
     useQueryMock.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
       if (queryKey[0] === "/api/admin/cms/sidebars") {
         return { data: [], isLoading: false };
@@ -131,10 +138,14 @@ describe("CmsBlogEditorPage", () => {
 
       return { data: undefined, isLoading: false };
     });
-    useMutationMock.mockReturnValue({
-      mutate: vi.fn(),
-      mutateAsync: vi.fn(),
-      isPending: false,
+    useMutationMock.mockImplementation(() => {
+      const state = {
+        mutate: vi.fn(),
+        mutateAsync: vi.fn(),
+        isPending: false,
+      };
+      mutationStates.push(state);
+      return state;
     });
     vi.stubGlobal(
       "ResizeObserver",
@@ -185,5 +196,30 @@ describe("CmsBlogEditorPage", () => {
     expect(saveButton).not.toBeNull();
     expect(saveButton?.disabled).toBe(true);
     expect(navigateMock).toHaveBeenCalledWith("/admin/cms/blog");
+  });
+
+  it("submits the existing post through the update mutation", async () => {
+    editorLockState.isReadOnly = false;
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(CmsBlogEditorPage));
+    });
+
+    const saveButton = container.querySelector('[data-testid="button-save-post"]') as HTMLButtonElement | null;
+    expect(saveButton).not.toBeNull();
+
+    await act(async () => {
+      saveButton?.click();
+    });
+
+    const calledPayload = mutationStates.flatMap((state) => state.mutate.mock.calls).at(-1)?.[0];
+    expect(calledPayload).toEqual(
+      expect.objectContaining({
+        title: "Latest Insights",
+        slug: "latest-insights",
+        authorName: "Admin",
+      })
+    );
   });
 });

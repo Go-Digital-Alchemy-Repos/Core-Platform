@@ -20,6 +20,11 @@ const editorLockState = {
     description: "Jamie Editor is already editing this document.",
   },
 };
+let mutationStates: Array<{
+  mutate: ReturnType<typeof vi.fn>;
+  mutateAsync: ReturnType<typeof vi.fn>;
+  isPending: boolean;
+}> = [];
 
 const mockDocs = [
   {
@@ -81,6 +86,8 @@ describe("DocsPage", () => {
 
   beforeEach(() => {
     lockGuardMock.mockReset();
+    editorLockState.isReadOnly = true;
+    mutationStates = [];
     useQueryMock.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
       if (queryKey[0] === "/api/admin/docs") {
         return { data: mockDocs, isLoading: false };
@@ -88,10 +95,14 @@ describe("DocsPage", () => {
 
       return { data: [], isLoading: false };
     });
-    useMutationMock.mockReturnValue({
-      mutate: vi.fn(),
-      mutateAsync: vi.fn(),
-      isPending: false,
+    useMutationMock.mockImplementation(() => {
+      const state = {
+        mutate: vi.fn(),
+        mutateAsync: vi.fn(),
+        isPending: false,
+      };
+      mutationStates.push(state);
+      return state;
     });
     vi.stubGlobal(
       "ResizeObserver",
@@ -147,5 +158,37 @@ describe("DocsPage", () => {
     });
 
     expect(document.body.querySelector('[data-testid="input-doc-title"]')).toBeNull();
+  });
+
+  it("submits the edited document through the update mutation", async () => {
+    editorLockState.isReadOnly = false;
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(DocsPage));
+    });
+
+    const editButton = document.body.querySelector('[data-testid="button-edit-doc"]') as HTMLButtonElement | null;
+    expect(editButton).not.toBeNull();
+
+    await act(async () => {
+      editButton?.click();
+    });
+
+    const saveButton = document.body.querySelector('[data-testid="button-save-doc"]') as HTMLButtonElement | null;
+    expect(saveButton).not.toBeNull();
+
+    await act(async () => {
+      saveButton?.click();
+    });
+
+    const calledPayload = mutationStates.flatMap((state) => state.mutate.mock.calls).at(-1)?.[0];
+    expect(calledPayload).toEqual(
+      expect.objectContaining({
+        id: "doc-1",
+        title: "Editor Workflow",
+        slug: "editor-workflow",
+      })
+    );
   });
 });

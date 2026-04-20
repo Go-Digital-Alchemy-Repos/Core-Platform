@@ -73,6 +73,7 @@ import { analyzeCmsPageQuality } from "@/lib/cms-page-quality";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { useEditorSaveState } from "@/hooks/use-editor-save-state";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 
 const editorSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -420,6 +421,10 @@ export default function CmsPageEditorPage() {
     isDirty: form.formState.isDirty || builderDirty,
     isSaving: isPending,
   });
+  const unsavedChangesGuard = useUnsavedChangesGuard({
+    isDirty: form.formState.isDirty || builderDirty,
+    message: "You have unsaved changes to this page. Leave without saving?",
+  });
 
   useEffect(() => {
     return () => {
@@ -498,7 +503,9 @@ export default function CmsPageEditorPage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/admin/cms/pages")}
+              onClick={() =>
+                unsavedChangesGuard.confirmDiscardChanges(() => navigate("/admin/cms/pages"))
+              }
               data-testid="button-back"
             >
               <ArrowLeft className="h-4 w-4" />

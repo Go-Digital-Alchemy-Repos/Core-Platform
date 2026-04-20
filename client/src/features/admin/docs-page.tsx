@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { useEditorSaveState } from "@/hooks/use-editor-save-state";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { markdownToExcerpt } from "@/lib/markdown";
 import {
   BookOpenText,
@@ -243,11 +244,25 @@ export default function DocsPage() {
   };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
+  const isDirty = sheetOpen && !!editingDoc && JSON.stringify(editingDoc) !== savedDocSnapshot;
   const saveState = useEditorSaveState({
-    isDirty: sheetOpen && !!editingDoc && JSON.stringify(editingDoc) !== savedDocSnapshot,
+    isDirty,
     isSaving,
   });
+  const unsavedChangesGuard = useUnsavedChangesGuard({
+    isDirty,
+    message: "You have unsaved changes to this document. Close without saving?",
+  });
   saveFeedbackRef.current = saveState;
+
+  const handleSheetOpenChange = (open: boolean) => {
+    if (open) {
+      setSheetOpen(true);
+      return;
+    }
+
+    unsavedChangesGuard.confirmDiscardChanges(() => setSheetOpen(false));
+  };
 
   const openCreate = () => {
     const blankDoc = {
@@ -491,7 +506,7 @@ export default function DocsPage() {
         </div>
       </div>
 
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+      <Sheet open={sheetOpen} onOpenChange={handleSheetOpenChange}>
         <SheetContent side="right" size="xl">
           <SheetHeader>
             <SheetTitle>{editingDoc?.id ? "Edit Document" : "New Document"}</SheetTitle>
@@ -615,7 +630,10 @@ export default function DocsPage() {
             <div className="flex w-full items-center justify-between gap-3">
               <EditorSaveIndicator state={saveState.state} />
               <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => setSheetOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => unsavedChangesGuard.confirmDiscardChanges(() => setSheetOpen(false))}
+                >
                   Cancel
                 </Button>
                 <Button
