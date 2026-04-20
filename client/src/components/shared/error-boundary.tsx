@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
+  name?: string;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface ErrorBoundaryState {
@@ -23,7 +25,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("ErrorBoundary caught:", error, errorInfo);
+    this.props.onError?.(error, errorInfo);
+
+    if (!this.props.onError) {
+      if (this.props.name) {
+        console.error(`[ErrorBoundary:${this.props.name}]`, error, errorInfo);
+      } else {
+        console.error("ErrorBoundary caught:", error, errorInfo);
+      }
+    }
   }
 
   render() {

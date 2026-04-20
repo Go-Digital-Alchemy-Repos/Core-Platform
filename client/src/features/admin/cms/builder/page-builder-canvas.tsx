@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { getBlockSummary } from "./page-builder-support";
 import { FULL_WIDTH_BLOCK_TYPES } from "./page-builder-constants";
+import { reportBuilderRenderError } from "./builder-diagnostics";
 
 interface CanvasBlockFrameProps {
   block: BlockInstance;
@@ -52,9 +53,11 @@ interface CanvasBlockFrameProps {
 function BlockPreviewFallback({
   blockType,
   summary,
+  blockId,
 }: {
   blockType: string;
   summary: string;
+  blockId: string;
 }) {
   return (
     <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/80 p-6 text-left dark:border-amber-700 dark:bg-amber-950/20">
@@ -65,6 +68,7 @@ function BlockPreviewFallback({
         The section is still available for editing. You can adjust its settings in the inspector and keep working.
       </p>
       <div className="mt-3 flex flex-wrap gap-2 text-xs text-amber-900/80 dark:text-amber-200/80">
+        <span className="rounded-full bg-background/80 px-2 py-1">Block ID: {blockId}</span>
         <span className="rounded-full bg-background/80 px-2 py-1">Type: {blockType}</span>
         {summary ? <span className="rounded-full bg-background/80 px-2 py-1">{summary}</span> : null}
       </div>
@@ -125,10 +129,24 @@ function CanvasBlockFrame({
       >
         <div className="pointer-events-none select-none">
           <ErrorBoundary
+            name={`builder-block-preview:${block.type}`}
+            onError={(error, errorInfo) =>
+              reportBuilderRenderError({
+                surface: "builder-block-preview",
+                block: { id: block.id, type: block.type },
+                error,
+                errorInfo,
+                context: {
+                  index,
+                  label: blockDef?.label ?? block.type,
+                },
+              })
+            }
             fallback={
               <BlockPreviewFallback
                 blockType={blockDef?.label ?? block.type}
                 summary={summary}
+                blockId={block.id}
               />
             }
           >

@@ -66,6 +66,7 @@ import type { CmsPage, CmsPageRevision, CmsSidebar } from "@shared/schema";
 import { format } from "date-fns";
 import { PageBuilder } from "./builder/page-builder";
 import type { BuilderContent } from "./builder/block-registry";
+import { reportBuilderRenderError } from "./builder/builder-diagnostics";
 import { mergeJoinHeroBlocks } from "@shared/cms-blocks";
 import { TemplatePicker } from "./components/template-picker";
 import { LandingPageWizard } from "./components/landing-page-wizard";
@@ -426,6 +427,15 @@ export default function CmsPageEditorPage() {
     message: "You have unsaved changes to this page. Leave without saving?",
   });
 
+  const confirmPageStatusAction = useCallback(
+    (actionLabel: string, onProceed: () => void) =>
+      unsavedChangesGuard.confirmIfDirty(
+        onProceed,
+        `You have unsaved changes to this page. ${actionLabel} will use the last saved version, not your in-progress edits. Continue?`
+      ),
+    [unsavedChangesGuard]
+  );
+
   useEffect(() => {
     return () => {
       if (navTimerRef.current) clearTimeout(navTimerRef.current);
@@ -586,7 +596,9 @@ export default function CmsPageEditorPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => unpublishMutation.mutate()}
+                  onClick={() =>
+                    confirmPageStatusAction("Unpublishing", () => unpublishMutation.mutate())
+                  }
                   disabled={unpublishMutation.isPending || editorLock.isReadOnly}
                   data-testid="button-unpublish"
                 >
@@ -613,7 +625,9 @@ export default function CmsPageEditorPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => unpublishMutation.mutate()}
+                  onClick={() =>
+                    confirmPageStatusAction("Canceling this schedule", () => unpublishMutation.mutate())
+                  }
                   disabled={unpublishMutation.isPending || editorLock.isReadOnly}
                   data-testid="button-cancel-schedule"
                 >
@@ -630,7 +644,9 @@ export default function CmsPageEditorPage() {
               <>
                 <Button
                   variant="outline"
-                  onClick={() => publishMutation.mutate()}
+                  onClick={() =>
+                    confirmPageStatusAction("Publishing", () => publishMutation.mutate())
+                  }
                   disabled={publishMutation.isPending || editorLock.isReadOnly}
                   data-testid="button-publish"
                 >
@@ -666,7 +682,11 @@ export default function CmsPageEditorPage() {
                         className="w-full"
                         size="sm"
                         disabled={!scheduleDate || scheduleMutation.isPending || editorLock.isReadOnly}
-                        onClick={() => scheduleMutation.mutate(new Date(scheduleDate).toISOString())}
+                        onClick={() =>
+                          confirmPageStatusAction("Scheduling this page", () =>
+                            scheduleMutation.mutate(new Date(scheduleDate).toISOString())
+                          )
+                        }
                         data-testid="button-confirm-schedule"
                       >
                         {scheduleMutation.isPending ? (
@@ -723,6 +743,19 @@ export default function CmsPageEditorPage() {
           <TabsContent value="builder" className="mt-0">
             <div className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
               <ErrorBoundary
+                name="page-builder-shell"
+                onError={(error, errorInfo) =>
+                  reportBuilderRenderError({
+                    surface: "page-builder-shell",
+                    error,
+                    errorInfo,
+                    context: {
+                      pageId: page?.id ?? id ?? null,
+                      slug: page?.slug ?? form.getValues("slug") ?? null,
+                      title: page?.title ?? form.getValues("title") ?? null,
+                    },
+                  })
+                }
                 fallback={
                   <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/80 p-6 text-left dark:border-amber-700 dark:bg-amber-950/20">
                     <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-200">

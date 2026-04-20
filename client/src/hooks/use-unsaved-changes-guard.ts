@@ -28,20 +28,28 @@ export function useUnsavedChangesGuard({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [message, shouldWarn]);
 
-  const confirmDiscardChanges = useCallback(
-    (onDiscard?: () => void) => {
-      if (shouldWarn && !window.confirm(message)) {
+  const confirmIfDirty = useCallback(
+    (onProceed?: () => void, overrideMessage?: string) => {
+      const promptMessage = overrideMessage ?? message;
+      if (shouldWarn && !window.confirm(promptMessage)) {
         return false;
       }
 
-      onDiscard?.();
+      onProceed?.();
       return true;
     },
     [message, shouldWarn]
   );
 
+  const confirmDiscardChanges = useCallback(
+    (onDiscard?: () => void, overrideMessage?: string) =>
+      confirmIfDirty(onDiscard, overrideMessage),
+    [confirmIfDirty]
+  );
+
   return {
     shouldWarn,
+    confirmIfDirty,
     confirmDiscardChanges,
   };
 }

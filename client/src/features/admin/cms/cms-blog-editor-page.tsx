@@ -351,6 +351,11 @@ export default function CmsBlogEditorPage() {
     isDirty,
     message: "You have unsaved changes to this post. Leave without saving?",
   });
+  const confirmSavedPostAction = (actionLabel: string, onProceed: () => void) =>
+    unsavedChangesGuard.confirmIfDirty(
+      onProceed,
+      `You have unsaved changes to this post. ${actionLabel} will use the last saved version, not your in-progress edits. Continue?`
+    );
   const isPublished = form.watch("isPublished");
   const watchPostType = form.watch("postType");
   const currentSlug = form.watch("slug");
@@ -961,15 +966,17 @@ export default function CmsBlogEditorPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={async () => {
-                                try {
-                                  await apiRequest("PUT", `/api/admin/blog/${id}`, { scheduledAt: null });
-                                  queryClient.invalidateQueries({ queryKey: ["/api/admin/blog", id] });
-                                  toast({ title: "Schedule cancelled" });
-                                } catch {
-                                  toast({ title: "Failed to cancel schedule", variant: "destructive" });
-                                }
-                              }}
+                              onClick={() =>
+                                confirmSavedPostAction("Canceling this schedule", async () => {
+                                  try {
+                                    await apiRequest("PUT", `/api/admin/blog/${id}`, { scheduledAt: null });
+                                    queryClient.invalidateQueries({ queryKey: ["/api/admin/blog", id] });
+                                    toast({ title: "Schedule cancelled" });
+                                  } catch {
+                                    toast({ title: "Failed to cancel schedule", variant: "destructive" });
+                                  }
+                                })
+                              }
                               data-testid="button-cancel-blog-schedule"
                             >
                               Cancel Schedule
@@ -1001,35 +1008,37 @@ export default function CmsBlogEditorPage() {
                                   className="w-full"
                                   size="sm"
                                   disabled={!blogScheduleDate || updateMutation.isPending || createMutation.isPending}
-                                  onClick={async () => {
-                                    const scheduledIso = new Date(blogScheduleDate).toISOString();
-                                    if (isNew) {
-                                      form.handleSubmit(async (data) => {
+                                  onClick={() =>
+                                    confirmSavedPostAction("Scheduling this post", async () => {
+                                      const scheduledIso = new Date(blogScheduleDate).toISOString();
+                                      if (isNew) {
+                                        form.handleSubmit(async (data) => {
+                                          try {
+                                            const res = await apiRequest("POST", "/api/admin/blog", buildPayload(data));
+                                            const created: BlogPost = await res.json();
+                                            await apiRequest("PUT", `/api/admin/blog/${created.id}`, { scheduledAt: scheduledIso });
+                                            queryClient.invalidateQueries({ queryKey: ["/api/admin/blog"] });
+                                            setBlogScheduleOpen(false);
+                                            setBlogScheduleDate("");
+                                            toast({ title: "Post created and scheduled" });
+                                            navigate(`/admin/cms/blog/${created.id}`);
+                                          } catch {
+                                            toast({ title: "Failed to schedule post", variant: "destructive" });
+                                          }
+                                        })();
+                                      } else {
                                         try {
-                                          const res = await apiRequest("POST", "/api/admin/blog", buildPayload(data));
-                                          const created: BlogPost = await res.json();
-                                          await apiRequest("PUT", `/api/admin/blog/${created.id}`, { scheduledAt: scheduledIso });
-                                          queryClient.invalidateQueries({ queryKey: ["/api/admin/blog"] });
+                                          await apiRequest("PUT", `/api/admin/blog/${id}`, { scheduledAt: scheduledIso });
+                                          queryClient.invalidateQueries({ queryKey: ["/api/admin/blog", id] });
                                           setBlogScheduleOpen(false);
                                           setBlogScheduleDate("");
-                                          toast({ title: "Post created and scheduled" });
-                                          navigate(`/admin/cms/blog/${created.id}`);
+                                          toast({ title: "Post scheduled for publishing" });
                                         } catch {
                                           toast({ title: "Failed to schedule post", variant: "destructive" });
                                         }
-                                      })();
-                                    } else {
-                                      try {
-                                        await apiRequest("PUT", `/api/admin/blog/${id}`, { scheduledAt: scheduledIso });
-                                        queryClient.invalidateQueries({ queryKey: ["/api/admin/blog", id] });
-                                        setBlogScheduleOpen(false);
-                                        setBlogScheduleDate("");
-                                        toast({ title: "Post scheduled for publishing" });
-                                      } catch {
-                                        toast({ title: "Failed to schedule post", variant: "destructive" });
                                       }
-                                    }
-                                  }}
+                                    })
+                                  }
                                   data-testid="button-confirm-blog-schedule"
                                 >
                                   <CalendarClock className="h-4 w-4 mr-1.5" />

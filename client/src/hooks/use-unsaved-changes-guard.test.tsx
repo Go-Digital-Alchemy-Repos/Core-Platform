@@ -84,6 +84,18 @@ describe("useUnsavedChangesGuard", () => {
     expect(onDiscard).not.toHaveBeenCalled();
   });
 
+  it("supports override messages for non-navigation dirty actions", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const onProceed = vi.fn();
+    const api = await renderHarness({ isDirty: true, message: "Leave this editor?" });
+
+    expect(
+      api.confirmIfDirty(onProceed, "Publish the saved version instead?")
+    ).toBe(true);
+    expect(confirmSpy).toHaveBeenCalledWith("Publish the saved version instead?");
+    expect(onProceed).toHaveBeenCalledTimes(1);
+  });
+
   it("registers a beforeunload prompt only while dirty", async () => {
     await renderHarness({ isDirty: true, message: "Leave this editor?" });
 

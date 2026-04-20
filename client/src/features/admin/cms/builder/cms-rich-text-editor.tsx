@@ -1,7 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import {
@@ -25,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { createCmsLinkExtension, createStarterKit } from "@/lib/tiptap";
 
 interface CmsRichTextEditorProps {
   value: string;
@@ -82,16 +81,11 @@ export function CmsRichTextEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
+      createStarterKit({
         heading: { levels: [2, 3] },
       }),
       Underline,
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: "text-primary underline underline-offset-2",
-        },
-      }),
+      createCmsLinkExtension(),
       Placeholder.configure({
         placeholder: placeholder ?? "Write and format your content here...",
       }),

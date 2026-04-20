@@ -1,6 +1,4 @@
 import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +20,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { createLinkExtension, createStarterKit } from "@/lib/tiptap";
 
 const EMOJI_LIST = [
   "😀", "😂", "😊", "😍", "🤔", "😢", "😎", "🙏",
@@ -87,16 +86,13 @@ export function RichTextEditor({ onSend, disabled, placeholder, sendRef }: RichT
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
+      createStarterKit({
         heading: false,
         codeBlock: false,
         blockquote: false,
         horizontalRule: false,
       }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: { class: "text-primary underline cursor-pointer" },
-      }),
+      createLinkExtension(),
       Placeholder.configure({
         placeholder: placeholder ?? "Type a message…",
       }),

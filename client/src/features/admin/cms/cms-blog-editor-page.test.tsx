@@ -56,6 +56,61 @@ vi.mock("@/components/shared/editor-lock-banner", () => ({
     React.createElement("div", { "data-testid": "editor-lock-banner" }, title),
 }));
 
+vi.mock("@/components/ui/popover", () => {
+  const PopoverContext = React.createContext<{
+    open: boolean;
+    setOpen: (open: boolean) => void;
+  }>({
+    open: false,
+    setOpen: () => undefined,
+  });
+
+  return {
+    Popover: ({
+      open,
+      onOpenChange,
+      children,
+    }: {
+      open?: boolean;
+      onOpenChange?: (open: boolean) => void;
+      children: React.ReactNode;
+    }) => {
+      const [internalOpen, setInternalOpen] = React.useState(open ?? false);
+      const currentOpen = open ?? internalOpen;
+      const setOpen = (nextOpen: boolean) => {
+        if (open === undefined) {
+          setInternalOpen(nextOpen);
+        }
+        onOpenChange?.(nextOpen);
+      };
+
+      return React.createElement(
+        PopoverContext.Provider,
+        { value: { open: currentOpen, setOpen } },
+        children
+      );
+    },
+    PopoverTrigger: ({
+      asChild,
+      children,
+    }: {
+      asChild?: boolean;
+      children: React.ReactElement<{ onClick?: () => void }>;
+    }) => {
+      const ctx = React.useContext(PopoverContext);
+      const child = React.Children.only(children);
+      return React.cloneElement(child, {
+        onClick: () => ctx.setOpen(!ctx.open),
+      });
+    },
+    PopoverContent: ({ children }: { children: React.ReactNode }) => {
+      const ctx = React.useContext(PopoverContext);
+      if (!ctx.open) return null;
+      return React.createElement("div", null, children);
+    },
+  };
+});
+
 vi.mock("@/components/shared/blog-editor", () => ({
   BlogEditor: () => React.createElement("div", { "data-testid": "blog-editor" }, "Blog Editor"),
 }));
@@ -155,6 +210,15 @@ describe("CmsBlogEditorPage", () => {
         unobserve() {}
       },
     );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        })
+      ) as typeof fetch
+    );
     (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
     (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
@@ -221,5 +285,61 @@ describe("CmsBlogEditorPage", () => {
         authorName: "Admin",
       })
     );
+  });
+
+  it("prompts before scheduling when the post has unsaved edits", async () => {
+    editorLockState.isReadOnly = false;
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(CmsBlogEditorPage));
+    });
+
+    const titleInput = container.querySelector('[data-testid="input-post-title"]') as HTMLInputElement | null;
+    expect(titleInput).not.toBeNull();
+
+    await act(async () => {
+      const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setValue?.call(titleInput, "Updated Insights");
+      titleInput!.dispatchEvent(new Event("input", { bubbles: true }));
+      titleInput!.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    const openScheduleButton = container.querySelector(
+      '[data-testid="button-open-blog-schedule"]'
+    ) as HTMLButtonElement | null;
+    expect(openScheduleButton).not.toBeNull();
+
+    await act(async () => {
+      openScheduleButton?.click();
+    });
+
+    const scheduleInput = document.body.querySelector(
+      '[data-testid="input-blog-schedule-date"]'
+    ) as HTMLInputElement | null;
+    expect(scheduleInput).not.toBeNull();
+
+    await act(async () => {
+      const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setValue?.call(scheduleInput, "2026-05-01T10:30");
+      scheduleInput!.dispatchEvent(new Event("input", { bubbles: true }));
+      scheduleInput!.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    const confirmScheduleButton = document.body.querySelector(
+      '[data-testid="button-confirm-blog-schedule"]'
+    ) as HTMLButtonElement | null;
+    expect(confirmScheduleButton).not.toBeNull();
+    expect(confirmScheduleButton?.disabled).toBe(false);
+
+    await act(async () => {
+      confirmScheduleButton?.click();
+    });
+
+    expect(confirmSpy).toHaveBeenCalledWith(
+      "You have unsaved changes to this post. Scheduling this post will use the last saved version, not your in-progress edits. Continue?"
+    );
+    expect(fetch).not.toHaveBeenCalled();
   });
 });
