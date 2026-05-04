@@ -34,7 +34,12 @@ export function securityHeaders(): RequestHandler {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "https://js.stripe.com"],
+        scriptSrc: [
+          "'self'",
+          "https://js.stripe.com",
+          "https://www.googletagmanager.com",
+          "https://static.cloudflareinsights.com",
+        ],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
         imgSrc: [
@@ -50,6 +55,10 @@ export function securityHeaders(): RequestHandler {
         connectSrc: [
           "'self'",
           "https://api.stripe.com",
+          "https://www.google-analytics.com",
+          "https://region1.google-analytics.com",
+          "https://www.googletagmanager.com",
+          "https://cloudflareinsights.com",
           "https://*.r2.cloudflarestorage.com",
           "https://*.r2.dev",
           "https://*.tile.openstreetmap.org",

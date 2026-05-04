@@ -758,6 +758,9 @@ function HeadTagAdditionsTab({ settings }: { settings: SettingsData }) {
             <p className="mt-2">
               Tags pasted here load directly on the public site and are not automatically gated by cookie-consent preferences.
             </p>
+            <p className="mt-2">
+              For GA4, enter the measurement ID in the integration card instead of pasting the full Google script snippet here. That keeps analytics aligned with the site&apos;s consent flow.
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -766,7 +769,7 @@ function HeadTagAdditionsTab({ settings }: { settings: SettingsData }) {
               id="public-head-html"
               value={headHtml}
               onChange={(event) => setHeadHtml(event.target.value)}
-              placeholder={`<!-- Example -->\n<meta name="google-site-verification" content="..." />\n<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>`}
+              placeholder={`<!-- Example -->\n<meta name="google-site-verification" content="..." />\n<meta name="facebook-domain-verification" content="..." />`}
               className="min-h-[280px] font-mono text-xs"
               data-testid="textarea-public-head-html"
             />
