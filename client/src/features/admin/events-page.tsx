@@ -81,6 +81,7 @@ import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 
 const eventFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
+  slug: z.string().optional(),
   description: z.string().optional(),
   date: z.string().min(1, "Date is required"),
   endDate: z.string().optional(),
@@ -127,6 +128,7 @@ type EventFormValues = z.infer<typeof eventFormSchema>;
 
 const defaultFormValues: EventFormValues = {
   title: "",
+  slug: "",
   description: "",
   date: "",
   endDate: "",
@@ -186,6 +188,16 @@ function visibilityLabel(v: string | null | undefined): string {
     case "admins_only": return "Admins Only";
     default: return "Public";
   }
+}
+
+function slugifyEventTitle(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/['"]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
 }
 
 export default function AdminEventsPage() {
@@ -337,6 +349,7 @@ function EventsContent() {
   const watchRegistrationEnabled = form.watch("registrationEnabled");
   const watchRegistrationType = form.watch("registrationType");
   const watchEventTitle = form.watch("title");
+  const watchEventSlug = form.watch("slug");
   const watchEventDescription = form.watch("description");
   const watchEventImageUrl = form.watch("imageUrl");
   const watchEventImagePositionX = form.watch("imagePositionX");
@@ -348,6 +361,13 @@ function EventsContent() {
   const watchRecordingAccess = form.watch("recordingAccess");
   const watchIsRecurring = form.watch("isRecurring");
   const watchRecurrencePattern = form.watch("recurrencePattern");
+
+  useEffect(() => {
+    if (editingEvent) return;
+    const slugState = form.getFieldState("slug");
+    if (slugState.isDirty) return;
+    form.setValue("slug", slugifyEventTitle(watchEventTitle || ""), { shouldDirty: false });
+  }, [editingEvent, form, watchEventTitle]);
 
   useLockConflictGuard({
     active: dialogOpen && Boolean(editingEvent?.id),
@@ -486,6 +506,7 @@ function EventsContent() {
   function buildPayload(data: EventFormValues) {
     return {
       ...data,
+      slug: data.slug?.trim() ?? "",
       timezone: data.timezone?.trim() || "",
       date: fromDateTimeLocalValue(data.date, data.timezone),
       endDate: fromDateTimeLocalValue(data.endDate, data.timezone),
@@ -515,6 +536,7 @@ function EventsContent() {
     const eventTimeZone = event.timezone ?? "";
     form.reset({
       title: event.title,
+      slug: event.slug ?? "",
       description: event.description ?? "",
       date: toDateTimeLocalValue(event.date, eventTimeZone),
       endDate: toDateTimeLocalValue(event.endDate, eventTimeZone),
@@ -851,6 +873,28 @@ function EventsContent() {
                                   <FormControl>
                                     <Input {...field} data-testid="input-event-title" />
                                   </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="slug"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>URL Slug</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      value={field.value ?? ""}
+                                      onChange={(event) => field.onChange(slugifyEventTitle(event.target.value))}
+                                      placeholder={slugifyEventTitle(watchEventTitle || "event-name")}
+                                      data-testid="input-event-slug"
+                                    />
+                                  </FormControl>
+                                  <p className="text-xs text-muted-foreground">
+                                    Public URL: /events/{watchEventSlug || slugifyEventTitle(watchEventTitle || "event-name")}
+                                  </p>
                                   <FormMessage />
                                 </FormItem>
                               )}

@@ -5,7 +5,7 @@ const mockGetSeo = vi.fn();
 const mockGetSetting = vi.fn();
 const mockGetPageBySlug = vi.fn();
 const mockGetPostBySlug = vi.fn();
-const mockGetEvent = vi.fn();
+const mockGetEventByIdentifier = vi.fn();
 const mockGetProfileWithUser = vi.fn();
 
 vi.mock("../storage", () => ({
@@ -23,7 +23,7 @@ vi.mock("../storage", () => ({
       getPostBySlug: mockGetPostBySlug,
     },
     events: {
-      getEvent: mockGetEvent,
+      getEventByIdentifier: mockGetEventByIdentifier,
     },
     therapists: {
       getProfileWithUser: mockGetProfileWithUser,
@@ -107,6 +107,7 @@ const blogPost: BlogPost = {
 const event: Event = {
   id: "event-1",
   title: "Application Process Webinar",
+  slug: "application-process-webinar",
   description: "Join us for a walk-through of the application process.",
   date: new Date("2026-06-01T15:00:00.000Z"),
   endDate: null,
@@ -158,7 +159,7 @@ describe("public-prerender.service", () => {
     mockGetSetting.mockResolvedValue(null);
     mockGetPageBySlug.mockResolvedValue(undefined);
     mockGetPostBySlug.mockResolvedValue(undefined);
-    mockGetEvent.mockResolvedValue(undefined);
+    mockGetEventByIdentifier.mockResolvedValue(undefined);
     mockGetProfileWithUser.mockResolvedValue(undefined);
   });
 
@@ -175,7 +176,7 @@ describe("public-prerender.service", () => {
 
   it("returns a prerender snapshot for blog posts and event detail pages", async () => {
     mockGetPostBySlug.mockResolvedValue(blogPost);
-    mockGetEvent.mockResolvedValue(event);
+    mockGetEventByIdentifier.mockResolvedValue(event);
     const { getPublicHtmlSnapshot } = await import("../services/public-prerender.service");
 
     const postSnapshot = await getPublicHtmlSnapshot("/insights/understanding-application-process");
@@ -183,6 +184,7 @@ describe("public-prerender.service", () => {
 
     expect(postSnapshot?.bodyHtml).toContain("This article explains the application process");
     expect(eventSnapshot?.bodyHtml).toContain("Application Process Webinar");
+    expect(eventSnapshot?.canonicalUrl).toBe("https://tckwellness.com/events/application-process-webinar");
   });
 
   it("marks search result pages as noindex in the injected head", async () => {

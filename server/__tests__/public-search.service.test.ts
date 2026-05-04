@@ -90,6 +90,7 @@ const samplePost: BlogPost = {
 const sampleEvent: Event = {
   id: "event-1",
   title: "Application Process Webinar",
+  slug: "application-process-webinar",
   description: "Join us for a walk-through of the application process.",
   date: new Date("2026-06-01T15:00:00.000Z"),
   endDate: null,
@@ -149,7 +150,7 @@ describe("public-search.service", () => {
     expect(results.map((result) => result.type)).toEqual(expect.arrayContaining(["page", "post", "event"]));
     expect(results.map((result) => result.url)).toContain("/application-process");
     expect(results.map((result) => result.url)).toContain("/insights/understanding-application-process");
-    expect(results.map((result) => result.url)).toContain("/events/event-1");
+    expect(results.map((result) => result.url)).toContain("/events/application-process-webinar");
   });
 
   it("does not return non-public or draft content", async () => {

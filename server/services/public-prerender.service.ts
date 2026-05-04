@@ -1,5 +1,6 @@
 import sanitizeHtml from "sanitize-html";
 import type { BlogPost, CmsPage, Event, SeoSettings } from "@shared/schema";
+import { getEventPath } from "@shared/event-url";
 import { storage } from "../storage";
 
 interface PublicHtmlSnapshot {
@@ -337,7 +338,7 @@ function buildPostSnapshot(post: BlogPost, seo: SeoSettings | null, siteUrl: str
 }
 
 function buildEventSnapshot(event: Event, seo: SeoSettings | null, siteUrl: string): PublicHtmlSnapshot {
-  const canonicalUrl = `${siteUrl}/events/${event.id}`;
+  const canonicalUrl = `${siteUrl}${getEventPath(event)}`;
   const title = event.title;
   const description = truncate(stripHtml(event.description || ""), 180) || DEFAULT_DESCRIPTION;
   const detailLines = [
@@ -519,7 +520,7 @@ export async function getPublicHtmlSnapshot(
 
   const eventMatch = pathname.match(/^\/events\/([^/]+)$/);
   if (eventMatch) {
-    const event = await storage.events.getEvent(decodeURIComponent(eventMatch[1]));
+    const event = await storage.events.getEventByIdentifier(decodeURIComponent(eventMatch[1]));
     if (!event || event.status !== "published" || event.visibility !== "public") return null;
     return buildEventSnapshot(event, seo, siteUrl);
   }

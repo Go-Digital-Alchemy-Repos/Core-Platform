@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useParams, useLocation } from "wouter";
 import type { Event } from "@shared/schema/events";
+import { getEventPath, getEventUrlSegment } from "@shared/event-url";
 import type { EventRegistration } from "@shared/schema/event-registrations";
 import type { SeoSettings } from "@shared/schema";
 import { PageLayout } from "@/components/layout/page-layout";
@@ -557,7 +558,7 @@ function EventSeo({ event, globalSeo }: { event: Event; globalSeo?: SeoSettings 
     ? stripHtml(event.description)
     : globalSeo?.defaultMetaDescription || undefined;
   const effectiveOgImage = event.imageUrl || globalSeo?.defaultOgImageUrl || undefined;
-  const canonical = `${siteUrl}/events/${event.id}`;
+  const canonical = `${siteUrl}${getEventPath(event)}`;
 
   useSeo({
     title: effectiveTitle,
@@ -610,7 +611,7 @@ export default function EventDetailPage() {
         description: "Your payment has been processed and your registration is confirmed.",
       });
       // Clear the query parameters without refreshing the page
-      setLocation(`/events/${eventId}`, { replace: true });
+      setLocation(event ? getEventPath(event) : `/events/${eventId}`, { replace: true });
       // Invalidate queries to fetch the new registration status
       queryClient.invalidateQueries({ queryKey: ["/api/events", eventId, "registration"] });
     } else if (checkout === "canceled") {
@@ -618,9 +619,17 @@ export default function EventDetailPage() {
         title: "Registration canceled",
         description: "The payment process was canceled. You can try registering again when you're ready.",
       });
-      setLocation(`/events/${eventId}`, { replace: true });
+      setLocation(event ? getEventPath(event) : `/events/${eventId}`, { replace: true });
     }
-  }, [eventId, setLocation, toast]);
+  }, [event, eventId, setLocation, toast]);
+
+  useEffect(() => {
+    if (!event || !eventId) return;
+    const canonicalSegment = getEventUrlSegment(event);
+    if (eventId !== canonicalSegment && !window.location.search) {
+      setLocation(getEventPath(event), { replace: true });
+    }
+  }, [event, eventId, setLocation]);
 
   const isPast = event ? new Date(event.date) < new Date() : false;
   const joinUrl = event?.virtualJoinUrl || event?.zoomLink;

@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ExternalLink, FileCode2, Globe, BookOpen, CalendarDays, FileText, CheckCircle2, EyeOff, ShieldOff, Save, RotateCcw } from "lucide-react";
 import type { SeoSettings, CmsPage, BlogPost, Event } from "@shared/schema";
+import { getEventPath } from "@shared/event-url";
 
 interface SitemapEntry {
   loc: string;
@@ -142,7 +143,7 @@ export function CmsSitemapTab() {
   const eventEntries: SitemapEntry[] = (events ?? []).map((e) => {
     const excluded = e.status === "draft" || e.visibility !== "public";
     return {
-      loc: `${siteUrl}/events/${e.id}`,
+      loc: `${siteUrl}${getEventPath(e)}`,
       label: e.title,
       type: "Event",
       status: e.status ?? undefined,

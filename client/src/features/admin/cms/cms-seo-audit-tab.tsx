@@ -294,7 +294,7 @@ export function CmsSeoAuditTab() {
                       item={item}
                       type="event"
                       editPath={`/admin/events/${item.id}`}
-                      previewPath={item.status !== "draft" ? `/events/${item.id}` : undefined}
+                      previewPath={item.status !== "draft" ? `/events/${item.slug || item.id}` : undefined}
                     />
                   ))}
               </div>

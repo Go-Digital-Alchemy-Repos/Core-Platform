@@ -5,6 +5,7 @@ import { logger } from "../utils/logger";
 import { authenticateToken, requireRole } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
 import type { Event } from "@shared/schema/events";
+import { getEventPath } from "@shared/event-url";
 import { getDirectorySettings } from "../services/directory-settings.service";
 
 const router = Router();
@@ -131,8 +132,8 @@ router.post(
           quantity: 1,
         },
       ],
-      success_url: `${host}/events/${eventId}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${host}/events/${eventId}?checkout=canceled`,
+      success_url: `${host}${getEventPath(event)}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${host}${getEventPath(event)}?checkout=canceled`,
       metadata: { registrationId: registration.id, eventId },
       customer_email: user.email,
     });

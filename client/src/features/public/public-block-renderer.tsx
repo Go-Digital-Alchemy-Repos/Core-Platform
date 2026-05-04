@@ -28,6 +28,7 @@ import {
   str,
 } from "@/features/admin/cms/builder/block-renderer.shared";
 import { SectionHeading } from "@/features/admin/cms/builder/section-heading";
+import { getEventPath } from "@shared/event-url";
 import {
   Globe, Heart, Users, MapPin, Mail, Phone, Star, CheckCircle,
   Quote, UserCheck, CalendarDays, BookOpen, Image, Play, Minus,
@@ -549,7 +550,7 @@ function FeaturedProfessionalsBlock({ props }: { props: Record<string, unknown> 
 }
 
 function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
-  const { data: events } = useQuery<{ id: string; title: string; date: string; isVirtual: boolean; imageUrl?: string | null; imagePositionX?: number | null; imagePositionY?: number | null }[]>({
+  const { data: events } = useQuery<{ id: string; slug?: string | null; title: string; date: string; isVirtual: boolean; imageUrl?: string | null; imagePositionX?: number | null; imagePositionY?: number | null }[]>({
     queryKey: ["/api/events"],
   });
   const limit = num(props.limit, 4);
@@ -558,8 +559,8 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
   const visible = (events ?? []).filter((e) => new Date(e.date) > new Date()).slice(0, limit);
   const shouldCarousel = visible.length > 4;
 
-  const renderEventCard = (e: { id: string; title: string; date: string; isVirtual: boolean; imageUrl?: string | null; imagePositionX?: number | null; imagePositionY?: number | null }) => (
-    <Link key={e.id} href={`/events/${e.id}`} className="w-full max-w-[16.2rem]">
+  const renderEventCard = (e: { id: string; slug?: string | null; title: string; date: string; isVirtual: boolean; imageUrl?: string | null; imagePositionX?: number | null; imagePositionY?: number | null }) => (
+    <Link key={e.id} href={getEventPath(e)} className="w-full max-w-[16.2rem]">
       <Card className="mx-auto h-full w-full max-w-[16.2rem] overflow-hidden transition-shadow hover:shadow-md cursor-pointer" data-testid={`event-preview-${e.id}`}>
         {e.imageUrl && (
           <div className="aspect-[16/10] overflow-hidden" data-testid={`img-event-preview-${e.id}`}>

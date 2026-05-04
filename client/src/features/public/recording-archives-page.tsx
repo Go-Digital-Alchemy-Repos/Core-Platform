@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Event } from "@shared/schema/events";
+import { getEventPath } from "@shared/event-url";
 import type { RecordingPurchase } from "@shared/schema/recording-purchases";
 import { PageLayout } from "@/components/layout/page-layout";
 import { stripHtml } from "@/lib/html";
@@ -147,7 +148,7 @@ function RecordingCard({
             {formatDate(event.date)}
           </Badge>
         </div>
-        <Link href={`/events/${event.id}`}>
+        <Link href={getEventPath(event)}>
           <CardTitle className="text-base line-clamp-2 cursor-pointer hover:text-primary transition-colors" data-testid={`text-recording-title-${event.id}`}>
             {event.title}
           </CardTitle>
@@ -161,7 +162,7 @@ function RecordingCard({
           </div>
         )}
         <p className="line-clamp-2" data-testid={`text-recording-description-${event.id}`}>
-          {stripHtml(event.description)}
+          {stripHtml(event.description ?? "")}
         </p>
       </CardContent>
       <CardFooter className="flex-none p-4 pt-0">

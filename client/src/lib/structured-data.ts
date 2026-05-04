@@ -1,5 +1,6 @@
 import type { SeoSettings, BlogPost, CmsPage, Event } from "@shared/schema";
 import { stripHtml } from "@/lib/html";
+import { getEventPath } from "@shared/event-url";
 
 export type JsonLdObject = Record<string, unknown>;
 
@@ -122,7 +123,7 @@ export function buildEventLd(
 
   const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
   const orgName = globalSeo?.organizationName || globalSeo?.siteName || "TCK Wellness";
-  const eventUrl = `${siteUrl}/events/${event.id}`;
+  const eventUrl = `${siteUrl}${getEventPath(event)}`;
 
   const isHybrid =
     event.isVirtual &&

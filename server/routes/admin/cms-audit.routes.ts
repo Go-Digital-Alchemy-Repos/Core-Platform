@@ -73,6 +73,7 @@ router.get("/seo-audit", async (_req, res) => {
       events: events.map((e) => ({
         id: e.id,
         title: e.title,
+        slug: e.slug,
         status: e.status,
         visibility: e.visibility,
         date: e.date,

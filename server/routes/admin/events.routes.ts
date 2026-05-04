@@ -16,6 +16,7 @@ const router = Router();
 const VALID_STATUSES = ["draft", "published", "canceled", "completed"] as const;
 const VALID_VISIBILITIES = ["public", "members_only", "counselors_only", "admins_only"] as const;
 const VALID_REGISTRATION_TYPES = ["free", "paid"] as const;
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function isValidDate(d: Date): boolean {
   return d instanceof Date && !isNaN(d.getTime());
@@ -30,6 +31,30 @@ function isValidTimeZone(timeZone: string): boolean {
   } catch {
     return false;
   }
+}
+
+function slugifyEventTitle(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/['"]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+}
+
+async function buildUniqueEventSlug(title: string, requestedSlug?: string | null, currentEventId?: string): Promise<string> {
+  const base = slugifyEventTitle(requestedSlug || title) || "event";
+
+  for (let i = 0; i < 100; i += 1) {
+    const candidate = i === 0 ? base : `${base}-${i + 1}`;
+    const owner = await storage.events.getEventSlugOwner(candidate);
+    if (!owner || owner.id === currentEventId) {
+      return candidate;
+    }
+  }
+
+  return `${base}-${Date.now().toString(36)}`;
 }
 
 async function normalizeEventImage<T extends { imageUrl?: string | null }>(event: T): Promise<T> {
@@ -63,6 +88,10 @@ function validateEventData(data: any): string | null {
 
   if (data.registrationType && !VALID_REGISTRATION_TYPES.includes(data.registrationType)) {
     return `Invalid registration type. Must be one of: ${VALID_REGISTRATION_TYPES.join(", ")}`;
+  }
+
+  if (data.slug && !SLUG_PATTERN.test(data.slug)) {
+    return "Slug must use lowercase letters, numbers, and hyphens only";
   }
 
   if (data.registrationType === "paid" && (!data.registrationFee || data.registrationFee <= 0)) {
@@ -132,7 +161,9 @@ router.post(
     if (error) {
       return res.status(400).json({ message: error });
     }
-    const event = await storage.events.createEvent(coerceDates(req.body) as any);
+    const payload = coerceDates(req.body) as any;
+    payload.slug = await buildUniqueEventSlug(payload.title, payload.slug);
+    const event = await storage.events.createEvent(payload);
     res.status(201).json(await normalizeEventImage(event));
   })
 );
@@ -150,7 +181,20 @@ router.put(
       return notFound(res, "Event");
     }
 
-    const event = await storage.events.updateEvent(id, coerceDates(req.body) as any);
+    const payload = coerceDates(req.body) as any;
+    if (payload.slug !== undefined || payload.title !== undefined) {
+      const requestedSlug =
+        payload.slug !== undefined
+          ? payload.slug
+          : oldEvent.slug;
+      payload.slug = await buildUniqueEventSlug(
+        payload.title || oldEvent.title,
+        requestedSlug,
+        id
+      );
+    }
+
+    const event = await storage.events.updateEvent(id, payload);
     if (!event) {
       notFound(res, "Event");
       return;
@@ -197,12 +241,14 @@ router.post(
     const {
       id: _id,
       createdAt: _createdAt,
+      slug: _slug,
       ...eventData
     } = sourceEvent;
 
     const newEvent = await storage.events.createEvent({
       ...eventData,
       title: `Copy of ${sourceEvent.title}`,
+      slug: await buildUniqueEventSlug(`Copy of ${sourceEvent.title}`),
       status: "draft",
       date: tomorrow,
       endDate: null,

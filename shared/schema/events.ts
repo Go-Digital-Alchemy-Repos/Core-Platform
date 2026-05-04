@@ -6,6 +6,7 @@ import { z } from "zod";
 export const events = pgTable("events", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
   description: text("description"),
   date: timestamp("date").notNull(),
   endDate: timestamp("end_date"),
@@ -56,6 +57,7 @@ export const events = pgTable("events", {
   parentEventId: varchar("parent_event_id"),
 }, (table) => [
   index("idx_events_date").on(table.date),
+  index("idx_events_slug").on(table.slug),
   index("idx_events_status_visibility").on(table.status, table.visibility),
   foreignKey({
     columns: [table.parentEventId],

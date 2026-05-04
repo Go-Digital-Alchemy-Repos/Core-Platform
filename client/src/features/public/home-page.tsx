@@ -23,6 +23,7 @@ import {
 import { getQueryFn } from "@/lib/queryClient";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import { stripHtml } from "@/lib/html";
+import { getEventPath } from "@shared/event-url";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 
@@ -457,7 +458,7 @@ export default function HomePage() {
         ) : upcomingEvents.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             {upcomingEvents.map((event: any) => (
-              <Link key={event.id} href={`/events/${event.id}`}>
+              <Link key={event.id} href={getEventPath(event)}>
                 <Card className="cursor-pointer hover-elevate h-full" data-testid={`card-event-${event.id}`}>
                   <CardContent className="p-6">
                     <div className="flex items-center gap-2 mb-3 flex-wrap">

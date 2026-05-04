@@ -1,5 +1,6 @@
 import type { BlogPost, CmsPage, Event } from "@shared/schema";
 import type { PublicSearchResult } from "@shared/types/public-search";
+import { getEventPath } from "@shared/event-url";
 import { storage } from "../storage";
 
 interface SearchDocument {
@@ -334,7 +335,7 @@ export async function searchPublicSite(query: string): Promise<PublicSearchResul
       type: "event" as const,
       id: event.id,
       title: event.title,
-      url: `/events/${event.id}`,
+      url: getEventPath(event),
       metadata: event.locationName || event.location || "Event",
       searchableText: buildEventText(event),
       excerptSource: event.description || buildEventText(event),

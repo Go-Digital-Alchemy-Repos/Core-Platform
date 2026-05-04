@@ -1,10 +1,28 @@
-import { eq, gte, lt, lte, asc, desc, and, sql } from "drizzle-orm";
+import { eq, gte, lt, lte, asc, desc, and, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import { events, type Event, type InsertEvent } from "@shared/schema";
 
 export class EventStorage {
   async getEvent(id: string): Promise<Event | undefined> {
     const [event] = await db.select().from(events).where(eq(events.id, id));
+    return event;
+  }
+
+  async getEventBySlug(slug: string): Promise<Event | undefined> {
+    const [event] = await db.select().from(events).where(eq(events.slug, slug));
+    return event;
+  }
+
+  async getEventByIdentifier(identifier: string): Promise<Event | undefined> {
+    const [event] = await db
+      .select()
+      .from(events)
+      .where(or(eq(events.id, identifier), eq(events.slug, identifier)));
+    return event;
+  }
+
+  async getEventSlugOwner(slug: string): Promise<Event | undefined> {
+    const [event] = await db.select().from(events).where(eq(events.slug, slug));
     return event;
   }
 

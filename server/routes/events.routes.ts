@@ -113,7 +113,7 @@ router.get(
   optionalAuth,
   asyncHandler(async (req, res) => {
     const id = paramString(req.params.id);
-    const event = await storage.events.getEvent(id);
+    const event = await storage.events.getEventByIdentifier(id);
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }

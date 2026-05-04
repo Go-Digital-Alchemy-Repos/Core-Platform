@@ -25,6 +25,7 @@ import { searchPublicSite } from "../services/public-search.service";
 import { buildRobotsTxtPayload } from "../services/robots-txt.service";
 import { storage } from "../storage/index";
 import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
+import { getEventPath } from "@shared/event-url";
 import { DEFAULT_DIRECTORY_SETTINGS, getDirectorySettings } from "../services/directory-settings.service";
 
 function escapeXml(str: string): string {
@@ -253,7 +254,7 @@ export function registerApiRoutes(app: Express) {
       for (const event of events) {
         if (event.status === "draft" || event.visibility !== "public") continue;
         urls.push({
-          loc: `${base}/events/${event.id}`,
+          loc: `${base}${getEventPath(event)}`,
           changefreq: "weekly",
           priority: "0.7",
         });

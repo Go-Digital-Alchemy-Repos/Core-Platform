@@ -2,12 +2,13 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import type { Event } from "@shared/schema/events";
+import { getEventPath } from "@shared/event-url";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatEventDate, formatEventListDateLines } from "@/lib/event-datetime";
+import { formatEventDate, formatEventListDateLines, formatEventTime } from "@/lib/event-datetime";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import { stripHtml } from "@/lib/html";
 import {
@@ -69,11 +70,11 @@ function EventCard({ event }: { event: Event }) {
   const dateLines = formatEventListDateLines(event.date, event.endDate, event.timezone);
 
   return (
-    <Link href={`/events/${event.id}`} className="block">
+    <Link href={getEventPath(event)} className="block">
       <Card
         data-testid={`card-event-${event.id}`}
         className={`cursor-pointer hover-elevate ${isPast ? "opacity-60" : ""} overflow-hidden`}
-        onClick={() => navigate(`/events/${event.id}`)}
+        onClick={() => navigate(getEventPath(event))}
       >
         <div className={event.imageUrl ? "flex flex-col sm:flex-row" : ""}>
           {event.imageUrl && (
@@ -331,7 +332,7 @@ function CalendarView({ events }: { events: Event[] }) {
                       {dayEvents.map((event) => (
                         <Tooltip key={event.id}>
                           <TooltipTrigger asChild>
-                            <Link href={`/events/${event.id}`}>
+                            <Link href={getEventPath(event)}>
                               <div
                                 className="truncate rounded bg-primary/10 px-1 py-0.5 text-[10px] leading-tight text-primary cursor-pointer hover:bg-primary/20 transition-colors"
                                 data-testid={`calendar-event-${event.id}`}
@@ -346,7 +347,7 @@ function CalendarView({ events }: { events: Event[] }) {
                             className="w-[min(90vw,16rem)] p-0 overflow-hidden"
                             data-testid={`tooltip-event-${event.id}`}
                           >
-                            <Link href={`/events/${event.id}`}>
+                            <Link href={getEventPath(event)}>
                               <div className="cursor-pointer">
                                 {event.imageUrl && (
                                   <img

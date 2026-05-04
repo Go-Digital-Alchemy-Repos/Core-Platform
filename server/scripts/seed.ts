@@ -149,6 +149,7 @@ async function seed() {
   await db.insert(events).values([
     {
       title: "Understanding the TCK Experience",
+      slug: "understanding-the-tck-experience",
       description: "Join us for an insightful webinar exploring the unique challenges and strengths of Third Culture Kids. Led by Dr. Sarah Chen, this session will cover identity formation, belonging, and resilience.",
       date: nextWeek,
       endDate: new Date(nextWeek.getTime() + 2 * 60 * 60 * 1000),
@@ -159,6 +160,7 @@ async function seed() {
     },
     {
       title: "Therapist Networking Mixer",
+      slug: "therapist-networking-mixer",
       description: "Monthly networking event for TCK Wellness member therapists. Share best practices, discuss challenging cases, and build your professional community.",
       date: nextMonth,
       endDate: new Date(nextMonth.getTime() + 3 * 60 * 60 * 1000),
@@ -168,6 +170,7 @@ async function seed() {
     },
     {
       title: "Cross-Cultural Parenting Workshop",
+      slug: "cross-cultural-parenting-workshop",
       description: "A practical workshop for parents raising children across cultures. Learn strategies for maintaining cultural connections while supporting healthy identity development.",
       date: twoWeeks,
       endDate: new Date(twoWeeks.getTime() + 1.5 * 60 * 60 * 1000),
@@ -178,6 +181,7 @@ async function seed() {
     },
     {
       title: "Re-entry & Reverse Culture Shock Panel",
+      slug: "re-entry-reverse-culture-shock-panel",
       description: "A panel discussion featuring therapists and TCKs who have navigated the challenges of returning to their passport country. Hear real stories and expert guidance.",
       date: twoMonths,
       endDate: new Date(twoMonths.getTime() + 2 * 60 * 60 * 1000),
