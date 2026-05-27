@@ -5,9 +5,12 @@ const MockS3Client = vi.fn(() => ({ send: mockSend }));
 
 vi.mock("@aws-sdk/client-s3", () => ({
   S3Client: MockS3Client,
-  PutObjectCommand: vi.fn((params: unknown) => ({ type: "PutObject", ...params as object })),
-  DeleteObjectCommand: vi.fn((params: unknown) => ({ type: "DeleteObject", ...params as object })),
-  HeadBucketCommand: vi.fn((params: unknown) => ({ type: "HeadBucket", ...params as object })),
+  PutObjectCommand: vi.fn((params: unknown) => ({ type: "PutObject", ...(params as object) })),
+  DeleteObjectCommand: vi.fn((params: unknown) => ({
+    type: "DeleteObject",
+    ...(params as object),
+  })),
+  HeadBucketCommand: vi.fn((params: unknown) => ({ type: "HeadBucket", ...(params as object) })),
 }));
 
 vi.mock("../utils/logger", () => ({
@@ -72,6 +75,36 @@ describe("R2 service", () => {
     await mod.uploadFile("b.png", Buffer.from("b"), "image/png");
 
     expect(mockGetDecryptedCategory).toHaveBeenCalledTimes(2);
+  });
+
+  it("uses an app-served URL when no public URL is configured", async () => {
+    mockGetDecryptedCategory.mockResolvedValue({
+      r2_account_id: "acct",
+      r2_access_key_id: "key",
+      r2_secret_access_key: "secret",
+      r2_bucket_name: "bucket",
+      r2_public_url: "",
+    });
+    mockSend.mockResolvedValue({});
+
+    const mod = await import("../services/r2.service");
+    const url = await mod.uploadFile("images/photo.jpg", Buffer.from("data"), "image/jpeg");
+    expect(url).toBe("/r2/images/photo.jpg");
+  });
+
+  it("uses an app-served URL when the configured public URL is the private R2 API host", async () => {
+    mockGetDecryptedCategory.mockResolvedValue({
+      r2_account_id: "acct",
+      r2_access_key_id: "key",
+      r2_secret_access_key: "secret",
+      r2_bucket_name: "bucket",
+      r2_public_url: "https://acct.r2.cloudflarestorage.com/bucket",
+    });
+    mockSend.mockResolvedValue({});
+
+    const mod = await import("../services/r2.service");
+    const url = await mod.uploadFile("images/photo.jpg", Buffer.from("data"), "image/jpeg");
+    expect(url).toBe("/r2/images/photo.jpg");
   });
 
   it("returns null when R2 is not configured", async () => {

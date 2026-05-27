@@ -16,6 +16,7 @@ import blogRoutes from "./blog.routes";
 import registrationRoutes from "./registration.routes";
 import guestRegistrationRoutes from "./guest-registration.routes";
 import cmsPublicRoutes from "./cms-public.routes";
+import r2PublicRoutes from "./r2-public.routes";
 import contactProfessionalRoutes from "./contact-professional.routes";
 import setupRoutes from "./setup.routes";
 import applicationRoutes from "./application.routes";
@@ -26,7 +27,10 @@ import { buildRobotsTxtPayload } from "../services/robots-txt.service";
 import { storage } from "../storage/index";
 import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
 import { getEventPath } from "@shared/event-url";
-import { DEFAULT_DIRECTORY_SETTINGS, getDirectorySettings } from "../services/directory-settings.service";
+import {
+  DEFAULT_DIRECTORY_SETTINGS,
+  getDirectorySettings,
+} from "../services/directory-settings.service";
 
 function escapeXml(str: string): string {
   return str
@@ -38,6 +42,7 @@ function escapeXml(str: string): string {
 }
 
 export function registerApiRoutes(app: Express) {
+  app.use("/r2", r2PublicRoutes);
   app.use("/api/auth", authRoutes);
   app.use("/api/therapists", directoryRoutes);
   app.use("/api/therapist", therapistRoutes);
@@ -90,8 +95,10 @@ export function registerApiRoutes(app: Express) {
         h2Color: branding.text_h2_color || null,
         h3ToH6Color: branding.text_h3_h6_color || null,
         bodyTextColor: branding.text_body_color || null,
-        headingSubtextColor: branding.text_heading_subtext_color || branding.text_muted_color || null,
-        supportingCopyColor: branding.text_supporting_copy_color || branding.text_muted_color || null,
+        headingSubtextColor:
+          branding.text_heading_subtext_color || branding.text_muted_color || null,
+        supportingCopyColor:
+          branding.text_supporting_copy_color || branding.text_muted_color || null,
         helperTextColor: branding.text_helper_text_color || branding.text_muted_color || null,
         metaTextColor: branding.text_meta_color || null,
         linkColor: branding.text_link_color || null,
@@ -140,9 +147,18 @@ export function registerApiRoutes(app: Express) {
     try {
       const settings = await storage.settings.getDecryptedCategory("system_configuration");
       res.json({
-        directoryEnabled: normalizeBooleanSetting(settings.enable_directory, DEFAULT_SITE_FEATURES.directoryEnabled),
-        blogEnabled: normalizeBooleanSetting(settings.enable_blog, DEFAULT_SITE_FEATURES.blogEnabled),
-        eventsEnabled: normalizeBooleanSetting(settings.enable_events, DEFAULT_SITE_FEATURES.eventsEnabled),
+        directoryEnabled: normalizeBooleanSetting(
+          settings.enable_directory,
+          DEFAULT_SITE_FEATURES.directoryEnabled,
+        ),
+        blogEnabled: normalizeBooleanSetting(
+          settings.enable_blog,
+          DEFAULT_SITE_FEATURES.blogEnabled,
+        ),
+        eventsEnabled: normalizeBooleanSetting(
+          settings.enable_events,
+          DEFAULT_SITE_FEATURES.eventsEnabled,
+        ),
       });
     } catch (err) {
       logger.app.warn("Failed to retrieve system configuration, returning defaults", {
@@ -213,7 +229,8 @@ export function registerApiRoutes(app: Express) {
 
       const base = seoSettings?.siteUrl?.replace(/\/$/, "") || "";
 
-      const urls: Array<{ loc: string; lastmod?: string; changefreq?: string; priority?: string }> = [];
+      const urls: Array<{ loc: string; lastmod?: string; changefreq?: string; priority?: string }> =
+        [];
 
       urls.push({ loc: base || "/", changefreq: "weekly", priority: "1.0" });
 
@@ -232,10 +249,24 @@ export function registerApiRoutes(app: Express) {
 
       for (const page of pages) {
         if (page.status !== "published" || page.noindex) continue;
-        if (["home", "about", "contact", "join", "insights", "events", "recordings", "directory"].includes(page.slug)) continue;
+        if (
+          [
+            "home",
+            "about",
+            "contact",
+            "join",
+            "insights",
+            "events",
+            "recordings",
+            "directory",
+          ].includes(page.slug)
+        )
+          continue;
         urls.push({
           loc: `${base}/${page.slug}`,
-          lastmod: page.updatedAt ? new Date(page.updatedAt).toISOString().split("T")[0] : undefined,
+          lastmod: page.updatedAt
+            ? new Date(page.updatedAt).toISOString().split("T")[0]
+            : undefined,
           changefreq: "monthly",
           priority: "0.6",
         });
@@ -245,7 +276,9 @@ export function registerApiRoutes(app: Express) {
         if (!post.isPublished || post.noindex) continue;
         urls.push({
           loc: `${base}/insights/${post.slug}`,
-          lastmod: post.updatedAt ? new Date(post.updatedAt).toISOString().split("T")[0] : undefined,
+          lastmod: post.updatedAt
+            ? new Date(post.updatedAt).toISOString().split("T")[0]
+            : undefined,
           changefreq: "monthly",
           priority: "0.7",
         });
@@ -292,7 +325,10 @@ export function registerApiRoutes(app: Express) {
         return res.redirect(redirect.statusCode, redirect.toPath);
       }
     } catch (err) {
-      logger.app.warn("Failed to look up redirect", { path: req.path, error: err instanceof Error ? err.message : String(err) });
+      logger.app.warn("Failed to look up redirect", {
+        path: req.path,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
     next();
   });

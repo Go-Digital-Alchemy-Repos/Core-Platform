@@ -19,36 +19,63 @@ interface R2Config {
 let cachedClient: S3Client | null = null;
 let cachedConfig: R2Config | null = null;
 
-function getFallbackPublicBaseUrl(bucketName: string): string {
-  return `https://${bucketName}.r2.dev`;
+function buildAppServedObjectUrl(key: string): string {
+  const normalizedKey = key
+    .replace(/^\/+/, "")
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+
+  return `/r2/${normalizedKey}`;
 }
 
-function getPublicBaseUrl(bucketName: string, configuredPublicUrl: string): string {
+function getConfiguredPublicBaseUrl(configuredPublicUrl: string): string | null {
   const trimmed = configuredPublicUrl.trim();
   if (!trimmed) {
-    return getFallbackPublicBaseUrl(bucketName);
+    return null;
   }
 
   try {
     const parsed = new URL(trimmed);
     if (parsed.hostname.endsWith(".r2.cloudflarestorage.com")) {
-      logger.r2.warn("Configured public URL uses the private R2 API host; falling back to the public bucket URL", {
-        configuredPublicUrl: trimmed,
-      });
-      return getFallbackPublicBaseUrl(bucketName);
+      logger.r2.warn(
+        "Configured public URL uses the private R2 API host; serving R2 files through the app instead",
+        {
+          configuredPublicUrl: trimmed,
+        },
+      );
+      return null;
     }
     return parsed.toString().replace(/\/$/, "");
   } catch {
-    logger.r2.warn("Configured public URL is invalid; falling back to the public bucket URL", {
+    logger.r2.warn("Configured public URL is invalid; serving R2 files through the app instead", {
       configuredPublicUrl: trimmed,
     });
-    return getFallbackPublicBaseUrl(bucketName);
+    return null;
   }
 }
 
 function buildPublicObjectUrl(baseUrl: string, key: string): string {
   const normalizedKey = key.replace(/^\/+/, "");
   return `${baseUrl.replace(/\/$/, "")}/${normalizedKey}`;
+}
+
+function getPublicObjectUrl(key: string, configuredPublicUrl: string): string {
+  const configuredBaseUrl = getConfiguredPublicBaseUrl(configuredPublicUrl);
+  if (configuredBaseUrl) {
+    return buildPublicObjectUrl(configuredBaseUrl, key);
+  }
+
+  return buildAppServedObjectUrl(key);
+}
+
+function getObjectKeyFromUrl(url: URL, bucketName: string): string {
+  const segments = url.pathname.split("/").filter(Boolean);
+  if (segments[0] === bucketName) {
+    segments.shift();
+  }
+
+  return segments.map((segment) => decodeURIComponent(segment)).join("/");
 }
 
 async function getR2Config(): Promise<R2Config | null> {
@@ -65,12 +92,18 @@ async function getR2Config(): Promise<R2Config | null> {
       return { accountId, accessKeyId, secretAccessKey, bucketName, publicUrl };
     }
   } catch (err) {
-    logger.r2.warn("Failed to load R2 configuration", { error: err instanceof Error ? err.message : String(err) });
+    logger.r2.warn("Failed to load R2 configuration", {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
   return null;
 }
 
-async function getClient(): Promise<{ client: S3Client; bucketName: string; publicUrl: string } | null> {
+async function getClient(): Promise<{
+  client: S3Client;
+  bucketName: string;
+  publicUrl: string;
+} | null> {
   if (cachedClient && cachedConfig) {
     return {
       client: cachedClient,
@@ -108,7 +141,7 @@ export async function isConfigured(): Promise<boolean> {
 export async function uploadFile(
   key: string,
   buffer: Buffer,
-  contentType: string
+  contentType: string,
 ): Promise<string | null> {
   const r2 = await getClient();
   if (!r2) {
@@ -125,15 +158,12 @@ export async function uploadFile(
             Key: key,
             Body: buffer,
             ContentType: contentType,
-          })
+          }),
         ),
-      "R2 upload"
+      "R2 upload",
     );
 
-    const publicUrl = buildPublicObjectUrl(
-      getPublicBaseUrl(r2.bucketName, r2.publicUrl),
-      key
-    );
+    const publicUrl = getPublicObjectUrl(key, r2.publicUrl);
 
     logger.r2.info("File uploaded", { key });
     return publicUrl;
@@ -154,9 +184,9 @@ export async function deleteFile(key: string): Promise<boolean> {
           new DeleteObjectCommand({
             Bucket: r2.bucketName,
             Key: key,
-          })
+          }),
         ),
-      "R2 delete"
+      "R2 delete",
     );
     logger.r2.info("File deleted", { key });
     return true;
@@ -167,7 +197,7 @@ export async function deleteFile(key: string): Promise<boolean> {
 }
 
 export async function downloadFile(
-  key: string
+  key: string,
 ): Promise<{ buffer: Buffer; contentType: string | null } | null> {
   const r2 = await getClient();
   if (!r2) return null;
@@ -179,9 +209,9 @@ export async function downloadFile(
           new GetObjectCommand({
             Bucket: r2.bucketName,
             Key: key,
-          })
+          }),
         ),
-      "R2 download"
+      "R2 download",
     );
 
     const bytes = await response.Body?.transformToByteArray?.();
@@ -209,9 +239,7 @@ export async function testConnection(): Promise<{
   }
 
   try {
-    await r2.client.send(
-      new HeadBucketCommand({ Bucket: r2.bucketName })
-    );
+    await r2.client.send(new HeadBucketCommand({ Bucket: r2.bucketName }));
     return { success: true, message: "R2 connection successful" };
   } catch (err: any) {
     return { success: false, message: err.message || "Connection failed" };
@@ -223,8 +251,14 @@ export function resetClient(): void {
   cachedConfig = null;
 }
 
-export async function normalizePublicUrl(url: string | null | undefined): Promise<string | null | undefined> {
+export async function normalizePublicUrl(
+  url: string | null | undefined,
+): Promise<string | null | undefined> {
   if (!url) return url;
+
+  if (url.startsWith("/r2/")) {
+    return url;
+  }
 
   let parsed: URL;
   try {
@@ -243,6 +277,6 @@ export async function normalizePublicUrl(url: string | null | undefined): Promis
   const r2 = await getClient();
   if (!r2) return url;
 
-  const publicBaseUrl = getPublicBaseUrl(r2.bucketName, r2.publicUrl);
-  return buildPublicObjectUrl(publicBaseUrl, parsed.pathname);
+  const objectKey = getObjectKeyFromUrl(parsed, r2.bucketName);
+  return getPublicObjectUrl(objectKey, r2.publicUrl);
 }
