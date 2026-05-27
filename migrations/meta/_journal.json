@@ -85,6 +85,83 @@
       "when": 1776040200000,
       "tag": "0011_blog_taxonomies",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1776043800000,
+      "tag": "0003_reference_workflow_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1776047400000,
+      "tag": "0004_background_check_scaffold",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1776051000000,
+      "tag": "0012_blog_post_categories",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1776054600000,
+      "tag": "0013_directory_membership_lifecycle",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1776058200000,
+      "tag": "0014_cms_forms",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1776061800000,
+      "tag": "0015_system_user_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1776065400000,
+      "tag": "0016_blog_comments",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1776069000000,
+      "tag": "0017_blog_event_image_focus",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1776072600000,
+      "tag": "0018_editor_locks",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1776076200000,
+      "tag": "0019_seo_custom_robots",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1776079800000,
+      "tag": "0020_event_slugs",
+      "breakpoints": true
     }
   ]
 }
