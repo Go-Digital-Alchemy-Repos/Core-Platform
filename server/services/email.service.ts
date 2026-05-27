@@ -5,7 +5,7 @@ const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || "587", 10);
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
-const SMTP_FROM = process.env.SMTP_FROM || "TCK Wellness <noreply@tckwellness.com>";
+const SMTP_FROM = process.env.SMTP_FROM || "Core Platform <noreply@coreplatform.com>";
 
 const isSmtpConfigured = !!(SMTP_HOST && SMTP_USER && SMTP_PASS);
 
@@ -131,8 +131,8 @@ async function sendViaSmtp(
 
 function baseTemplate(title: string, body: string, options: { logoUrl?: string | null } = {}): string {
   const logoMarkup = options.logoUrl
-    ? `<img src="${options.logoUrl}" alt="TCK Wellness" style="display:block;max-width:220px;max-height:52px;height:auto;width:auto;margin:0 auto;" />`
-    : `<div style="color:#1e3a5f;font-size:22px;font-weight:600;text-align:center;">TCK Wellness</div>`;
+    ? `<img src="${options.logoUrl}" alt="Core Platform" style="display:block;max-width:220px;max-height:52px;height:auto;width:auto;margin:0 auto;" />`
+    : `<div style="color:#1e3a5f;font-size:22px;font-weight:600;text-align:center;">Core Platform</div>`;
 
   return `<!DOCTYPE html>
 <html>
@@ -149,7 +149,7 @@ function baseTemplate(title: string, body: string, options: { logoUrl?: string |
           ${body}
         </td></tr>
         <tr><td style="background:#f9fafb;padding:20px 32px;border-top:1px solid #e5e7eb;">
-          <p style="margin:0;color:#6b7280;font-size:13px;">This is an automated message from TCK Wellness. Please do not reply directly to this email.</p>
+          <p style="margin:0;color:#6b7280;font-size:13px;">This is an automated message from Core Platform. Please do not reply directly to this email.</p>
         </td></tr>
       </table>
     </td></tr>
@@ -376,7 +376,7 @@ export async function sendWelcomeEmail(
   const { subject, html, isActive } = await getTemplateHtml(
     "welcome-new-user",
     vars,
-    "Welcome to TCK Wellness!",
+    "Welcome to Core Platform!",
     `<p>Hi ${vars.firstName}, an account has been created for you.</p>`
   );
   if (!isActive) return false;
@@ -502,7 +502,7 @@ export async function sendNewMessageEmail(
   const html = await renderEmailShell(
     "New Message in Your Message Center",
     `<p>Hi ${firstName},</p>
-    <p>You have received a new message from <strong>${senderName}</strong> in your TCK Wellness Message Center.</p>
+    <p>You have received a new message from <strong>${senderName}</strong> in your Core Platform Message Center.</p>
     <p>For your privacy, message content is not included in this email notification. Please log in to read the full message.</p>
     <p style="margin:24px 0;">
       <a href="${loginUrl}" style="display:inline-block;background:#1e3a5f;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">
@@ -511,7 +511,7 @@ export async function sendNewMessageEmail(
     </p>
     <p style="color:#6b7280;font-size:13px;">If you did not expect this message, you can safely ignore this email.</p>`
   );
-  return sendEmail(to, `New message from ${senderName} — TCK Wellness`, html);
+  return sendEmail(to, `New message from ${senderName} — Core Platform`, html);
 }
 
 function formatIcsDate(d: Date): string {
@@ -727,21 +727,21 @@ export async function sendReferenceRequestEmail(
   const vars = { refereeName, applicantName, referenceUrl };
   const fallbackBody = `
     <p>Dear ${refereeName},</p>
-    <p><strong>${applicantName}</strong> has applied to join the <strong>TCK Wellness Counselor Network</strong> and has listed you as a professional reference.</p>
-    <p>TCK Wellness connects Third Culture Kids (TCKs) with specialized mental health professionals who understand the unique experiences of growing up across cultures. As part of our vetting process, we ask references to complete a brief, confidential questionnaire.</p>
+    <p><strong>${applicantName}</strong> has applied to join the <strong>Core Platform Counselor Network</strong> and has listed you as a professional reference.</p>
+    <p>Core Platform connects Third Culture Kids (Core Platforms) with specialized mental health professionals who understand the unique experiences of growing up across cultures. As part of our vetting process, we ask references to complete a brief, confidential questionnaire.</p>
     <p><strong>Your responses will remain confidential</strong> and will not be shared with the applicant.</p>
     <p style="margin:24px 0;">
       <a href="${referenceUrl}" style="display:inline-block;padding:12px 28px;background:#1e3a5f;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">Complete Reference Form</a>
     </p>
     <p>The form takes approximately 5–10 minutes to complete. We kindly ask that you respond within <strong>7 days</strong> of receiving this email.</p>
-    <p>If you have any questions about this request, please contact us at <a href="mailto:support@tckwellness.com">support@tckwellness.com</a>.</p>
+    <p>If you have any questions about this request, please contact us at <a href="mailto:support@coreplatform.com">support@coreplatform.com</a>.</p>
     <p>Thank you for your time and support.</p>
-    <p>Warm regards,<br>The TCK Wellness Team</p>
+    <p>Warm regards,<br>The Core Platform Team</p>
   `;
   const { subject, html, isActive } = await getTemplateHtml(
     "reference-request",
     vars,
-    `Reference Request for ${applicantName} — TCK Wellness`,
+    `Reference Request for ${applicantName} — Core Platform`,
     fallbackBody
   );
   if (!isActive) return false;

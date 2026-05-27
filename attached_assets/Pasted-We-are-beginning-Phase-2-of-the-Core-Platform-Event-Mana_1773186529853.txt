@@ -1,10 +1,10 @@
-We are beginning Phase 2 of the TCK Wellness Event Management sprint: enhancing the public and authenticated event detail experience to support richer event information without yet implementing full registration or payment workflows.
+We are beginning Phase 2 of the Core Platform Event Management sprint: enhancing the public and authenticated event detail experience to support richer event information without yet implementing full registration or payment workflows.
 
 IMPORTANT RULES
 - Nondestructive only
 - Preserve current event listing/detail UX patterns unless safely expanding them
 - Do not redesign the events section broadly
-- Keep UI consistent with the current TCK Wellness branding and component system
+- Keep UI consistent with the current Core Platform branding and component system
 - Reuse the counselor detail page map/location pattern wherever practical
 - Do not build registration checkout yet in this phase
 

@@ -1,7 +1,7 @@
-We are beginning a nondestructive CMS > SEO buildout for the TCK Wellness application.
+We are beginning a nondestructive CMS > SEO buildout for the Core Platform application.
 
 CONTEXT
-TCK Wellness now has a CMS area in Admin, but CMS > SEO is not yet built out. We need to create a real SEO control center for the public-facing site and blog. This should include both standard SEO settings and future-ready support for structured data.
+Core Platform now has a CMS area in Admin, but CMS > SEO is not yet built out. We need to create a real SEO control center for the public-facing site and blog. This should include both standard SEO settings and future-ready support for structured data.
 
 IMPORTANT RULES
 - Nondestructive only

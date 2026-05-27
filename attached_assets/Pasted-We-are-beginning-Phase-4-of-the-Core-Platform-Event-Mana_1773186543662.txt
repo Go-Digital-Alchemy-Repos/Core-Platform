@@ -1,4 +1,4 @@
-We are beginning Phase 4 of the TCK Wellness Event Management sprint: adding paid event registration using the existing Stripe integration patterns in the TCK Wellness platform.
+We are beginning Phase 4 of the Core Platform Event Management sprint: adding paid event registration using the existing Stripe integration patterns in the Core Platform platform.
 
 CONTEXT
 The platform already supports counselor subscriptions through Stripe. We now need to extend the event system to support paid event registration for events that require a registration fee. Users should be able to register and pay safely, admins should be able to see payment-related registration status, and the implementation should remain consistent with the platform’s current Stripe architecture.

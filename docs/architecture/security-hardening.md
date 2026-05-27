@@ -2,7 +2,7 @@
 
 ## Authentication
 
-- **JWT tokens** stored in HTTP-only cookies (`tck_token`)
+- **JWT tokens** stored in HTTP-only cookies (`corePlatform_token`)
 - Token expiry: 7 days
 - Password hashing: `bcryptjs` with 12 salt rounds
 - Cookie settings: `httpOnly: true`, `secure: true` (production), `sameSite: lax`

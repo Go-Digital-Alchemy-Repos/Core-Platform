@@ -1,4 +1,4 @@
-We are beginning Phase 3 of the TCK Wellness CMS sprint: implementing the CMS media upload experience and replacing image URL-style inputs with Cloudflare R2-backed upload/dropzone workflows.
+We are beginning Phase 3 of the Core Platform CMS sprint: implementing the CMS media upload experience and replacing image URL-style inputs with Cloudflare R2-backed upload/dropzone workflows.
 
 CONTEXT
 The CMS builder and CMS page architecture now exist or are underway. The CMS must NOT rely on admins pasting image URLs for content blocks or page visuals. Instead, anywhere in CMS where an admin would provide an image or background image, the UI must support drag-and-drop upload and/or media selection, with assets stored in Cloudflare R2.

@@ -1240,7 +1240,7 @@ function FormsPageContent() {
                               settings: { ...current.settings, mailchimpTag: event.target.value },
                             }))
                           }
-                          placeholder="TCK Newsletter"
+                          placeholder="Core Platform Newsletter"
                         />
                       </div>
                     </div>

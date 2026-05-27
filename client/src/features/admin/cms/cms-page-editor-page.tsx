@@ -1079,7 +1079,7 @@ export default function CmsPageEditorPage() {
                           <FormItem>
                             <FormLabel>Canonical URL <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
                             <FormControl>
-                              <Input placeholder="https://tckwellness.com/about" autoPrependHttps {...field} data-testid="input-canonical-url" />
+                              <Input placeholder="https://coreplatform.com/about" autoPrependHttps {...field} data-testid="input-canonical-url" />
                             </FormControl>
                             <FormDescription className="text-xs">
                               Override the canonical link tag. Leave blank to auto-generate from the page slug.

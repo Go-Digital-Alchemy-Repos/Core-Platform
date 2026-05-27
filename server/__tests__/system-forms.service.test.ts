@@ -58,18 +58,18 @@ describe("ensureSystemForms", () => {
             submitButtonText: "Send",
             successMessage: "Custom contact success",
             mailchimpEnabled: true,
-            mailchimpTag: "TCK General Inquiry",
+            mailchimpTag: "Core Platform General Inquiry",
             notifyAdmins: true,
             storeAsContactMessage: true,
           },
         };
       }
 
-      if (slug === "tck-interest") {
+      if (slug === "corePlatform-interest") {
         return {
           id: "interest-form-id",
-          name: "TCK Interest Form",
-          slug: "tck-interest",
+          name: "Core Platform Interest Form",
+          slug: "corePlatform-interest",
           description: "Custom description",
           kind: "interest",
           isSystem: true,
@@ -92,7 +92,7 @@ describe("ensureSystemForms", () => {
             submitButtonText: "Keep Me Informed",
             successMessage: "Custom success",
             mailchimpEnabled: true,
-            mailchimpTag: "TCK Interest",
+            mailchimpTag: "Core Platform Interest",
             notifyAdmins: false,
             storeAsContactMessage: false,
           },
@@ -105,18 +105,18 @@ describe("ensureSystemForms", () => {
     const mod = await import("../services/system-forms.service");
     await mod.ensureSystemForms();
 
-    const tckInterestUpdate = mockUpdate.mock.calls.find(
+    const corePlatformInterestUpdate = mockUpdate.mock.calls.find(
       ([id]: [string]) => id === "interest-form-id"
     );
     const contactUpdate = mockUpdate.mock.calls.find(
       ([id]: [string]) => id === "contact-form-id"
     );
 
-    expect(tckInterestUpdate).toBeTruthy();
-    expect(tckInterestUpdate[1].fields).toHaveLength(1);
-    expect(tckInterestUpdate[1].fields[0].label).toBe("Name");
+    expect(corePlatformInterestUpdate).toBeTruthy();
+    expect(corePlatformInterestUpdate[1].fields).toHaveLength(1);
+    expect(corePlatformInterestUpdate[1].fields[0].label).toBe("Name");
     expect(
-      tckInterestUpdate[1].fields.some((field: { label: string }) => field.label === "Introduction")
+      corePlatformInterestUpdate[1].fields.some((field: { label: string }) => field.label === "Introduction")
     ).toBe(false);
 
     expect(contactUpdate).toBeTruthy();
@@ -138,7 +138,7 @@ describe("ensureSystemForms", () => {
       expect.arrayContaining([
         "contact-form",
         "newsletter-signup",
-        "tck-interest",
+        "corePlatform-interest",
         "directory-application-start",
       ])
     );

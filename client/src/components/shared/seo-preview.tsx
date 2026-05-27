@@ -62,7 +62,7 @@ export function SeoPreview({
   description,
   url,
   ogImage,
-  siteName = "TCK Wellness",
+  siteName = "Core Platform",
   className,
   source,
 }: SeoPreviewProps) {

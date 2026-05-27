@@ -1,4 +1,4 @@
-We are beginning Phase 7 of the TCK Wellness CMS sprint: SEO, publishing workflow, revision improvements, and overall CMS polish.
+We are beginning Phase 7 of the Core Platform CMS sprint: SEO, publishing workflow, revision improvements, and overall CMS polish.
 
 CONTEXT
 The CMS now includes pages, builder architecture, media uploads, seeded public pages, reusable sections, and blog integration. This phase should tighten publishing workflow, revision usability, and SEO controls while keeping the system practical and maintainable.
@@ -58,7 +58,7 @@ IMPLEMENTATION REQUIREMENTS
    - save/publish affordances
    - validation messaging
 
-7. Keep implementation modular and aligned with the existing TCK Wellness design system.
+7. Keep implementation modular and aligned with the existing Core Platform design system.
 
 NONDESTRUCTIVE RULES
 - No slug breakage

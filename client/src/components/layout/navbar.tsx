@@ -132,7 +132,7 @@ export function Navbar() {
     <nav className="sticky top-0 z-[999] bg-background/95 backdrop-blur-sm border-b" data-testid="navbar">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 py-3 sm:py-4">
         <Link href="/" data-testid="link-brand">
-          <img src={brandLogo} alt="TCK Wellness" className="h-8 sm:h-10 w-auto" />
+          <img src={brandLogo} alt="Core Platform" className="h-8 sm:h-10 w-auto" />
         </Link>
 
         <div className="hidden md:flex items-center gap-2 flex-wrap">
@@ -304,7 +304,7 @@ export function Navbar() {
             <SheetContent side="right" className="w-72">
               <SheetHeader>
                 <SheetTitle>
-                  <img src={brandLogo} alt="TCK Wellness" className="h-8 w-auto" />
+                  <img src={brandLogo} alt="Core Platform" className="h-8 w-auto" />
                 </SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-1 mt-6">

@@ -33,13 +33,13 @@ vi.mock("../storage", () => ({
 
 const seoSettings: SeoSettings = {
   id: "seo-1",
-  siteName: "TCK Wellness",
-  siteUrl: "https://tckwellness.com",
-  titleSuffix: " | TCK Wellness",
+  siteName: "Core Platform",
+  siteUrl: "https://coreplatform.com",
+  titleSuffix: " | Core Platform",
   defaultMetaDescription: "Default description",
-  defaultOgImageUrl: "https://tckwellness.com/og.jpg",
+  defaultOgImageUrl: "https://coreplatform.com/og.jpg",
   defaultRobotsNoindex: false,
-  organizationName: "TCK Wellness",
+  organizationName: "Core Platform",
   organizationLogoUrl: null,
   facebookUrl: null,
   instagramUrl: null,
@@ -171,7 +171,7 @@ describe("public-prerender.service", () => {
 
     expect(snapshot?.title).toContain("Join the Network");
     expect(snapshot?.bodyHtml).toContain("The Application Process");
-    expect(snapshot?.canonicalUrl).toBe("https://tckwellness.com/join");
+    expect(snapshot?.canonicalUrl).toBe("https://coreplatform.com/join");
   });
 
   it("returns a prerender snapshot for blog posts and event detail pages", async () => {
@@ -184,7 +184,7 @@ describe("public-prerender.service", () => {
 
     expect(postSnapshot?.bodyHtml).toContain("This article explains the application process");
     expect(eventSnapshot?.bodyHtml).toContain("Application Process Webinar");
-    expect(eventSnapshot?.canonicalUrl).toBe("https://tckwellness.com/events/application-process-webinar");
+    expect(eventSnapshot?.canonicalUrl).toBe("https://coreplatform.com/events/application-process-webinar");
   });
 
   it("marks search result pages as noindex in the injected head", async () => {

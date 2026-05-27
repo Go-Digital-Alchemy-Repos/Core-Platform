@@ -86,7 +86,7 @@ function CmsPageSeo({ page, globalSeo }: { page: CmsPage; globalSeo?: SeoSetting
   useEffect(() => {
     const prevTitle = document.title;
     const effectiveTitle = page.seoTitle || page.title;
-    const titleSuffix = globalSeo?.titleSuffix ?? " | TCK Wellness";
+    const titleSuffix = globalSeo?.titleSuffix ?? " | Core Platform";
     const effectiveDescription =
       page.seoDescription || globalSeo?.defaultMetaDescription || "";
     const effectiveOgImage = page.ogImageUrl || globalSeo?.defaultOgImageUrl || "";

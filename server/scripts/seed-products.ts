@@ -26,7 +26,7 @@ async function seedStripeProducts() {
     console.log(`Creating Stripe product for tier: ${tier.name}`);
 
     const product = await stripe.products.create({
-      name: `TCK Wellness - ${tier.name}`,
+      name: `Core Platform - ${tier.name}`,
       description: tier.description || undefined,
       metadata: { tierId: tier.id },
     });

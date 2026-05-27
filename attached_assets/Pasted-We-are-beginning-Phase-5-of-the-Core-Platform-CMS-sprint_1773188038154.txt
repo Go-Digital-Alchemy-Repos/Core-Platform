@@ -1,4 +1,4 @@
-We are beginning Phase 5 of the TCK Wellness CMS sprint: implementing reusable sections and saved components for the CMS builder.
+We are beginning Phase 5 of the Core Platform CMS sprint: implementing reusable sections and saved components for the CMS builder.
 
 CONTEXT
 Admins need to create reusable content patterns from existing website sections and builder-created sections. This should work more like reusable saved sections/templates first, with a clean path toward broader synced components later.
@@ -17,7 +17,7 @@ IMPLEMENTATION REQUIREMENTS
 1. Inspect:
    - CMS builder/block architecture
    - seeded page content
-   - likely reusable sections from existing TCK Wellness website pages
+   - likely reusable sections from existing Core Platform website pages
    - media handling for block content
 
 2. Implement a reusable section/saved component system that supports:

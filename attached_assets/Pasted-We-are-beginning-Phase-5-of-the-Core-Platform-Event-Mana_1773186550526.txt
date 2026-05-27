@@ -1,7 +1,7 @@
-We are beginning Phase 5 of the TCK Wellness Event Management sprint: implementing Recording Archives for past events that have recorded video links.
+We are beginning Phase 5 of the Core Platform Event Management sprint: implementing Recording Archives for past events that have recorded video links.
 
 CONTEXT
-Past virtual events may have a recording/video link. When a past event has a video link, it should be available in a browsable Recording Archives experience where counselor and TCK users can browse and watch recordings on demand in a modal window. Access should respect the platform’s role and visibility rules.
+Past virtual events may have a recording/video link. When a past event has a video link, it should be available in a browsable Recording Archives experience where counselor and Core Platform users can browse and watch recordings on demand in a modal window. Access should respect the platform’s role and visibility rules.
 
 IMPORTANT RULES
 - Nondestructive only
@@ -17,7 +17,7 @@ Build a Recording Archives feature for past events with recordings, including:
 - browseable archive list
 - filtering/search if practical and lightweight
 - modal playback/on-demand viewing
-- role-appropriate access for counselor and TCK users
+- role-appropriate access for counselor and Core Platform users
 - sensible connection between archived recordings and source event records
 
 IMPLEMENTATION REQUIREMENTS
@@ -46,7 +46,7 @@ IMPLEMENTATION REQUIREMENTS
 
 6. Ensure archive viewing access aligns with intended roles:
    - counselor users
-   - TCK users / eligible authenticated users
+   - Core Platform users / eligible authenticated users
    - admins
 Do not expose restricted recordings publicly unless the event visibility rules explicitly allow it.
 

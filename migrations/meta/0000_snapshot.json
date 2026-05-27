@@ -2737,14 +2737,14 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
-          "default": "'TCK Wellness'"
+          "default": "'Core Platform'"
         },
         "title_suffix": {
           "name": "title_suffix",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
-          "default": "' | TCK Wellness'"
+          "default": "' | Core Platform'"
         },
         "default_meta_description": {
           "name": "default_meta_description",
@@ -2769,7 +2769,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
-          "default": "'TCK Wellness'"
+          "default": "'Core Platform'"
         },
         "organization_logo_url": {
           "name": "organization_logo_url",

@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-import logoIcon from "@assets/TCK-Wellness_Icon.webp";
+import logoIcon from "@assets/Core-Platform_Icon.webp";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -132,7 +132,7 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
         <div className="flex items-center gap-3" data-testid="text-therapist-title">
           <img
             src={logoIcon}
-            alt="TCK Wellness"
+            alt="Core Platform"
             className="h-9 w-9 object-contain flex-shrink-0"
             data-testid="img-therapist-logo"
           />
@@ -288,7 +288,7 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
           <SheetContent side="left" className="w-72 p-0">
             <SheetHeader className="p-4 border-b">
               <SheetTitle className="flex items-center gap-3">
-                <img src={logoIcon} alt="TCK Wellness" className="h-8 w-8 object-contain" />
+                <img src={logoIcon} alt="Core Platform" className="h-8 w-8 object-contain" />
                 <span className="font-heading text-base">My Account</span>
               </SheetTitle>
             </SheetHeader>

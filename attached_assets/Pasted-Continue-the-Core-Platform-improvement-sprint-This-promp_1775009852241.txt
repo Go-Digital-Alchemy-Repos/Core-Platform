@@ -1,4 +1,4 @@
-Continue the TCK Wellness improvement sprint.
+Continue the Core Platform improvement sprint.
 
 This prompt is focused ONLY on database performance and relational integrity.
 

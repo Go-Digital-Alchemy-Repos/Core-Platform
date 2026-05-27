@@ -7,7 +7,7 @@ import { AdminPermission, type UserRole, type AdminPermission as AdminPermission
 const isDev = process.env.NODE_ENV !== "production";
 const JWT_SECRET = process.env.SESSION_SECRET || (isDev ? "dev-secret-change-me" : "");
 const JWT_EXPIRY = "7d";
-const COOKIE_NAME = "tck_token";
+const COOKIE_NAME = "corePlatform_token";
 
 export interface JwtPayload {
   userId: string;

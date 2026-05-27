@@ -1,6 +1,6 @@
 # Getting Started In The Admin
 
-This documentation area is the operating manual for TCK Wellness. It combines system reference material, architecture notes, deployment runbooks, and practical admin guides in one searchable library.
+This documentation area is the operating manual for Core Platform. It combines system reference material, architecture notes, deployment runbooks, and practical admin guides in one searchable library.
 
 ## Recommended First Pass
 

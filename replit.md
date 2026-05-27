@@ -1,7 +1,7 @@
-# TCK Wellness — Counselor Directory & Subscription Platform
+# Core Platform — Counselor Directory & Subscription Platform
 
 ## Overview
-TCK Wellness is a platform dedicated to supporting Third Culture Kids (TCKs) by connecting them with specialized mental health counselors. It offers a searchable counselor directory, secure authentication, integrated mapping, subscription management, and a robust admin dashboard to provide essential mental health support to the TCK community. The project aims to become the leading platform for TCKs seeking mental health professionals and aims to improve access to culturally competent mental health care for TCKs.
+Core Platform is a platform dedicated to supporting Third Culture Kids (Core Platforms) by connecting them with specialized mental health counselors. It offers a searchable counselor directory, secure authentication, integrated mapping, subscription management, and a robust admin dashboard to provide essential mental health support to the Core Platform community. The project aims to become the leading platform for Core Platforms seeking mental health professionals and aims to improve access to culturally competent mental health care for Core Platforms.
 
 ## User Preferences
 - All visible text uses "Counselor"/"Counselors" throughout the UI (navbar, footer, home, directory, admin, auth pages).

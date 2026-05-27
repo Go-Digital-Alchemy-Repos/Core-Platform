@@ -74,7 +74,7 @@ function PodcastPlayer({ podcastUrl }: { podcastUrl: string }) {
 }
 
 function PostSeo({ post, globalSeo }: { post: BlogPost; globalSeo?: SeoSettings }) {
-  const titleSuffix = globalSeo?.titleSuffix ?? " | TCK Wellness";
+  const titleSuffix = globalSeo?.titleSuffix ?? " | Core Platform";
   const effectiveTitle = post.seoTitle || `${post.title}${titleSuffix}`;
   const effectiveDescription =
     post.seoDescription || post.excerpt || globalSeo?.defaultMetaDescription || undefined;

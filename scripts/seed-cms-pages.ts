@@ -13,7 +13,7 @@ const homeContent = {
       id: uid(),
       type: "hero",
       props: {
-        heading: 'Care that understands where TCKs "come from".',
+        heading: 'Care that understands where Core Platforms "come from".',
         subheading: "",
         ctaText: "Find a Mental Health Professional!",
         ctaLink: "/directory",
@@ -27,7 +27,7 @@ const homeContent = {
       id: uid(),
       type: "cards-grid",
       props: {
-        title: "Why TCK Informed?",
+        title: "Why Core Platform Informed?",
         subtitle: "We bridge the gap between Third Culture Kids and culturally competent mental health professionals.",
         columns: "3",
         cards: [
@@ -61,7 +61,7 @@ const homeContent = {
       id: uid(),
       type: "rich-text",
       props: {
-        content: "<p>Not every challenge requires a clinical diagnosis or therapy. Sometimes what TCKs need most is validation, community, or practical guidance for navigating transitions. Our directory includes a range of professionals — from licensed therapists to certified coaches and peer support specialists — so you can find the right kind of support for wherever you are in your journey.</p>",
+        content: "<p>Not every challenge requires a clinical diagnosis or therapy. Sometimes what Core Platforms need most is validation, community, or practical guidance for navigating transitions. Our directory includes a range of professionals — from licensed therapists to certified coaches and peer support specialists — so you can find the right kind of support for wherever you are in your journey.</p>",
         alignment: "center",
       },
     },
@@ -75,14 +75,14 @@ const homeContent = {
             quote:
               "For the first time, I didn't have to explain what it means to grow up between cultures. My mental health professional just understood.",
             name: "Sarah M.",
-            role: "Adult TCK",
+            role: "Adult Core Platform",
             location: "Singapore",
             avatarUrl:
               "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces",
           },
           {
             quote:
-              "TCK Wellness connected me with a mental health professional who speaks my language — literally and figuratively. It's been life-changing.",
+              "Core Platform connected me with a mental health professional who speaks my language — literally and figuratively. It's been life-changing.",
             name: "James K.",
             role: "Expat Parent",
             location: "Dubai",
@@ -100,9 +100,9 @@ const homeContent = {
           },
           {
             quote:
-              "I struggled for years to find someone who understood repatriation grief. TCK Wellness made it possible in minutes.",
+              "I struggled for years to find someone who understood repatriation grief. Core Platform made it possible in minutes.",
             name: "Lena T.",
-            role: "TCK & College Student",
+            role: "Core Platform & College Student",
             location: "Germany",
             avatarUrl:
               "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=faces",
@@ -111,7 +111,7 @@ const homeContent = {
             quote:
               "The specialization filters helped me find a mental health professional experienced with military kid transitions. Highly recommend.",
             name: "Marcus W.",
-            role: "Military TCK",
+            role: "Military Core Platform",
             location: "Virginia, USA",
             avatarUrl:
               "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces",
@@ -133,7 +133,7 @@ const homeContent = {
       type: "therapist-map",
       props: {
         title: "Our Mental Health Professionals Around the World",
-        subtitle: "Click a pin to learn more about a TCK-informed professional near you",
+        subtitle: "Click a pin to learn more about a Core Platform-informed professional near you",
       },
     },
     {
@@ -141,7 +141,7 @@ const homeContent = {
       type: "events-preview",
       props: {
         title: "Upcoming Events",
-        subtitle: "Join our community events for TCKs and mental health professionals.",
+        subtitle: "Join our community events for Core Platforms and mental health professionals.",
         limit: 3,
       },
     },
@@ -150,7 +150,7 @@ const homeContent = {
       type: "blog-preview",
       props: {
         title: "Featured Articles",
-        subtitle: "Latest insights on TCK mental health and cross-cultural wellness.",
+        subtitle: "Latest insights on Core Platform mental health and cross-cultural wellness.",
         limit: 6,
       },
     },
@@ -158,9 +158,9 @@ const homeContent = {
       id: uid(),
       type: "cta",
       props: {
-        heading: "Are You a TCK-Informed Mental Health Professional?",
+        heading: "Are You a Core Platform-Informed Mental Health Professional?",
         subheading:
-          "Join our growing directory and connect with clients who need your unique expertise. List your practice and reach the global TCK community.",
+          "Join our growing directory and connect with clients who need your unique expertise. List your practice and reach the global Core Platform community.",
         primaryText: "Join the Directory",
         primaryLink: "/auth/register",
         variant: "accent",
@@ -184,7 +184,7 @@ const aboutContent = {
       id: uid(),
       type: "rich-text",
       props: {
-        content: "<p>TCK Wellness was born from the lived experience of growing up between cultures. Our founders — Adult TCKs and mental health advocates — experienced firsthand how difficult it is to find a mental health professional who truly understands what it means to call multiple countries \"home.\" In 2024, they set out to build a bridge between Third Culture Kids and the culturally competent professionals who serve them.</p>",
+        content: "<p>Core Platform was born from the lived experience of growing up between cultures. Our founders — Adult Core Platforms and mental health advocates — experienced firsthand how difficult it is to find a mental health professional who truly understands what it means to call multiple countries \"home.\" In 2024, they set out to build a bridge between Third Culture Kids and the culturally competent professionals who serve them.</p>",
         alignment: "left",
       },
     },
@@ -201,7 +201,7 @@ const aboutContent = {
       id: uid(),
       type: "rich-text",
       props: {
-        content: "<p>Our vision is a world where every Third Culture Kid has access to mental health support that honors their multicultural identity. Our mission is to build the most trusted directory of TCK-informed mental health professionals — vetted, accessible, and global — so that no one has to navigate the complexities of cross-cultural life alone.</p>",
+        content: "<p>Our vision is a world where every Third Culture Kid has access to mental health support that honors their multicultural identity. Our mission is to build the most trusted directory of Core Platform-informed mental health professionals — vetted, accessible, and global — so that no one has to navigate the complexities of cross-cultural life alone.</p>",
         alignment: "left",
       },
     },
@@ -212,7 +212,7 @@ const aboutContent = {
         eyebrow: "THE RESEARCH",
         title: "The Stats Speak for Themselves",
         subtitle:
-          "According to TCK Training's 2024 research, survey of 1600+ adult TCKs:",
+          "According to Core Platform Training's 2024 research, survey of 1600+ adult Core Platforms:",
         alignment: "center",
       },
     },
@@ -224,17 +224,17 @@ const aboutContent = {
         cards: [
           {
             icon: "AlertCircle",
-            title: "60% of TCKs",
+            title: "60% of Core Platforms",
             description: "experienced symptoms of anxiety related to their cross-cultural upbringing and transitions.",
           },
           {
             icon: "AlertCircle",
-            title: "59% of TCKs",
+            title: "59% of Core Platforms",
             description: "experienced symptoms of depression, often connected to unresolved grief of place and identity.",
           },
           {
             icon: "AlertCircle",
-            title: "47% of TCKs",
+            title: "47% of Core Platforms",
             description: "experienced symptoms of suicidal ideation at some point in their lives.",
           },
         ],
@@ -253,7 +253,7 @@ const aboutContent = {
       type: "section-header",
       props: {
         eyebrow: "WHY IT MATTERS",
-        title: "Why TCK Informed?",
+        title: "Why Core Platform Informed?",
         alignment: "left",
       },
     },
@@ -261,7 +261,7 @@ const aboutContent = {
       id: uid(),
       type: "rich-text",
       props: {
-        content: "<p>Traditional therapy models were developed within a single cultural framework. When TCKs bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A TCK-informed mental health professional understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.</p>",
+        content: "<p>Traditional therapy models were developed within a single cultural framework. When Core Platforms bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A Core Platform-informed mental health professional understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.</p>",
         alignment: "left",
       },
     },
@@ -285,7 +285,7 @@ const aboutContent = {
 <ul>
 <li>Every mental health professional completes a detailed application process</li>
 <li>Credentials and licensure are verified</li>
-<li>Training or lived experience with TCK/cross-cultural populations is required</li>
+<li>Training or lived experience with Core Platform/cross-cultural populations is required</li>
 <li>Profiles are reviewed by our team before being published</li>
 </ul>
 <h3>What vetting does not mean:</h3>
@@ -309,14 +309,14 @@ const aboutContent = {
             quote:
               "For the first time, I didn't have to explain what it means to grow up between cultures. My mental health professional just understood.",
             name: "Sarah M.",
-            role: "Adult TCK",
+            role: "Adult Core Platform",
             location: "Singapore",
             avatarUrl:
               "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces",
           },
           {
             quote:
-              "TCK Wellness connected me with a mental health professional who speaks my language — literally and figuratively. It's been life-changing.",
+              "Core Platform connected me with a mental health professional who speaks my language — literally and figuratively. It's been life-changing.",
             name: "James K.",
             role: "Expat Parent",
             location: "Dubai",
@@ -334,9 +334,9 @@ const aboutContent = {
           },
           {
             quote:
-              "I struggled for years to find someone who understood repatriation grief. TCK Wellness made it possible in minutes.",
+              "I struggled for years to find someone who understood repatriation grief. Core Platform made it possible in minutes.",
             name: "Lena T.",
-            role: "TCK & College Student",
+            role: "Core Platform & College Student",
             location: "Germany",
             avatarUrl:
               "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=faces",
@@ -345,7 +345,7 @@ const aboutContent = {
             quote:
               "The specialization filters helped me find a mental health professional experienced with military kid transitions. Highly recommend.",
             name: "Marcus W.",
-            role: "Military TCK",
+            role: "Military Core Platform",
             location: "Virginia, USA",
             avatarUrl:
               "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces",
@@ -385,24 +385,24 @@ const aboutContent = {
       props: {
         items: [
           {
-            question: "What is a Third Culture Kid (TCK)?",
+            question: "What is a Third Culture Kid (Core Platform)?",
             answer:
-              "A Third Culture Kid (TCK) is a person who has spent a significant part of their developmental years outside their parents' culture. They build relationships with multiple cultures while not having full ownership of any, creating what is often called a 'third culture' — a blend of their passport country and host countries.",
+              "A Third Culture Kid (Core Platform) is a person who has spent a significant part of their developmental years outside their parents' culture. They build relationships with multiple cultures while not having full ownership of any, creating what is often called a 'third culture' — a blend of their passport country and host countries.",
           },
           {
-            question: "Who can use TCK Wellness to find a mental health professional?",
+            question: "Who can use Core Platform to find a mental health professional?",
             answer:
-              "TCK Wellness is for anyone who has had a cross-cultural upbringing or is navigating globally-mobile life: TCKs of all ages, expat families, international students, military families, missionary kids, diplomats' children, and cross-cultural professionals.",
+              "Core Platform is for anyone who has had a cross-cultural upbringing or is navigating globally-mobile life: Core Platforms of all ages, expat families, international students, military families, missionary kids, diplomats' children, and cross-cultural professionals.",
           },
           {
             question: "How are mental health professionals vetted before joining the directory?",
             answer:
-              "Every mental health professional completes an application process, provides verified credentials, and must demonstrate training or lived experience with TCK and cross-cultural populations. Our team reviews each profile before it goes live in the directory.",
+              "Every mental health professional completes an application process, provides verified credentials, and must demonstrate training or lived experience with Core Platform and cross-cultural populations. Our team reviews each profile before it goes live in the directory.",
           },
           {
-            question: "Is TCK Wellness a therapy service?",
+            question: "Is Core Platform a therapy service?",
             answer:
-              "No. TCK Wellness is a directory and community platform. We connect individuals with qualified mental health professionals — we do not provide therapy directly. All therapeutic relationships are between clients and their chosen mental health professionals.",
+              "No. Core Platform is a directory and community platform. We connect individuals with qualified mental health professionals — we do not provide therapy directly. All therapeutic relationships are between clients and their chosen mental health professionals.",
           },
           {
             question: "Can I use the directory if I live outside the United States?",
@@ -410,9 +410,9 @@ const aboutContent = {
               "Yes. Our mental health professionals serve clients globally, with many offering online/telehealth sessions. Use the location and online session filters in the directory to find mental health professionals who can work with you wherever you are.",
           },
           {
-            question: "How can I support TCK Wellness?",
+            question: "How can I support Core Platform?",
             answer:
-              "You can support us by sharing the platform with TCKs and expat communities, following us on social media, attending our events, or if you're a mental health professional — joining our network.",
+              "You can support us by sharing the platform with Core Platforms and expat communities, following us on social media, attending our events, or if you're a mental health professional — joining our network.",
           },
         ],
       },
@@ -421,8 +421,8 @@ const aboutContent = {
       id: uid(),
       type: "cta",
       props: {
-        heading: "Donate to TCK Wellness",
-        subheading: "Your support helps us maintain this platform, expand our directory, and provide resources to the global TCK community. Every contribution — large or small — makes a difference in connecting TCKs with the care they deserve.",
+        heading: "Donate to Core Platform",
+        subheading: "Your support helps us maintain this platform, expand our directory, and provide resources to the global Core Platform community. Every contribution — large or small — makes a difference in connecting Core Platforms with the care they deserve.",
         primaryText: "Donate",
         primaryLink: "/donate",
         variant: "accent",
@@ -457,7 +457,7 @@ const joinContent = {
       id: uid(),
       type: "join-registration-form",
       props: {
-        heading: "Are you a TCK-Informed Mental Health Professional?",
+        heading: "Are you a Core Platform-Informed Mental Health Professional?",
         accentHeading: "Join the Network!",
         subheading: "",
       },
@@ -479,12 +479,12 @@ const joinContent = {
           {
             icon: "ClipboardCheck",
             title: "Directory Listing",
-            description: "Get a professional profile in our searchable directory, visible to TCKs and cross-cultural families seeking specialized support worldwide.",
+            description: "Get a professional profile in our searchable directory, visible to Core Platforms and cross-cultural families seeking specialized support worldwide.",
           },
           {
             icon: "Users",
             title: "Client Connections",
-            description: "Receive referrals from individuals actively searching for TCK-informed mental health professionals who understand their experience.",
+            description: "Receive referrals from individuals actively searching for Core Platform-informed mental health professionals who understand their experience.",
           },
           {
             icon: "BarChart3",
@@ -494,7 +494,7 @@ const joinContent = {
           {
             icon: "Star",
             title: "Community Access",
-            description: "Join a network of TCK-informed professionals for peer consultation, shared resources, and community events.",
+            description: "Join a network of Core Platform-informed professionals for peer consultation, shared resources, and community events.",
           },
         ],
       },
@@ -516,7 +516,7 @@ const joinContent = {
           {
             icon: "ClipboardCheck",
             title: "1. Submit Your Application",
-            description: "Complete our online application with your credentials, areas of specialization, and experience working with TCK or cross-cultural populations.",
+            description: "Complete our online application with your credentials, areas of specialization, and experience working with Core Platform or cross-cultural populations.",
           },
           {
             icon: "CheckCircle",
@@ -525,8 +525,8 @@ const joinContent = {
           },
           {
             icon: "Search",
-            title: "3. TCK Competency Review",
-            description: "We assess your training and lived experience with TCK, expat, and cross-cultural clients to confirm a strong fit for our directory.",
+            title: "3. Core Platform Competency Review",
+            description: "We assess your training and lived experience with Core Platform, expat, and cross-cultural clients to confirm a strong fit for our directory.",
           },
           {
             icon: "User",
@@ -536,7 +536,7 @@ const joinContent = {
           {
             icon: "Star",
             title: "5. Go Live in the Directory",
-            description: "Once approved, your profile goes live and you begin receiving visibility from TCKs and families searching for support.",
+            description: "Once approved, your profile goes live and you begin receiving visibility from Core Platforms and families searching for support.",
           },
         ],
       },
@@ -547,7 +547,7 @@ const joinContent = {
       props: {
         heading: "Interested in Training but Not a Member?",
         subheading:
-          "We offer TCK-informed training programs for mental health professionals who want to deepen their cross-cultural competency. Whether you're just beginning to explore the TCK space or want to sharpen your skills, our training equips you with the frameworks and lived-experience insights to better serve globally-mobile clients.",
+          "We offer Core Platform-informed training programs for mental health professionals who want to deepen their cross-cultural competency. Whether you're just beginning to explore the Core Platform space or want to sharpen your skills, our training equips you with the frameworks and lived-experience insights to better serve globally-mobile clients.",
         primaryText: "Learn More",
         primaryLink: "/training",
         variant: "light",
@@ -562,7 +562,7 @@ const insightsContent = {
       id: uid(),
       type: "section-header",
       props: {
-        eyebrow: "TCK Wellness Blog",
+        eyebrow: "Core Platform Blog",
         title: "Insights & Articles",
         subtitle: "Explore articles, research, and insights on Third Culture Kid mental health and cross-cultural counseling.",
         alignment: "center",
@@ -600,7 +600,7 @@ const eventsContent = {
       props: {
         heading: "Upcoming Events",
         subheading:
-          "We offer quarterly TCK-informed trainings for professional providers. All of our members get free registration to the events below.",
+          "We offer quarterly Core Platform-informed trainings for professional providers. All of our members get free registration to the events below.",
         defaultView: "list",
         showViewToggle: true,
       },
@@ -632,7 +632,7 @@ const directoryContent = {
       props: {
         heading: "Find a Mental Health Professional",
         subheading:
-          "Search for TCK-informed care by specialty, location, language, or session format, then explore results on the map.",
+          "Search for Core Platform-informed care by specialty, location, language, or session format, then explore results on the map.",
         showCategoryChips: true,
         showMap: true,
       },
@@ -641,12 +641,12 @@ const directoryContent = {
       id: uid(),
       type: "text-image",
       props: {
-        heading: "Why TCK Informed?",
+        heading: "Why Core Platform Informed?",
         body:
-          "Traditional therapy models were developed within a single cultural framework. When TCKs bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A TCK-informed mental health professional understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.",
+          "Traditional therapy models were developed within a single cultural framework. When Core Platforms bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A Core Platform-informed mental health professional understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.",
         imageUrl:
           "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1200&h=1200&fit=crop&crop=faces",
-        imageAlt: "TCK-informed counseling",
+        imageAlt: "Core Platform-informed counseling",
         imagePosition: "left",
       },
     },
@@ -657,7 +657,7 @@ const directoryContent = {
         title: 'What does it mean to be "vetted"?',
         subtitle: "And just as importantly, what it does not mean.",
         content:
-          "<h3>What does it mean to be &ldquo;vetted&rdquo;?</h3><ul><li>Every mental health professional completes a detailed application process</li><li>Credentials and licensure are verified</li><li>Training or lived experience with TCK/cross-cultural populations is required</li><li>Profiles are reviewed by our team before being published</li></ul><h3>What does it NOT mean to be &ldquo;vetted&rdquo;?</h3><ul><li>We are not a licensing or credentialing body</li><li>We do not provide clinical supervision</li><li>Listing does not constitute an endorsement of specific therapeutic outcomes</li><li>We do not guarantee a therapeutic match, but we make finding one easier</li></ul>",
+          "<h3>What does it mean to be &ldquo;vetted&rdquo;?</h3><ul><li>Every mental health professional completes a detailed application process</li><li>Credentials and licensure are verified</li><li>Training or lived experience with Core Platform/cross-cultural populations is required</li><li>Profiles are reviewed by our team before being published</li></ul><h3>What does it NOT mean to be &ldquo;vetted&rdquo;?</h3><ul><li>We are not a licensing or credentialing body</li><li>We do not provide clinical supervision</li><li>Listing does not constitute an endorsement of specific therapeutic outcomes</li><li>We do not guarantee a therapeutic match, but we make finding one easier</li></ul>",
         alignment: "left",
         sectionBackgroundColor: "#f6f7f5",
         sectionShowRadialGradient: true,
@@ -674,9 +674,9 @@ const pages = [
     pageType: "home" as const,
     status: "published" as const,
     content: homeContent,
-    seoTitle: "TCK Wellness — Mental Health Support for Third Culture Kids",
+    seoTitle: "Core Platform — Mental Health Support for Third Culture Kids",
     seoDescription:
-      "Find a mental health professional who understands your cross-cultural experience. TCK Wellness connects Third Culture Kids, expats, and globally-mobile families with specialized mental health professionals.",
+      "Find a mental health professional who understands your cross-cultural experience. Core Platform connects Third Culture Kids, expats, and globally-mobile families with specialized mental health professionals.",
   },
   {
     slug: "about",
@@ -684,9 +684,9 @@ const pages = [
     pageType: "about" as const,
     status: "published" as const,
     content: aboutContent,
-    seoTitle: "About TCK Wellness",
+    seoTitle: "About Core Platform",
     seoDescription:
-      "Learn about TCK Wellness, our mission to support Third Culture Kids, and how we vet mental health professionals for cross-cultural competency.",
+      "Learn about Core Platform, our mission to support Third Culture Kids, and how we vet mental health professionals for cross-cultural competency.",
   },
   {
     slug: "contact",
@@ -694,9 +694,9 @@ const pages = [
     pageType: "contact" as const,
     status: "published" as const,
     content: contactContent,
-    seoTitle: "Contact TCK Wellness",
+    seoTitle: "Contact Core Platform",
     seoDescription:
-      "Get in touch with the TCK Wellness team. We're here to help you find the right mental health professional or answer questions about our platform.",
+      "Get in touch with the Core Platform team. We're here to help you find the right mental health professional or answer questions about our platform.",
   },
   {
     slug: "join",
@@ -704,9 +704,9 @@ const pages = [
     pageType: "custom" as const,
     status: "published" as const,
     content: joinContent,
-    seoTitle: "Join the TCK Wellness Mental Health Professional Network",
+    seoTitle: "Join the Core Platform Mental Health Professional Network",
     seoDescription:
-      "Apply to join the TCK Wellness mental health professional network. Reach TCKs and cross-cultural families who need your specialized expertise.",
+      "Apply to join the Core Platform mental health professional network. Reach Core Platforms and cross-cultural families who need your specialized expertise.",
   },
   {
     slug: "insights",
@@ -715,7 +715,7 @@ const pages = [
     template: "with-sidebar" as const,
     status: "published" as const,
     content: insightsContent,
-    seoTitle: "Insights & Articles | TCK Wellness",
+    seoTitle: "Insights & Articles | Core Platform",
     seoDescription:
       "Explore articles, research, and insights on Third Culture Kid mental health and cross-cultural counseling.",
   },
@@ -725,9 +725,9 @@ const pages = [
     pageType: "custom" as const,
     status: "published" as const,
     content: eventsContent,
-    seoTitle: "Upcoming Events | TCK Wellness",
+    seoTitle: "Upcoming Events | Core Platform",
     seoDescription:
-      "Explore upcoming TCK Wellness trainings, workshops, and community events.",
+      "Explore upcoming Core Platform trainings, workshops, and community events.",
   },
   {
     slug: "recordings",
@@ -735,9 +735,9 @@ const pages = [
     pageType: "custom" as const,
     status: "published" as const,
     content: recordingsContent,
-    seoTitle: "Video Archives | TCK Wellness",
+    seoTitle: "Video Archives | Core Platform",
     seoDescription:
-      "Watch past TCK Wellness trainings and webinars from the video archives.",
+      "Watch past Core Platform trainings and webinars from the video archives.",
   },
   {
     slug: "directory",
@@ -745,9 +745,9 @@ const pages = [
     pageType: "custom" as const,
     status: "published" as const,
     content: directoryContent,
-    seoTitle: "Find a Mental Health Professional | TCK Wellness",
+    seoTitle: "Find a Mental Health Professional | Core Platform",
     seoDescription:
-      "Browse TCK-informed mental health professionals by location, specialty, language, and more.",
+      "Browse Core Platform-informed mental health professionals by location, specialty, language, and more.",
   },
 ];
 

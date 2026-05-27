@@ -15,12 +15,12 @@ const membershipBenefits = [
   {
     icon: ClipboardCheck,
     title: "Directory Listing",
-    description: "Get a professional profile in our searchable directory, visible to TCKs and cross-cultural families seeking specialized support worldwide.",
+    description: "Get a professional profile in our searchable directory, visible to Core Platforms and cross-cultural families seeking specialized support worldwide.",
   },
   {
     icon: Users,
     title: "Client Connections",
-    description: "Receive referrals from individuals actively searching for TCK-informed mental health professionals who understand their experience.",
+    description: "Receive referrals from individuals actively searching for Core Platform-informed mental health professionals who understand their experience.",
   },
   {
     icon: BarChart3,
@@ -30,7 +30,7 @@ const membershipBenefits = [
   {
     icon: Star,
     title: "Community Access",
-    description: "Join a network of TCK-informed professionals for peer consultation, shared resources, and community events.",
+    description: "Join a network of Core Platform-informed professionals for peer consultation, shared resources, and community events.",
   },
 ];
 
@@ -38,7 +38,7 @@ const applicationSteps = [
   {
     step: 1,
     title: "Submit Your Application",
-    description: "Complete our online application with your credentials, areas of specialization, and experience working with TCK or cross-cultural populations.",
+    description: "Complete our online application with your credentials, areas of specialization, and experience working with Core Platform or cross-cultural populations.",
   },
   {
     step: 2,
@@ -47,8 +47,8 @@ const applicationSteps = [
   },
   {
     step: 3,
-    title: "TCK Competency Review",
-    description: "We assess your training and lived experience with TCK, expat, and cross-cultural clients to confirm a strong fit for our directory.",
+    title: "Core Platform Competency Review",
+    description: "We assess your training and lived experience with Core Platform, expat, and cross-cultural clients to confirm a strong fit for our directory.",
   },
   {
     step: 4,
@@ -58,7 +58,7 @@ const applicationSteps = [
   {
     step: 5,
     title: "Go Live in the Directory",
-    description: "Once approved, your profile goes live and you begin receiving visibility from TCKs and families searching for support.",
+    description: "Once approved, your profile goes live and you begin receiving visibility from Core Platforms and families searching for support.",
   },
 ];
 
@@ -69,7 +69,7 @@ export default function JoinNetworkPage() {
     <PageLayout>
       <section className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="section-join-hero">
         <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title">
-          Are you a TCK-Informed Mental Health Professional?{" "}
+          Are you a Core Platform-Informed Mental Health Professional?{" "}
           <span className="text-accent">Join the Network!</span>
         </h1>
 
@@ -145,7 +145,7 @@ export default function JoinNetworkPage() {
             Interested in Training but Not a Member?
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-8">
-            We offer TCK-informed training programs for mental health professionals who want to deepen their cross-cultural competency. Whether you're just beginning to explore the TCK space or want to sharpen your skills, our training equips you with the frameworks and lived-experience insights to better serve globally-mobile clients.
+            We offer Core Platform-informed training programs for mental health professionals who want to deepen their cross-cultural competency. Whether you're just beginning to explore the Core Platform space or want to sharpen your skills, our training equips you with the frameworks and lived-experience insights to better serve globally-mobile clients.
           </p>
           <Button size="lg" className="w-full bg-accent text-accent-foreground border-accent-border sm:w-auto" data-testid="button-learn-more-training">
             Learn More

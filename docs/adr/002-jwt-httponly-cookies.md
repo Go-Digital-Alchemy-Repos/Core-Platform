@@ -20,7 +20,7 @@ We chose **JWT tokens stored in HTTP-only cookies**. The implementation:
 - Tokens contain `userId`, `email`, and `role`
 - Tokens expire after 7 days
 - Cookie settings: `httpOnly: true`, `secure: true` (production), `sameSite: lax`, `path: /`
-- The cookie name is `tck_token`
+- The cookie name is `corePlatform_token`
 
 ## Consequences
 

@@ -27,21 +27,21 @@ import Autoplay from "embla-carousel-autoplay";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
 
 const stats = [
-  { value: "60%", label: "of TCKs experienced symptoms of", highlight: "anxiety" },
-  { value: "59%", label: "of TCKs experienced symptoms of", highlight: "depression" },
-  { value: "47%", label: "of TCKs experienced symptoms of", highlight: "suicidal ideation" },
+  { value: "60%", label: "of Core Platforms experienced symptoms of", highlight: "anxiety" },
+  { value: "59%", label: "of Core Platforms experienced symptoms of", highlight: "depression" },
+  { value: "47%", label: "of Core Platforms experienced symptoms of", highlight: "suicidal ideation" },
 ];
 
 const testimonials = [
   {
     quote: "For the first time, I didn't have to explain what it means to grow up between cultures. My mental health professional just understood.",
     name: "Sarah M.",
-    role: "Adult TCK",
+    role: "Adult Core Platform",
     location: "Singapore",
     avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "TCK Wellness connected me with a mental health professional who speaks my language — literally and figuratively. It's been life-changing.",
+    quote: "Core Platform connected me with a mental health professional who speaks my language — literally and figuratively. It's been life-changing.",
     name: "James K.",
     role: "Expat Parent",
     location: "Dubai",
@@ -55,16 +55,16 @@ const testimonials = [
     avatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "I struggled for years to find someone who understood repatriation grief. TCK Wellness made it possible in minutes.",
+    quote: "I struggled for years to find someone who understood repatriation grief. Core Platform made it possible in minutes.",
     name: "Lena T.",
-    role: "TCK & College Student",
+    role: "Core Platform & College Student",
     location: "Germany",
     avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=faces",
   },
   {
     quote: "The specialization filters helped me find a mental health professional experienced with military kid transitions. Highly recommend.",
     name: "Marcus W.",
-    role: "Military TCK",
+    role: "Military Core Platform",
     location: "Virginia, USA",
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces",
   },
@@ -80,7 +80,7 @@ const testimonials = [
 const vettedMeans = [
   "Every mental health professional completes a detailed application process",
   "Credentials and licensure are verified",
-  "Training or lived experience with TCK/cross-cultural populations is required",
+  "Training or lived experience with Core Platform/cross-cultural populations is required",
   "Profiles are reviewed by our team before being published",
 ];
 
@@ -93,28 +93,28 @@ const vettedDoesNotMean = [
 
 const faqs = [
   {
-    question: "What is a Third Culture Kid (TCK)?",
-    answer: "A Third Culture Kid (TCK) is a person who has spent a significant part of their developmental years outside their parents' culture. They build relationships with multiple cultures while not having full ownership of any, creating what is often called a 'third culture' — a blend of their passport country and host countries.",
+    question: "What is a Third Culture Kid (Core Platform)?",
+    answer: "A Third Culture Kid (Core Platform) is a person who has spent a significant part of their developmental years outside their parents' culture. They build relationships with multiple cultures while not having full ownership of any, creating what is often called a 'third culture' — a blend of their passport country and host countries.",
   },
   {
-    question: "Who can use TCK Wellness to find a mental health professional?",
-    answer: "TCK Wellness is for anyone who has had a cross-cultural upbringing or is navigating globally-mobile life: TCKs of all ages, expat families, international students, military families, missionary kids, diplomats' children, and cross-cultural professionals.",
+    question: "Who can use Core Platform to find a mental health professional?",
+    answer: "Core Platform is for anyone who has had a cross-cultural upbringing or is navigating globally-mobile life: Core Platforms of all ages, expat families, international students, military families, missionary kids, diplomats' children, and cross-cultural professionals.",
   },
   {
     question: "How are mental health professionals vetted before joining the directory?",
-    answer: "Every mental health professional completes an application process, provides verified credentials, and must demonstrate training or lived experience with TCK and cross-cultural populations. Our team reviews each profile before it goes live in the directory.",
+    answer: "Every mental health professional completes an application process, provides verified credentials, and must demonstrate training or lived experience with Core Platform and cross-cultural populations. Our team reviews each profile before it goes live in the directory.",
   },
   {
-    question: "Is TCK Wellness a therapy service?",
-    answer: "No. TCK Wellness is a directory and community platform. We connect individuals with qualified mental health professionals — we do not provide therapy directly. All therapeutic relationships are between clients and their chosen mental health professionals.",
+    question: "Is Core Platform a therapy service?",
+    answer: "No. Core Platform is a directory and community platform. We connect individuals with qualified mental health professionals — we do not provide therapy directly. All therapeutic relationships are between clients and their chosen mental health professionals.",
   },
   {
     question: "Can I use the directory if I live outside the United States?",
     answer: "Yes. Our mental health professionals serve clients globally, with many offering online/telehealth sessions. Use the location and online session filters in the directory to find mental health professionals who can work with you wherever you are.",
   },
   {
-    question: "How can I support TCK Wellness?",
-    answer: "You can support us by sharing the platform with TCKs and expat communities, following us on social media, attending our events, or if you're a mental health professional — joining our network.",
+    question: "How can I support Core Platform?",
+    answer: "You can support us by sharing the platform with Core Platforms and expat communities, following us on social media, attending our events, or if you're a mental health professional — joining our network.",
   },
 ];
 
@@ -256,7 +256,7 @@ export default function AboutPage() {
                 History
               </h2>
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                TCK Wellness was born from the lived experience of growing up between cultures. Our founders — Adult TCKs and mental health advocates — experienced firsthand how difficult it is to find a mental health professional who truly understands what it means to call multiple countries "home." In 2024, they set out to build a bridge between Third Culture Kids and the culturally competent professionals who serve them.
+                Core Platform was born from the lived experience of growing up between cultures. Our founders — Adult Core Platforms and mental health advocates — experienced firsthand how difficult it is to find a mental health professional who truly understands what it means to call multiple countries "home." In 2024, they set out to build a bridge between Third Culture Kids and the culturally competent professionals who serve them.
               </p>
             </div>
 
@@ -265,7 +265,7 @@ export default function AboutPage() {
                 Vision & Mission
               </h2>
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Our vision is a world where every Third Culture Kid has access to mental health support that honors their multicultural identity. Our mission is to build the most trusted directory of TCK-informed mental health professionals — vetted, accessible, and global — so that no one has to navigate the complexities of cross-cultural life alone.
+                Our vision is a world where every Third Culture Kid has access to mental health support that honors their multicultural identity. Our mission is to build the most trusted directory of Core Platform-informed mental health professionals — vetted, accessible, and global — so that no one has to navigate the complexities of cross-cultural life alone.
               </p>
             </div>
           </div>
@@ -274,7 +274,7 @@ export default function AboutPage() {
             <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
               <img
                 src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=400&fit=crop&crop=faces"
-                alt="TCK community"
+                alt="Core Platform community"
                 className="w-full h-full object-cover"
                 data-testid="img-about-hero"
               />
@@ -287,7 +287,7 @@ export default function AboutPage() {
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center">
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-stats-heading">The Stats Speak for Themselves</h2>
           <p className="sm:text-base text-muted-foreground mb-10 max-w-3xl mx-auto text-[18px]">
-            According to <a href="https://www.tcktraining.com/research" target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-2 hover:text-accent/80">TCK Training's 2024 research</a>, survey of 1600+ adult TCKs:
+            According to <a href="https://www.corePlatformtraining.com/research" target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-2 hover:text-accent/80">Core Platform Training's 2024 research</a>, survey of 1600+ adult Core Platforms:
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-10 mb-10">
             {stats.map((stat) => (
@@ -299,24 +299,24 @@ export default function AboutPage() {
           </p>
         </div>
       </section>
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-why-tck-informed">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-why-corePlatform-informed">
         <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 md:gap-12 items-center">
           <div className="flex justify-center">
             <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
               <img
                 src="https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=300&h=300&fit=crop&crop=faces"
-                alt="TCK-informed counseling"
+                alt="Core Platform-informed counseling"
                 className="w-full h-full object-cover"
-                data-testid="img-why-tck-informed"
+                data-testid="img-why-corePlatform-informed"
               />
             </div>
           </div>
           <div>
             <h2 className="font-heading text-2xl sm:text-3xl font-semibold mb-3" data-testid="text-why-informed-heading">
-              Why TCK Informed?
+              Why Core Platform Informed?
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Traditional therapy models were developed within a single cultural framework. When TCKs bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A TCK-informed mental health professional understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.
+              Traditional therapy models were developed within a single cultural framework. When Core Platforms bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A Core Platform-informed mental health professional understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.
             </p>
           </div>
         </div>
@@ -359,7 +359,7 @@ export default function AboutPage() {
           What Are People Saying?
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mx-auto mb-10 sm:mb-14">
-          Hear from TCKs, expat families, and mental health professionals who have found their match.
+          Hear from Core Platforms, expat families, and mental health professionals who have found their match.
         </p>
         <TestimonialsCarousel />
       </section>
@@ -430,10 +430,10 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-10 md:gap-16 items-center">
             <div className="text-center md:text-left">
               <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold mb-3 sm:mb-4" data-testid="text-donate-heading">
-                Donate to TCK Wellness
+                Donate to Core Platform
               </h2>
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-xl mb-8">
-                Your support helps us maintain this platform, expand our directory, and provide resources to the global TCK community. Every contribution — large or small — makes a difference in connecting TCKs with the care they deserve.
+                Your support helps us maintain this platform, expand our directory, and provide resources to the global Core Platform community. Every contribution — large or small — makes a difference in connecting Core Platforms with the care they deserve.
               </p>
               <Button size="lg" className="bg-accent text-accent-foreground border-accent-border" data-testid="button-donate">
                 <Heart className="mr-2 h-4 w-4" />
@@ -444,7 +444,7 @@ export default function AboutPage() {
               <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-2xl bg-accent/10 flex items-center justify-center overflow-hidden">
                 <img
                   src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=300&h=300&fit=crop"
-                  alt="Support TCK Wellness"
+                  alt="Support Core Platform"
                   className="w-full h-full object-cover"
                   data-testid="img-donate"
                 />

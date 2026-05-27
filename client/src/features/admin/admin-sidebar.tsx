@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-import logoIcon from "@assets/TCK-Wellness_Icon.webp";
+import logoIcon from "@assets/Core-Platform_Icon.webp";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -250,7 +250,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
               <div className="flex items-center gap-3" data-testid="text-admin-title">
                 <img
                   src={adminLogo}
-                  alt="TCK Wellness"
+                  alt="Core Platform"
                   className="h-9 w-9 object-contain flex-shrink-0"
                   data-testid="img-admin-logo"
                 />

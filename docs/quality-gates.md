@@ -1,6 +1,6 @@
 # Quality Gates
 
-This document describes the quality checks available in the TCK Wellness codebase and how to use them.
+This document describes the quality checks available in the Core Platform codebase and how to use them.
 
 ## Available Scripts
 

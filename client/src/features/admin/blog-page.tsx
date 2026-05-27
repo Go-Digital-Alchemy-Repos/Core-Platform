@@ -299,7 +299,7 @@ function BlogContent() {
                 id="category"
                 value={formData.category}
                 onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value }))}
-                placeholder="e.g., TCK Research, Mental Health Professional Tips"
+                placeholder="e.g., Core Platform Research, Mental Health Professional Tips"
                 data-testid="input-post-category"
               />
             </div>
@@ -309,7 +309,7 @@ function BlogContent() {
                 id="tags"
                 value={formData.tags}
                 onChange={(e) => setFormData((f) => ({ ...f, tags: e.target.value }))}
-                placeholder="e.g., TCK, identity, belonging"
+                placeholder="e.g., Core Platform, identity, belonging"
                 data-testid="input-post-tags"
               />
             </div>

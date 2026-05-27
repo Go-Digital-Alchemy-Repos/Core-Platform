@@ -77,7 +77,7 @@ export default function RegisterPage() {
     };
     register.mutate(data, {
       onSuccess: (result: any) => {
-        toast({ title: "Account created!", description: "Welcome to TCK Wellness." });
+        toast({ title: "Account created!", description: "Welcome to Core Platform." });
         redirectByRole(result.role);
       },
       onError: (error: Error) => {
@@ -101,7 +101,7 @@ export default function RegisterPage() {
               Create an Account
             </h1>
             <p className="text-muted-foreground mt-2" data-testid="text-register-subtitle">
-              Join the TCK Wellness community
+              Join the Core Platform community
             </p>
           </div>
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The TCK Wellness CMS visual builder is a registry-first, canvas-based editor for CMS pages. It preserves the existing structured JSON page model while upgrading the authoring experience from form-driven editing to a synchronized navigator, visual canvas, and inspector.
+The Core Platform CMS visual builder is a registry-first, canvas-based editor for CMS pages. It preserves the existing structured JSON page model while upgrading the authoring experience from form-driven editing to a synchronized navigator, visual canvas, and inspector.
 
 This phase does **not** introduce front-end live editing. It focuses only on the admin authoring experience.
 

@@ -65,7 +65,7 @@ async function geocodeAddress(data: TherapistLocationFields): Promise<GeocodedCo
   url.searchParams.set("limit", "1");
   url.searchParams.set("q", addressParts.join(", "));
 
-  const userAgent = "TCK-Wellness/1.0 (support@tckwellness.org)";
+  const userAgent = "Core-Platform/1.0 (support@coreplatform.org)";
   const response = await fetch(url, {
     headers: {
       "User-Agent": userAgent,

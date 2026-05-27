@@ -110,17 +110,17 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
     url: "/",
     metadata: "Page",
     searchableText: [
-      "TCK Wellness",
+      "Core Platform",
       "Find a Mental Health Professional",
       "Applications open in June",
-      "Why TCK Informed",
+      "Why Core Platform Informed",
       "Culturally Informed Care",
       "Specialized Support",
       "Global Community",
       "Featured Articles",
       "Upcoming Events",
     ].join(" "),
-    excerptSource: "Explore TCK-informed mental health support, featured articles, and upcoming events.",
+    excerptSource: "Explore Core Platform-informed mental health support, featured articles, and upcoming events.",
   },
   {
     slug: "about",
@@ -129,14 +129,14 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
     url: "/about",
     metadata: "Page",
     searchableText: [
-      "About TCK Wellness",
+      "About Core Platform",
       "What is a Third Culture Kid",
       "What does it mean to be vetted",
       "Every mental health professional completes a detailed application process",
       "Credentials and licensure are verified",
-      "Training or lived experience with TCK cross-cultural populations is required",
+      "Training or lived experience with Core Platform cross-cultural populations is required",
     ].join(" "),
-    excerptSource: "Learn what it means for a provider to be vetted and how TCK Wellness supports cross-cultural mental health care.",
+    excerptSource: "Learn what it means for a provider to be vetted and how Core Platform supports cross-cultural mental health care.",
   },
   {
     slug: "contact",
@@ -150,7 +150,7 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
       "Have a question or feedback",
       "Company Information",
     ].join(" "),
-    excerptSource: "Get in touch with TCK Wellness through the contact form and company information.",
+    excerptSource: "Get in touch with Core Platform through the contact form and company information.",
   },
   {
     slug: "join",
@@ -159,7 +159,7 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
     url: "/join",
     metadata: "Page",
     searchableText: [
-      "Are you a TCK-Informed Mental Health Professional Join the Network",
+      "Are you a Core Platform-Informed Mental Health Professional Join the Network",
       "What Does Membership Include",
       "Directory Listing",
       "Client Connections",
@@ -168,14 +168,14 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
       "The Application Process",
       "Submit Your Application",
       "Credential Verification",
-      "TCK Competency Review",
+      "Core Platform Competency Review",
       "Profile Setup",
       "Go Live in the Directory",
       "Interested in Training but Not a Member",
       "Applications open in June",
     ].join(" "),
     excerptSource:
-      "The Application Process includes Submit Your Application, Credential Verification, TCK Competency Review, Profile Setup, and Go Live in the Directory.",
+      "The Application Process includes Submit Your Application, Credential Verification, Core Platform Competency Review, Profile Setup, and Go Live in the Directory.",
   },
   {
     slug: "directory",
@@ -186,11 +186,11 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
     searchableText: [
       "Find a Mental Health Professional",
       "Search by specialty location language or session format",
-      "Why TCK Informed",
+      "Why Core Platform Informed",
       "What does it mean to be vetted",
       "Every mental health professional completes a detailed application process",
     ].join(" "),
-    excerptSource: "Search for TCK-informed care by specialty, location, language, or session format.",
+    excerptSource: "Search for Core Platform-informed care by specialty, location, language, or session format.",
   },
   {
     slug: "privacy-policy",
@@ -200,9 +200,9 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
     metadata: "Page",
     searchableText: [
       "Privacy Policy",
-      "how TCK Wellness collects uses stores and protects information",
+      "how Core Platform collects uses stores and protects information",
     ].join(" "),
-    excerptSource: "Review how TCK Wellness collects, uses, stores, and protects information across the website and related services.",
+    excerptSource: "Review how Core Platform collects, uses, stores, and protects information across the website and related services.",
   },
   {
     slug: "terms-of-service",
@@ -212,9 +212,9 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
     metadata: "Page",
     searchableText: [
       "Terms of Service",
-      "terms governing use of the TCK Wellness website directory events and services",
+      "terms governing use of the Core Platform website directory events and services",
     ].join(" "),
-    excerptSource: "Review the terms governing use of the TCK Wellness website, directory, events, and related services.",
+    excerptSource: "Review the terms governing use of the Core Platform website, directory, events, and related services.",
   },
   {
     slug: "disclaimer",
@@ -226,9 +226,9 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
       "Disclaimer",
       "mental health emergency",
       "suicide and crisis lifeline",
-      "TCK Wellness conducts a vetting process",
+      "Core Platform conducts a vetting process",
     ].join(" "),
-    excerptSource: "Review emergency guidance, directory vetting limitations, and important information about using the TCK Wellness directory and related services.",
+    excerptSource: "Review emergency guidance, directory vetting limitations, and important information about using the Core Platform directory and related services.",
   },
 ];
 

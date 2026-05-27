@@ -1,4 +1,4 @@
-We are beginning a nondestructive platform integrity pass for the TCK Wellness application. This app is a production-oriented BetterHelp-style counselor directory and subscription platform built with React + TypeScript on the frontend and Express + TypeScript + Drizzle on the backend. Your task is to stabilize the codebase so future phases can be implemented safely.
+We are beginning a nondestructive platform integrity pass for the Core Platform application. This app is a production-oriented BetterHelp-style counselor directory and subscription platform built with React + TypeScript on the frontend and Express + TypeScript + Drizzle on the backend. Your task is to stabilize the codebase so future phases can be implemented safely.
 
 IMPORTANT CONTEXT
 - This project already has working features and existing UI/UX that must be preserved.

@@ -1,6 +1,6 @@
 # CMS Pages And Visual Builder
 
-The TCK Wellness page builder uses structured content blocks rather than freeform page design. This keeps the site maintainable, consistent, and safer for non-technical editors.
+The Core Platform page builder uses structured content blocks rather than freeform page design. This keeps the site maintainable, consistent, and safer for non-technical editors.
 
 ## Builder Layout
 

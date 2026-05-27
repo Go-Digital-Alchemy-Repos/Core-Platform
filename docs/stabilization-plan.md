@@ -1,4 +1,4 @@
-# TCK Wellness — Stabilization & Improvement Plan
+# Core Platform — Stabilization & Improvement Plan
 
 Generated from full codebase audit. Non-destructive; preserves all existing features.
 

@@ -78,7 +78,7 @@ function NewsletterWidget({ widget }: { widget: SidebarWidget }) {
   const heading = widget.title || "Stay Connected";
   const description = text(
     widget.settings.description,
-    "Get TCK-informed articles, events, and resources in your inbox."
+    "Get Core Platform-informed articles, events, and resources in your inbox."
   );
   const buttonText = text(widget.settings.buttonText, "Sign Up");
   const formSlug = text(widget.settings.formSlug, "newsletter-signup");

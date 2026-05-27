@@ -50,14 +50,14 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
         stats: [
           { value: "500+", label: "Verified Counselors" },
           { value: "40+", label: "Countries Represented" },
-          { value: "10,000+", label: "TCKs Connected" },
+          { value: "10,000+", label: "Core Platforms Connected" },
           { value: "4.9/5", label: "Average Rating" },
         ],
       }),
       block("section-header", {
         eyebrow: "How It Works",
         title: "Your Path to Support in 3 Simple Steps",
-        subtitle: "Getting started with TCK Wellness is straightforward and stress-free.",
+        subtitle: "Getting started with Core Platform is straightforward and stress-free.",
       }),
       block("delivery-setup", {
         title: "",
@@ -68,26 +68,26 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
         ],
       }),
       block("feature-list", {
-        title: "Why TCK Wellness?",
-        subtitle: "We built this platform specifically for the TCK community.",
+        title: "Why Core Platform?",
+        subtitle: "We built this platform specifically for the Core Platform community.",
         columns: "3",
         features: [
           { icon: "Globe", title: "Culturally Informed Care", description: "Every counselor understands the nuances of growing up between cultures." },
           { icon: "ShieldCheck", title: "Vetted Professionals", description: "Thorough verification ensures quality and safety for every member." },
-          { icon: "Heart", title: "TCK-Specific Training", description: "Counselors with specialized training in cross-cultural identity and transition." },
+          { icon: "Heart", title: "Core Platform-Specific Training", description: "Counselors with specialized training in cross-cultural identity and transition." },
         ],
       }),
       block("testimonials", {
         title: "What Our Community Says",
         items: [
-          { quote: "Finding a counselor who truly understood my TCK experience was life-changing.", name: "Sarah M.", role: "Adult TCK", location: "Singapore" },
-          { quote: "I finally feel seen and understood in a way I never did before.", name: "James T.", role: "TCK Client", location: "Germany" },
+          { quote: "Finding a counselor who truly understood my Core Platform experience was life-changing.", name: "Sarah M.", role: "Adult Core Platform", location: "Singapore" },
+          { quote: "I finally feel seen and understood in a way I never did before.", name: "James T.", role: "Core Platform Client", location: "Germany" },
           { quote: "The platform made it so easy to find the right fit for my needs.", name: "Priya K.", role: "Expat Parent", location: "UAE" },
         ],
       }),
       block("cta", {
         heading: "Ready to Find Your Match?",
-        subheading: "Browse our network of TCK-informed counselors and take the first step today.",
+        subheading: "Browse our network of Core Platform-informed counselors and take the first step today.",
         primaryText: "Browse Counselors",
         primaryLink: "/directory",
         secondaryText: "Join as a Counselor",
@@ -106,23 +106,23 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     blocks: () => [
       block("section-header", {
         eyebrow: "Our Story",
-        title: "The TCK Wellness Mission",
+        title: "The Core Platform Mission",
         subtitle: "How we're building a bridge between Third Culture Kids and the mental health support they deserve.",
         alignment: "center",
       }),
       block("text-image", {
         heading: "A Community Built on Understanding",
-        body: "TCK Wellness was born from a simple realization: Third Culture Kids face unique mental health challenges that most professionals aren't equipped to handle. Growing up between cultures creates a rich but complex inner world that requires specialized understanding.",
-        imageAlt: "TCK community",
+        body: "Core Platform was born from a simple realization: Third Culture Kids face unique mental health challenges that most professionals aren't equipped to handle. Growing up between cultures creates a rich but complex inner world that requires specialized understanding.",
+        imageAlt: "Core Platform community",
         imagePosition: "right",
       }),
       block("rich-text", {
-        content: "<h2>Why Cross-Cultural Competence Matters</h2><p>Traditional therapy approaches often miss the nuances of the TCK experience. Issues like rootlessness, cultural identity confusion, and hidden grief require professionals who have either lived the experience themselves or received specific training.</p><p>Our platform bridges this gap by connecting TCKs with counselors who truly understand their world.</p>",
+        content: "<h2>Why Cross-Cultural Competence Matters</h2><p>Traditional therapy approaches often miss the nuances of the Core Platform experience. Issues like rootlessness, cultural identity confusion, and hidden grief require professionals who have either lived the experience themselves or received specific training.</p><p>Our platform bridges this gap by connecting Core Platforms with counselors who truly understand their world.</p>",
         alignment: "left",
       }),
       block("text-image", {
         heading: "Our Impact So Far",
-        body: "Since our founding, we've connected thousands of TCKs with culturally informed counselors across more than 40 countries. Every match represents a step toward better mental health support for the global community.",
+        body: "Since our founding, we've connected thousands of Core Platforms with culturally informed counselors across more than 40 countries. Every match represents a step toward better mental health support for the global community.",
         imageAlt: "Global impact",
         imagePosition: "left",
       }),
@@ -133,7 +133,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
           { icon: "Globe", title: "Global Network", description: "Counselors across 40+ countries speaking dozens of languages." },
           { icon: "ShieldCheck", title: "Rigorous Vetting", description: "Every professional undergoes thorough verification and background checks." },
           { icon: "Heart", title: "Cultural Sensitivity", description: "Training requirements ensure counselors understand cross-cultural challenges." },
-          { icon: "Users", title: "Community Focus", description: "Built by TCKs, for TCKs — we understand because we've lived it." },
+          { icon: "Users", title: "Community Focus", description: "Built by Core Platforms, for Core Platforms — we understand because we've lived it." },
         ],
       }),
       block("cta", {
@@ -157,7 +157,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     blocks: () => [
       block("hero", {
         heading: "Stop Explaining Your Background — Start Being Understood",
-        subheading: "Connect with a counselor who gets the TCK experience without needing a cultural crash course.",
+        subheading: "Connect with a counselor who gets the Core Platform experience without needing a cultural crash course.",
         ctaText: "Find Your Counselor",
         ctaLink: "/directory",
         ctaSecondaryText: "",
@@ -166,10 +166,10 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
         badge: "For Third Culture Kids",
       }),
       block("recovery-use-cases", {
-        title: "Is TCK Wellness Right for You?",
+        title: "Is Core Platform Right for You?",
         subtitle: "Our platform serves a diverse range of cross-cultural individuals and families.",
         personas: [
-          { title: "Adult TCKs", description: "You grew up across cultures and struggle with identity, belonging, or unresolved grief from constant transitions.", icon: "User" },
+          { title: "Adult Core Platforms", description: "You grew up across cultures and struggle with identity, belonging, or unresolved grief from constant transitions.", icon: "User" },
           { title: "Expat Families", description: "You're raising children between cultures and want proactive mental health support for your family.", icon: "Users" },
           { title: "Cross-Cultural Couples", description: "You and your partner navigate different cultural backgrounds and need help bridging the gap.", icon: "Heart" },
         ],
@@ -210,7 +210,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       }),
       block("cta", {
         heading: "Take the First Step Today",
-        subheading: "Join thousands of TCKs who've found the support they deserve. Browse our directory — it's completely free.",
+        subheading: "Join thousands of Core Platforms who've found the support they deserve. Browse our directory — it's completely free.",
         primaryText: "Browse Counselors Now",
         primaryLink: "/directory",
         secondaryText: "",
@@ -228,7 +228,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     blockCount: 3,
     blocks: () => [
       block("section-header", {
-        eyebrow: "TCK Wellness Blog",
+        eyebrow: "Core Platform Blog",
         title: "Insights & Articles",
         subtitle: "Explore articles, research, and insights on Third Culture Kid mental health and cross-cultural counseling.",
         alignment: "center",
@@ -257,7 +257,7 @@ export interface LandingPageGoal {
 export const LANDING_PAGE_GOALS: LandingPageGoal[] = [
   { id: "find-counselor", label: "Help users find a counselor", description: "Drive visitors to browse and connect with counselors" },
   { id: "join-network", label: "Recruit counselors to join", description: "Convince mental health professionals to join the network" },
-  { id: "build-awareness", label: "Build awareness about TCK wellness", description: "Educate visitors about the TCK experience and the platform" },
+  { id: "build-awareness", label: "Build awareness about Core Platform", description: "Educate visitors about the Core Platform experience and the platform" },
   { id: "promote-event", label: "Promote an event or webinar", description: "Drive registrations for upcoming community events" },
   { id: "general", label: "General purpose landing page", description: "Flexible landing page for any campaign or purpose" },
 ];
@@ -268,7 +268,7 @@ export interface AudienceOption {
 }
 
 export const AUDIENCE_OPTIONS: AudienceOption[] = [
-  { id: "adult-tcks", label: "Adult TCKs" },
+  { id: "adult-corePlatforms", label: "Adult Core Platforms" },
   { id: "expat-families", label: "Expat Families" },
   { id: "cross-cultural-couples", label: "Cross-Cultural Couples" },
   { id: "organizations", label: "Organizations & Schools" },
@@ -315,7 +315,7 @@ export function getRecommendedBlocks(goalId: string): WizardBlockOption[] {
 }
 
 const AUDIENCE_LABELS: Record<string, string> = {
-  "adult-tcks": "Adult TCKs",
+  "adult-corePlatforms": "Adult Core Platforms",
   "expat-families": "Expat Families",
   "cross-cultural-couples": "Cross-Cultural Couples",
   "organizations": "Organizations & Schools",
@@ -333,11 +333,11 @@ function buildAudienceSubheading(audiences: string[], fallback: string): string 
 
 function buildUseCasesForAudiences(audiences: string[]) {
   const personas: Record<string, { title: string; description: string; icon: string }> = {
-    "adult-tcks": { title: "Adult TCKs", description: "Adults who grew up across cultures and need support navigating identity, belonging, and transitions.", icon: "User" },
+    "adult-corePlatforms": { title: "Adult Core Platforms", description: "Adults who grew up across cultures and need support navigating identity, belonging, and transitions.", icon: "User" },
     "expat-families": { title: "Expat Families", description: "Parents raising children between cultures who want proactive mental health support.", icon: "Users" },
     "cross-cultural-couples": { title: "Cross-Cultural Couples", description: "Partners navigating different cultural backgrounds who need help bridging the gap.", icon: "Heart" },
     "organizations": { title: "Organizations & Schools", description: "Companies and schools supporting internationally mobile employees and students.", icon: "Building2" },
-    "counselors": { title: "Mental Health Professionals", description: "Clinicians seeking to join a network of TCK-informed practitioners.", icon: "UserCheck" },
+    "counselors": { title: "Mental Health Professionals", description: "Clinicians seeking to join a network of Core Platform-informed practitioners.", icon: "UserCheck" },
     "general": { title: "The Global Community", description: "Anyone seeking culturally informed mental health support.", icon: "Globe" },
   };
   return audiences.map((a) => personas[a] ?? personas["general"]!);
@@ -362,7 +362,7 @@ export function generateLandingPageBlocks(
 
     if (opt.type === "hero") {
       blocks.push(block("hero", {
-        heading: headline || "Welcome to TCK Wellness",
+        heading: headline || "Welcome to Core Platform",
         subheading: subheadline || audienceDesc || "Connecting Third Culture Kids with mental health professionals who understand your world.",
         ctaText: ctaText || "Get Started",
         ctaLink: ctaLink || "/directory",

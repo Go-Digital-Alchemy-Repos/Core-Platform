@@ -303,12 +303,12 @@ CREATE TABLE "saved_professionals" (
 --> statement-breakpoint
 CREATE TABLE "seo_settings" (
 	"id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"site_name" text DEFAULT 'TCK Wellness',
-	"title_suffix" text DEFAULT ' | TCK Wellness',
+	"site_name" text DEFAULT 'Core Platform',
+	"title_suffix" text DEFAULT ' | Core Platform',
 	"default_meta_description" text,
 	"site_url" text,
 	"default_og_image_url" text,
-	"organization_name" text DEFAULT 'TCK Wellness',
+	"organization_name" text DEFAULT 'Core Platform',
 	"organization_logo_url" text,
 	"facebook_url" text,
 	"twitter_handle" text,

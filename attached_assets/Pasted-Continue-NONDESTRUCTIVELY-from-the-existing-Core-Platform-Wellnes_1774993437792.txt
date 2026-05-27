@@ -1,4 +1,4 @@
-Continue NONDESTRUCTIVELY from the existing TCK Wellness codebase and preserve all current working functionality.
+Continue NONDESTRUCTIVELY from the existing Core Platform codebase and preserve all current working functionality.
 
 Now implement the BACKGROUND CHECK stage scaffolding as a first-class part of the provider application pipeline.
 

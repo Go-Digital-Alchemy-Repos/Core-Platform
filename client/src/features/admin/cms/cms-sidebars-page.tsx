@@ -83,7 +83,7 @@ function defaultWidget(type: SidebarWidgetType): SidebarWidget {
       type,
       title: "Stay Connected",
       settings: {
-        description: "Get TCK-informed articles, events, and resources in your inbox.",
+        description: "Get Core Platform-informed articles, events, and resources in your inbox.",
         buttonText: "Sign Up",
         formSlug: "newsletter-signup",
       },

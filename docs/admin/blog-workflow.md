@@ -1,6 +1,6 @@
 # Blog Workflow
 
-Insights & Articles is the blog area for TCK Wellness. The blog system supports managed posts, categories, tags, featured layouts, sidebar presentation, and moderated comments.
+Insights & Articles is the blog area for Core Platform. The blog system supports managed posts, categories, tags, featured layouts, sidebar presentation, and moderated comments.
 
 ## Blog Tabs
 

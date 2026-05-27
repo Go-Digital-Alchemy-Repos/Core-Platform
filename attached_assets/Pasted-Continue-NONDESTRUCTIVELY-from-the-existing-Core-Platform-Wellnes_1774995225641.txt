@@ -1,4 +1,4 @@
-Continue NONDESTRUCTIVELY from the existing TCK Wellness codebase and preserve all current working functionality.
+Continue NONDESTRUCTIVELY from the existing Core Platform codebase and preserve all current working functionality.
 
 Now implement the final approval/denial logic, subscription gating, and public directory eligibility rules for the provider application system.
 

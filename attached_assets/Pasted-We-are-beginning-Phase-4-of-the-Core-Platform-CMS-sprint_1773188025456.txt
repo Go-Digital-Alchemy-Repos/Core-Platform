@@ -1,4 +1,4 @@
-We are beginning Phase 4 of the TCK Wellness CMS sprint: seeding the existing public-facing website pages into CMS and safely integrating CMS-based frontend rendering.
+We are beginning Phase 4 of the Core Platform CMS sprint: seeding the existing public-facing website pages into CMS and safely integrating CMS-based frontend rendering.
 
 CONTEXT
 The goal is that existing public website pages should be available inside CMS and ready for admin editing. This should be done with a practical seeding/import strategy, not unrealistic automatic reverse engineering. Existing public pages should continue to work safely, with fallback behavior where needed.

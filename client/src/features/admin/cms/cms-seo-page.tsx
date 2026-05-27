@@ -44,7 +44,7 @@ import { CmsSitemapTab } from "./cms-sitemap-tab";
 
 const seoFormSchema = z.object({
   siteName: z.string().min(1, "Site name is required"),
-  titleSuffix: z.string().default(" | TCK Wellness"),
+  titleSuffix: z.string().default(" | Core Platform"),
   defaultMetaDescription: z.string().max(320, "Keep under 320 characters").optional().nullable(),
   siteUrl: z
     .string()
@@ -144,12 +144,12 @@ export default function CmsSeoPage() {
   const form = useForm<SeoFormValues>({
     resolver: zodResolver(seoFormSchema),
     defaultValues: {
-      siteName: "TCK Wellness",
-      titleSuffix: " | TCK Wellness",
+      siteName: "Core Platform",
+      titleSuffix: " | Core Platform",
       defaultMetaDescription: "",
       siteUrl: "",
       defaultOgImageUrl: "",
-      organizationName: "TCK Wellness",
+      organizationName: "Core Platform",
       organizationLogoUrl: "",
       facebookUrl: "",
       twitterHandle: "",
@@ -162,12 +162,12 @@ export default function CmsSeoPage() {
   useEffect(() => {
     if (settings) {
       form.reset({
-        siteName: settings.siteName ?? "TCK Wellness",
-        titleSuffix: settings.titleSuffix ?? " | TCK Wellness",
+        siteName: settings.siteName ?? "Core Platform",
+        titleSuffix: settings.titleSuffix ?? " | Core Platform",
         defaultMetaDescription: settings.defaultMetaDescription ?? "",
         siteUrl: settings.siteUrl ?? "",
         defaultOgImageUrl: settings.defaultOgImageUrl ?? "",
-        organizationName: settings.organizationName ?? "TCK Wellness",
+        organizationName: settings.organizationName ?? "Core Platform",
         organizationLogoUrl: settings.organizationLogoUrl ?? "",
         facebookUrl: settings.facebookUrl ?? "",
         twitterHandle: settings.twitterHandle ?? "",
@@ -260,7 +260,7 @@ export default function CmsSeoPage() {
                             <FormControl>
                               <Input
                                 {...field}
-                                placeholder="TCK Wellness"
+                                placeholder="Core Platform"
                                 data-testid="input-site-name"
                               />
                             </FormControl>
@@ -281,7 +281,7 @@ export default function CmsSeoPage() {
                               <Input
                                 {...field}
                                 value={field.value ?? ""}
-                                placeholder="TCK Wellness"
+                                placeholder="Core Platform"
                                 data-testid="input-org-name"
                               />
                             </FormControl>
@@ -302,7 +302,7 @@ export default function CmsSeoPage() {
                               <Input
                                 {...field}
                                 value={field.value ?? ""}
-                                placeholder="https://tckwellness.com"
+                                placeholder="https://coreplatform.com"
                                 autoPrependHttps
                                 data-testid="input-site-url"
                               />
@@ -337,12 +337,12 @@ export default function CmsSeoPage() {
                             <FormControl>
                               <Input
                                 {...field}
-                                placeholder=" | TCK Wellness"
+                                placeholder=" | Core Platform"
                                 data-testid="input-title-suffix"
                               />
                             </FormControl>
                             <FormDescription className="text-xs">
-                              Appended to page titles — e.g. "Find a Mental Health Professional | TCK Wellness"
+                              Appended to page titles — e.g. "Find a Mental Health Professional | Core Platform"
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -486,7 +486,7 @@ export default function CmsSeoPage() {
                                 <Input
                                   {...field}
                                   value={field.value ?? ""}
-                                  placeholder="https://facebook.com/tckwellness"
+                                  placeholder="https://facebook.com/coreplatform"
                                   autoPrependHttps
                                   data-testid="input-facebook-url"
                                 />
@@ -505,7 +505,7 @@ export default function CmsSeoPage() {
                                 <Input
                                   {...field}
                                   value={field.value ?? ""}
-                                  placeholder="@tckwellness"
+                                  placeholder="@coreplatform"
                                   data-testid="input-twitter-handle"
                                 />
                               </FormControl>
@@ -526,7 +526,7 @@ export default function CmsSeoPage() {
                                 <Input
                                   {...field}
                                   value={field.value ?? ""}
-                                  placeholder="https://linkedin.com/company/tckwellness"
+                                  placeholder="https://linkedin.com/company/coreplatform"
                                   autoPrependHttps
                                   data-testid="input-linkedin-url"
                                 />
@@ -545,7 +545,7 @@ export default function CmsSeoPage() {
                                 <Input
                                   {...field}
                                   value={field.value ?? ""}
-                                  placeholder="https://instagram.com/tckwellness"
+                                  placeholder="https://instagram.com/coreplatform"
                                   autoPrependHttps
                                   data-testid="input-instagram-url"
                                 />

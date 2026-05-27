@@ -1,7 +1,7 @@
-We are beginning Phase 6 of the TCK Wellness CMS sprint: integrating the existing blog into the new CMS area.
+We are beginning Phase 6 of the Core Platform CMS sprint: integrating the existing blog into the new CMS area.
 
 CONTEXT
-TCK Wellness already has a blog feature. We do NOT want to rebuild it blindly if there are salvageable models, routes, services, and admin patterns already in place. The goal is to absorb blog management into the CMS area and align it with the new CMS architecture where practical.
+Core Platform already has a blog feature. We do NOT want to rebuild it blindly if there are salvageable models, routes, services, and admin patterns already in place. The goal is to absorb blog management into the CMS area and align it with the new CMS architecture where practical.
 
 IMPORTANT RULES
 - Nondestructive only

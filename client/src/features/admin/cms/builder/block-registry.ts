@@ -377,7 +377,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     description: "Full-width hero with heading, subheading, and CTA buttons",
     category: "hero",
     defaultProps: {
-      heading: "Welcome to TCK Wellness",
+      heading: "Welcome to Core Platform",
       accentHeading: "",
       headingColor: "",
       accentHeadingColor: "",
@@ -447,8 +447,8 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     category: "layout",
     defaultProps: {
       eyebrow: "Our Approach",
-      title: "Why TCK-Informed Care Matters",
-      subtitle: "We match you with mental health professionals who understand the TCK experience.",
+      title: "Why Core Platform-Informed Care Matters",
+      subtitle: "We match you with mental health professionals who understand the Core Platform experience.",
       alignment: "center",
       headingLevel: "h2",
     },
@@ -489,7 +489,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       alignment: "left",
       headingLevel: "h2",
       imageUrl: "",
-      imageAlt: "About TCK Wellness",
+      imageAlt: "About Core Platform",
       imageCaption: "",
       imagePosition: "right",
       ...SHARED_MOBILE_IMAGE_DEFAULTS,
@@ -623,7 +623,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     category: "conversion",
     defaultProps: {
       heading: "Ready to Get Started?",
-      subheading: "Find a TCK-informed mental health professional and begin your journey today.",
+      subheading: "Find a Core Platform-informed mental health professional and begin your journey today.",
       primaryText: "Browse Mental Health Professionals",
       primaryLink: "/directory",
       primaryAction: "internal-link",
@@ -667,12 +667,12 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     description: "A configurable grid of icon + text cards",
     category: "content",
     defaultProps: {
-      title: "Why Choose TCK Wellness",
+      title: "Why Choose Core Platform",
       subtitle: "",
       columns: "3",
       cards: [
-        { title: "Culturally Informed", description: "Mental health professionals who understand the TCK experience.", icon: "Globe" },
-        { title: "Specialized Support", description: "Targeted help for unique TCK challenges.", icon: "Heart" },
+        { title: "Culturally Informed", description: "Mental health professionals who understand the Core Platform experience.", icon: "Globe" },
+        { title: "Specialized Support", description: "Targeted help for unique Core Platform challenges.", icon: "Heart" },
         { title: "Global Community", description: "Connect with others who share your journey.", icon: "Users" },
       ],
     },
@@ -701,7 +701,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       title: "Frequently Asked Questions",
       items: [
-        { question: "What is a Third Culture Kid?", answer: "A TCK is someone who spent a significant part of their developmental years in a culture different from their parents'." },
+        { question: "What is a Third Culture Kid?", answer: "A Core Platform is someone who spent a significant part of their developmental years in a culture different from their parents'." },
         { question: "How are mental health professionals vetted?", answer: "All mental health professionals complete a thorough application and background verification process." },
       ],
     },
@@ -727,8 +727,8 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       title: "What Our Community Says",
       items: [
-        { quote: "Finding a mental health professional who truly understood my TCK experience was life-changing.", name: "Sarah M.", role: "TCK Client", location: "Singapore" },
-        { quote: "I finally feel seen and understood in a way I never did before.", name: "James T.", role: "TCK Client", location: "Germany" },
+        { quote: "Finding a mental health professional who truly understood my Core Platform experience was life-changing.", name: "Sarah M.", role: "Core Platform Client", location: "Singapore" },
+        { quote: "I finally feel seen and understood in a way I never did before.", name: "James T.", role: "Core Platform Client", location: "Germany" },
       ],
     },
     propDefs: [
@@ -740,7 +740,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         itemSchema: [
           { key: "quote", label: "Quote", type: "textarea", placeholder: "Testimonial text" },
           { key: "name", label: "Name", type: "text", placeholder: "Person's name" },
-          { key: "role", label: "Role", type: "text", placeholder: "e.g. TCK Client" },
+          { key: "role", label: "Role", type: "text", placeholder: "e.g. Core Platform Client" },
           { key: "location", label: "Location", type: "text", placeholder: "e.g. Singapore" },
         ],
       },
@@ -754,7 +754,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     category: "data",
     defaultProps: {
       title: "Meet Our Mental Health Professionals",
-      subtitle: "Browse our network of TCK-informed mental health professionals.",
+      subtitle: "Browse our network of Core Platform-informed mental health professionals.",
       limit: 3,
     },
     propDefs: [
@@ -771,7 +771,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     category: "data",
     defaultProps: {
       title: "Meet Our Mental Health Professionals",
-      subtitle: "Browse our network of TCK-informed mental health professionals.",
+      subtitle: "Browse our network of Core Platform-informed mental health professionals.",
       limit: 3,
     },
     propDefs: [
@@ -819,7 +819,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     category: "data",
     defaultProps: {
       title: "Latest Insights",
-      subtitle: "Resources and perspectives for the TCK community.",
+      subtitle: "Resources and perspectives for the Core Platform community.",
       limit: 5,
       enableHoverMotion: true,
     },
@@ -926,8 +926,8 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       title: "Get in Touch",
       items: [
-        { icon: "MapPin", label: "Location", value: "Global — serving TCKs worldwide" },
-        { icon: "Globe", label: "Website", value: "www.tckwellness.com" },
+        { icon: "MapPin", label: "Location", value: "Global — serving Core Platforms worldwide" },
+        { icon: "Globe", label: "Website", value: "www.coreplatform.com" },
       ],
     },
     propDefs: [
@@ -972,7 +972,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       features: [
         { icon: "CheckCircle", title: "Vetted Professionals", description: "Every professional is carefully reviewed and verified." },
         { icon: "Globe", title: "Global Reach", description: "Connect with professionals worldwide." },
-        { icon: "Heart", title: "Culturally Informed", description: "Professionals who understand the TCK experience." },
+        { icon: "Heart", title: "Culturally Informed", description: "Professionals who understand the Core Platform experience." },
       ],
     },
     propDefs: [
@@ -1060,7 +1060,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         { icon: "ShieldCheck", label: "Verified Professionals" },
         { icon: "Lock", label: "Secure & Confidential" },
         { icon: "Globe", label: "Global Network" },
-        { icon: "Heart", label: "TCK-Informed Care" },
+        { icon: "Heart", label: "Core Platform-Informed Care" },
       ],
     },
     propDefs: [
@@ -1112,7 +1112,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       stats: [
         { value: "500+", label: "Professionals in Network" },
         { value: "40+", label: "Countries Represented" },
-        { value: "10,000+", label: "TCKs Connected" },
+        { value: "10,000+", label: "Core Platforms Connected" },
       ],
       disclaimer: "",
     },
@@ -1285,7 +1285,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       title: "The Research Behind Our Approach",
       body: "",
       citations: [
-        { text: "TCK Training Research Study, 2024", url: "" },
+        { text: "Core Platform Training Research Study, 2024", url: "" },
       ],
     },
     propDefs: [
@@ -1315,7 +1315,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         { text: "Licensed mental health professional", required: true },
         { text: "Cross-cultural training or experience", required: true },
         { text: "Background verification completed", required: true },
-        { text: "Specialized in TCK-related challenges", required: false },
+        { text: "Specialized in Core Platform-related challenges", required: false },
       ],
     },
     propDefs: [
@@ -1420,10 +1420,10 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     description: "Persona-based messaging showing who this is for",
     category: "content",
     defaultProps: {
-      title: "Who Is TCK Wellness For?",
+      title: "Who Is Core Platform For?",
       subtitle: "",
       personas: [
-        { title: "Adult TCKs", description: "Adults who grew up across cultures and need support navigating identity, belonging, and transitions.", icon: "User" },
+        { title: "Adult Core Platforms", description: "Adults who grew up across cultures and need support navigating identity, belonging, and transitions.", icon: "User" },
         { title: "Expat Families", description: "Parents raising children between cultures who want proactive mental health support.", icon: "Users" },
         { title: "Organizations", description: "Companies and schools supporting internationally mobile employees and students.", icon: "Building2" },
       ],
@@ -1437,7 +1437,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "array-items",
         itemSchema: [
           { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. User, Users" },
-          { key: "title", label: "Persona Title", type: "text", placeholder: "e.g. Adult TCKs" },
+          { key: "title", label: "Persona Title", type: "text", placeholder: "e.g. Adult Core Platforms" },
           { key: "description", label: "Description", type: "textarea", placeholder: "Who they are and what they need" },
         ],
       },
@@ -1511,7 +1511,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     category: "dynamic",
     defaultProps: {
       title: "Our Mental Health Professionals Around the World",
-      subtitle: "Click a pin to learn more about a TCK-informed professional near you",
+      subtitle: "Click a pin to learn more about a Core Platform-informed professional near you",
     },
     propDefs: [
       { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
@@ -1629,7 +1629,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     category: "dynamic",
     defaultProps: {
       heading: "Upcoming Events",
-      subheading: "We offer quarterly TCK-informed trainings for professional providers. All of our members get free registration to the events below.",
+      subheading: "We offer quarterly Core Platform-informed trainings for professional providers. All of our members get free registration to the events below.",
       defaultView: "list",
       showViewToggle: true,
     },
@@ -1722,7 +1722,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     isDynamic: true,
     category: "hero",
     defaultProps: {
-      heading: "Are you a TCK-Informed Mental Health Professional?",
+      heading: "Are you a Core Platform-Informed Mental Health Professional?",
       accentHeading: "Join the Network!",
       headingColor: "",
       accentHeadingColor: "",
@@ -1746,7 +1746,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     isDynamic: true,
     category: "dynamic",
     defaultProps: {
-      heading: "Are you a TCK-Informed Mental Health Professional?",
+      heading: "Are you a Core Platform-Informed Mental Health Professional?",
       accentHeading: "Join the Network!",
       headingColor: "",
       accentHeadingColor: "",

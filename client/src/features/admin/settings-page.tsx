@@ -260,7 +260,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
         key: "mailgun_from_address",
         label: "From Address",
         isSecret: false,
-        placeholder: "TCK Wellness <noreply@yourdomain.com>",
+        placeholder: "Core Platform <noreply@yourdomain.com>",
       },
     ],
   },
@@ -351,7 +351,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
         key: "r2_bucket_name",
         label: "Bucket Name",
         isSecret: false,
-        placeholder: "tck-wellness-uploads",
+        placeholder: "corePlatform-wellness-uploads",
       },
       {
         key: "r2_public_url",
@@ -1226,7 +1226,7 @@ export function BrandingTab({
                   id="company-name"
                   value={companyInfo.company_name}
                   onChange={(event) => setCompanyInfo((current) => ({ ...current, company_name: event.target.value }))}
-                  placeholder="TCK Wellness"
+                  placeholder="Core Platform"
                   data-testid="input-company-name"
                 />
               </div>
@@ -1556,7 +1556,7 @@ export function BrandingTab({
               <div className="rounded-xl border bg-muted/10 p-5">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Preview</p>
                 <h4 className="mt-3 text-2xl font-semibold" style={previewHeadingStyle}>
-                  TCK Wellness helps globally mobile families feel understood.
+                  Core Platform helps globally mobile families feel understood.
                 </h4>
                 <p className="mt-3 text-sm text-muted-foreground" style={previewBodyStyle}>
                   Use this preview to compare heading and body combinations before saving. These font selections only apply to the public-facing website, not the admin dashboard.

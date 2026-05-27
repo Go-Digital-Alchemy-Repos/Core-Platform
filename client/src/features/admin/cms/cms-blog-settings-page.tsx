@@ -686,7 +686,7 @@ function TaxonomyManager({
               <Input
                 value={draft.name}
                 onChange={(e) => setDraft((current) => ({ ...current, name: e.target.value }))}
-                placeholder={type === "category" ? "e.g. TCK Research" : "e.g. belonging"}
+                placeholder={type === "category" ? "e.g. Core Platform Research" : "e.g. belonging"}
                 data-testid={`input-blog-${type}-name`}
               />
             </div>

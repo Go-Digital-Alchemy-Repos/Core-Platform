@@ -81,8 +81,8 @@ router.post(
       firstName,
       applicantName,
       howKnown,
-      tckObservation,
-      tckUnderstanding,
+      corePlatformObservation,
+      corePlatformUnderstanding,
       culturalConnection,
       safetyConcern,
       safetyConcernDetails,
@@ -98,10 +98,10 @@ router.post(
     if (typeof firstName === "string" && firstName.length > 200) errors.push("First name is too long");
     if (!howKnown || typeof howKnown !== "string" || !howKnown.trim()) errors.push("How you know the applicant is required");
     if (typeof howKnown === "string" && howKnown.length > MAX_TEXT_LENGTH) errors.push("Response is too long (max 5000 characters)");
-    if (!tckObservation || typeof tckObservation !== "string" || !tckObservation.trim()) errors.push("TCK observation response is required");
-    if (typeof tckObservation === "string" && tckObservation.length > MAX_TEXT_LENGTH) errors.push("Response is too long (max 5000 characters)");
-    if (!tckUnderstanding || typeof tckUnderstanding !== "string" || !tckUnderstanding.trim()) errors.push("TCK understanding response is required");
-    if (typeof tckUnderstanding === "string" && tckUnderstanding.length > MAX_TEXT_LENGTH) errors.push("Response is too long (max 5000 characters)");
+    if (!corePlatformObservation || typeof corePlatformObservation !== "string" || !corePlatformObservation.trim()) errors.push("Core Platform observation response is required");
+    if (typeof corePlatformObservation === "string" && corePlatformObservation.length > MAX_TEXT_LENGTH) errors.push("Response is too long (max 5000 characters)");
+    if (!corePlatformUnderstanding || typeof corePlatformUnderstanding !== "string" || !corePlatformUnderstanding.trim()) errors.push("Core Platform understanding response is required");
+    if (typeof corePlatformUnderstanding === "string" && corePlatformUnderstanding.length > MAX_TEXT_LENGTH) errors.push("Response is too long (max 5000 characters)");
     if (!culturalConnection || typeof culturalConnection !== "string" || !culturalConnection.trim()) errors.push("Cultural connection response is required");
     if (typeof culturalConnection === "string" && culturalConnection.length > MAX_TEXT_LENGTH) errors.push("Response is too long (max 5000 characters)");
     if (!safetyConcern || !["yes", "no"].includes(safetyConcern)) errors.push("Safety concern answer is required (yes/no)");
@@ -125,8 +125,8 @@ router.post(
       firstName,
       applicantName,
       howKnown,
-      tckObservation,
-      tckUnderstanding,
+      corePlatformObservation,
+      corePlatformUnderstanding,
       culturalConnection,
       safetyConcern,
       safetyConcernDetails: safetyConcern === "yes" ? safetyConcernDetails : null,

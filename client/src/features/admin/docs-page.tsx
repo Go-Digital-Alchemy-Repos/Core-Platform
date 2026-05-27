@@ -458,7 +458,7 @@ export default function DocsPage() {
                           {selectedDoc.title}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          System and editorial documentation for the TCK Wellness platform.
+                          System and editorial documentation for the Core Platform platform.
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">

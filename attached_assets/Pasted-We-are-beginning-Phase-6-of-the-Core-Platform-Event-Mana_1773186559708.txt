@@ -1,4 +1,4 @@
-We are beginning Phase 6 of the TCK Wellness Event Management sprint: adding event admin workflow polish and practical event management tools.
+We are beginning Phase 6 of the Core Platform Event Management sprint: adding event admin workflow polish and practical event management tools.
 
 CONTEXT
 The core event model, public details, registration, paid registration, and recording archives are now in place or underway. We need to round out the event management system with the practical tools admins need to operate events effectively.

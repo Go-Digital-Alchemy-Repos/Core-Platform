@@ -189,7 +189,7 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
 }
 
 export function JoinHeroBlock({ props = {} }: { props?: Record<string, unknown> }) {
-  const heading = str(props.heading) || "Are you a TCK-Informed Mental Health Professional?";
+  const heading = str(props.heading) || "Are you a Core Platform-Informed Mental Health Professional?";
   const accentHeading = str(props.accentHeading) || "Join the Network!";
   const subheading = str(props.subheading);
   const hasImageBackground = !!str(props.sectionBackgroundImageUrl);

@@ -1,12 +1,12 @@
-We are beginning Phase 2 of the TCK Wellness CMS sprint: building the visual page builder foundation and block registry for CMS-managed public pages.
+We are beginning Phase 2 of the Core Platform CMS sprint: building the visual page builder foundation and block registry for CMS-managed public pages.
 
 CONTEXT
-CMS foundation now exists with admin navigation and page records. We need a modern page builder experience for public-facing website pages, inspired by Webflow-style editing but implemented safely within the TCK Wellness architecture.
+CMS foundation now exists with admin navigation and page records. We need a modern page builder experience for public-facing website pages, inspired by Webflow-style editing but implemented safely within the Core Platform architecture.
 
 IMPORTANT RULES
 - Nondestructive only
 - Preserve current public page rendering until CMS rendering is safely wired
-- Reuse/adapt existing TCK Wellness sections/components wherever practical
+- Reuse/adapt existing Core Platform sections/components wherever practical
 - Do not attempt pixel-perfect Webflow cloning
 - Keep the builder structured, typed, and maintainable
 - Anywhere a builder block would normally ask for image URLs or background image URLs, do NOT use raw URL inputs. Those must become media picker/dropzone upload patterns backed by Cloudflare R2 in the next phase-compatible way.
@@ -25,13 +25,13 @@ IMPLEMENTATION REQUIREMENTS
 1. Inspect:
    - CMS page model
    - current public page sections/components
-   - existing TCK Wellness design patterns
+   - existing Core Platform design patterns
    - any home/about/events/blog/resource content sections
    - current admin UI conventions
 
 2. Add a builder editor experience to CMS page editing.
 
-3. Create a typed block registry based on real TCK Wellness page patterns. Start with a sensible block set such as:
+3. Create a typed block registry based on real Core Platform page patterns. Start with a sensible block set such as:
    - Hero
    - Rich Text
    - Text + Image

@@ -71,9 +71,9 @@ router.post("/", guestMessageLimiter, async (req: Request, res: Response) => {
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">New Contact Message via TCK Wellness</h2>
+        <h2 style="color: #333;">New Contact Message via Core Platform</h2>
         <p>Hi ${escapeHtml(professionalName)},</p>
-        <p>You've received a new message through your TCK Wellness profile:</p>
+        <p>You've received a new message through your Core Platform profile:</p>
         <div style="background: #f9f9f9; border-left: 4px solid #4f8c7c; padding: 16px; margin: 16px 0; border-radius: 4px;">
           <p style="margin: 0 0 8px 0;"><strong>From:</strong> ${safeName}</p>
           <p style="margin: 0 0 8px 0;"><strong>Email:</strong> <a href="mailto:${safeEmail}">${safeEmail}</a></p>
@@ -84,13 +84,13 @@ router.post("/", guestMessageLimiter, async (req: Request, res: Response) => {
         </div>
         <p style="color: #666; font-size: 14px;">You can reply directly to this person at <a href="mailto:${safeEmail}">${safeEmail}</a>.</p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-        <p style="color: #999; font-size: 12px;">This message was sent through your TCK Wellness counselor profile.</p>
+        <p style="color: #999; font-size: 12px;">This message was sent through your Core Platform counselor profile.</p>
       </div>
     `;
 
     const sent = await sendEmail(
       user.email,
-      `New message from ${safeName} — TCK Wellness`,
+      `New message from ${safeName} — Core Platform`,
       html
     );
 

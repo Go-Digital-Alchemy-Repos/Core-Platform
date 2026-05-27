@@ -19,12 +19,12 @@ export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS = [
   {
     slug: "therapist-approval",
     name: "Therapist Application Approved",
-    subject: "Your TCK Wellness Application Has Been Approved!",
+    subject: "Your Core Platform Application Has Been Approved!",
     description: "Sent when an admin approves a therapist's application to join the directory.",
     variables: ["firstName", "loginUrl"],
     htmlBody: baseWrap("Application Approved", `
     <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
-    <p style="color:#374151;font-size:15px;line-height:1.6;">Great news! Your application to join the TCK Wellness therapist directory has been <strong style="color:#059669;">approved</strong>.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Great news! Your application to join the Core Platform therapist directory has been <strong style="color:#059669;">approved</strong>.</p>
     <p style="color:#374151;font-size:15px;line-height:1.6;">You can now log in to complete your profile and set up your subscription to appear in the public directory.</p>
     <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
       <tr><td style="background:#2d8a7e;border-radius:6px;padding:12px 28px;">
@@ -42,17 +42,17 @@ export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS = [
   {
     slug: "therapist-rejection",
     name: "Therapist Application Rejected",
-    subject: "Update on Your TCK Wellness Application",
+    subject: "Update on Your Core Platform Application",
     description: "Sent when an admin rejects a therapist's application.",
     variables: ["firstName", "reason"],
     htmlBody: baseWrap("Application Update", `
     <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
-    <p style="color:#374151;font-size:15px;line-height:1.6;">Thank you for your interest in joining the TCK Wellness therapist directory. After reviewing your application, we are unable to approve it at this time.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Thank you for your interest in joining the Core Platform therapist directory. After reviewing your application, we are unable to approve it at this time.</p>
     {{#reason}}<div style="background:#fef2f2;border-left:4px solid #ef4444;padding:12px 16px;margin:16px 0;border-radius:0 4px 4px 0;">
       <p style="margin:0;color:#991b1b;font-size:14px;"><strong>Reason:</strong> {{reason}}</p>
     </div>{{/reason}}
     <p style="color:#374151;font-size:15px;line-height:1.6;">If you believe this was made in error or would like to discuss your application further, please reach out to us through our contact page.</p>
-    <p style="color:#6b7280;font-size:14px;margin-top:24px;">We appreciate your interest in TCK Wellness and wish you the best.</p>`),
+    <p style="color:#6b7280;font-size:14px;margin-top:24px;">We appreciate your interest in Core Platform and wish you the best.</p>`),
   },
   {
     slug: "membership-renewal-reminder",
@@ -123,7 +123,7 @@ export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS = [
   {
     slug: "password-reset",
     name: "Password Reset",
-    subject: "Reset Your TCK Wellness Password",
+    subject: "Reset Your Core Platform Password",
     description: "Sent when a user requests a password reset or an admin sends a reset link.",
     variables: ["firstName", "resetUrl"],
     htmlBody: baseWrap("Password Reset", `
@@ -141,12 +141,12 @@ export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS = [
   {
     slug: "welcome-new-user",
     name: "Welcome New User",
-    subject: "Welcome to TCK Wellness!",
+    subject: "Welcome to Core Platform!",
     description: "Sent when an admin manually creates a new user account.",
     variables: ["firstName", "loginUrl", "tempPassword"],
-    htmlBody: baseWrap("Welcome to TCK Wellness", `
+    htmlBody: baseWrap("Welcome to Core Platform", `
     <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
-    <p style="color:#374151;font-size:15px;line-height:1.6;">An account has been created for you on TCK Wellness.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">An account has been created for you on Core Platform.</p>
     {{#tempPassword}}<div style="background:#f0fdf4;border-left:4px solid #22c55e;padding:12px 16px;margin:16px 0;border-radius:0 4px 4px 0;">
       <p style="margin:0;color:#166534;font-size:14px;"><strong>Temporary Password:</strong> {{tempPassword}}</p>
       <p style="margin:4px 0 0;color:#166534;font-size:13px;">Please change this after logging in.</p>
@@ -165,7 +165,7 @@ export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS = [
     description: "Sent to admin(s) when a therapist self-registers on the platform.",
     variables: ["therapistName", "therapistEmail", "dashboardUrl"],
     htmlBody: baseWrap("New Therapist Registration", `
-    <p style="color:#374151;font-size:15px;line-height:1.6;">A new therapist has registered on TCK Wellness and is awaiting review.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">A new therapist has registered on Core Platform and is awaiting review.</p>
     <div style="background:#f3f4f6;border-radius:6px;padding:16px;margin:16px 0;">
       <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Name:</strong> {{therapistName}}</p>
       <p style="margin:0;color:#374151;font-size:14px;"><strong>Email:</strong> {{therapistEmail}}</p>
@@ -183,7 +183,7 @@ export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS = [
     description: "Sent to admin(s) when a client self-registers on the platform.",
     variables: ["clientName", "clientEmail", "dashboardUrl"],
     htmlBody: baseWrap("New Client Registration", `
-    <p style="color:#374151;font-size:15px;line-height:1.6;">A new client has registered on TCK Wellness.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">A new client has registered on Core Platform.</p>
     <div style="background:#f3f4f6;border-radius:6px;padding:16px;margin:16px 0;">
       <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Name:</strong> {{clientName}}</p>
       <p style="margin:0;color:#374151;font-size:14px;"><strong>Email:</strong> {{clientEmail}}</p>

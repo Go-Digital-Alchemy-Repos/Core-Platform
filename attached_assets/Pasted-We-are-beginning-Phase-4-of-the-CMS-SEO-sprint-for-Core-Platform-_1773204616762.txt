@@ -1,7 +1,7 @@
-We are beginning Phase 4 of the CMS > SEO sprint for TCK Wellness: building practical technical SEO tools in the CMS.
+We are beginning Phase 4 of the CMS > SEO sprint for Core Platform: building practical technical SEO tools in the CMS.
 
 CONTEXT
-TCK Wellness needs more than metadata fields. Admin users also need visibility into technical SEO factors and basic editorial controls such as redirects, sitemap awareness, robots/noindex visibility, and content-level SEO completeness.
+Core Platform needs more than metadata fields. Admin users also need visibility into technical SEO factors and basic editorial controls such as redirects, sitemap awareness, robots/noindex visibility, and content-level SEO completeness.
 
 IMPORTANT RULES
 - Nondestructive only

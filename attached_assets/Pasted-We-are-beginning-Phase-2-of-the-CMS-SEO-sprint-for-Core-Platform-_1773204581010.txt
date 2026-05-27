@@ -1,4 +1,4 @@
-We are beginning Phase 2 of the CMS > SEO sprint for TCK Wellness: implementing page-level and blog-post-level SEO field management.
+We are beginning Phase 2 of the CMS > SEO sprint for Core Platform: implementing page-level and blog-post-level SEO field management.
 
 CONTEXT
 The CMS now has or is gaining SEO foundation and global settings. We need editors/admins to manage SEO fields for public pages and blog posts directly within the CMS and blog editing flows.

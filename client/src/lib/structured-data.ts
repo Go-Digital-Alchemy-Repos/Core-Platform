@@ -20,7 +20,7 @@ function absoluteUrl(path: string, base?: string | null): string {
 export function buildOrganizationLd(globalSeo: SeoSettings): JsonLdObject | null {
   if (!globalSeo.organizationName && !globalSeo.siteName) return null;
 
-  const name = globalSeo.organizationName || globalSeo.siteName || "TCK Wellness";
+  const name = globalSeo.organizationName || globalSeo.siteName || "Core Platform";
   const siteUrl = globalSeo.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
 
   const sameAs: string[] = [
@@ -54,7 +54,7 @@ export function buildWebSiteLd(globalSeo: SeoSettings): JsonLdObject | null {
   return compactObject({
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: globalSeo.siteName || "TCK Wellness",
+    name: globalSeo.siteName || "Core Platform",
     url: siteUrl,
   });
 }
@@ -81,7 +81,7 @@ export function buildArticleLd(
   if (!post.title) return null;
 
   const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
-  const orgName = globalSeo?.organizationName || globalSeo?.siteName || "TCK Wellness";
+  const orgName = globalSeo?.organizationName || globalSeo?.siteName || "Core Platform";
   const postUrl = `${siteUrl}/insights/${post.slug}`;
 
   const image = post.ogImageUrl || post.coverImageUrl;
@@ -122,7 +122,7 @@ export function buildEventLd(
   if (!event.title || !event.date) return null;
 
   const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
-  const orgName = globalSeo?.organizationName || globalSeo?.siteName || "TCK Wellness";
+  const orgName = globalSeo?.organizationName || globalSeo?.siteName || "Core Platform";
   const eventUrl = `${siteUrl}${getEventPath(event)}`;
 
   const isHybrid =

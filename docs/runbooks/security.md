@@ -1,4 +1,4 @@
-# TCK Wellness — Security Runbook
+# Core Platform — Security Runbook
 
 ## Required Environment Variables
 
@@ -48,7 +48,7 @@ Authentication uses JWT tokens stored in HTTP-only cookies:
 
 | Setting | Value | Notes |
 |---|---|---|
-| Cookie name | `tck_token` | |
+| Cookie name | `corePlatform_token` | |
 | `httpOnly` | `true` | Prevents JavaScript access (XSS mitigation) |
 | `secure` | `true` in production | Cookies only sent over HTTPS |
 | `sameSite` | `lax` | Prevents cross-site request attachment while allowing top-level navigation |

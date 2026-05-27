@@ -16,7 +16,7 @@ export const mixedBuilderFixture: BuilderContent = {
       type: "call-to-action",
       props: {
         heading: "Join the Network",
-        body: "<p>Apply to be part of the TCK-informed network.</p>",
+        body: "<p>Apply to be part of the Core Platform-informed network.</p>",
         ctaText: "Apply Now",
       },
     },

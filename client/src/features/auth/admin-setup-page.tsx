@@ -113,7 +113,7 @@ export default function AdminSetupPage() {
               </div>
             </div>
             <h1 className="font-heading text-3xl font-bold" data-testid="text-setup-title">
-              Welcome to TCK Wellness
+              Welcome to Core Platform
             </h1>
             <p className="text-muted-foreground mt-2" data-testid="text-setup-subtitle">
               Set up your administrator account to get started
@@ -124,7 +124,7 @@ export default function AdminSetupPage() {
             <CardHeader>
               <CardTitle>Create Admin Account</CardTitle>
               <CardDescription>
-                This will be the primary administrator for your TCK Wellness platform
+                This will be the primary administrator for your Core Platform platform
               </CardDescription>
             </CardHeader>
             <CardContent>

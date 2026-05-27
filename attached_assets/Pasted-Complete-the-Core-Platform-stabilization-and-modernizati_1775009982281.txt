@@ -1,4 +1,4 @@
-Complete the TCK Wellness stabilization and modernization sprint.
+Complete the Core Platform stabilization and modernization sprint.
 
 This is the final prompt in the series and should consolidate the work performed so far.
 

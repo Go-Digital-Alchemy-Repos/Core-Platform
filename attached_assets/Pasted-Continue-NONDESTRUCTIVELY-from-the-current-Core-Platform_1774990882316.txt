@@ -1,4 +1,4 @@
-Continue NONDESTRUCTIVELY from the current TCK Wellness codebase and preserve all existing functionality.
+Continue NONDESTRUCTIVELY from the current Core Platform codebase and preserve all existing functionality.
 
 Now build the provider-facing membership application wizard that begins when a logged-in provider clicks:
 “Apply for Membership and Get Listed”
@@ -38,7 +38,7 @@ Fields:
 
 STEP 2 — Professional Information
 Fields:
-- applying as a TCK-informed:
+- applying as a Core Platform-informed:
   - Mental Health Professional
   - Debriefer
   - Coach
@@ -56,7 +56,7 @@ Credential repeater:
 
 Design this so future proof-of-licensure uploads/dropzone support can be added later without rework.
 
-STEP 3 — TCK-Informed Questions
+STEP 3 — Core Platform-Informed Questions
 Create this section as a configurable narrative-question section.
 If final exact questions are not yet defined in code, scaffold it so future question copy can be updated without architecture changes.
 
@@ -71,7 +71,7 @@ Include guidance copy explaining who to include and that references will receive
 STEP 5 — Accessibility Discount
 Fields:
 - starting fee per appointment
-- do you offer sliding-scale or reduced-fee sessions for TCKs? yes/no
+- do you offer sliding-scale or reduced-fee sessions for Core Platforms? yes/no
 - optional explanation/details
 
 Store fields needed for later admin discount review.
@@ -81,11 +81,11 @@ STEP 6 — Terms & Conditions
 Include:
 - independent professional acknowledgment
 - no employee/agent/representative relationship
-- no endorsement by TCK Wellness
+- no endorsement by Core Platform
 - sole professional responsibility
 - responsibility for licenses/credentials/insurance
 - must accurately represent qualifications
-- must notify TCK Wellness of disciplinary/licensure issues
+- must notify Core Platform of disciplinary/licensure issues
 - indemnification language
 - directory removal-at-discretion language
 - typed full legal name acknowledgment/signature

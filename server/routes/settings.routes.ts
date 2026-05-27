@@ -277,7 +277,7 @@ router.post(
     for (const v of template.variables) {
       if (v === "firstName") sampleVars[v] = "Jane";
       else if (v === "loginUrl" || v === "resetUrl" || v === "dashboardUrl")
-        sampleVars[v] = "https://tckwellness.com/example-link";
+        sampleVars[v] = "https://coreplatform.com/example-link";
       else if (v === "reason") sampleVars[v] = "Additional credentials required.";
       else if (v === "tempPassword") sampleVars[v] = "Temp1234!";
       else if (v === "therapistName" || v === "clientName" || v === "senderName")

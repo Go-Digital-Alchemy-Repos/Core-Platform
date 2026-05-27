@@ -13,9 +13,9 @@ interface PublicHtmlSnapshot {
   jsonLd?: Array<Record<string, unknown>>;
 }
 
-const DEFAULT_TITLE = "TCK Wellness - Find Your TCK-Informed Therapist";
+const DEFAULT_TITLE = "Core Platform - Find Your Core Platform-Informed Therapist";
 const DEFAULT_DESCRIPTION =
-  "TCK Wellness connects Third Culture Kids with culturally informed therapists worldwide. Find your therapist today.";
+  "Core Platform connects Third Culture Kids with culturally informed therapists worldwide. Find your therapist today.";
 
 const FALLBACK_STATIC_PAGES: Record<
   string,
@@ -24,37 +24,37 @@ const FALLBACK_STATIC_PAGES: Record<
   "/": {
     title: "Home",
     description:
-      "Explore TCK-informed mental health support, featured articles, and upcoming events from TCK Wellness.",
+      "Explore Core Platform-informed mental health support, featured articles, and upcoming events from Core Platform.",
     body:
-      "TCK Wellness connects Third Culture Kids with culturally informed care, featured articles, and upcoming events.",
+      "Core Platform connects Third Culture Kids with culturally informed care, featured articles, and upcoming events.",
   },
   "/about": {
     title: "About",
     description:
-      "Learn what it means for a provider to be vetted and how TCK Wellness supports cross-cultural mental health care.",
+      "Learn what it means for a provider to be vetted and how Core Platform supports cross-cultural mental health care.",
     body:
-      "Learn what it means for a provider to be vetted and how TCK Wellness supports cross-cultural mental health care.",
+      "Learn what it means for a provider to be vetted and how Core Platform supports cross-cultural mental health care.",
   },
   "/contact": {
     title: "Contact Us",
     description:
-      "Get in touch with TCK Wellness through the contact form and company information.",
+      "Get in touch with Core Platform through the contact form and company information.",
     body:
-      "Contact TCK Wellness with questions, feedback, or partnership inquiries through the contact form and company information.",
+      "Contact Core Platform with questions, feedback, or partnership inquiries through the contact form and company information.",
   },
   "/join": {
     title: "Join the Network",
     description:
-      "Learn about membership, the application process, and how TCK-informed mental health professionals can join the network.",
+      "Learn about membership, the application process, and how Core Platform-informed mental health professionals can join the network.",
     body:
-      "Join the network to learn about membership benefits and the application process, including submitting your application, credential verification, TCK competency review, profile setup, and going live in the directory.",
+      "Join the network to learn about membership benefits and the application process, including submitting your application, credential verification, Core Platform competency review, profile setup, and going live in the directory.",
   },
   "/directory": {
     title: "Find a Mental Health Professional",
     description:
-      "Search for TCK-informed mental health professionals by specialty, location, language, or session format.",
+      "Search for Core Platform-informed mental health professionals by specialty, location, language, or session format.",
     body:
-      "Find a mental health professional by searching specialties, locations, languages, and session formats in the TCK Wellness directory.",
+      "Find a mental health professional by searching specialties, locations, languages, and session formats in the Core Platform directory.",
   },
   "/insights": {
     title: "Insights & Articles",
@@ -66,37 +66,37 @@ const FALLBACK_STATIC_PAGES: Record<
   "/events": {
     title: "Events",
     description:
-      "Explore public events, trainings, and community gatherings from TCK Wellness.",
+      "Explore public events, trainings, and community gatherings from Core Platform.",
     body:
-      "Explore public events, trainings, and community gatherings from TCK Wellness.",
+      "Explore public events, trainings, and community gatherings from Core Platform.",
   },
   "/recordings": {
     title: "Recording Archives",
     description:
-      "Watch archived event recordings and educational content from TCK Wellness.",
+      "Watch archived event recordings and educational content from Core Platform.",
     body:
-      "Watch archived event recordings and educational content from TCK Wellness.",
+      "Watch archived event recordings and educational content from Core Platform.",
   },
   "/privacy-policy": {
     title: "Privacy Policy",
     description:
-      "Review how TCK Wellness collects, uses, stores, and protects information across the website and related services.",
+      "Review how Core Platform collects, uses, stores, and protects information across the website and related services.",
     body:
-      "Review how TCK Wellness collects, uses, stores, and protects information across the website and related services.",
+      "Review how Core Platform collects, uses, stores, and protects information across the website and related services.",
   },
   "/terms-of-service": {
     title: "Terms of Service",
     description:
-      "Review the terms governing use of the TCK Wellness website, directory, events, and related services.",
+      "Review the terms governing use of the Core Platform website, directory, events, and related services.",
     body:
-      "Review the terms governing use of the TCK Wellness website, directory, events, and related services.",
+      "Review the terms governing use of the Core Platform website, directory, events, and related services.",
   },
   "/disclaimer": {
     title: "Disclaimer",
     description:
-      "Review emergency guidance, directory vetting limitations, and important information about using the TCK Wellness directory and related services.",
+      "Review emergency guidance, directory vetting limitations, and important information about using the Core Platform directory and related services.",
     body:
-      "Review emergency guidance, directory vetting limitations, and important information about using the TCK Wellness directory and related services.",
+      "Review emergency guidance, directory vetting limitations, and important information about using the Core Platform directory and related services.",
   },
 };
 
@@ -180,8 +180,8 @@ function absoluteUrl(path: string | null | undefined, siteUrl: string) {
 }
 
 function buildHeadTitle(rawTitle: string, seo?: SeoSettings | null) {
-  const suffix = seo?.titleSuffix ?? " | TCK Wellness";
-  return rawTitle.includes("TCK Wellness") ? rawTitle : `${rawTitle}${suffix}`;
+  const suffix = seo?.titleSuffix ?? " | Core Platform";
+  return rawTitle.includes("Core Platform") ? rawTitle : `${rawTitle}${suffix}`;
 }
 
 function buildOrganizationSchema(seo: SeoSettings | null, siteUrl: string) {
@@ -189,7 +189,7 @@ function buildOrganizationSchema(seo: SeoSettings | null, siteUrl: string) {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: seo?.organizationName || seo?.siteName || "TCK Wellness",
+    name: seo?.organizationName || seo?.siteName || "Core Platform",
     url: siteUrl,
     logo: seo?.organizationLogoUrl
       ? {
@@ -219,7 +219,7 @@ function buildWebsiteSchema(seo: SeoSettings | null, siteUrl: string) {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: seo?.siteName || "TCK Wellness",
+    name: seo?.siteName || "Core Platform",
     url: siteUrl,
   };
 }
@@ -409,9 +409,9 @@ async function buildTherapistSnapshot(
   const canonicalUrl = `${siteUrl}/directory/${profile.id}`;
   const description =
     truncate(
-      stripHtml(profile.bio || profile.title || "View this TCK-informed mental health professional profile."),
+      stripHtml(profile.bio || profile.title || "View this Core Platform-informed mental health professional profile."),
       180,
-    ) || "View this TCK-informed mental health professional profile.";
+    ) || "View this Core Platform-informed mental health professional profile.";
 
   return {
     title: buildHeadTitle(displayName, seo),
@@ -448,8 +448,8 @@ function buildSearchSnapshot(query: string, seo: SeoSettings | null, siteUrl: st
   const term = query.trim();
   const title = term ? `Search Results for "${term}"` : "Site Search";
   const description = term
-    ? `Search results for ${term} across pages, articles, and events on TCK Wellness.`
-    : "Search pages, articles, and events on TCK Wellness.";
+    ? `Search results for ${term} across pages, articles, and events on Core Platform.`
+    : "Search pages, articles, and events on Core Platform.";
 
   return {
     title: buildHeadTitle(title, seo),
@@ -504,7 +504,7 @@ export async function getPublicHtmlSnapshot(
   }
 
   const seo = await storage.seoSettings.get();
-  const siteUrl = (seo?.siteUrl || "").replace(/\/$/, "") || "https://tckwellness.com";
+  const siteUrl = (seo?.siteUrl || "").replace(/\/$/, "") || "https://coreplatform.com";
 
   if (pathname === "/search") {
     const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);

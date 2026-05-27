@@ -1,7 +1,7 @@
 # Validation Report
 
 **Date**: 2026-04-03
-**Scope**: Final validation sweep for TCK Wellness stabilization sprint
+**Scope**: Final validation sweep for Core Platform stabilization sprint
 
 ---
 
@@ -10,7 +10,7 @@
 **Result**: PASS
 
 ```
-> rest-express@1.0.0 check
+> core-platform@1.0.0 check
 > tsc
 ```
 
@@ -21,7 +21,7 @@ Zero errors. All 62 original TypeScript errors from the initial audit have been 
 **Result**: PASS (warnings only)
 
 ```
-> rest-express@1.0.0 lint
+> core-platform@1.0.0 lint
 > eslint client/src server shared
 
 ✖ 207 problems (0 errors, 207 warnings)

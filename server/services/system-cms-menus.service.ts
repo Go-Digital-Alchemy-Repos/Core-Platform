@@ -108,7 +108,7 @@ const defaultMenus: Array<InsertCmsMenu & { location: StandardMenuLocation }> = 
     name: "Resources",
     location: "footer_resources",
     items: [
-      item("About TCKs", "/about"),
+      item("About Core Platforms", "/about"),
       item("Upcoming Events", "/events"),
       item("Browse Specializations", "/directory"),
     ],

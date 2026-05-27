@@ -55,7 +55,7 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
       submitButtonText: "Send Message",
       successMessage: "Thank you for reaching out. We'll get back to you soon.",
       mailchimpEnabled: true,
-      mailchimpTag: "TCK General Inquiry",
+      mailchimpTag: "Core Platform General Inquiry",
       notifyAdmins: true,
       storeAsContactMessage: true,
     }),
@@ -77,13 +77,13 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
       submitButtonText: "Sign Up",
       successMessage: "You're on the list. We'll keep you posted.",
       mailchimpEnabled: true,
-      mailchimpTag: "TCK Newsletter",
+      mailchimpTag: "Core Platform Newsletter",
     }),
   },
   {
-    name: "TCK Interest Form",
-    slug: "tck-interest",
-    description: "Launch update and early-interest form for people who want to stay informed about TCK Wellness.",
+    name: "Core Platform Interest Form",
+    slug: "corePlatform-interest",
+    description: "Launch update and early-interest form for people who want to stay informed about Core Platform.",
     kind: "interest",
     isSystem: true,
     isActive: true,
@@ -91,7 +91,7 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
       field("intro", "intro", "Introduction", "html", {
         config: {
           htmlContent:
-            "<p><strong>We're so excited for the launch of TCK Wellness coming late 2026!</strong></p><p>We envision a world where Third Culture Kids (TCKs) no longer face misunderstanding or misdiagnosis due to the nuances of a globally-mobile upbringing, but have access to professionals providing TCK-informed care.</p><p>Our goal is to do this by developing a database of TCK-informed providers who receive ongoing training after thorough vetting.</p><p>If you'd like to be updated on the launch, please give us your information below.</p>",
+            "<p><strong>We're so excited for the launch of Core Platform coming late 2026!</strong></p><p>We envision a world where Third Culture Kids (Core Platforms) no longer face misunderstanding or misdiagnosis due to the nuances of a globally-mobile upbringing, but have access to professionals providing Core Platform-informed care.</p><p>Our goal is to do this by developing a database of Core Platform-informed providers who receive ongoing training after thorough vetting.</p><p>If you'd like to be updated on the launch, please give us your information below.</p>",
         },
       }),
       field("name", "name", "Name", "name", {
@@ -105,11 +105,11 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
       field("demographics", "demographics", "What demographic do you fit into? Choose all that apply!", "checkbox", {
         required: true,
         options: [
-          { label: "TCK", value: "tck" },
+          { label: "Core Platform", value: "corePlatform" },
           { label: "Counselor", value: "counselor" },
-          { label: "TCK Parent", value: "tck-parent" },
-          { label: "TCK Caregiver", value: "tck-caregiver" },
-          { label: "Adult TCK", value: "adult-tck" },
+          { label: "Core Platform Parent", value: "corePlatform-parent" },
+          { label: "Core Platform Caregiver", value: "corePlatform-caregiver" },
+          { label: "Adult Core Platform", value: "adult-corePlatform" },
           { label: "Other", value: "other" },
         ],
       }),
@@ -128,7 +128,7 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
       field(
         "testimonial",
         "testimonial",
-        "We're gathering a few short testimonials for our website about why this initiative feels needed. If you're willing, please share 1-2 sentences answering: \"Why are you excited about the TCK Wellness Initiative?\" Quotes will be shared using first names only.",
+        "We're gathering a few short testimonials for our website about why this initiative feels needed. If you're willing, please share 1-2 sentences answering: \"Why are you excited about the Core Platform Initiative?\" Quotes will be shared using first names only.",
         "textarea",
         {
           placeholder: "Share 1-2 sentences if you'd like to contribute a testimonial.",
@@ -137,9 +137,9 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
     ],
     settings: settings({
       submitButtonText: "Keep Me Informed",
-      successMessage: "Thanks for your interest. We'll keep you informed about the TCK Wellness launch.",
+      successMessage: "Thanks for your interest. We'll keep you informed about the Core Platform launch.",
       mailchimpEnabled: true,
-      mailchimpTag: "TCK Interest",
+      mailchimpTag: "Core Platform Interest",
     }),
   },
   {
@@ -152,7 +152,7 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
     fields: [],
     settings: settings({
       mailchimpEnabled: true,
-      mailchimpTag: "TCK Directory Applicants",
+      mailchimpTag: "Core Platform Directory Applicants",
     }),
   },
 ];

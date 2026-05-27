@@ -30,7 +30,7 @@ import type {
 const vettedMeans = [
   "Every mental health professional completes a detailed application process",
   "Credentials and licensure are verified",
-  "Training or lived experience with TCK/cross-cultural populations is required",
+  "Training or lived experience with Core Platform/cross-cultural populations is required",
   "Profiles are reviewed by our team before being published",
 ];
 
@@ -44,7 +44,7 @@ const vettedDoesNotMean = [
 const categories = [
   { icon: Brain, label: "Anxiety", slug: "Anxiety" },
   { icon: Fingerprint, label: "Identity & Belonging", slug: "Identity & Belonging" },
-  { icon: Globe, label: "TCK Support", slug: "Third Culture Kids (TCK)" },
+  { icon: Globe, label: "Core Platform Support", slug: "Third Culture Kids (Core Platform)" },
   { icon: UserCheck, label: "Expatriate Adjustment", slug: "Expatriate Adjustment" },
   { icon: Puzzle, label: "Cross-Cultural", slug: "Cross-Cultural Transitions" },
   { icon: Heart, label: "Grief & Loss", slug: "Grief & Loss" },
@@ -740,24 +740,24 @@ export default function DirectoryPage() {
       <Navbar />
       <DirectoryBrowserSection />
 
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-directory-why-tck-informed">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-directory-why-corePlatform-informed">
         <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 md:gap-12 items-center">
           <div className="flex justify-center">
             <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
               <img
                 src="https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=300&h=300&fit=crop&crop=faces"
-                alt="TCK-informed counseling"
+                alt="Core Platform-informed counseling"
                 className="w-full h-full object-cover"
-                data-testid="img-directory-why-tck-informed"
+                data-testid="img-directory-why-corePlatform-informed"
               />
             </div>
           </div>
           <div>
             <h2 className="font-heading text-2xl sm:text-3xl font-semibold mb-3" data-testid="text-directory-why-informed-heading">
-              Why TCK Informed?
+              Why Core Platform Informed?
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Traditional therapy models were developed within a single cultural framework. When TCKs bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A TCK-informed mental health professional understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.
+              Traditional therapy models were developed within a single cultural framework. When Core Platforms bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A Core Platform-informed mental health professional understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.
             </p>
           </div>
         </div>

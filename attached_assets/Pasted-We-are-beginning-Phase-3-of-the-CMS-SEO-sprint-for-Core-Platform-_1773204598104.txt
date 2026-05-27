@@ -1,7 +1,7 @@
-We are beginning Phase 3 of the CMS > SEO sprint for TCK Wellness: implementing structured data support for optimal search engine understanding and eligibility for rich results.
+We are beginning Phase 3 of the CMS > SEO sprint for Core Platform: implementing structured data support for optimal search engine understanding and eligibility for rich results.
 
 CONTEXT
-Google recommends using JSON-LD for structured data and requires markup to match the visible main content of the page. Structured data does not guarantee rich results, but it helps Google understand page content and can improve eligibility for enhanced search appearances. TCK Wellness has multiple public content types that should support structured data, including:
+Google recommends using JSON-LD for structured data and requires markup to match the visible main content of the page. Structured data does not guarantee rich results, but it helps Google understand page content and can improve eligibility for enhanced search appearances. Core Platform has multiple public content types that should support structured data, including:
 - sitewide organization identity
 - public page hierarchy/breadcrumbs
 - blog/article content
@@ -22,7 +22,7 @@ PRIMARY GOAL
 Build a structured data generation system for the public site and CMS-managed content.
 
 REQUIRED STRUCTURED DATA TARGETS
-Implement support for the most relevant structured data types for TCK Wellness, including:
+Implement support for the most relevant structured data types for Core Platform, including:
 1. Organization
 2. BreadcrumbList
 3. Article for blog/editorial pages

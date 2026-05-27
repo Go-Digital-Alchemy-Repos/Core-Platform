@@ -18,7 +18,7 @@ const defaultTherapistLinks = [
 ];
 
 const defaultResourceLinks = [
-  { href: "/about", label: "About TCKs", testId: "link-footer-about-tcks" },
+  { href: "/about", label: "About Core Platforms", testId: "link-footer-about-corePlatforms" },
   { href: "/events", label: "Upcoming Events", testId: "link-footer-upcoming-events" },
   { href: "/directory", label: "Browse Specializations", testId: "link-footer-specializations" },
 ];
@@ -202,7 +202,7 @@ export function Footer() {
           <div className="col-span-2">
             <img
               src={brandLogo}
-              alt="TCK Wellness"
+              alt="Core Platform"
               className="h-8 sm:h-9 w-auto mb-3 sm:mb-4"
             />
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">

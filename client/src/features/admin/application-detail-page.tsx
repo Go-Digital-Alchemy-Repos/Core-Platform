@@ -485,12 +485,12 @@ export default function AdminApplicationDetailPage() {
               </CardContent>
             </Card>
 
-            {snapFd.tckQuestions && Object.keys(snapFd.tckQuestions).length > 0 && (
+            {snapFd.corePlatformQuestions && Object.keys(snapFd.corePlatformQuestions).length > 0 && (
               <Card>
-                <CardHeader><CardTitle className="text-base">TCK Questions</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-base">Core Platform Questions</CardTitle></CardHeader>
                 <CardContent>
                   <div className="space-y-4 text-sm">
-                    {Object.entries(snapFd.tckQuestions as Record<string, string>).map(([key, val]) => (
+                    {Object.entries(snapFd.corePlatformQuestions as Record<string, string>).map(([key, val]) => (
                       <div key={key}>
                         <p className="text-muted-foreground text-xs capitalize">{key.replace(/([A-Z])/g, " $1").replace(/_/g, " ")}</p>
                         <p className="bg-muted/50 rounded p-2 mt-1">{val || "—"}</p>
@@ -657,8 +657,8 @@ export default function AdminApplicationDetailPage() {
                           {[
                             { label: "Respondent Name", value: rd.firstName },
                             { label: "Relationship", value: rd.relationship },
-                            { label: "TCK Observation", value: rd.tckObservation },
-                            { label: "TCK Understanding", value: rd.tckUnderstanding },
+                            { label: "Core Platform Observation", value: rd.corePlatformObservation },
+                            { label: "Core Platform Understanding", value: rd.corePlatformUnderstanding },
                             { label: "Cultural Connection", value: rd.culturalConnection },
                             { label: "Safety Concern", value: rd.safetyConcern },
                             { label: "Safety Details", value: rd.safetyConcernDetails },

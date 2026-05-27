@@ -5,12 +5,12 @@ import { z } from "zod";
 
 export const seoSettings = pgTable("seo_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  siteName: text("site_name").default("TCK Wellness"),
-  titleSuffix: text("title_suffix").default(" | TCK Wellness"),
+  siteName: text("site_name").default("Core Platform"),
+  titleSuffix: text("title_suffix").default(" | Core Platform"),
   defaultMetaDescription: text("default_meta_description"),
   siteUrl: text("site_url"),
   defaultOgImageUrl: text("default_og_image_url"),
-  organizationName: text("organization_name").default("TCK Wellness"),
+  organizationName: text("organization_name").default("Core Platform"),
   organizationLogoUrl: text("organization_logo_url"),
   facebookUrl: text("facebook_url"),
   twitterHandle: text("twitter_handle"),

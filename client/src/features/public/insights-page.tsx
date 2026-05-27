@@ -197,7 +197,7 @@ export default function InsightsPage() {
                 <p className="text-sm public-helper-text">
                   {posts && posts.length > 0
                     ? "Try a different search, category, or tag."
-                    : "Check back soon for insights on TCK mental health and cross-cultural counseling."}
+                    : "Check back soon for insights on Core Platform mental health and cross-cultural counseling."}
                 </p>
               </div>
             )}

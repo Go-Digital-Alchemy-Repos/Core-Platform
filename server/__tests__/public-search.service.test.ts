@@ -29,7 +29,7 @@ const samplePage: CmsPage = {
   sidebarId: null,
   content: [{ title: "The Application Process", body: "Learn how to apply with step-by-step guidance." }],
   seoTitle: null,
-  seoDescription: "A guide to the TCK Wellness application process.",
+  seoDescription: "A guide to the Core Platform application process.",
   seoKeywords: null,
   ogImageUrl: null,
   canonicalUrl: null,
@@ -56,7 +56,7 @@ const joinCmsPage: CmsPage = {
   title: "Join the Network",
   slug: "join",
   seoDescription: null,
-  content: [{ title: "Membership", body: "Grow your practice with TCK Wellness." }],
+  content: [{ title: "Membership", body: "Grow your practice with Core Platform." }],
 };
 
 const samplePost: BlogPost = {

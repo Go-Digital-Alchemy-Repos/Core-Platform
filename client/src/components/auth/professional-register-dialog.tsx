@@ -77,7 +77,7 @@ export function ProfessionalRegisterDialog({
     };
     register.mutate(data, {
       onSuccess: () => {
-        toast({ title: "Application submitted!", description: "Welcome to TCK Wellness." });
+        toast({ title: "Application submitted!", description: "Welcome to Core Platform." });
         onOpenChange(false);
         setLocation("/therapist");
       },

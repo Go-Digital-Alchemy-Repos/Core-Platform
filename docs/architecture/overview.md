@@ -1,4 +1,4 @@
-# TCK Wellness — Architecture Overview
+# Core Platform — Architecture Overview
 
 ## Tech Stack
 
@@ -92,7 +92,7 @@
 
 3. **Storage → Database**: Storage classes use Drizzle ORM query builders to interact with PostgreSQL. All table definitions live in `shared/schema/`.
 
-4. **Auth Flow**: JWT tokens are stored in HTTP-only cookies (`tck_token`). The `authenticateToken` middleware verifies tokens and attaches the user to `req.user`. Role-based access is enforced via `requireRole()`.
+4. **Auth Flow**: JWT tokens are stored in HTTP-only cookies (`corePlatform_token`). The `authenticateToken` middleware verifies tokens and attaches the user to `req.user`. Role-based access is enforced via `requireRole()`.
 
 5. **File Uploads**: Files are uploaded to Cloudflare R2 via `r2.service.ts`. The upload route handles multipart form data and returns the R2 URL.
 

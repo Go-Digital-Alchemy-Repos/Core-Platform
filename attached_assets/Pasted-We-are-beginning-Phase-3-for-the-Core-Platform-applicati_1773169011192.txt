@@ -1,7 +1,7 @@
-We are beginning Phase 3 for the TCK Wellness application: moving therapist directory search/filter logic from client-heavy in-memory processing to server-side query semantics with pagination, while preserving the existing public directory UX.
+We are beginning Phase 3 for the Core Platform application: moving therapist directory search/filter logic from client-heavy in-memory processing to server-side query semantics with pagination, while preserving the existing public directory UX.
 
 CONTEXT
-TCK Wellness is a BetterHelp-style counselor directory for TCK-informed counselors. The therapist directory is a core product surface and must scale beyond the current seed data. Prior review found that the backend currently accepts some search/filter params, but the storage layer only partially applies them server-side, leaving the client to do too much filtering/sorting in memory.
+Core Platform is a BetterHelp-style counselor directory for Core Platform-informed counselors. The therapist directory is a core product surface and must scale beyond the current seed data. Prior review found that the backend currently accepts some search/filter params, but the storage layer only partially applies them server-side, leaving the client to do too much filtering/sorting in memory.
 
 PRIMARY GOAL
 Implement robust server-side directory filtering, searching, sorting support where appropriate, and pagination metadata, while preserving the current public UI and URL-driven deep-link behavior.

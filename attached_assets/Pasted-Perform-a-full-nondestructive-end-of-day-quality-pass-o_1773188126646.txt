@@ -1,4 +1,4 @@
-Perform a full nondestructive end-of-day quality pass on the TCK Wellness CMS implementation after the recent CMS sprint work.
+Perform a full nondestructive end-of-day quality pass on the Core Platform CMS implementation after the recent CMS sprint work.
 
 GOALS
 - reduce code debt introduced during the CMS sprint

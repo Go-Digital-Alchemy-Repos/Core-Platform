@@ -41,7 +41,7 @@ function statusDescription(status: ApplicationStatus) {
     interview_scheduled: "Your interview has been scheduled. Check your email for details.",
     interview_completed: "Your interview is complete. A decision will be made soon.",
     approved_pending_subscription: "Congratulations! You've been approved. Activate your membership subscription to be listed in our directory.",
-    active_member: "You are an active member of the TCK Wellness counselor network!",
+    active_member: "You are an active member of the Core Platform counselor network!",
     denied: "We appreciate your interest, but we are unable to approve your application at this time. The application fee is non-refundable.",
     withdrawn: "You have withdrawn your application.",
   };

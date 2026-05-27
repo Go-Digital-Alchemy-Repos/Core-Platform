@@ -1,7 +1,7 @@
-We are beginning a major nondestructive CMS buildout for the TCK Wellness application.
+We are beginning a major nondestructive CMS buildout for the Core Platform application.
 
 CONTEXT
-TCK Wellness already has:
+Core Platform already has:
 - an admin dashboard
 - public website pages
 - blog functionality
@@ -22,7 +22,7 @@ IMPORTANT RULES
 - Do not break current public rendering
 - Do not remove existing pages or blog features
 - Additive implementation only
-- Adapt to TCK Wellness as a single-site CMS inside the existing app
+- Adapt to Core Platform as a single-site CMS inside the existing app
 - Do not introduce unnecessary multi-tenant/workspace/site abstractions
 - Keep architecture modular and future-ready
 - Anywhere in the CMS that would normally use an image URL input, plan for Cloudflare R2-backed upload/dropzone handling instead of raw URL inputs

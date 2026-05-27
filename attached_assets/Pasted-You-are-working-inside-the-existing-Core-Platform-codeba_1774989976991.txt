@@ -1,4 +1,4 @@
-You are working inside the existing TCK Wellness codebase.
+You are working inside the existing Core Platform codebase.
 
 This is a NONDESTRUCTIVE implementation task. Do not remove or break any existing auth, dashboard, profile, subscription, admin, or directory functionality. Reuse existing patterns wherever possible. Preserve all current working features. Build incrementally.
 

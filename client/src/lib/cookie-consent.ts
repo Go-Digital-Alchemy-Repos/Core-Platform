@@ -1,8 +1,8 @@
-export const COOKIE_CONSENT_STORAGE_KEY = "tck_cookie_consent";
-export const COOKIE_CONSENT_COOKIE_NAME = "tck_cookie_consent";
+export const COOKIE_CONSENT_STORAGE_KEY = "corePlatform_cookie_consent";
+export const COOKIE_CONSENT_COOKIE_NAME = "corePlatform_cookie_consent";
 export const COOKIE_CONSENT_DURATION_DAYS = 60;
 export const COOKIE_CONSENT_VERSION = 1;
-export const COOKIE_CONSENT_CHANGED_EVENT = "tck:cookie-consent-changed";
+export const COOKIE_CONSENT_CHANGED_EVENT = "corePlatform:cookie-consent-changed";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 

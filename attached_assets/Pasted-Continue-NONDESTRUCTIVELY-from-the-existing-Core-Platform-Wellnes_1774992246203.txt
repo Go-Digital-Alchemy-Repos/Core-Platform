@@ -1,4 +1,4 @@
-Continue NONDESTRUCTIVELY from the existing TCK Wellness codebase and preserve all working functionality.
+Continue NONDESTRUCTIVELY from the existing Core Platform codebase and preserve all working functionality.
 
 Now implement the automated REFERENCE workflow that begins immediately after a provider application is successfully submitted.
 
@@ -43,14 +43,14 @@ Fields:
 - Your first name
 - Name of the Applicant
 - How do you know the applicant, and how long have you known them?
-- In what contexts have you had the opportunity to observe the applicant interacting with TCKs?
-- In your experience, how well does the applicant understand the unique experiences and challenges faced by TCKs?
+- In what contexts have you had the opportunity to observe the applicant interacting with Core Platforms?
+- In your experience, how well does the applicant understand the unique experiences and challenges faced by Core Platforms?
 - How would you describe the applicant’s ability to connect with children, teens, or families from culturally diverse or internationally mobile backgrounds?
 - Are you aware of any situations in which the applicant’s interactions with children might have posed a concern for the child’s safety or well-being? (Yes/No/Optional comments)
 - Are you aware of any situations in which the applicant’s behavior toward colleagues, clients, or others may have been unprofessional, unethical, or otherwise concerning? (Yes/No/Optional comments)
-- Would you recommend the applicant as a TCK-informed provider? (Yes/No/Optional comments)
+- Would you recommend the applicant as a Core Platform-informed provider? (Yes/No/Optional comments)
 
-Include the TCK-informed definition text in the form.
+Include the Core Platform-informed definition text in the form.
 
 D. Reference status updates
 As references open/submit:

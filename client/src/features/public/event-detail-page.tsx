@@ -551,7 +551,7 @@ function RegistrationSection({
 }
 
 function EventSeo({ event, globalSeo }: { event: Event; globalSeo?: SeoSettings }) {
-  const titleSuffix = globalSeo?.titleSuffix ?? " | TCK Wellness";
+  const titleSuffix = globalSeo?.titleSuffix ?? " | Core Platform";
   const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
   const effectiveTitle = `${event.title}${titleSuffix}`;
   const effectiveDescription = event.description
@@ -1074,7 +1074,7 @@ export default function EventDetailPage() {
 
                 {event.memberOnly && !event.registrationEnabled && (
                   <p className="text-sm text-muted-foreground">
-                    This event is exclusive to TCK Wellness members.{" "}
+                    This event is exclusive to Core Platform members.{" "}
                     <Link href="/join" className="text-accent underline underline-offset-2">
                       Join the network
                     </Link>{" "}

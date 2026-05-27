@@ -1,6 +1,6 @@
 # Stabilization Sprint Changelog
 
-Summary of all completed work from the TCK Wellness stabilization sprint.
+Summary of all completed work from the Core Platform stabilization sprint.
 
 ---
 

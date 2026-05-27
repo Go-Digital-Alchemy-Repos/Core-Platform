@@ -5,7 +5,7 @@ import type { Specialization, InsertSpecialization } from "../../shared/schema/s
 
 const SEED_SPECIALIZATIONS = [
   "Anxiety", "Depression", "Trauma & PTSD", "Grief & Loss",
-  "Identity & Belonging", "Cross-Cultural Transitions", "Third Culture Kids (TCK)",
+  "Identity & Belonging", "Cross-Cultural Transitions", "Third Culture Kids (Core Platform)",
   "Expatriate Adjustment", "Relationship Issues", "Family Therapy",
   "Couples Counseling", "Child & Adolescent", "Substance Abuse",
   "Eating Disorders", "Career Counseling", "Mindfulness & Meditation",

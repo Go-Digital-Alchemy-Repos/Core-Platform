@@ -1,4 +1,4 @@
-We are beginning Phase 2 for the TCK Wellness application: a nondestructive security hardening pass. This app is a counselor directory and subscription platform with authentication, counselor approval, Stripe subscriptions, messaging, email, and admin operations. Your task is to harden the application for production without changing the existing UX or removing features.
+We are beginning Phase 2 for the Core Platform application: a nondestructive security hardening pass. This app is a counselor directory and subscription platform with authentication, counselor approval, Stripe subscriptions, messaging, email, and admin operations. Your task is to harden the application for production without changing the existing UX or removing features.
 
 IMPORTANT RULES
 - Nondestructive only

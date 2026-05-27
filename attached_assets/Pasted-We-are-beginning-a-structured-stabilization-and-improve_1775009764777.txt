@@ -1,4 +1,4 @@
-We are beginning a structured stabilization and improvement sprint for the TCK Wellness application.
+We are beginning a structured stabilization and improvement sprint for the Core Platform application.
 
 This is a NON-DESTRUCTIVE refactor and hardening pass. Do not remove existing features, do not break current flows, and do not redesign the UI unless required for performance or correctness. Preserve all existing business logic unless explicitly improved below.
 

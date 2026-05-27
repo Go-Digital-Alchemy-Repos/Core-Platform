@@ -57,7 +57,7 @@ export const SPECIALIZATIONS = [
   "Grief & Loss",
   "Identity & Belonging",
   "Cross-Cultural Transitions",
-  "Third Culture Kids (TCK)",
+  "Third Culture Kids (Core Platform)",
   "Expatriate Adjustment",
   "Relationship Issues",
   "Family Therapy",

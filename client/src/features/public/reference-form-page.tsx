@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { apiRequest } from "@/lib/queryClient";
 
-const TCK_DEFINITION = `A "TCK-informed" provider is a mental health professional who demonstrates meaningful understanding of the unique developmental, emotional, and cultural experiences of Third Culture Kids (TCKs) — individuals who spent a significant part of their formative years in a culture other than their parents' home culture. TCK-informed providers recognize themes such as high mobility, repeated loss and grief, cultural identity complexity, "hidden diversity," rootlessness, restlessness, and the challenge of repatriation. They approach their work with cultural humility and an awareness of how cross-cultural upbringing shapes mental health, attachment, and belonging.`;
+const CORE_PLATFORM_DEFINITION = `A "Core Platform-informed" provider is a mental health professional who demonstrates meaningful understanding of the unique developmental, emotional, and cultural experiences of Third Culture Kids (Core Platforms) — individuals who spent a significant part of their formative years in a culture other than their parents' home culture. Core Platform-informed providers recognize themes such as high mobility, repeated loss and grief, cultural identity complexity, "hidden diversity," rootlessness, restlessness, and the challenge of repatriation. They approach their work with cultural humility and an awareness of how cross-cultural upbringing shapes mental health, attachment, and belonging.`;
 
 interface ReferenceData {
   alreadyCompleted: boolean;
@@ -24,8 +24,8 @@ interface FormState {
   firstName: string;
   applicantName: string;
   howKnown: string;
-  tckObservation: string;
-  tckUnderstanding: string;
+  corePlatformObservation: string;
+  corePlatformUnderstanding: string;
   culturalConnection: string;
   safetyConcern: string;
   safetyConcernDetails: string;
@@ -102,8 +102,8 @@ export default function ReferenceFormPage() {
     firstName: "",
     applicantName: "",
     howKnown: "",
-    tckObservation: "",
-    tckUnderstanding: "",
+    corePlatformObservation: "",
+    corePlatformUnderstanding: "",
     culturalConnection: "",
     safetyConcern: "",
     safetyConcernDetails: "",
@@ -159,12 +159,12 @@ export default function ReferenceFormPage() {
       setValidationError("Please describe how you know the applicant.");
       return;
     }
-    if (!form.tckObservation.trim()) {
-      setValidationError("Please answer the TCK observation question.");
+    if (!form.corePlatformObservation.trim()) {
+      setValidationError("Please answer the Core Platform observation question.");
       return;
     }
-    if (!form.tckUnderstanding.trim()) {
-      setValidationError("Please answer the TCK understanding question.");
+    if (!form.corePlatformUnderstanding.trim()) {
+      setValidationError("Please answer the Core Platform understanding question.");
       return;
     }
     if (!form.culturalConnection.trim()) {
@@ -207,7 +207,7 @@ export default function ReferenceFormPage() {
             <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
             <h2 className="text-xl font-semibold mb-2">Invalid Reference Link</h2>
             <p className="text-muted-foreground">
-              This reference link is invalid, has expired, or the application is no longer active. If you believe this is an error, please contact the applicant or TCK Wellness support.
+              This reference link is invalid, has expired, or the application is no longer active. If you believe this is an error, please contact the applicant or Core Platform support.
             </p>
           </CardContent>
         </Card>
@@ -226,7 +226,7 @@ export default function ReferenceFormPage() {
             </h2>
             <p className="text-muted-foreground">
               {submitted
-                ? `Your reference for ${data.applicantName} has been submitted successfully. Your feedback is confidential and will not be shared with the applicant. Thank you for helping support the TCK Wellness counselor network.`
+                ? `Your reference for ${data.applicantName} has been submitted successfully. Your feedback is confidential and will not be shared with the applicant. Thank you for helping support the Core Platform counselor network.`
                 : `A reference for ${data.applicantName} has already been submitted from this link. Thank you for your support.`}
             </p>
           </CardContent>
@@ -239,7 +239,7 @@ export default function ReferenceFormPage() {
     <div className="min-h-screen bg-background">
       <div className="bg-[#1e3a5f] text-white py-6">
         <div className="container max-w-2xl mx-auto px-4">
-          <h1 className="text-2xl font-bold">TCK Wellness</h1>
+          <h1 className="text-2xl font-bold">Core Platform</h1>
           <p className="text-white/80 text-sm mt-1">Confidential Reference Form</p>
         </div>
       </div>
@@ -252,7 +252,7 @@ export default function ReferenceFormPage() {
               <div>
                 <p className="font-medium">Confidential Reference for {data.applicantName}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  <strong>{data.applicantName}</strong> has applied to join the TCK Wellness counselor network and has listed you as a professional reference.
+                  <strong>{data.applicantName}</strong> has applied to join the Core Platform counselor network and has listed you as a professional reference.
                   Your responses are <strong>strictly confidential</strong> and will not be shared with the applicant. This form takes approximately 5–10 minutes to complete.
                 </p>
               </div>
@@ -262,8 +262,8 @@ export default function ReferenceFormPage() {
 
         <Card className="mb-6 bg-muted/30">
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">What does "TCK-informed" mean?</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">{TCK_DEFINITION}</p>
+            <p className="text-xs text-muted-foreground font-medium mb-1">What does "Core Platform-informed" mean?</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">{CORE_PLATFORM_DEFINITION}</p>
           </CardContent>
         </Card>
 
@@ -322,28 +322,28 @@ export default function ReferenceFormPage() {
               </div>
 
               <div>
-                <Label htmlFor="tckObservation">In what contexts have you had the opportunity to observe the applicant interacting with TCKs? *</Label>
+                <Label htmlFor="corePlatformObservation">In what contexts have you had the opportunity to observe the applicant interacting with Core Platforms? *</Label>
                 <Textarea
-                  id="tckObservation"
-                  value={form.tckObservation}
-                  onChange={(e) => updateField("tckObservation", e.target.value)}
+                  id="corePlatformObservation"
+                  value={form.corePlatformObservation}
+                  onChange={(e) => updateField("corePlatformObservation", e.target.value)}
                   placeholder="Describe any clinical, educational, or community settings..."
                   rows={3}
                   className="mt-1"
-                  data-testid="textarea-tck-observation"
+                  data-testid="textarea-corePlatform-observation"
                 />
               </div>
 
               <div>
-                <Label htmlFor="tckUnderstanding">In your experience, how well does the applicant understand the unique experiences and challenges faced by TCKs? *</Label>
+                <Label htmlFor="corePlatformUnderstanding">In your experience, how well does the applicant understand the unique experiences and challenges faced by Core Platforms? *</Label>
                 <Textarea
-                  id="tckUnderstanding"
-                  value={form.tckUnderstanding}
-                  onChange={(e) => updateField("tckUnderstanding", e.target.value)}
-                  placeholder="Share your assessment of their TCK knowledge and sensitivity..."
+                  id="corePlatformUnderstanding"
+                  value={form.corePlatformUnderstanding}
+                  onChange={(e) => updateField("corePlatformUnderstanding", e.target.value)}
+                  placeholder="Share your assessment of their Core Platform knowledge and sensitivity..."
                   rows={3}
                   className="mt-1"
-                  data-testid="textarea-tck-understanding"
+                  data-testid="textarea-corePlatform-understanding"
                 />
               </div>
 
@@ -397,7 +397,7 @@ export default function ReferenceFormPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Would you recommend the applicant as a TCK-informed provider? *</Label>
+                <Label>Would you recommend the applicant as a Core Platform-informed provider? *</Label>
                 <div className="flex gap-4 mt-2">
                   {["yes", "no"].map((opt) => (
                     <label key={opt} className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
@@ -446,7 +446,7 @@ export default function ReferenceFormPage() {
           </div>
 
           <p className="text-xs text-muted-foreground text-center pb-8">
-            Your responses are confidential and will only be reviewed by the TCK Wellness team.
+            Your responses are confidential and will only be reviewed by the Core Platform team.
             They will not be shared with the applicant.
           </p>
         </div>

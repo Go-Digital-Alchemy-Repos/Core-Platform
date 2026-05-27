@@ -1,4 +1,4 @@
-We are beginning Phase 5 of the CMS > SEO sprint for TCK Wellness: polishing the SEO system with previews, validation, and editorial usability improvements.
+We are beginning Phase 5 of the CMS > SEO sprint for Core Platform: polishing the SEO system with previews, validation, and editorial usability improvements.
 
 CONTEXT
 The CMS SEO system now includes global settings, page/post SEO fields, structured data output, and technical SEO tools. We now need to make the experience more editor-friendly and safer.
@@ -45,7 +45,7 @@ Do not over-police editors.
    - whether required source fields for those schema types are present
 Do not build a full crawler or validator clone.
 
-6. Keep UX consistent with the TCK Wellness design system.
+6. Keep UX consistent with the Core Platform design system.
 
 NONDESTRUCTIVE RULES
 - No public SEO regressions

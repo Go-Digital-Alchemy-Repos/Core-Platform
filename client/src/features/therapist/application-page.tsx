@@ -31,7 +31,7 @@ interface FormData {
   professionalTitle?: string;
   organizationName?: string;
   professionalWebsite?: string;
-  tckQuestions?: Record<string, string>;
+  corePlatformQuestions?: Record<string, string>;
   accessibilityStartingFee?: string;
   accessibilitySlidingScale?: string;
   accessibilityDetails?: string;
@@ -57,28 +57,28 @@ const WIZARD_STEPS = [
   { id: "before-you-begin", label: "Before You Begin", icon: FileText },
   { id: "contact", label: "Contact Info", icon: User },
   { id: "professional", label: "Professional Info", icon: Briefcase },
-  { id: "tck-questions", label: "TCK Questions", icon: MessageSquare },
+  { id: "corePlatform-questions", label: "Core Platform Questions", icon: MessageSquare },
   { id: "references", label: "References", icon: Users },
   { id: "accessibility", label: "Accessibility", icon: DollarSign },
   { id: "terms", label: "Terms", icon: Shield },
 ];
 
-const TCK_QUESTIONS = [
+const CORE_PLATFORM_QUESTIONS = [
   {
-    id: "tck_experience",
-    label: "Describe your experience working with Third Culture Kids (TCKs) or cross-cultural populations.",
+    id: "corePlatform_experience",
+    label: "Describe your experience working with Third Culture Kids (Core Platforms) or cross-cultural populations.",
   },
   {
-    id: "tck_approach",
-    label: "What therapeutic approaches or frameworks do you use when working with TCKs or individuals navigating cultural transitions?",
+    id: "corePlatform_approach",
+    label: "What therapeutic approaches or frameworks do you use when working with Core Platforms or individuals navigating cultural transitions?",
   },
   {
-    id: "tck_understanding",
-    label: "How would you define or describe the unique challenges faced by TCKs, and how does your practice address them?",
+    id: "corePlatform_understanding",
+    label: "How would you define or describe the unique challenges faced by Core Platforms, and how does your practice address them?",
   },
   {
-    id: "tck_continuing_ed",
-    label: "What continuing education, training, or personal experience informs your TCK-related work?",
+    id: "corePlatform_continuing_ed",
+    label: "What continuing education, training, or personal experience informs your Core Platform-related work?",
   },
 ];
 
@@ -326,7 +326,7 @@ function BeforeYouBeginStep({ formData, onChange }: { formData: FormData; onChan
             <FileText className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
             <div>
               <p className="font-medium">Vetting Criteria</p>
-              <p className="text-sm text-muted-foreground">Review our vetting criteria to understand what we look for in TCK Wellness providers.</p>
+              <p className="text-sm text-muted-foreground">Review our vetting criteria to understand what we look for in Core Platform providers.</p>
               <Button variant="ghost" size="sm" className="p-0 h-auto mt-1 text-primary" data-testid="link-vetting-criteria" disabled>
                 <ExternalLink className="w-3 h-3 mr-1" />
                 Preview vetting criteria (PDF coming soon)
@@ -474,7 +474,7 @@ function ProfessionalInfoStep({
 
       <div className="space-y-4">
         <div>
-          <Label>I am applying as a TCK-informed: *</Label>
+          <Label>I am applying as a Core Platform-informed: *</Label>
           <div className="grid gap-2 mt-2">
             {roleOptions.map((opt) => (
               <label
@@ -646,22 +646,22 @@ function ProfessionalInfoStep({
 }
 
 function TckQuestionsStep({ formData, onChange }: { formData: FormData; onChange: (data: Partial<FormData>) => void }) {
-  const questions = formData.tckQuestions || {};
+  const questions = formData.corePlatformQuestions || {};
   const updateQuestion = (id: string, value: string) => {
-    onChange({ tckQuestions: { ...questions, [id]: value } });
+    onChange({ corePlatformQuestions: { ...questions, [id]: value } });
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold" data-testid="text-step-title">TCK-Informed Practice</h3>
+        <h3 className="text-lg font-semibold" data-testid="text-step-title">Core Platform-Informed Practice</h3>
         <p className="text-muted-foreground mt-1">
           Help us understand your experience and approach to working with Third Culture Kids and cross-cultural populations.
         </p>
       </div>
 
       <div className="space-y-6">
-        {TCK_QUESTIONS.map((q, idx) => (
+        {CORE_PLATFORM_QUESTIONS.map((q, idx) => (
           <div key={q.id}>
             <Label htmlFor={q.id} className="text-sm font-medium leading-snug">
               {idx + 1}. {q.label}
@@ -838,7 +838,7 @@ function AccessibilityStep({ formData, onChange }: { formData: FormData; onChang
         </div>
 
         <div>
-          <Label>Do you offer sliding-scale or reduced-fee sessions for TCKs? *</Label>
+          <Label>Do you offer sliding-scale or reduced-fee sessions for Core Platforms? *</Label>
           <div className="grid grid-cols-2 gap-3 mt-2">
             {[
               { value: "yes", label: "Yes" },
@@ -886,14 +886,14 @@ function AccessibilityStep({ formData, onChange }: { formData: FormData; onChang
 
 function TermsStep({ formData, onChange }: { formData: FormData; onChange: (data: Partial<FormData>) => void }) {
   const termsItems = [
-    "I acknowledge that I am an independent professional and not an employee, agent, or representative of TCK Wellness.",
-    "I understand that listing on the TCK Wellness directory does not constitute an endorsement by TCK Wellness of my services, qualifications, or methods.",
+    "I acknowledge that I am an independent professional and not an employee, agent, or representative of Core Platform.",
+    "I understand that listing on the Core Platform directory does not constitute an endorsement by Core Platform of my services, qualifications, or methods.",
     "I accept sole professional responsibility for the services I provide to clients.",
     "I am responsible for maintaining all necessary licenses, credentials, certifications, and professional liability insurance required to practice in my jurisdiction(s).",
     "I will accurately represent my qualifications, experience, and services in my directory profile and in all interactions facilitated through the platform.",
-    "I will promptly notify TCK Wellness of any disciplinary actions, licensure issues, or changes to my professional standing.",
-    "I agree to indemnify and hold harmless TCK Wellness, its founders, staff, and affiliates from any claims, damages, or liabilities arising from my professional services.",
-    "I understand that TCK Wellness reserves the right to remove my listing from the directory at its discretion, with or without cause.",
+    "I will promptly notify Core Platform of any disciplinary actions, licensure issues, or changes to my professional standing.",
+    "I agree to indemnify and hold harmless Core Platform, its founders, staff, and affiliates from any claims, damages, or liabilities arising from my professional services.",
+    "I understand that Core Platform reserves the right to remove my listing from the directory at its discretion, with or without cause.",
   ];
 
   return (
@@ -927,7 +927,7 @@ function TermsStep({ formData, onChange }: { formData: FormData; onChange: (data
             className="mt-0.5 h-4 w-4 rounded border-gray-300"
             data-testid="checkbox-insurance-agreement"
           />
-          <span className="text-sm">I agree to maintain professional liability insurance for as long as I am listed on the TCK Wellness directory.</span>
+          <span className="text-sm">I agree to maintain professional liability insurance for as long as I am listed on the Core Platform directory.</span>
         </label>
 
         <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-muted/50 transition-colors">
@@ -995,9 +995,9 @@ function getStepValidation(step: number, formData: FormData, application: any): 
       if ((application?.credentials?.length ?? 0) === 0) return { valid: false, message: "At least one credential is required." };
       return { valid: true };
     case 5: {
-      const questions = formData.tckQuestions || {};
-      const answered = TCK_QUESTIONS.filter((q) => (questions[q.id] || "").trim().length > 0);
-      if (answered.length < TCK_QUESTIONS.length) return { valid: false, message: `Please answer all ${TCK_QUESTIONS.length} questions.` };
+      const questions = formData.corePlatformQuestions || {};
+      const answered = CORE_PLATFORM_QUESTIONS.filter((q) => (questions[q.id] || "").trim().length > 0);
+      if (answered.length < CORE_PLATFORM_QUESTIONS.length) return { valid: false, message: `Please answer all ${CORE_PLATFORM_QUESTIONS.length} questions.` };
       return { valid: true };
     }
     case 6:
@@ -1279,7 +1279,7 @@ export default function ApplicationPage() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-heading">Apply for Membership</CardTitle>
             <CardDescription className="max-w-md mx-auto">
-              Join the TCK Wellness counselor network and connect with Third Culture Kids who need your expertise.
+              Join the Core Platform counselor network and connect with Third Culture Kids who need your expertise.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">

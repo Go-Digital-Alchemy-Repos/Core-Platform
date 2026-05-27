@@ -192,7 +192,7 @@ export default function CmsBlogPage() {
                   <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-5">
                     {search || statusFilter !== "all"
                       ? "Try different search terms or filters."
-                      : "Create your first post to start sharing insights with the TCK community."}
+                      : "Create your first post to start sharing insights with the Core Platform community."}
                   </p>
                   {!search && statusFilter === "all" && (
                     <Button asChild variant="outline">

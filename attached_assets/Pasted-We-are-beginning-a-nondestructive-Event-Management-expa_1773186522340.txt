@@ -1,4 +1,4 @@
-We are beginning a nondestructive Event Management expansion sprint for the TCK Wellness application. This app is a BetterHelp-style counselor directory and subscription platform with public users/clients, counselors, and administrators. We need to expand the existing event system to support richer event delivery details and future registration/payment/archive capabilities.
+We are beginning a nondestructive Event Management expansion sprint for the Core Platform application. This app is a BetterHelp-style counselor directory and subscription platform with public users/clients, counselors, and administrators. We need to expand the existing event system to support richer event delivery details and future registration/payment/archive capabilities.
 
 IMPORTANT RULES
 - Nondestructive only

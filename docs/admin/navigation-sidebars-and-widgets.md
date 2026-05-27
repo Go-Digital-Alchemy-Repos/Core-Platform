@@ -1,6 +1,6 @@
 # Navigation, Sidebars, And Widgets
 
-TCK Wellness uses a CMS-managed navigation system and reusable sidebar/widget system instead of hard-coded menu content.
+Core Platform uses a CMS-managed navigation system and reusable sidebar/widget system instead of hard-coded menu content.
 
 ## Menus
 

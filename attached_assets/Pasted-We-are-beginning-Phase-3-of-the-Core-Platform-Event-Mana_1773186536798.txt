@@ -1,7 +1,7 @@
-We are beginning Phase 3 of the TCK Wellness Event Management sprint: implementing a nondestructive free event registration system for eligible users.
+We are beginning Phase 3 of the Core Platform Event Management sprint: implementing a nondestructive free event registration system for eligible users.
 
 CONTEXT
-TCK Wellness already has users, counselors, admins, events, email templates, and admin systems. We now need to allow event registration for free events, give admins visibility into registrants, support CSV export, and integrate registration-related email workflows. This phase should focus on free registration only. Paid registration via Stripe will be handled in the next phase.
+Core Platform already has users, counselors, admins, events, email templates, and admin systems. We now need to allow event registration for free events, give admins visibility into registrants, support CSV export, and integrate registration-related email workflows. This phase should focus on free registration only. Paid registration via Stripe will be handled in the next phase.
 
 IMPORTANT RULES
 - Nondestructive only

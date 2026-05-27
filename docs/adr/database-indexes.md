@@ -6,7 +6,7 @@
 
 ## Context
 
-The TCK Wellness application has grown to include a therapist directory with filterable listings, direct messaging, events with recurrence support, and admin contact message management. While the schema had basic indexes (e.g., `idx_tp_visibility` on `is_approved, is_active`), several query patterns lacked index support, and one FK relationship was missing.
+The Core Platform application has grown to include a therapist directory with filterable listings, direct messaging, events with recurrence support, and admin contact message management. While the schema had basic indexes (e.g., `idx_tp_visibility` on `is_approved, is_active`), several query patterns lacked index support, and one FK relationship was missing.
 
 ## Decisions
 
