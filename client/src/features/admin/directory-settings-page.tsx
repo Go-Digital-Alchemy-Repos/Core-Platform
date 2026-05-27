@@ -142,7 +142,7 @@ function DirectoryApplicationSettingsTab() {
       <div>
         <h2 className="text-xl font-heading font-semibold">Application Settings</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Control the application fee experience, approval gating, and renewal / delinquency rules for the directory module.
+          Control the application fee experience, approval gating, and renewal / delinquency rules for the directory app.
         </p>
       </div>
 
@@ -308,7 +308,7 @@ export default function DirectorySettingsPage() {
         <div>
           <h1 className="text-2xl font-heading font-semibold">Directory Settings</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage membership plans and application rules for the directory module.
+            Manage membership plans and application rules for the directory app.
           </p>
         </div>
 

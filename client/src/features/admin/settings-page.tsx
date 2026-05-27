@@ -167,12 +167,12 @@ const SYSTEM_CONFIGURATION_FIELDS: Array<{
   {
     key: "enable_directory",
     label: "Enable Directory",
-    description: "Turns the directory module on or off for this site, including admin navigation and directory routes.",
+    description: "Turns the directory app on or off for this site, including admin navigation and directory routes.",
   },
   {
     key: "enable_blog",
     label: "Enable Blog",
-    description: "Controls blog and insights entry points so sites can ship without the publishing module when needed.",
+    description: "Controls blog and insights entry points so sites can ship without the publishing app when needed.",
   },
   {
     key: "enable_events",
@@ -648,15 +648,15 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
           System Configuration
         </h3>
         <p className="text-sm text-muted-foreground">
-          Control which major site modules are active so this platform can be reused across projects without carrying unnecessary features.
+          Control which major site apps are active so this platform can be reused across projects without carrying unnecessary features.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Feature Modules</CardTitle>
+          <CardTitle className="text-base">Feature Apps</CardTitle>
           <CardDescription>
-            These toggles hide or reveal major admin navigation and public entry routes. Existing data is preserved when a module is turned off.
+            These toggles hide or reveal major admin navigation and public entry routes. Existing data is preserved when an app is turned off.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

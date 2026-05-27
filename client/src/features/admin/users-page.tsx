@@ -238,7 +238,7 @@ function UsersContent() {
             System Users
           </h1>
           <p className="text-sm text-muted-foreground">
-            Manage admin and editor accounts used to operate the platform. Directory members are managed separately in the Directory module.
+            Manage admin and editor accounts used to operate the platform. Directory members are managed separately in the Directory app.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)} data-testid="button-create-user">
