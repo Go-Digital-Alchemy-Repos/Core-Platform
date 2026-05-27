@@ -29,6 +29,9 @@ async function buildAll() {
 
   console.log("copying migrations...");
   await cp("migrations", "dist/migrations", { recursive: true });
+
+  console.log("copying docs...");
+  await cp("docs", "dist/docs", { recursive: true });
 }
 
 buildAll().catch((err) => {
