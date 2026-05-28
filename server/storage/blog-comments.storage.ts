@@ -47,7 +47,11 @@ export class BlogCommentsStorage {
   }
 
   async createComment(data: InsertBlogComment): Promise<BlogComment> {
-    const [comment] = await db.insert(blogComments).values(data).returning();
+    const insertData: typeof blogComments.$inferInsert = {
+      ...data,
+      status: (data.status ?? "pending") as BlogCommentStatus,
+    };
+    const [comment] = await db.insert(blogComments).values(insertData).returning();
     return comment;
   }
 

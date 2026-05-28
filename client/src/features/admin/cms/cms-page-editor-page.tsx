@@ -402,7 +402,7 @@ export default function CmsPageEditorPage() {
     form.handleSubmit((formData) => {
       const payload = {
         ...formData,
-        sidebarId: formData.template === "with-sidebar" ? (formData.sidebarId || null) : null,
+        sidebarId: formData.template === "with-sidebar" ? formData.sidebarId || "" : "",
         content: builderContent,
       };
       if (isNew) {

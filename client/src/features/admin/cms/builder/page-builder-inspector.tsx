@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from "react";
+import type { ReactNode, Ref } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -118,7 +118,7 @@ export function BlockInspectorPanel({
 }
 
 interface DesktopInspectorPanelProps {
-  shellRef: RefObject<HTMLDivElement | null>;
+  shellRef: Ref<HTMLDivElement>;
   offset: number;
   children: ReactNode;
 }

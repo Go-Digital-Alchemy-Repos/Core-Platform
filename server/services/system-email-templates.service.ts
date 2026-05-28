@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db";
-import { emailTemplates } from "@shared/schema";
+import { emailTemplates, type InsertEmailTemplate } from "@shared/schema";
 import { logger } from "../utils/logger";
 
 function baseWrap(title: string, body: string): string {
@@ -15,7 +15,7 @@ function removeLegacyAdminCta(htmlBody: string) {
   );
 }
 
-export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS = [
+export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS: InsertEmailTemplate[] = [
   {
     slug: "therapist-approval",
     name: "Therapist Application Approved",

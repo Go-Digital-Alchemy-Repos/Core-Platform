@@ -2,6 +2,7 @@ import { Router } from "express";
 import { insertCmsFormSchema } from "@shared/schema";
 import { asyncHandler } from "../../middleware/error-handler";
 import { storage } from "../../storage";
+import { paramString } from "../../utils/params";
 
 const router = Router();
 
@@ -15,7 +16,8 @@ router.get(
 router.get(
   "/forms/:id",
   asyncHandler(async (req, res) => {
-    const form = await storage.forms.getById(req.params.id);
+    const id = paramString(req.params.id);
+    const form = await storage.forms.getById(id);
     if (!form) {
       return res.status(404).json({ message: "Form not found" });
     }
@@ -26,23 +28,26 @@ router.get(
 router.get(
   "/forms/:id/submissions",
   asyncHandler(async (req, res) => {
-    const form = await storage.forms.getById(req.params.id);
+    const id = paramString(req.params.id);
+    const form = await storage.forms.getById(id);
     if (!form) {
       return res.status(404).json({ message: "Form not found" });
     }
-    res.json(await storage.forms.getSubmissionsByFormId(req.params.id));
+    res.json(await storage.forms.getSubmissionsByFormId(id));
   })
 );
 
 router.delete(
   "/forms/:id/submissions/:submissionId",
   asyncHandler(async (req, res) => {
-    const form = await storage.forms.getById(req.params.id);
+    const id = paramString(req.params.id);
+    const submissionId = paramString(req.params.submissionId);
+    const form = await storage.forms.getById(id);
     if (!form) {
       return res.status(404).json({ message: "Form not found" });
     }
 
-    const deleted = await storage.forms.deleteSubmission(req.params.id, req.params.submissionId);
+    const deleted = await storage.forms.deleteSubmission(id, submissionId);
     if (!deleted) {
       return res.status(404).json({ message: "Submission not found" });
     }
@@ -77,17 +82,18 @@ router.put(
       return res.status(400).json({ message: "Invalid form payload", errors: parsed.error.flatten() });
     }
 
-    const current = await storage.forms.getById(req.params.id);
+    const id = paramString(req.params.id);
+    const current = await storage.forms.getById(id);
     if (!current) {
       return res.status(404).json({ message: "Form not found" });
     }
 
     const conflicting = await storage.forms.getBySlug(parsed.data.slug);
-    if (conflicting && conflicting.id !== req.params.id) {
+    if (conflicting && conflicting.id !== id) {
       return res.status(409).json({ message: "A form with that slug already exists" });
     }
 
-    const form = await storage.forms.update(req.params.id, parsed.data);
+    const form = await storage.forms.update(id, parsed.data);
     res.json(form);
   })
 );
@@ -95,7 +101,8 @@ router.put(
 router.delete(
   "/forms/:id",
   asyncHandler(async (req, res) => {
-    const existing = await storage.forms.getById(req.params.id);
+    const id = paramString(req.params.id);
+    const existing = await storage.forms.getById(id);
     if (!existing) {
       return res.status(404).json({ message: "Form not found" });
     }
@@ -104,7 +111,7 @@ router.delete(
       return res.status(400).json({ message: "System forms cannot be deleted" });
     }
 
-    const deleted = await storage.forms.delete(req.params.id);
+    const deleted = await storage.forms.delete(id);
     res.json({ success: deleted });
   })
 );

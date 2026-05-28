@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from "react";
+import type { ReactNode, Ref } from "react";
 import { Button } from "@/components/ui/button";
 import {
   ResizableHandle,
@@ -101,7 +101,7 @@ function CanvasShell({
   leftToggle,
   rightToggle,
 }: {
-  canvasPanelRef: RefObject<HTMLDivElement | null>;
+  canvasPanelRef: Ref<HTMLDivElement>;
   canvasProps: VisualCanvasProps;
   leftToggle?: ReactNode;
   rightToggle?: ReactNode;
@@ -125,8 +125,8 @@ interface DesktopBuilderLayoutProps {
   advancedInspectorOpen: boolean;
   leftRailPanel: ReactNode;
   inspectorPanel: ReactNode;
-  canvasPanelRef: RefObject<HTMLDivElement | null>;
-  inspectorShellRef: RefObject<HTMLDivElement | null>;
+  canvasPanelRef: Ref<HTMLDivElement>;
+  inspectorShellRef: Ref<HTMLDivElement>;
   desktopInspectorOffset: number;
   onSetStructurePanelOpen: (open: boolean) => void;
   onSetAdvancedInspectorOpen: (open: boolean) => void;

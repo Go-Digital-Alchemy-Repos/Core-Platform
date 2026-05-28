@@ -372,7 +372,7 @@ function stringifySubmissionValue(value: unknown): string {
   return String(value);
 }
 
-function formatSubmissionDate(value: string | null | undefined) {
+function formatSubmissionDate(value: string | Date | null | undefined) {
   if (!value) return "Unknown";
   return new Intl.DateTimeFormat("en-US", {
     month: "short",

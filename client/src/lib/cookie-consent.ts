@@ -91,7 +91,7 @@ export function readCookieConsentRecord(): CookieConsentRecord | null {
 
 export function getCookieConsentPreferences(): CookieConsentPreferences {
   const stored = readCookieConsentRecord();
-  if (!isCookieConsentRecordActive(stored)) {
+  if (!stored || !isCookieConsentRecordActive(stored)) {
     return DEFAULT_COOKIE_CONSENT_PREFERENCES;
   }
   return stored.preferences;
@@ -99,7 +99,7 @@ export function getCookieConsentPreferences(): CookieConsentPreferences {
 
 export function hasCookieConsent(category: CookieConsentCategory, record: CookieConsentRecord | null = readCookieConsentRecord()): boolean {
   if (category === "essential") return true;
-  if (!isCookieConsentRecordActive(record)) return false;
+  if (!record || !isCookieConsentRecordActive(record)) return false;
   return Boolean(record.preferences[category]);
 }
 

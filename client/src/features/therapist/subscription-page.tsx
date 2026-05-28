@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { apiRequest, getQueryFn } from "@/lib/queryClient";
+import { apiRequest, getQueryFn, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { TherapistSubscription, MembershipTier } from "@shared/schema";
 import { TherapistLayout } from "./therapist-layout";

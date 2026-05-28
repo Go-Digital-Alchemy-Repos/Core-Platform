@@ -503,7 +503,7 @@ export async function getPublicHtmlSnapshot(
     return null;
   }
 
-  const seo = await storage.seoSettings.get();
+  const seo = (await storage.seoSettings.get()) ?? null;
   const siteUrl = (seo?.siteUrl || "").replace(/\/$/, "") || "https://coreplatform.com";
 
   if (pathname === "/search") {

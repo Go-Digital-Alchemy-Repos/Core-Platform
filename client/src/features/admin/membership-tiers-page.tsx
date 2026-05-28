@@ -162,11 +162,12 @@ export function TiersContent({ embedded = false }: { embedded?: boolean } = {}) 
     setDialogOpen(true);
   }
 
-  function onSubmit(values: TierFormSubmitValues) {
+  function onSubmit(values: TierFormValues) {
+    const parsedValues = tierFormSchema.parse(values);
     if (editingTier) {
-      updateMutation.mutate({ id: editingTier.id, data: values });
+      updateMutation.mutate({ id: editingTier.id, data: parsedValues });
     } else {
-      createMutation.mutate(values);
+      createMutation.mutate(parsedValues);
     }
   }
 

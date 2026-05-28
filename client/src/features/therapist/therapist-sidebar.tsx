@@ -50,7 +50,7 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
     queryKey: ["/api/therapist/application"],
   });
 
-  const hasSubmittedApplication = application && application.status && application.status !== "draft";
+  const hasSubmittedApplication = Boolean(application?.status && application.status !== "draft");
   const hasDraftOrNoApplication = !application || !application.status || application.status === "draft";
   const isActiveMember = application?.status === "active_member";
 

@@ -366,7 +366,7 @@ export async function searchPublicSite(query: string): Promise<PublicSearchResul
           }
         : null;
     })
-    .filter((entry): entry is { score: number; result: PublicSearchResult } => Boolean(entry))
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
     .sort((a, b) => b.score - a.score || a.result.title.localeCompare(b.result.title))
     .map((entry) => entry.result);
 }

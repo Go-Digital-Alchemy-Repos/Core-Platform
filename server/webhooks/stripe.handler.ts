@@ -117,9 +117,14 @@ export class WebhookHandlers {
           });
 
           if (eventDetails) {
-            const user = await storage.users.getUser(registration.userId);
+            const user = registration.userId ? await storage.users.getUser(registration.userId) : undefined;
+            const recipientEmail = registration.email || user?.email;
+            if (!recipientEmail) {
+              logger.email.warn("Skipping payment confirmation email without recipient", { registrationId, sessionId: session.id });
+              break;
+            }
             sendPaymentConfirmationEmail(
-              registration.email,
+              recipientEmail,
               user?.firstName || registration.fullName.split(" ")[0] || "there",
               eventDetails.title,
               eventDetails.date.toDateString(),

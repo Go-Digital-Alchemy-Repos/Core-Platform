@@ -23,7 +23,7 @@ export interface SidebarWidget {
   settings: Record<string, unknown>;
 }
 
-export const sidebarWidgetSchema: z.ZodType<SidebarWidget> = z.object({
+export const sidebarWidgetSchema = z.object({
   id: z.string().min(1),
   type: z.enum(SIDEBAR_WIDGET_TYPES),
   title: z.string().default(""),

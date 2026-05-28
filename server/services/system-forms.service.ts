@@ -1,15 +1,18 @@
-import type { CmsFormField, CmsFormSettings, InsertCmsForm } from "@shared/schema";
+import { cmsFormFieldSchema, type CmsFormField, type CmsFormSettings, type InsertCmsForm } from "@shared/schema";
+import { z } from "zod";
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
+
+type CmsFormFieldInput = z.input<typeof cmsFormFieldSchema>;
 
 function field(
   id: string,
   key: string,
   label: string,
   type: CmsFormField["type"],
-  options: Partial<CmsFormField> = {}
+  options: Partial<CmsFormFieldInput> = {}
 ): CmsFormField {
-  return {
+  return cmsFormFieldSchema.parse({
     id,
     key,
     label,
@@ -19,8 +22,9 @@ function field(
     required: false,
     width: "full",
     options: [],
+    config: {},
     ...options,
-  };
+  });
 }
 
 function settings(overrides: Partial<CmsFormSettings>): CmsFormSettings {
