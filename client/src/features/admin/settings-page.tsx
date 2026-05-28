@@ -433,7 +433,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
       "Open Cloudflare R2 API tokens for the correct account.",
       "Create an Account API token with Object Read and Write access scoped to this bucket.",
       "Copy the Access Key ID and Secret Access Key immediately; Cloudflare only shows the secret once.",
-      "Copy the Account ID from the R2 overview or account overview, then enter the bucket name and public URL.",
+      "Copy the Account ID from the R2 overview or account overview, then enter the bucket name.",
+      "Leave Public URL blank unless you have a custom public domain. Do not use the r2.cloudflarestorage.com API endpoint as the Public URL.",
     ],
     fields: [
       {
