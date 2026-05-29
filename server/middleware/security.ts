@@ -182,6 +182,10 @@ export const originCheck: RequestHandler = (req: Request, res: Response, next: N
     return next();
   }
 
+  if (req.path === "/api/crm/leads") {
+    return next();
+  }
+
   if (isDev) {
     return next();
   }
