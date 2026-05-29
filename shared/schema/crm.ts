@@ -26,6 +26,33 @@ export const CRM_CLIENT_STATUS_LABELS: Record<CrmClientStatus, string> = {
   inactive: "Inactive",
 };
 
+export const CRM_CLIENT_TYPES = ["individual", "business"] as const;
+export type CrmClientType = (typeof CRM_CLIENT_TYPES)[number];
+
+export const CRM_CLIENT_TYPE_LABELS: Record<CrmClientType, string> = {
+  individual: "Individual",
+  business: "Business",
+};
+
+export const CRM_CONTACT_METHODS = ["email", "phone", "text", "no_preference"] as const;
+export type CrmContactMethod = (typeof CRM_CONTACT_METHODS)[number];
+
+export const CRM_CONTACT_METHOD_LABELS: Record<CrmContactMethod, string> = {
+  email: "Email",
+  phone: "Phone",
+  text: "Text",
+  no_preference: "No Preference",
+};
+
+export const CRM_CLIENT_ONBOARDING_STATUSES = ["not_started", "in_progress", "complete"] as const;
+export type CrmClientOnboardingStatus = (typeof CRM_CLIENT_ONBOARDING_STATUSES)[number];
+
+export const CRM_CLIENT_ONBOARDING_STATUS_LABELS: Record<CrmClientOnboardingStatus, string> = {
+  not_started: "Not Started",
+  in_progress: "In Progress",
+  complete: "Complete",
+};
+
 export const crmLeads = pgTable("crm_leads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -59,6 +86,35 @@ export const crmClients = pgTable("crm_clients", {
   email: text("email"),
   phone: text("phone"),
   company: text("company"),
+  clientType: text("client_type").$type<CrmClientType>().notNull().default("individual"),
+  primaryEmail: text("primary_email"),
+  secondaryEmail: text("secondary_email"),
+  primaryPhone: text("primary_phone"),
+  alternatePhone: text("alternate_phone"),
+  preferredContactMethod: text("preferred_contact_method").$type<CrmContactMethod>().notNull().default("no_preference"),
+  addressLine1: text("address_line_1"),
+  addressLine2: text("address_line_2"),
+  city: text("city"),
+  region: text("region"),
+  postalCode: text("postal_code"),
+  country: text("country"),
+  companyName: text("company_name"),
+  legalName: text("legal_name"),
+  website: text("website"),
+  industry: text("industry"),
+  companySize: text("company_size"),
+  businessType: text("business_type"),
+  companyPhone: text("company_phone"),
+  companyEmail: text("company_email"),
+  billingContactName: text("billing_contact_name"),
+  billingEmail: text("billing_email"),
+  billingPhone: text("billing_phone"),
+  accountOwnerId: varchar("account_owner_id").references(() => users.id, { onDelete: "set null" }),
+  onboardingStatus: text("onboarding_status").$type<CrmClientOnboardingStatus>().notNull().default("not_started"),
+  serviceStartDate: timestamp("service_start_date"),
+  renewalDate: timestamp("renewal_date"),
+  clientSince: timestamp("client_since"),
+  internalTags: jsonb("internal_tags").$type<string[]>().default(sql`'[]'::jsonb`).notNull(),
   status: text("status").$type<CrmClientStatus>().notNull().default("onboarding"),
   source: text("source").notNull().default("manual"),
   formData: jsonb("form_data").$type<Record<string, unknown>>().default(sql`'{}'::jsonb`).notNull(),
@@ -72,6 +128,9 @@ export const crmClients = pgTable("crm_clients", {
   index("idx_crm_clients_status").on(table.status),
   index("idx_crm_clients_email").on(table.email),
   index("idx_crm_clients_phone").on(table.phone),
+  index("idx_crm_clients_client_type").on(table.clientType),
+  index("idx_crm_clients_company_name").on(table.companyName),
+  index("idx_crm_clients_account_owner").on(table.accountOwnerId),
   index("idx_crm_clients_owner").on(table.ownerId),
   index("idx_crm_clients_created_at").on(table.createdAt),
 ]);
@@ -180,6 +239,35 @@ export const crmClientUpdateSchema = z.object({
   email: z.string().trim().email().optional().or(z.literal("")).nullable(),
   phone: z.string().trim().optional().nullable(),
   company: z.string().trim().optional().nullable(),
+  clientType: z.enum(CRM_CLIENT_TYPES).optional(),
+  primaryEmail: z.string().trim().email().optional().or(z.literal("")).nullable(),
+  secondaryEmail: z.string().trim().email().optional().or(z.literal("")).nullable(),
+  primaryPhone: z.string().trim().optional().nullable(),
+  alternatePhone: z.string().trim().optional().nullable(),
+  preferredContactMethod: z.enum(CRM_CONTACT_METHODS).optional(),
+  addressLine1: z.string().trim().optional().nullable(),
+  addressLine2: z.string().trim().optional().nullable(),
+  city: z.string().trim().optional().nullable(),
+  region: z.string().trim().optional().nullable(),
+  postalCode: z.string().trim().optional().nullable(),
+  country: z.string().trim().optional().nullable(),
+  companyName: z.string().trim().optional().nullable(),
+  legalName: z.string().trim().optional().nullable(),
+  website: z.string().trim().optional().nullable(),
+  industry: z.string().trim().optional().nullable(),
+  companySize: z.string().trim().optional().nullable(),
+  businessType: z.string().trim().optional().nullable(),
+  companyPhone: z.string().trim().optional().nullable(),
+  companyEmail: z.string().trim().email().optional().or(z.literal("")).nullable(),
+  billingContactName: z.string().trim().optional().nullable(),
+  billingEmail: z.string().trim().email().optional().or(z.literal("")).nullable(),
+  billingPhone: z.string().trim().optional().nullable(),
+  accountOwnerId: z.string().trim().optional().nullable(),
+  onboardingStatus: z.enum(CRM_CLIENT_ONBOARDING_STATUSES).optional(),
+  serviceStartDate: z.coerce.date().optional().nullable(),
+  renewalDate: z.coerce.date().optional().nullable(),
+  clientSince: z.coerce.date().optional().nullable(),
+  internalTags: z.array(z.string().trim().min(1)).optional(),
   status: z.enum(CRM_CLIENT_STATUSES).optional(),
   ownerId: z.string().trim().optional().nullable(),
   nextFollowUpAt: z.coerce.date().optional().nullable(),

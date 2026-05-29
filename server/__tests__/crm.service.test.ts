@@ -128,9 +128,64 @@ describe("crm.service", () => {
       status: "onboarding",
       name: "Ada Lovelace",
       source: "website_form",
+      clientType: "business",
+      primaryEmail: "ada@example.com",
+      primaryPhone: "555-0100",
+      preferredContactMethod: "email",
+      companyName: "Compiler Co",
+      onboardingStatus: "not_started",
     }));
     expect(mockCreateNote).toHaveBeenCalledWith(expect.objectContaining({ leadId: "lead-1" }));
     expect(mockCreateClientNote).toHaveBeenCalledWith(expect.objectContaining({ clientId: "client-1" }));
+  });
+
+  it("creates an individual client for a won lead without a company", async () => {
+    mockGetClientBySourceLeadId.mockResolvedValue(undefined);
+    mockCreateClient.mockImplementation(async (client) => ({ id: "client-2", ...client }));
+
+    const { ensureClientForWonLead } = await import("../services/crm.service");
+    await ensureClientForWonLead({
+      id: "lead-2",
+      name: "Grace Hopper",
+      email: null,
+      phone: "555-0101",
+      company: null,
+      message: null,
+      stage: "won",
+      source: "manual",
+      externalId: null,
+      formSubmissionId: null,
+      formData: {},
+      metadata: {},
+      ownerId: null,
+      nextFollowUpAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    expect(mockCreateClient).toHaveBeenCalledWith(expect.objectContaining({
+      clientType: "individual",
+      primaryPhone: "555-0101",
+      preferredContactMethod: "phone",
+      companyName: null,
+    }));
+  });
+
+  it("validates second-stage client profile update fields", async () => {
+    const { crmClientUpdateSchema } = await import("@shared/schema");
+
+    expect(() => crmClientUpdateSchema.parse({
+      clientType: "business",
+      preferredContactMethod: "email",
+      onboardingStatus: "in_progress",
+      companyName: "Compiler Co",
+      city: "Arlington",
+      internalTags: ["priority", "renewal"],
+    })).not.toThrow();
+
+    expect(() => crmClientUpdateSchema.parse({ clientType: "household" })).toThrow();
+    expect(() => crmClientUpdateSchema.parse({ preferredContactMethod: "fax" })).toThrow();
+    expect(() => crmClientUpdateSchema.parse({ onboardingStatus: "stalled" })).toThrow();
   });
 
   it("does not create duplicate clients for the same won lead", async () => {

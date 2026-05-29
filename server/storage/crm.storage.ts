@@ -173,6 +173,12 @@ export class CrmStorage {
         ilike(crmClients.email, pattern),
         ilike(crmClients.phone, pattern),
         ilike(crmClients.company, pattern),
+        ilike(crmClients.primaryEmail, pattern),
+        ilike(crmClients.primaryPhone, pattern),
+        ilike(crmClients.companyName, pattern),
+        ilike(crmClients.website, pattern),
+        ilike(crmClients.city, pattern),
+        ilike(crmClients.region, pattern),
         ilike(crmClients.source, pattern),
       ));
     }

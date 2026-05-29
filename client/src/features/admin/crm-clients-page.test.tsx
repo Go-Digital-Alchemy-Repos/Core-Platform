@@ -38,7 +38,7 @@ describe("AdminCrmClientsPage", () => {
   beforeEach(() => {
     useQueryMock.mockImplementation(({ queryKey, enabled = true }: { queryKey: unknown[]; enabled?: boolean }) => {
       if (!enabled) return { data: undefined, isLoading: false };
-      if (queryKey[0] === "/api/admin/crm/clients" && queryKey.length === 2) {
+      if (queryKey[0] === "/api/admin/crm/clients" && typeof queryKey[1] === "object") {
         return {
           data: [
             {
@@ -47,11 +47,67 @@ describe("AdminCrmClientsPage", () => {
               email: "ada@example.com",
               phone: null,
               company: "Compiler Co",
+              clientType: "business",
+              primaryEmail: "ada@example.com",
+              primaryPhone: null,
+              preferredContactMethod: "email",
+              companyName: "Compiler Co",
+              onboardingStatus: "not_started",
+              internalTags: [],
               status: "onboarding",
               source: "website_form",
               nextFollowUpAt: null,
             },
           ],
+          isLoading: false,
+        };
+      }
+      if (queryKey[0] === "/api/admin/crm/clients" && queryKey[1] === "client-1") {
+        return {
+          data: {
+            id: "client-1",
+            name: "Ada Lovelace",
+            email: "ada@example.com",
+            phone: null,
+            company: "Compiler Co",
+            clientType: "business",
+            primaryEmail: "ada@example.com",
+            primaryPhone: null,
+            secondaryEmail: null,
+            alternatePhone: null,
+            preferredContactMethod: "email",
+            addressLine1: null,
+            addressLine2: null,
+            city: "Arlington",
+            region: "VA",
+            postalCode: null,
+            country: "United States",
+            companyName: "Compiler Co",
+            legalName: null,
+            website: "https://compiler.example",
+            industry: "Technology",
+            companySize: "11-50",
+            businessType: "LLC",
+            companyPhone: null,
+            companyEmail: "hello@compiler.example",
+            billingContactName: "Ada Lovelace",
+            billingEmail: "billing@compiler.example",
+            billingPhone: null,
+            accountOwnerId: null,
+            onboardingStatus: "not_started",
+            serviceStartDate: null,
+            renewalDate: null,
+            clientSince: null,
+            internalTags: ["priority"],
+            status: "onboarding",
+            source: "website_form",
+            nextFollowUpAt: null,
+            sourceLead: { id: "lead-1", name: "Ada Lead" },
+            notes: [],
+            tasks: [],
+            formData: {},
+            metadata: {},
+          },
           isLoading: false,
         };
       }
@@ -85,5 +141,28 @@ describe("AdminCrmClientsPage", () => {
     expect(container.textContent).toContain("CRM Clients");
     expect(container.textContent).toContain("Ada Lovelace");
     expect(container.textContent).toContain("Onboarding");
+    expect(container.textContent).toContain("Business");
+    expect(container.textContent).toContain("Compiler Co");
+  });
+
+  it("renders expanded profile tabs for a selected client", () => {
+    act(() => {
+      root = createRoot(container);
+      root.render(<AdminCrmClientsPage />);
+    });
+
+    const clientRow = Array.from(container.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Ada Lovelace"),
+    );
+    expect(clientRow).not.toBeNull();
+    act(() => {
+      clientRow?.click();
+    });
+
+    expect(document.body.textContent).toContain("Overview");
+    expect(document.body.textContent).toContain("Contact");
+    expect(document.body.textContent).toContain("Company");
+    expect(document.body.textContent).toContain("Billing/Admin");
+    expect(document.body.querySelector('[data-testid="select-crm-client-type"]')).not.toBeNull();
   });
 });

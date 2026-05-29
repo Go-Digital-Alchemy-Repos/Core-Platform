@@ -100,6 +100,8 @@ export async function createCrmLeadFromFormSubmission({
 export async function ensureClientForWonLead(lead: CrmLead, createdById?: string | null): Promise<CrmClient> {
   const existing = await storage.crm.getClientBySourceLeadId(lead.id);
   if (existing) return existing;
+  const clientType = cleanString(lead.company) ? "business" : "individual";
+  const now = new Date();
 
   const client = await storage.crm.createClient({
     sourceLeadId: lead.id,
@@ -107,6 +109,13 @@ export async function ensureClientForWonLead(lead: CrmLead, createdById?: string
     email: lead.email,
     phone: lead.phone,
     company: lead.company,
+    clientType,
+    primaryEmail: lead.email,
+    primaryPhone: lead.phone,
+    preferredContactMethod: lead.email ? "email" : lead.phone ? "phone" : "no_preference",
+    companyName: lead.company,
+    onboardingStatus: "not_started",
+    clientSince: now,
     status: "onboarding",
     source: lead.source,
     formData: lead.formData ?? {},
