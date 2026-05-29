@@ -4,6 +4,25 @@ export { membershipTiers, insertMembershipTierSchema, type InsertMembershipTier,
 export { therapistSubscriptions, insertSubscriptionSchema, type InsertSubscription, type TherapistSubscription } from "./subscriptions";
 export { events, insertEventSchema, type InsertEvent, type Event } from "./events";
 export { contactMessages, insertContactMessageSchema, type InsertContactMessage, type ContactMessage } from "./contact-messages";
+export {
+  CRM_LEAD_STAGE_LABELS,
+  CRM_LEAD_STAGES,
+  crmLeadInputSchema,
+  crmLeadNotes,
+  crmLeadTasks,
+  crmLeads,
+  insertCrmLeadNoteSchema,
+  insertCrmLeadSchema,
+  insertCrmLeadTaskSchema,
+  type CrmLead,
+  type CrmLeadInput,
+  type CrmLeadNote,
+  type CrmLeadStage,
+  type CrmLeadTask,
+  type InsertCrmLead,
+  type InsertCrmLeadNote,
+  type InsertCrmLeadTask,
+} from "./crm";
 export { docs, insertDocSchema, type InsertDoc, type Doc } from "./docs";
 export { passwordResetTokens, type PasswordResetToken } from "./password-reset-tokens";
 export { systemSettings, insertSystemSettingSchema, type InsertSystemSetting, type SystemSetting } from "./system-settings";

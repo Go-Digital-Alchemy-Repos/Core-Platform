@@ -28,6 +28,7 @@ import {
   Palette,
   Type,
   Tag,
+  Handshake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -38,6 +39,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
+import type { AdminPermission } from "@shared/types";
 import type { User as AppUser } from "@shared/schema";
 
 interface NavItem {
@@ -56,7 +58,7 @@ interface NavGroup {
 function buildNavGroups(
   siteFeatures: SiteFeatures,
   user: AppUser | null,
-  hasAdminPermission: (permission: "directory" | "content" | "design") => boolean,
+  hasAdminPermission: (permission: AdminPermission) => boolean,
 ): NavGroup[] {
   const groups: NavGroup[] = [
     {
@@ -124,6 +126,21 @@ function buildNavGroups(
                 href: "/admin/events",
                 icon: CalendarDays,
                 iconColor: "text-purple-600",
+              },
+            ],
+          },
+        ] satisfies NavGroup[])
+      : []),
+    ...(siteFeatures.crmEnabled && hasAdminPermission("crm")
+      ? ([
+          {
+            label: "CRM",
+            items: [
+              {
+                title: "Pipeline",
+                href: "/admin/crm",
+                icon: Handshake,
+                iconColor: "text-blue-600",
               },
             ],
           },

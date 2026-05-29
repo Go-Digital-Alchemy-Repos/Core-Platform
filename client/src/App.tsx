@@ -45,6 +45,7 @@ const AdminTherapistsPage = lazy(() => import("@/features/admin/therapists-page"
 const AdminUsersPage = lazy(() => import("@/features/admin/users-page"));
 const AdminDirectorySettingsPage = lazy(() => import("@/features/admin/directory-settings-page"));
 const AdminFormsPage = lazy(() => import("@/features/admin/forms-page"));
+const AdminCrmPage = lazy(() => import("@/features/admin/crm-page"));
 const AdminEventsPage = lazy(() => import("@/features/admin/events-page"));
 const DocsPage = lazy(() => import("@/features/admin/docs-page"));
 const AdminSettingsPage = lazy(() => import("@/features/admin/settings-page"));
@@ -97,6 +98,9 @@ function AdminIndexRoute() {
     }
     if (hasAdminPermission("content")) {
       return <Redirect to="/admin/cms" replace />;
+    }
+    if (hasAdminPermission("crm")) {
+      return <Redirect to="/admin/crm" replace />;
     }
     if (hasAdminPermission("design")) {
       return <Redirect to="/admin/design/branding" replace />;
@@ -197,6 +201,11 @@ function Router() {
         <Route path="/admin/forms">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             <AdminFormsPage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/crm">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["crm"]}>
+            {siteFeatures.crmEnabled ? <AdminCrmPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/blog">

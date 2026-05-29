@@ -19,6 +19,7 @@ export const AdminPermission = {
   DIRECTORY: "directory",
   CONTENT: "content",
   DESIGN: "design",
+  CRM: "crm",
 } as const;
 export type AdminPermission = (typeof AdminPermission)[keyof typeof AdminPermission];
 

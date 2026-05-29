@@ -107,7 +107,7 @@ type BrandingColorSettingKey =
   | "text_secondary_foreground_color"
   | "text_tertiary_foreground_color";
 
-type SystemConfigurationSettingKey = "enable_directory" | "enable_blog" | "enable_events";
+type SystemConfigurationSettingKey = "enable_directory" | "enable_blog" | "enable_events" | "enable_crm";
 
 const BRANDING_CORE_COLOR_FIELDS: Array<{
   key: BrandingColorSettingKey;
@@ -244,6 +244,12 @@ const SYSTEM_CONFIGURATION_FIELDS: Array<{
     label: "Enable Events",
     description:
       "Controls events administration and public events routes for sites that do not run an events program.",
+  },
+  {
+    key: "enable_crm",
+    label: "Enable CRM",
+    description:
+      "Turns the CRM pipeline app on or off, including admin navigation and inbound lead routes.",
   },
 ];
 
@@ -419,6 +425,28 @@ const INTEGRATIONS: IntegrationConfig[] = [
         label: "Reporting Private Key",
         isSecret: true,
         placeholder: "-----BEGIN PRIVATE KEY-----",
+      },
+    ],
+  },
+  {
+    category: "crm",
+    title: "CRM Inbound API",
+    description: "API key used by external lead sources like social ads, Zapier, and landing-page tools",
+    icon: Plug,
+    accountUrl: "https://core-platform-production-0848.up.railway.app/admin/settings",
+    docsUrl: "https://core-platform-production-0848.up.railway.app/admin/settings",
+    instructions: [
+      "Create a strong shared key for trusted lead sources.",
+      "Send inbound leads to /api/crm/leads with the key in the X-CRM-API-Key header.",
+      "Rotate this key if a connected integration is removed or compromised.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "crm_api_key",
+        label: "Inbound API Key",
+        isSecret: true,
+        placeholder: "Generate a long random secret",
       },
     ],
   },
@@ -743,6 +771,12 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
         DEFAULT_SITE_FEATURES.blogEnabled,
       );
     }
+    if (key === "enable_crm") {
+      return normalizeBooleanSetting(
+        systemConfig.enable_crm?.value,
+        DEFAULT_SITE_FEATURES.crmEnabled,
+      );
+    }
     return normalizeBooleanSetting(
       systemConfig.enable_events?.value,
       DEFAULT_SITE_FEATURES.eventsEnabled,
@@ -752,6 +786,7 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
     enable_directory: getStoredValue("enable_directory"),
     enable_blog: getStoredValue("enable_blog"),
     enable_events: getStoredValue("enable_events"),
+    enable_crm: getStoredValue("enable_crm"),
   });
 
   useEffect(() => {
@@ -759,11 +794,13 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
       enable_directory: getStoredValue("enable_directory"),
       enable_blog: getStoredValue("enable_blog"),
       enable_events: getStoredValue("enable_events"),
+      enable_crm: getStoredValue("enable_crm"),
     });
   }, [
     systemConfig.enable_directory?.value,
     systemConfig.enable_blog?.value,
     systemConfig.enable_events?.value,
+    systemConfig.enable_crm?.value,
   ]);
 
   const saveMutation = useMutation({

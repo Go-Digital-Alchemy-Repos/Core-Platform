@@ -18,6 +18,7 @@ const permissionSchema = z.enum([
   AdminPermission.DIRECTORY,
   AdminPermission.CONTENT,
   AdminPermission.DESIGN,
+  AdminPermission.CRM,
 ]);
 
 function isSystemUserRole(role: string) {

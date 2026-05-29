@@ -19,6 +19,7 @@ import cmsSidebarsRoutes from "./cms-sidebars.routes";
 import systemBackupsRoutes from "./system-backups.routes";
 import formsRoutes from "./forms.routes";
 import editorLocksRoutes from "./editor-locks.routes";
+import crmRoutes from "./crm.routes";
 
 const router = Router();
 
@@ -40,6 +41,7 @@ router.use("/cms", requireAdminPermission("content"), cmsAuditRoutes);
 router.use("/cms", requireAdminPermission("design"), cmsMenusRoutes);
 router.use("/cms", requireAdminPermission("design"), cmsSidebarsRoutes);
 router.use("/", requireAdminPermission("content"), formsRoutes);
+router.use("/crm", requireAdminPermission("crm"), crmRoutes);
 router.use("/editor-locks", requireRole("admin", "editor"), editorLocksRoutes);
 router.use("/", requireRole("admin"), systemBackupsRoutes);
 router.use("/applications", requireAdminPermission("directory"), applicationsRoutes);

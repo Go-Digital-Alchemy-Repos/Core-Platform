@@ -22,6 +22,7 @@ import setupRoutes from "./setup.routes";
 import applicationRoutes from "./application.routes";
 import referenceRoutes from "./reference.routes";
 import formsRoutes from "./forms.routes";
+import crmRoutes from "./crm.routes";
 import { searchPublicSite } from "../services/public-search.service";
 import { buildRobotsTxtPayload } from "../services/robots-txt.service";
 import { storage } from "../storage/index";
@@ -52,6 +53,7 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/events", eventsRoutes);
   app.use("/api/contact", contactRoutes);
   app.use("/api/forms", formsRoutes);
+  app.use("/api/crm", crmRoutes);
   app.use("/api/admin/docs", docsRoutes);
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/notifications", notificationsRoutes);
@@ -158,6 +160,10 @@ export function registerApiRoutes(app: Express) {
         eventsEnabled: normalizeBooleanSetting(
           settings.enable_events,
           DEFAULT_SITE_FEATURES.eventsEnabled,
+        ),
+        crmEnabled: normalizeBooleanSetting(
+          settings.enable_crm,
+          DEFAULT_SITE_FEATURES.crmEnabled,
         ),
       });
     } catch (err) {

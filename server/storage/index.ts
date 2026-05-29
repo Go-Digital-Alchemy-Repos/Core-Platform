@@ -29,6 +29,7 @@ import { CmsMenusStorage } from "./cms-menus.storage";
 import { CmsSidebarsStorage } from "./cms-sidebars.storage";
 import { FormsStorage } from "./forms.storage";
 import { EditorLocksStorage } from "./editor-locks.storage";
+import { CrmStorage } from "./crm.storage";
 export const storage = {
   users: new UserStorage(),
   therapists: new TherapistStorage(),
@@ -61,6 +62,7 @@ export const storage = {
   cmsSidebars: new CmsSidebarsStorage(),
   forms: new FormsStorage(),
   editorLocks: new EditorLocksStorage(),
+  crm: new CrmStorage(),
 };
 
 export type { TherapistWithUser, PaginatedTherapists, DirectoryFilterOptions, TherapistSearchParams } from "@shared/types/directory";

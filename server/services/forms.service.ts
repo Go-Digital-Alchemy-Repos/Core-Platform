@@ -3,6 +3,7 @@ import { storage } from "../storage";
 import { logger } from "../utils/logger";
 import { sendContactFormEmail, sendManagedFormSubmissionEmail } from "./email.service";
 import { syncContactToMailchimp } from "./mailchimp.service";
+import { createCrmLeadFromFormSubmission } from "./crm.service";
 import { AppError } from "../middleware/error-handler";
 
 function normalizeFormSettings(form: CmsForm) {
@@ -22,6 +23,7 @@ function normalizeFormSettings(form: CmsForm) {
     mailchimpTag: typeof settings.mailchimpTag === "string" ? settings.mailchimpTag.trim() : "",
     notifyAdmins: Boolean(settings.notifyAdmins),
     storeAsContactMessage: Boolean(settings.storeAsContactMessage),
+    createCrmLead: Boolean(settings.createCrmLead),
   };
 }
 
@@ -391,6 +393,16 @@ async function notifyAssignedUsers(form: CmsForm, data: Record<string, unknown>,
   });
 }
 
+async function maybeCreateCrmLead(form: CmsForm, data: Record<string, unknown>, submissionId: string) {
+  const settings = normalizeFormSettings(form);
+  if (!settings.createCrmLead) return;
+  await createCrmLeadFromFormSubmission({
+    formName: form.name,
+    formSubmissionId: submissionId,
+    data,
+  });
+}
+
 export async function submitManagedFormBySlug(
   slug: string,
   data: unknown,
@@ -413,6 +425,7 @@ export async function submitManagedFormBySlug(
 
   await maybeSyncFormToMailchimp(form, validated);
   await handleContactFormEffects(form, validated, options.baseUrl);
+  await maybeCreateCrmLead(form, validated, submission.id);
   await notifyAssignedUsers(form, validated, options.baseUrl);
 
   return {

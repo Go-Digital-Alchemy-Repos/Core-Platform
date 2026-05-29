@@ -35,6 +35,7 @@ function settings(overrides: Partial<CmsFormSettings>): CmsFormSettings {
     mailchimpTag: "",
     notifyAdmins: false,
     storeAsContactMessage: false,
+    createCrmLead: false,
     ...overrides,
   };
 }

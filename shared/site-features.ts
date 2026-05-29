@@ -2,12 +2,14 @@ export interface SiteFeatures {
   directoryEnabled: boolean;
   blogEnabled: boolean;
   eventsEnabled: boolean;
+  crmEnabled: boolean;
 }
 
 export const DEFAULT_SITE_FEATURES: SiteFeatures = {
   directoryEnabled: true,
   blogEnabled: true,
   eventsEnabled: true,
+  crmEnabled: true,
 };
 
 export function normalizeBooleanSetting(value: unknown, fallback = true): boolean {

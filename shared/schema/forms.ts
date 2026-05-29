@@ -94,6 +94,7 @@ export const cmsFormSettingsSchema = z.object({
   mailchimpTag: z.string().optional().default(""),
   notifyAdmins: z.boolean().optional().default(false),
   storeAsContactMessage: z.boolean().optional().default(false),
+  createCrmLead: z.boolean().optional().default(false),
 });
 
 export type CmsFormSettings = z.infer<typeof cmsFormSettingsSchema>;

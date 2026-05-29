@@ -93,6 +93,12 @@ const EDITOR_PERMISSION_OPTIONS = [
     description: "Branding, typography, menus, sidebars, and reusable sections.",
     icon: Palette,
   },
+  {
+    value: AdminPermission.CRM,
+    label: "CRM",
+    description: "Pipeline, leads, notes, and follow-up tasks.",
+    icon: FolderKanban,
+  },
 ] as const;
 
 const SYSTEM_ROLE_OPTIONS = [

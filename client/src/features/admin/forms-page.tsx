@@ -289,6 +289,7 @@ function createBlankForm(): EditableForm {
       mailchimpTag: "",
       notifyAdmins: false,
       storeAsContactMessage: false,
+      createCrmLead: false,
     },
   };
 }
@@ -314,6 +315,7 @@ function normalizeEditableForm(form: CmsForm): EditableForm {
       mailchimpTag: typeof form.settings?.mailchimpTag === "string" ? form.settings.mailchimpTag : "",
       notifyAdmins: Boolean(form.settings?.notifyAdmins),
       storeAsContactMessage: Boolean(form.settings?.storeAsContactMessage),
+      createCrmLead: Boolean(form.settings?.createCrmLead),
     },
   };
 }
@@ -1268,6 +1270,18 @@ function FormsPageContent() {
                           }
                         />
                         <span className="ml-3 text-sm text-muted-foreground">Store in contact inbox</span>
+                      </div>
+                      <div className="flex h-10 items-center rounded-md border px-3">
+                        <Switch
+                          checked={Boolean(draft.settings.createCrmLead)}
+                          onCheckedChange={(checked) =>
+                            updateDraft((current) => ({
+                              ...current,
+                              settings: { ...current.settings, createCrmLead: checked },
+                            }))
+                          }
+                        />
+                        <span className="ml-3 text-sm text-muted-foreground">Create CRM lead</span>
                       </div>
                     </div>
                   </div>
