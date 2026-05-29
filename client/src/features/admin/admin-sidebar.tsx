@@ -35,6 +35,7 @@ import { useAuth } from "@/hooks/use-auth";
 import logoIcon from "@assets/Core-Platform_Icon.webp";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
@@ -293,6 +294,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
   const { user, logout, hasAdminPermission } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [closedGroups, setClosedGroups] = useState<Set<string>>(() => new Set());
   const adminLogo = logoIcon;
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
@@ -302,6 +304,17 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
   const navGroups = buildNavGroups(siteFeatures, user, hasAdminPermission).filter(
     (group) => group.items.length > 0,
   );
+  const toggleGroup = (label: string, open: boolean) => {
+    setClosedGroups((current) => {
+      const next = new Set(current);
+      if (open) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+  };
 
   const renderNavItem = (item: NavItem) => {
     const exactOnlyRoutes = ["/admin", "/admin/cms"];
@@ -434,17 +447,54 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
               className="flex flex-col gap-1 px-2 flex-1 overflow-y-auto"
               data-testid="nav-admin-sidebar"
             >
-              {navGroups.map((group, groupIdx) => (
-                <div key={groupIdx} className="flex flex-col gap-0.5">
-                  {groupIdx > 0 && <Separator className="my-2" />}
-                  {group.label && !collapsed && (
-                    <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-                      {group.label}
-                    </p>
-                  )}
-                  {group.items.map(renderNavItem)}
-                </div>
-              ))}
+              {navGroups.map((group, groupIdx) => {
+                const groupKey = group.label ?? `group-${groupIdx}`;
+                const groupIsOpen = !group.label || !closedGroups.has(group.label);
+
+                if (!group.label || collapsed) {
+                  return (
+                    <div key={groupKey} className="flex flex-col gap-0.5">
+                      {groupIdx > 0 && <Separator className="my-2" />}
+                      {group.label && !collapsed && (
+                        <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                          {group.label}
+                        </p>
+                      )}
+                      {group.items.map(renderNavItem)}
+                    </div>
+                  );
+                }
+
+                return (
+                  <Collapsible
+                    key={groupKey}
+                    open={groupIsOpen}
+                    onOpenChange={(open) => toggleGroup(group.label!, open)}
+                    className="flex flex-col gap-0.5"
+                  >
+                    {groupIdx > 0 && <Separator className="my-2" />}
+                    <CollapsibleTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-1 text-left text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 transition-colors hover:bg-muted hover:text-muted-foreground"
+                        aria-label={`${groupIsOpen ? "Collapse" : "Expand"} ${group.label}`}
+                        data-testid={`button-toggle-admin-section-${group.label.toLowerCase().replace(/\s+/g, "-")}`}
+                      >
+                        <ChevronRight
+                          className={cn(
+                            "h-3 w-3 flex-shrink-0 transition-transform",
+                            groupIsOpen ? "rotate-90" : "",
+                          )}
+                        />
+                        <span className="min-w-0 flex-1 truncate">{group.label}</span>
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="flex flex-col gap-0.5 overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                      {group.items.map(renderNavItem)}
+                    </CollapsibleContent>
+                  </Collapsible>
+                );
+              })}
             </nav>
 
             {user && (
