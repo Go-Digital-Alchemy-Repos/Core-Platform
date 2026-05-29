@@ -294,7 +294,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
   const { user, logout, hasAdminPermission } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [closedGroups, setClosedGroups] = useState<Set<string>>(() => new Set());
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
   const adminLogo = logoIcon;
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
@@ -305,15 +305,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
     (group) => group.items.length > 0,
   );
   const toggleGroup = (label: string, open: boolean) => {
-    setClosedGroups((current) => {
-      const next = new Set(current);
-      if (open) {
-        next.delete(label);
-      } else {
-        next.add(label);
-      }
-      return next;
-    });
+    setOpenGroup(open ? label : null);
   };
 
   const renderNavItem = (item: NavItem) => {
@@ -449,7 +441,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
             >
               {navGroups.map((group, groupIdx) => {
                 const groupKey = group.label ?? `group-${groupIdx}`;
-                const groupIsOpen = !group.label || !closedGroups.has(group.label);
+                const groupIsOpen = !group.label || openGroup === group.label;
 
                 if (!group.label || collapsed) {
                   return (
