@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { z } from "zod";
-import { CRM_LEAD_STAGES, crmLeadInputSchema } from "@shared/schema";
+import { CRM_CLIENT_STATUSES, CRM_LEAD_STAGES, crmClientUpdateSchema, crmLeadInputSchema } from "@shared/schema";
 import { asyncHandler } from "../../middleware/error-handler";
 import { storage } from "../../storage";
-import { createOrUpdateCrmLead } from "../../services/crm.service";
+import { createOrUpdateCrmLead, ensureClientForWonLead } from "../../services/crm.service";
 import { paramString } from "../../utils/params";
-import type { CrmLeadStage } from "@shared/schema";
+import type { CrmClientStatus, CrmLeadStage } from "@shared/schema";
 
 const router = Router();
 
@@ -19,9 +19,16 @@ const taskCreateSchema = z.object({
 const taskUpdateSchema = taskCreateSchema.partial().extend({
   completed: z.boolean().optional(),
 });
+const clientNoteSchema = noteSchema;
+const clientTaskCreateSchema = taskCreateSchema;
+const clientTaskUpdateSchema = taskUpdateSchema;
 
 function isCrmLeadStage(value: unknown): value is CrmLeadStage {
   return typeof value === "string" && CRM_LEAD_STAGES.includes(value as CrmLeadStage);
+}
+
+function isCrmClientStatus(value: unknown): value is CrmClientStatus {
+  return typeof value === "string" && CRM_CLIENT_STATUSES.includes(value as CrmClientStatus);
 }
 
 router.get(
@@ -32,6 +39,79 @@ router.get(
       ? req.query.stage
       : "all";
     res.json(await storage.crm.listLeads({ query, stage }));
+  })
+);
+
+router.get(
+  "/clients",
+  asyncHandler(async (req, res) => {
+    const query = typeof req.query.q === "string" ? req.query.q : undefined;
+    const status = isCrmClientStatus(req.query.status)
+      ? req.query.status
+      : "all";
+    res.json(await storage.crm.listClients({ query, status }));
+  })
+);
+
+router.get(
+  "/clients/:id",
+  asyncHandler(async (req, res) => {
+    const detail = await storage.crm.getClientDetail(paramString(req.params.id));
+    if (!detail) return res.status(404).json({ message: "Client not found" });
+    res.json(detail);
+  })
+);
+
+router.patch(
+  "/clients/:id",
+  asyncHandler(async (req, res) => {
+    const parsed = crmClientUpdateSchema.parse(req.body);
+    const client = await storage.crm.updateClient(paramString(req.params.id), parsed);
+    if (!client) return res.status(404).json({ message: "Client not found" });
+    res.json(client);
+  })
+);
+
+router.post(
+  "/clients/:id/notes",
+  asyncHandler(async (req, res) => {
+    const clientId = paramString(req.params.id);
+    const client = await storage.crm.getClientById(clientId);
+    if (!client) return res.status(404).json({ message: "Client not found" });
+    const parsed = clientNoteSchema.parse(req.body);
+    res.status(201).json(await storage.crm.createClientNote({
+      clientId,
+      body: parsed.body,
+      createdById: req.user?.id ?? null,
+    }));
+  })
+);
+
+router.post(
+  "/clients/:id/tasks",
+  asyncHandler(async (req, res) => {
+    const clientId = paramString(req.params.id);
+    const client = await storage.crm.getClientById(clientId);
+    if (!client) return res.status(404).json({ message: "Client not found" });
+    const parsed = clientTaskCreateSchema.parse(req.body);
+    res.status(201).json(await storage.crm.createClientTask({
+      clientId,
+      title: parsed.title,
+      dueAt: parsed.dueAt ?? null,
+      assignedToId: parsed.assignedToId ?? req.user?.id ?? null,
+      createdById: req.user?.id ?? null,
+      completed: false,
+    }));
+  })
+);
+
+router.patch(
+  "/clients/tasks/:taskId",
+  asyncHandler(async (req, res) => {
+    const parsed = clientTaskUpdateSchema.parse(req.body);
+    const task = await storage.crm.updateClientTask(paramString(req.params.taskId), parsed);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+    res.json(task);
   })
 );
 
@@ -58,6 +138,9 @@ router.patch(
     const parsed = leadUpdateSchema.parse(req.body);
     const lead = await storage.crm.updateLead(paramString(req.params.id), parsed);
     if (!lead) return res.status(404).json({ message: "Lead not found" });
+    if (parsed.stage === "won") {
+      await ensureClientForWonLead(lead, req.user?.id);
+    }
     res.json(lead);
   })
 );

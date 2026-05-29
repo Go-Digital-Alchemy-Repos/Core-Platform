@@ -1,9 +1,22 @@
 import { useMemo, useState } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   CRM_LEAD_STAGE_LABELS,
   CRM_LEAD_STAGES,
   type CrmLead,
+  type CrmClient,
   type CrmLeadNote,
   type CrmLeadStage,
   type CrmLeadTask,
@@ -39,7 +52,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarClock, ClipboardList, Handshake, Plus, Search, UserRound } from "lucide-react";
 
-type LeadDetail = CrmLead & { notes: CrmLeadNote[]; tasks: CrmLeadTask[] };
+type LeadDetail = CrmLead & { notes: CrmLeadNote[]; tasks: CrmLeadTask[]; client?: CrmClient };
 
 const STAGE_COLORS: Record<CrmLeadStage, string> = {
   new: "border-blue-200 bg-blue-50 text-blue-800",
@@ -55,12 +68,27 @@ function formatDate(value: string | Date | null | undefined) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
 }
 
-function LeadCard({ lead, onOpen }: { lead: CrmLead; onOpen: (id: string) => void }) {
+function LeadCard({ lead, onOpen, dragState }: { lead: CrmLead; onOpen: (id: string) => void; dragState?: ReturnType<typeof useDraggable> }) {
+  const transform = dragState?.transform;
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onOpen(lead.id)}
-      className="w-full rounded-md border bg-background p-3 text-left shadow-sm transition-colors hover:border-primary"
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(lead.id);
+        }
+      }}
+      ref={dragState?.setNodeRef}
+      style={transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined}
+      {...dragState?.listeners}
+      {...dragState?.attributes}
+      className={cn(
+        "w-full cursor-grab rounded-md border bg-background p-3 text-left shadow-sm transition-colors hover:border-primary active:cursor-grabbing",
+        dragState?.isDragging && "opacity-40",
+      )}
       data-testid={`card-crm-lead-${lead.id}`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -79,7 +107,50 @@ function LeadCard({ lead, onOpen }: { lead: CrmLead; onOpen: (id: string) => voi
           {formatDate(lead.nextFollowUpAt)}
         </p>
       ) : null}
-    </button>
+    </div>
+  );
+}
+
+function DraggableLeadCard({ lead, onOpen }: { lead: CrmLead; onOpen: (id: string) => void }) {
+  const dragState = useDraggable({
+    id: lead.id,
+    data: { type: "lead", lead },
+  });
+
+  return <LeadCard lead={lead} onOpen={onOpen} dragState={dragState} />;
+}
+
+function PipelineColumn({
+  stage,
+  leads,
+  isLoading,
+  onOpen,
+}: {
+  stage: CrmLeadStage;
+  leads: CrmLead[];
+  isLoading: boolean;
+  onOpen: (id: string) => void;
+}) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: stage,
+    data: { type: "stage", stage },
+  });
+
+  return (
+    <Card className={cn("flex min-h-0 flex-col transition-colors", isOver && "border-primary bg-primary/5")}>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center justify-between text-sm">
+          <span className={cn("rounded-full border px-2 py-1", STAGE_COLORS[stage])}>{CRM_LEAD_STAGE_LABELS[stage]}</span>
+          <Badge variant="secondary">{leads.length}</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent ref={setNodeRef} className="min-h-40 flex-1 space-y-2 overflow-y-auto">
+        {leads.map((lead) => <DraggableLeadCard key={lead.id} lead={lead} onOpen={onOpen} />)}
+        {!isLoading && leads.length === 0 ? (
+          <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">Drop leads here</div>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -213,6 +284,11 @@ function LeadDetailSheet({ leadId, onClose }: { leadId: string | null; onClose: 
                 </div>
                 <p className="text-sm"><span className="font-medium">Source:</span> {lead.source}</p>
                 <p className="text-sm"><span className="font-medium">Company:</span> {lead.company || "—"}</p>
+                {lead.client ? (
+                  <p className="text-sm sm:col-span-2">
+                    <span className="font-medium">Client:</span> {lead.client.name} ({lead.client.status})
+                  </p>
+                ) : null}
               </div>
 
               <Tabs defaultValue="notes">
@@ -266,6 +342,11 @@ function CrmContent() {
   const [stage, setStage] = useState<CrmLeadStage | "all">("all");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [activeLead, setActiveLead] = useState<CrmLead | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor),
+  );
   const { data: leads = [], isLoading } = useQuery<CrmLead[]>({
     queryKey: ["/api/admin/crm", { stage, query }],
     queryFn: async () => {
@@ -284,6 +365,28 @@ function CrmContent() {
       return acc;
     }, {} as Record<CrmLeadStage, CrmLead[]>);
   }, [leads]);
+
+  const moveLeadMutation = useMutation({
+    mutationFn: async ({ leadId, nextStage }: { leadId: string; nextStage: CrmLeadStage }) => {
+      await apiRequest("PATCH", `/api/admin/crm/${leadId}`, { stage: nextStage });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/crm"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/crm/clients"] });
+    },
+  });
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveLead((event.active.data.current?.lead as CrmLead | undefined) ?? null);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const lead = event.active.data.current?.lead as CrmLead | undefined;
+    const nextStage = event.over?.data.current?.stage as CrmLeadStage | undefined;
+    setActiveLead(null);
+    if (!lead || !nextStage || lead.stage === nextStage) return;
+    moveLeadMutation.mutate({ leadId: lead.id, nextStage });
+  };
 
   return (
     <div className="flex min-h-screen flex-col gap-5 p-6">
@@ -312,24 +415,20 @@ function CrmContent() {
         </Select>
       </div>
 
-      <div className="grid min-h-[520px] gap-4 xl:grid-cols-6">
-        {CRM_LEAD_STAGES.map((item) => (
-          <Card key={item} className="flex min-h-0 flex-col">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between text-sm">
-                <span className={cn("rounded-full border px-2 py-1", STAGE_COLORS[item])}>{CRM_LEAD_STAGE_LABELS[item]}</span>
-                <Badge variant="secondary">{leadsByStage[item]?.length ?? 0}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="min-h-0 flex-1 space-y-2 overflow-y-auto">
-              {(leadsByStage[item] ?? []).map((lead) => <LeadCard key={lead.id} lead={lead} onOpen={setSelectedLeadId} />)}
-              {!isLoading && (leadsByStage[item] ?? []).length === 0 ? (
-                <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">No leads</div>
-              ) : null}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragCancel={() => setActiveLead(null)} onDragEnd={handleDragEnd}>
+        <div className="grid min-h-[520px] gap-4 xl:grid-cols-6">
+          {CRM_LEAD_STAGES.map((item) => (
+            <PipelineColumn
+              key={item}
+              stage={item}
+              leads={leadsByStage[item] ?? []}
+              isLoading={isLoading}
+              onOpen={setSelectedLeadId}
+            />
+          ))}
+        </div>
+        <DragOverlay>{activeLead ? <LeadCard lead={activeLead} onOpen={() => undefined} /> : null}</DragOverlay>
+      </DndContext>
 
       <div className="rounded-lg border">
         <div className="grid grid-cols-[1fr_140px_140px_120px] gap-3 border-b px-4 py-3 text-xs font-medium text-muted-foreground">

@@ -4,6 +4,9 @@ const mockFindDuplicateLead = vi.fn();
 const mockCreateLead = vi.fn();
 const mockUpdateLead = vi.fn();
 const mockCreateNote = vi.fn();
+const mockGetClientBySourceLeadId = vi.fn();
+const mockCreateClient = vi.fn();
+const mockCreateClientNote = vi.fn();
 
 vi.mock("../storage", () => ({
   storage: {
@@ -12,6 +15,9 @@ vi.mock("../storage", () => ({
       createLead: mockCreateLead,
       updateLead: mockUpdateLead,
       createNote: mockCreateNote,
+      getClientBySourceLeadId: mockGetClientBySourceLeadId,
+      createClient: mockCreateClient,
+      createClientNote: mockCreateClientNote,
     },
   },
 }));
@@ -90,5 +96,68 @@ describe("crm.service", () => {
       company: "Compiler Co",
       message: "Please call me.",
     });
+  });
+
+  it("creates a client for a won lead", async () => {
+    mockGetClientBySourceLeadId.mockResolvedValue(undefined);
+    mockCreateClient.mockImplementation(async (client) => ({ id: "client-1", ...client }));
+
+    const { ensureClientForWonLead } = await import("../services/crm.service");
+    const client = await ensureClientForWonLead({
+      id: "lead-1",
+      name: "Ada Lovelace",
+      email: "ada@example.com",
+      phone: "555-0100",
+      company: "Compiler Co",
+      message: "Ready",
+      stage: "won",
+      source: "website_form",
+      externalId: null,
+      formSubmissionId: null,
+      formData: { need: "consulting" },
+      metadata: { campaign: "spring" },
+      ownerId: "admin-1",
+      nextFollowUpAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }, "admin-1");
+
+    expect(client.id).toBe("client-1");
+    expect(mockCreateClient).toHaveBeenCalledWith(expect.objectContaining({
+      sourceLeadId: "lead-1",
+      status: "onboarding",
+      name: "Ada Lovelace",
+      source: "website_form",
+    }));
+    expect(mockCreateNote).toHaveBeenCalledWith(expect.objectContaining({ leadId: "lead-1" }));
+    expect(mockCreateClientNote).toHaveBeenCalledWith(expect.objectContaining({ clientId: "client-1" }));
+  });
+
+  it("does not create duplicate clients for the same won lead", async () => {
+    mockGetClientBySourceLeadId.mockResolvedValue({ id: "client-1", sourceLeadId: "lead-1", name: "Ada" });
+
+    const { ensureClientForWonLead } = await import("../services/crm.service");
+    const client = await ensureClientForWonLead({
+      id: "lead-1",
+      name: "Ada",
+      email: null,
+      phone: null,
+      company: null,
+      message: null,
+      stage: "won",
+      source: "manual",
+      externalId: null,
+      formSubmissionId: null,
+      formData: {},
+      metadata: {},
+      ownerId: null,
+      nextFollowUpAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    expect(client.id).toBe("client-1");
+    expect(mockCreateClient).not.toHaveBeenCalled();
+    expect(mockCreateClientNote).not.toHaveBeenCalled();
   });
 });

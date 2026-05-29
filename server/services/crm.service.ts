@@ -1,4 +1,9 @@
-import { crmLeadInputSchema, type CrmLeadInput, type CrmLead } from "@shared/schema";
+import {
+  crmLeadInputSchema,
+  type CrmClient,
+  type CrmLead,
+  type CrmLeadInput,
+} from "@shared/schema";
 import { storage } from "../storage";
 
 function cleanString(value: string | null | undefined) {
@@ -90,4 +95,40 @@ export async function createCrmLeadFromFormSubmission({
     formData: data,
     metadata: { formName },
   });
+}
+
+export async function ensureClientForWonLead(lead: CrmLead, createdById?: string | null): Promise<CrmClient> {
+  const existing = await storage.crm.getClientBySourceLeadId(lead.id);
+  if (existing) return existing;
+
+  const client = await storage.crm.createClient({
+    sourceLeadId: lead.id,
+    name: lead.name,
+    email: lead.email,
+    phone: lead.phone,
+    company: lead.company,
+    status: "onboarding",
+    source: lead.source,
+    formData: lead.formData ?? {},
+    metadata: {
+      ...(lead.metadata ?? {}),
+      convertedFromLeadId: lead.id,
+      convertedAt: new Date().toISOString(),
+    },
+    ownerId: lead.ownerId,
+    nextFollowUpAt: lead.nextFollowUpAt,
+  });
+
+  await storage.crm.createNote({
+    leadId: lead.id,
+    createdById: createdById ?? null,
+    body: "Lead converted to client after moving to Won.",
+  });
+  await storage.crm.createClientNote({
+    clientId: client.id,
+    createdById: createdById ?? null,
+    body: "Client created from won lead.",
+  });
+
+  return client;
 }

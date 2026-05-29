@@ -142,6 +142,12 @@ function buildNavGroups(
                 icon: Handshake,
                 iconColor: "text-blue-600",
               },
+              {
+                title: "Clients",
+                href: "/admin/crm/clients",
+                icon: UserCheck,
+                iconColor: "text-emerald-600",
+              },
             ],
           },
         ] satisfies NavGroup[])

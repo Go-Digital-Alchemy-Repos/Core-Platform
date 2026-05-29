@@ -1,14 +1,25 @@
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
+  CRM_CLIENT_STATUSES,
   CRM_LEAD_STAGES,
+  crmClientNotes,
+  crmClientTasks,
+  crmClients,
   crmLeadNotes,
   crmLeadTasks,
   crmLeads,
+  type CrmClient,
+  type CrmClientNote,
+  type CrmClientStatus,
+  type CrmClientTask,
   type CrmLead,
   type CrmLeadNote,
   type CrmLeadStage,
   type CrmLeadTask,
+  type InsertCrmClient,
+  type InsertCrmClientNote,
+  type InsertCrmClientTask,
   type InsertCrmLead,
   type InsertCrmLeadNote,
   type InsertCrmLeadTask,
@@ -22,10 +33,26 @@ export interface CrmLeadListFilters {
 export interface CrmLeadDetail extends CrmLead {
   notes: CrmLeadNote[];
   tasks: CrmLeadTask[];
+  client?: CrmClient;
+}
+
+export interface CrmClientListFilters {
+  query?: string;
+  status?: CrmClientStatus | "all";
+}
+
+export interface CrmClientDetail extends CrmClient {
+  sourceLead?: CrmLead;
+  notes: CrmClientNote[];
+  tasks: CrmClientTask[];
 }
 
 function isCrmLeadStage(value: string | undefined): value is CrmLeadStage {
   return !!value && CRM_LEAD_STAGES.includes(value as CrmLeadStage);
+}
+
+function isCrmClientStatus(value: string | undefined): value is CrmClientStatus {
+  return !!value && CRM_CLIENT_STATUSES.includes(value as CrmClientStatus);
 }
 
 export class CrmStorage {
@@ -61,11 +88,12 @@ export class CrmStorage {
   async getLeadDetail(id: string): Promise<CrmLeadDetail | undefined> {
     const lead = await this.getLeadById(id);
     if (!lead) return undefined;
-    const [notes, tasks] = await Promise.all([
+    const [notes, tasks, client] = await Promise.all([
       this.listNotes(id),
       this.listTasks(id),
+      this.getClientBySourceLeadId(id),
     ]);
-    return { ...lead, notes, tasks };
+    return { ...lead, notes, tasks, client };
   }
 
   async findDuplicateLead(data: Pick<InsertCrmLead, "email" | "phone">): Promise<CrmLead | undefined> {
@@ -131,6 +159,104 @@ export class CrmStorage {
       .update(crmLeadTasks)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(crmLeadTasks.id, id))
+      .returning();
+    return task;
+  }
+
+  async listClients(filters: CrmClientListFilters = {}): Promise<CrmClient[]> {
+    const conditions = [];
+    const query = filters.query?.trim();
+    if (query) {
+      const pattern = `%${query}%`;
+      conditions.push(or(
+        ilike(crmClients.name, pattern),
+        ilike(crmClients.email, pattern),
+        ilike(crmClients.phone, pattern),
+        ilike(crmClients.company, pattern),
+        ilike(crmClients.source, pattern),
+      ));
+    }
+    if (isCrmClientStatus(filters.status)) {
+      conditions.push(eq(crmClients.status, filters.status));
+    }
+
+    return db
+      .select()
+      .from(crmClients)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(crmClients.updatedAt), desc(crmClients.createdAt));
+  }
+
+  async getClientById(id: string): Promise<CrmClient | undefined> {
+    const [client] = await db.select().from(crmClients).where(eq(crmClients.id, id)).limit(1);
+    return client;
+  }
+
+  async getClientBySourceLeadId(sourceLeadId: string): Promise<CrmClient | undefined> {
+    const [client] = await db
+      .select()
+      .from(crmClients)
+      .where(eq(crmClients.sourceLeadId, sourceLeadId))
+      .limit(1);
+    return client;
+  }
+
+  async getClientDetail(id: string): Promise<CrmClientDetail | undefined> {
+    const client = await this.getClientById(id);
+    if (!client) return undefined;
+    const [sourceLead, notes, tasks] = await Promise.all([
+      client.sourceLeadId ? this.getLeadById(client.sourceLeadId) : Promise.resolve(undefined),
+      this.listClientNotes(id),
+      this.listClientTasks(id),
+    ]);
+    return { ...client, sourceLead, notes, tasks };
+  }
+
+  async createClient(data: InsertCrmClient): Promise<CrmClient> {
+    const [client] = await db.insert(crmClients).values(data).returning();
+    return client;
+  }
+
+  async updateClient(id: string, data: Partial<InsertCrmClient>): Promise<CrmClient | undefined> {
+    const [client] = await db
+      .update(crmClients)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(crmClients.id, id))
+      .returning();
+    return client;
+  }
+
+  async listClientNotes(clientId: string): Promise<CrmClientNote[]> {
+    return db
+      .select()
+      .from(crmClientNotes)
+      .where(eq(crmClientNotes.clientId, clientId))
+      .orderBy(desc(crmClientNotes.createdAt));
+  }
+
+  async createClientNote(data: InsertCrmClientNote): Promise<CrmClientNote> {
+    const [note] = await db.insert(crmClientNotes).values(data).returning();
+    return note;
+  }
+
+  async listClientTasks(clientId: string): Promise<CrmClientTask[]> {
+    return db
+      .select()
+      .from(crmClientTasks)
+      .where(eq(crmClientTasks.clientId, clientId))
+      .orderBy(crmClientTasks.completed, crmClientTasks.dueAt, desc(crmClientTasks.createdAt));
+  }
+
+  async createClientTask(data: InsertCrmClientTask): Promise<CrmClientTask> {
+    const [task] = await db.insert(crmClientTasks).values(data).returning();
+    return task;
+  }
+
+  async updateClientTask(id: string, data: Partial<InsertCrmClientTask>): Promise<CrmClientTask | undefined> {
+    const [task] = await db
+      .update(crmClientTasks)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(crmClientTasks.id, id))
       .returning();
     return task;
   }
