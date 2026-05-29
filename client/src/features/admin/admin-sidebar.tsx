@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import {
@@ -307,26 +307,35 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
   const toggleGroup = (label: string, open: boolean) => {
     setOpenGroup(open ? label : null);
   };
+  const exactOnlyRoutes = ["/admin", "/admin/cms", "/admin/crm"];
+  const isRouteActive = (href?: string) => Boolean(
+    href &&
+      (location === href ||
+        (!exactOnlyRoutes.includes(href) && location.startsWith(href))),
+  );
+  const isChildRouteActive = (child: NavItem) => {
+    if (!child.href) return false;
+    if (child.href === "/admin/cms/blog") {
+      return (
+        location === child.href ||
+        location === "/admin/cms/blog/new" ||
+        /^\/admin\/cms\/blog\/[^/]+$/.test(location)
+      );
+    }
+    return isRouteActive(child.href);
+  };
+  const isNavItemActive = (item: NavItem) =>
+    isRouteActive(item.href) || Boolean(item.children?.some(isChildRouteActive));
+  const activeGroupLabel = navGroups.find((group) =>
+    group.label && group.items.some(isNavItemActive)
+  )?.label ?? null;
+
+  useEffect(() => {
+    setOpenGroup(activeGroupLabel);
+  }, [activeGroupLabel]);
 
   const renderNavItem = (item: NavItem) => {
-    const exactOnlyRoutes = ["/admin", "/admin/cms"];
-    const isActive = Boolean(
-      item.href &&
-      (location === item.href ||
-        (!exactOnlyRoutes.includes(item.href) && location.startsWith(item.href))),
-    );
-    const isChildRouteActive = (child: NavItem) => {
-      if (!child.href) return false;
-      if (child.href === "/admin/cms/blog") {
-        return (
-          location === child.href ||
-          location === "/admin/cms/blog/new" ||
-          /^\/admin\/cms\/blog\/[^/]+$/.test(location)
-        );
-      }
-      return location === child.href || location.startsWith(child.href);
-    };
-
+    const isActive = isRouteActive(item.href);
     const childIsActive = Boolean(item.children?.some(isChildRouteActive));
     const parentIsActive = isActive || childIsActive;
     const linkContent = (
