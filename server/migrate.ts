@@ -327,6 +327,36 @@ async function ensureEcommerceTables(migrationsFolder: string) {
   logger.app.info("Ecommerce schema reconciled successfully");
 }
 
+async function columnExists(tableName: string, columnName: string) {
+  const result = await db.execute(sql<{ exists: boolean }>`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = ${tableName}
+        AND column_name = ${columnName}
+    ) AS exists
+  `);
+
+  return Boolean((result.rows[0] as { exists?: boolean } | undefined)?.exists);
+}
+
+async function ensureEventFlexibilityTables(migrationsFolder: string) {
+  const hasEventType = await columnExists("events", "event_type");
+  const hasEventVenues = await tableExists("event_venues");
+  const hasEventVenueId = await columnExists("events", "venue_id");
+
+  if (!hasEventType) {
+    logger.app.info("Applying event flexibility migration for legacy database without Drizzle journal");
+    await runSqlMigrationFile(migrationsFolder, "0027_event_flexibility.sql");
+  }
+
+  if (!hasEventVenues || !hasEventVenueId) {
+    logger.app.info("Applying event venues and organizers migration for legacy database without Drizzle journal");
+    await runSqlMigrationFile(migrationsFolder, "0028_event_venues_organizers.sql");
+  }
+}
+
 export async function runMigrations() {
   const migrationsFolder = path.resolve(
     process.env.NODE_ENV === "production" ? __dirname : process.cwd(),
@@ -338,6 +368,7 @@ export async function runMigrations() {
     await ensureEventSlugs();
     await ensureCrmTables();
     await ensureEcommerceTables(migrationsFolder);
+    await ensureEventFlexibilityTables(migrationsFolder);
   }
 
   if (!bootstrapState.hasJournal && bootstrapState.publicTableCount > 0) {
