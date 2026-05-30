@@ -39,6 +39,10 @@ export interface PricedCartLine {
   categoryIds: string[];
   taxable: boolean;
   taxCategory: string | null;
+  taxAmount: number;
+  requiresShipping: boolean;
+  fulfillmentType: string;
+  productSnapshot: Record<string, unknown>;
 }
 
 export interface PricedCart {
@@ -352,21 +356,45 @@ export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise
       throw new Error("One or more product variants do not have enough inventory");
     }
     const unitPrice = effectiveVariantPrice(product, variant);
+    const taxable = product.taxable ?? true;
+    const requiresShipping = product.requiresShipping ?? true;
+    const fulfillmentType = product.fulfillmentType ?? "standard";
+    const image = variant.image ?? product.primaryImage;
+    const sku = variant.sku ?? product.sku;
     return {
       productId: product.id,
       variantId: variant.id,
       name: product.name,
       variantTitle: variant.isDefault ? null : variant.title,
-      sku: variant.sku ?? product.sku,
+      sku,
       optionsSnapshot: variant.optionValues,
       slug: product.urlSlug,
       quantity: item.quantity,
       unitPrice,
       lineTotal: unitPrice * item.quantity,
-      image: variant.image ?? product.primaryImage,
+      image,
       categoryIds: (productCategories.get(product.id) ?? []).map((category) => category.id),
-      taxable: product.taxable,
+      taxable,
       taxCategory: product.taxCategory,
+      taxAmount: 0,
+      requiresShipping,
+      fulfillmentType,
+      productSnapshot: {
+        productId: product.id,
+        variantId: variant.id,
+        productName: product.name,
+        variantTitle: variant.isDefault ? null : variant.title,
+        sku,
+        slug: product.urlSlug,
+        image,
+        taxable,
+        taxCategory: product.taxCategory,
+        requiresShipping,
+        fulfillmentType,
+        weight: variant.weight ?? product.weight,
+        weightUnit: variant.weightUnit ?? product.weightUnit,
+        options: variant.optionValues,
+      },
     };
   }));
 
@@ -411,8 +439,12 @@ export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise
       totalAmount,
     };
   }
+  const linesWithTax = lines.map((line, index) => ({
+    ...line,
+    taxAmount: tax.lineTaxAmounts[index] ?? 0,
+  }));
   return {
-    lines,
+    lines: linesWithTax,
     subtotalAmount,
     discountAmount,
     shippingAmount,

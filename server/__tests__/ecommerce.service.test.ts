@@ -154,6 +154,11 @@ describe("ecommerce services", () => {
     expect(priced.lines[0].unitPrice).toBe(7500);
     expect(priced.lines[0].variantId).toBe("v1");
     expect(priced.taxAmount).toBe(0);
+    expect(priced.lines[0]).toMatchObject({
+      productSnapshot: expect.objectContaining({ slug: "test-product", taxable: true }),
+      requiresShipping: true,
+      taxAmount: 0,
+    });
   });
 
   it("applies fixed coupon discounts with order minimums", async () => {
@@ -524,6 +529,7 @@ describe("ecommerce services", () => {
     expect(priced.discountAmount).toBe(1000);
     expect(priced.tax).toMatchObject({ provider: "manual", taxableAmount: 10000, rateBps: 600 });
     expect(priced.taxAmount).toBe(600);
+    expect(priced.lines[0].taxAmount).toBe(540);
     expect(priced.totalAmount).toBe(10600);
     expect(priced.couponValidation?.finalTotals.taxAmount).toBe(600);
   });

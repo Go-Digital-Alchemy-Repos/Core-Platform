@@ -28,6 +28,7 @@ export interface EcommerceTaxCalculation {
   taxableAmount: number;
   rateBps: number;
   provider: "none" | "manual";
+  lineTaxAmounts: number[];
 }
 
 export async function getEcommerceTaxSettings(): Promise<EcommerceTaxSettings> {
@@ -60,7 +61,7 @@ export async function calculateEcommerceTax(input: {
 }): Promise<EcommerceTaxCalculation> {
   const settings = await getEcommerceTaxSettings();
   if (!settings.enabled) {
-    return { taxAmount: 0, taxableAmount: 0, rateBps: 0, provider: "none" };
+    return { taxAmount: 0, taxableAmount: 0, rateBps: 0, provider: "none", lineTaxAmounts: input.lines.map(() => 0) };
   }
 
   const taxableSubtotal = input.lines
@@ -69,16 +70,30 @@ export async function calculateEcommerceTax(input: {
   const discountRatio = input.subtotalAmount > 0
     ? Math.min(1, Math.max(0, input.discountAmount / input.subtotalAmount))
     : 0;
-  const discountedTaxableSubtotal = Math.max(0, Math.round(taxableSubtotal * (1 - discountRatio)));
+  const lineTaxableAmounts = input.lines.map((line) =>
+    line.taxable ? Math.max(0, Math.round(line.lineTotal * (1 - discountRatio))) : 0,
+  );
+  const discountedTaxableSubtotal = lineTaxableAmounts.reduce((sum, amount) => sum + amount, 0);
   const taxableShipping = settings.taxShipping ? input.shippingAmount : 0;
   const taxableAmount = Math.max(0, discountedTaxableSubtotal + taxableShipping);
   const rateBps = settings.manualRateBps;
   const taxAmount = Math.round((taxableAmount * rateBps) / 10000);
+  const lineTaxTotal = Math.round((discountedTaxableSubtotal * rateBps) / 10000);
+  let allocatedLineTax = 0;
+  const lastTaxableIndex = lineTaxableAmounts.reduce((last, amount, index) => (amount > 0 ? index : last), -1);
+  const lineTaxAmounts = lineTaxableAmounts.map((amount, index) => {
+    if (amount <= 0) return 0;
+    if (index === lastTaxableIndex) return lineTaxTotal - allocatedLineTax;
+    const lineTax = Math.round((lineTaxTotal * amount) / discountedTaxableSubtotal);
+    allocatedLineTax += lineTax;
+    return lineTax;
+  });
 
   return {
     taxAmount,
     taxableAmount,
     rateBps,
     provider: "manual",
+    lineTaxAmounts,
   };
 }
