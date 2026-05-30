@@ -294,11 +294,20 @@ interface IntegrationField {
   placeholder: string;
 }
 
+type IntegrationGroupKey =
+  | "commerce"
+  | "shipping"
+  | "marketing"
+  | "communications"
+  | "infrastructure";
+
 interface IntegrationConfig {
   category: string;
   title: string;
   description: string;
+  group: IntegrationGroupKey;
   icon: typeof CreditCard;
+  badge?: string;
   accountUrl: string;
   docsUrl?: string;
   instructions: string[];
@@ -307,11 +316,44 @@ interface IntegrationConfig {
   supportsConnectionTest?: boolean;
 }
 
+const INTEGRATION_GROUPS: Array<{
+  key: IntegrationGroupKey;
+  title: string;
+  description: string;
+}> = [
+  {
+    key: "commerce",
+    title: "Commerce & Payments",
+    description: "Payment, merchant catalog, and product discovery connections.",
+  },
+  {
+    key: "shipping",
+    title: "Shipping & Fulfillment",
+    description: "Label purchasing, fulfillment automation, inventory, and delivery workflows.",
+  },
+  {
+    key: "marketing",
+    title: "Marketing & Analytics",
+    description: "Measurement, advertising, attribution, and audience lifecycle tools.",
+  },
+  {
+    key: "communications",
+    title: "Communications & CRM",
+    description: "Transactional email, lead intake, and customer operations integrations.",
+  },
+  {
+    key: "infrastructure",
+    title: "Storage & Infrastructure",
+    description: "Platform services used by media, uploads, and deployment operations.",
+  },
+];
+
 const INTEGRATIONS: IntegrationConfig[] = [
   {
     category: "stripe",
     title: "Stripe",
     description: "Payment processing for therapist subscriptions",
+    group: "commerce",
     icon: CreditCard,
     accountUrl: "https://dashboard.stripe.com/apikeys",
     docsUrl: "https://docs.stripe.com/keys",
@@ -346,6 +388,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
     category: "mailgun",
     title: "Mailgun",
     description: "Transactional email delivery service",
+    group: "communications",
     icon: Mail,
     accountUrl: "https://app.mailgun.com/app/account/security/api_keys",
     docsUrl:
@@ -380,6 +423,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
     category: "mailchimp",
     title: "Mailchimp",
     description: "Audience sync used by managed forms and lifecycle tagging",
+    group: "marketing",
     icon: Tag,
     accountUrl: "https://admin.mailchimp.com/account/api/",
     docsUrl: "https://mailchimp.com/help/about-api-keys/",
@@ -414,6 +458,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
     title: "Google Analytics",
     description:
       "Reserve the GA4 tracking and reporting configuration used by future public analytics and the planned admin Analytics area.",
+    group: "marketing",
     icon: BarChart3,
     accountUrl: "https://analytics.google.com/analytics/web/",
     docsUrl: "https://support.google.com/analytics/answer/9539598",
@@ -455,6 +500,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
     title: "Meta Pixel & Conversions API",
     description:
       "Marketing pixel and server-side event credentials for Facebook and Instagram commerce campaigns",
+    group: "marketing",
     icon: Megaphone,
     accountUrl: "https://business.facebook.com/events_manager",
     docsUrl: "https://developers.facebook.com/docs/meta-pixel/",
@@ -490,6 +536,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
     title: "TikTok Pixel & Events API",
     description:
       "TikTok browser pixel and Events API credentials for catalog, checkout, and purchase tracking",
+    group: "marketing",
     icon: Megaphone,
     accountUrl: "https://ads.tiktok.com/i18n/events_manager",
     docsUrl: "https://business-api.tiktok.com/portal/docs?id=1739584855420929",
@@ -524,6 +571,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
     category: "x_ads",
     title: "X Ads Website Tag",
     description: "Consent-based website tag configuration for X campaign measurement and remarketing",
+    group: "marketing",
     icon: Megaphone,
     accountUrl: "https://ads.x.com/conversion_tracking",
     docsUrl: "https://business.x.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html",
@@ -546,6 +594,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
     category: "google_merchant_center",
     title: "Google Merchant Center",
     description: "Product feed readiness settings for Shopping surfaces and merchant diagnostics",
+    group: "commerce",
     icon: Store,
     accountUrl: "https://merchants.google.com/",
     docsUrl: "https://support.google.com/merchants/answer/7052112",
@@ -574,6 +623,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
     category: "crm",
     title: "CRM Inbound API",
     description: "API key used by external lead sources like social ads, Zapier, and landing-page tools",
+    group: "communications",
     icon: Plug,
     accountUrl: "https://core-platform-production-0848.up.railway.app/admin/settings",
     docsUrl: "https://core-platform-production-0848.up.railway.app/admin/settings",
@@ -596,7 +646,9 @@ const INTEGRATIONS: IntegrationConfig[] = [
     category: "shipstation",
     title: "ShipStation",
     description: "Shipping label, fulfillment, and shipment sync configuration for ecommerce orders",
+    group: "shipping",
     icon: Truck,
+    badge: "Best workflow automation",
     accountUrl: "https://shipstation.com/account/settings/api",
     docsUrl: "https://docs.shipstation.com/api-overview",
     instructions: [
@@ -633,9 +685,172 @@ const INTEGRATIONS: IntegrationConfig[] = [
     ],
   },
   {
+    category: "shippo",
+    title: "Shippo",
+    description: "Carrier rates, label purchasing, address validation, and tracking through a developer-first shipping API",
+    group: "shipping",
+    icon: Truck,
+    badge: "Best API strategy",
+    accountUrl: "https://apps.goshippo.com/settings/api",
+    docsUrl: "https://docs.goshippo.com/docs/Guides_general/authentication/",
+    instructions: [
+      "Open Shippo API settings and copy separate test and live tokens.",
+      "Use test mode while validating rates, labels, webhooks, and tracking events.",
+      "Switch to live mode only after package dimensions, carrier accounts, and fulfillment workflows are verified.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "shippo_active_mode",
+        label: "Active Mode",
+        isSecret: false,
+        placeholder: "test",
+      },
+      {
+        key: "shippo_test_token",
+        label: "Test API Token",
+        isSecret: true,
+        placeholder: "shippo_test_...",
+      },
+      {
+        key: "shippo_live_token",
+        label: "Live API Token",
+        isSecret: true,
+        placeholder: "shippo_live_...",
+      },
+      {
+        key: "shippo_webhook_secret",
+        label: "Webhook Secret",
+        isSecret: true,
+        placeholder: "Optional webhook signing secret",
+      },
+    ],
+  },
+  {
+    category: "veeqo",
+    title: "Veeqo",
+    description: "Inventory, warehouse, order, shipping, and marketplace operations for multi-channel ecommerce",
+    group: "shipping",
+    icon: Store,
+    badge: "Best inventory + shipping",
+    accountUrl: "https://app.veeqo.com/",
+    docsUrl: "https://developers.veeqo.com/getting-started/authentication",
+    instructions: [
+      "Use Veeqo when the store needs inventory and warehouse operations alongside shipping.",
+      "For private store usage, generate an API key from the Veeqo user or employee record.",
+      "Store warehouse, channel, and location identifiers so future order sync can target the correct operation.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "veeqo_api_key",
+        label: "API Key",
+        isSecret: true,
+        placeholder: "Veeqo API key",
+      },
+      {
+        key: "veeqo_default_warehouse_id",
+        label: "Default Warehouse ID",
+        isSecret: false,
+        placeholder: "123456",
+      },
+      {
+        key: "veeqo_default_store_id",
+        label: "Default Store ID",
+        isSecret: false,
+        placeholder: "123456",
+      },
+      {
+        key: "veeqo_sync_inventory",
+        label: "Sync Inventory",
+        isSecret: false,
+        placeholder: "false",
+      },
+    ],
+  },
+  {
+    category: "easyship",
+    title: "Easyship",
+    description: "International shipping rates, duties, taxes, courier options, and cross-border delivery workflows",
+    group: "shipping",
+    icon: Truck,
+    badge: "Best international features",
+    accountUrl: "https://www.easyship.com/developers",
+    docsUrl: "https://www.easyship.com/developers",
+    instructions: [
+      "Use Easyship when cross-border rates, duties, taxes, and international courier options matter.",
+      "Generate an API key from the Easyship developer area and start in sandbox/test mode when available.",
+      "Save origin warehouse and incoterm defaults before enabling automated label purchasing.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "easyship_api_key",
+        label: "API Key",
+        isSecret: true,
+        placeholder: "Easyship API key",
+      },
+      {
+        key: "easyship_active_mode",
+        label: "Active Mode",
+        isSecret: false,
+        placeholder: "test",
+      },
+      {
+        key: "easyship_origin_warehouse_id",
+        label: "Origin Warehouse ID",
+        isSecret: false,
+        placeholder: "warehouse identifier",
+      },
+      {
+        key: "easyship_default_incoterm",
+        label: "Default Incoterm",
+        isSecret: false,
+        placeholder: "DDU",
+      },
+    ],
+  },
+  {
+    category: "pirate_ship",
+    title: "Pirate Ship",
+    description: "Simple manual shipping workflow using order exports and tracking imports instead of a public API",
+    group: "shipping",
+    icon: Truck,
+    badge: "Best simplicity",
+    accountUrl: "https://www.pirateship.com/",
+    docsUrl: "https://support.pirateship.com/en/articles/2309246-does-pirate-ship-have-an-api",
+    instructions: [
+      "Pirate Ship does not expose a public API, so this integration is intentionally configured as a manual workflow.",
+      "Use CSV order export and tracking import for simple stores that do not need real-time rate or label automation.",
+      "Choose Shippo, ShipStation, Veeqo, or Easyship instead when automated labels, webhooks, or API-driven fulfillment are required.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "pirate_ship_account_email",
+        label: "Account Email",
+        isSecret: false,
+        placeholder: "shipping@yourdomain.com",
+      },
+      {
+        key: "pirate_ship_export_profile",
+        label: "Export Profile",
+        isSecret: false,
+        placeholder: "Default CSV export",
+      },
+      {
+        key: "pirate_ship_tracking_import_enabled",
+        label: "Tracking Import Enabled",
+        isSecret: false,
+        placeholder: "false",
+      },
+    ],
+  },
+  {
     category: "cloudflare_r2",
     title: "Cloudflare R2",
     description: "Object storage for images and file uploads",
+    group: "infrastructure",
     icon: Cloud,
     accountUrl: "https://dash.cloudflare.com/?to=/:account/r2/api-tokens",
     docsUrl: "https://developers.cloudflare.com/r2/api/s3/tokens/",
@@ -759,7 +974,14 @@ function IntegrationCard({
               <Icon className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-lg">{config.title}</CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
+                <CardTitle className="text-lg">{config.title}</CardTitle>
+                {config.badge ? (
+                  <Badge variant="secondary" className="font-normal">
+                    {config.badge}
+                  </Badge>
+                ) : null}
+              </div>
               <CardDescription>{config.description}</CardDescription>
             </div>
           </div>
@@ -920,6 +1142,13 @@ function IntegrationCard({
 }
 
 function IntegrationsTab({ settings }: { settings: SettingsData }) {
+  const configuredCount = INTEGRATIONS.filter((config) =>
+    config.fields.some((field) => {
+      const setting = settings[config.category]?.[field.key];
+      return setting?.value && setting.value !== "";
+    }),
+  ).length;
+
   return (
     <div className="space-y-6">
       <div>
@@ -927,12 +1156,35 @@ function IntegrationsTab({ settings }: { settings: SettingsData }) {
           Integrations
         </h3>
         <p className="text-sm text-muted-foreground">
-          Configure third-party service connections. Secret values are encrypted at rest.
+          Browse integrations by category. {configuredCount} of {INTEGRATIONS.length} connections
+          have saved settings, and secret values are encrypted at rest.
         </p>
       </div>
-      {INTEGRATIONS.map((config) => (
-        <IntegrationCard key={config.category} config={config} settings={settings} />
-      ))}
+      <div className="space-y-8">
+        {INTEGRATION_GROUPS.map((group) => {
+          const groupIntegrations = INTEGRATIONS.filter((config) => config.group === group.key);
+          if (groupIntegrations.length === 0) return null;
+
+          return (
+            <section key={group.key} className="space-y-4" data-testid={`integration-group-${group.key}`}>
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b pb-3">
+                <div>
+                  <h4 className="text-base font-semibold">{group.title}</h4>
+                  <p className="text-sm text-muted-foreground">{group.description}</p>
+                </div>
+                <Badge variant="outline">
+                  {groupIntegrations.length} {groupIntegrations.length === 1 ? "option" : "options"}
+                </Badge>
+              </div>
+              <div className="grid gap-4 xl:grid-cols-2">
+                {groupIntegrations.map((config) => (
+                  <IntegrationCard key={config.category} config={config} settings={settings} />
+                ))}
+              </div>
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -3051,7 +3303,7 @@ export default function AdminSettingsPage() {
 
   return (
     <AdminSidebar>
-      <div className="p-6 max-w-4xl">
+      <div className="p-6 max-w-7xl">
         <h1 className="text-2xl font-heading font-bold mb-1" data-testid="text-settings-title">
           System Settings
         </h1>
@@ -3088,11 +3340,11 @@ export default function AdminSettingsPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="email-templates" className="mt-6">
+          <TabsContent value="email-templates" className="mt-6 max-w-4xl">
             <EmailTemplatesTab />
           </TabsContent>
 
-          <TabsContent value="head-tags" className="mt-6">
+          <TabsContent value="head-tags" className="mt-6 max-w-4xl">
             {isLoading ? (
               <div className="flex items-center justify-center p-12">
                 <Loader2 className="h-6 w-6 animate-spin" />
@@ -3102,7 +3354,7 @@ export default function AdminSettingsPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="system" className="mt-6">
+          <TabsContent value="system" className="mt-6 max-w-4xl">
             {isLoading ? (
               <div className="flex items-center justify-center p-12">
                 <Loader2 className="h-6 w-6 animate-spin" />
