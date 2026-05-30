@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import { Switch, Route, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
@@ -8,6 +9,7 @@ import { BrandingProvider } from "@/components/shared/branding-provider";
 import { CookieConsentBanner } from "@/components/shared/cookie-consent-banner";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import { useAuth } from "@/hooks/use-auth";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
 import { loadGa4IfConsented, loadMarketingPixelsIfConsented } from "@/lib/analytics-runtime";
 import { subscribeToCookieConsent } from "@/lib/cookie-consent";
 import NotFound from "@/pages/not-found";
@@ -120,6 +122,20 @@ function AdminIndexRoute() {
   return <NotFound />;
 }
 
+function DirectoryApplicationRoute({ children }: { children: ReactNode }) {
+  const { settings, isLoading } = useDirectorySettings();
+
+  if (isLoading) {
+    return <PageLoader />;
+  }
+
+  if (!settings.directoryRequiresApplicationProcess) {
+    return <Redirect to="/therapist/profile?application=disabled" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 function Router() {
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
@@ -177,12 +193,20 @@ function Router() {
         </Route>
         <Route path="/therapist/apply">
           <ProtectedRoute roles={["therapist"]}>
-            {siteFeatures.directoryEnabled ? <ApplicationPage /> : <NotFound />}
+            {siteFeatures.directoryEnabled ? (
+              <DirectoryApplicationRoute>
+                <ApplicationPage />
+              </DirectoryApplicationRoute>
+            ) : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/therapist/application/status">
           <ProtectedRoute roles={["therapist"]}>
-            {siteFeatures.directoryEnabled ? <ApplicationStatusPage /> : <NotFound />}
+            {siteFeatures.directoryEnabled ? (
+              <DirectoryApplicationRoute>
+                <ApplicationStatusPage />
+              </DirectoryApplicationRoute>
+            ) : <NotFound />}
           </ProtectedRoute>
         </Route>
 

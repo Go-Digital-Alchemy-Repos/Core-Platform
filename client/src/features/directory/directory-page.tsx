@@ -20,9 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSpecializations } from "@/hooks/use-specializations";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
 import type {
-  TherapistWithUser,
   PaginatedTherapists,
   DirectoryFilterOptions,
 } from "@shared/types/directory";
@@ -207,7 +207,8 @@ export function DirectoryBrowserSection({
 }) {
   const queryString = useSearch();
   const [, navigate] = useLocation();
-  const heading = str(props.heading) || "Find a Mental Health Professional";
+  const { settings: directorySettings } = useDirectorySettings();
+  const heading = str(props.heading) || `Find ${directorySettings.participantLabelPlural}`;
   const subheading = str(props.subheading);
   const showCategoryChips = bool(props.showCategoryChips, true);
   const showMap = bool(props.showMap, true);
@@ -396,7 +397,7 @@ export function DirectoryBrowserSection({
                 {!isLoading && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1 mt-[10px] mb-[10px]" data-testid="text-results-count">
                     <Users className="h-3 w-3 flex-shrink-0" />
-                    {total} mental health professional{total !== 1 ? "s" : ""} available
+                    {total} {total === 1 ? directorySettings.participantLabelSingular : directorySettings.participantLabelPlural} available
                   </p>
                 )}
               </div>
@@ -447,12 +448,12 @@ export function DirectoryBrowserSection({
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search name, specialty, language..."
+                placeholder={`Search name, ${directorySettings.specialtyLabelPlural.toLowerCase()}, language...`}
                 className="pl-9 h-9 text-sm"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 data-testid="input-search"
-                aria-label="Search therapists"
+                aria-label={`Search ${directorySettings.participantLabelPlural.toLowerCase()}`}
               />
             </div>
 
@@ -461,7 +462,7 @@ export function DirectoryBrowserSection({
                 <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
                   <div>
                     <Label className="text-[11px] text-muted-foreground mb-1 block">
-                      Specializations {specializations.length > 0 && `(${specializations.length})`}
+                      {directorySettings.specialtyLabelPlural} {specializations.length > 0 && `(${specializations.length})`}
                     </Label>
                     <div
                       className="border rounded-md max-h-[180px] overflow-y-auto p-1.5 space-y-0.5"
@@ -643,7 +644,7 @@ export function DirectoryBrowserSection({
             ) : therapists.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-4 text-center" data-testid="text-no-results">
                 <Users className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm font-medium text-muted-foreground">No mental health professionals found</p>
+                <p className="text-sm font-medium text-muted-foreground">No {directorySettings.participantLabelPlural.toLowerCase()} found</p>
                 <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your search or filters</p>
                 {activeFilterCount > 0 && (
                   <Button

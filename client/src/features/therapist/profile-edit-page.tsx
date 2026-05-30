@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useSearch } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,6 +11,7 @@ import { TherapistLayout } from "./therapist-layout";
 import { LANGUAGES, PracticeMode } from "@shared/types";
 import { useSpecializations } from "@/hooks/use-specializations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +28,7 @@ import { PhoneInput } from "@/components/shared/phone-input";
 import { phoneSchema } from "@/lib/phone-utils";
 import { useAuth } from "@/hooks/use-auth";
 import { CmsRichTextEditor } from "@/features/admin/cms/builder/cms-rich-text-editor";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
 
 const profileFormSchema = z.object({
   title: z.string().optional(),
@@ -58,6 +61,8 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 export default function ProfileEditPage() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const search = useSearch();
+  const { settings: directorySettings } = useDirectorySettings();
   const { specializations: specList } = useSpecializations();
   const [otherLangOpen, setOtherLangOpen] = useState(false);
   const customLangInputRef = useRef<HTMLInputElement>(null);
@@ -183,14 +188,23 @@ export default function ProfileEditPage() {
     <TherapistLayout>
     <div className="p-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-heading font-semibold mb-6" data-testid="text-profile-edit-title">
-        Edit Profile
+        Edit {directorySettings.listingLabelSingular}
       </h1>
+
+      {new URLSearchParams(search).get("application") === "disabled" && (
+        <Alert className="mb-6" data-testid="alert-application-disabled">
+          <AlertTitle>Application process disabled</AlertTitle>
+          <AlertDescription>
+            You can set up your {directorySettings.listingLabelSingular.toLowerCase()} directly. Complete the details below to prepare it for the {directorySettings.directoryLabelSingular.toLowerCase()}.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Profile Photo</CardTitle>
+              <CardTitle className="text-base">{directorySettings.listingLabelSingular} Photo</CardTitle>
             </CardHeader>
             <CardContent>
               <AvatarUpload

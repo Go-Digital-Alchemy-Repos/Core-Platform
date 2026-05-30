@@ -159,14 +159,17 @@ router.post(
 
     const user = req.user!;
 
+    const directorySettings = await getDirectorySettings();
     const application = await storage.applications.getByUserId(user.id);
-    if (!application || !["approved_pending_subscription", "active_member"].includes(application.status)) {
+    if (
+      directorySettings.directoryRequiresApplicationProcess &&
+      (!application || !["approved_pending_subscription", "active_member"].includes(application.status))
+    ) {
       res.status(403).json({ message: "Your application must be approved before you can subscribe. Please complete the application process first." });
       return;
     }
 
     const stripe = await getUncachableStripeClient();
-    const directorySettings = await getDirectorySettings();
 
     let subscription = await storage.subscriptions.getSubscriptionByTherapist(user.id);
     let customerId = subscription?.stripeCustomerId;
@@ -193,6 +196,7 @@ router.post(
 
     if (
       subscription &&
+      application &&
       directorySettings.applicationFeeCreditOnApproval &&
       application.paymentStatus === "paid" &&
       (subscription.applicationFeeCreditAppliedAt == null) &&

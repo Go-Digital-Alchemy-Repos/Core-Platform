@@ -1,4 +1,10 @@
-import { storage } from "../storage/index";
+import { storage } from "../storage";
+import {
+  DIRECTORY_LABEL_PRESETS,
+  DIRECTORY_MODES,
+  type DirectoryMode,
+  type PublicDirectorySettings,
+} from "@shared/types/directory-settings";
 
 function parseBoolean(value: string | undefined, fallback: boolean): boolean {
   if (value == null) return fallback;
@@ -20,7 +26,18 @@ function parseMoneyToCents(value: string | undefined, fallbackCents: number): nu
   return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed * 100)) : fallbackCents;
 }
 
-export const DEFAULT_DIRECTORY_SETTINGS = {
+function parseDirectoryMode(value: string | undefined): DirectoryMode {
+  return DIRECTORY_MODES.includes(value as DirectoryMode) ? (value as DirectoryMode) : "therapists";
+}
+
+function parseLabel(value: string | undefined, fallback: string): string {
+  const trimmed = value?.trim();
+  return trimmed || fallback;
+}
+
+export const DEFAULT_DIRECTORY_SETTINGS: PublicDirectorySettings = {
+  directoryMode: "therapists",
+  ...DIRECTORY_LABEL_PRESETS.therapists,
   applicationFeeAmountCents: 15000,
   applicationFeeNoticeTitle: "Application Fee",
   applicationFeeNoticeBody:
@@ -32,16 +49,27 @@ export const DEFAULT_DIRECTORY_SETTINGS = {
   renewalReminderDays: 30,
   paymentFailureGraceHours: 48,
   suspendListingOnPastDue: true,
+  directoryRequiresApplicationProcess: true,
   directoryRequiresApprovedApplication: true,
   directoryRequiresActiveSubscription: true,
 };
 
-export type DirectorySettings = typeof DEFAULT_DIRECTORY_SETTINGS;
+export type DirectorySettings = PublicDirectorySettings;
 
 export async function getDirectorySettings(): Promise<DirectorySettings> {
   const settings = await storage.settings.getDecryptedCategory("directory_settings");
+  const directoryMode = parseDirectoryMode(settings.directory_mode);
+  const labelDefaults = DIRECTORY_LABEL_PRESETS[directoryMode];
 
   return {
+    directoryMode,
+    directoryLabelSingular: parseLabel(settings.directory_label_singular, labelDefaults.directoryLabelSingular),
+    directoryLabelPlural: parseLabel(settings.directory_label_plural, labelDefaults.directoryLabelPlural),
+    listingLabelSingular: parseLabel(settings.listing_label_singular, labelDefaults.listingLabelSingular),
+    listingLabelPlural: parseLabel(settings.listing_label_plural, labelDefaults.listingLabelPlural),
+    participantLabelSingular: parseLabel(settings.participant_label_singular, labelDefaults.participantLabelSingular),
+    participantLabelPlural: parseLabel(settings.participant_label_plural, labelDefaults.participantLabelPlural),
+    specialtyLabelPlural: parseLabel(settings.specialty_label_plural, labelDefaults.specialtyLabelPlural),
     applicationFeeAmountCents: parseMoneyToCents(
       settings.application_fee_amount_usd,
       DEFAULT_DIRECTORY_SETTINGS.applicationFeeAmountCents,
@@ -71,6 +99,10 @@ export async function getDirectorySettings(): Promise<DirectorySettings> {
     suspendListingOnPastDue: parseBoolean(
       settings.suspend_listing_on_past_due,
       DEFAULT_DIRECTORY_SETTINGS.suspendListingOnPastDue,
+    ),
+    directoryRequiresApplicationProcess: parseBoolean(
+      settings.directory_requires_application_process,
+      DEFAULT_DIRECTORY_SETTINGS.directoryRequiresApplicationProcess,
     ),
     directoryRequiresApprovedApplication: parseBoolean(
       settings.directory_requires_approved_application,

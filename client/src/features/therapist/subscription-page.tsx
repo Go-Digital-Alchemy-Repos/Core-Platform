@@ -10,6 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle, AlertCircle, Clock, CreditCard, ExternalLink, Loader2, Check, Lock, ClipboardList } from "lucide-react";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
+
+interface ApplicationData {
+  status?: string;
+}
 
 function getStatusBadge(status: string | undefined) {
   switch (status) {
@@ -30,6 +35,7 @@ function getStatusBadge(status: string | undefined) {
 
 export default function SubscriptionPage() {
   const { toast } = useToast();
+  const { settings: directorySettings } = useDirectorySettings();
 
   const { data: subscription, isLoading: subLoading } = useQuery<TherapistSubscription | null>({
     queryKey: ["/api/stripe/subscription-status"],
@@ -41,7 +47,7 @@ export default function SubscriptionPage() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
-  const { data: application } = useQuery<any>({
+  const { data: application } = useQuery<ApplicationData | null>({
     queryKey: ["/api/therapist/application"],
   });
 
@@ -105,8 +111,8 @@ export default function SubscriptionPage() {
     );
   }
 
-  const isApprovedForSubscription = application &&
-    ["approved_pending_subscription", "active_member"].includes(application.status);
+  const isApprovedForSubscription = !directorySettings.directoryRequiresApplicationProcess ||
+    (application?.status && ["approved_pending_subscription", "active_member"].includes(application.status));
 
   const activeTiers = (tiers ?? []).filter((t) => t.isActive).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
@@ -191,7 +197,7 @@ export default function SubscriptionPage() {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Membership suspended</AlertTitle>
           <AlertDescription>
-            Your directory listing is currently suspended because the renewal payment is still unresolved. Update billing and retry the payment to restore access.
+            Your {directorySettings.directoryLabelSingular.toLowerCase()} listing is currently suspended because the renewal payment is still unresolved. Update billing and retry the payment to restore access.
           </AlertDescription>
         </Alert>
       )}

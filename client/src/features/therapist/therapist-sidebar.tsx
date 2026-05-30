@@ -26,6 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetBody } from "@/components/ui/sheet";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
 
 interface NavItem {
   title: string;
@@ -45,6 +46,7 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { settings: directorySettings } = useDirectorySettings();
 
   const { data: application } = useQuery<ApplicationData | null>({
     queryKey: ["/api/therapist/application"],
@@ -53,13 +55,14 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
   const hasSubmittedApplication = Boolean(application?.status && application.status !== "draft");
   const hasDraftOrNoApplication = !application || !application.status || application.status === "draft";
   const isActiveMember = application?.status === "active_member";
+  const applicationsEnabled = directorySettings.directoryRequiresApplicationProcess;
 
   const navItems: NavItem[] = [
     { title: "Dashboard", href: "/therapist", icon: LayoutDashboard, iconColor: "text-teal-600" },
-    { title: "Edit Profile", href: "/therapist/profile", icon: UserPen, iconColor: "text-emerald-600" },
+    { title: `Edit ${directorySettings.listingLabelSingular}`, href: "/therapist/profile", icon: UserPen, iconColor: "text-emerald-600" },
     { title: "Subscription", href: "/therapist/subscription", icon: CreditCard, iconColor: "text-amber-600" },
-    { title: "Application", href: "/therapist/apply", icon: FileText, iconColor: "text-blue-600", show: !isActiveMember && hasDraftOrNoApplication },
-    { title: "Application Status", href: "/therapist/application/status", icon: ClipboardCheck, iconColor: "text-purple-600", show: hasSubmittedApplication },
+    { title: "Application", href: "/therapist/apply", icon: FileText, iconColor: "text-blue-600", show: applicationsEnabled && !isActiveMember && hasDraftOrNoApplication },
+    { title: "Application Status", href: "/therapist/application/status", icon: ClipboardCheck, iconColor: "text-purple-600", show: applicationsEnabled && hasSubmittedApplication },
   ];
 
   const visibleItems = navItems.filter((item) => item.show !== false);
@@ -169,7 +172,7 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
                     {user.firstName} {user.lastName}
                   </p>
                   <Badge variant="outline" className="text-[10px]" data-testid="badge-therapist-sidebar-role">
-                    Counselor
+                    {directorySettings.participantLabelSingular}
                   </Badge>
                 </div>
               </div>

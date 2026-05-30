@@ -10,6 +10,7 @@ import {
   Star,
   ArrowRight,
 } from "lucide-react";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
 
 const membershipBenefits = [
   {
@@ -64,13 +65,14 @@ const applicationSteps = [
 
 export default function JoinNetworkPage() {
   const [loginOpen, setLoginOpen] = useState(false);
+  const { settings: directorySettings } = useDirectorySettings();
 
   return (
     <PageLayout>
       <section className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="section-join-hero">
         <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title">
-          Are you a Core Platform-Informed Mental Health Professional?{" "}
-          <span className="text-accent">Join the Network!</span>
+          Are you ready to be listed in our {directorySettings.directoryLabelSingular}?{" "}
+          <span className="text-accent">Join the Network</span>
         </h1>
 
         <Button
@@ -80,7 +82,7 @@ export default function JoinNetworkPage() {
           data-testid="button-apply-member"
         >
           <Clock className="mr-2 h-5 w-5" />
-          Applications open in June.
+          {directorySettings.directoryRequiresApplicationProcess ? "Applications open in June." : "Registration opens soon."}
         </Button>
 
         <p className="text-sm sm:text-base text-muted-foreground mt-6" data-testid="text-login-prompt">
@@ -116,6 +118,7 @@ export default function JoinNetworkPage() {
         </div>
       </section>
 
+      {directorySettings.directoryRequiresApplicationProcess && (
       <section className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-application-process">
         <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-10 sm:mb-14" data-testid="text-process-heading">
           The Application Process
@@ -137,6 +140,7 @@ export default function JoinNetworkPage() {
           </div>
         </div>
       </section>
+      )}
 
       <section className="relative bg-muted/30 overflow-hidden" data-testid="section-training-cta">
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.12) 0%, transparent 70%)" }} />
