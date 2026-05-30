@@ -34,6 +34,7 @@ const mockSendEcommerceRefundEmail = vi.fn();
 const mockGetDecryptedCategory = vi.fn(async (_category: string) => ({}));
 const mockUpsertSetting = vi.fn();
 const mockInvalidateCategory = vi.fn();
+const mockGetEcommerceStripeClient = vi.fn();
 const mockStripePaymentIntentCreate = vi.fn();
 const mockStripePaymentIntentCancel = vi.fn();
 
@@ -80,12 +81,7 @@ vi.mock("../services/ecommerce-stripe.service", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../services/ecommerce-stripe.service")>();
   return {
     ...actual,
-    getEcommerceStripeClient: vi.fn(async () => ({
-      paymentIntents: {
-        create: mockStripePaymentIntentCreate,
-        cancel: mockStripePaymentIntentCancel,
-      },
-    })),
+    getEcommerceStripeClient: mockGetEcommerceStripeClient,
   };
 });
 
@@ -121,6 +117,13 @@ describe("ecommerce services", () => {
     mockGetDecryptedCategory.mockResolvedValue({});
     mockUpsertSetting.mockReset();
     mockInvalidateCategory.mockReset();
+    mockGetEcommerceStripeClient.mockReset();
+    mockGetEcommerceStripeClient.mockResolvedValue({
+      paymentIntents: {
+        create: mockStripePaymentIntentCreate,
+        cancel: mockStripePaymentIntentCancel,
+      },
+    });
     mockStripePaymentIntentCreate.mockReset();
     mockStripePaymentIntentCreate.mockResolvedValue({
       id: "pi_test",
@@ -893,6 +896,58 @@ describe("ecommerce services", () => {
     expect(mockCreateOrder).not.toHaveBeenCalled();
   });
 
+  it("does not create an order when Stripe checkout is not configured", async () => {
+    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+    mockGetEcommerceStripeClient.mockRejectedValueOnce(Object.assign(
+      new Error("Ecommerce Stripe secret key is not configured"),
+      { statusCode: 409 },
+    ));
+    mockProducts.push({
+      id: "p-digital",
+      name: "Digital Guide",
+      price: 5000,
+      active: true,
+      status: "published",
+      visibility: "online",
+      archivedAt: null,
+      requiresShipping: false,
+      productType: "digital",
+      fulfillmentType: "digital",
+    } as EcommerceProduct);
+    mockVariants.push({
+      id: "v-digital",
+      productId: "p-digital",
+      title: "Default",
+      price: 5000,
+      active: true,
+      status: "active",
+      isDefault: true,
+      trackInventory: false,
+      inventoryQuantity: 0,
+      allowBackorder: false,
+      optionValues: {},
+    } as EcommerceProductVariant);
+
+    await expect(createEcommercePaymentIntent({
+      items: [{ productId: "p-digital", quantity: 1 }],
+      customer: { email: "buyer@example.com", name: "Buyer" },
+      shippingAddress: {
+        name: "Buyer",
+        address: "123 Main St",
+        city: "Detroit",
+        state: "MI",
+        zip: "48201",
+        country: "US",
+      },
+      billingSameAsShipping: true,
+    })).rejects.toMatchObject({
+      message: "Ecommerce Stripe secret key is not configured",
+      statusCode: 409,
+    });
+    expect(mockFindOrCreateCustomer).not.toHaveBeenCalled();
+    expect(mockCreateOrder).not.toHaveBeenCalled();
+  });
+
   it("marks checkout orders failed when Stripe cannot create a PaymentIntent", async () => {
     const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
     const customer = { id: "customer-1", email: "buyer@example.com", name: "Buyer" };
@@ -1648,6 +1703,7 @@ describe("ecommerce services", () => {
   it("validates Stripe key mode separation", async () => {
     const {
       getEcommerceStripePublishableKey,
+      getEcommerceStripeSecretKey,
       validateStripeKeyMode,
       validateStripeSettingsKeyModes,
     } = await import("../services/ecommerce-stripe.service");
@@ -1674,6 +1730,19 @@ describe("ecommerce services", () => {
     });
     await expect(getEcommerceStripePublishableKey()).rejects.toMatchObject({
       message: "Ecommerce Stripe publishable key is not configured",
+      statusCode: 409,
+    });
+    await expect(getEcommerceStripeSecretKey()).rejects.toMatchObject({
+      message: "Ecommerce Stripe secret key is not configured",
+      statusCode: 409,
+    });
+
+    mockGetDecryptedCategory.mockResolvedValue({
+      active_mode: "live",
+      live_secret_key: "sk_test_wrong",
+    });
+    await expect(getEcommerceStripeSecretKey()).rejects.toMatchObject({
+      message: "Live mode cannot use a test secret key",
       statusCode: 409,
     });
   });

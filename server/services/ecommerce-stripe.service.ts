@@ -43,9 +43,9 @@ export async function getEcommerceStripeSecretKey(): Promise<string> {
   const settings = await getEcommerceStripeSettings();
   const mode = settings.active_mode === "live" ? "live" : "test";
   const key = mode === "live" ? settings.live_secret_key : settings.test_secret_key;
-  if (!key) throw new Error("Ecommerce Stripe secret key is not configured");
-  if (mode === "live" && isTestKey(key)) throw new Error("Live Stripe mode cannot use a test secret key");
-  if (mode === "test" && isLiveKey(key)) throw new Error("Test Stripe mode cannot use a live secret key");
+  const error = validateStripeKeyMode(mode, undefined, key);
+  if (error) throw stripeConfigurationError(error);
+  if (!key) throw stripeConfigurationError("Ecommerce Stripe secret key is not configured");
   return key;
 }
 

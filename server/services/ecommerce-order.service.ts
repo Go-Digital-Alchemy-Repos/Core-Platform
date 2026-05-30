@@ -146,6 +146,7 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
   }
   if (priced.totalAmount <= 0) throw httpError("Order total must be greater than zero", 400);
 
+  const stripe = await getEcommerceStripeClient();
   const customer = await storage.ecommerce.findOrCreateCustomer({
     email: data.customer.email,
     name: data.customer.name,
@@ -195,10 +196,8 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
     customerUserAgent: data.metaTracking?.userAgent,
   }, pricedLinesToOrderItems(priced.lines));
 
-  let stripe;
   let intent;
   try {
-    stripe = await getEcommerceStripeClient();
     intent = await stripe.paymentIntents.create({
       amount: order.totalAmount,
       currency: "usd",
