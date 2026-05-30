@@ -1,5 +1,6 @@
-import { and, desc, eq, ilike, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "../db";
+import { requiresAtomicInventoryStockGuard } from "../services/ecommerce-inventory.service";
 import {
   ecommerceCategories,
   ecommerceCouponRedemptions,
@@ -558,17 +559,26 @@ export class EcommerceStorage {
           .limit(1);
         if (!variant?.trackInventory) continue;
 
-        const nextQuantity = variant.inventoryQuantity - item.quantity;
-        await tx
+        const whereClause = requiresAtomicInventoryStockGuard(variant)
+          ? and(eq(ecommerceProductVariants.id, variant.id), gte(ecommerceProductVariants.inventoryQuantity, item.quantity))
+          : eq(ecommerceProductVariants.id, variant.id);
+        const [updatedVariant] = await tx
           .update(ecommerceProductVariants)
-          .set({ inventoryQuantity: nextQuantity, updatedAt: new Date() })
-          .where(eq(ecommerceProductVariants.id, variant.id));
+          .set({
+            inventoryQuantity: sql`${ecommerceProductVariants.inventoryQuantity} - ${item.quantity}`,
+            updatedAt: new Date(),
+          })
+          .where(whereClause)
+          .returning({ inventoryQuantity: ecommerceProductVariants.inventoryQuantity });
+        if (!updatedVariant) {
+          throw new Error(`Insufficient inventory for variant ${variant.id}`);
+        }
         await tx.insert(ecommerceInventoryAdjustments).values({
           productId: item.productId,
           variantId: variant.id,
           orderId,
           delta: -item.quantity,
-          quantityAfter: nextQuantity,
+          quantityAfter: updatedVariant.inventoryQuantity,
           reason: "order_paid",
           note: `Order ${orderId}`,
         });
