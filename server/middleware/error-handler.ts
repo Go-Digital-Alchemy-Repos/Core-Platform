@@ -22,13 +22,21 @@ export function asyncHandler(
 export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
   const isValidationError = err instanceof ZodError;
   const status = isValidationError ? 400 : err.statusCode || err.status || 500;
-
-  logger.app.error(`${req.method} ${req.path} ${status}`, err, {
+  const logContext = {
     requestId: req.requestId,
     method: req.method,
     path: req.path,
     statusCode: status,
-  });
+  };
+
+  if (status >= 500) {
+    logger.app.error(`${req.method} ${req.path} ${status}`, err, logContext);
+  } else {
+    logger.app.warn(`${req.method} ${req.path} ${status}`, {
+      ...logContext,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
 
   if (!res.headersSent) {
     if (isValidationError) {
