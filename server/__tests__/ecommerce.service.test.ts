@@ -177,6 +177,72 @@ describe("ecommerce services", () => {
     });
   });
 
+  it("rejects archived products during server-side cart pricing", async () => {
+    const { priceCart } = await import("../services/ecommerce-pricing.service");
+    mockProducts.push({
+      id: "p1",
+      name: "Archived Product",
+      tagline: null,
+      description: null,
+      price: 10000,
+      primaryImage: null,
+      secondaryImages: [],
+      features: [],
+      included: [],
+      active: true,
+      status: "published",
+      sku: null,
+      tags: [],
+      salePrice: null,
+      discountType: "NONE",
+      discountValue: null,
+      saleStartAt: null,
+      saleEndAt: null,
+      metaTitle: null,
+      metaDescription: null,
+      metaKeywords: null,
+      urlSlug: "archived-product",
+      canonicalUrl: null,
+      robotsIndex: true,
+      robotsFollow: true,
+      ogTitle: null,
+      ogDescription: null,
+      ogImage: null,
+      mediaId: null,
+      archivedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockVariants.push({
+      id: "v1",
+      productId: "p1",
+      title: "Default",
+      optionSignature: "default",
+      optionValues: {},
+      sku: null,
+      barcode: null,
+      price: 10000,
+      salePrice: null,
+      compareAtPrice: null,
+      costPerItem: null,
+      inventoryQuantity: 0,
+      trackInventory: false,
+      lowStockThreshold: null,
+      allowBackorder: false,
+      weight: null,
+      weightUnit: "oz",
+      image: null,
+      status: "active",
+      active: true,
+      sortOrder: 0,
+      isDefault: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await expect(priceCart({ items: [{ productId: "p1", quantity: 1 }] })).rejects.toThrow(/unavailable/);
+  });
+
   it("applies fixed coupon discounts with order minimums", async () => {
     const { priceCart } = await import("../services/ecommerce-pricing.service");
     mockProducts.push({

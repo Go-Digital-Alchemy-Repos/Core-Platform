@@ -343,7 +343,7 @@ export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise
 
   const lines = await Promise.all(parsed.items.map(async (item) => {
     const product = productMap.get(item.productId);
-    if (!product || !product.active || product.status !== "published") {
+    if (!product || product.archivedAt || !product.active || product.status !== "published") {
       throw new Error("One or more products are unavailable");
     }
     const variant = item.variantId

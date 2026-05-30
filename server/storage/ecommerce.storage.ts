@@ -91,8 +91,9 @@ export interface EcommerceCouponReport {
 }
 
 export class EcommerceStorage {
-  async getProducts(options: { publicOnly?: boolean; search?: string } = {}): Promise<EcommerceProduct[]> {
+  async getProducts(options: { publicOnly?: boolean; search?: string; includeArchived?: boolean } = {}): Promise<EcommerceProduct[]> {
     const clauses = [];
+    if (!options.includeArchived) clauses.push(isNull(ecommerceProducts.archivedAt));
     if (options.publicOnly) {
       clauses.push(eq(ecommerceProducts.active, true), eq(ecommerceProducts.status, "published"));
     }
@@ -171,7 +172,22 @@ export class EcommerceStorage {
   }
 
   async deleteProduct(id: string): Promise<void> {
-    await db.delete(ecommerceProducts).where(eq(ecommerceProducts.id, id));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(ecommerceProducts)
+        .set({
+          active: false,
+          featured: false,
+          status: "archived",
+          archivedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(ecommerceProducts.id, id));
+      await tx
+        .update(ecommerceProductVariants)
+        .set({ active: false, status: "inactive", updatedAt: new Date() })
+        .where(eq(ecommerceProductVariants.productId, id));
+    });
   }
 
   async getProductCategories(productId: string): Promise<EcommerceCategory[]> {
