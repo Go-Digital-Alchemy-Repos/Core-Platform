@@ -7,6 +7,7 @@ import {
   UserCheck,
   CreditCard,
   CalendarDays,
+  CalendarPlus,
   FileText,
   Settings,
   LogOut,
@@ -46,6 +47,8 @@ import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
 import type { AdminPermission } from "@shared/types";
 import type { User as AppUser } from "@shared/schema";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
+import type { PublicDirectorySettings } from "@shared/types/directory-settings";
 
 interface NavItem {
   title: string;
@@ -53,6 +56,7 @@ interface NavItem {
   icon: React.ElementType;
   iconColor: string;
   children?: NavItem[];
+  show?: boolean;
 }
 
 interface NavGroup {
@@ -64,6 +68,7 @@ function buildNavGroups(
   siteFeatures: SiteFeatures,
   user: AppUser | null,
   hasAdminPermission: (permission: AdminPermission) => boolean,
+  directorySettings: PublicDirectorySettings,
 ): NavGroup[] {
   const groups: NavGroup[] = [
     {
@@ -83,22 +88,22 @@ function buildNavGroups(
     ...(siteFeatures.directoryEnabled && hasAdminPermission("directory")
       ? ([
           {
-            label: "Directory System",
+            label: `${directorySettings.directoryLabelSingular} System`,
             items: [
               {
-                title: "Directory",
+                title: directorySettings.directoryLabelPlural,
                 href: "/admin/therapists",
                 icon: UserCheck,
                 iconColor: "text-emerald-600",
                 children: [
                   {
-                    title: "Profiles",
+                    title: directorySettings.listingLabelPlural,
                     href: "/admin/therapists",
                     icon: UserCheck,
                     iconColor: "text-emerald-600",
                   },
                   {
-                    title: "Specializations",
+                    title: directorySettings.specialtyLabelPlural,
                     href: "/admin/therapists/specializations",
                     icon: Tag,
                     iconColor: "text-emerald-500",
@@ -116,6 +121,7 @@ function buildNavGroups(
                 href: "/admin/applications",
                 icon: ClipboardList,
                 iconColor: "text-orange-600",
+                show: directorySettings.directoryRequiresApplicationProcess,
               },
             ],
           },
@@ -131,6 +137,14 @@ function buildNavGroups(
                 href: "/admin/events",
                 icon: CalendarDays,
                 iconColor: "text-purple-600",
+                children: [
+                  {
+                    title: "Create Event",
+                    href: "/admin/events/new",
+                    icon: CalendarPlus,
+                    iconColor: "text-purple-500",
+                  },
+                ],
               },
             ],
           },
@@ -364,9 +378,18 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
     staleTime: 60_000,
   });
   const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
-  const navGroups = buildNavGroups(siteFeatures, user, hasAdminPermission).filter(
-    (group) => group.items.length > 0,
-  );
+  const { settings: directorySettings } = useDirectorySettings();
+  const navGroups = buildNavGroups(siteFeatures, user, hasAdminPermission, directorySettings)
+    .map((group) => ({
+      ...group,
+      items: group.items
+        .filter((item) => item.show !== false)
+        .map((item) => ({
+          ...item,
+          children: item.children?.filter((child) => child.show !== false),
+        })),
+    }))
+    .filter((group) => group.items.length > 0);
   const toggleGroup = (label: string, open: boolean) => {
     setOpenGroup(open ? label : null);
   };

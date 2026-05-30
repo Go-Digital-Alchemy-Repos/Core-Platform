@@ -3,6 +3,7 @@ import { TherapistStorage } from "./therapist.storage";
 import { TierStorage } from "./tier.storage";
 import { SubscriptionStorage } from "./subscription.storage";
 import { EventStorage } from "./event.storage";
+import { EventOrganizersStorage, EventVenuesStorage } from "./event-taxonomy.storage";
 import { ContactStorage } from "./contact.storage";
 import { DocsStorage } from "./docs.storage";
 import { PasswordResetStorage } from "./password-reset.storage";
@@ -37,6 +38,8 @@ export const storage = {
   tiers: new TierStorage(),
   subscriptions: new SubscriptionStorage(),
   events: new EventStorage(),
+  eventVenues: new EventVenuesStorage(),
+  eventOrganizers: new EventOrganizersStorage(),
   contacts: new ContactStorage(),
   docs: new DocsStorage(),
   passwordResets: new PasswordResetStorage(),

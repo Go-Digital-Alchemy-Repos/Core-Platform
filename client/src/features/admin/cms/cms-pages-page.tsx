@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Eye, EyeOff, Globe, FileCode, CalendarClock } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, Globe, CalendarClock, Link2 } from "lucide-react";
 import type { CmsPage } from "@shared/schema";
 import { format } from "date-fns";
 import { useState } from "react";
@@ -30,6 +30,20 @@ const PAGE_TYPE_COLORS: Record<string, string> = {
   landing: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   custom: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400",
 };
+
+interface CmsPageRelationshipSummary {
+  menuReferences: Array<{
+    menuId: string;
+    menuName: string;
+    itemId: string;
+    itemLabel: string;
+    itemUrl: string;
+    labelSource?: "page" | "custom";
+  }>;
+  counts: {
+    menuItems: number;
+  };
+}
 
 export default function CmsPagesPage() {
   const [, navigate] = useLocation();
@@ -69,17 +83,28 @@ export default function CmsPagesPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages"] });
       toast({ title: "Page moved to draft" });
     },
-    onError: () => toast({ title: "Failed to unpublish page", variant: "destructive" }),
+    onError: (error: Error) => toast({ title: "Failed to unpublish page", description: error.message, variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/admin/cms/pages/${id}?force=true`),
+    mutationFn: ({ id, force }: { id: string; force: boolean }) =>
+      apiRequest("DELETE", `/api/admin/cms/pages/${id}${force ? "?force=true" : ""}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages"] });
       toast({ title: "Page deleted" });
       setDeleteTarget(null);
     },
-    onError: () => toast({ title: "Failed to delete page", variant: "destructive" }),
+    onError: (error: Error) => toast({ title: "Failed to delete page", description: error.message, variant: "destructive" }),
+  });
+
+  const { data: deleteRelationships } = useQuery<CmsPageRelationshipSummary>({
+    queryKey: ["/api/admin/cms/pages", deleteTarget?.id, "relationships"],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/cms/pages/${deleteTarget!.id}/relationships`, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to load page references");
+      return response.json();
+    },
+    enabled: Boolean(deleteTarget?.id),
   });
 
   const getEditorHref = (page: CmsPage) =>
@@ -252,15 +277,39 @@ export default function CmsPagesPage() {
               Are you sure you want to delete <strong>{deleteTarget?.title}</strong>? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {deleteRelationships && deleteRelationships.counts.menuItems > 0 && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200" data-testid="delete-page-reference-warning">
+              <div className="flex items-center gap-2 font-medium">
+                <Link2 className="h-4 w-4" />
+                {deleteRelationships.counts.menuItems} navigation reference{deleteRelationships.counts.menuItems === 1 ? "" : "s"} will remain
+              </div>
+              <div className="mt-2 space-y-1 text-xs">
+                {deleteRelationships.menuReferences.slice(0, 4).map((reference) => (
+                  <p key={`${reference.menuId}-${reference.itemId}`}>
+                    {reference.menuName}: {reference.itemLabel || "(no label)"} · {reference.itemUrl}
+                  </p>
+                ))}
+                {deleteRelationships.menuReferences.length > 4 && (
+                  <p>+{deleteRelationships.menuReferences.length - 4} more</p>
+                )}
+              </div>
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
-              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+              onClick={() =>
+                deleteTarget &&
+                deleteMutation.mutate({
+                  id: deleteTarget.id,
+                  force: Boolean(deleteRelationships && deleteRelationships.counts.menuItems > 0),
+                })
+              }
               disabled={deleteMutation.isPending}
               data-testid="button-confirm-delete"
             >
-              Delete
+              {deleteRelationships && deleteRelationships.counts.menuItems > 0 ? "Delete Anyway" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

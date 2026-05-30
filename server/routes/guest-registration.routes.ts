@@ -8,6 +8,7 @@ import {
   sendRegistrationConfirmationEmail,
   sendWaitlistEmail,
 } from "../services/email.service";
+import { submitManagedFormById } from "../services/forms.service";
 
 import type { Event } from "@shared/schema/events";
 
@@ -17,6 +18,7 @@ const guestRegistrationSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(100),
   lastName: z.string().min(1, "Last name is required").max(100),
   email: z.string().email("Valid email is required").max(255),
+  formData: z.record(z.unknown()).optional(),
 });
 
 function canGuestAccessEvent(event: Event): boolean {
@@ -81,7 +83,7 @@ router.post(
       return res.status(409).json({ message: "This email is already registered for this event" });
     }
 
-    let status = "confirmed";
+    let status = event.registrationApprovalMode === "manual" ? "pending" : "confirmed";
     if (event.capacity) {
       const confirmedCount = await storage.eventRegistrations.getConfirmedCount(eventId);
       if (confirmedCount >= event.capacity) {
@@ -91,6 +93,12 @@ router.post(
           return res.status(400).json({ message: "This event is full" });
         }
       }
+    }
+
+    if (event.registrationFormId) {
+      await submitManagedFormById(event.registrationFormId, parsed.data.formData ?? {}, {
+        source: `event:${eventId}`,
+      });
     }
 
     const fullName = `${firstName} ${lastName}`;

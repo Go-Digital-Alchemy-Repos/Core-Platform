@@ -1,9 +1,10 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useParams, useLocation } from "wouter";
 import type { Event } from "@shared/schema/events";
+import { EVENT_CATEGORY_LABELS, EVENT_TYPE_LABELS } from "@shared/schema/events";
 import { getEventPath, getEventUrlSegment } from "@shared/event-url";
 import type { EventRegistration } from "@shared/schema/event-registrations";
-import type { SeoSettings } from "@shared/schema";
+import type { CmsForm, SeoSettings } from "@shared/schema";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { EventLocationMap } from "@/components/shared/event-location-map";
+import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
@@ -50,7 +52,6 @@ import {
   ClockIcon,
   Loader2,
   LogIn,
-  Mail,
 } from "lucide-react";
 
 function formatCurrency(amountCents: number, currency: string) {
@@ -122,6 +123,10 @@ function RegistrationSection({
     queryKey: ["/api/events", event.id, "registration"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!user && event.registrationEnabled === true && !isPast && !isCanceled,
+  });
+  const { data: registrationForm } = useQuery<CmsForm>({
+    queryKey: ["/api/events", event.id, "registration-form"],
+    enabled: Boolean(event.registrationFormId) && event.registrationEnabled === true && !isPast && !isCanceled,
   });
 
   const registerMutation = useMutation({
@@ -252,7 +257,7 @@ function RegistrationSection({
       );
     }
 
-    if (isPaid || (event.visibility && event.visibility !== "public")) {
+    if (isPaid || event.registrationFormId || (event.visibility && event.visibility !== "public")) {
       return (
         <Card data-testid="card-registration-login">
           <CardContent className="p-5 sm:p-6">
@@ -263,7 +268,9 @@ function RegistrationSection({
             <p className="text-sm text-muted-foreground mb-4">
               {isPaid 
                 ? `This is a paid event (${formatCurrency(event.registrationFee || 0, event.registrationCurrency || "usd")}). Log in to register and pay.` 
-                : "Log in to your account to register for this event."}
+                : event.registrationFormId
+                  ? "Log in to complete the event registration form."
+                  : "Log in to your account to register for this event."}
             </p>
             <Link href="/login">
               <Button data-testid="button-login-to-register">
@@ -506,6 +513,50 @@ function RegistrationSection({
     );
   }
 
+  if (registration && registration.status === "pending") {
+    return (
+      <Card className="border-yellow-600/30" data-testid="card-registration-pending-approval">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <ClockIcon className="h-5 w-5 text-yellow-600" />
+            <h3 className="font-heading text-lg font-semibold">Registration Pending</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Your registration has been submitted and is waiting for approval.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isFree && registrationForm) {
+    return (
+      <Card data-testid="card-registration-custom-form">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Ticket className="h-5 w-5 text-accent" />
+            <h3 className="font-heading text-lg font-semibold">Register for This Event</h3>
+          </div>
+          <PublicFormRenderer
+            slug={`event-${event.id}-registration`}
+            formOverride={registrationForm}
+            submitUrl={`/api/events/${event.id}/register`}
+            buildSubmitBody={(values) => ({ formData: values })}
+            buttonTextOverride={
+              event.registrationApprovalMode === "manual"
+                ? "Submit Registration Request"
+                : "Register for This Event"
+            }
+            onSubmitSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ["/api/events", event.id, "registration"] });
+            }}
+            compact
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card data-testid="card-registration-register">
       <CardContent className="p-5 sm:p-6">
@@ -590,7 +641,7 @@ export default function EventDetailPage() {
   const eventId = params.id;
   const { user } = useAuth();
   const { toast } = useToast();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
 
   const { data: event, isLoading, error } = useQuery<Event>({
     queryKey: ["/api/events", eventId],
@@ -706,6 +757,16 @@ export default function EventDetailPage() {
                   data-testid="badge-event-status"
                 >
                   {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                </Badge>
+              )}
+              {event.eventType && (
+                <Badge variant="outline" data-testid="badge-event-type">
+                  {EVENT_TYPE_LABELS[event.eventType] ?? event.eventType}
+                </Badge>
+              )}
+              {event.category && (
+                <Badge variant="outline" data-testid="badge-event-category">
+                  {EVENT_CATEGORY_LABELS[event.category] ?? event.category}
                 </Badge>
               )}
               {isHybrid ? (
@@ -1046,7 +1107,12 @@ export default function EventDetailPage() {
                     {event.registrationEnabled && event.registrationType === "free" && (
                       <RegistrationSection
                         event={event}
-                        user={user as any}
+                        user={user ? {
+                          id: user.id,
+                          role: user.role,
+                          email: user.email,
+                          firstName: user.firstName ?? "",
+                        } : null}
                         isPast={isPast}
                         isCanceled={isCanceled}
                       />

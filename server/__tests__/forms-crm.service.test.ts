@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockGetPublicBySlug = vi.fn();
+const mockGetPublicById = vi.fn();
 const mockCreateSubmission = vi.fn();
 const mockCreateCrmLeadFromFormSubmission = vi.fn();
 
@@ -8,6 +9,7 @@ vi.mock("../storage", () => ({
   storage: {
     forms: {
       getPublicBySlug: mockGetPublicBySlug,
+      getPublicById: mockGetPublicById,
       createSubmission: mockCreateSubmission,
     },
     users: {
@@ -54,6 +56,7 @@ describe("forms CRM ingestion", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetPublicBySlug.mockResolvedValue(form);
+    mockGetPublicById.mockResolvedValue(form);
     mockCreateSubmission.mockResolvedValue({ id: "submission-1", formId: "form-1", data: {}, source: "public" });
   });
 
@@ -75,5 +78,20 @@ describe("forms CRM ingestion", () => {
     await submitManagedFormBySlug("lead-form", { name: "Lin", email: "lin@example.com" });
 
     expect(mockCreateCrmLeadFromFormSubmission).not.toHaveBeenCalled();
+  });
+
+  it("stores event intake submissions with event source metadata", async () => {
+    const { submitManagedFormById } = await import("../services/forms.service");
+    await submitManagedFormById(
+      "form-1",
+      { name: "Lin", email: "lin@example.com" },
+      { source: "event:event-1" },
+    );
+
+    expect(mockCreateSubmission).toHaveBeenCalledWith({
+      formId: "form-1",
+      data: { name: "Lin", email: "lin@example.com" },
+      source: "event:event-1",
+    });
   });
 });

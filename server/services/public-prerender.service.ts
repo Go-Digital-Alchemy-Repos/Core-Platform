@@ -2,6 +2,7 @@ import sanitizeHtml from "sanitize-html";
 import type { BlogPost, CmsPage, EcommerceProduct, Event, SeoSettings } from "@shared/schema";
 import { getEventPath } from "@shared/event-url";
 import { storage } from "../storage";
+import { getDirectorySettings } from "./directory-settings.service";
 
 interface PublicHtmlSnapshot {
   title: string;
@@ -410,8 +411,13 @@ async function buildTherapistSnapshot(
   seo: SeoSettings | null,
   siteUrl: string,
 ): Promise<PublicHtmlSnapshot | null> {
+  const directorySettings = await getDirectorySettings();
   const profile = await storage.therapists.getProfileWithUser(id);
-  if (!profile || !profile.isApproved || !profile.isActive) return null;
+  if (
+    !profile ||
+    !profile.isActive ||
+    (directorySettings.directoryRequiresApprovedApplication && !profile.isApproved)
+  ) return null;
 
   const displayName =
     [profile.user?.firstName, profile.user?.lastName].filter(Boolean).join(" ") ||

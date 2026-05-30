@@ -13,6 +13,8 @@ import {
   Video,
   Mail,
   Send,
+  ExternalLink,
+  Navigation,
 } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
@@ -28,6 +30,7 @@ import { MapView } from "@/components/directory/map-view";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
 import { SiInstagram, SiFacebook, SiX, SiLinkedin, SiYoutube, SiTiktok } from "react-icons/si";
 
@@ -59,6 +62,7 @@ export default function TherapistProfilePage() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { settings: directorySettings } = useDirectorySettings();
 
   const [contactForm, setContactForm] = useState({ name: "", email: "", message: "", preferredContact: "email" as "email" | "phone" | "text", phone: "" });
   const [showContactForm, setShowContactForm] = useState(false);
@@ -87,7 +91,7 @@ export default function TherapistProfilePage() {
       return payload;
     },
     onSuccess: () => {
-      toast({ title: "Message sent", description: "Your message has been emailed to this mental health professional." });
+      toast({ title: "Message sent", description: `Your message has been emailed to this ${directorySettings.participantLabelSingular.toLowerCase()}.` });
       setContactForm({ name: "", email: "", message: "", preferredContact: "email", phone: "" });
       setShowContactForm(false);
     },
@@ -129,12 +133,12 @@ export default function TherapistProfilePage() {
       <PageLayout>
         <div className="container mx-auto px-4 py-16 text-center flex flex-col items-center gap-4">
           <p className="text-lg text-muted-foreground" data-testid="text-not-found">
-            Mental health professional not found.
+            {directorySettings.participantLabelSingular} not found.
           </p>
           <Link href="/directory">
             <Button variant="outline" data-testid="link-back-directory">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Directory
+              Back to {directorySettings.directoryLabelSingular}
             </Button>
           </Link>
         </div>
@@ -142,11 +146,24 @@ export default function TherapistProfilePage() {
     );
   }
 
-  const displayName = [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") || "Mental Health Professional";
+  const displayName = [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") || directorySettings.participantLabelSingular;
   const initials = [therapist.user?.firstName?.[0], therapist.user?.lastName?.[0]].filter(Boolean).join("").toUpperCase() || "?";
   const addressParts = [therapist.addressLine1, therapist.addressLine2, therapist.city, therapist.state, therapist.zipCode, therapist.country].filter(Boolean);
-  const hasContact = addressParts.length > 0 || therapist.phone || therapist.website;
-  const showMap = therapist.latitude != null && therapist.longitude != null;
+  const visibleAddressParts = directorySettings.showLocationFields ? addressParts : [];
+  const hasContact =
+    visibleAddressParts.length > 0 ||
+    (directorySettings.showPhone && therapist.phone) ||
+    (directorySettings.showWebsite && therapist.website);
+  const showMap = directorySettings.showLocationFields && therapist.latitude != null && therapist.longitude != null;
+  const directionsUrl =
+    visibleAddressParts.length > 0
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(visibleAddressParts.join(", "))}`
+      : null;
+  const normalizedWebsite = therapist.website
+    ? /^https?:\/\//i.test(therapist.website)
+      ? therapist.website
+      : `https://${therapist.website}`
+    : null;
 
   function socialUrl(platform: string, handle: string | null): string | null {
     if (!handle) return null;
@@ -171,7 +188,26 @@ export default function TherapistProfilePage() {
     { key: "youtube", url: socialUrl("youtube", therapist.youtubeHandle), icon: SiYoutube, color: "text-red-600", label: "YouTube" },
     { key: "tiktok", url: socialUrl("tiktok", therapist.tiktokHandle), icon: SiTiktok, color: "text-foreground", label: "TikTok" },
   ].filter((s) => s.url);
-  const hasSocial = socialLinks.length > 0;
+  const hasSocial = directorySettings.showSocialLinks && socialLinks.length > 0;
+  const primaryCta = (() => {
+    if (isSelf || directorySettings.primaryCtaType === "none") return null;
+    const label = directorySettings.primaryCtaLabel || "Contact";
+    switch (directorySettings.primaryCtaType) {
+      case "website":
+        return directorySettings.showWebsite && normalizedWebsite
+          ? { type: "link" as const, href: normalizedWebsite, icon: ExternalLink, label }
+          : null;
+      case "phone":
+        return directorySettings.showPhone && therapist.phone
+          ? { type: "link" as const, href: `tel:${therapist.phone}`, icon: Phone, label }
+          : null;
+      case "directions":
+        return directionsUrl ? { type: "link" as const, href: directionsUrl, icon: Navigation, label } : null;
+      case "contact_form":
+      default:
+        return { type: "contact_form" as const, icon: Mail, label };
+    }
+  })();
 
   return (
     <PageLayout>
@@ -179,7 +215,7 @@ export default function TherapistProfilePage() {
         <Link href="/directory">
           <Button variant="ghost" className="mb-6 -ml-2" data-testid="link-back-directory-top">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Directory
+            Back to {directorySettings.directoryLabelSingular}
           </Button>
         </Link>
 
@@ -196,10 +232,11 @@ export default function TherapistProfilePage() {
                     <h1 className="text-2xl font-bold tracking-tight" data-testid="text-professional-name">
                       {displayName}
                     </h1>
-                    {therapist.title && (
+                    {directorySettings.showProfileTitle && therapist.title && (
                       <p className="text-muted-foreground mt-1" data-testid="text-title">{therapist.title}</p>
                     )}
                     <div className="flex flex-wrap items-center gap-2 mt-3">
+                      {directorySettings.showPracticeMode && (
                       <Badge variant="secondary" data-testid="badge-session-format">
                         {therapist.practiceMode === "virtual" ? (
                           <Monitor className="h-3 w-3 mr-1" />
@@ -208,27 +245,28 @@ export default function TherapistProfilePage() {
                         )}
                         {getSessionFormatLabel(therapist.practiceMode)}
                       </Badge>
-                      {therapist.acceptingClients ? (
+                      )}
+                      {directorySettings.showAvailabilityStatus && (therapist.acceptingClients ? (
                         <Badge variant="outline" className="text-green-700 border-green-300" data-testid="badge-accepting">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Accepting Clients
+                          {directorySettings.acceptingClientsLabel}
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="text-red-700 border-red-300" data-testid="badge-not-accepting">
                           <XCircle className="h-3 w-3 mr-1" />
-                          Not Accepting Clients
+                          Not {directorySettings.acceptingClientsLabel.toLowerCase()}
                         </Badge>
-                      )}
+                      ))}
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {therapist.bio && (
+            {directorySettings.showProfileBio && therapist.bio && (
               <Card data-testid="card-bio">
                 <CardHeader>
-                  <h2 className="text-lg font-semibold">About</h2>
+                  <h2 className="text-lg font-semibold">{directorySettings.profileBioLabel}</h2>
                 </CardHeader>
                 <CardContent>
                   <div
@@ -240,10 +278,10 @@ export default function TherapistProfilePage() {
               </Card>
             )}
 
-            {(therapist.specializations as string[] | null)?.length ? (
+            {directorySettings.showSpecialties && (therapist.specializations as string[] | null)?.length ? (
               <Card data-testid="card-specializations">
                 <CardHeader>
-                  <h2 className="text-lg font-semibold">Specializations</h2>
+                  <h2 className="text-lg font-semibold">{directorySettings.specialtyLabelPlural}</h2>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
@@ -255,7 +293,7 @@ export default function TherapistProfilePage() {
               </Card>
             ) : null}
 
-            {(therapist.languages as string[] | null)?.length ? (
+            {directorySettings.showLanguages && (therapist.languages as string[] | null)?.length ? (
               <Card data-testid="card-languages">
                 <CardHeader>
                   <h2 className="text-lg font-semibold">Languages</h2>
@@ -270,10 +308,10 @@ export default function TherapistProfilePage() {
               </Card>
             ) : null}
 
-            {therapist.credentials && (
+            {directorySettings.showCredentials && therapist.credentials && (
               <Card data-testid="card-education">
                 <CardHeader>
-                  <h2 className="text-lg font-semibold">Credentials</h2>
+                  <h2 className="text-lg font-semibold">{directorySettings.credentialsLabel}</h2>
                 </CardHeader>
                 <CardContent>
                   <p className="whitespace-pre-wrap text-muted-foreground" data-testid="text-credentials">
@@ -285,10 +323,17 @@ export default function TherapistProfilePage() {
           </div>
 
           <div className="flex flex-col gap-6">
-            {!isSelf && (
+            {primaryCta && (
               <Card data-testid="card-contact-form">
                 <CardContent className="pt-6">
-                  {!showContactForm ? (
+                  {primaryCta.type === "link" ? (
+                    <Button asChild className="w-full bg-accent text-accent-foreground border-accent-border" size="lg">
+                      <a href={primaryCta.href} target={primaryCta.href.startsWith("tel:") ? undefined : "_blank"} rel="noopener noreferrer">
+                        <primaryCta.icon className="h-4 w-4 mr-2" />
+                        {primaryCta.label}
+                      </a>
+                    </Button>
+                  ) : !showContactForm ? (
                     <>
                       <Button
                         className="w-full bg-accent text-accent-foreground border-accent-border"
@@ -296,8 +341,8 @@ export default function TherapistProfilePage() {
                         onClick={() => setShowContactForm(true)}
                         data-testid="button-contact-professional"
                       >
-                        <Mail className="h-4 w-4 mr-2" />
-                        Contact {displayName}
+                        <primaryCta.icon className="h-4 w-4 mr-2" />
+                        {primaryCta.label}
                       </Button>
                       <p className="text-xs text-muted-foreground text-center mt-2">
                         Send a message — no account required
@@ -413,7 +458,7 @@ export default function TherapistProfilePage() {
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Your message will be emailed directly to this mental health professional. They will reply to you at the email address you provide.
+                        Your message will be emailed directly to this {directorySettings.participantLabelSingular.toLowerCase()}. They will reply to you at the email address you provide.
                       </p>
                     </form>
                   )}
@@ -441,7 +486,7 @@ export default function TherapistProfilePage() {
               </Card>
             )}
 
-            {!showMap && therapist.practiceMode === "virtual" && (
+            {!showMap && directorySettings.showPracticeMode && therapist.practiceMode === "virtual" && (
               <Card data-testid="card-virtual-notice">
                 <CardContent className="pt-6 text-center">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mb-3">
@@ -449,7 +494,7 @@ export default function TherapistProfilePage() {
                   </div>
                   <p className="text-sm font-medium">Virtual Practice</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    This mental health professional offers sessions online and is available worldwide.
+                    This {directorySettings.participantLabelSingular.toLowerCase()} offers services online and is available worldwide.
                   </p>
                 </CardContent>
               </Card>
@@ -462,13 +507,13 @@ export default function TherapistProfilePage() {
                     Contact Information
                   </h3>
                   <div className="flex flex-col gap-3 text-sm">
-                    {addressParts.length > 0 && (
+                    {visibleAddressParts.length > 0 && (
                       <div className="flex items-start gap-3" data-testid="text-address">
                         <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
-                        <span className="text-muted-foreground break-words min-w-0">{addressParts.join(", ")}</span>
+                        <span className="text-muted-foreground break-words min-w-0">{visibleAddressParts.join(", ")}</span>
                       </div>
                     )}
-                    {therapist.phone && (
+                    {directorySettings.showPhone && therapist.phone && (
                       <div className="flex items-center gap-3" data-testid="text-phone">
                         <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
                         <a href={`tel:${therapist.phone}`} className="hover:underline break-all min-w-0">
@@ -476,16 +521,16 @@ export default function TherapistProfilePage() {
                         </a>
                       </div>
                     )}
-                    {therapist.website && (
+                    {directorySettings.showWebsite && normalizedWebsite && (
                       <div className="flex items-center gap-3 min-w-0" data-testid="text-website">
                         <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
                         <a
-                          href={therapist.website}
+                          href={normalizedWebsite}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="hover:underline break-all min-w-0"
                         >
-                          {therapist.website.replace(/^https?:\/\//, "")}
+                          {normalizedWebsite.replace(/^https?:\/\//, "")}
                         </a>
                       </div>
                     )}

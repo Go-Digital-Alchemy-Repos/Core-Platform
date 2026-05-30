@@ -57,6 +57,9 @@ import {
   AlertTriangle,
   Sparkles,
   Settings,
+  Link2,
+  Trash2,
+  Pencil,
 } from "lucide-react";
 import {
   Popover,
@@ -76,6 +79,22 @@ import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { useEditorSaveState } from "@/hooks/use-editor-save-state";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
+
+interface CmsPageRelationshipSummary {
+  menuReferences: Array<{
+    menuId: string;
+    menuName: string;
+    menuLocation: string;
+    itemId: string;
+    itemLabel: string;
+    itemUrl: string;
+    labelSource?: "page" | "custom";
+    depth: number;
+  }>;
+  counts: {
+    menuItems: number;
+  };
+}
 
 const editorSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -145,6 +164,12 @@ export default function CmsPageEditorPage() {
 
   const { data: sidebars = [] } = useQuery<CmsSidebar[]>({
     queryKey: ["/api/admin/cms/sidebars"],
+  });
+
+  const { data: relationships } = useQuery<CmsPageRelationshipSummary>({
+    queryKey: ["/api/admin/cms/pages", id, "relationships"],
+    queryFn: () => fetch(`/api/admin/cms/pages/${id}/relationships`, { credentials: "include" }).then((r) => r.json()),
+    enabled: !isNew,
   });
 
   const editorLock = useEditorLock({
@@ -238,6 +263,8 @@ export default function CmsPageEditorPage() {
     onSuccess: async (res, variables) => {
       const created: CmsPage = await res.json();
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/menus"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cms/menus"] });
       toast({ title: "Page created successfully" });
       setDraftPreviewUrl("");
       applySavedState(
@@ -274,6 +301,8 @@ export default function CmsPageEditorPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id, "revisions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/menus"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cms/menus"] });
       toast({ title: "Page saved" });
       setDraftPreviewUrl("");
       applySavedState(
@@ -312,14 +341,16 @@ export default function CmsPageEditorPage() {
     onError: () => toast({ title: "Failed to publish page", variant: "destructive" }),
   });
 
-  const unpublishMutation = useMutation({
-    mutationFn: () => apiRequest("POST", `/api/admin/cms/pages/${id}/unpublish`),
+  const unpublishMutation = useMutation<Response, Error, boolean>({
+    mutationFn: (force = false) =>
+      apiRequest("POST", `/api/admin/cms/pages/${id}/unpublish${force ? "?force=true" : ""}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id, "relationships"] });
       toast({ title: "Page unpublished — reverted to draft" });
     },
-    onError: () => toast({ title: "Failed to unpublish page", variant: "destructive" }),
+    onError: (error: Error) => toast({ title: "Failed to unpublish page", description: error.message, variant: "destructive" }),
   });
 
   const [scheduleDate, setScheduleDate] = useState("");
@@ -337,6 +368,25 @@ export default function CmsPageEditorPage() {
       toast({ title: "Page scheduled for publishing" });
     },
     onError: () => toast({ title: "Failed to schedule page", variant: "destructive" }),
+  });
+
+  const removeMenuReferencesMutation = useMutation({
+    mutationFn: () => apiRequest("POST", `/api/admin/cms/pages/${id}/relationships/remove-menu-items`),
+    onSuccess: async (res) => {
+      const result = await res.json().catch(() => null);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id, "relationships"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/menus"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cms/menus"] });
+      toast({
+        title: "Navigation references removed",
+        description: result?.itemsRemoved
+          ? `${result.itemsRemoved} menu item${result.itemsRemoved === 1 ? "" : "s"} removed.`
+          : undefined,
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to remove references", description: error.message, variant: "destructive" });
+    },
   });
 
   const [restoringId, setRestoringId] = useState<string | null>(null);
@@ -479,6 +529,25 @@ export default function CmsPageEditorPage() {
     return { errors, warnings, info };
   }, [qualityIssues]);
 
+  const menuReferenceCount = relationships?.counts.menuItems ?? 0;
+  const runUnpublish = () => {
+    const force = menuReferenceCount > 0;
+    confirmPageStatusAction(
+      force
+        ? `Moving this page to draft will leave ${menuReferenceCount} navigation reference${menuReferenceCount === 1 ? "" : "s"} pointing at a non-published page`
+        : "Unpublishing",
+      () => unpublishMutation.mutate(force),
+    );
+  };
+
+  const removeMenuReferences = () => {
+    const message =
+      menuReferenceCount > 0
+        ? `Remove ${menuReferenceCount} navigation item${menuReferenceCount === 1 ? "" : "s"} that reference this page? This edits the affected menus.`
+        : "Remove navigation references for this page?";
+    unsavedChangesGuard.confirmIfDirty(() => removeMenuReferencesMutation.mutate(), message);
+  };
+
   if (!isNew && pageLoading) {
     return (
       <AdminSidebar>
@@ -597,9 +666,7 @@ export default function CmsPageEditorPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    confirmPageStatusAction("Unpublishing", () => unpublishMutation.mutate())
-                  }
+                  onClick={runUnpublish}
                   disabled={unpublishMutation.isPending || editorLock.isReadOnly}
                   data-testid="button-unpublish"
                 >
@@ -626,9 +693,7 @@ export default function CmsPageEditorPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    confirmPageStatusAction("Canceling this schedule", () => unpublishMutation.mutate())
-                  }
+                  onClick={runUnpublish}
                   disabled={unpublishMutation.isPending || editorLock.isReadOnly}
                   data-testid="button-cancel-schedule"
                 >
@@ -938,6 +1003,62 @@ export default function CmsPageEditorPage() {
 
               {!isNew && (
                 <div className="space-y-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Link2 className="h-4 w-4 text-muted-foreground" />
+                        Linked References
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      {menuReferenceCount === 0 ? (
+                        <p className="text-xs text-muted-foreground" data-testid="text-no-page-references">
+                          No navigation menu items currently reference this page.
+                        </p>
+                      ) : (
+                        <div className="space-y-2" data-testid="list-page-references">
+                          {relationships?.menuReferences.map((reference) => (
+                            <div key={`${reference.menuId}-${reference.itemId}`} className="rounded-md border p-2 text-xs">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-medium">{reference.itemLabel || "(no label)"}</span>
+                                <Badge variant={reference.labelSource === "page" ? "default" : "outline"} className="text-[10px]">
+                                  {reference.labelSource === "page" ? "Synced" : "Custom"}
+                                </Badge>
+                              </div>
+                              <p className="mt-1 text-muted-foreground">
+                                {reference.menuName} · {reference.itemUrl}
+                              </p>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="mt-2 h-7 px-2 text-xs"
+                                onClick={() => navigate(`/admin/cms/menus?editMenu=${reference.menuId}&item=${reference.itemId}`)}
+                                data-testid={`button-edit-reference-menu-${reference.itemId}`}
+                              >
+                                <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                                Edit menu
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={removeMenuReferences}
+                            disabled={removeMenuReferencesMutation.isPending || editorLock.isReadOnly}
+                            data-testid="button-remove-page-menu-references"
+                          >
+                            {removeMenuReferencesMutation.isPending ? (
+                              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                            )}
+                            Remove from menus
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                   <Card>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-sm flex items-center gap-2">

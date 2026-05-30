@@ -48,6 +48,8 @@ export interface MenuItem {
   label: string;
   url: string;
   openInNewTab: boolean;
+  pageId?: string | null;
+  labelSource?: "page" | "custom";
   children: MenuItem[];
 }
 
@@ -57,6 +59,8 @@ export const menuItemSchema: z.ZodType<MenuItem> = z.lazy(() =>
     label: z.string().min(1),
     url: z.string().min(1),
     openInNewTab: z.preprocess((v) => v ?? false, z.boolean()),
+    pageId: z.string().nullable().optional(),
+    labelSource: z.enum(["page", "custom"]).optional(),
     children: z.preprocess((v) => v ?? [], z.array(menuItemSchema)),
   })
 ) as z.ZodType<MenuItem>;

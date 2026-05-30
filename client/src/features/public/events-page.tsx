@@ -1,12 +1,24 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import type { Event } from "@shared/schema/events";
+import {
+  EVENT_AUDIENCE_LABELS,
+  EVENT_AUDIENCES,
+  EVENT_CATEGORY_LABELS,
+  EVENT_CATEGORIES,
+  EVENT_DELIVERY_MODE_LABELS,
+  EVENT_DELIVERY_MODES,
+  EVENT_TYPE_LABELS,
+  EVENT_TYPES,
+  type Event,
+  type EventDeliveryMode,
+} from "@shared/schema/events";
 import { getEventPath } from "@shared/event-url";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatEventDate, formatEventListDateLines, formatEventTime } from "@/lib/event-datetime";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
@@ -29,6 +41,8 @@ import {
   Video,
   User,
   Building,
+  Search,
+  X,
 } from "lucide-react";
 
 function str(v: unknown): string {
@@ -37,6 +51,26 @@ function str(v: unknown): string {
 
 function bool(v: unknown, fallback = false): boolean {
   return typeof v === "boolean" ? v : fallback;
+}
+
+function getInitialSearchParam(key: string, fallback = "all") {
+  if (typeof window === "undefined") return fallback;
+  return new URLSearchParams(window.location.search).get(key) || fallback;
+}
+
+function normalizeEventText(event: Event) {
+  return [
+    event.title,
+    event.description ? stripHtml(event.description) : "",
+    event.speakerName,
+    event.location,
+    event.locationName,
+    event.locationAddress,
+    Array.isArray(event.tags) ? event.tags.join(" ") : "",
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
 }
 
 function getRegistrationStatus(event: Event): { label: string; open: boolean } | null {
@@ -60,11 +94,18 @@ function formatPrice(fee: number, currency: string) {
   return `${curr === "USD" ? "$" : curr + " "}${amount.toFixed(amount % 1 === 0 ? 0 : 2)}`;
 }
 
+function getDeliveryMode(event: Event): EventDeliveryMode {
+  if (event.deliveryMode) return event.deliveryMode;
+  if (event.isVirtual && (event.location || event.locationName || event.locationAddress)) return "hybrid";
+  return event.isVirtual ? "virtual" : "in_person";
+}
+
 function EventCard({ event }: { event: Event }) {
   const [, navigate] = useLocation();
   const eventDate = new Date(event.date);
   const isPast = eventDate < new Date();
-  const isHybrid = event.isVirtual && !!(event.location || event.locationName || event.locationAddress);
+  const deliveryMode = getDeliveryMode(event);
+  const isHybrid = deliveryMode === "hybrid";
   const registrationStatus = getRegistrationStatus(event);
   const displayLocation = event.locationName || event.locationAddress || event.location;
   const dateLines = formatEventListDateLines(event.date, event.endDate, event.timezone);
@@ -112,7 +153,7 @@ function EventCard({ event }: { event: Event }) {
                     <Monitor className="mr-1 h-3 w-3" />
                     Hybrid
                   </Badge>
-                ) : event.isVirtual ? (
+                ) : deliveryMode === "virtual" ? (
                   <Badge variant="secondary" data-testid={`badge-virtual-${event.id}`}>
                     <Monitor className="mr-1 h-3 w-3" />
                     Virtual
@@ -121,6 +162,11 @@ function EventCard({ event }: { event: Event }) {
                   <Badge variant="secondary" data-testid={`badge-in-person-${event.id}`}>
                     <Building className="mr-1 h-3 w-3" />
                     In-Person
+                  </Badge>
+                )}
+                {event.eventType && (
+                  <Badge variant="outline" data-testid={`badge-event-type-${event.id}`}>
+                    {EVENT_TYPE_LABELS[event.eventType] ?? event.eventType}
                   </Badge>
                 )}
                 {event.registrationEnabled && event.registrationType === "paid" && event.registrationFee ? (
@@ -395,16 +441,107 @@ export function EventsArchiveSection({
 }: {
   props?: Record<string, unknown>;
 }) {
-  const initialView = str(props.defaultView) === "calendar" ? "calendar" : "list";
+  const [location] = useLocation();
+  const initialView =
+    getInitialSearchParam("view", str(props.defaultView) === "calendar" ? "calendar" : "list") === "calendar"
+      ? "calendar"
+      : "list";
   const [view, setView] = useState<"list" | "calendar">(initialView);
+  const [keywordFilter, setKeywordFilter] = useState(() => getInitialSearchParam("q", ""));
+  const [typeFilter, setTypeFilter] = useState(() => getInitialSearchParam("type"));
+  const [categoryFilter, setCategoryFilter] = useState(() => getInitialSearchParam("category"));
+  const [audienceFilter, setAudienceFilter] = useState(() => getInitialSearchParam("audience"));
+  const [deliveryFilter, setDeliveryFilter] = useState(() => getInitialSearchParam("delivery"));
+  const [timeFilter, setTimeFilter] = useState(() => getInitialSearchParam("when", "upcoming"));
+  const [costFilter, setCostFilter] = useState(() => getInitialSearchParam("cost"));
+  const [recordingFilter, setRecordingFilter] = useState(() => getInitialSearchParam("media"));
   const heading = str(props.heading) || "Upcoming Events";
   const subheading =
     str(props.subheading) ||
     "We offer quarterly Core Platform-informed trainings for professional providers! All of our members get free registration to the events below.";
   const showViewToggle = bool(props.showViewToggle, true);
   const { data: events, isLoading, error } = useQuery<Event[]>({
-    queryKey: ["/api/events"],
+    queryKey: ["/api/events/all"],
   });
+  const isEventsPage = location.split("?")[0] === "/events";
+  const activeFilterCount = [
+    keywordFilter.trim(),
+    typeFilter !== "all",
+    categoryFilter !== "all",
+    audienceFilter !== "all",
+    deliveryFilter !== "all",
+    timeFilter !== "upcoming",
+    costFilter !== "all",
+    recordingFilter !== "all",
+    view !== (str(props.defaultView) === "calendar" ? "calendar" : "list"),
+  ].filter(Boolean).length;
+
+  useEffect(() => {
+    if (!isEventsPage || typeof window === "undefined") return;
+
+    const params = new URLSearchParams();
+    if (keywordFilter.trim()) params.set("q", keywordFilter.trim());
+    if (typeFilter !== "all") params.set("type", typeFilter);
+    if (categoryFilter !== "all") params.set("category", categoryFilter);
+    if (audienceFilter !== "all") params.set("audience", audienceFilter);
+    if (deliveryFilter !== "all") params.set("delivery", deliveryFilter);
+    if (timeFilter !== "upcoming") params.set("when", timeFilter);
+    if (costFilter !== "all") params.set("cost", costFilter);
+    if (recordingFilter !== "all") params.set("media", recordingFilter);
+    if (view !== "list") params.set("view", view);
+
+    const nextUrl = params.toString() ? `/events?${params.toString()}` : "/events";
+    if (`${window.location.pathname}${window.location.search}` !== nextUrl) {
+      window.history.replaceState(null, "", nextUrl);
+    }
+  }, [
+    audienceFilter,
+    categoryFilter,
+    costFilter,
+    deliveryFilter,
+    isEventsPage,
+    keywordFilter,
+    recordingFilter,
+    timeFilter,
+    typeFilter,
+    view,
+  ]);
+
+  const filteredEvents = useMemo(() => {
+    const now = new Date();
+    const keyword = keywordFilter.trim().toLowerCase();
+    return (events ?? []).filter((event) => {
+      const isPast = new Date(event.date) < now;
+      const deliveryMode = getDeliveryMode(event);
+      const isPaid = event.registrationEnabled && event.registrationType === "paid";
+      const hasRecording = Boolean(event.recordingUrl);
+
+      if (keyword && !normalizeEventText(event).includes(keyword)) return false;
+      if (typeFilter !== "all" && event.eventType !== typeFilter) return false;
+      if (categoryFilter !== "all" && event.category !== categoryFilter) return false;
+      if (audienceFilter !== "all" && event.audience !== audienceFilter) return false;
+      if (deliveryFilter !== "all" && deliveryMode !== deliveryFilter) return false;
+      if (timeFilter === "upcoming" && isPast) return false;
+      if (timeFilter === "past" && !isPast) return false;
+      if (costFilter === "free" && isPaid) return false;
+      if (costFilter === "paid" && !isPaid) return false;
+      if (recordingFilter === "recordings" && !hasRecording) return false;
+
+      return true;
+    });
+  }, [audienceFilter, categoryFilter, costFilter, deliveryFilter, events, keywordFilter, recordingFilter, timeFilter, typeFilter]);
+
+  const resetFilters = () => {
+    setKeywordFilter("");
+    setTypeFilter("all");
+    setCategoryFilter("all");
+    setAudienceFilter("all");
+    setDeliveryFilter("all");
+    setTimeFilter("upcoming");
+    setCostFilter("all");
+    setRecordingFilter("all");
+    setView(str(props.defaultView) === "calendar" ? "calendar" : "list");
+  };
 
   return (
     <>
@@ -451,6 +588,82 @@ export function EventsArchiveSection({
       </section>
 
       <section className="mx-auto max-w-4xl px-4 sm:px-6 py-10 sm:py-14" data-testid="section-events-content">
+        {events && events.length > 0 && (
+          <div className="mb-6 space-y-3 rounded-lg border bg-background p-3" data-testid="events-filters">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={keywordFilter}
+                  onChange={(event) => setKeywordFilter(event.target.value)}
+                  placeholder="Search events"
+                  className="pl-9"
+                  data-testid="filter-event-keyword"
+                />
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span data-testid="text-event-result-count">
+                  {filteredEvents.length} of {events.length} event{events.length === 1 ? "" : "s"}
+                </span>
+                {activeFilterCount > 0 && (
+                  <Badge variant="outline" data-testid="badge-active-filter-count">
+                    {activeFilterCount} active
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} data-testid="filter-event-type">
+              <option value="all">All types</option>
+              {EVENT_TYPES.map((eventType) => (
+                <option key={eventType} value={eventType}>{EVENT_TYPE_LABELS[eventType]}</option>
+              ))}
+            </select>
+            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} data-testid="filter-event-category">
+              <option value="all">All categories</option>
+              {EVENT_CATEGORIES.map((category) => (
+                <option key={category} value={category}>{EVENT_CATEGORY_LABELS[category]}</option>
+              ))}
+            </select>
+            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={audienceFilter} onChange={(event) => setAudienceFilter(event.target.value)} data-testid="filter-event-audience">
+              <option value="all">All audiences</option>
+              {EVENT_AUDIENCES.map((audience) => (
+                <option key={audience} value={audience}>{EVENT_AUDIENCE_LABELS[audience]}</option>
+              ))}
+            </select>
+            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={deliveryFilter} onChange={(event) => setDeliveryFilter(event.target.value)} data-testid="filter-event-delivery">
+              <option value="all">All delivery</option>
+              {EVENT_DELIVERY_MODES.map((mode) => (
+                <option key={mode} value={mode}>{EVENT_DELIVERY_MODE_LABELS[mode]}</option>
+              ))}
+            </select>
+            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={timeFilter} onChange={(event) => setTimeFilter(event.target.value)} data-testid="filter-event-time">
+              <option value="upcoming">Upcoming</option>
+              <option value="past">Past</option>
+              <option value="all">All dates</option>
+            </select>
+            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={costFilter} onChange={(event) => setCostFilter(event.target.value)} data-testid="filter-event-cost">
+              <option value="all">Free and paid</option>
+              <option value="free">Free</option>
+              <option value="paid">Paid</option>
+            </select>
+            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={recordingFilter} onChange={(event) => setRecordingFilter(event.target.value)} data-testid="filter-event-recordings">
+              <option value="all">All media</option>
+              <option value="recordings">Recordings</option>
+            </select>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={resetFilters}
+              data-testid="button-reset-event-filters"
+            >
+              <X className="mr-1.5 h-4 w-4" />
+              Reset
+            </Button>
+            </div>
+          </div>
+        )}
+
         {isLoading && <EventsSkeleton />}
 
         {error && (
@@ -472,16 +685,24 @@ export function EventsArchiveSection({
           </Card>
         )}
 
-        {events && events.length > 0 && view === "list" && (
+        {events && events.length > 0 && filteredEvents.length === 0 && (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground" data-testid="text-no-filtered-events">
+              No events match these filters.
+            </CardContent>
+          </Card>
+        )}
+
+        {filteredEvents.length > 0 && view === "list" && (
           <div className="space-y-4" data-testid="list-events">
-            {events.map((event) => (
+            {filteredEvents.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}
           </div>
         )}
 
-        {events && events.length > 0 && view === "calendar" && (
-          <CalendarView events={events} />
+        {filteredEvents.length > 0 && view === "calendar" && (
+          <CalendarView events={filteredEvents} />
         )}
       </section>
     </>

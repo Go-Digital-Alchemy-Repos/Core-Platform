@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
@@ -38,6 +39,8 @@ import {
   Loader2,
   MapPin,
   LayoutTemplate,
+  Link2,
+  AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -46,6 +49,7 @@ import {
   STANDARD_MENU_LOCATIONS,
   LEGACY_MENU_LOCATIONS,
   type CmsMenu,
+  type CmsPage,
   type MenuItem,
   type MenuLocation,
 } from "@shared/schema";
@@ -66,8 +70,14 @@ const LEGACY_LOCATION_OPTIONS = LEGACY_MENU_LOCATIONS.map((location) => ({
   label: MENU_LOCATION_LABELS[location],
 }));
 
+function cmsPagePath(slug: string): string {
+  const cleanSlug = slug.trim().replace(/^\/+/, "").replace(/\/+$/, "");
+  return cleanSlug ? `/${cleanSlug}` : "/";
+}
+
 function MenuItemEditor({
   item,
+  pages,
   depth,
   index,
   totalSiblings,
@@ -79,6 +89,7 @@ function MenuItemEditor({
   onOutdent,
 }: {
   item: MenuItem;
+  pages: CmsPage[];
   depth: number;
   index: number;
   totalSiblings: number;
@@ -92,6 +103,11 @@ function MenuItemEditor({
   const [expanded, setExpanded] = useState(true);
   const hasChildren = item.children && item.children.length > 0;
   const canNest = depth < 3;
+  const selectedPageId = item.pageId ?? "";
+  const selectedPage = selectedPageId ? pages.find((entry) => entry.id === selectedPageId) : null;
+  const hasMissingPage = Boolean(selectedPageId && !selectedPage);
+  const isUnpublishedPage = Boolean(selectedPage && selectedPage.status !== "published");
+  const isPageSynced = Boolean(selectedPage && item.labelSource === "page");
 
   const updateChild = useCallback(
     (childId: string, updates: Partial<MenuItem>) => {
@@ -134,12 +150,64 @@ function MenuItemEditor({
     [item, onUpdate]
   );
 
+  const updateLabel = (label: string) => {
+    onUpdate(item.id, {
+      label,
+      labelSource: item.pageId ? "custom" : item.labelSource,
+    });
+  };
+
+  const updateUrl = (url: string) => {
+    onUpdate(item.id, {
+      url,
+      pageId: null,
+      labelSource: item.pageId ? "custom" : item.labelSource,
+    });
+  };
+
+  const selectPage = (pageId: string) => {
+    if (!pageId) {
+      onUpdate(item.id, { pageId: null, labelSource: "custom" });
+      return;
+    }
+
+    const page = pages.find((entry) => entry.id === pageId);
+    if (!page) return;
+
+    onUpdate(item.id, {
+      pageId: page.id,
+      label: page.title,
+      url: cmsPagePath(page.slug),
+      labelSource: "page",
+      openInNewTab: false,
+    });
+  };
+
+  const useSelectedPageTitle = () => {
+    if (!selectedPage) return;
+    onUpdate(item.id, {
+      label: selectedPage.title,
+      url: cmsPagePath(selectedPage.slug),
+      labelSource: "page",
+      pageId: selectedPage.id,
+    });
+  };
+
+  const clearPageLink = () => {
+    onUpdate(item.id, {
+      pageId: null,
+      labelSource: "custom",
+    });
+  };
+
   const addChild = useCallback(() => {
     const newChild: MenuItem = {
       id: generateId(),
       label: "",
       url: "/",
       openInNewTab: false,
+      pageId: null,
+      labelSource: "custom",
       children: [],
     };
     onUpdate(item.id, { children: [...item.children, newChild] });
@@ -166,17 +234,75 @@ function MenuItemEditor({
           <div className="w-4 shrink-0" />
         )}
 
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-center">
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-start">
+          <div className="space-y-1">
+            <select
+              value={selectedPageId}
+              onChange={(e) => selectPage(e.target.value)}
+              className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              data-testid={`select-page-${item.id}`}
+            >
+              <option value="">Manual link</option>
+              {pages.map((page) => (
+                <option key={page.id} value={page.id}>
+                  {page.title}
+                </option>
+              ))}
+            </select>
+            <div className="flex min-h-4 items-center gap-1.5 text-[11px] text-muted-foreground">
+              {hasMissingPage ? (
+                <>
+                  <AlertTriangle className="h-3 w-3 text-destructive" />
+                  <span className="text-destructive">Missing page</span>
+                  <button
+                    type="button"
+                    className="font-medium text-primary hover:underline"
+                    onClick={clearPageLink}
+                    data-testid={`button-clear-page-link-${item.id}`}
+                  >
+                    Clear link
+                  </button>
+                </>
+              ) : selectedPage ? (
+                <>
+                  {isUnpublishedPage ? (
+                    <AlertTriangle className="h-3 w-3 text-amber-600" />
+                  ) : (
+                    <Link2 className="h-3 w-3" />
+                  )}
+                  <span>
+                    {isUnpublishedPage
+                      ? `Linked to ${selectedPage.status} page`
+                      : isPageSynced
+                        ? "Synced from page"
+                        : "Custom label"}
+                  </span>
+                  {!isPageSynced && (
+                    <button
+                      type="button"
+                      className="font-medium text-primary hover:underline"
+                      onClick={useSelectedPageTitle}
+                      data-testid={`button-use-page-title-${item.id}`}
+                    >
+                      Use page title
+                    </button>
+                  )}
+                </>
+              ) : (
+                <span>Manual URL</span>
+              )}
+            </div>
+          </div>
           <Input
             value={item.label}
-            onChange={(e) => onUpdate(item.id, { label: e.target.value })}
+            onChange={(e) => updateLabel(e.target.value)}
             placeholder="Label"
             className="h-8 text-sm"
             data-testid={`input-label-${item.id}`}
           />
           <Input
             value={item.url}
-            onChange={(e) => onUpdate(item.id, { url: e.target.value })}
+            onChange={(e) => updateUrl(e.target.value)}
             placeholder="/url or https://..."
             className="h-8 text-sm"
             data-testid={`input-url-${item.id}`}
@@ -238,6 +364,7 @@ function MenuItemEditor({
             <MenuItemEditor
               key={child.id}
               item={child}
+              pages={pages}
               depth={depth + 1}
               index={cIdx}
               totalSiblings={item.children.length}
@@ -277,6 +404,9 @@ function MenuEditor({
   const [name, setName] = useState(menu?.name || draft?.name || "");
   const [location, setLocation] = useState<MenuLocation>((menu?.location as MenuLocation) || (draft?.location as MenuLocation) || "unassigned");
   const [items, setItems] = useState<MenuItem[]>((menu?.items as MenuItem[]) || []);
+  const { data: pages = [] } = useQuery<CmsPage[]>({
+    queryKey: ["/api/admin/cms/pages"],
+  });
   const editorLock = useEditorLock({
     resourceType: "cms_menu",
     resourceId: isNew ? null : menu?.id ?? null,
@@ -405,6 +535,8 @@ function MenuEditor({
         label: "",
         url: "/",
         openInNewTab: false,
+        pageId: null,
+        labelSource: "custom",
         children: [],
       },
     ]);
@@ -499,6 +631,7 @@ function MenuEditor({
               <MenuItemEditor
                 key={item.id}
                 item={item}
+                pages={pages}
                 depth={1}
                 index={idx}
                 totalSiblings={items.length}
@@ -519,6 +652,7 @@ function MenuEditor({
 
 export default function CmsMenusPage() {
   const { toast } = useToast();
+  const [currentPath, navigate] = useLocation();
   const [editingMenu, setEditingMenu] = useState<CmsMenu | null | "new">(null);
   const [draftMenuDefaults, setDraftMenuDefaults] = useState<Partial<Pick<CmsMenu, "name" | "location">> | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<CmsMenu | null>(null);
@@ -559,6 +693,19 @@ export default function CmsMenusPage() {
     }
   }
 
+  useEffect(() => {
+    if (!menus || editingMenu !== null) return;
+    const query = currentPath.includes("?") ? currentPath.slice(currentPath.indexOf("?")) : window.location.search;
+    const editMenuId = new URLSearchParams(query).get("editMenu");
+    if (!editMenuId) return;
+
+    const menu = menus.find((entry) => entry.id === editMenuId);
+    if (menu) {
+      setEditingMenu(menu);
+      setDraftMenuDefaults(null);
+    }
+  }, [currentPath, editingMenu, menus]);
+
   if (editingMenu !== null) {
     return (
       <AdminSidebar>
@@ -569,6 +716,7 @@ export default function CmsMenusPage() {
             onClose={() => {
               setEditingMenu(null);
               setDraftMenuDefaults(null);
+              navigate("/admin/cms/menus");
             }}
           />
         </div>

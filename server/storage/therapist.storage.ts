@@ -10,7 +10,6 @@ import type {
   TherapistWithUser,
   PaginatedTherapists,
   DirectoryFilterOptions,
-  TherapistSearchParams,
   SortOption,
 } from "@shared/types/directory";
 
@@ -27,6 +26,7 @@ interface InternalSearchParams {
   sort?: SortOption;
   latitude?: number;
   longitude?: number;
+  requireApprovedApplication?: boolean;
 }
 
 const FILTER_CACHE_TTL = parseInt(process.env.FILTER_OPTIONS_CACHE_TTL || "300", 10);
@@ -35,10 +35,13 @@ const FILTER_OPTIONS_KEY = "filter_options";
 
 function buildFilterConditions(params: InternalSearchParams): SQL[] {
   const conditions: SQL[] = [
-    eq(therapistProfiles.isApproved, true),
     eq(therapistProfiles.isActive, true),
     eq(users.isSuspended, false),
   ];
+
+  if (params.requireApprovedApplication !== false) {
+    conditions.push(eq(therapistProfiles.isApproved, true));
+  }
 
   if (params.practiceMode) {
     conditions.push(eq(therapistProfiles.practiceMode, params.practiceMode));
@@ -198,16 +201,21 @@ export class TherapistStorage {
     };
   }
 
-  async getFilterOptions(): Promise<DirectoryFilterOptions> {
+  async getFilterOptions(requireApprovedApplication = true): Promise<DirectoryFilterOptions> {
     const cached = filterOptionsCache.get(FILTER_OPTIONS_KEY);
-    if (cached) return cached;
+    if (cached && requireApprovedApplication) return cached;
+
+    const approvalSql = requireApprovedApplication
+      ? sql`AND ${therapistProfiles.isApproved} = true`
+      : sql``;
 
     const langResult = await db.execute(
       sql`SELECT DISTINCT unnest(${therapistProfiles.languages}) AS lang
           FROM ${therapistProfiles}
           INNER JOIN ${users} ON ${therapistProfiles.userId} = ${users.id}
-          WHERE ${therapistProfiles.isApproved} = true AND ${therapistProfiles.isActive} = true
+          WHERE ${therapistProfiles.isActive} = true
             AND ${users.isSuspended} = false
+            ${approvalSql}
           ORDER BY lang`
     );
 
@@ -215,9 +223,9 @@ export class TherapistStorage {
       sql`SELECT DISTINCT ${therapistProfiles.country} AS country
           FROM ${therapistProfiles}
           INNER JOIN ${users} ON ${therapistProfiles.userId} = ${users.id}
-          WHERE ${therapistProfiles.isApproved} = true
-            AND ${therapistProfiles.isActive} = true
+          WHERE ${therapistProfiles.isActive} = true
             AND ${users.isSuspended} = false
+            ${approvalSql}
             AND ${therapistProfiles.country} IS NOT NULL
           ORDER BY country`
     );
@@ -227,7 +235,7 @@ export class TherapistStorage {
       countries: (countryResult.rows as Array<{ country: string }>).map((r) => r.country),
     };
 
-    filterOptionsCache.set(FILTER_OPTIONS_KEY, result);
+    if (requireApprovedApplication) filterOptionsCache.set(FILTER_OPTIONS_KEY, result);
     return result;
   }
 
@@ -280,7 +288,17 @@ export class TherapistStorage {
     return Number(result[0].count);
   }
 
-  async listFeatured(): Promise<TherapistWithUser[]> {
+  async listFeatured(requireApprovedApplication = true): Promise<TherapistWithUser[]> {
+    const conditions: SQL[] = [
+      eq(therapistProfiles.isFeatured, true),
+      eq(therapistProfiles.isActive, true),
+      eq(users.isSuspended, false),
+    ];
+
+    if (requireApprovedApplication) {
+      conditions.push(eq(therapistProfiles.isApproved, true));
+    }
+
     const results = await db
       .select({
         profile: therapistProfiles,
@@ -293,14 +311,7 @@ export class TherapistStorage {
       })
       .from(therapistProfiles)
       .innerJoin(users, eq(therapistProfiles.userId, users.id))
-      .where(
-        and(
-          eq(therapistProfiles.isFeatured, true),
-          eq(therapistProfiles.isApproved, true),
-          eq(therapistProfiles.isActive, true),
-          eq(users.isSuspended, false)
-        )
-      )
+      .where(and(...conditions))
       .limit(6);
 
     return results.map((r) => ({ ...r.profile, user: r.user }));

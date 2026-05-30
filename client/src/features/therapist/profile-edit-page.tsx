@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useSearch } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,6 +11,7 @@ import { TherapistLayout } from "./therapist-layout";
 import { LANGUAGES, PracticeMode } from "@shared/types";
 import { useSpecializations } from "@/hooks/use-specializations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +28,7 @@ import { PhoneInput } from "@/components/shared/phone-input";
 import { phoneSchema } from "@/lib/phone-utils";
 import { useAuth } from "@/hooks/use-auth";
 import { CmsRichTextEditor } from "@/features/admin/cms/builder/cms-rich-text-editor";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
 
 const profileFormSchema = z.object({
   title: z.string().optional(),
@@ -58,6 +61,8 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 export default function ProfileEditPage() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const search = useSearch();
+  const { settings: directorySettings } = useDirectorySettings();
   const { specializations: specList } = useSpecializations();
   const [otherLangOpen, setOtherLangOpen] = useState(false);
   const customLangInputRef = useRef<HTMLInputElement>(null);
@@ -127,6 +132,19 @@ export default function ProfileEditPage() {
       willingToTravel: false,
     },
   });
+  const showBasicInformation =
+    directorySettings.showProfileTitle ||
+    directorySettings.showProfileBio ||
+    directorySettings.showCredentials ||
+    directorySettings.showLicenseNumber;
+  const showPracticeDetails =
+    directorySettings.showPracticeMode ||
+    directorySettings.showAvailabilityStatus ||
+    directorySettings.showTravelOption;
+  const showLocationContact =
+    directorySettings.showLocationFields ||
+    directorySettings.showPhone ||
+    directorySettings.showWebsite;
 
   const updateMutation = useMutation({
     mutationFn: async (data: ProfileFormValues) => {
@@ -165,6 +183,47 @@ export default function ProfileEditPage() {
       predefined.push(...customEntries);
     }
     const unique = Array.from(new Set(predefined));
+
+    const missingFields = [
+      directorySettings.showProfileTitle && directorySettings.requireProfileTitle && !data.title?.trim()
+        ? directorySettings.profileTitleLabel
+        : null,
+      directorySettings.showProfileBio && directorySettings.requireProfileBio && !data.bio?.trim()
+        ? directorySettings.profileBioLabel
+        : null,
+      directorySettings.showSpecialties && directorySettings.requireSpecialties && unique.length === 0
+        ? directorySettings.specialtyLabelPlural
+        : null,
+      directorySettings.showLanguages && directorySettings.requireLanguages && !(data.languages ?? []).length
+        ? "Languages"
+        : null,
+      directorySettings.showCredentials && directorySettings.requireCredentials && !data.credentials?.trim()
+        ? directorySettings.credentialsLabel
+        : null,
+      directorySettings.showLicenseNumber && directorySettings.requireLicenseNumber && !data.licenseNumber?.trim()
+        ? directorySettings.licenseNumberLabel
+        : null,
+      directorySettings.showPracticeMode && directorySettings.requirePracticeMode && !data.practiceMode?.trim()
+        ? directorySettings.practiceModeLabel
+        : null,
+      directorySettings.showLocationFields &&
+      directorySettings.requireLocationFields &&
+      (!data.addressLine1?.trim() || !data.city?.trim() || !data.country?.trim())
+        ? `${directorySettings.locationContactLabel} address, city, and country`
+        : null,
+      directorySettings.showPhone && directorySettings.requirePhone && !data.phone?.trim() ? "Phone" : null,
+      directorySettings.showWebsite && directorySettings.requireWebsite && !data.website?.trim() ? "Website" : null,
+    ].filter(Boolean);
+
+    if (missingFields.length > 0) {
+      toast({
+        title: "Required fields missing",
+        description: `Please complete: ${missingFields.join(", ")}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     updateMutation.mutate({ ...data, specializations: unique });
   }
 
@@ -183,14 +242,23 @@ export default function ProfileEditPage() {
     <TherapistLayout>
     <div className="p-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-heading font-semibold mb-6" data-testid="text-profile-edit-title">
-        Edit Profile
+        Edit {directorySettings.listingLabelSingular}
       </h1>
+
+      {new URLSearchParams(search).get("application") === "disabled" && (
+        <Alert className="mb-6" data-testid="alert-application-disabled">
+          <AlertTitle>Application process disabled</AlertTitle>
+          <AlertDescription>
+            You can set up your {directorySettings.listingLabelSingular.toLowerCase()} directly. Complete the details below to prepare it for the {directorySettings.directoryLabelSingular.toLowerCase()}.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Profile Photo</CardTitle>
+              <CardTitle className="text-base">{directorySettings.listingLabelSingular} Photo</CardTitle>
             </CardHeader>
             <CardContent>
               <AvatarUpload
@@ -201,35 +269,39 @@ export default function ProfileEditPage() {
             </CardContent>
           </Card>
 
+          {showBasicInformation && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Basic Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FormField
+              {directorySettings.showProfileTitle && (
+                <FormField
                 control={form.control}
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Professional Title</FormLabel>
+                    <FormLabel>{directorySettings.profileTitleLabel}{directorySettings.requireProfileTitle ? " *" : ""}</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Licensed Clinical Psychologist" {...field} data-testid="input-title" />
+                      <Input placeholder={directorySettings.profileTitlePlaceholder} {...field} data-testid="input-title" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
+              )}
+              {directorySettings.showProfileBio && (
+                <FormField
                 control={form.control}
                 name="bio"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Bio</FormLabel>
+                    <FormLabel>{directorySettings.profileBioLabel}{directorySettings.requireProfileBio ? " *" : ""}</FormLabel>
                     <FormControl>
                       <CmsRichTextEditor
                         value={field.value ?? ""}
                         onChange={field.onChange}
-                        placeholder="Tell clients about your practice and approach..."
+                        placeholder={directorySettings.profileBioPlaceholder}
                         data-testid="input-bio"
                       />
                     </FormControl>
@@ -237,40 +309,47 @@ export default function ProfileEditPage() {
                   </FormItem>
                 )}
               />
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
+                {directorySettings.showCredentials && (
+                  <FormField
                   control={form.control}
                   name="credentials"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Credentials</FormLabel>
+                      <FormLabel>{directorySettings.credentialsLabel}{directorySettings.requireCredentials ? " *" : ""}</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. PhD, LMFT" {...field} data-testid="input-credentials" />
+                        <Input placeholder={directorySettings.credentialsPlaceholder} {...field} data-testid="input-credentials" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
+                )}
+                {directorySettings.showLicenseNumber && (
+                  <FormField
                   control={form.control}
                   name="licenseNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>License Number</FormLabel>
+                      <FormLabel>{directorySettings.licenseNumberLabel}{directorySettings.requireLicenseNumber ? " *" : ""}</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. PSY12345" {...field} data-testid="input-license" />
+                        <Input placeholder={directorySettings.licenseNumberPlaceholder} {...field} data-testid="input-license" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                )}
               </div>
             </CardContent>
           </Card>
+          )}
 
+          {directorySettings.showSpecialties && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Specializations</CardTitle>
+              <CardTitle className="text-base">{directorySettings.specialtyLabelPlural}{directorySettings.requireSpecialties ? " *" : ""}</CardTitle>
             </CardHeader>
             <CardContent>
               <FormField
@@ -320,7 +399,7 @@ export default function ProfileEditPage() {
                     {otherChecked && (
                       <div className="mt-3">
                         <Input
-                          placeholder="Enter custom specialty (comma-separated for multiple)"
+                          placeholder={`Enter custom ${directorySettings.specialtyLabelPlural.toLowerCase()} (comma-separated for multiple)`}
                           value={otherValue}
                           onChange={(e) => setOtherValue(e.target.value)}
                           data-testid="input-spec-other"
@@ -333,10 +412,12 @@ export default function ProfileEditPage() {
               />
             </CardContent>
           </Card>
+          )}
 
+          {directorySettings.showLanguages && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Languages</CardTitle>
+              <CardTitle className="text-base">Languages{directorySettings.requireLanguages ? " *" : ""}</CardTitle>
             </CardHeader>
             <CardContent>
               <FormField
@@ -456,22 +537,25 @@ export default function ProfileEditPage() {
               />
             </CardContent>
           </Card>
+          )}
 
+          {showPracticeDetails && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Practice Details</CardTitle>
+              <CardTitle className="text-base">{directorySettings.practiceDetailsLabel}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FormField
+              {directorySettings.showPracticeMode && (
+                <FormField
                 control={form.control}
                 name="practiceMode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Session Format</FormLabel>
+                    <FormLabel>{directorySettings.practiceModeLabel}{directorySettings.requirePracticeMode ? " *" : ""}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-practice-mode">
-                          <SelectValue placeholder="Select session format" />
+                          <SelectValue placeholder={`Select ${directorySettings.practiceModeLabel.toLowerCase()}`} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -484,14 +568,16 @@ export default function ProfileEditPage() {
                   </FormItem>
                 )}
               />
-              <FormField
+              )}
+              {directorySettings.showAvailabilityStatus && (
+                <FormField
                 control={form.control}
                 name="acceptingClients"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between gap-2 rounded-md border p-3">
                     <div>
-                      <FormLabel>Accepting New Clients</FormLabel>
-                      <p className="text-sm text-muted-foreground">Toggle whether you are currently accepting new clients</p>
+                      <FormLabel>{directorySettings.acceptingClientsLabel}</FormLabel>
+                      <p className="text-sm text-muted-foreground">{directorySettings.acceptingClientsHelpText}</p>
                     </div>
                     <FormControl>
                       <Switch
@@ -503,14 +589,16 @@ export default function ProfileEditPage() {
                   </FormItem>
                 )}
               />
-              <FormField
+              )}
+              {directorySettings.showTravelOption && (
+                <FormField
                 control={form.control}
                 name="willingToTravel"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between gap-2 rounded-md border p-3">
                     <div>
-                      <FormLabel>Willing to Travel</FormLabel>
-                      <p className="text-sm text-muted-foreground">Toggle whether you are willing to travel for sessions</p>
+                      <FormLabel>{directorySettings.willingToTravelLabel}</FormLabel>
+                      <p className="text-sm text-muted-foreground">{directorySettings.willingToTravelHelpText}</p>
                     </div>
                     <FormControl>
                       <Switch
@@ -522,14 +610,19 @@ export default function ProfileEditPage() {
                   </FormItem>
                 )}
               />
+              )}
             </CardContent>
           </Card>
+          )}
 
+          {showLocationContact && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Location & Contact</CardTitle>
+              <CardTitle className="text-base">{directorySettings.locationContactLabel}{directorySettings.requireLocationFields ? " *" : ""}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {directorySettings.showLocationFields && (
+                <>
               <FormField
                 control={form.control}
                 name="addressLine1"
@@ -610,13 +703,16 @@ export default function ProfileEditPage() {
                   )}
                 />
               </div>
+                </>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
+                {directorySettings.showPhone && (
+                  <FormField
                   control={form.control}
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone</FormLabel>
+                      <FormLabel>Phone{directorySettings.requirePhone ? " *" : ""}</FormLabel>
                       <FormControl>
                         <PhoneInput {...field} data-testid="input-phone" />
                       </FormControl>
@@ -624,12 +720,14 @@ export default function ProfileEditPage() {
                     </FormItem>
                   )}
                 />
-                <FormField
+                )}
+                {directorySettings.showWebsite && (
+                  <FormField
                   control={form.control}
                   name="website"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Website</FormLabel>
+                      <FormLabel>Website{directorySettings.requireWebsite ? " *" : ""}</FormLabel>
                       <FormControl>
                         <Input placeholder="https://example.com" {...field} data-testid="input-website" />
                       </FormControl>
@@ -637,10 +735,13 @@ export default function ProfileEditPage() {
                     </FormItem>
                   )}
                 />
+                )}
               </div>
             </CardContent>
           </Card>
+          )}
 
+          {directorySettings.showSocialLinks && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Social Media</CardTitle>
@@ -693,6 +794,7 @@ export default function ProfileEditPage() {
               </div>
             </CardContent>
           </Card>
+          )}
 
           <Button type="submit" disabled={updateMutation.isPending} className="w-full" data-testid="button-save-profile">
             {updateMutation.isPending ? (
@@ -700,7 +802,7 @@ export default function ProfileEditPage() {
             ) : (
               <Save className="w-4 h-4 mr-2" />
             )}
-            Save Profile
+            Save {directorySettings.listingLabelSingular}
           </Button>
         </form>
       </Form>

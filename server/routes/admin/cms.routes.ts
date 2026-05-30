@@ -5,6 +5,11 @@ import { paramString } from "../../utils/params";
 import { insertCmsPageSchema } from "@shared/schema";
 import { logger } from "../../utils/logger";
 import { createCmsPreviewToken } from "../../utils/cms-preview-token";
+import {
+  getCmsPageMenuReferences,
+  removeCmsPageMenuReferences,
+  syncCmsPageRelationships,
+} from "../../services/cms-relationships.service";
 
 const router = Router();
 
@@ -95,6 +100,40 @@ router.get("/pages/:id", async (req, res) => {
   }
 });
 
+router.get("/pages/:id/relationships", async (req, res) => {
+  try {
+    const id = paramString(req.params.id);
+    const page = await resolvePage(id);
+    if (!page) return res.status(404).json({ error: "Page not found" });
+
+    const menuReferences = await getCmsPageMenuReferences(page);
+    res.json({
+      pageId: page.id,
+      menuReferences,
+      counts: {
+        menuItems: menuReferences.length,
+      },
+    });
+  } catch (error) {
+    logger.cms.error("Failed to fetch page relationships", error, { requestId: req.requestId });
+    res.status(500).json({ error: "Failed to fetch CMS page relationships" });
+  }
+});
+
+router.post("/pages/:id/relationships/remove-menu-items", async (req, res) => {
+  try {
+    const id = paramString(req.params.id);
+    const page = await resolvePage(id);
+    if (!page) return res.status(404).json({ error: "Page not found" });
+
+    const result = await removeCmsPageMenuReferences(page);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    logger.cms.error("Failed to remove page menu references", error, { requestId: req.requestId });
+    res.status(500).json({ error: "Failed to remove CMS page menu references" });
+  }
+});
+
 router.get("/pages/:id/preview-link", async (req, res) => {
   try {
     const id = paramString(req.params.id);
@@ -155,6 +194,9 @@ router.put("/pages/:id", async (req, res) => {
     });
 
     const updated = await storage.cmsPages.updatePage(page.id, { ...data, updatedBy: adminId });
+    if (updated) {
+      await syncCmsPageRelationships(page, updated);
+    }
     res.json(updated);
   } catch (error) {
     logger.cms.error("Failed to update page", error, { requestId: req.requestId });
@@ -169,6 +211,15 @@ router.delete("/pages/:id", async (req, res) => {
     if (!page) return res.status(404).json({ error: "Page not found" });
 
     const force = req.query.force === "true";
+    const menuReferences = await getCmsPageMenuReferences(page);
+    if (menuReferences.length > 0 && !force) {
+      return res.status(409).json({
+        error: "This page is still used in navigation menus. Review linked references before deleting it.",
+        code: "CMS_PAGE_HAS_MENU_REFERENCES",
+        menuReferences,
+      });
+    }
+
     if (page.status === "published" && !force) {
       return res.status(400).json({ error: "Cannot delete a published page. Unpublish it first or use ?force=true" });
     }
@@ -225,6 +276,16 @@ router.post("/pages/:id/unpublish", async (req, res) => {
     const adminId = (req as any).user?.id;
     const existingPage = await resolvePage(id);
     if (!existingPage) return res.status(404).json({ error: "Page not found" });
+    const force = req.query.force === "true";
+    const menuReferences = await getCmsPageMenuReferences(existingPage);
+    if (menuReferences.length > 0 && !force) {
+      return res.status(409).json({
+        error: "This page is still used in navigation menus. Review linked references before moving it to draft.",
+        code: "CMS_PAGE_HAS_MENU_REFERENCES",
+        menuReferences,
+      });
+    }
+
     const page = await storage.cmsPages.unpublishPage(existingPage.id, adminId);
     if (!page) return res.status(404).json({ error: "Page not found" });
     res.json(page);

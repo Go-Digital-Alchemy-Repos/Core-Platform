@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { CmsForm, CmsFormField, CmsFormListColumn } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +19,9 @@ import { cn } from "@/lib/utils";
 
 interface PublicFormRendererProps {
   slug: string;
+  formOverride?: CmsForm;
+  submitUrl?: string;
+  buildSubmitBody?: (values: FormValues) => unknown;
   className?: string;
   showHeader?: boolean;
   descriptionOverride?: string;
@@ -480,6 +482,9 @@ function renderFieldInput(
 
 export function PublicFormRenderer({
   slug,
+  formOverride,
+  submitUrl,
+  buildSubmitBody,
   className,
   showHeader = true,
   descriptionOverride,
@@ -501,9 +506,11 @@ export function PublicFormRenderer({
       return response.json();
     },
     staleTime: 60_000,
+    enabled: !formOverride,
   });
+  const effectiveForm = formOverride ?? form;
 
-  const fields = useMemo(() => (Array.isArray(form?.fields) ? form.fields : []), [form?.fields]);
+  const fields = useMemo(() => (Array.isArray(effectiveForm?.fields) ? effectiveForm.fields : []), [effectiveForm?.fields]);
   const pages = useMemo(() => splitPages(fields), [fields]);
   const activePage = pages[currentPageIndex] ?? pages[0] ?? { meta: null, fields: fields };
   const visibleFields = currentPageFields(activePage);
@@ -515,23 +522,23 @@ export function PublicFormRenderer({
 
   const description =
     descriptionOverride ??
-    (typeof form?.description === "string" && form.description.trim() ? form.description : "");
+    (typeof effectiveForm?.description === "string" && effectiveForm.description.trim() ? effectiveForm.description : "");
   const submitLabel =
     buttonTextOverride ??
-    (typeof form?.settings === "object" &&
-    form?.settings &&
-    typeof form.settings.submitButtonText === "string" &&
-    form.settings.submitButtonText.trim()
-      ? form.settings.submitButtonText.trim()
+    (typeof effectiveForm?.settings === "object" &&
+    effectiveForm?.settings &&
+    typeof effectiveForm.settings.submitButtonText === "string" &&
+    effectiveForm.settings.submitButtonText.trim()
+      ? effectiveForm.settings.submitButtonText.trim()
       : "Submit");
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`/api/forms/${slug}/submit`, {
+      const response = await fetch(submitUrl ?? `/api/forms/${slug}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(values),
+        body: JSON.stringify(buildSubmitBody ? buildSubmitBody(values) : values),
       });
       const payload = (await response.json().catch(() => ({}))) as { message?: string; error?: string };
 
@@ -559,7 +566,7 @@ export function PublicFormRenderer({
     },
   });
 
-  if (isLoading) {
+  if (isLoading && !formOverride) {
     return (
       <div className={cn("flex items-center justify-center py-10", className)}>
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -567,7 +574,7 @@ export function PublicFormRenderer({
     );
   }
 
-  if (!form) {
+  if (!effectiveForm) {
     return (
       <div className={cn("rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground", className)}>
         This form is unavailable right now.
@@ -585,7 +592,7 @@ export function PublicFormRenderer({
     <div className={cn("space-y-4", className)} data-testid={`public-form-${slug}`}>
       {showHeader && (
         <div className="space-y-1">
-          <h3 className="font-semibold public-heading-3">{form.name}</h3>
+          <h3 className="font-semibold public-heading-3">{effectiveForm.name}</h3>
           {description ? <p className="text-sm public-supporting-copy">{description}</p> : null}
         </div>
       )}

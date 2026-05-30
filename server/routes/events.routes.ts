@@ -25,9 +25,9 @@ function canAccessEvent(event: Event, userRole: string | null): boolean {
 }
 
 function redactSensitiveFields(event: Event): Event {
-  const redacted = { ...event };
+  const redacted = { ...event } as Event & Record<(typeof SENSITIVE_FIELDS)[number], null>;
   for (const field of SENSITIVE_FIELDS) {
-    (redacted as any)[field] = null;
+    redacted[field] = null;
   }
   return redacted;
 }
@@ -109,6 +109,27 @@ router.get(
 );
 
 router.get(
+  "/:id/registration-form",
+  optionalAuth,
+  asyncHandler(async (req, res) => {
+    const id = paramString(req.params.id);
+    const event = await storage.events.getEventByIdentifier(id);
+    if (!event || event.status === "draft" || event.status === "archived" || !event.registrationFormId) {
+      return res.status(404).json({ message: "Form not found" });
+    }
+    const userRole = req.user?.role ?? null;
+    if (!canAccessEvent(event, userRole)) {
+      return res.status(403).json({ message: "You do not have access to this form" });
+    }
+    const form = await storage.forms.getPublicById(event.registrationFormId);
+    if (!form) {
+      return res.status(404).json({ message: "Form not found" });
+    }
+    res.json(form);
+  })
+);
+
+router.get(
   "/:id",
   optionalAuth,
   asyncHandler(async (req, res) => {
@@ -117,7 +138,7 @@ router.get(
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
-    if (event.status === "draft") {
+    if (event.status === "draft" || event.status === "archived") {
       return res.status(404).json({ message: "Event not found" });
     }
     const userRole = req.user?.role ?? null;

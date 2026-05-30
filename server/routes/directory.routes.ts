@@ -4,6 +4,7 @@ import { asyncHandler } from "../middleware/error-handler";
 import { paramString } from "../utils/params";
 import { therapistSearchSchema } from "@shared/types/directory";
 import * as r2Service from "../services/r2.service";
+import { getDirectorySettings } from "../services/directory-settings.service";
 
 const router = Router();
 
@@ -45,6 +46,8 @@ router.get(
 
     const specArray = specialization ? specialization.split(",").filter(Boolean) : undefined;
 
+    const directorySettings = await getDirectorySettings();
+
     const result = await storage.therapists.listProfilesPaginated({
       search: search || undefined,
       specializations: specArray,
@@ -58,6 +61,7 @@ router.get(
       sort,
       latitude,
       longitude,
+      requireApprovedApplication: directorySettings.directoryRequiresApprovedApplication,
     });
 
     res.json({
@@ -70,7 +74,8 @@ router.get(
 router.get(
   "/filters",
   asyncHandler(async (_req, res) => {
-    const options = await storage.therapists.getFilterOptions();
+    const directorySettings = await getDirectorySettings();
+    const options = await storage.therapists.getFilterOptions(directorySettings.directoryRequiresApprovedApplication);
     res.json(options);
   })
 );
@@ -78,7 +83,8 @@ router.get(
 router.get(
   "/featured",
   asyncHandler(async (_req, res) => {
-    const featured = await storage.therapists.listFeatured();
+    const directorySettings = await getDirectorySettings();
+    const featured = await storage.therapists.listFeatured(directorySettings.directoryRequiresApprovedApplication);
     res.json(await Promise.all(featured.map(normalizeTherapistResult)));
   })
 );
@@ -86,8 +92,13 @@ router.get(
 router.get(
   "/:id",
   asyncHandler(async (req, res) => {
+    const directorySettings = await getDirectorySettings();
     const profile = await storage.therapists.getProfileWithUser(paramString(req.params.id));
-    if (!profile) {
+    if (
+      !profile ||
+      !profile.isActive ||
+      (directorySettings.directoryRequiresApprovedApplication && !profile.isApproved)
+    ) {
       res.status(404).json({ message: "Therapist not found" });
       return;
     }

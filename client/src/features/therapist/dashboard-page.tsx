@@ -11,7 +11,22 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UserPen, CreditCard, CheckCircle, AlertCircle, Clock, XCircle, AlertTriangle, Send, ClipboardList } from "lucide-react";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
 
+interface ApplicationReference {
+  status?: string | null;
+}
+
+interface ApplicationData {
+  status?: string;
+  paymentStatus?: string | null;
+  backgroundCheckStatus?: string | null;
+  referencesStatus?: string | null;
+  references?: ApplicationReference[];
+  decision?: {
+    reason?: string | null;
+  } | null;
+}
 
 function computeProfileCompletion(profile: TherapistProfile | null): number {
   if (!profile) return 0;
@@ -48,7 +63,8 @@ function getStatusBadge(status: string | undefined) {
 }
 
 function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
-  const { data: application } = useQuery<any>({
+  const { settings: directorySettings } = useDirectorySettings();
+  const { data: application } = useQuery<ApplicationData | null>({
     queryKey: ["/api/therapist/application"],
   });
 
@@ -60,7 +76,7 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
         <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
         <AlertTitle data-testid="text-approval-title">Active Member</AlertTitle>
         <AlertDescription data-testid="text-approval-message">
-          Your membership is active and your profile is live in the counselor directory. Complete your profile to attract more clients.
+          Your membership is active and your {directorySettings.listingLabelSingular.toLowerCase()} is live in the {directorySettings.directoryLabelSingular.toLowerCase()}. Complete your {directorySettings.listingLabelSingular.toLowerCase()} to attract more clients.
         </AlertDescription>
       </Alert>
     );
@@ -72,7 +88,7 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
         <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
         <AlertTitle data-testid="text-approval-title">Approved — Activate Membership</AlertTitle>
         <AlertDescription data-testid="text-approval-message" className="space-y-3">
-          <p>Congratulations! Your application has been approved. Activate your membership subscription to be listed in the counselor directory.</p>
+          <p>Congratulations! Your application has been approved. Activate your membership subscription to be listed in the {directorySettings.directoryLabelSingular.toLowerCase()}.</p>
           <Link href="/therapist/subscription">
             <Button size="sm" data-testid="button-activate-subscription">
               <CreditCard className="w-4 h-4 mr-2" />
@@ -130,7 +146,25 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
         <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
         <AlertTitle data-testid="text-approval-title">Approved</AlertTitle>
         <AlertDescription data-testid="text-approval-message">
-          Your profile is approved and live in the directory!
+          Your {directorySettings.listingLabelSingular.toLowerCase()} is approved and live in the {directorySettings.directoryLabelSingular.toLowerCase()}.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (!directorySettings.directoryRequiresApplicationProcess) {
+    return (
+      <Alert data-testid="banner-approval-status" className="border-blue-500/50 bg-blue-50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100">
+        <UserPen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <AlertTitle data-testid="text-approval-title">Complete Your {directorySettings.listingLabelSingular}</AlertTitle>
+        <AlertDescription data-testid="text-approval-message" className="space-y-3">
+          <p>Application review is disabled for this {directorySettings.directoryLabelSingular.toLowerCase()}. Complete your {directorySettings.listingLabelSingular.toLowerCase()} details to get ready for publishing.</p>
+          <Link href="/therapist/profile">
+            <Button size="sm" data-testid="button-complete-profile">
+              <UserPen className="w-4 h-4 mr-2" />
+              Complete Your {directorySettings.listingLabelSingular}
+            </Button>
+          </Link>
         </AlertDescription>
       </Alert>
     );
@@ -152,7 +186,7 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
             </span>
             {(() => {
               const refs = application.references ?? [];
-              const completed = refs.filter((r: any) => r.status === "completed").length;
+              const completed = refs.filter((r) => r.status === "completed").length;
               const total = refs.length;
               const isActive = application.referencesStatus !== "not_started" || completed > 0;
               return (
@@ -173,7 +207,7 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
     );
   }
 
-  if (application && !["draft", "withdrawn"].includes(application.status)) {
+  if (application && application.status && !["draft", "withdrawn"].includes(application.status)) {
     return (
       <Alert data-testid="banner-approval-status" className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-100">
         <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -196,7 +230,7 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
       <Send className="h-4 w-4 text-blue-600 dark:text-blue-400" />
       <AlertTitle data-testid="text-approval-title">Registered</AlertTitle>
       <AlertDescription data-testid="text-approval-message" className="space-y-3">
-        <p>Welcome! To be listed in our counselor directory, you'll need to complete your profile and submit an application for review.</p>
+        <p>Welcome! To be listed in our {directorySettings.directoryLabelSingular.toLowerCase()}, you'll need to complete your {directorySettings.listingLabelSingular.toLowerCase()} and submit an application for review.</p>
         <div className="flex gap-2 flex-wrap">
           <Link href="/therapist/profile">
             <Button size="sm" data-testid="button-complete-profile">
@@ -222,6 +256,7 @@ function ApprovalBanner({ profile }: { profile: TherapistProfile | null }) {
 
 export default function TherapistDashboardPage() {
   const { user } = useAuth();
+  const { settings: directorySettings } = useDirectorySettings();
 
   const { data: profile, isLoading: profileLoading } = useQuery<TherapistProfile | null>({
     queryKey: ["/api/therapist/profile"],
@@ -233,12 +268,13 @@ export default function TherapistDashboardPage() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
-  const { data: application } = useQuery<any>({
+  const { data: application } = useQuery<ApplicationData | null>({
     queryKey: ["/api/therapist/application"],
   });
 
   const completion = computeProfileCompletion(profile ?? null);
-  const isApproved = profile?.isApproved === true;
+  const isApproved = profile?.isApproved === true || !directorySettings.directoryRequiresApprovedApplication;
+  const requiresApplicationProcess = directorySettings.directoryRequiresApplicationProcess;
 
   if (profileLoading || subLoading) {
     return (
@@ -260,10 +296,10 @@ export default function TherapistDashboardPage() {
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div>
         <h1 className="text-2xl font-heading font-semibold" data-testid="text-dashboard-title">
-          Welcome, {user?.firstName || "Mental Health Professional"}
+          Welcome, {user?.firstName || directorySettings.participantLabelSingular}
         </h1>
         <p className="text-muted-foreground mt-1" data-testid="text-dashboard-subtitle">
-          Manage your profile and subscription from your dashboard.
+          Manage your {directorySettings.listingLabelSingular.toLowerCase()} and subscription from your dashboard.
         </p>
       </div>
 
@@ -282,13 +318,13 @@ export default function TherapistDashboardPage() {
             <Progress value={completion} className="h-2" data-testid="progress-profile" />
             {completion < 100 && (
               <p className="text-sm text-muted-foreground">
-                Complete your profile to appear in the directory and attract clients.
+                Complete your {directorySettings.listingLabelSingular.toLowerCase()} to appear in the {directorySettings.directoryLabelSingular.toLowerCase()}.
               </p>
             )}
             <Link href="/therapist/profile">
               <Button variant="outline" className="w-full" data-testid="button-edit-profile">
                 <UserPen className="w-4 h-4 mr-2" />
-                Edit Profile
+                Edit {directorySettings.listingLabelSingular}
               </Button>
             </Link>
           </CardContent>
@@ -319,7 +355,7 @@ export default function TherapistDashboardPage() {
                 </span>
               )}
             </div>
-            {!isApproved && !application?.status?.includes("denied") && (
+            {!isApproved && requiresApplicationProcess && !application?.status?.includes("denied") && (
               <p className="text-sm text-muted-foreground" data-testid="text-approval-note">
                 Complete the approval process before subscribing
               </p>
