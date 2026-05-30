@@ -6,6 +6,11 @@ export interface CmsPageRelationshipSyncResult {
   itemsUpdated: number;
 }
 
+export interface CmsPageRelationshipCleanupResult {
+  menusUpdated: number;
+  itemsRemoved: number;
+}
+
 export interface CmsPageMenuReference {
   menuId: string;
   menuName: string;
@@ -119,8 +124,40 @@ function collectMenuReferences(
   return references;
 }
 
+function removeMenuReferencesForPage(items: MenuItem[], page: CmsPage) {
+  let changed = false;
+  let itemsRemoved = 0;
+  const path = pagePath(page.slug);
+  const nextItems: MenuItem[] = [];
+
+  for (const item of items) {
+    const childResult = removeMenuReferencesForPage(item.children ?? [], page);
+    const isReference = item.pageId === page.id || (!item.pageId && normalizeUrlForMatch(item.url) === path);
+
+    if (isReference) {
+      changed = true;
+      itemsRemoved += 1;
+      continue;
+    }
+
+    if (childResult.changed) {
+      changed = true;
+      itemsRemoved += childResult.itemsRemoved;
+      nextItems.push({ ...item, children: childResult.items });
+    } else {
+      nextItems.push(item);
+    }
+  }
+
+  return { items: nextItems, changed, itemsRemoved };
+}
+
 export function syncMenuItemsWithPage(items: MenuItem[], oldPage: CmsPage, newPage: CmsPage) {
   return syncMenuItemsForPage(items, oldPage, newPage);
+}
+
+export function removeMenuItemsForPage(items: MenuItem[], page: CmsPage) {
+  return removeMenuReferencesForPage(items, page);
 }
 
 export async function getCmsPageMenuReferences(page: CmsPage): Promise<CmsPageMenuReference[]> {
@@ -132,6 +169,23 @@ export async function getCmsPageMenuReferences(page: CmsPage): Promise<CmsPageMe
       location: menu.location,
     }),
   );
+}
+
+export async function removeCmsPageMenuReferences(page: CmsPage): Promise<CmsPageRelationshipCleanupResult> {
+  const menus = await storage.cmsMenus.getAll();
+  let menusUpdated = 0;
+  let itemsRemoved = 0;
+
+  for (const menu of menus) {
+    const result = removeMenuItemsForPage((menu.items as MenuItem[]) || [], page);
+    if (!result.changed) continue;
+
+    await storage.cmsMenus.update(menu.id, { items: result.items });
+    menusUpdated += 1;
+    itemsRemoved += result.itemsRemoved;
+  }
+
+  return { menusUpdated, itemsRemoved };
 }
 
 export async function syncCmsPageRelationships(

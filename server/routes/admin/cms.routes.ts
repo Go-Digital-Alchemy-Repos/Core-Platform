@@ -5,7 +5,11 @@ import { paramString } from "../../utils/params";
 import { insertCmsPageSchema } from "@shared/schema";
 import { logger } from "../../utils/logger";
 import { createCmsPreviewToken } from "../../utils/cms-preview-token";
-import { getCmsPageMenuReferences, syncCmsPageRelationships } from "../../services/cms-relationships.service";
+import {
+  getCmsPageMenuReferences,
+  removeCmsPageMenuReferences,
+  syncCmsPageRelationships,
+} from "../../services/cms-relationships.service";
 
 const router = Router();
 
@@ -113,6 +117,20 @@ router.get("/pages/:id/relationships", async (req, res) => {
   } catch (error) {
     logger.cms.error("Failed to fetch page relationships", error, { requestId: req.requestId });
     res.status(500).json({ error: "Failed to fetch CMS page relationships" });
+  }
+});
+
+router.post("/pages/:id/relationships/remove-menu-items", async (req, res) => {
+  try {
+    const id = paramString(req.params.id);
+    const page = await resolvePage(id);
+    if (!page) return res.status(404).json({ error: "Page not found" });
+
+    const result = await removeCmsPageMenuReferences(page);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    logger.cms.error("Failed to remove page menu references", error, { requestId: req.requestId });
+    res.status(500).json({ error: "Failed to remove CMS page menu references" });
   }
 });
 

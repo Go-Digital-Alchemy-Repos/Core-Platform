@@ -58,6 +58,7 @@ import {
   Sparkles,
   Settings,
   Link2,
+  Trash2,
 } from "lucide-react";
 import {
   Popover,
@@ -368,6 +369,25 @@ export default function CmsPageEditorPage() {
     onError: () => toast({ title: "Failed to schedule page", variant: "destructive" }),
   });
 
+  const removeMenuReferencesMutation = useMutation({
+    mutationFn: () => apiRequest("POST", `/api/admin/cms/pages/${id}/relationships/remove-menu-items`),
+    onSuccess: async (res) => {
+      const result = await res.json().catch(() => null);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id, "relationships"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/menus"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cms/menus"] });
+      toast({
+        title: "Navigation references removed",
+        description: result?.itemsRemoved
+          ? `${result.itemsRemoved} menu item${result.itemsRemoved === 1 ? "" : "s"} removed.`
+          : undefined,
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to remove references", description: error.message, variant: "destructive" });
+    },
+  });
+
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const restoreMutation = useMutation({
     mutationFn: (revisionId: string) =>
@@ -517,6 +537,14 @@ export default function CmsPageEditorPage() {
         : "Unpublishing",
       () => unpublishMutation.mutate(force),
     );
+  };
+
+  const removeMenuReferences = () => {
+    const message =
+      menuReferenceCount > 0
+        ? `Remove ${menuReferenceCount} navigation item${menuReferenceCount === 1 ? "" : "s"} that reference this page? This edits the affected menus.`
+        : "Remove navigation references for this page?";
+    unsavedChangesGuard.confirmIfDirty(() => removeMenuReferencesMutation.mutate(), message);
   };
 
   if (!isNew && pageLoading) {
@@ -1001,6 +1029,21 @@ export default function CmsPageEditorPage() {
                               </p>
                             </div>
                           ))}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            onClick={removeMenuReferences}
+                            disabled={removeMenuReferencesMutation.isPending || editorLock.isReadOnly}
+                            data-testid="button-remove-page-menu-references"
+                          >
+                            {removeMenuReferencesMutation.isPending ? (
+                              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                            )}
+                            Remove from menus
+                          </Button>
                         </div>
                       )}
                     </CardContent>

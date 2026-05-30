@@ -10,7 +10,11 @@ vi.mock("../storage", () => ({
   },
 }));
 
-import { getCmsPageMenuReferences, syncMenuItemsWithPage } from "../services/cms-relationships.service";
+import {
+  getCmsPageMenuReferences,
+  removeMenuItemsForPage,
+  syncMenuItemsWithPage,
+} from "../services/cms-relationships.service";
 import { storage } from "../storage";
 
 function page(overrides: Partial<CmsPage>): CmsPage {
@@ -167,5 +171,40 @@ describe("cms relationship sync", () => {
       menuLocation: "main_navigation",
       depth: 1,
     });
+  });
+
+  it("removes linked and legacy menu items for a page", () => {
+    const result = removeMenuItemsForPage(
+      [
+        item({ id: "linked", pageId: "page-1", labelSource: "page" }),
+        item({ id: "legacy", pageId: undefined, labelSource: undefined }),
+        item({ id: "other", label: "Other", url: "/other" }),
+      ],
+      page({ title: "About", slug: "about" }),
+    );
+
+    expect(result.changed).toBe(true);
+    expect(result.itemsRemoved).toBe(2);
+    expect(result.items.map((entry) => entry.id)).toEqual(["other"]);
+  });
+
+  it("removes nested menu references without dropping their siblings", () => {
+    const result = removeMenuItemsForPage(
+      [
+        item({
+          id: "parent",
+          label: "Resources",
+          url: "#",
+          children: [
+            item({ id: "child-reference", pageId: "page-1", labelSource: "page" }),
+            item({ id: "child-other", label: "Other", url: "/other" }),
+          ],
+        }),
+      ],
+      page({ title: "About", slug: "about" }),
+    );
+
+    expect(result.itemsRemoved).toBe(1);
+    expect(result.items[0]?.children.map((entry) => entry.id)).toEqual(["child-other"]);
   });
 });

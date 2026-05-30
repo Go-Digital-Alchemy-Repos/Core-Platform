@@ -39,6 +39,7 @@ import {
   MapPin,
   LayoutTemplate,
   Link2,
+  AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -103,6 +104,8 @@ function MenuItemEditor({
   const canNest = depth < 3;
   const selectedPageId = item.pageId ?? "";
   const selectedPage = selectedPageId ? pages.find((entry) => entry.id === selectedPageId) : null;
+  const hasMissingPage = Boolean(selectedPageId && !selectedPage);
+  const isUnpublishedPage = Boolean(selectedPage && selectedPage.status !== "published");
   const isPageSynced = Boolean(selectedPage && item.labelSource === "page");
 
   const updateChild = useCallback(
@@ -189,6 +192,13 @@ function MenuItemEditor({
     });
   };
 
+  const clearPageLink = () => {
+    onUpdate(item.id, {
+      pageId: null,
+      labelSource: "custom",
+    });
+  };
+
   const addChild = useCallback(() => {
     const newChild: MenuItem = {
       id: generateId(),
@@ -239,10 +249,33 @@ function MenuItemEditor({
               ))}
             </select>
             <div className="flex min-h-4 items-center gap-1.5 text-[11px] text-muted-foreground">
-              {selectedPage ? (
+              {hasMissingPage ? (
                 <>
-                  <Link2 className="h-3 w-3" />
-                  <span>{isPageSynced ? "Synced from page" : "Custom label"}</span>
+                  <AlertTriangle className="h-3 w-3 text-destructive" />
+                  <span className="text-destructive">Missing page</span>
+                  <button
+                    type="button"
+                    className="font-medium text-primary hover:underline"
+                    onClick={clearPageLink}
+                    data-testid={`button-clear-page-link-${item.id}`}
+                  >
+                    Clear link
+                  </button>
+                </>
+              ) : selectedPage ? (
+                <>
+                  {isUnpublishedPage ? (
+                    <AlertTriangle className="h-3 w-3 text-amber-600" />
+                  ) : (
+                    <Link2 className="h-3 w-3" />
+                  )}
+                  <span>
+                    {isUnpublishedPage
+                      ? `Linked to ${selectedPage.status} page`
+                      : isPageSynced
+                        ? "Synced from page"
+                        : "Custom label"}
+                  </span>
                   {!isPageSynced && (
                     <button
                       type="button"
