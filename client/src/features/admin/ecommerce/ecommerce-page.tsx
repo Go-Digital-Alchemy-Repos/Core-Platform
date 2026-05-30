@@ -7,6 +7,7 @@ import {
   Copy,
   FolderTree,
   Eye,
+  Image,
   Package,
   Pencil,
   Percent,
@@ -14,6 +15,7 @@ import {
   Plus,
   Save,
   Search,
+  SlidersHorizontal,
   Settings,
   ShoppingBag,
   Tag,
@@ -32,7 +34,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatMoney } from "@/features/ecommerce/cart-store";
@@ -344,11 +347,13 @@ function couponStatus(coupon: Coupon): { label: string; variant: "default" | "se
   return { label: "Active", variant: "default" };
 }
 
-function ProductsTab() {
+export function ProductsTab() {
   const { toast } = useToast();
   const { data: products = [] } = useQuery<Product[]>({ queryKey: ["/api/admin/ecommerce/products"] });
   const { data: categories = [] } = useQuery<Category[]>({ queryKey: ["/api/admin/ecommerce/categories"] });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [activeProductEditorTab, setActiveProductEditorTab] = useState("content");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [inventoryFilter, setInventoryFilter] = useState("all");
@@ -451,6 +456,12 @@ function ProductsTab() {
     });
   };
 
+  const openCreate = () => {
+    resetForm();
+    setActiveProductEditorTab("content");
+    setEditorOpen(true);
+  };
+
   const openEdit = (product: Product) => {
     const defaultVariant = product.variants?.find((variant) => variant.isDefault) ?? product.variants?.[0];
     setEditingId(product.id);
@@ -501,6 +512,8 @@ function ProductsTab() {
       lowStockThreshold: defaultVariant?.lowStockThreshold == null ? "" : String(defaultVariant.lowStockThreshold),
       allowBackorder: defaultVariant?.allowBackorder ?? false,
     });
+    setActiveProductEditorTab("content");
+    setEditorOpen(true);
   };
 
   const productPayload = () => ({
@@ -586,6 +599,7 @@ function ProductsTab() {
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/products"] });
       toast({ title: editingId ? "Product updated" : "Product created" });
       resetForm();
+      setEditorOpen(false);
     },
     onError: (error) => toast({
       title: "Product could not be saved",
@@ -637,116 +651,18 @@ function ProductsTab() {
   });
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+    <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Plus className="h-5 w-5" /> {editingId ? "Edit product" : "Product editor"}</CardTitle>
-          <CardDescription>Manage catalog data, pricing, inventory, media, shipping, visibility, and SEO.</CardDescription>
+        <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <CardTitle>Products</CardTitle>
+            <CardDescription>Search, filter, and open a focused product workspace.</CardDescription>
+          </div>
+          <Button type="button" onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            New product
+          </Button>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={submit} className="grid gap-4">
-            <ProductEditorSection title="Basic Info">
-              <div className="space-y-2"><Label>Title</Label><Input value={form.name} onChange={(e) => setForm((current) => ({ ...current, name: e.target.value }))} required /></div>
-              <div className="space-y-2"><Label>Subtitle</Label><Input value={form.tagline} onChange={(e) => setForm((current) => ({ ...current, tagline: e.target.value }))} /></div>
-              <div className="space-y-2"><Label>Short description</Label><Textarea value={form.shortDescription} onChange={(e) => setForm((current) => ({ ...current, shortDescription: e.target.value }))} rows={2} /></div>
-              <div className="space-y-2"><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))} rows={4} /></div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2"><Label>Product type</Label><Input value={form.productType} onChange={(e) => setForm((current) => ({ ...current, productType: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Vendor / brand</Label><Input value={form.vendor} onChange={(e) => setForm((current) => ({ ...current, vendor: e.target.value }))} /></div>
-              </div>
-            </ProductEditorSection>
-
-            <ProductEditorSection title="Pricing">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2"><Label>Base price</Label><Input value={form.price} onChange={(e) => setForm((current) => ({ ...current, price: e.target.value }))} required /></div>
-                <div className="space-y-2"><Label>Sale price</Label><Input value={form.salePrice} onChange={(e) => setForm((current) => ({ ...current, salePrice: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Compare-at price</Label><Input value={form.compareAtPrice} onChange={(e) => setForm((current) => ({ ...current, compareAtPrice: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Cost per item</Label><Input value={form.costPerItem} onChange={(e) => setForm((current) => ({ ...current, costPerItem: e.target.value }))} /></div>
-              </div>
-              <p className="text-xs text-muted-foreground">Estimated margin: {profitMargin == null ? "Add cost and price" : `${profitMargin}%`}</p>
-              <div className="flex items-center gap-3"><Switch checked={form.taxable} onCheckedChange={(taxable) => setForm((current) => ({ ...current, taxable }))} /><Label>Taxable</Label></div>
-              <div className="space-y-2"><Label>Tax category</Label><Input value={form.taxCategory} onChange={(e) => setForm((current) => ({ ...current, taxCategory: e.target.value }))} /></div>
-            </ProductEditorSection>
-
-            <ProductEditorSection title="Inventory">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2"><Label>SKU</Label><Input value={form.sku} onChange={(e) => setForm((current) => ({ ...current, sku: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Barcode / UPC</Label><Input value={form.barcode} onChange={(e) => setForm((current) => ({ ...current, barcode: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Quantity</Label><Input type="number" value={form.inventoryQuantity} onChange={(e) => setForm((current) => ({ ...current, inventoryQuantity: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Low stock threshold</Label><Input type="number" value={form.lowStockThreshold} onChange={(e) => setForm((current) => ({ ...current, lowStockThreshold: e.target.value }))} /></div>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex items-center gap-3"><Switch checked={form.trackInventory} onCheckedChange={(trackInventory) => setForm((current) => ({ ...current, trackInventory }))} /><Label>Track inventory</Label></div>
-                <div className="flex items-center gap-3"><Switch checked={form.allowBackorder} onCheckedChange={(allowBackorder) => setForm((current) => ({ ...current, allowBackorder }))} /><Label>Allow backorders</Label></div>
-              </div>
-            </ProductEditorSection>
-
-            <ProductEditorSection title="Media">
-              <div className="space-y-2"><Label>Primary image URL</Label><Input value={form.primaryImage} onChange={(e) => setForm((current) => ({ ...current, primaryImage: e.target.value }))} /></div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2"><Label>Add gallery image URL</Label><Input value={form.mediaUrl} onChange={(e) => setForm((current) => ({ ...current, mediaUrl: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Gallery image alt text</Label><Input value={form.mediaAltText} onChange={(e) => setForm((current) => ({ ...current, mediaAltText: e.target.value }))} /></div>
-              </div>
-            </ProductEditorSection>
-
-            <ProductEditorSection title="Organization">
-              <div className="space-y-2"><Label>Tags</Label><Input value={form.tags} onChange={(e) => setForm((current) => ({ ...current, tags: e.target.value }))} /></div>
-              <div className="space-y-2"><Label>Features</Label><Input value={form.features} onChange={(e) => setForm((current) => ({ ...current, features: e.target.value }))} /></div>
-              <div className="space-y-2"><Label>Included items</Label><Input value={form.included} onChange={(e) => setForm((current) => ({ ...current, included: e.target.value }))} /></div>
-              {categories.length ? (
-                <div className="space-y-2">
-                  <Label>Categories</Label>
-                  <div className="max-h-32 overflow-auto rounded-lg border p-2">
-                    {categories.map((category) => (
-                      <label key={category.id} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm">
-                        <input type="checkbox" checked={form.categoryIds.includes(category.id)} onChange={() => toggleCategory(category.id)} />
-                        <span>{category.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </ProductEditorSection>
-
-            <ProductEditorSection title="Shipping">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex items-center gap-3"><Switch checked={form.physicalProduct} onCheckedChange={(physicalProduct) => setForm((current) => ({ ...current, physicalProduct }))} /><Label>Physical product</Label></div>
-                <div className="flex items-center gap-3"><Switch checked={form.requiresShipping} onCheckedChange={(requiresShipping) => setForm((current) => ({ ...current, requiresShipping }))} /><Label>Requires shipping</Label></div>
-                <div className="space-y-2"><Label>Weight</Label><Input type="number" value={form.weight} onChange={(e) => setForm((current) => ({ ...current, weight: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Weight unit</Label><Select value={form.weightUnit} onValueChange={(weightUnit) => setForm((current) => ({ ...current, weightUnit }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="oz">oz</SelectItem><SelectItem value="lb">lb</SelectItem><SelectItem value="g">g</SelectItem><SelectItem value="kg">kg</SelectItem></SelectContent></Select></div>
-                <div className="space-y-2"><Label>Length</Label><Input type="number" value={form.length} onChange={(e) => setForm((current) => ({ ...current, length: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Width</Label><Input type="number" value={form.width} onChange={(e) => setForm((current) => ({ ...current, width: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Height</Label><Input type="number" value={form.height} onChange={(e) => setForm((current) => ({ ...current, height: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>Shipping profile</Label><Input value={form.shippingProfile} onChange={(e) => setForm((current) => ({ ...current, shippingProfile: e.target.value }))} /></div>
-              </div>
-            </ProductEditorSection>
-
-            <ProductEditorSection title="Visibility and SEO">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2"><Label>Status</Label><Select value={form.status} onValueChange={(status) => setForm((current) => ({ ...current, status }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="published">Published</SelectItem><SelectItem value="archived">Archived</SelectItem><SelectItem value="scheduled">Scheduled</SelectItem></SelectContent></Select></div>
-                <div className="space-y-2"><Label>Visibility</Label><Select value={form.visibility} onValueChange={(visibility) => setForm((current) => ({ ...current, visibility }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="online">Online store</SelectItem><SelectItem value="hidden">Hidden</SelectItem><SelectItem value="admin">Admin only</SelectItem></SelectContent></Select></div>
-                <div className="space-y-2"><Label>Scheduled publish</Label><Input type="datetime-local" value={form.publishedAt} onChange={(e) => setForm((current) => ({ ...current, publishedAt: e.target.value }))} /></div>
-                <div className="space-y-2"><Label>URL slug</Label><Input value={form.urlSlug} onChange={(e) => setForm((current) => ({ ...current, urlSlug: e.target.value }))} /></div>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="flex items-center gap-3"><Switch checked={form.active} onCheckedChange={(active) => setForm((current) => ({ ...current, active }))} /><Label>Active</Label></div>
-                <div className="flex items-center gap-3"><Switch checked={form.featured} onCheckedChange={(featured) => setForm((current) => ({ ...current, featured }))} /><Label>Featured</Label></div>
-              </div>
-              <div className="space-y-2"><Label>Meta title</Label><Input value={form.metaTitle} onChange={(e) => setForm((current) => ({ ...current, metaTitle: e.target.value }))} /></div>
-              <div className="space-y-2"><Label>Meta description</Label><Textarea value={form.metaDescription} onChange={(e) => setForm((current) => ({ ...current, metaDescription: e.target.value }))} rows={2} /></div>
-              <div className="space-y-2"><Label>OpenGraph image</Label><Input value={form.ogImage} onChange={(e) => setForm((current) => ({ ...current, ogImage: e.target.value }))} /></div>
-              <div className="space-y-2"><Label>Badge text</Label><Input value={form.badgeText} onChange={(e) => setForm((current) => ({ ...current, badgeText: e.target.value }))} /></div>
-            </ProductEditorSection>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Button type="submit" disabled={saveMutation.isPending}><Save className="mr-2 h-4 w-4" /> {editingId ? "Update product" : "Save product"}</Button>
-              {editingId ? <Button type="button" variant="outline" onClick={resetForm}>Cancel</Button> : null}
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader><CardTitle>Products</CardTitle><CardDescription>Search, filter, and edit catalog products.</CardDescription></CardHeader>
         <CardContent className="space-y-5">
           <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px]">
             <div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search title, SKU, vendor, tag" /></div>
@@ -774,6 +690,147 @@ function ProductsTab() {
           </TableBody></Table>
         </CardContent>
       </Card>
+      <Sheet open={editorOpen} onOpenChange={(open) => {
+        setEditorOpen(open);
+        if (!open) resetForm();
+      }}>
+        <SheetContent side="right" size="full" className="p-0">
+          <SheetHeader className="border-b p-6 pr-12">
+            <SheetTitle>{editingId ? "Edit product" : "Create product"}</SheetTitle>
+            <SheetDescription>Manage content, media, pricing, inventory, shipping, publishing, and SEO.</SheetDescription>
+          </SheetHeader>
+          <SheetBody className="p-0">
+            <form id="ecommerce-product-form" onSubmit={submit}>
+              <Tabs value={activeProductEditorTab} onValueChange={setActiveProductEditorTab} className="flex min-h-full flex-col">
+                <div className="border-b bg-muted/30 px-6 py-3">
+                  <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 bg-transparent p-0">
+                    <TabsTrigger value="content"><Package className="mr-1.5 h-4 w-4 text-emerald-600" />Content</TabsTrigger>
+                    <TabsTrigger value="media"><Image className="mr-1.5 h-4 w-4 text-sky-600" />Media</TabsTrigger>
+                    <TabsTrigger value="pricing"><Percent className="mr-1.5 h-4 w-4 text-amber-600" />Pricing</TabsTrigger>
+                    <TabsTrigger value="inventory"><ClipboardList className="mr-1.5 h-4 w-4 text-blue-600" />Inventory</TabsTrigger>
+                    <TabsTrigger value="shipping"><Truck className="mr-1.5 h-4 w-4 text-cyan-600" />Shipping</TabsTrigger>
+                    <TabsTrigger value="settings"><SlidersHorizontal className="mr-1.5 h-4 w-4 text-slate-600" />Settings</TabsTrigger>
+                    <TabsTrigger value="seo"><Search className="mr-1.5 h-4 w-4 text-violet-600" />SEO</TabsTrigger>
+                  </TabsList>
+                </div>
+                <div className="p-6">
+                  <TabsContent value="content" className="mt-0">
+                    <ProductEditorSection title="Product content">
+                      <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="space-y-2"><Label>Title</Label><Input value={form.name} onChange={(e) => setForm((current) => ({ ...current, name: e.target.value }))} required /></div>
+                        <div className="space-y-2"><Label>Subtitle</Label><Input value={form.tagline} onChange={(e) => setForm((current) => ({ ...current, tagline: e.target.value }))} /></div>
+                      </div>
+                      <div className="space-y-2"><Label>Short description</Label><Textarea value={form.shortDescription} onChange={(e) => setForm((current) => ({ ...current, shortDescription: e.target.value }))} rows={3} /></div>
+                      <div className="space-y-2"><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))} rows={7} /></div>
+                      <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="space-y-2"><Label>Product type</Label><Input value={form.productType} onChange={(e) => setForm((current) => ({ ...current, productType: e.target.value }))} /></div>
+                        <div className="space-y-2"><Label>Vendor / brand</Label><Input value={form.vendor} onChange={(e) => setForm((current) => ({ ...current, vendor: e.target.value }))} /></div>
+                      </div>
+                    </ProductEditorSection>
+                    <ProductEditorSection title="Merchandising">
+                      <div className="space-y-2"><Label>Tags</Label><Input value={form.tags} onChange={(e) => setForm((current) => ({ ...current, tags: e.target.value }))} /></div>
+                      <div className="space-y-2"><Label>Features</Label><Input value={form.features} onChange={(e) => setForm((current) => ({ ...current, features: e.target.value }))} /></div>
+                      <div className="space-y-2"><Label>Included items</Label><Input value={form.included} onChange={(e) => setForm((current) => ({ ...current, included: e.target.value }))} /></div>
+                    </ProductEditorSection>
+                  </TabsContent>
+                  <TabsContent value="media" className="mt-0">
+                    <ProductEditorSection title="Media">
+                      <div className="space-y-2"><Label>Primary image URL</Label><Input value={form.primaryImage} onChange={(e) => setForm((current) => ({ ...current, primaryImage: e.target.value }))} /></div>
+                      <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="space-y-2"><Label>Add gallery image URL</Label><Input value={form.mediaUrl} onChange={(e) => setForm((current) => ({ ...current, mediaUrl: e.target.value }))} /></div>
+                        <div className="space-y-2"><Label>Gallery image alt text</Label><Input value={form.mediaAltText} onChange={(e) => setForm((current) => ({ ...current, mediaAltText: e.target.value }))} /></div>
+                      </div>
+                    </ProductEditorSection>
+                  </TabsContent>
+                  <TabsContent value="pricing" className="mt-0">
+                    <ProductEditorSection title="Pricing">
+                      <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="space-y-2"><Label>Base price</Label><Input value={form.price} onChange={(e) => setForm((current) => ({ ...current, price: e.target.value }))} required /></div>
+                        <div className="space-y-2"><Label>Sale price</Label><Input value={form.salePrice} onChange={(e) => setForm((current) => ({ ...current, salePrice: e.target.value }))} /></div>
+                        <div className="space-y-2"><Label>Compare-at price</Label><Input value={form.compareAtPrice} onChange={(e) => setForm((current) => ({ ...current, compareAtPrice: e.target.value }))} /></div>
+                        <div className="space-y-2"><Label>Cost per item</Label><Input value={form.costPerItem} onChange={(e) => setForm((current) => ({ ...current, costPerItem: e.target.value }))} /></div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Estimated margin: {profitMargin == null ? "Add cost and price" : `${profitMargin}%`}</p>
+                      <div className="flex items-center gap-3"><Switch checked={form.taxable} onCheckedChange={(taxable) => setForm((current) => ({ ...current, taxable }))} /><Label>Taxable</Label></div>
+                      <div className="space-y-2"><Label>Tax category</Label><Input value={form.taxCategory} onChange={(e) => setForm((current) => ({ ...current, taxCategory: e.target.value }))} /></div>
+                    </ProductEditorSection>
+                  </TabsContent>
+                  <TabsContent value="inventory" className="mt-0">
+                    <ProductEditorSection title="Inventory">
+                      <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="space-y-2"><Label>SKU</Label><Input value={form.sku} onChange={(e) => setForm((current) => ({ ...current, sku: e.target.value }))} /></div>
+                        <div className="space-y-2"><Label>Barcode / UPC</Label><Input value={form.barcode} onChange={(e) => setForm((current) => ({ ...current, barcode: e.target.value }))} /></div>
+                        <div className="space-y-2"><Label>Quantity</Label><Input type="number" value={form.inventoryQuantity} onChange={(e) => setForm((current) => ({ ...current, inventoryQuantity: e.target.value }))} /></div>
+                        <div className="space-y-2"><Label>Low stock threshold</Label><Input type="number" value={form.lowStockThreshold} onChange={(e) => setForm((current) => ({ ...current, lowStockThreshold: e.target.value }))} /></div>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="flex items-center gap-3"><Switch checked={form.trackInventory} onCheckedChange={(trackInventory) => setForm((current) => ({ ...current, trackInventory }))} /><Label>Track inventory</Label></div>
+                        <div className="flex items-center gap-3"><Switch checked={form.allowBackorder} onCheckedChange={(allowBackorder) => setForm((current) => ({ ...current, allowBackorder }))} /><Label>Allow backorders</Label></div>
+                      </div>
+                    </ProductEditorSection>
+                  </TabsContent>
+                  <TabsContent value="shipping" className="mt-0">
+                    <ProductEditorSection title="Shipping">
+                      <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="flex items-center gap-3"><Switch checked={form.physicalProduct} onCheckedChange={(physicalProduct) => setForm((current) => ({ ...current, physicalProduct }))} /><Label>Physical product</Label></div>
+                        <div className="flex items-center gap-3"><Switch checked={form.requiresShipping} onCheckedChange={(requiresShipping) => setForm((current) => ({ ...current, requiresShipping }))} /><Label>Requires shipping</Label></div>
+                        <div className="space-y-2"><Label>Weight</Label><Input type="number" value={form.weight} onChange={(e) => setForm((current) => ({ ...current, weight: e.target.value }))} /></div>
+                        <div className="space-y-2"><Label>Weight unit</Label><Select value={form.weightUnit} onValueChange={(weightUnit) => setForm((current) => ({ ...current, weightUnit }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="oz">oz</SelectItem><SelectItem value="lb">lb</SelectItem><SelectItem value="g">g</SelectItem><SelectItem value="kg">kg</SelectItem></SelectContent></Select></div>
+                        <div className="space-y-2"><Label>Length</Label><Input type="number" value={form.length} onChange={(e) => setForm((current) => ({ ...current, length: e.target.value }))} /></div>
+                        <div className="space-y-2"><Label>Width</Label><Input type="number" value={form.width} onChange={(e) => setForm((current) => ({ ...current, width: e.target.value }))} /></div>
+                        <div className="space-y-2"><Label>Height</Label><Input type="number" value={form.height} onChange={(e) => setForm((current) => ({ ...current, height: e.target.value }))} /></div>
+                        <div className="space-y-2"><Label>Shipping profile</Label><Input value={form.shippingProfile} onChange={(e) => setForm((current) => ({ ...current, shippingProfile: e.target.value }))} /></div>
+                      </div>
+                    </ProductEditorSection>
+                  </TabsContent>
+                  <TabsContent value="settings" className="mt-0">
+                    <ProductEditorSection title="Publishing and organization">
+                      <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="space-y-2"><Label>Status</Label><Select value={form.status} onValueChange={(status) => setForm((current) => ({ ...current, status }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="published">Published</SelectItem><SelectItem value="archived">Archived</SelectItem><SelectItem value="scheduled">Scheduled</SelectItem></SelectContent></Select></div>
+                        <div className="space-y-2"><Label>Visibility</Label><Select value={form.visibility} onValueChange={(visibility) => setForm((current) => ({ ...current, visibility }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="online">Online store</SelectItem><SelectItem value="hidden">Hidden</SelectItem><SelectItem value="admin">Admin only</SelectItem></SelectContent></Select></div>
+                        <div className="space-y-2"><Label>Scheduled publish</Label><Input type="datetime-local" value={form.publishedAt} onChange={(e) => setForm((current) => ({ ...current, publishedAt: e.target.value }))} /></div>
+                        <div className="space-y-2"><Label>Badge text</Label><Input value={form.badgeText} onChange={(e) => setForm((current) => ({ ...current, badgeText: e.target.value }))} /></div>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="flex items-center gap-3"><Switch checked={form.active} onCheckedChange={(active) => setForm((current) => ({ ...current, active }))} /><Label>Active</Label></div>
+                        <div className="flex items-center gap-3"><Switch checked={form.featured} onCheckedChange={(featured) => setForm((current) => ({ ...current, featured }))} /><Label>Featured</Label></div>
+                      </div>
+                      {categories.length ? (
+                        <div className="space-y-2">
+                          <Label>Categories</Label>
+                          <div className="max-h-48 overflow-auto rounded-md border p-2">
+                            {categories.map((category) => (
+                              <label key={category.id} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm">
+                                <input type="checkbox" checked={form.categoryIds.includes(category.id)} onChange={() => toggleCategory(category.id)} />
+                                <span>{category.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                    </ProductEditorSection>
+                  </TabsContent>
+                  <TabsContent value="seo" className="mt-0">
+                    <ProductEditorSection title="SEO and social preview">
+                      <div className="space-y-2"><Label>URL slug</Label><Input value={form.urlSlug} onChange={(e) => setForm((current) => ({ ...current, urlSlug: e.target.value }))} /></div>
+                      <div className="space-y-2"><Label>Meta title</Label><Input value={form.metaTitle} onChange={(e) => setForm((current) => ({ ...current, metaTitle: e.target.value }))} /></div>
+                      <div className="space-y-2"><Label>Meta description</Label><Textarea value={form.metaDescription} onChange={(e) => setForm((current) => ({ ...current, metaDescription: e.target.value }))} rows={4} /></div>
+                      <div className="space-y-2"><Label>OpenGraph image</Label><Input value={form.ogImage} onChange={(e) => setForm((current) => ({ ...current, ogImage: e.target.value }))} /></div>
+                    </ProductEditorSection>
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </form>
+          </SheetBody>
+          <SheetFooter>
+            <Button type="button" variant="outline" onClick={() => setEditorOpen(false)}>Cancel</Button>
+            <Button type="submit" form="ecommerce-product-form" disabled={saveMutation.isPending}>
+              <Save className="mr-2 h-4 w-4" />
+              {editingId ? "Update product" : "Save product"}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
