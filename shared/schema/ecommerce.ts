@@ -87,6 +87,7 @@ export const ecommerceProductCategories = pgTable("ecommerce_product_categories"
   categoryId: varchar("category_id").notNull().references(() => ecommerceCategories.id, { onDelete: "cascade" }),
 }, (table) => [
   uniqueIndex("idx_ecommerce_product_categories_unique").on(table.productId, table.categoryId),
+  index("idx_ecommerce_product_categories_category").on(table.categoryId),
 ]);
 
 export const ecommerceCustomers = pgTable("ecommerce_customers", {
@@ -158,6 +159,8 @@ export const ecommerceOrders = pgTable("ecommerce_orders", {
 }, (table) => [
   index("idx_ecommerce_orders_customer_id").on(table.customerId),
   index("idx_ecommerce_orders_status").on(table.status),
+  index("idx_ecommerce_orders_payment_status").on(table.paymentStatus),
+  index("idx_ecommerce_orders_created_at").on(table.createdAt),
   uniqueIndex("idx_ecommerce_orders_lookup_token").on(table.lookupToken),
   uniqueIndex("idx_ecommerce_orders_payment_intent").on(table.stripePaymentIntentId),
 ]);
@@ -170,7 +173,10 @@ export const ecommerceOrderItems = pgTable("ecommerce_order_items", {
   quantity: integer("quantity").notNull(),
   unitPrice: integer("unit_price").notNull(),
   lineTotal: integer("line_total").notNull(),
-});
+}, (table) => [
+  index("idx_ecommerce_order_items_order").on(table.orderId),
+  index("idx_ecommerce_order_items_product").on(table.productId),
+]);
 
 export const ecommerceCoupons = pgTable("ecommerce_coupons", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -194,6 +200,7 @@ export const ecommerceCoupons = pgTable("ecommerce_coupons", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
   uniqueIndex("idx_ecommerce_coupons_code").on(table.code),
+  index("idx_ecommerce_coupons_active").on(table.active),
 ]);
 
 export const ecommerceCouponRedemptions = pgTable("ecommerce_coupon_redemptions", {
@@ -203,7 +210,11 @@ export const ecommerceCouponRedemptions = pgTable("ecommerce_coupon_redemptions"
   customerId: varchar("customer_id").references(() => ecommerceCustomers.id),
   discountAmount: integer("discount_amount").notNull(),
   redeemedAt: timestamp("redeemed_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("idx_ecommerce_coupon_redemptions_coupon").on(table.couponId),
+  index("idx_ecommerce_coupon_redemptions_order").on(table.orderId),
+  index("idx_ecommerce_coupon_redemptions_customer").on(table.customerId),
+]);
 
 export const ecommerceRefunds = pgTable("ecommerce_refunds", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -219,7 +230,11 @@ export const ecommerceRefunds = pgTable("ecommerce_refunds", {
   processedAt: timestamp("processed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("idx_ecommerce_refunds_order").on(table.orderId),
+  index("idx_ecommerce_refunds_status").on(table.status),
+  uniqueIndex("idx_ecommerce_refunds_stripe_refund").on(table.stripeRefundId),
+]);
 
 export const ecommerceShippingZones = pgTable("ecommerce_shipping_zones", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -229,7 +244,9 @@ export const ecommerceShippingZones = pgTable("ecommerce_shipping_zones", {
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("idx_ecommerce_shipping_zones_active").on(table.active),
+]);
 
 export const ecommerceShippingRates = pgTable("ecommerce_shipping_rates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -242,7 +259,10 @@ export const ecommerceShippingRates = pgTable("ecommerce_shipping_rates", {
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("idx_ecommerce_shipping_rates_zone").on(table.zoneId),
+  index("idx_ecommerce_shipping_rates_active").on(table.active),
+]);
 
 export const ecommerceShipments = pgTable("ecommerce_shipments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -256,7 +276,10 @@ export const ecommerceShipments = pgTable("ecommerce_shipments", {
   emailSentAt: timestamp("email_sent_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("idx_ecommerce_shipments_order").on(table.orderId),
+  index("idx_ecommerce_shipments_tracking").on(table.trackingNumber),
+]);
 
 export const ecommerceIntegrationSettings = pgTable("ecommerce_integration_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
