@@ -6,7 +6,9 @@ import { paramString } from "../../utils/params";
 import {
   insertEcommerceCategorySchema,
   insertEcommerceCouponSchema,
+  insertEcommerceProductMediaSchema,
   insertEcommerceProductSchema,
+  insertEcommerceProductVariantSchema,
   insertEcommerceShipmentSchema,
   insertEcommerceShippingRateSchema,
   insertEcommerceShippingZoneSchema,
@@ -81,6 +83,34 @@ router.put("/products/:id", asyncHandler(async (req, res) => {
 
 router.get("/products/:id/variants", asyncHandler(async (req, res) => {
   res.json(await storage.ecommerce.getProductVariants(paramString(req.params.id)));
+}));
+
+router.put("/products/:id/variants/:variantId", asyncHandler(async (req, res) => {
+  const productId = paramString(req.params.id);
+  const variantId = paramString(req.params.variantId);
+  const existing = await storage.ecommerce.getProductVariant(variantId);
+  if (!existing || existing.productId !== productId) {
+    res.status(404).json({ message: "Variant not found" });
+    return;
+  }
+  const variant = await storage.ecommerce.updateProductVariant(
+    variantId,
+    insertEcommerceProductVariantSchema.partial().parse(req.body),
+  );
+  res.json(variant);
+}));
+
+router.post("/products/:id/media", asyncHandler(async (req, res) => {
+  const productId = paramString(req.params.id);
+  const product = await storage.ecommerce.getProduct(productId);
+  if (!product) {
+    res.status(404).json({ message: "Product not found" });
+    return;
+  }
+  const media = await storage.ecommerce.createProductMedia(
+    insertEcommerceProductMediaSchema.parse({ ...req.body, productId }),
+  );
+  res.status(201).json(media);
 }));
 
 router.delete("/products/:id", asyncHandler(async (req, res) => {

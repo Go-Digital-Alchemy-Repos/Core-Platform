@@ -57,13 +57,74 @@ type View =
 interface Product {
   id: string;
   name: string;
+  tagline?: string | null;
+  description?: string | null;
+  shortDescription?: string | null;
+  productType?: string | null;
+  vendor?: string | null;
   price: number;
+  compareAtPrice?: number | null;
+  costPerItem?: number | null;
+  taxable: boolean;
+  taxCategory?: string | null;
+  featured: boolean;
+  visibility: string;
+  publishedAt?: string | null;
+  archivedAt?: string | null;
   salePrice?: number | null;
   status: string;
   active: boolean;
   sku?: string | null;
   urlSlug: string;
   tags: string[];
+  primaryImage?: string | null;
+  secondaryImages: string[];
+  features: string[];
+  included: string[];
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  ogImage?: string | null;
+  physicalProduct: boolean;
+  requiresShipping: boolean;
+  weight?: number | null;
+  weightUnit: string;
+  length?: number | null;
+  width?: number | null;
+  height?: number | null;
+  dimensionUnit: string;
+  shippingProfile?: string | null;
+  fulfillmentType: string;
+  badgeText?: string | null;
+  categories?: Category[];
+  variants?: ProductVariant[];
+  media?: ProductMedia[];
+}
+
+interface ProductVariant {
+  id: string;
+  productId: string;
+  title: string;
+  sku?: string | null;
+  barcode?: string | null;
+  price?: number | null;
+  salePrice?: number | null;
+  compareAtPrice?: number | null;
+  costPerItem?: number | null;
+  inventoryQuantity: number;
+  trackInventory: boolean;
+  lowStockThreshold?: number | null;
+  allowBackorder: boolean;
+  status: string;
+  active: boolean;
+  isDefault: boolean;
+}
+
+interface ProductMedia {
+  id: string;
+  url: string;
+  type: string;
+  altText?: string | null;
+  primary: boolean;
 }
 
 interface Category {
@@ -197,87 +258,442 @@ function couponStatus(coupon: Coupon): { label: string; variant: "default" | "se
 function ProductsTab() {
   const { toast } = useToast();
   const { data: products = [] } = useQuery<Product[]>({ queryKey: ["/api/admin/ecommerce/products"] });
+  const { data: categories = [] } = useQuery<Category[]>({ queryKey: ["/api/admin/ecommerce/categories"] });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [inventoryFilter, setInventoryFilter] = useState("all");
   const [form, setForm] = useState({
     name: "",
     tagline: "",
+    shortDescription: "",
     description: "",
+    productType: "",
+    vendor: "",
     price: "",
+    compareAtPrice: "",
     salePrice: "",
+    costPerItem: "",
     sku: "",
+    barcode: "",
     urlSlug: "",
     primaryImage: "",
+    mediaUrl: "",
+    mediaAltText: "",
     tags: "",
     features: "",
     included: "",
+    categoryIds: [] as string[],
     status: "draft",
     active: true,
+    featured: false,
+    visibility: "online",
+    publishedAt: "",
+    taxable: true,
+    taxCategory: "",
     metaTitle: "",
     metaDescription: "",
     ogImage: "",
+    physicalProduct: true,
+    requiresShipping: true,
+    weight: "",
+    weightUnit: "oz",
+    length: "",
+    width: "",
+    height: "",
+    dimensionUnit: "in",
+    shippingProfile: "",
+    fulfillmentType: "merchant",
+    badgeText: "",
+    trackInventory: false,
+    inventoryQuantity: "0",
+    lowStockThreshold: "",
+    allowBackorder: false,
   });
-  const mutation = useMutation({
-    mutationFn: async () => apiRequest("POST", "/api/admin/ecommerce/products", {
-      ...form,
+
+  const resetForm = () => {
+    setEditingId(null);
+    setForm({
+      name: "",
+      tagline: "",
+      shortDescription: "",
+      description: "",
+      productType: "",
+      vendor: "",
+      price: "",
+      compareAtPrice: "",
+      salePrice: "",
+      costPerItem: "",
+      sku: "",
+      barcode: "",
+      urlSlug: "",
+      primaryImage: "",
+      mediaUrl: "",
+      mediaAltText: "",
+      tags: "",
+      features: "",
+      included: "",
+      categoryIds: [],
+      status: "draft",
+      active: true,
+      featured: false,
+      visibility: "online",
+      publishedAt: "",
+      taxable: true,
+      taxCategory: "",
+      metaTitle: "",
+      metaDescription: "",
+      ogImage: "",
+      physicalProduct: true,
+      requiresShipping: true,
+      weight: "",
+      weightUnit: "oz",
+      length: "",
+      width: "",
+      height: "",
+      dimensionUnit: "in",
+      shippingProfile: "",
+      fulfillmentType: "merchant",
+      badgeText: "",
+      trackInventory: false,
+      inventoryQuantity: "0",
+      lowStockThreshold: "",
+      allowBackorder: false,
+    });
+  };
+
+  const openEdit = (product: Product) => {
+    const defaultVariant = product.variants?.find((variant) => variant.isDefault) ?? product.variants?.[0];
+    setEditingId(product.id);
+    setForm({
+      name: product.name,
+      tagline: product.tagline ?? "",
+      shortDescription: product.shortDescription ?? "",
+      description: product.description ?? "",
+      productType: product.productType ?? "",
+      vendor: product.vendor ?? "",
+      price: moneyInput(product.price),
+      compareAtPrice: moneyInput(product.compareAtPrice),
+      salePrice: moneyInput(product.salePrice),
+      costPerItem: moneyInput(product.costPerItem),
+      sku: defaultVariant?.sku ?? product.sku ?? "",
+      barcode: defaultVariant?.barcode ?? "",
+      urlSlug: product.urlSlug,
+      primaryImage: product.primaryImage ?? "",
+      mediaUrl: "",
+      mediaAltText: "",
+      tags: product.tags.join(", "),
+      features: product.features.join(", "),
+      included: product.included.join(", "),
+      categoryIds: product.categories?.map((category) => category.id) ?? [],
+      status: product.status,
+      active: product.active,
+      featured: product.featured,
+      visibility: product.visibility,
+      publishedAt: dateTimeInput(product.publishedAt),
+      taxable: product.taxable,
+      taxCategory: product.taxCategory ?? "",
+      metaTitle: product.metaTitle ?? "",
+      metaDescription: product.metaDescription ?? "",
+      ogImage: product.ogImage ?? "",
+      physicalProduct: product.physicalProduct,
+      requiresShipping: product.requiresShipping,
+      weight: product.weight == null ? "" : String(product.weight),
+      weightUnit: product.weightUnit,
+      length: product.length == null ? "" : String(product.length),
+      width: product.width == null ? "" : String(product.width),
+      height: product.height == null ? "" : String(product.height),
+      dimensionUnit: product.dimensionUnit,
+      shippingProfile: product.shippingProfile ?? "",
+      fulfillmentType: product.fulfillmentType,
+      badgeText: product.badgeText ?? "",
+      trackInventory: defaultVariant?.trackInventory ?? false,
+      inventoryQuantity: String(defaultVariant?.inventoryQuantity ?? 0),
+      lowStockThreshold: defaultVariant?.lowStockThreshold == null ? "" : String(defaultVariant.lowStockThreshold),
+      allowBackorder: defaultVariant?.allowBackorder ?? false,
+    });
+  };
+
+  const productPayload = () => ({
+      name: form.name.trim(),
+      tagline: form.tagline.trim() || null,
+      shortDescription: form.shortDescription.trim() || null,
+      description: form.description.trim() || null,
+      productType: form.productType.trim() || null,
+      vendor: form.vendor.trim() || null,
       price: cents(form.price),
-      salePrice: form.salePrice ? cents(form.salePrice) : undefined,
+      compareAtPrice: nullableCents(form.compareAtPrice),
+      salePrice: nullableCents(form.salePrice),
+      costPerItem: nullableCents(form.costPerItem),
+      sku: form.sku.trim() || null,
+      primaryImage: form.primaryImage.trim() || null,
       tags: csv(form.tags),
       features: csv(form.features),
       included: csv(form.included),
       secondaryImages: [],
-      urlSlug: form.urlSlug || form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
-    }),
+      urlSlug: form.urlSlug || slugify(form.name),
+      categoryIds: form.categoryIds,
+      status: form.status,
+      active: form.active,
+      featured: form.featured,
+      visibility: form.visibility,
+      publishedAt: form.publishedAt ? new Date(form.publishedAt).toISOString() : null,
+      taxable: form.taxable,
+      taxCategory: form.taxCategory.trim() || null,
+      metaTitle: form.metaTitle.trim() || null,
+      metaDescription: form.metaDescription.trim() || null,
+      ogImage: form.ogImage.trim() || null,
+      physicalProduct: form.physicalProduct,
+      requiresShipping: form.requiresShipping,
+      weight: nullableInt(form.weight),
+      weightUnit: form.weightUnit,
+      length: nullableInt(form.length),
+      width: nullableInt(form.width),
+      height: nullableInt(form.height),
+      dimensionUnit: form.dimensionUnit,
+      shippingProfile: form.shippingProfile.trim() || null,
+      fulfillmentType: form.fulfillmentType,
+      badgeText: form.badgeText.trim() || null,
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest(
+        editingId ? "PUT" : "POST",
+        editingId ? `/api/admin/ecommerce/products/${editingId}` : "/api/admin/ecommerce/products",
+        productPayload(),
+      );
+      const product = await response.json() as Product;
+      const defaultVariant = products.find((item) => item.id === product.id)?.variants?.find((variant) => variant.isDefault);
+      if (editingId && defaultVariant) {
+        await apiRequest("PUT", `/api/admin/ecommerce/products/${product.id}/variants/${defaultVariant.id}`, {
+          sku: form.sku.trim() || null,
+          barcode: form.barcode.trim() || null,
+          price: cents(form.price),
+          salePrice: nullableCents(form.salePrice),
+          compareAtPrice: nullableCents(form.compareAtPrice),
+          costPerItem: nullableCents(form.costPerItem),
+          inventoryQuantity: nullableInt(form.inventoryQuantity) ?? 0,
+          trackInventory: form.trackInventory,
+          lowStockThreshold: nullableInt(form.lowStockThreshold),
+          allowBackorder: form.allowBackorder,
+          active: form.active,
+          status: form.active ? "active" : "inactive",
+          image: form.primaryImage.trim() || null,
+        });
+      }
+      if (form.mediaUrl.trim()) {
+        await apiRequest("POST", `/api/admin/ecommerce/products/${product.id}/media`, {
+          url: form.mediaUrl.trim(),
+          altText: form.mediaAltText.trim() || product.name,
+          type: "image",
+          primary: !product.primaryImage,
+          sortOrder: 0,
+        });
+      }
+      return product;
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/products"] });
-      toast({ title: "Product created" });
+      toast({ title: editingId ? "Product updated" : "Product created" });
+      resetForm();
     },
+    onError: (error) => toast({
+      title: "Product could not be saved",
+      description: error instanceof Error ? error.message : "Please review product settings.",
+      variant: "destructive",
+    }),
   });
+
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    mutation.mutate();
+    saveMutation.mutate();
   };
+
+  const toggleCategory = (categoryId: string) => {
+    setForm((current) => ({
+      ...current,
+      categoryIds: current.categoryIds.includes(categoryId)
+        ? current.categoryIds.filter((id) => id !== categoryId)
+        : [...current.categoryIds, categoryId],
+    }));
+  };
+
+  const inventoryStatus = (product: Product) => {
+    const defaultVariant = product.variants?.find((variant) => variant.isDefault) ?? product.variants?.[0];
+    if (!defaultVariant?.trackInventory) return { label: "Not tracked", variant: "outline" as const };
+    if (defaultVariant.inventoryQuantity <= 0) {
+      return { label: defaultVariant.allowBackorder ? "Backordered" : "Out of stock", variant: "destructive" as const };
+    }
+    if (defaultVariant.lowStockThreshold != null && defaultVariant.inventoryQuantity <= defaultVariant.lowStockThreshold) {
+      return { label: "Low stock", variant: "secondary" as const };
+    }
+    return { label: "In stock", variant: "default" as const };
+  };
+
+  const profitMargin = (() => {
+    const price = cents(form.salePrice || form.price);
+    const cost = cents(form.costPerItem);
+    if (!price || !cost) return null;
+    return Math.round(((price - cost) / price) * 100);
+  })();
+
+  const filteredProducts = products.filter((product) => {
+    const term = search.trim().toLowerCase();
+    const text = `${product.name} ${product.sku ?? ""} ${product.vendor ?? ""} ${product.tags.join(" ")}`.toLowerCase();
+    if (term && !text.includes(term)) return false;
+    if (statusFilter !== "all" && product.status !== statusFilter) return false;
+    if (inventoryFilter !== "all" && inventoryStatus(product).label.toLowerCase() !== inventoryFilter) return false;
+    return true;
+  });
+
   return (
     <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
       <Card>
-        <CardHeader><CardTitle className="flex items-center gap-2"><Plus className="h-5 w-5" /> Product editor</CardTitle><CardDescription>Create products with pricing, media URLs, tags, and SEO fields.</CardDescription></CardHeader>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Plus className="h-5 w-5" /> {editingId ? "Edit product" : "Product editor"}</CardTitle>
+          <CardDescription>Manage catalog data, pricing, inventory, media, shipping, visibility, and SEO.</CardDescription>
+        </CardHeader>
         <CardContent>
           <form onSubmit={submit} className="grid gap-4">
-            {([
-              ["name", "Name"],
-              ["tagline", "Tagline"],
-              ["price", "Price"],
-              ["salePrice", "Sale price"],
-              ["sku", "SKU"],
-              ["urlSlug", "URL slug"],
-              ["primaryImage", "Primary image URL"],
-              ["tags", "Tags"],
-              ["features", "Features"],
-              ["included", "Included items"],
-              ["metaTitle", "Meta title"],
-              ["metaDescription", "Meta description"],
-              ["ogImage", "OpenGraph image"],
-            ] as const).map(([key, label]) => (
-              <div key={key} className="space-y-2">
-                <Label>{label}</Label>
-                <Input value={form[key]} onChange={(e) => setForm((current) => ({ ...current, [key]: e.target.value }))} required={key === "name" || key === "price"} />
+            <ProductEditorSection title="Basic Info">
+              <div className="space-y-2"><Label>Title</Label><Input value={form.name} onChange={(e) => setForm((current) => ({ ...current, name: e.target.value }))} required /></div>
+              <div className="space-y-2"><Label>Subtitle</Label><Input value={form.tagline} onChange={(e) => setForm((current) => ({ ...current, tagline: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Short description</Label><Textarea value={form.shortDescription} onChange={(e) => setForm((current) => ({ ...current, shortDescription: e.target.value }))} rows={2} /></div>
+              <div className="space-y-2"><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))} rows={4} /></div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2"><Label>Product type</Label><Input value={form.productType} onChange={(e) => setForm((current) => ({ ...current, productType: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>Vendor / brand</Label><Input value={form.vendor} onChange={(e) => setForm((current) => ({ ...current, vendor: e.target.value }))} /></div>
               </div>
-            ))}
-            <div className="space-y-2"><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))} /></div>
+            </ProductEditorSection>
+
+            <ProductEditorSection title="Pricing">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2"><Label>Base price</Label><Input value={form.price} onChange={(e) => setForm((current) => ({ ...current, price: e.target.value }))} required /></div>
+                <div className="space-y-2"><Label>Sale price</Label><Input value={form.salePrice} onChange={(e) => setForm((current) => ({ ...current, salePrice: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>Compare-at price</Label><Input value={form.compareAtPrice} onChange={(e) => setForm((current) => ({ ...current, compareAtPrice: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>Cost per item</Label><Input value={form.costPerItem} onChange={(e) => setForm((current) => ({ ...current, costPerItem: e.target.value }))} /></div>
+              </div>
+              <p className="text-xs text-muted-foreground">Estimated margin: {profitMargin == null ? "Add cost and price" : `${profitMargin}%`}</p>
+              <div className="flex items-center gap-3"><Switch checked={form.taxable} onCheckedChange={(taxable) => setForm((current) => ({ ...current, taxable }))} /><Label>Taxable</Label></div>
+              <div className="space-y-2"><Label>Tax category</Label><Input value={form.taxCategory} onChange={(e) => setForm((current) => ({ ...current, taxCategory: e.target.value }))} /></div>
+            </ProductEditorSection>
+
+            <ProductEditorSection title="Inventory">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2"><Label>SKU</Label><Input value={form.sku} onChange={(e) => setForm((current) => ({ ...current, sku: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>Barcode / UPC</Label><Input value={form.barcode} onChange={(e) => setForm((current) => ({ ...current, barcode: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>Quantity</Label><Input type="number" value={form.inventoryQuantity} onChange={(e) => setForm((current) => ({ ...current, inventoryQuantity: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>Low stock threshold</Label><Input type="number" value={form.lowStockThreshold} onChange={(e) => setForm((current) => ({ ...current, lowStockThreshold: e.target.value }))} /></div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex items-center gap-3"><Switch checked={form.trackInventory} onCheckedChange={(trackInventory) => setForm((current) => ({ ...current, trackInventory }))} /><Label>Track inventory</Label></div>
+                <div className="flex items-center gap-3"><Switch checked={form.allowBackorder} onCheckedChange={(allowBackorder) => setForm((current) => ({ ...current, allowBackorder }))} /><Label>Allow backorders</Label></div>
+              </div>
+            </ProductEditorSection>
+
+            <ProductEditorSection title="Media">
+              <div className="space-y-2"><Label>Primary image URL</Label><Input value={form.primaryImage} onChange={(e) => setForm((current) => ({ ...current, primaryImage: e.target.value }))} /></div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2"><Label>Add gallery image URL</Label><Input value={form.mediaUrl} onChange={(e) => setForm((current) => ({ ...current, mediaUrl: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>Gallery image alt text</Label><Input value={form.mediaAltText} onChange={(e) => setForm((current) => ({ ...current, mediaAltText: e.target.value }))} /></div>
+              </div>
+            </ProductEditorSection>
+
+            <ProductEditorSection title="Organization">
+              <div className="space-y-2"><Label>Tags</Label><Input value={form.tags} onChange={(e) => setForm((current) => ({ ...current, tags: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Features</Label><Input value={form.features} onChange={(e) => setForm((current) => ({ ...current, features: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Included items</Label><Input value={form.included} onChange={(e) => setForm((current) => ({ ...current, included: e.target.value }))} /></div>
+              {categories.length ? (
+                <div className="space-y-2">
+                  <Label>Categories</Label>
+                  <div className="max-h-32 overflow-auto rounded-lg border p-2">
+                    {categories.map((category) => (
+                      <label key={category.id} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm">
+                        <input type="checkbox" checked={form.categoryIds.includes(category.id)} onChange={() => toggleCategory(category.id)} />
+                        <span>{category.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </ProductEditorSection>
+
+            <ProductEditorSection title="Shipping">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex items-center gap-3"><Switch checked={form.physicalProduct} onCheckedChange={(physicalProduct) => setForm((current) => ({ ...current, physicalProduct }))} /><Label>Physical product</Label></div>
+                <div className="flex items-center gap-3"><Switch checked={form.requiresShipping} onCheckedChange={(requiresShipping) => setForm((current) => ({ ...current, requiresShipping }))} /><Label>Requires shipping</Label></div>
+                <div className="space-y-2"><Label>Weight</Label><Input type="number" value={form.weight} onChange={(e) => setForm((current) => ({ ...current, weight: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>Weight unit</Label><Select value={form.weightUnit} onValueChange={(weightUnit) => setForm((current) => ({ ...current, weightUnit }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="oz">oz</SelectItem><SelectItem value="lb">lb</SelectItem><SelectItem value="g">g</SelectItem><SelectItem value="kg">kg</SelectItem></SelectContent></Select></div>
+                <div className="space-y-2"><Label>Length</Label><Input type="number" value={form.length} onChange={(e) => setForm((current) => ({ ...current, length: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>Width</Label><Input type="number" value={form.width} onChange={(e) => setForm((current) => ({ ...current, width: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>Height</Label><Input type="number" value={form.height} onChange={(e) => setForm((current) => ({ ...current, height: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>Shipping profile</Label><Input value={form.shippingProfile} onChange={(e) => setForm((current) => ({ ...current, shippingProfile: e.target.value }))} /></div>
+              </div>
+            </ProductEditorSection>
+
+            <ProductEditorSection title="Visibility and SEO">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2"><Label>Status</Label><Select value={form.status} onValueChange={(status) => setForm((current) => ({ ...current, status }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="published">Published</SelectItem><SelectItem value="archived">Archived</SelectItem><SelectItem value="scheduled">Scheduled</SelectItem></SelectContent></Select></div>
+                <div className="space-y-2"><Label>Visibility</Label><Select value={form.visibility} onValueChange={(visibility) => setForm((current) => ({ ...current, visibility }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="online">Online store</SelectItem><SelectItem value="hidden">Hidden</SelectItem><SelectItem value="admin">Admin only</SelectItem></SelectContent></Select></div>
+                <div className="space-y-2"><Label>Scheduled publish</Label><Input type="datetime-local" value={form.publishedAt} onChange={(e) => setForm((current) => ({ ...current, publishedAt: e.target.value }))} /></div>
+                <div className="space-y-2"><Label>URL slug</Label><Input value={form.urlSlug} onChange={(e) => setForm((current) => ({ ...current, urlSlug: e.target.value }))} /></div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex items-center gap-3"><Switch checked={form.active} onCheckedChange={(active) => setForm((current) => ({ ...current, active }))} /><Label>Active</Label></div>
+                <div className="flex items-center gap-3"><Switch checked={form.featured} onCheckedChange={(featured) => setForm((current) => ({ ...current, featured }))} /><Label>Featured</Label></div>
+              </div>
+              <div className="space-y-2"><Label>Meta title</Label><Input value={form.metaTitle} onChange={(e) => setForm((current) => ({ ...current, metaTitle: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Meta description</Label><Textarea value={form.metaDescription} onChange={(e) => setForm((current) => ({ ...current, metaDescription: e.target.value }))} rows={2} /></div>
+              <div className="space-y-2"><Label>OpenGraph image</Label><Input value={form.ogImage} onChange={(e) => setForm((current) => ({ ...current, ogImage: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Badge text</Label><Input value={form.badgeText} onChange={(e) => setForm((current) => ({ ...current, badgeText: e.target.value }))} /></div>
+            </ProductEditorSection>
+
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-2"><Label>Status</Label><Select value={form.status} onValueChange={(status) => setForm((current) => ({ ...current, status }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="published">Published</SelectItem></SelectContent></Select></div>
-              <div className="flex items-center gap-3 pt-7"><Switch checked={form.active} onCheckedChange={(active) => setForm((current) => ({ ...current, active }))} /><Label>Active</Label></div>
+              <Button type="submit" disabled={saveMutation.isPending}><Save className="mr-2 h-4 w-4" /> {editingId ? "Update product" : "Save product"}</Button>
+              {editingId ? <Button type="button" variant="outline" onClick={resetForm}>Cancel</Button> : null}
             </div>
-            <Button type="submit" disabled={mutation.isPending}><Save className="mr-2 h-4 w-4" /> Save product</Button>
           </form>
         </CardContent>
       </Card>
       <Card>
-        <CardHeader><CardTitle>Products</CardTitle></CardHeader>
-        <CardContent>
-          <Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Status</TableHead><TableHead>Price</TableHead><TableHead>SKU</TableHead></TableRow></TableHeader><TableBody>
-            {products.map((product) => <TableRow key={product.id}><TableCell className="font-medium">{product.name}</TableCell><TableCell><Badge variant={product.status === "published" ? "default" : "secondary"}>{product.status}</Badge></TableCell><TableCell>{formatMoney(product.salePrice ?? product.price)}</TableCell><TableCell>{product.sku || "-"}</TableCell></TableRow>)}
+        <CardHeader><CardTitle>Products</CardTitle><CardDescription>Search, filter, and edit catalog products.</CardDescription></CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px]">
+            <div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search title, SKU, vendor, tag" /></div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All statuses</SelectItem><SelectItem value="draft">Draft</SelectItem><SelectItem value="published">Published</SelectItem><SelectItem value="archived">Archived</SelectItem><SelectItem value="scheduled">Scheduled</SelectItem></SelectContent></Select>
+            <Select value={inventoryFilter} onValueChange={setInventoryFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All inventory</SelectItem><SelectItem value="in stock">In stock</SelectItem><SelectItem value="low stock">Low stock</SelectItem><SelectItem value="out of stock">Out of stock</SelectItem><SelectItem value="backordered">Backordered</SelectItem><SelectItem value="not tracked">Not tracked</SelectItem></SelectContent></Select>
+          </div>
+          <Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Status</TableHead><TableHead>Inventory</TableHead><TableHead>Price</TableHead><TableHead>Vendor</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader><TableBody>
+            {filteredProducts.map((product) => {
+              const inventory = inventoryStatus(product);
+              const defaultVariant = product.variants?.find((variant) => variant.isDefault) ?? product.variants?.[0];
+              return (
+                <TableRow key={product.id}>
+                  <TableCell>
+                    <div className="font-medium">{product.name}</div>
+                    <div className="text-xs text-muted-foreground">{defaultVariant?.sku || product.sku || product.urlSlug}</div>
+                  </TableCell>
+                  <TableCell><Badge variant={product.status === "published" ? "default" : "secondary"}>{product.status}</Badge></TableCell>
+                  <TableCell><Badge variant={inventory.variant}>{inventory.label}</Badge></TableCell>
+                  <TableCell>{formatMoney(defaultVariant?.salePrice ?? product.salePrice ?? defaultVariant?.price ?? product.price)}</TableCell>
+                  <TableCell>{product.vendor || "-"}</TableCell>
+                  <TableCell><div className="flex justify-end gap-2"><Button type="button" variant="outline" size="sm" asChild><Link href={`/products/${product.urlSlug}`}><Eye className="mr-2 h-4 w-4" />Preview</Link></Button><Button type="button" variant="outline" size="sm" onClick={() => openEdit(product)}><Pencil className="mr-2 h-4 w-4" />Edit</Button></div></TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody></Table>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function ProductEditorSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3 rounded-lg border p-4">
+      <h3 className="text-sm font-semibold">{title}</h3>
+      <div className="grid gap-3">{children}</div>
     </div>
   );
 }
