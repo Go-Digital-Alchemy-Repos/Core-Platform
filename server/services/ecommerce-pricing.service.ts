@@ -6,6 +6,8 @@ import {
   type EcommerceCoupon,
   type EcommerceProduct,
   type EcommerceProductVariant,
+  type EcommerceShippingRate,
+  type EcommerceShippingZone,
 } from "@shared/schema";
 
 export const priceCartSchema = z.object({
@@ -13,6 +15,12 @@ export const priceCartSchema = z.object({
   couponCode: z.string().optional(),
   customerId: z.string().optional(),
   customerEmail: z.string().email().optional(),
+  shippingRateId: z.string().optional(),
+});
+
+export const shippingAddressQuoteSchema = z.object({
+  country: z.string().default("US"),
+  state: z.string().optional(),
 });
 
 export interface PricedCartLine {
@@ -41,6 +49,15 @@ export interface PricedCart {
   couponMessage?: string;
   couponCode?: string;
   couponValidation?: CouponValidationResult;
+  shippingRate: ShippingRateOption | null;
+}
+
+export interface ShippingRateOption {
+  id: string;
+  zoneId: string;
+  name: string;
+  description: string | null;
+  amount: number;
 }
 
 export interface CouponValidationResult {
@@ -241,6 +258,70 @@ export async function validateCoupon(code: string, subtotalAmount: number): Prom
   return validateCouponForCart({ code, lines: [], subtotalAmount });
 }
 
+function matchesShippingZone(zone: EcommerceShippingZone, address: z.infer<typeof shippingAddressQuoteSchema>): boolean {
+  if (!zone.active) return false;
+  const country = address.country.trim().toUpperCase() || "US";
+  const state = address.state?.trim().toUpperCase();
+  const zoneCountries = (zone.countries ?? []).map((value) => value.trim().toUpperCase()).filter(Boolean);
+  const zoneStates = (zone.states ?? []).map((value) => value.trim().toUpperCase()).filter(Boolean);
+
+  if (zoneCountries.length > 0 && !zoneCountries.includes(country)) return false;
+  if (zoneStates.length > 0 && (!state || !zoneStates.includes(state))) return false;
+  return true;
+}
+
+function rateAppliesToSubtotal(rate: EcommerceShippingRate, subtotalAmount: number): boolean {
+  if (!rate.active) return false;
+  if (rate.minOrderAmount != null && subtotalAmount < rate.minOrderAmount) return false;
+  if (rate.maxOrderAmount != null && subtotalAmount > rate.maxOrderAmount) return false;
+  return true;
+}
+
+export async function getShippingRateOptions(input: {
+  subtotalAmount: number;
+  address?: z.infer<typeof shippingAddressQuoteSchema>;
+}): Promise<ShippingRateOption[]> {
+  const address = shippingAddressQuoteSchema.parse(input.address ?? {});
+  const [zones, rates] = await Promise.all([
+    storage.ecommerce.getShippingZones(),
+    storage.ecommerce.getShippingRates(),
+  ]);
+  const matchingZoneIds = new Set(zones.filter((zone) => matchesShippingZone(zone, address)).map((zone) => zone.id));
+  return rates
+    .filter((rate) => matchingZoneIds.has(rate.zoneId) && rateAppliesToSubtotal(rate, input.subtotalAmount))
+    .sort((a, b) => a.amount - b.amount || a.name.localeCompare(b.name))
+    .map((rate) => ({
+      id: rate.id,
+      zoneId: rate.zoneId,
+      name: rate.name,
+      description: rate.description,
+      amount: rate.amount,
+    }));
+}
+
+export async function resolveShippingRate(input: {
+  shippingRateId?: string;
+  subtotalAmount: number;
+}): Promise<ShippingRateOption | null> {
+  if (!input.shippingRateId) return null;
+  const [zones, rates] = await Promise.all([
+    storage.ecommerce.getShippingZones(),
+    storage.ecommerce.getShippingRates(),
+  ]);
+  const activeZoneIds = new Set(zones.filter((zone) => zone.active).map((zone) => zone.id));
+  const rate = rates.find((candidate) => candidate.id === input.shippingRateId);
+  if (!rate || !activeZoneIds.has(rate.zoneId) || !rateAppliesToSubtotal(rate, input.subtotalAmount)) {
+    throw new Error("Selected shipping rate is unavailable");
+  }
+  return {
+    id: rate.id,
+    zoneId: rate.zoneId,
+    name: rate.name,
+    description: rate.description,
+    amount: rate.amount,
+  };
+}
+
 export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise<PricedCart> {
   const parsed = priceCartSchema.parse(input);
   const ids = [...new Set(parsed.items.map((item) => item.productId))];
@@ -284,6 +365,11 @@ export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise
   }));
 
   const subtotalAmount = lines.reduce((sum, line) => sum + line.lineTotal, 0);
+  const shippingRate = await resolveShippingRate({
+    shippingRateId: parsed.shippingRateId,
+    subtotalAmount,
+  });
+  const shippingAmount = shippingRate?.amount ?? 0;
   let coupon: EcommerceCoupon | null = null;
   let discountAmount = 0;
   let couponMessage: string | undefined;
@@ -294,6 +380,7 @@ export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise
       code: parsed.couponCode,
       lines,
       subtotalAmount,
+      shippingAmount,
       customerId: parsed.customerId,
       customerEmail: parsed.customerEmail,
     });
@@ -303,7 +390,6 @@ export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise
     couponMessage = result.message;
   }
 
-  const shippingAmount = 0;
   const taxAmount = 0;
   const totalAmount = Math.max(0, subtotalAmount - discountAmount + shippingAmount + taxAmount);
   return {
@@ -317,5 +403,6 @@ export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise
     couponCode: coupon?.code ?? (parsed.couponCode ? normalizeCode(parsed.couponCode) : undefined),
     couponMessage,
     couponValidation,
+    shippingRate,
   };
 }

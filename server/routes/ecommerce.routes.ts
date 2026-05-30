@@ -3,7 +3,13 @@ import { z } from "zod";
 import { storage } from "../storage/index";
 import { asyncHandler } from "../middleware/error-handler";
 import { paramString } from "../utils/params";
-import { priceCart, priceCartSchema, validateCoupon } from "../services/ecommerce-pricing.service";
+import {
+  getShippingRateOptions,
+  priceCart,
+  priceCartSchema,
+  shippingAddressQuoteSchema,
+  validateCoupon,
+} from "../services/ecommerce-pricing.service";
 import { createEcommercePaymentIntent } from "../services/ecommerce-order.service";
 import { getEcommerceStripePublishableKey, getEcommerceStripeMode } from "../services/ecommerce-stripe.service";
 import { requireEcommerceEnabled } from "../middleware/site-features";
@@ -61,6 +67,21 @@ router.post(
   "/cart/price",
   asyncHandler(async (req, res) => {
     res.json(await priceCart(priceCartSchema.parse(req.body)));
+  }),
+);
+
+router.post(
+  "/shipping/rates",
+  asyncHandler(async (req, res) => {
+    const data = z.object({
+      items: priceCartSchema.shape.items,
+      address: shippingAddressQuoteSchema,
+    }).parse(req.body);
+    const priced = await priceCart({ items: data.items });
+    res.json(await getShippingRateOptions({
+      subtotalAmount: priced.subtotalAmount,
+      address: data.address,
+    }));
   }),
 );
 

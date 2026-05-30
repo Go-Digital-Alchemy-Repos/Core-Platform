@@ -25,8 +25,10 @@ export default function CartPage() {
         ) : (
           <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px]">
             <div className="space-y-4">
-              {items.map((item) => (
-                <Card key={item.productId}>
+              {items.map((item) => {
+                const lineKey = `${item.productId}:${item.variantId ?? "default"}`;
+                return (
+                <Card key={lineKey}>
                   <CardContent className="flex gap-4 p-4">
                     <div className="h-24 w-24 shrink-0 overflow-hidden rounded-md bg-muted">
                       {item.image ? <img src={item.image} alt={item.name} className="h-full w-full object-cover" /> : null}
@@ -40,10 +42,10 @@ export default function CartPage() {
                           min={1}
                           max={99}
                           value={item.quantity}
-                          onChange={(event) => update(items.map((line) => line.productId === item.productId ? { ...line, quantity: Math.max(1, Number(event.target.value) || 1) } : line))}
+                          onChange={(event) => update(items.map((line) => line.productId === item.productId && (line.variantId ?? null) === (item.variantId ?? null) ? { ...line, quantity: Math.max(1, Number(event.target.value) || 1) } : line))}
                           className="h-9 w-20"
                         />
-                        <Button variant="ghost" size="icon" onClick={() => update(items.filter((line) => line.productId !== item.productId))}>
+                        <Button variant="ghost" size="icon" onClick={() => update(items.filter((line) => !(line.productId === item.productId && (line.variantId ?? null) === (item.variantId ?? null))))}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -51,7 +53,8 @@ export default function CartPage() {
                     <div className="font-semibold">{formatMoney(item.unitPrice * item.quantity)}</div>
                   </CardContent>
                 </Card>
-              ))}
+              );
+              })}
             </div>
             <Card className="h-fit">
               <CardHeader><CardTitle>Summary</CardTitle></CardHeader>

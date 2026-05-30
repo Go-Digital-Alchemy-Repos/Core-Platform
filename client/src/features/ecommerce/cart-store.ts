@@ -1,5 +1,6 @@
 export interface CartItem {
   productId: string;
+  variantId?: string | null;
   name: string;
   slug: string;
   unitPrice: number;
@@ -31,7 +32,7 @@ export function clearCart(): void {
 
 export function addCartItem(item: CartItem): void {
   const cart = readCart();
-  const existing = cart.find((line) => line.productId === item.productId);
+  const existing = cart.find((line) => line.productId === item.productId && (line.variantId ?? null) === (item.variantId ?? null));
   if (existing) {
     existing.quantity += item.quantity;
     writeCart([...cart]);

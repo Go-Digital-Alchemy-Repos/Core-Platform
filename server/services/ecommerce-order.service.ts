@@ -22,6 +22,7 @@ export const checkoutSchema = priceCartSchema.extend({
     phone: z.string().optional(),
   }),
   shippingAddress: addressSchema,
+  shippingRateId: z.string().optional(),
   billingSameAsShipping: z.boolean().default(true),
   billingAddress: addressSchema.optional(),
   metaTracking: z.object({
@@ -35,7 +36,12 @@ export const checkoutSchema = priceCartSchema.extend({
 
 export async function createEcommercePaymentIntent(input: unknown, requestMeta: { ip?: string | null } = {}) {
   const data = checkoutSchema.parse(input);
-  const priced = await priceCart({ items: data.items, couponCode: data.couponCode, customerEmail: data.customer.email });
+  const priced = await priceCart({
+    items: data.items,
+    couponCode: data.couponCode,
+    customerEmail: data.customer.email,
+    shippingRateId: data.shippingRateId,
+  });
   if (priced.totalAmount <= 0) throw new Error("Order total must be greater than zero");
 
   const customer = await storage.ecommerce.findOrCreateCustomer({

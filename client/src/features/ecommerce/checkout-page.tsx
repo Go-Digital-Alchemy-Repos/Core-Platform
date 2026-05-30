@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { CartItem, clearCart, formatMoney, readCart } from "./cart-store";
@@ -23,6 +24,7 @@ interface FormState {
   state: string;
   zip: string;
   couponCode: string;
+  shippingRateId: string;
 }
 
 const initialForm: FormState = {
@@ -35,6 +37,7 @@ const initialForm: FormState = {
   state: "",
   zip: "",
   couponCode: "",
+  shippingRateId: "",
 };
 
 interface StripeConfig {
@@ -53,6 +56,13 @@ interface PaymentIntentResponse {
     taxAmount: number;
     totalAmount: number;
   };
+}
+
+interface ShippingRateOption {
+  id: string;
+  name: string;
+  description?: string | null;
+  amount: number;
 }
 
 function CheckoutPaymentForm({
@@ -113,6 +123,8 @@ function CheckoutPaymentForm({
 export default function CheckoutPage() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [form, setForm] = useState(initialForm);
+  const [shippingRates, setShippingRates] = useState<ShippingRateOption[]>([]);
+  const [shippingQuoted, setShippingQuoted] = useState(false);
   const [intent, setIntent] = useState<PaymentIntentResponse | null>(null);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const { toast } = useToast();
@@ -130,15 +142,23 @@ export default function CheckoutPage() {
 
   const hasStripeConfig = Boolean(stripeConfig?.publishableKey);
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const selectedShippingRate = shippingRates.find((rate) => rate.id === form.shippingRateId);
   const elementsOptions = useMemo(
     () => intent?.clientSecret ? { clientSecret: intent.clientSecret, appearance: { theme: "stripe" as const } } : undefined,
     [intent?.clientSecret],
   );
   const mutation = useMutation({
     mutationFn: async () => {
+      if (!shippingQuoted) {
+        throw new Error("Update shipping rates before continuing.");
+      }
+      if (shippingRates.length > 0 && !form.shippingRateId) {
+        throw new Error("Select a shipping method before continuing.");
+      }
       const res = await apiRequest("POST", "/api/ecommerce/checkout/payment-intent", {
-        items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+        items: items.map((item) => ({ productId: item.productId, variantId: item.variantId ?? undefined, quantity: item.quantity })),
         couponCode: form.couponCode || undefined,
+        shippingRateId: form.shippingRateId || undefined,
         customer: { email: form.email, name: form.name, phone: form.phone || undefined },
         shippingAddress: {
           name: form.name,
@@ -157,6 +177,29 @@ export default function CheckoutPage() {
       setIntent(data);
     },
     onError: (error: Error) => toast({ title: "Checkout failed", description: error.message, variant: "destructive" }),
+  });
+  const shippingQuoteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/ecommerce/shipping/rates", {
+        items: items.map((item) => ({ productId: item.productId, variantId: item.variantId ?? undefined, quantity: item.quantity })),
+        address: {
+          country: "US",
+          state: form.state,
+        },
+      });
+      return res.json() as Promise<ShippingRateOption[]>;
+    },
+    onSuccess: (rates) => {
+      setShippingRates(rates);
+      setShippingQuoted(true);
+      setForm((current) => ({
+        ...current,
+        shippingRateId: rates.some((rate) => rate.id === current.shippingRateId)
+          ? current.shippingRateId
+          : rates[0]?.id ?? "",
+      }));
+    },
+    onError: (error: Error) => toast({ title: "Shipping rates unavailable", description: error.message, variant: "destructive" }),
   });
 
   const submit = (event: FormEvent) => {
@@ -205,10 +248,56 @@ export default function CheckoutPage() {
                         required={!["phone", "line2", "couponCode"].includes(key)}
                         value={form[key]}
                         disabled={Boolean(intent)}
-                        onChange={(event) => setForm((current) => ({ ...current, [key]: event.target.value }))}
+                        onChange={(event) => {
+                          setForm((current) => ({ ...current, [key]: event.target.value }));
+                          if (["state", "zip"].includes(key)) setShippingQuoted(false);
+                        }}
                       />
                     </div>
                   ))}
+                  <div className="space-y-3 sm:col-span-2">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <Label>Shipping method</Label>
+                        <p className="text-sm text-muted-foreground">Rates are selected from active shipping zones and calculated on the server.</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={Boolean(intent) || shippingQuoteMutation.isPending || !form.state.trim()}
+                        onClick={() => shippingQuoteMutation.mutate()}
+                      >
+                        {shippingQuoteMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Update rates
+                      </Button>
+                    </div>
+                    {shippingQuoted ? (
+                      shippingRates.length ? (
+                        <RadioGroup
+                          value={form.shippingRateId}
+                          onValueChange={(shippingRateId) => setForm((current) => ({ ...current, shippingRateId }))}
+                          className="gap-3"
+                        >
+                          {shippingRates.map((rate) => (
+                            <label key={rate.id} className="flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+                              <RadioGroupItem value={rate.id} className="mt-1" disabled={Boolean(intent)} />
+                              <span className="flex flex-1 justify-between gap-4">
+                                <span>
+                                  <span className="block font-medium">{rate.name}</span>
+                                  {rate.description ? <span className="text-sm text-muted-foreground">{rate.description}</span> : null}
+                                </span>
+                                <span className="font-semibold">{formatMoney(rate.amount)}</span>
+                              </span>
+                            </label>
+                          ))}
+                        </RadioGroup>
+                      ) : (
+                        <p className="rounded-lg border p-3 text-sm text-muted-foreground">No paid shipping rates matched this address. Checkout will continue with no shipping charge.</p>
+                      )
+                    ) : (
+                      <p className="rounded-lg border p-3 text-sm text-muted-foreground">Enter the shipping state and update rates before payment.</p>
+                    )}
+                  </div>
                 </form>
               </CardContent>
             </Card>
@@ -218,6 +307,12 @@ export default function CheckoutPage() {
                 {items.map((item) => <div key={item.productId} className="flex justify-between gap-4 text-sm"><span>{item.name} x {item.quantity}</span><span>{formatMoney(item.unitPrice * item.quantity)}</span></div>)}
                 <div className="border-t pt-4">
                   <div className="flex justify-between font-semibold"><span>Estimated subtotal</span><span>{formatMoney(intent?.priced.subtotalAmount ?? subtotal)}</span></div>
+                  {!intent && selectedShippingRate ? (
+                    <div className="mt-3 flex justify-between text-sm text-muted-foreground">
+                      <span>Selected shipping</span>
+                      <span>{formatMoney(selectedShippingRate.amount)}</span>
+                    </div>
+                  ) : null}
                   {intent ? (
                     <div className="mt-3 space-y-2 text-sm text-muted-foreground">
                       <div className="flex justify-between"><span>Discount</span><span>-{formatMoney(intent.priced.discountAmount)}</span></div>
