@@ -29,6 +29,29 @@ const productPayloadSchema = insertEcommerceProductSchema.extend({
   categoryIds: z.array(z.string()).default([]),
 });
 
+async function validateCategoryParent(categoryId: string | null, parentId: string | null | undefined) {
+  if (!parentId) return;
+  if (categoryId && parentId === categoryId) {
+    throw Object.assign(new Error("A category cannot be its own parent"), { statusCode: 400 });
+  }
+
+  const categories = await storage.ecommerce.getCategories(false);
+  const categoryMap = new Map(categories.map((category) => [category.id, category]));
+  if (!categoryMap.has(parentId)) {
+    throw Object.assign(new Error("Parent category not found"), { statusCode: 400 });
+  }
+
+  let cursor = categoryMap.get(parentId);
+  while (cursor?.parentId) {
+    if (categoryId && cursor.parentId === categoryId) {
+      throw Object.assign(new Error("A category cannot be moved under one of its subcategories"), {
+        statusCode: 400,
+      });
+    }
+    cursor = categoryMap.get(cursor.parentId);
+  }
+}
+
 router.get("/products", asyncHandler(async (_req, res) => {
   const products = await storage.ecommerce.getProducts();
   const withCategories = await Promise.all(products.map(async (product) => ({
@@ -64,11 +87,16 @@ router.get("/categories", asyncHandler(async (_req, res) => {
 }));
 
 router.post("/categories", asyncHandler(async (req, res) => {
-  res.status(201).json(await storage.ecommerce.createCategory(insertEcommerceCategorySchema.parse(req.body)));
+  const data = insertEcommerceCategorySchema.parse(req.body);
+  await validateCategoryParent(null, data.parentId);
+  res.status(201).json(await storage.ecommerce.createCategory(data));
 }));
 
 router.put("/categories/:id", asyncHandler(async (req, res) => {
-  const category = await storage.ecommerce.updateCategory(paramString(req.params.id), insertEcommerceCategorySchema.partial().parse(req.body));
+  const categoryId = paramString(req.params.id);
+  const data = insertEcommerceCategorySchema.partial().parse(req.body);
+  await validateCategoryParent(categoryId, data.parentId);
+  const category = await storage.ecommerce.updateCategory(categoryId, data);
   if (!category) {
     res.status(404).json({ message: "Category not found" });
     return;

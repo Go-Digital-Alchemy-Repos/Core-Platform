@@ -4,7 +4,9 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   CalendarDays,
   ClipboardList,
+  FolderTree,
   Package,
+  Pencil,
   Plug,
   Plus,
   Save,
@@ -12,6 +14,7 @@ import {
   ShoppingBag,
   Tag,
   TicketPercent,
+  Trash2,
   Truck,
   Undo2,
 } from "lucide-react";
@@ -64,6 +67,10 @@ interface Category {
   id: string;
   name: string;
   slug: string;
+  description?: string | null;
+  parentId?: string | null;
+  image?: string | null;
+  sortOrder: number;
   active: boolean;
 }
 
@@ -113,6 +120,10 @@ function cents(value: string): number {
 
 function csv(value: string): string[] {
   return value.split(",").map((part) => part.trim()).filter(Boolean);
+}
+
+function slugify(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
 function ProductsTab() {
@@ -204,18 +215,299 @@ function ProductsTab() {
 }
 
 function CategoriesTab() {
+  const { toast } = useToast();
   const { data: categories = [] } = useQuery<Category[]>({ queryKey: ["/api/admin/ecommerce/categories"] });
-  const [name, setName] = useState("");
-  const mutation = useMutation({
-    mutationFn: async () => apiRequest("POST", "/api/admin/ecommerce/categories", {
-      name,
-      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
-      active: true,
-      sortOrder: 0,
-    }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/categories"] }),
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    name: "",
+    slug: "",
+    description: "",
+    parentId: "",
+    image: "",
+    sortOrder: "0",
+    active: true,
   });
-  return <CrudList title="Categories" icon={<Package className="h-5 w-5" />} value={name} setValue={setName} onCreate={() => mutation.mutate()} rows={categories.map((c) => [c.name, c.slug, c.active ? "Active" : "Inactive"])} />;
+
+  const categoryMap = new Map(categories.map((category) => [category.id, category]));
+  const childrenByParent = categories.reduce<Map<string, Category[]>>((map, category) => {
+    const key = category.parentId || "root";
+    const siblings = map.get(key) ?? [];
+    siblings.push(category);
+    map.set(key, siblings);
+    return map;
+  }, new Map());
+
+  const sortCategories = (items: Category[]) =>
+    [...items].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+
+  const collectDescendantIds = (categoryId: string): Set<string> => {
+    const descendants = new Set<string>();
+    const visit = (parentId: string) => {
+      for (const child of childrenByParent.get(parentId) ?? []) {
+        descendants.add(child.id);
+        visit(child.id);
+      }
+    };
+    visit(categoryId);
+    return descendants;
+  };
+
+  const flattenedCategories = (() => {
+    const rows: Array<Category & { depth: number }> = [];
+    const visited = new Set<string>();
+    const visit = (items: Category[], depth: number) => {
+      for (const category of sortCategories(items)) {
+        if (visited.has(category.id)) continue;
+        visited.add(category.id);
+        rows.push({ ...category, depth });
+        visit(childrenByParent.get(category.id) ?? [], depth + 1);
+      }
+    };
+    visit(childrenByParent.get("root") ?? [], 0);
+    const orphaned = categories.filter((category) => category.parentId && !categoryMap.has(category.parentId));
+    visit(orphaned, 0);
+    return rows;
+  })();
+
+  const blockedParentIds = editingId ? collectDescendantIds(editingId) : new Set<string>();
+  if (editingId) blockedParentIds.add(editingId);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setForm({
+      name: "",
+      slug: "",
+      description: "",
+      parentId: "",
+      image: "",
+      sortOrder: "0",
+      active: true,
+    });
+  };
+
+  const openEdit = (category: Category) => {
+    setEditingId(category.id);
+    setForm({
+      name: category.name,
+      slug: category.slug,
+      description: category.description ?? "",
+      parentId: category.parentId ?? "",
+      image: category.image ?? "",
+      sortOrder: String(category.sortOrder ?? 0),
+      active: category.active,
+    });
+  };
+
+  const startSubcategory = (parentId: string) => {
+    resetForm();
+    setForm((current) => ({ ...current, parentId }));
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        name: form.name.trim(),
+        slug: slugify(form.slug || form.name),
+        description: form.description.trim() || null,
+        parentId: form.parentId || null,
+        image: form.image.trim() || null,
+        sortOrder: Number(form.sortOrder) || 0,
+        active: form.active,
+      };
+      const method = editingId ? "PUT" : "POST";
+      const url = editingId ? `/api/admin/ecommerce/categories/${editingId}` : "/api/admin/ecommerce/categories";
+      return apiRequest(method, url, payload);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/categories"] });
+      toast({ title: editingId ? "Category updated" : "Category created" });
+      resetForm();
+    },
+    onError: (error) => {
+      toast({
+        title: "Category could not be saved",
+        description: error instanceof Error ? error.message : "Please review the category details.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (categoryId: string) => apiRequest("DELETE", `/api/admin/ecommerce/categories/${categoryId}`),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/categories"] });
+      toast({ title: "Category deleted" });
+      resetForm();
+    },
+  });
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    saveMutation.mutate();
+  };
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FolderTree className="h-5 w-5" />
+            {editingId ? "Edit category" : "Category editor"}
+          </CardTitle>
+          <CardDescription>Create parent categories and sub-categories for product browsing.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={submit} className="grid gap-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input
+                value={form.name}
+                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                placeholder="Guides & Workbooks"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Slug</Label>
+              <Input
+                value={form.slug}
+                onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))}
+                placeholder={slugify(form.name) || "guides-workbooks"}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Parent category</Label>
+              <Select
+                value={form.parentId || "__root"}
+                onValueChange={(value) =>
+                  setForm((current) => ({ ...current, parentId: value === "__root" ? "" : value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__root">No parent category</SelectItem>
+                  {flattenedCategories
+                    .filter((category) => !blockedParentIds.has(category.id))
+                    .map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {"-- ".repeat(category.depth)}
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea
+                value={form.description}
+                onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Image URL</Label>
+              <Input
+                value={form.image}
+                onChange={(event) => setForm((current) => ({ ...current, image: event.target.value }))}
+                placeholder="https://..."
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Sort order</Label>
+                <Input
+                  type="number"
+                  value={form.sortOrder}
+                  onChange={(event) => setForm((current) => ({ ...current, sortOrder: event.target.value }))}
+                />
+              </div>
+              <div className="flex items-center gap-3 pt-7">
+                <Switch
+                  checked={form.active}
+                  onCheckedChange={(active) => setForm((current) => ({ ...current, active }))}
+                />
+                <Label>Active</Label>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" disabled={saveMutation.isPending || !form.name.trim()}>
+                <Save className="mr-2 h-4 w-4" />
+                {editingId ? "Update category" : "Create category"}
+              </Button>
+              {editingId ? (
+                <Button type="button" variant="outline" onClick={resetForm}>
+                  Cancel
+                </Button>
+              ) : null}
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Tag className="h-5 w-5" />
+            Categories
+          </CardTitle>
+          <CardDescription>Edit existing categories or add child categories under any parent.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Slug</TableHead>
+                <TableHead>Parent</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {flattenedCategories.map((category) => (
+                <TableRow key={category.id}>
+                  <TableCell className="font-medium">
+                    <span style={{ paddingLeft: `${category.depth * 1.25}rem` }}>{category.name}</span>
+                  </TableCell>
+                  <TableCell>{category.slug}</TableCell>
+                  <TableCell>{category.parentId ? categoryMap.get(category.parentId)?.name ?? "Missing parent" : "-"}</TableCell>
+                  <TableCell>
+                    <Badge variant={category.active ? "default" : "secondary"}>
+                      {category.active ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="outline" size="sm" onClick={() => startSubcategory(category.id)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Sub
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => openEdit(category)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteMutation.mutate(category.id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 function CouponsTab() {
