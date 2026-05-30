@@ -9,6 +9,9 @@ import {
   ecommerceOrders,
   ecommerceProcessedWebhookEvents,
   ecommerceProductCategories,
+  ecommerceInventoryAdjustments,
+  ecommerceProductMedia,
+  ecommerceProductVariants,
   ecommerceProducts,
   ecommerceRefunds,
   ecommerceShipments,
@@ -20,6 +23,8 @@ import {
   type EcommerceOrder,
   type EcommerceOrderItem,
   type EcommerceProduct,
+  type EcommerceProductMedia,
+  type EcommerceProductVariant,
   type EcommerceRefund,
   type EcommerceShipment,
   type EcommerceShippingRate,
@@ -30,6 +35,8 @@ import {
   type InsertEcommerceOrder,
   type InsertEcommerceOrderItem,
   type InsertEcommerceProduct,
+  type InsertEcommerceProductMedia,
+  type InsertEcommerceProductVariant,
   type InsertEcommerceRefund,
   type InsertEcommerceShipment,
   type InsertEcommerceShippingRate,
@@ -38,6 +45,8 @@ import {
 
 export interface EcommerceProductWithCategories extends EcommerceProduct {
   categories: EcommerceCategory[];
+  variants: EcommerceProductVariant[];
+  media: EcommerceProductMedia[];
 }
 
 export interface EcommerceOrderWithDetails extends EcommerceOrder {
@@ -86,6 +95,20 @@ export class EcommerceStorage {
   async createProduct(data: InsertEcommerceProduct, categoryIds: string[] = []): Promise<EcommerceProduct> {
     return db.transaction(async (tx) => {
       const [product] = await tx.insert(ecommerceProducts).values(data).returning();
+      await tx.insert(ecommerceProductVariants).values({
+        productId: product.id,
+        title: "Default",
+        optionSignature: "default",
+        optionValues: {},
+        sku: product.sku,
+        price: product.price,
+        salePrice: product.salePrice,
+        compareAtPrice: product.compareAtPrice,
+        image: product.primaryImage,
+        active: product.active,
+        status: product.active ? "active" : "inactive",
+        isDefault: true,
+      });
       if (categoryIds.length) {
         await tx.insert(ecommerceProductCategories).values(
           categoryIds.map((categoryId) => ({ productId: product.id, categoryId })),
@@ -103,6 +126,19 @@ export class EcommerceStorage {
         .where(eq(ecommerceProducts.id, id))
         .returning();
       if (!product) return undefined;
+      await tx
+        .update(ecommerceProductVariants)
+        .set({
+          sku: data.sku ?? product.sku,
+          price: data.price ?? product.price,
+          salePrice: data.salePrice ?? product.salePrice,
+          compareAtPrice: data.compareAtPrice ?? product.compareAtPrice,
+          image: data.primaryImage ?? product.primaryImage,
+          active: data.active ?? product.active,
+          status: (data.active ?? product.active) ? "active" : "inactive",
+          updatedAt: new Date(),
+        })
+        .where(and(eq(ecommerceProductVariants.productId, id), eq(ecommerceProductVariants.isDefault, true)));
       if (categoryIds) {
         await tx.delete(ecommerceProductCategories).where(eq(ecommerceProductCategories.productId, id));
         if (categoryIds.length) {
@@ -136,6 +172,55 @@ export class EcommerceStorage {
       .from(ecommerceProductCategories)
       .innerJoin(ecommerceCategories, eq(ecommerceProductCategories.categoryId, ecommerceCategories.id))
       .where(eq(ecommerceProductCategories.productId, productId));
+  }
+
+  async getProductVariants(productId: string): Promise<EcommerceProductVariant[]> {
+    return db
+      .select()
+      .from(ecommerceProductVariants)
+      .where(eq(ecommerceProductVariants.productId, productId))
+      .orderBy(ecommerceProductVariants.sortOrder, ecommerceProductVariants.title);
+  }
+
+  async getProductMedia(productId: string): Promise<EcommerceProductMedia[]> {
+    return db
+      .select()
+      .from(ecommerceProductMedia)
+      .where(eq(ecommerceProductMedia.productId, productId))
+      .orderBy(ecommerceProductMedia.sortOrder);
+  }
+
+  async getProductVariant(id: string): Promise<EcommerceProductVariant | undefined> {
+    const [variant] = await db.select().from(ecommerceProductVariants).where(eq(ecommerceProductVariants.id, id));
+    return variant;
+  }
+
+  async getDefaultProductVariant(productId: string): Promise<EcommerceProductVariant | undefined> {
+    const [variant] = await db
+      .select()
+      .from(ecommerceProductVariants)
+      .where(and(eq(ecommerceProductVariants.productId, productId), eq(ecommerceProductVariants.isDefault, true)))
+      .limit(1);
+    return variant;
+  }
+
+  async createProductVariant(data: InsertEcommerceProductVariant): Promise<EcommerceProductVariant> {
+    const [variant] = await db.insert(ecommerceProductVariants).values(data).returning();
+    return variant;
+  }
+
+  async updateProductVariant(id: string, data: Partial<InsertEcommerceProductVariant>): Promise<EcommerceProductVariant | undefined> {
+    const [variant] = await db
+      .update(ecommerceProductVariants)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(ecommerceProductVariants.id, id))
+      .returning();
+    return variant;
+  }
+
+  async createProductMedia(data: InsertEcommerceProductMedia): Promise<EcommerceProductMedia> {
+    const [media] = await db.insert(ecommerceProductMedia).values(data).returning();
+    return media;
   }
 
   async getCategory(id: string): Promise<EcommerceCategory | undefined> {
@@ -359,7 +444,9 @@ export class EcommerceStorage {
     return db.transaction(async (tx) => {
       const [order] = await tx.insert(ecommerceOrders).values(data as typeof ecommerceOrders.$inferInsert).returning();
       if (items.length) {
-        await tx.insert(ecommerceOrderItems).values(items.map((item) => ({ ...item, orderId: order.id })));
+        await tx
+          .insert(ecommerceOrderItems)
+          .values(items.map((item) => ({ ...item, orderId: order.id })) as Array<typeof ecommerceOrderItems.$inferInsert>);
       }
       const orderItems = await tx.select().from(ecommerceOrderItems).where(eq(ecommerceOrderItems.orderId, order.id));
       const [customer] = await tx.select().from(ecommerceCustomers).where(eq(ecommerceCustomers.id, order.customerId));
@@ -428,6 +515,36 @@ export class EcommerceStorage {
   async getProductsByIds(ids: string[]): Promise<EcommerceProduct[]> {
     if (ids.length === 0) return [];
     return db.select().from(ecommerceProducts).where(inArray(ecommerceProducts.id, ids));
+  }
+
+  async deductInventoryForPaidOrder(orderId: string): Promise<void> {
+    await db.transaction(async (tx) => {
+      const items = await tx.select().from(ecommerceOrderItems).where(eq(ecommerceOrderItems.orderId, orderId));
+      for (const item of items) {
+        if (!item.variantId) continue;
+        const [variant] = await tx
+          .select()
+          .from(ecommerceProductVariants)
+          .where(eq(ecommerceProductVariants.id, item.variantId))
+          .limit(1);
+        if (!variant?.trackInventory) continue;
+
+        const nextQuantity = Math.max(0, variant.inventoryQuantity - item.quantity);
+        await tx
+          .update(ecommerceProductVariants)
+          .set({ inventoryQuantity: nextQuantity, updatedAt: new Date() })
+          .where(eq(ecommerceProductVariants.id, variant.id));
+        await tx.insert(ecommerceInventoryAdjustments).values({
+          productId: item.productId,
+          variantId: variant.id,
+          orderId,
+          delta: -item.quantity,
+          quantityAfter: nextQuantity,
+          reason: "order_paid",
+          note: `Order ${orderId}`,
+        });
+      }
+    });
   }
 
   async createRefund(data: InsertEcommerceRefund): Promise<EcommerceRefund> {

@@ -1,7 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import type { EcommerceCoupon, EcommerceOrder, EcommerceProduct } from "@shared/schema";
+import type { EcommerceCoupon, EcommerceOrder, EcommerceProduct, EcommerceProductVariant } from "@shared/schema";
 
 const mockProducts: EcommerceProduct[] = [];
+const mockVariants: EcommerceProductVariant[] = [];
 const mockCoupons: EcommerceCoupon[] = [];
 const mockGetOrder = vi.fn();
 const mockUpdateOrder = vi.fn();
@@ -12,12 +13,15 @@ const mockCreateRefund = vi.fn();
 const mockGetProductCategories = vi.fn(async (_productId: string) => []);
 const mockCountCouponRedemptions = vi.fn(async () => 0);
 const mockRecordCouponRedemptionForOrder = vi.fn();
+const mockDeductInventoryForPaidOrder = vi.fn();
 const mockSendEcommerceOrderConfirmation = vi.fn();
 
 vi.mock("../storage/index", () => ({
   storage: {
     ecommerce: {
       getProductsByIds: vi.fn(async (ids: string[]) => mockProducts.filter((product) => ids.includes(product.id))),
+      getProductVariant: vi.fn(async (id: string) => mockVariants.find((variant) => variant.id === id)),
+      getDefaultProductVariant: vi.fn(async (productId: string) => mockVariants.find((variant) => variant.productId === productId && variant.isDefault)),
       getCouponByCode: vi.fn(async (code: string) => mockCoupons.find((coupon) => coupon.code === code.toUpperCase())),
       getProductCategories: mockGetProductCategories,
       countCouponRedemptions: mockCountCouponRedemptions,
@@ -25,6 +29,7 @@ vi.mock("../storage/index", () => ({
       updateOrder: mockUpdateOrder,
       getOrderWithDetails: mockGetOrderWithDetails,
       recordCouponRedemptionForOrder: mockRecordCouponRedemptionForOrder,
+      deductInventoryForPaidOrder: mockDeductInventoryForPaidOrder,
       getRefundByStripeRefundId: mockGetRefundByStripeRefundId,
       updateRefund: mockUpdateRefund,
       createRefund: mockCreateRefund,
@@ -39,6 +44,7 @@ vi.mock("../services/ecommerce-email.service", () => ({
 describe("ecommerce services", () => {
   beforeEach(() => {
     mockProducts.length = 0;
+    mockVariants.length = 0;
     mockCoupons.length = 0;
     mockGetOrder.mockReset();
     mockUpdateOrder.mockReset();
@@ -51,6 +57,7 @@ describe("ecommerce services", () => {
     mockCountCouponRedemptions.mockReset();
     mockCountCouponRedemptions.mockResolvedValue(0);
     mockRecordCouponRedemptionForOrder.mockReset();
+    mockDeductInventoryForPaidOrder.mockReset();
     mockSendEcommerceOrderConfirmation.mockReset();
   });
 
@@ -89,11 +96,38 @@ describe("ecommerce services", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+    mockVariants.push({
+      id: "v1",
+      productId: "p1",
+      title: "Default",
+      optionSignature: "default",
+      optionValues: {},
+      sku: null,
+      barcode: null,
+      price: 10000,
+      salePrice: 7500,
+      compareAtPrice: null,
+      costPerItem: null,
+      inventoryQuantity: 0,
+      trackInventory: false,
+      lowStockThreshold: null,
+      allowBackorder: false,
+      weight: null,
+      weightUnit: "oz",
+      image: null,
+      status: "active",
+      active: true,
+      sortOrder: 0,
+      isDefault: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     const priced = await priceCart({ items: [{ productId: "p1", quantity: 2 }] });
     expect(priced.subtotalAmount).toBe(15000);
     expect(priced.totalAmount).toBe(15000);
     expect(priced.lines[0].unitPrice).toBe(7500);
+    expect(priced.lines[0].variantId).toBe("v1");
   });
 
   it("applies fixed coupon discounts with order minimums", async () => {
@@ -131,6 +165,32 @@ describe("ecommerce services", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+    mockVariants.push({
+      id: "v1",
+      productId: "p1",
+      title: "Default",
+      optionSignature: "default",
+      optionValues: {},
+      sku: null,
+      barcode: null,
+      price: 10000,
+      salePrice: null,
+      compareAtPrice: null,
+      costPerItem: null,
+      inventoryQuantity: 0,
+      trackInventory: false,
+      lowStockThreshold: null,
+      allowBackorder: false,
+      weight: null,
+      weightUnit: "oz",
+      image: null,
+      status: "active",
+      active: true,
+      sortOrder: 0,
+      isDefault: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
     mockCoupons.push({
       id: "c1",
       code: "SAVE20",
@@ -157,6 +217,74 @@ describe("ecommerce services", () => {
     expect(priced.discountAmount).toBe(2000);
     expect(priced.totalAmount).toBe(8000);
     expect(priced.coupon?.code).toBe("SAVE20");
+  });
+
+  it("prices explicit variants and rejects unavailable inventory", async () => {
+    const { priceCart } = await import("../services/ecommerce-pricing.service");
+    mockProducts.push({
+      id: "p1",
+      name: "Variant Product",
+      tagline: null,
+      description: null,
+      price: 10000,
+      primaryImage: null,
+      secondaryImages: [],
+      features: [],
+      included: [],
+      active: true,
+      status: "published",
+      sku: null,
+      tags: [],
+      salePrice: null,
+      discountType: "NONE",
+      discountValue: null,
+      saleStartAt: null,
+      saleEndAt: null,
+      metaTitle: null,
+      metaDescription: null,
+      metaKeywords: null,
+      urlSlug: "variant-product",
+      canonicalUrl: null,
+      robotsIndex: true,
+      robotsFollow: true,
+      ogTitle: null,
+      ogDescription: null,
+      ogImage: null,
+      mediaId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as EcommerceProduct);
+    mockVariants.push({
+      id: "v-red",
+      productId: "p1",
+      title: "Red",
+      optionSignature: "color:red",
+      optionValues: { Color: "Red" },
+      sku: "RED-1",
+      barcode: null,
+      price: 12000,
+      salePrice: null,
+      compareAtPrice: null,
+      costPerItem: null,
+      inventoryQuantity: 1,
+      trackInventory: true,
+      lowStockThreshold: null,
+      allowBackorder: false,
+      weight: null,
+      weightUnit: "oz",
+      image: null,
+      status: "active",
+      active: true,
+      sortOrder: 0,
+      isDefault: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const priced = await priceCart({ items: [{ productId: "p1", variantId: "v-red", quantity: 1 }] });
+    expect(priced.totalAmount).toBe(12000);
+    expect(priced.lines[0]).toMatchObject({ variantId: "v-red", sku: "RED-1", variantTitle: "Red" });
+    await expect(priceCart({ items: [{ productId: "p1", variantId: "v-red", quantity: 2 }] })).rejects.toThrow(/inventory/);
   });
 
   it("rejects expired and exhausted coupons with structured messages", async () => {
@@ -261,6 +389,7 @@ describe("ecommerce services", () => {
 
     expect(mockUpdateOrder).toHaveBeenCalledTimes(2);
     expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledTimes(1);
+    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledTimes(1);
     expect(mockSendEcommerceOrderConfirmation).toHaveBeenCalledTimes(1);
   });
 

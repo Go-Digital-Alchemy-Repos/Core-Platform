@@ -57,6 +57,8 @@ router.get("/products", asyncHandler(async (_req, res) => {
   const withCategories = await Promise.all(products.map(async (product) => ({
     ...product,
     categories: await storage.ecommerce.getProductCategories(product.id),
+    variants: await storage.ecommerce.getProductVariants(product.id),
+    media: await storage.ecommerce.getProductMedia(product.id),
   })));
   res.json(withCategories);
 }));
@@ -75,6 +77,10 @@ router.put("/products/:id", asyncHandler(async (req, res) => {
     return;
   }
   res.json(product);
+}));
+
+router.get("/products/:id/variants", asyncHandler(async (req, res) => {
+  res.json(await storage.ecommerce.getProductVariants(paramString(req.params.id)));
 }));
 
 router.delete("/products/:id", asyncHandler(async (req, res) => {

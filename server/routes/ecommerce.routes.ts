@@ -19,6 +19,8 @@ router.get(
     res.json(await Promise.all(products.map(async (product) => ({
       ...product,
       categories: await storage.ecommerce.getProductCategories(product.id),
+      variants: (await storage.ecommerce.getProductVariants(product.id)).filter((variant) => variant.active && variant.status === "active"),
+      media: await storage.ecommerce.getProductMedia(product.id),
     }))));
   }),
 );
@@ -32,7 +34,9 @@ router.get(
       return;
     }
     const categories = await storage.ecommerce.getProductCategories(product.id);
-    res.json({ ...product, categories });
+    const variants = (await storage.ecommerce.getProductVariants(product.id)).filter((variant) => variant.active && variant.status === "active");
+    const media = await storage.ecommerce.getProductMedia(product.id);
+    res.json({ ...product, categories, variants, media });
   }),
 );
 

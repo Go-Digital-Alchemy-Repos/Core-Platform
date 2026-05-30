@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { storage } from "../storage/index";
-import { ecommerceCartItemSchema, type EcommerceCartItem, type EcommerceCategory, type EcommerceCoupon, type EcommerceProduct } from "@shared/schema";
+import {
+  ecommerceCartItemSchema,
+  type EcommerceCategory,
+  type EcommerceCoupon,
+  type EcommerceProduct,
+  type EcommerceProductVariant,
+} from "@shared/schema";
 
 export const priceCartSchema = z.object({
   items: z.array(ecommerceCartItemSchema).min(1),
@@ -11,7 +17,11 @@ export const priceCartSchema = z.object({
 
 export interface PricedCartLine {
   productId: string;
+  variantId: string | null;
   name: string;
+  variantTitle: string | null;
+  sku: string | null;
+  optionsSnapshot: Record<string, string> | null;
   slug: string;
   quantity: number;
   unitPrice: number;
@@ -69,6 +79,13 @@ export function effectiveProductPrice(product: EcommerceProduct, now = new Date(
   }
 
   return product.price;
+}
+
+export function effectiveVariantPrice(product: EcommerceProduct, variant: EcommerceProductVariant | undefined, now = new Date()): number {
+  if (!variant) return effectiveProductPrice(product, now);
+  if (variant.salePrice != null && variant.salePrice >= 0) return variant.salePrice;
+  if (variant.price != null && variant.price >= 0) return variant.price;
+  return effectiveProductPrice(product, now);
 }
 
 function normalizeCode(code: string): string {
@@ -235,23 +252,36 @@ export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise
     productCategories.set(product.id, await storage.ecommerce.getProductCategories(product.id));
   }));
 
-  const lines = parsed.items.map((item) => {
+  const lines = await Promise.all(parsed.items.map(async (item) => {
     const product = productMap.get(item.productId);
     if (!product || !product.active || product.status !== "published") {
       throw new Error("One or more products are unavailable");
     }
-    const unitPrice = effectiveProductPrice(product);
+    const variant = item.variantId
+      ? await storage.ecommerce.getProductVariant(item.variantId)
+      : await storage.ecommerce.getDefaultProductVariant(product.id);
+    if (!variant || variant.productId !== product.id || !variant.active || variant.status !== "active") {
+      throw new Error("One or more product variants are unavailable");
+    }
+    if (variant.trackInventory && !variant.allowBackorder && variant.inventoryQuantity < item.quantity) {
+      throw new Error("One or more product variants do not have enough inventory");
+    }
+    const unitPrice = effectiveVariantPrice(product, variant);
     return {
       productId: product.id,
+      variantId: variant.id,
       name: product.name,
+      variantTitle: variant.isDefault ? null : variant.title,
+      sku: variant.sku ?? product.sku,
+      optionsSnapshot: variant.optionValues,
       slug: product.urlSlug,
       quantity: item.quantity,
       unitPrice,
       lineTotal: unitPrice * item.quantity,
-      image: product.primaryImage,
+      image: variant.image ?? product.primaryImage,
       categoryIds: (productCategories.get(product.id) ?? []).map((category) => category.id),
     };
-  });
+  }));
 
   const subtotalAmount = lines.reduce((sum, line) => sum + line.lineTotal, 0);
   let coupon: EcommerceCoupon | null = null;

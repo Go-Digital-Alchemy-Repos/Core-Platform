@@ -16,6 +16,8 @@ import { cmsMedia } from "./cms-media";
 import { users } from "./users";
 
 export const ECOMMERCE_PRODUCT_STATUSES = ["draft", "published"] as const;
+export const ECOMMERCE_VARIANT_STATUSES = ["active", "inactive", "archived"] as const;
+export const ECOMMERCE_INVENTORY_ADJUSTMENT_REASONS = ["manual", "order_paid", "restock", "correction", "return"] as const;
 export const ECOMMERCE_ORDER_STATUSES = ["pending", "paid", "shipped", "delivered", "cancelled"] as const;
 export const ECOMMERCE_PAYMENT_STATUSES = [
   "unpaid",
@@ -35,7 +37,18 @@ export const ecommerceProducts = pgTable("ecommerce_products", {
   name: text("name").notNull(),
   tagline: text("tagline"),
   description: text("description"),
+  shortDescription: text("short_description"),
+  productType: text("product_type"),
+  vendor: text("vendor"),
   price: integer("price").notNull(),
+  compareAtPrice: integer("compare_at_price"),
+  costPerItem: integer("cost_per_item"),
+  taxable: boolean("taxable").notNull().default(true),
+  taxCategory: text("tax_category"),
+  featured: boolean("featured").notNull().default(false),
+  visibility: text("visibility").notNull().default("online"),
+  publishedAt: timestamp("published_at"),
+  archivedAt: timestamp("archived_at"),
   primaryImage: text("primary_image"),
   secondaryImages: text("secondary_images").array().notNull().default(sql`ARRAY[]::text[]`),
   features: text("features").array().notNull().default(sql`ARRAY[]::text[]`),
@@ -59,12 +72,139 @@ export const ecommerceProducts = pgTable("ecommerce_products", {
   ogTitle: text("og_title"),
   ogDescription: text("og_description"),
   ogImage: text("og_image"),
+  physicalProduct: boolean("physical_product").notNull().default(true),
+  requiresShipping: boolean("requires_shipping").notNull().default(true),
+  weight: integer("weight"),
+  weightUnit: text("weight_unit").notNull().default("oz"),
+  length: integer("length"),
+  width: integer("width"),
+  height: integer("height"),
+  dimensionUnit: text("dimension_unit").notNull().default("in"),
+  shippingProfile: text("shipping_profile"),
+  fulfillmentType: text("fulfillment_type").notNull().default("merchant"),
+  relatedProductIds: text("related_product_ids").array().notNull().default(sql`ARRAY[]::text[]`),
+  upsellProductIds: text("upsell_product_ids").array().notNull().default(sql`ARRAY[]::text[]`),
+  badgeText: text("badge_text"),
   mediaId: varchar("media_id").references(() => cmsMedia.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
   uniqueIndex("idx_ecommerce_products_url_slug").on(table.urlSlug),
   index("idx_ecommerce_products_status_active").on(table.status, table.active),
+  index("idx_ecommerce_products_featured").on(table.featured),
+  index("idx_ecommerce_products_vendor").on(table.vendor),
+]);
+
+export const ecommerceProductOptions = pgTable("ecommerce_product_options", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull().references(() => ecommerceProducts.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_product_options_product").on(table.productId),
+  uniqueIndex("idx_ecommerce_product_options_unique").on(table.productId, table.name),
+]);
+
+export const ecommerceProductOptionValues = pgTable("ecommerce_product_option_values", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  optionId: varchar("option_id").notNull().references(() => ecommerceProductOptions.id, { onDelete: "cascade" }),
+  value: text("value").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_option_values_option").on(table.optionId),
+  uniqueIndex("idx_ecommerce_option_values_unique").on(table.optionId, table.value),
+]);
+
+export const ecommerceProductVariants = pgTable("ecommerce_product_variants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull().references(() => ecommerceProducts.id, { onDelete: "cascade" }),
+  title: text("title").notNull().default("Default"),
+  optionSignature: text("option_signature").notNull().default("default"),
+  optionValues: jsonb("option_values").$type<Record<string, string>>().default(sql`'{}'::jsonb`).notNull(),
+  sku: text("sku"),
+  barcode: text("barcode"),
+  price: integer("price"),
+  salePrice: integer("sale_price"),
+  compareAtPrice: integer("compare_at_price"),
+  costPerItem: integer("cost_per_item"),
+  inventoryQuantity: integer("inventory_quantity").notNull().default(0),
+  trackInventory: boolean("track_inventory").notNull().default(false),
+  lowStockThreshold: integer("low_stock_threshold"),
+  allowBackorder: boolean("allow_backorder").notNull().default(false),
+  weight: integer("weight"),
+  weightUnit: text("weight_unit").notNull().default("oz"),
+  image: text("image"),
+  status: text("status").notNull().default("active"),
+  active: boolean("active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isDefault: boolean("is_default").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_variants_product").on(table.productId),
+  uniqueIndex("idx_ecommerce_variants_option_signature").on(table.productId, table.optionSignature),
+  uniqueIndex("idx_ecommerce_variants_sku").on(table.sku),
+  index("idx_ecommerce_variants_active").on(table.active, table.status),
+]);
+
+export const ecommerceProductMedia = pgTable("ecommerce_product_media", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull().references(() => ecommerceProducts.id, { onDelete: "cascade" }),
+  variantId: varchar("variant_id").references(() => ecommerceProductVariants.id, { onDelete: "set null" }),
+  mediaId: varchar("media_id").references(() => cmsMedia.id, { onDelete: "set null" }),
+  url: text("url").notNull(),
+  type: text("type").notNull().default("image"),
+  altText: text("alt_text"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  primary: boolean("primary").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_product_media_product").on(table.productId),
+  index("idx_ecommerce_product_media_variant").on(table.variantId),
+]);
+
+export const ecommerceProductCollections = pgTable("ecommerce_product_collections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  description: text("description"),
+  image: text("image"),
+  active: boolean("active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_ecommerce_collections_slug").on(table.slug),
+  index("idx_ecommerce_collections_active").on(table.active),
+]);
+
+export const ecommerceProductCollectionAssignments = pgTable("ecommerce_product_collection_assignments", {
+  productId: varchar("product_id").notNull().references(() => ecommerceProducts.id, { onDelete: "cascade" }),
+  collectionId: varchar("collection_id").notNull().references(() => ecommerceProductCollections.id, { onDelete: "cascade" }),
+}, (table) => [
+  uniqueIndex("idx_ecommerce_collection_assignments_unique").on(table.productId, table.collectionId),
+  index("idx_ecommerce_collection_assignments_collection").on(table.collectionId),
+]);
+
+export const ecommerceInventoryAdjustments = pgTable("ecommerce_inventory_adjustments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull().references(() => ecommerceProducts.id, { onDelete: "cascade" }),
+  variantId: varchar("variant_id").notNull().references(() => ecommerceProductVariants.id, { onDelete: "cascade" }),
+  orderId: varchar("order_id").references(() => ecommerceOrders.id, { onDelete: "set null" }),
+  delta: integer("delta").notNull(),
+  quantityAfter: integer("quantity_after").notNull(),
+  reason: text("reason").notNull().default("manual"),
+  note: text("note"),
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_inventory_adjustments_variant").on(table.variantId),
+  index("idx_ecommerce_inventory_adjustments_order").on(table.orderId),
 ]);
 
 export const ecommerceCategories = pgTable("ecommerce_categories", {
@@ -171,13 +311,18 @@ export const ecommerceOrderItems = pgTable("ecommerce_order_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   orderId: varchar("order_id").notNull().references(() => ecommerceOrders.id, { onDelete: "cascade" }),
   productId: varchar("product_id").notNull().references(() => ecommerceProducts.id),
+  variantId: varchar("variant_id").references(() => ecommerceProductVariants.id, { onDelete: "set null" }),
   productName: text("product_name").notNull(),
+  variantTitle: text("variant_title"),
+  sku: text("sku"),
+  optionsSnapshot: jsonb("options_snapshot").$type<Record<string, string> | null>(),
   quantity: integer("quantity").notNull(),
   unitPrice: integer("unit_price").notNull(),
   lineTotal: integer("line_total").notNull(),
 }, (table) => [
   index("idx_ecommerce_order_items_order").on(table.orderId),
   index("idx_ecommerce_order_items_product").on(table.productId),
+  index("idx_ecommerce_order_items_variant").on(table.variantId),
 ]);
 
 export const ecommerceCoupons = pgTable("ecommerce_coupons", {
@@ -324,7 +469,18 @@ export const ecommerceProcessedWebhookEvents = pgTable("ecommerce_processed_webh
 
 export const ecommerceProductsRelations = relations(ecommerceProducts, ({ many }) => ({
   categories: many(ecommerceProductCategories),
+  variants: many(ecommerceProductVariants),
+  media: many(ecommerceProductMedia),
   items: many(ecommerceOrderItems),
+}));
+
+export const ecommerceProductVariantsRelations = relations(ecommerceProductVariants, ({ one, many }) => ({
+  product: one(ecommerceProducts, {
+    fields: [ecommerceProductVariants.productId],
+    references: [ecommerceProducts.id],
+  }),
+  media: many(ecommerceProductMedia),
+  inventoryAdjustments: many(ecommerceInventoryAdjustments),
 }));
 
 export const ecommerceOrdersRelations = relations(ecommerceOrders, ({ one, many }) => ({
@@ -338,6 +494,12 @@ export const ecommerceOrdersRelations = relations(ecommerceOrders, ({ one, many 
 }));
 
 export const insertEcommerceProductSchema = createInsertSchema(ecommerceProducts).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceProductVariantSchema = createInsertSchema(ecommerceProductVariants).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceProductOptionSchema = createInsertSchema(ecommerceProductOptions).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceProductOptionValueSchema = createInsertSchema(ecommerceProductOptionValues).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceProductMediaSchema = createInsertSchema(ecommerceProductMedia).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceProductCollectionSchema = createInsertSchema(ecommerceProductCollections).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceInventoryAdjustmentSchema = createInsertSchema(ecommerceInventoryAdjustments).omit({ id: true, createdAt: true });
 export const insertEcommerceCategorySchema = createInsertSchema(ecommerceCategories).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertEcommerceCustomerSchema = createInsertSchema(ecommerceCustomers).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertEcommerceOrderSchema = createInsertSchema(ecommerceOrders).omit({ id: true, lookupToken: true, createdAt: true, updatedAt: true });
@@ -350,11 +512,24 @@ export const insertEcommerceShipmentSchema = createInsertSchema(ecommerceShipmen
 
 export const ecommerceCartItemSchema = z.object({
   productId: z.string().min(1),
+  variantId: z.string().min(1).optional(),
   quantity: z.number().int().min(1).max(99),
 });
 
 export type EcommerceProduct = typeof ecommerceProducts.$inferSelect;
 export type InsertEcommerceProduct = z.infer<typeof insertEcommerceProductSchema>;
+export type EcommerceProductVariant = typeof ecommerceProductVariants.$inferSelect;
+export type InsertEcommerceProductVariant = z.infer<typeof insertEcommerceProductVariantSchema>;
+export type EcommerceProductOption = typeof ecommerceProductOptions.$inferSelect;
+export type InsertEcommerceProductOption = z.infer<typeof insertEcommerceProductOptionSchema>;
+export type EcommerceProductOptionValue = typeof ecommerceProductOptionValues.$inferSelect;
+export type InsertEcommerceProductOptionValue = z.infer<typeof insertEcommerceProductOptionValueSchema>;
+export type EcommerceProductMedia = typeof ecommerceProductMedia.$inferSelect;
+export type InsertEcommerceProductMedia = z.infer<typeof insertEcommerceProductMediaSchema>;
+export type EcommerceProductCollection = typeof ecommerceProductCollections.$inferSelect;
+export type InsertEcommerceProductCollection = z.infer<typeof insertEcommerceProductCollectionSchema>;
+export type EcommerceInventoryAdjustment = typeof ecommerceInventoryAdjustments.$inferSelect;
+export type InsertEcommerceInventoryAdjustment = z.infer<typeof insertEcommerceInventoryAdjustmentSchema>;
 export type EcommerceCategory = typeof ecommerceCategories.$inferSelect;
 export type InsertEcommerceCategory = z.infer<typeof insertEcommerceCategorySchema>;
 export type EcommerceCustomer = typeof ecommerceCustomers.$inferSelect;
