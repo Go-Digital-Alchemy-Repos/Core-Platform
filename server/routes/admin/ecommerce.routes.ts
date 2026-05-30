@@ -93,6 +93,17 @@ async function validateCategorySlug(categoryId: string | null, slug: string | nu
   }
 }
 
+async function validateProductSlug(productId: string | null, slug: string | null | undefined) {
+  if (!slug) return;
+
+  const normalizedSlug = slug.trim().toLowerCase();
+  const products = await storage.ecommerce.getProducts({ includeArchived: true });
+  const existingProduct = products.find((product) => product.urlSlug.toLowerCase() === normalizedSlug);
+  if (existingProduct && existingProduct.id !== productId) {
+    throw Object.assign(new Error("A product with this URL slug already exists"), { statusCode: 409 });
+  }
+}
+
 router.get("/products", asyncHandler(async (_req, res) => {
   const products = await storage.ecommerce.getProducts();
   const withCategories = await Promise.all(products.map(async (product) => ({
@@ -106,13 +117,16 @@ router.get("/products", asyncHandler(async (_req, res) => {
 
 router.post("/products", asyncHandler(async (req, res) => {
   const { categoryIds, ...data } = productPayloadSchema.parse(req.body);
+  await validateProductSlug(null, data.urlSlug);
   res.status(201).json(await storage.ecommerce.createProduct(data, categoryIds));
 }));
 
 router.put("/products/:id", asyncHandler(async (req, res) => {
+  const productId = paramString(req.params.id);
   const parsed = productPayloadSchema.partial().parse(req.body);
   const { categoryIds, ...data } = parsed;
-  const product = await storage.ecommerce.updateProduct(paramString(req.params.id), data, categoryIds);
+  await validateProductSlug(productId, data.urlSlug);
+  const product = await storage.ecommerce.updateProduct(productId, data, categoryIds);
   if (!product) {
     res.status(404).json({ message: "Product not found" });
     return;
