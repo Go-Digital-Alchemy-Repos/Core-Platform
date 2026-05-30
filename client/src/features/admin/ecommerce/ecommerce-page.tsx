@@ -1656,7 +1656,7 @@ function OrdersTab() {
   );
 }
 
-function ShippingTab() {
+export function ShippingTab() {
   const { toast } = useToast();
   const { data: zones = [] } = useQuery<ShippingZone[]>({
     queryKey: ["/api/admin/ecommerce/shipping/zones"],
@@ -1824,6 +1824,11 @@ function ShippingTab() {
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/providers"] });
       toast({ title: "Shipping provider updated" });
     },
+    onError: (error) => toast({
+      title: "Shipping provider could not be updated",
+      description: error instanceof Error ? error.message : "Save provider credentials before enabling it.",
+      variant: "destructive",
+    }),
   });
   const credentialMutation = useMutation({
     mutationFn: async (provider: ShippingProvider) => apiRequest(
@@ -2260,83 +2265,88 @@ function ShippingTab() {
             <div key={group} className="space-y-3">
               <h3 className="text-sm font-semibold capitalize">{group}</h3>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {groupProviders.map((provider) => (
-                  <div key={provider.provider} className="rounded-lg border p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-semibold">{provider.displayName}</div>
-                        <p className="mt-1 text-sm text-muted-foreground">{provider.recommendedFor}</p>
-                      </div>
-                      <Badge variant={provider.active ? "default" : "secondary"}>
-                        {provider.operational ? "Operational" : provider.active ? "Needs setup" : "Available"}
-                      </Badge>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {provider.capabilities.map((capability) => (
-                        <Badge key={capability} variant="outline" className="capitalize">
-                          {capability.replace(/_/g, " ")}
-                        </Badge>
-                      ))}
-                    </div>
-                    <div className="mt-4 grid gap-3 rounded-lg bg-muted/40 p-3">
-                      <label className="flex items-center justify-between gap-3 text-sm">
-                        <span className="font-medium">Enabled</span>
-                        <Switch
-                          checked={provider.active}
-                          onCheckedChange={(active) => providerMutation.mutate({
-                            provider,
-                            active,
-                            testMode: provider.testMode,
-                          })}
-                        />
-                      </label>
-                      <label className="flex items-center justify-between gap-3 text-sm">
-                        <span className="font-medium">Test mode</span>
-                        <Switch
-                          checked={provider.testMode}
-                          onCheckedChange={(testMode) => providerMutation.mutate({
-                            provider,
-                            active: provider.active,
-                            testMode,
-                          })}
-                        />
-                      </label>
-                      {provider.setupFields.length ? (
-                        <p className="text-xs text-muted-foreground">
-                          {provider.configured
-                            ? `Ready for ${provider.readyCapabilities?.map((capability) => capability.replace(/_/g, " ")).join(", ") || "provider workflows"}.`
-                            : `Missing ${provider.missingCredentialLabels?.join(", ") || provider.setupFields.map((field) => field.label).join(", ")} in encrypted credential storage.`}
-                        </p>
-                      ) : null}
-                      {provider.setupFields.length ? (
-                        <div className="grid gap-2">
-                          {provider.setupFields.map((field) => (
-                            <Input
-                              key={field.key}
-                              type={field.secret ? "password" : "text"}
-                              value={providerCredentialForms[provider.provider]?.[field.key] ?? ""}
-                              onChange={(event) => updateProviderCredential(provider.provider, field.key, event.target.value)}
-                              placeholder={field.hasValue ? `${field.label} saved` : field.label}
-                            />
-                          ))}
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => credentialMutation.mutate(provider)}
-                            disabled={
-                              credentialMutation.isPending ||
-                              !Object.values(providerCredentialForms[provider.provider] ?? {}).some((value) => value.trim())
-                            }
-                          >
-                            <Save className="mr-2 h-4 w-4" />
-                            Save credentials
-                          </Button>
+                {groupProviders.map((provider) => {
+                  const activationBlocked = !provider.active && !provider.configured;
+                  return (
+                    <div key={provider.provider} className="rounded-lg border p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="font-semibold">{provider.displayName}</div>
+                          <p className="mt-1 text-sm text-muted-foreground">{provider.recommendedFor}</p>
                         </div>
-                      ) : null}
+                        <Badge variant={provider.active ? "default" : "secondary"}>
+                          {provider.operational ? "Operational" : provider.active ? "Needs setup" : "Available"}
+                        </Badge>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {provider.capabilities.map((capability) => (
+                          <Badge key={capability} variant="outline" className="capitalize">
+                            {capability.replace(/_/g, " ")}
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="mt-4 grid gap-3 rounded-lg bg-muted/40 p-3">
+                        <label className="flex items-center justify-between gap-3 text-sm">
+                          <span className="font-medium">Enabled</span>
+                          <Switch
+                            checked={provider.active}
+                            onCheckedChange={(active) => providerMutation.mutate({
+                              provider,
+                              active,
+                              testMode: provider.testMode,
+                            })}
+                            disabled={activationBlocked || providerMutation.isPending}
+                          />
+                        </label>
+                        <label className="flex items-center justify-between gap-3 text-sm">
+                          <span className="font-medium">Test mode</span>
+                          <Switch
+                            checked={provider.testMode}
+                            onCheckedChange={(testMode) => providerMutation.mutate({
+                              provider,
+                              active: provider.active,
+                              testMode,
+                            })}
+                            disabled={providerMutation.isPending}
+                          />
+                        </label>
+                        {provider.setupFields.length ? (
+                          <p className="text-xs text-muted-foreground">
+                            {provider.configured
+                              ? `Ready for ${provider.readyCapabilities?.map((capability) => capability.replace(/_/g, " ")).join(", ") || "provider workflows"}.`
+                              : `Missing ${provider.missingCredentialLabels?.join(", ") || provider.setupFields.map((field) => field.label).join(", ")} in encrypted credential storage.`}
+                          </p>
+                        ) : null}
+                        {provider.setupFields.length ? (
+                          <div className="grid gap-2">
+                            {provider.setupFields.map((field) => (
+                              <Input
+                                key={field.key}
+                                type={field.secret ? "password" : "text"}
+                                value={providerCredentialForms[provider.provider]?.[field.key] ?? ""}
+                                onChange={(event) => updateProviderCredential(provider.provider, field.key, event.target.value)}
+                                placeholder={field.hasValue ? `${field.label} saved` : field.label}
+                              />
+                            ))}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => credentialMutation.mutate(provider)}
+                              disabled={
+                                credentialMutation.isPending ||
+                                !Object.values(providerCredentialForms[provider.provider] ?? {}).some((value) => value.trim())
+                              }
+                            >
+                              <Save className="mr-2 h-4 w-4" />
+                              Save credentials
+                            </Button>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}

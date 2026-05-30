@@ -3,7 +3,7 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { CategoriesTab } from "@/features/admin/ecommerce/ecommerce-page";
+import { CategoriesTab, ShippingTab } from "@/features/admin/ecommerce/ecommerce-page";
 
 const categories = [
   {
@@ -46,6 +46,42 @@ const categories = [
 
 const useQueryMock = vi.fn();
 const useMutationMock = vi.fn();
+
+const shippingProviders = [
+  {
+    provider: "shipstation",
+    displayName: "ShipStation",
+    type: "workflow",
+    recommendedFor: "Operational shipping workflows.",
+    capabilities: ["labels", "tracking"],
+    setupFields: [
+      { key: "apiKey", label: "API key", secret: true, hasValue: false },
+      { key: "apiSecret", label: "API secret", secret: true, hasValue: false },
+    ],
+    active: false,
+    testMode: true,
+    connectedAt: null,
+    configured: false,
+    operational: false,
+    readyCapabilities: [],
+    missingCredentialLabels: ["API key", "API secret"],
+  },
+  {
+    provider: "easypost",
+    displayName: "EasyPost",
+    type: "aggregator",
+    recommendedFor: "Live carrier rates and labels.",
+    capabilities: ["rates", "labels"],
+    setupFields: [{ key: "apiKey", label: "API key", secret: true, hasValue: true }],
+    active: false,
+    testMode: true,
+    connectedAt: null,
+    configured: true,
+    operational: false,
+    readyCapabilities: [],
+    missingCredentialLabels: [],
+  },
+];
 
 vi.mock("@tanstack/react-query", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-query")>();
@@ -129,5 +165,29 @@ describe("Ecommerce CategoriesTab", () => {
     expect(inputs[0].value).toBe("Professional Training");
     expect(inputs[1].value).toBe("professional-training");
     expect(container.querySelector("textarea")?.value).toBe("Courses and workshops");
+  });
+
+  it("blocks shipping provider activation until required credentials are saved", () => {
+    useQueryMock.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
+      if (queryKey[0] === "/api/admin/ecommerce/shipping/providers") {
+        return { data: shippingProviders, isLoading: false };
+      }
+      return { data: [], isLoading: false };
+    });
+
+    act(() => {
+      root = createRoot(container);
+      root.render(React.createElement(ShippingTab));
+    });
+
+    expect(container.textContent).toContain("Missing API key, API secret in encrypted credential storage.");
+    const providerCards = Array.from(container.querySelectorAll(".rounded-lg.border.p-4"));
+    const shipStationCard = providerCards.find((card) => card.textContent?.includes("ShipStation"));
+    const easyPostCard = providerCards.find((card) => card.textContent?.includes("EasyPost"));
+    const shipStationEnabledSwitch = shipStationCard?.querySelector('[role="switch"]') as HTMLButtonElement | null;
+    const easyPostEnabledSwitch = easyPostCard?.querySelector('[role="switch"]') as HTMLButtonElement | null;
+
+    expect(shipStationEnabledSwitch?.disabled).toBe(true);
+    expect(easyPostEnabledSwitch?.disabled).toBe(false);
   });
 });
