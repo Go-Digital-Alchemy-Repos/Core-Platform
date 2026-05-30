@@ -24,9 +24,17 @@ const mockCountCouponRedemptions = vi.fn(async () => 0);
 const mockRecordCouponRedemptionForOrder = vi.fn();
 const mockDeductInventoryForPaidOrder = vi.fn();
 const mockSendEcommerceOrderConfirmation = vi.fn();
+const mockGetDecryptedCategory = vi.fn(async (_category: string) => ({}));
+const mockUpsertSetting = vi.fn();
+const mockInvalidateCategory = vi.fn();
 
 vi.mock("../storage/index", () => ({
   storage: {
+    settings: {
+      getDecryptedCategory: mockGetDecryptedCategory,
+      upsertSetting: mockUpsertSetting,
+      invalidateCategory: mockInvalidateCategory,
+    },
     ecommerce: {
       getProductsByIds: vi.fn(async (ids: string[]) => mockProducts.filter((product) => ids.includes(product.id))),
       getProductVariant: vi.fn(async (id: string) => mockVariants.find((variant) => variant.id === id)),
@@ -72,6 +80,10 @@ describe("ecommerce services", () => {
     mockRecordCouponRedemptionForOrder.mockReset();
     mockDeductInventoryForPaidOrder.mockReset();
     mockSendEcommerceOrderConfirmation.mockReset();
+    mockGetDecryptedCategory.mockReset();
+    mockGetDecryptedCategory.mockResolvedValue({});
+    mockUpsertSetting.mockReset();
+    mockInvalidateCategory.mockReset();
   });
 
   it("calculates effective sale pricing without trusting client prices", async () => {
@@ -141,6 +153,7 @@ describe("ecommerce services", () => {
     expect(priced.totalAmount).toBe(15000);
     expect(priced.lines[0].unitPrice).toBe(7500);
     expect(priced.lines[0].variantId).toBe("v1");
+    expect(priced.taxAmount).toBe(0);
   });
 
   it("applies fixed coupon discounts with order minimums", async () => {
@@ -389,6 +402,130 @@ describe("ecommerce services", () => {
     const priced = await priceCart({ items: [{ productId: "p1", quantity: 1 }], shippingRateId: "rate-standard" });
     expect(priced.shippingAmount).toBe(995);
     expect(priced.totalAmount).toBe(10995);
+  });
+
+  it("calculates manual tax server-side after discounts and optional shipping tax", async () => {
+    const { priceCart } = await import("../services/ecommerce-pricing.service");
+    mockGetDecryptedCategory.mockResolvedValue({
+      ecommerce_tax_enabled: "true",
+      ecommerce_tax_manual_rate_bps: "600",
+      ecommerce_tax_shipping: "true",
+    });
+    mockProducts.push({
+      id: "p1",
+      name: "Taxable Product",
+      tagline: null,
+      description: null,
+      price: 10000,
+      primaryImage: null,
+      secondaryImages: [],
+      features: [],
+      included: [],
+      active: true,
+      status: "published",
+      sku: null,
+      tags: [],
+      salePrice: null,
+      discountType: "NONE",
+      discountValue: null,
+      saleStartAt: null,
+      saleEndAt: null,
+      metaTitle: null,
+      metaDescription: null,
+      metaKeywords: null,
+      urlSlug: "taxable-product",
+      canonicalUrl: null,
+      robotsIndex: true,
+      robotsFollow: true,
+      ogTitle: null,
+      ogDescription: null,
+      ogImage: null,
+      mediaId: null,
+      taxable: true,
+      taxCategory: "general",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as EcommerceProduct);
+    mockVariants.push({
+      id: "v1",
+      productId: "p1",
+      title: "Default",
+      optionSignature: "default",
+      optionValues: {},
+      sku: null,
+      barcode: null,
+      price: 10000,
+      salePrice: null,
+      compareAtPrice: null,
+      costPerItem: null,
+      inventoryQuantity: 0,
+      trackInventory: false,
+      lowStockThreshold: null,
+      allowBackorder: false,
+      weight: null,
+      weightUnit: "oz",
+      image: null,
+      status: "active",
+      active: true,
+      sortOrder: 0,
+      isDefault: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockCoupons.push({
+      id: "c1",
+      code: "SAVE10",
+      description: null,
+      type: "fixed",
+      value: 1000,
+      minOrderAmount: null,
+      maxDiscountAmount: null,
+      maxRedemptions: null,
+      perCustomerLimit: null,
+      timesUsed: 0,
+      startDate: null,
+      endDate: null,
+      active: true,
+      blockAffiliateCommission: false,
+      blockVipDiscount: false,
+      minMarginPercent: null,
+      autoExpireAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as EcommerceCoupon);
+    mockShippingZones.push({
+      id: "zone-us",
+      name: "United States",
+      countries: ["US"],
+      states: [],
+      active: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockShippingRates.push({
+      id: "rate-standard",
+      zoneId: "zone-us",
+      name: "Standard",
+      description: null,
+      amount: 1000,
+      minOrderAmount: null,
+      maxOrderAmount: null,
+      active: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const priced = await priceCart({
+      items: [{ productId: "p1", quantity: 1 }],
+      couponCode: "SAVE10",
+      shippingRateId: "rate-standard",
+    });
+
+    expect(priced.discountAmount).toBe(1000);
+    expect(priced.tax).toMatchObject({ provider: "manual", taxableAmount: 10000, rateBps: 600 });
+    expect(priced.taxAmount).toBe(600);
+    expect(priced.totalAmount).toBe(10600);
+    expect(priced.couponValidation?.finalTotals.taxAmount).toBe(600);
   });
 
   it("rejects expired and exhausted coupons with structured messages", async () => {

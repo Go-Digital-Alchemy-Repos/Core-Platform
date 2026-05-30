@@ -33,6 +33,11 @@ import {
   getShippingProviderDefinition,
   mergeShippingProviderStatuses,
 } from "../../services/ecommerce-shipping-provider.service";
+import {
+  ecommerceTaxSettingsSchema,
+  getEcommerceTaxSettings,
+  saveEcommerceTaxSettings,
+} from "../../services/ecommerce-tax.service";
 import { requireEcommerceEnabled } from "../../middleware/site-features";
 
 const router = Router();
@@ -500,6 +505,14 @@ router.put("/settings/stripe", asyncHandler(async (req, res) => {
 
 router.post("/settings/stripe/test", asyncHandler(async (_req, res) => {
   res.json(await testEcommerceStripeConnection());
+}));
+
+router.get("/settings/tax", asyncHandler(async (_req, res) => {
+  res.json(await getEcommerceTaxSettings());
+}));
+
+router.put("/settings/tax", asyncHandler(async (req, res) => {
+  res.json(await saveEcommerceTaxSettings(ecommerceTaxSettingsSchema.parse(req.body)));
 }));
 
 export default router;

@@ -9,6 +9,7 @@ import {
   type EcommerceShippingRate,
   type EcommerceShippingZone,
 } from "@shared/schema";
+import { calculateEcommerceTax, type EcommerceTaxCalculation } from "./ecommerce-tax.service";
 
 export const priceCartSchema = z.object({
   items: z.array(ecommerceCartItemSchema).min(1),
@@ -36,6 +37,8 @@ export interface PricedCartLine {
   lineTotal: number;
   image: string | null;
   categoryIds: string[];
+  taxable: boolean;
+  taxCategory: string | null;
 }
 
 export interface PricedCart {
@@ -50,6 +53,7 @@ export interface PricedCart {
   couponCode?: string;
   couponValidation?: CouponValidationResult;
   shippingRate: ShippingRateOption | null;
+  tax: EcommerceTaxCalculation;
 }
 
 export interface ShippingRateOption {
@@ -361,6 +365,8 @@ export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise
       lineTotal: unitPrice * item.quantity,
       image: variant.image ?? product.primaryImage,
       categoryIds: (productCategories.get(product.id) ?? []).map((category) => category.id),
+      taxable: product.taxable,
+      taxCategory: product.taxCategory,
     };
   }));
 
@@ -390,8 +396,21 @@ export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise
     couponMessage = result.message;
   }
 
-  const taxAmount = 0;
+  const tax = await calculateEcommerceTax({
+    lines,
+    subtotalAmount,
+    discountAmount,
+    shippingAmount,
+  });
+  const taxAmount = tax.taxAmount;
   const totalAmount = Math.max(0, subtotalAmount - discountAmount + shippingAmount + taxAmount);
+  if (couponValidation) {
+    couponValidation.finalTotals = {
+      ...couponValidation.finalTotals,
+      taxAmount,
+      totalAmount,
+    };
+  }
   return {
     lines,
     subtotalAmount,
@@ -404,5 +423,6 @@ export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise
     couponMessage,
     couponValidation,
     shippingRate,
+    tax,
   };
 }

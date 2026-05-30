@@ -9,6 +9,7 @@ import {
   Eye,
   Package,
   Pencil,
+  Percent,
   Plug,
   Plus,
   Save,
@@ -247,6 +248,13 @@ interface StripeSettingsStatus {
   hasLiveSecretKey: boolean;
   hasTestWebhookSecret: boolean;
   hasLiveWebhookSecret: boolean;
+}
+
+interface TaxSettingsStatus {
+  enabled: boolean;
+  manualRateBps: number;
+  taxShipping: boolean;
+  stripeTaxEnabled: boolean;
 }
 
 const nav: Array<{ view: View; label: string; icon: ElementType; iconColor: string }> = [
@@ -2409,6 +2417,8 @@ function IntegrationsTab() {
 
 function SettingsTab() {
   const { data } = useQuery<StripeSettingsStatus>({ queryKey: ["/api/admin/ecommerce/settings/stripe"] });
+  const { data: taxData } = useQuery<TaxSettingsStatus>({ queryKey: ["/api/admin/ecommerce/settings/tax"] });
+  const { toast } = useToast();
   const [activeMode, setActiveMode] = useState("test");
   const [testPublishableKey, setTestPublishableKey] = useState("");
   const [testSecretKey, setTestSecretKey] = useState("");
@@ -2416,6 +2426,10 @@ function SettingsTab() {
   const [livePublishableKey, setLivePublishableKey] = useState("");
   const [liveSecretKey, setLiveSecretKey] = useState("");
   const [liveWebhookSecret, setLiveWebhookSecret] = useState("");
+  const [taxEnabled, setTaxEnabled] = useState(false);
+  const [manualRate, setManualRate] = useState("");
+  const [taxShipping, setTaxShipping] = useState(false);
+  const [stripeTaxEnabled, setStripeTaxEnabled] = useState(false);
   useEffect(() => {
     if (data) {
       setActiveMode(data.activeMode || "test");
@@ -2423,6 +2437,14 @@ function SettingsTab() {
       setLivePublishableKey(data.livePublishableKey || "");
     }
   }, [data]);
+  useEffect(() => {
+    if (taxData) {
+      setTaxEnabled(taxData.enabled);
+      setManualRate((taxData.manualRateBps / 100).toFixed(2).replace(/\.00$/, ""));
+      setTaxShipping(taxData.taxShipping);
+      setStripeTaxEnabled(taxData.stripeTaxEnabled);
+    }
+  }, [taxData]);
   const mutation = useMutation({
     mutationFn: async () => apiRequest("PUT", "/api/admin/ecommerce/settings/stripe", {
       activeMode,
@@ -2433,20 +2455,60 @@ function SettingsTab() {
       liveSecretKey,
       liveWebhookSecret,
     }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/settings/stripe"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/settings/stripe"] });
+      toast({ title: "Stripe settings saved" });
+    },
+  });
+  const taxMutation = useMutation({
+    mutationFn: async () => apiRequest("PUT", "/api/admin/ecommerce/settings/tax", {
+      enabled: taxEnabled,
+      manualRateBps: Math.round((Number(manualRate) || 0) * 100),
+      taxShipping,
+      stripeTaxEnabled,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/settings/tax"] });
+      toast({ title: "Tax settings saved" });
+    },
   });
   return (
-    <Card>
-      <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5" /> Stripe settings</CardTitle><CardDescription>Secret values are encrypted and masked after save.</CardDescription></CardHeader>
-      <CardContent className="grid gap-4">
-        <div className="space-y-2"><Label>Active mode</Label><Select value={activeMode} onValueChange={setActiveMode}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="test">Test</SelectItem><SelectItem value="live">Live</SelectItem></SelectContent></Select></div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <StripeModeFields title="Test keys" publishable={testPublishableKey} setPublishable={setTestPublishableKey} secret={testSecretKey} setSecret={setTestSecretKey} webhook={testWebhookSecret} setWebhook={setTestWebhookSecret} hasSecret={data?.hasTestSecretKey} hasWebhook={data?.hasTestWebhookSecret} />
-          <StripeModeFields title="Live keys" publishable={livePublishableKey} setPublishable={setLivePublishableKey} secret={liveSecretKey} setSecret={setLiveSecretKey} webhook={liveWebhookSecret} setWebhook={setLiveWebhookSecret} hasSecret={data?.hasLiveSecretKey} hasWebhook={data?.hasLiveWebhookSecret} />
-        </div>
-        <Button onClick={() => mutation.mutate()} disabled={mutation.isPending} className="w-fit"><Save className="mr-2 h-4 w-4" /> Save Stripe settings</Button>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5 text-slate-500" /> Stripe settings</CardTitle><CardDescription>Secret values are encrypted and masked after save.</CardDescription></CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="space-y-2"><Label>Active mode</Label><Select value={activeMode} onValueChange={setActiveMode}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="test">Test</SelectItem><SelectItem value="live">Live</SelectItem></SelectContent></Select></div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <StripeModeFields title="Test keys" publishable={testPublishableKey} setPublishable={setTestPublishableKey} secret={testSecretKey} setSecret={setTestSecretKey} webhook={testWebhookSecret} setWebhook={setTestWebhookSecret} hasSecret={data?.hasTestSecretKey} hasWebhook={data?.hasTestWebhookSecret} />
+            <StripeModeFields title="Live keys" publishable={livePublishableKey} setPublishable={setLivePublishableKey} secret={liveSecretKey} setSecret={setLiveSecretKey} webhook={liveWebhookSecret} setWebhook={setLiveWebhookSecret} hasSecret={data?.hasLiveSecretKey} hasWebhook={data?.hasLiveWebhookSecret} />
+          </div>
+          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending} className="w-fit"><Save className="mr-2 h-4 w-4" /> Save Stripe settings</Button>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Percent className="h-5 w-5 text-amber-600" /> Tax settings</CardTitle><CardDescription>Checkout tax is calculated server-side from saved settings and taxable product records.</CardDescription></CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div><Label>Enable tax calculation</Label><p className="text-sm text-muted-foreground">Adds tax to cart, checkout, and order totals.</p></div>
+              <Switch checked={taxEnabled} onCheckedChange={setTaxEnabled} />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div><Label>Tax shipping</Label><p className="text-sm text-muted-foreground">Include shipping charges in the taxable base.</p></div>
+              <Switch checked={taxShipping} onCheckedChange={setTaxShipping} />
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2"><Label>Manual tax rate (%)</Label><Input value={manualRate} onChange={(event) => setManualRate(event.target.value)} placeholder="6.00" inputMode="decimal" /></div>
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div><Label>Prepare Stripe Tax</Label><p className="text-sm text-muted-foreground">Marks this store for provider-backed tax calculation once the Stripe Tax API is connected.</p></div>
+              <Switch checked={stripeTaxEnabled} onCheckedChange={setStripeTaxEnabled} />
+            </div>
+          </div>
+          <Button onClick={() => taxMutation.mutate()} disabled={taxMutation.isPending} className="w-fit"><Save className="mr-2 h-4 w-4" /> Save tax settings</Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
