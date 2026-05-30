@@ -71,10 +71,6 @@ export default defineConfig({
             return "stripe";
           }
 
-          if (id.includes("/leaflet/") || id.includes("/react-leaflet/")) {
-            return "maps";
-          }
-
           return "vendor";
         },
       },
