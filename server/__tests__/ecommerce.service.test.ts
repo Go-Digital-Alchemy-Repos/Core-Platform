@@ -957,7 +957,11 @@ describe("ecommerce services", () => {
   });
 
   it("sanitizes public coupon validation payloads", async () => {
-    const { toPublicCouponValidationResult, validateCouponForCart } = await import("../services/ecommerce-pricing.service");
+    const {
+      toPublicCouponValidationResult,
+      toPublicPricedCart,
+      validateCouponForCart,
+    } = await import("../services/ecommerce-pricing.service");
     mockCoupons.push({
       id: "c-public",
       code: "SAVE10",
@@ -994,12 +998,13 @@ describe("ecommerce services", () => {
       updatedAt: new Date(),
     } as EcommerceCoupon);
 
-    const publicResult = toPublicCouponValidationResult(await validateCouponForCart({
+    const validationResult = await validateCouponForCart({
       code: "save10",
       lines: [],
       subtotalAmount: 5000,
       customerEmail: "buyer@example.com",
-    }));
+    });
+    const publicResult = toPublicCouponValidationResult(validationResult);
 
     expect(publicResult?.valid).toBe(true);
     expect(publicResult?.coupon).toMatchObject({
@@ -1027,6 +1032,54 @@ describe("ecommerce services", () => {
     expect(publicResult?.coupon).not.toHaveProperty("updatedAt");
     expect(publicResult?.coupon).not.toHaveProperty("blockAffiliateCommission");
     expect(publicResult?.coupon).not.toHaveProperty("minMarginPercent");
+
+    const publicPriced = toPublicPricedCart({
+      lines: [{
+        productId: "p1",
+        variantId: "v1",
+        name: "Guide",
+        variantTitle: null,
+        sku: "GUIDE",
+        optionsSnapshot: null,
+        slug: "guide",
+        quantity: 1,
+        unitPrice: 5000,
+        lineTotal: 5000,
+        image: null,
+        categoryIds: ["cat1"],
+        taxable: true,
+        taxCategory: "internal-tax-code",
+        taxAmount: 0,
+        requiresShipping: false,
+        fulfillmentType: "digital",
+        productSnapshot: { internal: "snapshot" },
+      }],
+      subtotalAmount: 5000,
+      discountAmount: 1000,
+      shippingAmount: 0,
+      taxAmount: 0,
+      totalAmount: 4000,
+      coupon: mockCoupons[0],
+      couponCode: "SAVE10",
+      couponMessage: "Coupon applied",
+      couponValidation: validationResult,
+      shippingRate: null,
+      tax: {
+        taxAmount: 0,
+        taxableAmount: 0,
+        rateBps: 0,
+        lineTaxAmounts: [0],
+        provider: "none",
+      },
+    });
+
+    expect(publicPriced.coupon).toMatchObject({ id: "c-public", code: "SAVE10" });
+    expect(publicPriced.coupon).not.toHaveProperty("notes");
+    expect(publicPriced.couponValidation?.coupon).not.toHaveProperty("createdBy");
+    expect(publicPriced.lines[0]).not.toHaveProperty("categoryIds");
+    expect(publicPriced.lines[0]).not.toHaveProperty("taxable");
+    expect(publicPriced.lines[0]).not.toHaveProperty("taxCategory");
+    expect(publicPriced.lines[0]).not.toHaveProperty("productSnapshot");
   });
 
   it("validates Stripe key mode separation", async () => {

@@ -61,6 +61,29 @@ export interface PricedCart {
   tax: EcommerceTaxCalculation;
 }
 
+export interface PublicPricedCartLine {
+  productId: string;
+  variantId: string | null;
+  name: string;
+  variantTitle: string | null;
+  sku: string | null;
+  optionsSnapshot: Record<string, string> | null;
+  slug: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  image: string | null;
+  taxAmount: number;
+  requiresShipping: boolean;
+  fulfillmentType: string;
+}
+
+export interface PublicPricedCart extends Omit<PricedCart, "lines" | "coupon" | "couponValidation"> {
+  lines: PublicPricedCartLine[];
+  coupon: Record<string, unknown> | null;
+  couponValidation?: ReturnType<typeof toPublicCouponValidationResult>;
+}
+
 export interface ShippingRateOption {
   id: string;
   zoneId: string;
@@ -183,6 +206,30 @@ export function toPublicCouponValidationResult(result: CouponValidationResult | 
   return {
     ...result,
     coupon: couponSnapshot(result.coupon),
+  };
+}
+
+export function toPublicPricedCart(priced: PricedCart): PublicPricedCart {
+  return {
+    ...priced,
+    lines: priced.lines.map((line) => ({
+      productId: line.productId,
+      variantId: line.variantId,
+      name: line.name,
+      variantTitle: line.variantTitle,
+      sku: line.sku,
+      optionsSnapshot: line.optionsSnapshot,
+      slug: line.slug,
+      quantity: line.quantity,
+      unitPrice: line.unitPrice,
+      lineTotal: line.lineTotal,
+      image: line.image,
+      taxAmount: line.taxAmount,
+      requiresShipping: line.requiresShipping,
+      fulfillmentType: line.fulfillmentType,
+    })),
+    coupon: couponSnapshot(priced.coupon),
+    couponValidation: toPublicCouponValidationResult(priced.couponValidation),
   };
 }
 

@@ -9,6 +9,7 @@ import {
   priceCartSchema,
   shippingAddressQuoteSchema,
   toPublicCouponValidationResult,
+  toPublicPricedCart,
   validateCoupon,
 } from "../services/ecommerce-pricing.service";
 import { createEcommercePaymentIntent } from "../services/ecommerce-order.service";
@@ -72,7 +73,7 @@ router.get(
 router.post(
   "/cart/price",
   asyncHandler(async (req, res) => {
-    res.json(await priceCart(priceCartSchema.parse(req.body)));
+    res.json(toPublicPricedCart(await priceCart(priceCartSchema.parse(req.body))));
   }),
 );
 

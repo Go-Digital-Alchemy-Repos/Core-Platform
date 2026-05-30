@@ -5,6 +5,7 @@ import {
   getShippingRateOptions,
   priceCart,
   priceCartSchema,
+  toPublicPricedCart,
   type PricedCartLine,
 } from "./ecommerce-pricing.service";
 import { getEcommerceStripeClient } from "./ecommerce-stripe.service";
@@ -217,7 +218,7 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
     paymentIntentId: intent.id,
     orderId: order.id,
     lookupToken: order.lookupToken,
-    priced,
+    priced: toPublicPricedCart(priced),
   };
 }
 
