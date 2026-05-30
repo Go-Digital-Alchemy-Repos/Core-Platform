@@ -142,9 +142,9 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
       subtotalAmount: priced.subtotalAmount,
       address: shippingAddress,
     });
-    if (rates.length > 0) throw new Error("Select a shipping method before checkout");
+    if (rates.length > 0) throw httpError("Select a shipping method before checkout", 400);
   }
-  if (priced.totalAmount <= 0) throw new Error("Order total must be greater than zero");
+  if (priced.totalAmount <= 0) throw httpError("Order total must be greater than zero", 400);
 
   const customer = await storage.ecommerce.findOrCreateCustomer({
     email: data.customer.email,

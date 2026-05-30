@@ -826,7 +826,7 @@ describe("ecommerce services", () => {
       updatedAt: new Date(),
     });
 
-    await expect(createEcommercePaymentIntent({
+    const checkout = createEcommercePaymentIntent({
       items: [{ productId: "p1", quantity: 1 }],
       customer: { email: "buyer@example.com", name: "Buyer" },
       shippingAddress: {
@@ -838,7 +838,58 @@ describe("ecommerce services", () => {
         country: "US",
       },
       billingSameAsShipping: true,
-    })).rejects.toThrow(/Select a shipping method/);
+    });
+    await expect(checkout).rejects.toMatchObject({
+      message: "Select a shipping method before checkout",
+      statusCode: 400,
+    });
+    expect(mockCreateOrder).not.toHaveBeenCalled();
+  });
+
+  it("returns a client error when checkout total is not payable", async () => {
+    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+    mockProducts.push({
+      id: "p-free",
+      name: "Free Digital",
+      price: 0,
+      active: true,
+      status: "published",
+      visibility: "online",
+      archivedAt: null,
+      requiresShipping: false,
+      productType: "digital",
+      fulfillmentType: "digital",
+    } as EcommerceProduct);
+    mockVariants.push({
+      id: "v-free",
+      productId: "p-free",
+      title: "Default",
+      price: 0,
+      active: true,
+      status: "active",
+      isDefault: true,
+      trackInventory: false,
+      inventoryQuantity: 0,
+      allowBackorder: false,
+      optionValues: {},
+    } as EcommerceProductVariant);
+
+    await expect(createEcommercePaymentIntent({
+      items: [{ productId: "p-free", quantity: 1 }],
+      customer: { email: "buyer@example.com", name: "Buyer" },
+      shippingAddress: {
+        name: "Buyer",
+        address: "123 Main St",
+        city: "Detroit",
+        state: "MI",
+        zip: "48201",
+        country: "US",
+      },
+      billingSameAsShipping: true,
+    })).rejects.toMatchObject({
+      message: "Order total must be greater than zero",
+      statusCode: 400,
+    });
     expect(mockCreateOrder).not.toHaveBeenCalled();
   });
 
