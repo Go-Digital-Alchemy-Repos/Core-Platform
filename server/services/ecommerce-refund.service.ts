@@ -18,6 +18,27 @@ export function computeRefundedAmount(refunds: Array<{ amount: number; status: s
     .reduce((sum, refund) => sum + refund.amount, 0);
 }
 
+function computeProcessedRefundedAmount(refunds: Array<{ amount: number; status: string }>): number {
+  return refunds
+    .filter((refund) => refund.status === "processed")
+    .reduce((sum, refund) => sum + refund.amount, 0);
+}
+
+function deriveRefundPaymentStatus(
+  order: { totalAmount: number; paymentStatus?: string | null },
+  refunds: Array<{ amount: number; status: string }>,
+) {
+  const processed = computeProcessedRefundedAmount(refunds);
+  const hasPending = refunds.some((refund) => refund.status === "pending");
+  const hasFailed = refunds.some((refund) => refund.status === "failed");
+
+  if (hasPending) return "refund_pending";
+  if (processed >= order.totalAmount) return "refunded";
+  if (processed > 0) return "partially_refunded";
+  if (hasFailed) return "refund_failed";
+  return order.paymentStatus ?? "paid";
+}
+
 export function mapStripeRefundStatus(status: string | null | undefined): RefundStatus {
   if (status === "succeeded") return "processed";
   if (status === "failed" || status === "canceled") return "failed";
@@ -46,9 +67,8 @@ export function assertEcommerceOrderCanRefund(order: {
 async function syncOrderRefundPaymentStatus(orderId: string) {
   const order = await storage.ecommerce.getOrderWithDetails(orderId);
   if (!order) return;
-  const refunded = computeRefundedAmount(order.refunds);
   await storage.ecommerce.updateOrder(order.id, {
-    paymentStatus: refunded >= order.totalAmount ? "refunded" : refunded > 0 ? "partially_refunded" : order.paymentStatus,
+    paymentStatus: deriveRefundPaymentStatus(order, order.refunds),
   });
 }
 
@@ -100,9 +120,8 @@ export async function createEcommerceRefund(params: {
 
   const refreshed = await storage.ecommerce.getOrderWithDetails(order.id);
   if (refreshed) {
-    const refunded = computeRefundedAmount([...refreshed.refunds, refund]);
     await storage.ecommerce.updateOrder(order.id, {
-      paymentStatus: refunded >= order.totalAmount ? "refunded" : "partially_refunded",
+      paymentStatus: deriveRefundPaymentStatus(order, [...refreshed.refunds, refund]),
     });
     await sendEcommerceRefundEmail(refreshed, params.amount);
   }

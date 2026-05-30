@@ -2081,6 +2081,77 @@ describe("ecommerce services", () => {
     expect(mockUpdateOrder).toHaveBeenCalledWith("order-1", { paymentStatus: "refunded" });
   });
 
+  it("marks orders refund_pending while Stripe refunds are still pending", async () => {
+    const { recordStripeRefundWebhook } = await import("../services/ecommerce-refund.service");
+    mockGetRefundByStripeRefundId.mockResolvedValue(undefined);
+    mockCreateRefund.mockResolvedValue({
+      id: "refund-pending",
+      orderId: "order-pending-refund",
+      amount: 2500,
+      status: "pending",
+    });
+    mockGetOrderWithDetails.mockResolvedValueOnce({
+      id: "order-pending-refund",
+      totalAmount: 5000,
+      status: "paid",
+      paymentStatus: "paid",
+      refunds: [],
+    }).mockResolvedValueOnce({
+      id: "order-pending-refund",
+      totalAmount: 5000,
+      status: "paid",
+      paymentStatus: "paid",
+      refunds: [{ amount: 2500, status: "pending" }],
+    });
+
+    await recordStripeRefundWebhook({
+      stripeRefundId: "re_pending",
+      orderId: "order-pending-refund",
+      amount: 2500,
+      status: "pending",
+    });
+
+    expect(mockCreateRefund).toHaveBeenCalledWith(expect.objectContaining({
+      orderId: "order-pending-refund",
+      status: "pending",
+      type: "partial",
+    }));
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-pending-refund", { paymentStatus: "refund_pending" });
+  });
+
+  it("marks orders refund_failed when Stripe reports a failed refund and no amount was processed", async () => {
+    const { recordStripeRefundWebhook } = await import("../services/ecommerce-refund.service");
+    mockGetRefundByStripeRefundId.mockResolvedValue({
+      id: "refund-failed",
+      orderId: "order-failed-refund",
+      amount: 2500,
+      status: "pending",
+    });
+    mockUpdateRefund.mockResolvedValue({
+      id: "refund-failed",
+      orderId: "order-failed-refund",
+      amount: 2500,
+      status: "failed",
+    });
+    mockGetOrderWithDetails.mockResolvedValue({
+      id: "order-failed-refund",
+      totalAmount: 5000,
+      status: "paid",
+      paymentStatus: "refund_pending",
+      refunds: [{ amount: 2500, status: "failed" }],
+    });
+
+    await recordStripeRefundWebhook({
+      stripeRefundId: "re_failed",
+      status: "failed",
+    });
+
+    expect(mockUpdateRefund).toHaveBeenCalledWith("refund-failed", expect.objectContaining({
+      status: "failed",
+    }));
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-failed-refund", { paymentStatus: "refund_failed" });
+  });
+
   it("ignores Stripe refund webhooks that exceed the remaining refundable balance", async () => {
     const { recordStripeRefundWebhook } = await import("../services/ecommerce-refund.service");
     mockGetRefundByStripeRefundId.mockResolvedValue(undefined);
