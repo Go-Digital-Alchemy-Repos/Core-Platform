@@ -228,9 +228,15 @@ interface Order {
   status: string;
   paymentStatus: string;
   totalAmount: number;
+  subtotalAmount?: number;
+  shippingAmount?: number;
+  taxAmount?: number;
+  discountAmount?: number;
   createdAt: string;
   customer?: { name: string; email: string } | null;
   items: Array<{ id: string; productName: string; quantity: number; lineTotal: number }>;
+  shipments?: Array<{ id: string; carrier?: string | null; trackingNumber?: string | null; trackingUrl?: string | null; status: string; shippedAt: string }>;
+  fulfillments?: Array<{ id: string; status: string; carrier?: string | null; trackingNumber?: string | null; fulfilledAt?: string | null }>;
 }
 
 interface StripeSettingsStatus {
@@ -1315,16 +1321,183 @@ function Metric({ label, value }: { label: string; value: string }) {
 }
 
 function OrdersTab() {
+  const { toast } = useToast();
   const { data: orders = [] } = useQuery<Order[]>({ queryKey: ["/api/admin/ecommerce/orders"] });
+  const { data: locations = [] } = useQuery<FulfillmentLocation[]>({
+    queryKey: ["/api/admin/ecommerce/shipping/locations"],
+  });
+  const [selectedOrderId, setSelectedOrderId] = useState<string>("");
+  const [shipmentForm, setShipmentForm] = useState({
+    carrier: "",
+    trackingNumber: "",
+    trackingUrl: "",
+    locationId: "",
+    serviceLevel: "",
+  });
+  const selectedOrder = orders.find((order) => order.id === selectedOrderId) ?? orders[0] ?? null;
+
+  useEffect(() => {
+    if (!selectedOrderId && orders[0]?.id) setSelectedOrderId(orders[0].id);
+  }, [orders, selectedOrderId]);
+
+  const shipmentMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedOrder) throw new Error("Select an order first.");
+      const shipmentResponse = await apiRequest("POST", `/api/admin/ecommerce/orders/${selectedOrder.id}/shipments`, {
+        carrier: shipmentForm.carrier.trim() || null,
+        trackingNumber: shipmentForm.trackingNumber.trim() || null,
+        trackingUrl: shipmentForm.trackingUrl.trim() || null,
+        status: "shipped",
+      });
+      const shipment = await shipmentResponse.json() as { id: string };
+      await apiRequest("POST", `/api/admin/ecommerce/orders/${selectedOrder.id}/fulfillments`, {
+        fulfillment: {
+          shipmentId: shipment.id,
+          locationId: shipmentForm.locationId || null,
+          status: "fulfilled",
+          method: "manual",
+          serviceLevel: shipmentForm.serviceLevel.trim() || null,
+          carrier: shipmentForm.carrier.trim() || null,
+          trackingNumber: shipmentForm.trackingNumber.trim() || null,
+          trackingUrl: shipmentForm.trackingUrl.trim() || null,
+          fulfilledAt: new Date().toISOString(),
+        },
+        items: selectedOrder.items.map((item) => ({ orderItemId: item.id, quantity: item.quantity })),
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/orders"] });
+      toast({ title: "Order marked shipped" });
+      setShipmentForm({ carrier: "", trackingNumber: "", trackingUrl: "", locationId: "", serviceLevel: "" });
+    },
+    onError: (error) => toast({
+      title: "Shipment could not be created",
+      description: error instanceof Error ? error.message : "Please review the fulfillment details.",
+      variant: "destructive",
+    }),
+  });
+
   return (
-    <Card>
-      <CardHeader><CardTitle className="flex items-center gap-2"><ShoppingBag className="h-5 w-5" /> Orders</CardTitle></CardHeader>
-      <CardContent>
-        <Table><TableHeader><TableRow><TableHead>Order</TableHead><TableHead>Customer</TableHead><TableHead>Status</TableHead><TableHead>Total</TableHead></TableRow></TableHeader><TableBody>
-          {orders.map((order) => <TableRow key={order.id}><TableCell className="font-mono text-xs">{order.id}</TableCell><TableCell>{order.customer?.email || "-"}</TableCell><TableCell><Badge>{order.status}</Badge> <Badge variant="outline">{order.paymentStatus}</Badge></TableCell><TableCell>{formatMoney(order.totalAmount)}</TableCell></TableRow>)}
-        </TableBody></Table>
-      </CardContent>
-    </Card>
+    <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><ShoppingBag className="h-5 w-5" /> Orders</CardTitle>
+          <CardDescription>Select an order to review items and create a shipment.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orders.map((order) => (
+                <TableRow key={order.id} className={selectedOrder?.id === order.id ? "bg-muted/50" : undefined}>
+                  <TableCell>
+                    <div className="font-mono text-xs">{order.id}</div>
+                    <div className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</div>
+                  </TableCell>
+                  <TableCell>{order.customer?.email || "-"}</TableCell>
+                  <TableCell><Badge>{order.status}</Badge> <Badge variant="outline">{order.paymentStatus}</Badge></TableCell>
+                  <TableCell>{formatMoney(order.totalAmount)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button type="button" variant="outline" size="sm" onClick={() => setSelectedOrderId(order.id)}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      View
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card className="h-fit">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5" /> Fulfillment</CardTitle>
+          <CardDescription>{selectedOrder ? `Order ${selectedOrder.id}` : "Select an order to fulfill."}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {selectedOrder ? (
+            <>
+              <div className="space-y-3">
+                <div className="grid gap-2 rounded-lg border p-3">
+                  {selectedOrder.items.map((item) => (
+                    <div key={item.id} className="flex justify-between gap-4 text-sm">
+                      <span>{item.productName} x {item.quantity}</span>
+                      <span>{formatMoney(item.lineTotal)}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between border-t pt-2 font-semibold">
+                    <span>Total</span>
+                    <span>{formatMoney(selectedOrder.totalAmount)}</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(selectedOrder.shipments ?? []).map((shipment) => (
+                    <Badge key={shipment.id} variant="outline">
+                      {shipment.carrier || "Shipment"} {shipment.trackingNumber || shipment.status}
+                    </Badge>
+                  ))}
+                  {(selectedOrder.fulfillments ?? []).map((fulfillment) => (
+                    <Badge key={fulfillment.id} variant="secondary">{fulfillment.status}</Badge>
+                  ))}
+                </div>
+              </div>
+
+              <form
+                className="grid gap-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  shipmentMutation.mutate();
+                }}
+              >
+                <div className="space-y-2">
+                  <Label>Fulfillment location</Label>
+                  <Select value={shipmentForm.locationId || "__none"} onValueChange={(locationId) => setShipmentForm((current) => ({ ...current, locationId: locationId === "__none" ? "" : locationId }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">No location</SelectItem>
+                      {locations.map((location) => <SelectItem key={location.id} value={location.id}>{location.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Carrier</Label>
+                    <Input value={shipmentForm.carrier} onChange={(event) => setShipmentForm((current) => ({ ...current, carrier: event.target.value }))} placeholder="UPS" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Service</Label>
+                    <Input value={shipmentForm.serviceLevel} onChange={(event) => setShipmentForm((current) => ({ ...current, serviceLevel: event.target.value }))} placeholder="Ground" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Tracking number</Label>
+                  <Input value={shipmentForm.trackingNumber} onChange={(event) => setShipmentForm((current) => ({ ...current, trackingNumber: event.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tracking URL</Label>
+                  <Input value={shipmentForm.trackingUrl} onChange={(event) => setShipmentForm((current) => ({ ...current, trackingUrl: event.target.value }))} placeholder="https://..." />
+                </div>
+                <Button type="submit" disabled={shipmentMutation.isPending || selectedOrder.items.length === 0}>
+                  <Save className="mr-2 h-4 w-4" />
+                  Mark shipped
+                </Button>
+              </form>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">No orders are available yet.</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
