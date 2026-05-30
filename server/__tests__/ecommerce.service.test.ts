@@ -17,6 +17,7 @@ const mockGetOrder = vi.fn();
 const mockUpdateOrder = vi.fn();
 const mockGetOrderWithDetails = vi.fn();
 const mockGetCustomer = vi.fn();
+const mockFindOrCreateCustomer = vi.fn();
 const mockCreateOrder = vi.fn();
 const mockGetFulfillmentsForOrder = vi.fn();
 const mockGetRefundByStripeRefundId = vi.fn();
@@ -32,6 +33,7 @@ const mockSendEcommerceRefundEmail = vi.fn();
 const mockGetDecryptedCategory = vi.fn(async (_category: string) => ({}));
 const mockUpsertSetting = vi.fn();
 const mockInvalidateCategory = vi.fn();
+const mockStripePaymentIntentCreate = vi.fn();
 
 vi.mock("../storage/index", () => ({
   storage: {
@@ -53,6 +55,7 @@ vi.mock("../storage/index", () => ({
       updateOrder: mockUpdateOrder,
       getOrderWithDetails: mockGetOrderWithDetails,
       getCustomer: mockGetCustomer,
+      findOrCreateCustomer: mockFindOrCreateCustomer,
       createOrder: mockCreateOrder,
       getFulfillmentsForOrder: mockGetFulfillmentsForOrder,
       recordCouponRedemptionForOrder: mockRecordCouponRedemptionForOrder,
@@ -70,6 +73,18 @@ vi.mock("../services/ecommerce-email.service", () => ({
   sendEcommerceRefundEmail: mockSendEcommerceRefundEmail,
 }));
 
+vi.mock("../services/ecommerce-stripe.service", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../services/ecommerce-stripe.service")>();
+  return {
+    ...actual,
+    getEcommerceStripeClient: vi.fn(async () => ({
+      paymentIntents: {
+        create: mockStripePaymentIntentCreate,
+      },
+    })),
+  };
+});
+
 describe("ecommerce services", () => {
   beforeEach(() => {
     mockProducts.length = 0;
@@ -81,6 +96,7 @@ describe("ecommerce services", () => {
     mockUpdateOrder.mockReset();
     mockGetOrderWithDetails.mockReset();
     mockGetCustomer.mockReset();
+    mockFindOrCreateCustomer.mockReset();
     mockCreateOrder.mockReset();
     mockGetFulfillmentsForOrder.mockReset();
     mockGetFulfillmentsForOrder.mockResolvedValue([]);
@@ -100,6 +116,11 @@ describe("ecommerce services", () => {
     mockGetDecryptedCategory.mockResolvedValue({});
     mockUpsertSetting.mockReset();
     mockInvalidateCategory.mockReset();
+    mockStripePaymentIntentCreate.mockReset();
+    mockStripePaymentIntentCreate.mockResolvedValue({
+      id: "pi_test",
+      client_secret: "pi_test_secret",
+    });
   });
 
   it("calculates effective sale pricing without trusting client prices", async () => {
@@ -619,6 +640,130 @@ describe("ecommerce services", () => {
       billingSameAsShipping: true,
     })).rejects.toThrow(/Select a shipping method/);
     expect(mockCreateOrder).not.toHaveBeenCalled();
+  });
+
+  it("marks checkout orders failed when Stripe cannot create a PaymentIntent", async () => {
+    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+    const customer = { id: "customer-1", email: "buyer@example.com", name: "Buyer" };
+    const order = {
+      id: "order-failed-checkout",
+      customerId: customer.id,
+      status: "pending",
+      paymentStatus: "unpaid",
+      totalAmount: 5000,
+      subtotalAmount: 5000,
+      taxAmount: 0,
+      shippingAmount: 0,
+      discountAmount: 0,
+      lookupToken: "lookup-token",
+    } as EcommerceOrder;
+    mockFindOrCreateCustomer.mockResolvedValue(customer);
+    mockCreateOrder.mockResolvedValue(order);
+    mockStripePaymentIntentCreate.mockRejectedValue(new Error("Stripe is unavailable"));
+    mockProducts.push({
+      id: "p-digital",
+      name: "Digital Guide",
+      tagline: null,
+      description: null,
+      shortDescription: null,
+      productType: "digital",
+      vendor: null,
+      price: 5000,
+      compareAtPrice: null,
+      costPerItem: null,
+      taxable: true,
+      taxCategory: null,
+      featured: false,
+      visibility: "online",
+      publishedAt: null,
+      archivedAt: null,
+      primaryImage: null,
+      secondaryImages: [],
+      features: [],
+      included: [],
+      active: true,
+      status: "published",
+      sku: "DIGITAL-1",
+      tags: [],
+      salePrice: null,
+      discountType: "NONE",
+      discountValue: null,
+      saleStartAt: null,
+      saleEndAt: null,
+      metaTitle: null,
+      metaDescription: null,
+      metaKeywords: null,
+      urlSlug: "digital-guide",
+      canonicalUrl: null,
+      robotsIndex: true,
+      robotsFollow: true,
+      ogTitle: null,
+      ogDescription: null,
+      ogImage: null,
+      physicalProduct: false,
+      requiresShipping: false,
+      weight: null,
+      weightUnit: "oz",
+      length: null,
+      width: null,
+      height: null,
+      dimensionUnit: "in",
+      shippingProfile: null,
+      fulfillmentType: "digital",
+      relatedProductIds: [],
+      upsellProductIds: [],
+      badgeText: null,
+      mediaId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockVariants.push({
+      id: "v-digital",
+      productId: "p-digital",
+      title: "Default",
+      optionSignature: "default",
+      optionValues: {},
+      sku: "DIGITAL-1",
+      barcode: null,
+      price: 5000,
+      salePrice: null,
+      compareAtPrice: null,
+      costPerItem: null,
+      inventoryQuantity: 0,
+      trackInventory: false,
+      lowStockThreshold: null,
+      allowBackorder: false,
+      weight: null,
+      weightUnit: "oz",
+      image: null,
+      status: "active",
+      active: true,
+      sortOrder: 0,
+      isDefault: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await expect(createEcommercePaymentIntent({
+      items: [{ productId: "p-digital", quantity: 1 }],
+      customer: { email: customer.email, name: customer.name },
+      shippingAddress: {
+        name: "Buyer",
+        address: "123 Main St",
+        city: "Detroit",
+        state: "MI",
+        zip: "48201",
+        country: "US",
+      },
+      billingSameAsShipping: true,
+    })).rejects.toThrow(/Stripe is unavailable/);
+
+    expect(mockCreateOrder).toHaveBeenCalled();
+    expect(mockUpdateOrder).toHaveBeenCalledWith(order.id, expect.objectContaining({
+      status: "cancelled",
+      paymentStatus: "failed",
+      notes: expect.stringContaining("Stripe is unavailable"),
+    }));
   });
 
   it("calculates manual tax server-side after discounts and optional shipping tax", async () => {

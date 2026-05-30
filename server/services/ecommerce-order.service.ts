@@ -12,6 +12,7 @@ import {
   sendEcommerceOrderConfirmation,
   sendEcommerceOrderStatusEmail,
 } from "./ecommerce-email.service";
+import { logger } from "../utils/logger";
 
 const addressSchema = z.object({
   name: z.string().min(1),
@@ -180,16 +181,33 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
     customerUserAgent: data.metaTracking?.userAgent,
   }, pricedLinesToOrderItems(priced.lines));
 
-  const stripe = await getEcommerceStripeClient();
-  const intent = await stripe.paymentIntents.create({
-    amount: order.totalAmount,
-    currency: "usd",
-    automatic_payment_methods: { enabled: true },
-    receipt_email: customer.email,
-    metadata: { orderId: order.id },
-  });
-  if (!intent.client_secret) {
-    throw new Error("Stripe did not return a client secret for this PaymentIntent");
+  let intent;
+  try {
+    const stripe = await getEcommerceStripeClient();
+    intent = await stripe.paymentIntents.create({
+      amount: order.totalAmount,
+      currency: "usd",
+      automatic_payment_methods: { enabled: true },
+      receipt_email: customer.email,
+      metadata: { orderId: order.id },
+    });
+    if (!intent.client_secret) {
+      throw new Error("Stripe did not return a client secret for this PaymentIntent");
+    }
+  } catch (err) {
+    try {
+      await storage.ecommerce.updateOrder(order.id, {
+        status: "cancelled",
+        paymentStatus: "failed",
+        notes: `Checkout failed before PaymentIntent creation: ${err instanceof Error ? err.message : String(err)}`,
+      });
+    } catch (updateErr) {
+      logger.stripe.warn("Failed to mark ecommerce checkout order failed after Stripe error", {
+        orderId: order.id,
+        error: updateErr instanceof Error ? updateErr.message : String(updateErr),
+      });
+    }
+    throw err;
   }
 
   await storage.ecommerce.updateOrder(order.id, { stripePaymentIntentId: intent.id });
