@@ -706,6 +706,52 @@ describe("ecommerce services", () => {
     expect(mockSendEcommerceOrderStatusEmail).not.toHaveBeenCalled();
   });
 
+  it("allows shipments only for paid, active ecommerce orders", async () => {
+    const { assertEcommerceOrderCanShip } = await import("../services/ecommerce-order.service");
+
+    mockGetOrder.mockResolvedValueOnce({
+      id: "order-ship-1",
+      status: "paid",
+      paymentStatus: "paid",
+    } as EcommerceOrder);
+    await expect(assertEcommerceOrderCanShip("order-ship-1")).resolves.toMatchObject({ id: "order-ship-1" });
+
+    mockGetOrder.mockResolvedValueOnce({
+      id: "order-ship-2",
+      status: "paid",
+      paymentStatus: "partially_refunded",
+    } as EcommerceOrder);
+    await expect(assertEcommerceOrderCanShip("order-ship-2")).resolves.toMatchObject({ id: "order-ship-2" });
+  });
+
+  it("blocks shipments for unpaid, cancelled, delivered, or missing ecommerce orders", async () => {
+    const { assertEcommerceOrderCanShip } = await import("../services/ecommerce-order.service");
+
+    mockGetOrder.mockResolvedValueOnce({
+      id: "order-unpaid",
+      status: "pending",
+      paymentStatus: "unpaid",
+    } as EcommerceOrder);
+    await expect(assertEcommerceOrderCanShip("order-unpaid")).rejects.toThrow(/paid orders/);
+
+    mockGetOrder.mockResolvedValueOnce({
+      id: "order-cancelled",
+      status: "cancelled",
+      paymentStatus: "paid",
+    } as EcommerceOrder);
+    await expect(assertEcommerceOrderCanShip("order-cancelled")).rejects.toThrow(/Cancelled/);
+
+    mockGetOrder.mockResolvedValueOnce({
+      id: "order-delivered",
+      status: "delivered",
+      paymentStatus: "paid",
+    } as EcommerceOrder);
+    await expect(assertEcommerceOrderCanShip("order-delivered")).rejects.toThrow(/Delivered/);
+
+    mockGetOrder.mockResolvedValueOnce(undefined);
+    await expect(assertEcommerceOrderCanShip("missing-order")).rejects.toThrow(/Order not found/);
+  });
+
   it("creates manual paid orders through server-side pricing and inventory deduction", async () => {
     const { createManualEcommerceOrder } = await import("../services/ecommerce-order.service");
     const customer = { id: "customer-1", email: "buyer@example.com", name: "Buyer" };

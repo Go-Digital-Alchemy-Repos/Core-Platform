@@ -57,6 +57,12 @@ export const adminOrderUpdateSchema = z.object({
   notes: z.string().optional(),
 });
 
+const shippablePaymentStatuses = new Set(["paid", "partially_refunded"]);
+
+function httpError(message: string, statusCode: number) {
+  return Object.assign(new Error(message), { statusCode });
+}
+
 function pricedLinesToOrderItems(lines: PricedCartLine[]) {
   return lines.map((line) => ({
     orderId: "",
@@ -219,6 +225,21 @@ export async function updateAdminEcommerceOrder(orderId: string, input: unknown)
     if (details) await sendEcommerceOrderStatusEmail(details);
   }
 
+  return order;
+}
+
+export async function assertEcommerceOrderCanShip(orderId: string) {
+  const order = await storage.ecommerce.getOrder(orderId);
+  if (!order) throw httpError("Order not found", 404);
+  if (!shippablePaymentStatuses.has(order.paymentStatus)) {
+    throw httpError("Only paid orders can be shipped", 400);
+  }
+  if (order.status === "cancelled") {
+    throw httpError("Cancelled orders cannot be shipped", 400);
+  }
+  if (order.status === "delivered") {
+    throw httpError("Delivered orders cannot receive new shipments", 400);
+  }
   return order;
 }
 

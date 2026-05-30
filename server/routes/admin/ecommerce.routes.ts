@@ -25,6 +25,7 @@ import {
 import { createEcommerceRefund } from "../../services/ecommerce-refund.service";
 import {
   adminOrderUpdateSchema,
+  assertEcommerceOrderCanShip,
   createManualEcommerceOrder,
   manualOrderSchema,
   updateAdminEcommerceOrder,
@@ -435,6 +436,7 @@ router.put("/shipping/providers/:provider/credentials", asyncHandler(async (req,
 
 router.post("/orders/:orderId/shipments", asyncHandler(async (req, res) => {
   const orderId = paramString(req.params.orderId);
+  await assertEcommerceOrderCanShip(orderId);
   const shipmentPayload = insertEcommerceShipmentSchema.parse({
     ...req.body,
     orderId,
