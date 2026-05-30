@@ -149,6 +149,25 @@ interface FulfillmentLocation {
   active: boolean;
 }
 
+interface ShippingZone {
+  id: string;
+  name: string;
+  countries: string[];
+  states: string[];
+  active: boolean;
+}
+
+interface ShippingRate {
+  id: string;
+  zoneId: string;
+  name: string;
+  description?: string | null;
+  amount: number;
+  minOrderAmount?: number | null;
+  maxOrderAmount?: number | null;
+  active: boolean;
+}
+
 interface ShippingProvider {
   provider: string;
   displayName: string;
@@ -1311,8 +1330,11 @@ function OrdersTab() {
 
 function ShippingTab() {
   const { toast } = useToast();
-  const { data: zones = [] } = useQuery<Array<{ id: string; name: string; active: boolean }>>({
+  const { data: zones = [] } = useQuery<ShippingZone[]>({
     queryKey: ["/api/admin/ecommerce/shipping/zones"],
+  });
+  const { data: rates = [] } = useQuery<ShippingRate[]>({
+    queryKey: ["/api/admin/ecommerce/shipping/rates"],
   });
   const { data: locations = [] } = useQuery<FulfillmentLocation[]>({
     queryKey: ["/api/admin/ecommerce/shipping/locations"],
@@ -1320,7 +1342,23 @@ function ShippingTab() {
   const { data: providers = [] } = useQuery<ShippingProvider[]>({
     queryKey: ["/api/admin/ecommerce/shipping/providers"],
   });
-  const [name, setName] = useState("");
+  const [zoneForm, setZoneForm] = useState({
+    id: "",
+    name: "",
+    countries: "US",
+    states: "",
+    active: true,
+  });
+  const [rateForm, setRateForm] = useState({
+    id: "",
+    zoneId: "",
+    name: "",
+    description: "",
+    amount: "",
+    minOrderAmount: "",
+    maxOrderAmount: "",
+    active: true,
+  });
   const [locationForm, setLocationForm] = useState({
     id: "",
     name: "",
@@ -1332,6 +1370,31 @@ function ShippingTab() {
     active: true,
   });
   const [providerCredentialForms, setProviderCredentialForms] = useState<Record<string, Record<string, string>>>({});
+
+  useEffect(() => {
+    if (!rateForm.zoneId && zones[0]?.id) {
+      setRateForm((current) => ({ ...current, zoneId: zones[0].id }));
+    }
+  }, [rateForm.zoneId, zones]);
+
+  const resetZoneForm = () => setZoneForm({
+    id: "",
+    name: "",
+    countries: "US",
+    states: "",
+    active: true,
+  });
+
+  const resetRateForm = () => setRateForm({
+    id: "",
+    zoneId: zones[0]?.id ?? "",
+    name: "",
+    description: "",
+    amount: "",
+    minOrderAmount: "",
+    maxOrderAmount: "",
+    active: true,
+  });
 
   const resetLocationForm = () => setLocationForm({
     id: "",
@@ -1345,11 +1408,53 @@ function ShippingTab() {
   });
 
   const zoneMutation = useMutation({
-    mutationFn: async () => apiRequest("POST", "/api/admin/ecommerce/shipping/zones", { name, countries: ["US"], states: [], active: true }),
-    onSuccess: () => {
-      setName("");
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/zones"] });
+    mutationFn: async () => {
+      const payload = {
+        name: zoneForm.name.trim(),
+        countries: csv(zoneForm.countries).map((country) => country.toUpperCase()),
+        states: csv(zoneForm.states).map((state) => state.toUpperCase()),
+        active: zoneForm.active,
+      };
+      return zoneForm.id
+        ? apiRequest("PUT", `/api/admin/ecommerce/shipping/zones/${zoneForm.id}`, payload)
+        : apiRequest("POST", "/api/admin/ecommerce/shipping/zones", payload);
     },
+    onSuccess: async () => {
+      resetZoneForm();
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/zones"] });
+      toast({ title: zoneForm.id ? "Shipping zone updated" : "Shipping zone created" });
+    },
+    onError: (error) => toast({
+      title: "Shipping zone could not be saved",
+      description: error instanceof Error ? error.message : "Please review the zone details.",
+      variant: "destructive",
+    }),
+  });
+  const rateMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        zoneId: rateForm.zoneId,
+        name: rateForm.name.trim(),
+        description: rateForm.description.trim() || null,
+        amount: cents(rateForm.amount),
+        minOrderAmount: rateForm.minOrderAmount ? cents(rateForm.minOrderAmount) : null,
+        maxOrderAmount: rateForm.maxOrderAmount ? cents(rateForm.maxOrderAmount) : null,
+        active: rateForm.active,
+      };
+      return rateForm.id
+        ? apiRequest("PUT", `/api/admin/ecommerce/shipping/rates/${rateForm.id}`, payload)
+        : apiRequest("POST", "/api/admin/ecommerce/shipping/rates", payload);
+    },
+    onSuccess: async () => {
+      resetRateForm();
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/rates"] });
+      toast({ title: rateForm.id ? "Shipping rate updated" : "Shipping rate created" });
+    },
+    onError: (error) => toast({
+      title: "Shipping rate could not be saved",
+      description: error instanceof Error ? error.message : "Please review the rate details.",
+      variant: "destructive",
+    }),
   });
   const locationMutation = useMutation({
     mutationFn: async () => {
@@ -1425,17 +1530,256 @@ function ShippingTab() {
     groups[key] = [...(groups[key] ?? []), provider];
     return groups;
   }, {});
+  const zoneMap = new Map(zones.map((zone) => [zone.id, zone]));
 
   return (
     <div className="grid gap-6">
-      <CrudList
-        title="Shipping zones"
-        icon={<Truck className="h-5 w-5" />}
-        value={name}
-        setValue={setName}
-        onCreate={() => zoneMutation.mutate()}
-        rows={zones.map((z) => [z.name, "US", z.active ? "Active" : "Inactive"])}
-      />
+      <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5" />
+              {zoneForm.id ? "Edit shipping zone" : "Shipping zone"}
+            </CardTitle>
+            <CardDescription>Define the countries and optional states a group of checkout rates applies to.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              className="grid gap-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                zoneMutation.mutate();
+              }}
+            >
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input
+                  value={zoneForm.name}
+                  onChange={(event) => setZoneForm((current) => ({ ...current, name: event.target.value }))}
+                  placeholder="United States"
+                  required
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Countries</Label>
+                  <Input
+                    value={zoneForm.countries}
+                    onChange={(event) => setZoneForm((current) => ({ ...current, countries: event.target.value }))}
+                    placeholder="US, CA"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>States</Label>
+                  <Input
+                    value={zoneForm.states}
+                    onChange={(event) => setZoneForm((current) => ({ ...current, states: event.target.value }))}
+                    placeholder="MI, OH"
+                  />
+                </div>
+              </div>
+              <label className="flex items-center gap-3 rounded-lg border p-3">
+                <Switch checked={zoneForm.active} onCheckedChange={(active) => setZoneForm((current) => ({ ...current, active }))} />
+                <span className="text-sm font-medium">Active</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" disabled={zoneMutation.isPending || !zoneForm.name.trim()}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {zoneForm.id ? "Update zone" : "Create zone"}
+                </Button>
+                {zoneForm.id ? <Button type="button" variant="outline" onClick={resetZoneForm}>Cancel</Button> : null}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5" />
+              Shipping zones
+            </CardTitle>
+            <CardDescription>Active zones determine which shipping rates can be selected at checkout.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {zones.length ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Countries</TableHead>
+                    <TableHead>States</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {zones.map((zone) => (
+                    <TableRow key={zone.id}>
+                      <TableCell className="font-medium">{zone.name}</TableCell>
+                      <TableCell>{zone.countries.length ? zone.countries.join(", ") : "All"}</TableCell>
+                      <TableCell>{zone.states.length ? zone.states.join(", ") : "All"}</TableCell>
+                      <TableCell><Badge variant={zone.active ? "default" : "secondary"}>{zone.active ? "Active" : "Inactive"}</Badge></TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setZoneForm({
+                            id: zone.id,
+                            name: zone.name,
+                            countries: zone.countries.join(", "),
+                            states: zone.states.join(", "),
+                            active: zone.active,
+                          })}
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-sm text-muted-foreground">No shipping zones have been added yet.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5" />
+              {rateForm.id ? "Edit shipping rate" : "Shipping rate"}
+            </CardTitle>
+            <CardDescription>Add flat rates and optional order thresholds for checkout.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              className="grid gap-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                rateMutation.mutate();
+              }}
+            >
+              <div className="space-y-2">
+                <Label>Zone</Label>
+                <Select
+                  value={rateForm.zoneId}
+                  onValueChange={(zoneId) => setRateForm((current) => ({ ...current, zoneId }))}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select a zone" /></SelectTrigger>
+                  <SelectContent>
+                    {zones.map((zone) => <SelectItem key={zone.id} value={zone.id}>{zone.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input value={rateForm.name} onChange={(event) => setRateForm((current) => ({ ...current, name: event.target.value }))} placeholder="Standard shipping" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Input value={rateForm.description} onChange={(event) => setRateForm((current) => ({ ...current, description: event.target.value }))} placeholder="3-5 business days" />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <Label>Amount</Label>
+                  <Input type="number" min="0" step="0.01" value={rateForm.amount} onChange={(event) => setRateForm((current) => ({ ...current, amount: event.target.value }))} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Min order</Label>
+                  <Input type="number" min="0" step="0.01" value={rateForm.minOrderAmount} onChange={(event) => setRateForm((current) => ({ ...current, minOrderAmount: event.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Max order</Label>
+                  <Input type="number" min="0" step="0.01" value={rateForm.maxOrderAmount} onChange={(event) => setRateForm((current) => ({ ...current, maxOrderAmount: event.target.value }))} />
+                </div>
+              </div>
+              <label className="flex items-center gap-3 rounded-lg border p-3">
+                <Switch checked={rateForm.active} onCheckedChange={(active) => setRateForm((current) => ({ ...current, active }))} />
+                <span className="text-sm font-medium">Active</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" disabled={rateMutation.isPending || !rateForm.zoneId || !rateForm.name.trim() || !rateForm.amount.trim()}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {rateForm.id ? "Update rate" : "Create rate"}
+                </Button>
+                {rateForm.id ? <Button type="button" variant="outline" onClick={resetRateForm}>Cancel</Button> : null}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5" />
+              Shipping rates
+            </CardTitle>
+            <CardDescription>These rates are returned to checkout when their zone and order thresholds match.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {rates.length ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Zone</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Order range</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rates.map((rate) => (
+                    <TableRow key={rate.id}>
+                      <TableCell>
+                        <div className="font-medium">{rate.name}</div>
+                        {rate.description ? <div className="text-xs text-muted-foreground">{rate.description}</div> : null}
+                      </TableCell>
+                      <TableCell>{zoneMap.get(rate.zoneId)?.name ?? "Missing zone"}</TableCell>
+                      <TableCell>{formatMoney(rate.amount)}</TableCell>
+                      <TableCell>
+                        {rate.minOrderAmount || rate.maxOrderAmount
+                          ? `${rate.minOrderAmount ? formatMoney(rate.minOrderAmount) : "$0.00"} - ${rate.maxOrderAmount ? formatMoney(rate.maxOrderAmount) : "No max"}`
+                          : "Any order"}
+                      </TableCell>
+                      <TableCell><Badge variant={rate.active ? "default" : "secondary"}>{rate.active ? "Active" : "Inactive"}</Badge></TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setRateForm({
+                            id: rate.id,
+                            zoneId: rate.zoneId,
+                            name: rate.name,
+                            description: rate.description ?? "",
+                            amount: String(rate.amount / 100),
+                            minOrderAmount: rate.minOrderAmount == null ? "" : String(rate.minOrderAmount / 100),
+                            maxOrderAmount: rate.maxOrderAmount == null ? "" : String(rate.maxOrderAmount / 100),
+                            active: rate.active,
+                          })}
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-sm text-muted-foreground">No shipping rates have been added yet.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
         <Card>
