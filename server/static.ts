@@ -5,6 +5,7 @@ import {
   getPublicHeadAdditions,
   getPublicHtmlSnapshot,
   injectPublicHtmlSnapshot,
+  isPublicPrerenderPath,
 } from "./services/public-prerender.service";
 
 export function serveStatic(app: Express) {
@@ -41,16 +42,11 @@ export function serveStatic(app: Express) {
   // fall through to index.html if the file doesn't exist
   app.use("/{*path}", async (req, res) => {
     const template = await getIndexTemplate();
-    const snapshot = await getPublicHtmlSnapshot(req.path, req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "");
-    const shouldInjectPublicHead =
-      !req.path.startsWith("/admin") &&
-      !req.path.startsWith("/auth") &&
-      !req.path.startsWith("/therapist") &&
-      !req.path.startsWith("/setup") &&
-      !req.path.startsWith("/preview") &&
-      !req.path.startsWith("/uploads") &&
-      !req.path.startsWith("/api");
-    const customHeadHtml = shouldInjectPublicHead ? await getPublicHeadAdditions() : null;
+    const shouldInjectPublicPrerender = isPublicPrerenderPath(req.path);
+    const snapshot = shouldInjectPublicPrerender
+      ? await getPublicHtmlSnapshot(req.path, req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "")
+      : null;
+    const customHeadHtml = shouldInjectPublicPrerender ? await getPublicHeadAdditions() : null;
 
     res.setHeader(
       "Cache-Control",

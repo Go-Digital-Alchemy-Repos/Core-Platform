@@ -15,7 +15,23 @@ interface PublicHtmlSnapshot {
 
 const DEFAULT_TITLE = "Core Platform - Find Your Core Platform-Informed Therapist";
 const DEFAULT_DESCRIPTION =
-  "Core Platform connects Third Culture Kids with culturally informed therapists worldwide. Find your therapist today.";
+  "Core Platform connects people with culturally informed care, featured articles, and upcoming events.";
+
+const NON_PUBLIC_PRERENDER_PREFIXES = [
+  "/api",
+  "/admin",
+  "/auth",
+  "/therapist",
+  "/setup",
+  "/preview",
+  "/uploads",
+];
+
+export function isPublicPrerenderPath(pathname: string) {
+  return !NON_PUBLIC_PRERENDER_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
 
 const FALLBACK_STATIC_PAGES: Record<
   string,
@@ -26,7 +42,7 @@ const FALLBACK_STATIC_PAGES: Record<
     description:
       "Explore Core Platform-informed mental health support, featured articles, and upcoming events from Core Platform.",
     body:
-      "Core Platform connects Third Culture Kids with culturally informed care, featured articles, and upcoming events.",
+      "Core Platform connects people with culturally informed care, featured articles, and upcoming events.",
   },
   "/about": {
     title: "About",
@@ -59,9 +75,9 @@ const FALLBACK_STATIC_PAGES: Record<
   "/insights": {
     title: "Insights & Articles",
     description:
-      "Browse articles, guidance, and insights focused on Third Culture Kids and culturally informed care.",
+      "Browse articles, guidance, and insights focused on culturally informed care.",
     body:
-      "Browse insights and articles focused on Third Culture Kids, culturally informed care, and mental health support.",
+      "Browse insights and articles focused on culturally informed care and mental health support.",
   },
   "/events": {
     title: "Events",
@@ -491,15 +507,7 @@ export async function getPublicHtmlSnapshot(
   pathname: string,
   search = "",
 ): Promise<PublicHtmlSnapshot | null> {
-  if (
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/auth") ||
-    pathname.startsWith("/therapist") ||
-    pathname.startsWith("/setup") ||
-    pathname.startsWith("/preview") ||
-    pathname.startsWith("/uploads")
-  ) {
+  if (!isPublicPrerenderPath(pathname)) {
     return null;
   }
 

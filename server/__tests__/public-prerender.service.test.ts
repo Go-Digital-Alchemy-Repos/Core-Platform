@@ -174,6 +174,18 @@ describe("public-prerender.service", () => {
     expect(snapshot?.canonicalUrl).toBe("https://coreplatform.com/join");
   });
 
+  it("skips prerender snapshots for private app routes", async () => {
+    const { getPublicHtmlSnapshot, isPublicPrerenderPath } = await import(
+      "../services/public-prerender.service"
+    );
+
+    await expect(getPublicHtmlSnapshot("/admin/settings")).resolves.toBeNull();
+    await expect(getPublicHtmlSnapshot("/auth/login")).resolves.toBeNull();
+    expect(isPublicPrerenderPath("/admin/settings")).toBe(false);
+    expect(isPublicPrerenderPath("/shop")).toBe(true);
+    expect(mockGetPageBySlug).not.toHaveBeenCalled();
+  });
+
   it("returns a prerender snapshot for blog posts and event detail pages", async () => {
     mockGetPostBySlug.mockResolvedValue(blogPost);
     mockGetEventByIdentifier.mockResolvedValue(event);
