@@ -441,6 +441,76 @@ describe("ecommerce services", () => {
     await expect(priceCart({ items: [{ productId: "p1", variantId: "v-red", quantity: 2 }] })).rejects.toThrow(/inventory/);
   });
 
+  it("aggregates duplicate cart lines before checking inventory", async () => {
+    const { priceCart } = await import("../services/ecommerce-pricing.service");
+    mockProducts.push({
+      id: "p1",
+      name: "Limited Product",
+      tagline: null,
+      description: null,
+      price: 10000,
+      primaryImage: null,
+      secondaryImages: [],
+      features: [],
+      included: [],
+      active: true,
+      status: "published",
+      sku: null,
+      tags: [],
+      salePrice: null,
+      discountType: "NONE",
+      discountValue: null,
+      saleStartAt: null,
+      saleEndAt: null,
+      metaTitle: null,
+      metaDescription: null,
+      metaKeywords: null,
+      urlSlug: "limited-product",
+      canonicalUrl: null,
+      robotsIndex: true,
+      robotsFollow: true,
+      ogTitle: null,
+      ogDescription: null,
+      ogImage: null,
+      mediaId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as EcommerceProduct);
+    mockVariants.push({
+      id: "v-limited",
+      productId: "p1",
+      title: "Default",
+      optionSignature: "default",
+      optionValues: {},
+      sku: "LIMIT-1",
+      barcode: null,
+      price: 10000,
+      salePrice: null,
+      compareAtPrice: null,
+      costPerItem: null,
+      inventoryQuantity: 1,
+      trackInventory: true,
+      lowStockThreshold: null,
+      allowBackorder: false,
+      weight: null,
+      weightUnit: "oz",
+      image: null,
+      status: "active",
+      active: true,
+      sortOrder: 0,
+      isDefault: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await expect(priceCart({
+      items: [
+        { productId: "p1", variantId: "v-limited", quantity: 1 },
+        { productId: "p1", variantId: "v-limited", quantity: 1 },
+      ],
+    })).rejects.toThrow(/inventory/);
+  });
+
   it("uses server-side shipping rates selected by id", async () => {
     const { getShippingRateOptions, priceCart } = await import("../services/ecommerce-pricing.service");
     mockProducts.push({

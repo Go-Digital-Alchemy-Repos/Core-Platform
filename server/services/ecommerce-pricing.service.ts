@@ -27,6 +27,29 @@ export const priceCartSchema = z.object({
   shippingAddress: shippingAddressQuoteSchema.optional(),
 });
 
+type EcommerceCartItem = z.infer<typeof ecommerceCartItemSchema>;
+
+function aggregateCartItems(items: EcommerceCartItem[]): EcommerceCartItem[] {
+  const itemMap = new Map<string, EcommerceCartItem>();
+
+  for (const item of items) {
+    const variantId = item.variantId ?? null;
+    const key = `${item.productId}:${variantId ?? ""}`;
+    const existing = itemMap.get(key);
+    if (!existing) {
+      itemMap.set(key, { ...item, variantId: variantId ?? undefined });
+      continue;
+    }
+    const quantity = existing.quantity + item.quantity;
+    if (quantity > 99) {
+      throw new Error("Cart item quantity exceeds the maximum allowed quantity");
+    }
+    existing.quantity = quantity;
+  }
+
+  return [...itemMap.values()];
+}
+
 export interface PricedCartLine {
   productId: string;
   variantId: string | null;
@@ -397,7 +420,8 @@ export async function resolveShippingRate(input: {
 
 export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise<PricedCart> {
   const parsed = priceCartSchema.parse(input);
-  const ids = [...new Set(parsed.items.map((item) => item.productId))];
+  const cartItems = aggregateCartItems(parsed.items);
+  const ids = [...new Set(cartItems.map((item) => item.productId))];
   const products = await storage.ecommerce.getProductsByIds(ids);
   const productMap = new Map(products.map((product) => [product.id, product]));
 
@@ -406,7 +430,7 @@ export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise
     productCategories.set(product.id, await storage.ecommerce.getProductCategories(product.id));
   }));
 
-  const lines = await Promise.all(parsed.items.map(async (item) => {
+  const lines = await Promise.all(cartItems.map(async (item) => {
     const product = productMap.get(item.productId);
     if (!product || product.archivedAt || !product.active || product.status !== "published" || (product.visibility ?? "online") !== "online") {
       throw new Error("One or more products are unavailable");
