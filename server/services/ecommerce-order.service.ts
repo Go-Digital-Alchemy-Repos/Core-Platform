@@ -182,9 +182,10 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
     customerUserAgent: data.metaTracking?.userAgent,
   }, pricedLinesToOrderItems(priced.lines));
 
+  let stripe;
   let intent;
   try {
-    const stripe = await getEcommerceStripeClient();
+    stripe = await getEcommerceStripeClient();
     intent = await stripe.paymentIntents.create({
       amount: order.totalAmount,
       currency: "usd",
@@ -213,7 +214,21 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
     throw err;
   }
 
-  await storage.ecommerce.updateOrder(order.id, { stripePaymentIntentId: intent.id });
+  try {
+    const linkedOrder = await storage.ecommerce.updateOrder(order.id, { stripePaymentIntentId: intent.id });
+    if (!linkedOrder) throw new Error("Failed to attach Stripe PaymentIntent to ecommerce order");
+  } catch (err) {
+    try {
+      await stripe.paymentIntents.cancel(intent.id);
+    } catch (cancelErr) {
+      logger.stripe.warn("Failed to cancel orphaned ecommerce PaymentIntent", {
+        orderId: order.id,
+        paymentIntentId: intent.id,
+        error: cancelErr instanceof Error ? cancelErr.message : String(cancelErr),
+      });
+    }
+    throw err;
+  }
 
   return {
     clientSecret: intent.client_secret,
