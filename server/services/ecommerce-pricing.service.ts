@@ -176,6 +176,16 @@ export function buildCouponSnapshot(coupon: EcommerceCoupon | null): Record<stri
   return couponSnapshot(coupon);
 }
 
+export function toPublicCouponValidationResult(result: CouponValidationResult | undefined): Omit<CouponValidationResult, "coupon"> & {
+  coupon: Record<string, unknown> | null;
+} | undefined {
+  if (!result) return undefined;
+  return {
+    ...result,
+    coupon: couponSnapshot(result.coupon),
+  };
+}
+
 function isLineEligible(coupon: EcommerceCoupon, line: PricedCartLine): boolean {
   const excludedProductIds = coupon.excludedProductIds ?? [];
   const excludedCategoryIds = coupon.excludedCategoryIds ?? [];

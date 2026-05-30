@@ -956,6 +956,79 @@ describe("ecommerce services", () => {
     expect(result.reasonCode).toBe("customer_usage_limit_reached");
   });
 
+  it("sanitizes public coupon validation payloads", async () => {
+    const { toPublicCouponValidationResult, validateCouponForCart } = await import("../services/ecommerce-pricing.service");
+    mockCoupons.push({
+      id: "c-public",
+      code: "SAVE10",
+      name: "Save ten",
+      description: "Public description",
+      notes: "Internal margin note",
+      type: "fixed",
+      value: 1000,
+      minOrderAmount: null,
+      maxDiscountAmount: null,
+      maxRedemptions: 100,
+      perCustomerLimit: 1,
+      timesUsed: 0,
+      startDate: null,
+      endDate: null,
+      active: true,
+      customerEligibility: "specific_emails",
+      eligibleCustomerEmails: ["buyer@example.com"],
+      eligibleProductIds: [],
+      eligibleCategoryIds: [],
+      excludedProductIds: [],
+      excludedCategoryIds: [],
+      allowStacking: false,
+      appliesTo: "subtotal",
+      applyBeforeTax: true,
+      archivedAt: null,
+      createdBy: "admin-1",
+      updatedBy: "admin-2",
+      blockAffiliateCommission: true,
+      blockVipDiscount: true,
+      minMarginPercent: 30,
+      autoExpireAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as EcommerceCoupon);
+
+    const publicResult = toPublicCouponValidationResult(await validateCouponForCart({
+      code: "save10",
+      lines: [],
+      subtotalAmount: 5000,
+      customerEmail: "buyer@example.com",
+    }));
+
+    expect(publicResult?.valid).toBe(true);
+    expect(publicResult?.coupon).toMatchObject({
+      id: "c-public",
+      code: "SAVE10",
+      name: "Save ten",
+      type: "fixed",
+      value: 1000,
+      minOrderAmount: null,
+      maxDiscountAmount: null,
+      appliesTo: "subtotal",
+      eligibleProductIds: [],
+      eligibleCategoryIds: [],
+      excludedProductIds: [],
+      excludedCategoryIds: [],
+    });
+    expect(publicResult?.coupon).not.toHaveProperty("notes");
+    expect(publicResult?.coupon).not.toHaveProperty("createdBy");
+    expect(publicResult?.coupon).not.toHaveProperty("updatedBy");
+    expect(publicResult?.coupon).not.toHaveProperty("eligibleCustomerEmails");
+    expect(publicResult?.coupon).not.toHaveProperty("perCustomerLimit");
+    expect(publicResult?.coupon).not.toHaveProperty("timesUsed");
+    expect(publicResult?.coupon).not.toHaveProperty("archivedAt");
+    expect(publicResult?.coupon).not.toHaveProperty("createdAt");
+    expect(publicResult?.coupon).not.toHaveProperty("updatedAt");
+    expect(publicResult?.coupon).not.toHaveProperty("blockAffiliateCommission");
+    expect(publicResult?.coupon).not.toHaveProperty("minMarginPercent");
+  });
+
   it("validates Stripe key mode separation", async () => {
     const {
       getEcommerceStripePublishableKey,

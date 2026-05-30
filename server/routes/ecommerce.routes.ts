@@ -8,6 +8,7 @@ import {
   priceCart,
   priceCartSchema,
   shippingAddressQuoteSchema,
+  toPublicCouponValidationResult,
   validateCoupon,
 } from "../services/ecommerce-pricing.service";
 import { createEcommercePaymentIntent } from "../services/ecommerce-order.service";
@@ -101,10 +102,10 @@ router.post(
     }).parse(req.body);
     if (data.items?.length) {
       const priced = await priceCart({ items: data.items, couponCode: data.code, customerEmail: data.customerEmail });
-      res.json(priced.couponValidation);
+      res.json(toPublicCouponValidationResult(priced.couponValidation));
       return;
     }
-    res.json(await validateCoupon(data.code, data.subtotalAmount ?? 0));
+    res.json(toPublicCouponValidationResult(await validateCoupon(data.code, data.subtotalAmount ?? 0)));
   }),
 );
 
