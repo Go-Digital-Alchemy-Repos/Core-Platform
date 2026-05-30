@@ -19,8 +19,11 @@ import {
 } from "../../services/ecommerce-stripe.service";
 import { createEcommerceRefund } from "../../services/ecommerce-refund.service";
 import { sendEcommerceOrderStatusEmail } from "../../services/ecommerce-email.service";
+import { requireEcommerceEnabled } from "../../middleware/site-features";
 
 const router = Router();
+
+router.use(requireEcommerceEnabled);
 
 const productPayloadSchema = insertEcommerceProductSchema.extend({
   categoryIds: z.array(z.string()).default([]),

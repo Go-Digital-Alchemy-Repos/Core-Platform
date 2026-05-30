@@ -27,12 +27,12 @@ import ecommerceRoutes from "./ecommerce.routes";
 import { searchPublicSite } from "../services/public-search.service";
 import { buildRobotsTxtPayload } from "../services/robots-txt.service";
 import { storage } from "../storage/index";
-import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
 import { getEventPath } from "@shared/event-url";
 import {
   DEFAULT_DIRECTORY_SETTINGS,
   getDirectorySettings,
 } from "../services/directory-settings.service";
+import { getSiteFeatures } from "../services/site-features.service";
 
 function escapeXml(str: string): string {
   return str
@@ -148,36 +148,7 @@ export function registerApiRoutes(app: Express) {
   });
 
   app.get("/api/site-config", async (_req, res) => {
-    try {
-      const settings = await storage.settings.getDecryptedCategory("system_configuration");
-      res.json({
-        directoryEnabled: normalizeBooleanSetting(
-          settings.enable_directory,
-          DEFAULT_SITE_FEATURES.directoryEnabled,
-        ),
-        blogEnabled: normalizeBooleanSetting(
-          settings.enable_blog,
-          DEFAULT_SITE_FEATURES.blogEnabled,
-        ),
-        eventsEnabled: normalizeBooleanSetting(
-          settings.enable_events,
-          DEFAULT_SITE_FEATURES.eventsEnabled,
-        ),
-        crmEnabled: normalizeBooleanSetting(
-          settings.enable_crm,
-          DEFAULT_SITE_FEATURES.crmEnabled,
-        ),
-        ecommerceEnabled: normalizeBooleanSetting(
-          settings.enable_ecommerce,
-          DEFAULT_SITE_FEATURES.ecommerceEnabled,
-        ),
-      });
-    } catch (err) {
-      logger.app.warn("Failed to retrieve system configuration, returning defaults", {
-        error: err instanceof Error ? err.message : String(err),
-      });
-      res.json(DEFAULT_SITE_FEATURES);
-    }
+    res.json(await getSiteFeatures());
   });
 
   app.get("/api/runtime-integrations", async (_req, res) => {

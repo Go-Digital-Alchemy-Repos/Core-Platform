@@ -6,8 +6,11 @@ import { paramString } from "../utils/params";
 import { priceCart, priceCartSchema, validateCoupon } from "../services/ecommerce-pricing.service";
 import { createEcommercePaymentIntent } from "../services/ecommerce-order.service";
 import { getEcommerceStripePublishableKey, getEcommerceStripeMode } from "../services/ecommerce-stripe.service";
+import { requireEcommerceEnabled } from "../middleware/site-features";
 
 const router = Router();
+
+router.use(requireEcommerceEnabled);
 
 router.get(
   "/products",
