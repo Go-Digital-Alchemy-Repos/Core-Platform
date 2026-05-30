@@ -14,6 +14,10 @@ function isLiveKey(key: string): boolean {
   return key.includes("_live_");
 }
 
+function stripeConfigurationError(message: string) {
+  return Object.assign(new Error(message), { statusCode: 503 });
+}
+
 export async function getEcommerceStripeSettings(): Promise<Record<string, string>> {
   return storage.settings.getDecryptedCategory("ecommerce_stripe");
 }
@@ -30,7 +34,8 @@ export async function getEcommerceStripePublishableKey(): Promise<string> {
     ? settings.live_publishable_key || ""
     : settings.test_publishable_key || "";
   const error = validateStripeKeyMode(mode, key);
-  if (error) throw new Error(error);
+  if (error) throw stripeConfigurationError(error);
+  if (!key) throw stripeConfigurationError("Ecommerce Stripe publishable key is not configured");
   return key;
 }
 

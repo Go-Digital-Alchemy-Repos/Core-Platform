@@ -1427,6 +1427,14 @@ describe("ecommerce services", () => {
       live_publishable_key: "pk_test_wrong",
     });
     await expect(getEcommerceStripePublishableKey()).rejects.toThrow(/Live mode/);
+
+    mockGetDecryptedCategory.mockResolvedValue({
+      active_mode: "test",
+    });
+    await expect(getEcommerceStripePublishableKey()).rejects.toMatchObject({
+      message: "Ecommerce Stripe publishable key is not configured",
+      statusCode: 503,
+    });
   });
 
   it("computes pending and processed refunds against refundable balance", async () => {
