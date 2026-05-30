@@ -65,6 +65,13 @@ interface ShippingRateOption {
   amount: number;
 }
 
+export function getStripeCheckoutUnavailableMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return "Secure card checkout is temporarily unavailable. Please contact support before placing this order.";
+  }
+  return "Secure card checkout is not available yet.";
+}
+
 function CheckoutPaymentForm({
   order,
   email,
@@ -136,7 +143,7 @@ export default function CheckoutPage() {
     return () => window.removeEventListener("ecommerce-cart-changed", syncCart);
   }, []);
 
-  const { data: stripeConfig } = useQuery<StripeConfig>({
+  const { data: stripeConfig, error: stripeConfigError, isLoading: isStripeConfigLoading } = useQuery<StripeConfig>({
     queryKey: ["/api/ecommerce/stripe/config"],
   });
 
@@ -147,6 +154,7 @@ export default function CheckoutPage() {
   }, [stripeConfig?.publishableKey]);
 
   const hasStripeConfig = Boolean(stripeConfig?.publishableKey);
+  const canCreatePayment = hasStripeConfig && !isStripeConfigLoading;
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const selectedShippingRate = shippingRates.find((rate) => rate.id === form.shippingRateId);
   const shippingQuoteKey = useMemo(() => JSON.stringify({
@@ -346,13 +354,17 @@ export default function CheckoutPage() {
                     <p className="mt-2 text-xs text-muted-foreground">Final tax, discount, and Stripe PaymentIntent totals are calculated by the server.</p>
                   )}
                 </div>
-                {!hasStripeConfig ? (
+                {isStripeConfigLoading ? (
+                  <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+                    Checking secure checkout availability...
+                  </div>
+                ) : !hasStripeConfig ? (
                   <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                    Stripe checkout is not configured yet. Add ecommerce Stripe test keys in Admin Ecommerce Settings.
+                    {getStripeCheckoutUnavailableMessage(stripeConfigError)}
                   </div>
                 ) : null}
                 {!intent ? (
-                  <Button type="submit" form="checkout-details-form" className="w-full" disabled={mutation.isPending || !hasStripeConfig}>
+                  <Button type="submit" form="checkout-details-form" className="w-full" disabled={mutation.isPending || !canCreatePayment}>
                     {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lock className="mr-2 h-4 w-4" />}
                     {mutation.isPending ? "Creating payment..." : "Continue to payment"}
                   </Button>
