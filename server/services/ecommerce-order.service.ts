@@ -117,12 +117,19 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
 }
 
 export async function markEcommerceOrderPaid(orderId: string, paymentIntentId: string) {
+  const existing = await storage.ecommerce.getOrder(orderId);
+  if (!existing) return undefined;
+  if (existing.stripePaymentIntentId && existing.stripePaymentIntentId !== paymentIntentId) {
+    throw new Error("PaymentIntent does not match this order");
+  }
+  const alreadyPaid = existing.status === "paid" && existing.paymentStatus === "paid";
+
   await storage.ecommerce.updateOrder(orderId, {
     status: "paid",
     paymentStatus: "paid",
     stripePaymentIntentId: paymentIntentId,
   });
   const details = await storage.ecommerce.getOrderWithDetails(orderId);
-  if (details) await sendEcommerceOrderConfirmation(details);
+  if (details && !alreadyPaid) await sendEcommerceOrderConfirmation(details);
   return details;
 }

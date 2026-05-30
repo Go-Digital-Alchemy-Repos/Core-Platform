@@ -18,18 +18,20 @@ export async function processEcommerceStripeWebhook(payload: Buffer, signature?:
     event = JSON.parse(payload.toString()) as Stripe.Event;
   }
 
-  const firstProcessing = await storage.ecommerce.markWebhookProcessed("stripe", event.id, event.type);
-  if (!firstProcessing) {
-    logger.stripe.info("Duplicate ecommerce webhook ignored", { eventId: event.id, eventType: event.type });
-    return;
-  }
-
   if (event.type === "payment_intent.succeeded") {
     const intent = event.data.object as Stripe.PaymentIntent;
     const orderId = intent.metadata?.orderId;
     if (!orderId) return;
     const order = await storage.ecommerce.getOrder(orderId);
     if (!order) return;
+    if (order.stripePaymentIntentId && order.stripePaymentIntentId !== intent.id) {
+      logger.stripe.error("Ecommerce webhook PaymentIntent mismatch", undefined, {
+        orderId,
+        expectedPaymentIntentId: order.stripePaymentIntentId,
+        actualPaymentIntentId: intent.id,
+      });
+      return;
+    }
     if (intent.amount !== order.totalAmount) {
       logger.stripe.error("Ecommerce webhook amount mismatch", undefined, {
         orderId,
@@ -39,10 +41,21 @@ export async function processEcommerceStripeWebhook(payload: Buffer, signature?:
       });
       return;
     }
+    const firstProcessing = await storage.ecommerce.markWebhookProcessed("stripe", event.id, event.type);
+    if (!firstProcessing) {
+      logger.stripe.info("Duplicate ecommerce webhook ignored", { eventId: event.id, eventType: event.type });
+      return;
+    }
     await markEcommerceOrderPaid(orderId, intent.id);
+    return;
   }
 
   if (event.type === "charge.refunded" || event.type === "refund.updated") {
+    const firstProcessing = await storage.ecommerce.markWebhookProcessed("stripe", event.id, event.type);
+    if (!firstProcessing) {
+      logger.stripe.info("Duplicate ecommerce webhook ignored", { eventId: event.id, eventType: event.type });
+      return;
+    }
     logger.stripe.info("Ecommerce refund webhook received", { eventId: event.id, eventType: event.type });
   }
 }

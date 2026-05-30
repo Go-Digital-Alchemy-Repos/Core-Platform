@@ -1,22 +1,37 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import type { EcommerceCoupon, EcommerceProduct } from "@shared/schema";
+import type { EcommerceCoupon, EcommerceOrder, EcommerceProduct } from "@shared/schema";
 
 const mockProducts: EcommerceProduct[] = [];
 const mockCoupons: EcommerceCoupon[] = [];
+const mockGetOrder = vi.fn();
+const mockUpdateOrder = vi.fn();
+const mockGetOrderWithDetails = vi.fn();
+const mockSendEcommerceOrderConfirmation = vi.fn();
 
 vi.mock("../storage/index", () => ({
   storage: {
     ecommerce: {
       getProductsByIds: vi.fn(async (ids: string[]) => mockProducts.filter((product) => ids.includes(product.id))),
       getCouponByCode: vi.fn(async (code: string) => mockCoupons.find((coupon) => coupon.code === code.toUpperCase())),
+      getOrder: mockGetOrder,
+      updateOrder: mockUpdateOrder,
+      getOrderWithDetails: mockGetOrderWithDetails,
     },
   },
+}));
+
+vi.mock("../services/ecommerce-email.service", () => ({
+  sendEcommerceOrderConfirmation: mockSendEcommerceOrderConfirmation,
 }));
 
 describe("ecommerce services", () => {
   beforeEach(() => {
     mockProducts.length = 0;
     mockCoupons.length = 0;
+    mockGetOrder.mockReset();
+    mockUpdateOrder.mockReset();
+    mockGetOrderWithDetails.mockReset();
+    mockSendEcommerceOrderConfirmation.mockReset();
   });
 
   it("calculates effective sale pricing without trusting client prices", async () => {
@@ -138,5 +153,42 @@ describe("ecommerce services", () => {
       { amount: 500, status: "pending" },
       { amount: 200, status: "failed" },
     ])).toBe(1500);
+  });
+
+  it("marks an ecommerce order paid once and skips duplicate confirmation emails", async () => {
+    const { markEcommerceOrderPaid } = await import("../services/ecommerce-order.service");
+    const pendingOrder = {
+      id: "order-1",
+      status: "pending",
+      paymentStatus: "unpaid",
+      stripePaymentIntentId: "pi_123",
+    } as EcommerceOrder;
+    const paidOrder = {
+      ...pendingOrder,
+      status: "paid",
+      paymentStatus: "paid",
+    } as EcommerceOrder;
+    mockGetOrder.mockResolvedValueOnce(pendingOrder).mockResolvedValueOnce(paidOrder);
+    mockGetOrderWithDetails.mockResolvedValue({ ...paidOrder, customer: null, items: [], refunds: [], shipments: [] });
+
+    await markEcommerceOrderPaid("order-1", "pi_123");
+    await markEcommerceOrderPaid("order-1", "pi_123");
+
+    expect(mockUpdateOrder).toHaveBeenCalledTimes(2);
+    expect(mockSendEcommerceOrderConfirmation).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a paid webhook when the PaymentIntent does not match the order", async () => {
+    const { markEcommerceOrderPaid } = await import("../services/ecommerce-order.service");
+    mockGetOrder.mockResolvedValue({
+      id: "order-1",
+      status: "pending",
+      paymentStatus: "unpaid",
+      stripePaymentIntentId: "pi_expected",
+    } as EcommerceOrder);
+
+    await expect(markEcommerceOrderPaid("order-1", "pi_other")).rejects.toThrow(/PaymentIntent/);
+    expect(mockUpdateOrder).not.toHaveBeenCalled();
+    expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
   });
 });
