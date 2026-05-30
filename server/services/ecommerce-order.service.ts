@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { storage } from "../storage/index";
-import { priceCart, priceCartSchema } from "./ecommerce-pricing.service";
+import { buildCouponSnapshot, priceCart, priceCartSchema } from "./ecommerce-pricing.service";
 import { getEcommerceStripeClient } from "./ecommerce-stripe.service";
 import { sendEcommerceOrderConfirmation } from "./ecommerce-email.service";
 
@@ -35,7 +35,7 @@ export const checkoutSchema = priceCartSchema.extend({
 
 export async function createEcommercePaymentIntent(input: unknown, requestMeta: { ip?: string | null } = {}) {
   const data = checkoutSchema.parse(input);
-  const priced = await priceCart({ items: data.items, couponCode: data.couponCode });
+  const priced = await priceCart({ items: data.items, couponCode: data.couponCode, customerEmail: data.customer.email });
   if (priced.totalAmount <= 0) throw new Error("Order total must be greater than zero");
 
   const customer = await storage.ecommerce.findOrCreateCustomer({
@@ -61,6 +61,7 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
     shippingAmount: priced.shippingAmount,
     discountAmount: priced.discountAmount,
     couponCode: priced.coupon?.code,
+    couponSnapshot: buildCouponSnapshot(priced.coupon),
     customerIp: requestMeta.ip ?? null,
     shippingName: data.shippingAddress.name,
     shippingCompany: data.shippingAddress.company,
@@ -129,6 +130,7 @@ export async function markEcommerceOrderPaid(orderId: string, paymentIntentId: s
     paymentStatus: "paid",
     stripePaymentIntentId: paymentIntentId,
   });
+  if (!alreadyPaid) await storage.ecommerce.recordCouponRedemptionForOrder(orderId);
   const details = await storage.ecommerce.getOrderWithDetails(orderId);
   if (details && !alreadyPaid) await sendEcommerceOrderConfirmation(details);
   return details;

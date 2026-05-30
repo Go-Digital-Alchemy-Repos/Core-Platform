@@ -26,6 +26,7 @@ export const ECOMMERCE_PAYMENT_STATUSES = [
   "refund_failed",
 ] as const;
 export const ECOMMERCE_COUPON_TYPES = ["percentage", "fixed", "freeShipping"] as const;
+export const ECOMMERCE_COUPON_STATUSES = ["active", "inactive", "scheduled", "expired", "exhausted", "archived"] as const;
 export const ECOMMERCE_REFUND_STATUSES = ["pending", "processed", "rejected", "failed"] as const;
 export const ECOMMERCE_REFUND_TYPES = ["full", "partial"] as const;
 
@@ -124,6 +125,7 @@ export const ecommerceOrders = pgTable("ecommerce_orders", {
   taxAmount: integer("tax_amount").notNull().default(0),
   shippingAmount: integer("shipping_amount").notNull().default(0),
   discountAmount: integer("discount_amount").notNull().default(0),
+  couponSnapshot: jsonb("coupon_snapshot").$type<Record<string, unknown> | null>(),
   stripeTaxCalculationId: text("stripe_tax_calculation_id"),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   stripeSessionId: text("stripe_session_id"),
@@ -181,7 +183,9 @@ export const ecommerceOrderItems = pgTable("ecommerce_order_items", {
 export const ecommerceCoupons = pgTable("ecommerce_coupons", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   code: text("code").notNull(),
+  name: text("name"),
   description: text("description"),
+  notes: text("notes"),
   type: text("type").notNull().default("fixed"),
   value: integer("value").notNull().default(0),
   minOrderAmount: integer("min_order_amount"),
@@ -192,6 +196,18 @@ export const ecommerceCoupons = pgTable("ecommerce_coupons", {
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
   active: boolean("active").notNull().default(true),
+  customerEligibility: text("customer_eligibility").notNull().default("all"),
+  eligibleCustomerEmails: text("eligible_customer_emails").array().notNull().default(sql`ARRAY[]::text[]`),
+  eligibleProductIds: text("eligible_product_ids").array().notNull().default(sql`ARRAY[]::text[]`),
+  eligibleCategoryIds: text("eligible_category_ids").array().notNull().default(sql`ARRAY[]::text[]`),
+  excludedProductIds: text("excluded_product_ids").array().notNull().default(sql`ARRAY[]::text[]`),
+  excludedCategoryIds: text("excluded_category_ids").array().notNull().default(sql`ARRAY[]::text[]`),
+  allowStacking: boolean("allow_stacking").notNull().default(false),
+  appliesTo: text("applies_to").notNull().default("subtotal"),
+  applyBeforeTax: boolean("apply_before_tax").notNull().default(true),
+  archivedAt: timestamp("archived_at"),
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
+  updatedBy: varchar("updated_by").references(() => users.id, { onDelete: "set null" }),
   blockAffiliateCommission: boolean("block_affiliate_commission").notNull().default(false),
   blockVipDiscount: boolean("block_vip_discount").notNull().default(false),
   minMarginPercent: integer("min_margin_percent"),
@@ -201,6 +217,8 @@ export const ecommerceCoupons = pgTable("ecommerce_coupons", {
 }, (table) => [
   uniqueIndex("idx_ecommerce_coupons_code").on(table.code),
   index("idx_ecommerce_coupons_active").on(table.active),
+  index("idx_ecommerce_coupons_archived").on(table.archivedAt),
+  index("idx_ecommerce_coupons_dates").on(table.startDate, table.endDate),
 ]);
 
 export const ecommerceCouponRedemptions = pgTable("ecommerce_coupon_redemptions", {
@@ -208,6 +226,8 @@ export const ecommerceCouponRedemptions = pgTable("ecommerce_coupon_redemptions"
   couponId: varchar("coupon_id").notNull().references(() => ecommerceCoupons.id),
   orderId: varchar("order_id").notNull().references(() => ecommerceOrders.id),
   customerId: varchar("customer_id").references(() => ecommerceCustomers.id),
+  couponCode: text("coupon_code"),
+  customerEmail: text("customer_email"),
   discountAmount: integer("discount_amount").notNull(),
   redeemedAt: timestamp("redeemed_at").notNull().defaultNow(),
 }, (table) => [
