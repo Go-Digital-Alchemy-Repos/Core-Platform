@@ -391,10 +391,16 @@ describe("ecommerce services", () => {
       updatedAt: new Date(),
     });
 
-    await expect(priceCart({ items: [{ productId: "p1", quantity: 1 }] })).rejects.toThrow(/unavailable/);
+    await expect(priceCart({ items: [{ productId: "p1", quantity: 1 }] })).rejects.toMatchObject({
+      message: "One or more products are unavailable",
+      statusCode: 400,
+    });
     mockProducts[0].archivedAt = null;
     mockProducts[0].visibility = "hidden";
-    await expect(priceCart({ items: [{ productId: "p1", quantity: 1 }] })).rejects.toThrow(/unavailable/);
+    await expect(priceCart({ items: [{ productId: "p1", quantity: 1 }] })).rejects.toMatchObject({
+      message: "One or more products are unavailable",
+      statusCode: 400,
+    });
   });
 
   it("applies fixed coupon discounts with order minimums", async () => {
@@ -551,7 +557,10 @@ describe("ecommerce services", () => {
     const priced = await priceCart({ items: [{ productId: "p1", variantId: "v-red", quantity: 1 }] });
     expect(priced.totalAmount).toBe(12000);
     expect(priced.lines[0]).toMatchObject({ variantId: "v-red", sku: "RED-1", variantTitle: "Red" });
-    await expect(priceCart({ items: [{ productId: "p1", variantId: "v-red", quantity: 2 }] })).rejects.toThrow(/inventory/);
+    await expect(priceCart({ items: [{ productId: "p1", variantId: "v-red", quantity: 2 }] })).rejects.toMatchObject({
+      message: "One or more product variants do not have enough inventory",
+      statusCode: 400,
+    });
   });
 
   it("aggregates duplicate cart lines before checking inventory", async () => {
@@ -621,7 +630,10 @@ describe("ecommerce services", () => {
         { productId: "p1", variantId: "v-limited", quantity: 1 },
         { productId: "p1", variantId: "v-limited", quantity: 1 },
       ],
-    })).rejects.toThrow(/inventory/);
+    })).rejects.toMatchObject({
+      message: "One or more product variants do not have enough inventory",
+      statusCode: 400,
+    });
   });
 
   it("uses server-side shipping rates selected by id", async () => {
@@ -742,7 +754,10 @@ describe("ecommerce services", () => {
       items: [{ productId: "p1", quantity: 1 }],
       shippingRateId: "rate-california",
       shippingAddress: { country: "US", state: "MI" },
-    })).rejects.toThrow(/shipping rate is unavailable/);
+    })).rejects.toMatchObject({
+      message: "Selected shipping rate is unavailable",
+      statusCode: 400,
+    });
   });
 
   it("requires a selected shipping rate for checkout when shippable rates match", async () => {

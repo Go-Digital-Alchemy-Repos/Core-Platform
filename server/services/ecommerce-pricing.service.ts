@@ -44,6 +44,10 @@ export const shippingRateQuoteRequestSchema = z.object({
 
 type EcommerceCartItem = z.infer<typeof ecommerceCartItemSchema>;
 
+function httpError(message: string, statusCode: number) {
+  return Object.assign(new Error(message), { statusCode });
+}
+
 function aggregateCartItems(items: EcommerceCartItem[]): EcommerceCartItem[] {
   const itemMap = new Map<string, EcommerceCartItem>();
 
@@ -57,7 +61,7 @@ function aggregateCartItems(items: EcommerceCartItem[]): EcommerceCartItem[] {
     }
     const quantity = existing.quantity + item.quantity;
     if (quantity > 99) {
-      throw new Error("Cart item quantity exceeds the maximum allowed quantity");
+      throw httpError("Cart item quantity exceeds the maximum allowed quantity", 400);
     }
     existing.quantity = quantity;
   }
@@ -422,7 +426,7 @@ export async function resolveShippingRate(input: {
   const activeZoneIds = new Set(activeZones.map((zone) => zone.id));
   const rate = rates.find((candidate) => candidate.id === input.shippingRateId);
   if (!rate || !activeZoneIds.has(rate.zoneId) || !rateAppliesToSubtotal(rate, input.subtotalAmount)) {
-    throw new Error("Selected shipping rate is unavailable");
+    throw httpError("Selected shipping rate is unavailable", 400);
   }
   return {
     id: rate.id,
@@ -448,16 +452,16 @@ export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise
   const lines = await Promise.all(cartItems.map(async (item) => {
     const product = productMap.get(item.productId);
     if (!product || product.archivedAt || !product.active || product.status !== "published" || (product.visibility ?? "online") !== "online") {
-      throw new Error("One or more products are unavailable");
+      throw httpError("One or more products are unavailable", 400);
     }
     const variant = item.variantId
       ? await storage.ecommerce.getProductVariant(item.variantId)
       : await storage.ecommerce.getDefaultProductVariant(product.id);
     if (!variant || variant.productId !== product.id || !variant.active || variant.status !== "active") {
-      throw new Error("One or more product variants are unavailable");
+      throw httpError("One or more product variants are unavailable", 400);
     }
     if (variant.trackInventory && !variant.allowBackorder && variant.inventoryQuantity < item.quantity) {
-      throw new Error("One or more product variants do not have enough inventory");
+      throw httpError("One or more product variants do not have enough inventory", 400);
     }
     const unitPrice = effectiveVariantPrice(product, variant);
     const taxable = product.taxable ?? true;
