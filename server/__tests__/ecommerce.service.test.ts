@@ -752,6 +752,59 @@ describe("ecommerce services", () => {
     await expect(assertEcommerceOrderCanShip("missing-order")).rejects.toThrow(/Order not found/);
   });
 
+  it("validates fulfillment items against the target order before creation", async () => {
+    const { assertEcommerceFulfillmentRequest } = await import("../services/ecommerce-order.service");
+    mockGetOrder.mockResolvedValue({
+      id: "order-fulfill-1",
+      status: "paid",
+      paymentStatus: "paid",
+    } as EcommerceOrder);
+    mockGetOrderWithDetails.mockResolvedValue({
+      id: "order-fulfill-1",
+      customer: null,
+      items: [
+        { id: "item-1", quantity: 2 },
+        { id: "item-2", quantity: 1 },
+      ],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+    });
+
+    await expect(assertEcommerceFulfillmentRequest("order-fulfill-1", [
+      { orderItemId: "item-1", quantity: 2 },
+      { orderItemId: "item-2", quantity: 1 },
+    ])).resolves.toEqual([
+      { orderItemId: "item-1", quantity: 2 },
+      { orderItemId: "item-2", quantity: 1 },
+    ]);
+  });
+
+  it("blocks fulfillment items that are not on the order or exceed ordered quantity", async () => {
+    const { assertEcommerceFulfillmentRequest } = await import("../services/ecommerce-order.service");
+    mockGetOrder.mockResolvedValue({
+      id: "order-fulfill-2",
+      status: "paid",
+      paymentStatus: "paid",
+    } as EcommerceOrder);
+    mockGetOrderWithDetails.mockResolvedValue({
+      id: "order-fulfill-2",
+      customer: null,
+      items: [{ id: "item-1", quantity: 2 }],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+    });
+
+    await expect(assertEcommerceFulfillmentRequest("order-fulfill-2", [
+      { orderItemId: "item-missing", quantity: 1 },
+    ])).rejects.toThrow(/does not belong/);
+
+    await expect(assertEcommerceFulfillmentRequest("order-fulfill-2", [
+      { orderItemId: "item-1", quantity: 3 },
+    ])).rejects.toThrow(/exceed/);
+  });
+
   it("creates manual paid orders through server-side pricing and inventory deduction", async () => {
     const { createManualEcommerceOrder } = await import("../services/ecommerce-order.service");
     const customer = { id: "customer-1", email: "buyer@example.com", name: "Buyer" };

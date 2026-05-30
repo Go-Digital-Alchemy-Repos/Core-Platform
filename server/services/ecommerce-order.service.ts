@@ -57,6 +57,11 @@ export const adminOrderUpdateSchema = z.object({
   notes: z.string().optional(),
 });
 
+export const fulfillmentItemsSchema = z.array(z.object({
+  orderItemId: z.string().min(1),
+  quantity: z.number().int().min(1),
+})).default([]);
+
 const shippablePaymentStatuses = new Set(["paid", "partially_refunded"]);
 
 function httpError(message: string, statusCode: number) {
@@ -241,6 +246,31 @@ export async function assertEcommerceOrderCanShip(orderId: string) {
     throw httpError("Delivered orders cannot receive new shipments", 400);
   }
   return order;
+}
+
+export async function assertEcommerceFulfillmentRequest(
+  orderId: string,
+  input: unknown,
+) {
+  const items = fulfillmentItemsSchema.parse(input);
+  await assertEcommerceOrderCanShip(orderId);
+  if (items.length === 0) return items;
+
+  const details = await storage.ecommerce.getOrderWithDetails(orderId);
+  if (!details) throw httpError("Order not found", 404);
+
+  const orderItemsById = new Map(details.items.map((item) => [item.id, item]));
+  for (const item of items) {
+    const orderItem = orderItemsById.get(item.orderItemId);
+    if (!orderItem) {
+      throw httpError("Fulfillment item does not belong to this order", 400);
+    }
+    if (item.quantity > orderItem.quantity) {
+      throw httpError("Fulfillment quantity cannot exceed the ordered quantity", 400);
+    }
+  }
+
+  return items;
 }
 
 export async function markEcommerceOrderPaid(orderId: string, paymentIntentId: string) {

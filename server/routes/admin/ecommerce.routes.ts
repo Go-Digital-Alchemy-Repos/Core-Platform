@@ -25,8 +25,10 @@ import {
 import { createEcommerceRefund } from "../../services/ecommerce-refund.service";
 import {
   adminOrderUpdateSchema,
+  assertEcommerceFulfillmentRequest,
   assertEcommerceOrderCanShip,
   createManualEcommerceOrder,
+  fulfillmentItemsSchema,
   manualOrderSchema,
   updateAdminEcommerceOrder,
 } from "../../services/ecommerce-order.service";
@@ -461,21 +463,20 @@ router.get("/orders/:orderId/fulfillments", asyncHandler(async (req, res) => {
 }));
 
 router.post("/orders/:orderId/fulfillments", asyncHandler(async (req, res) => {
+  const orderId = paramString(req.params.orderId);
   const body = z.object({
     fulfillment: insertEcommerceFulfillmentSchema.omit({ orderId: true }),
-    items: z.array(z.object({
-      orderItemId: z.string().min(1),
-      quantity: z.number().int().min(1),
-    })).default([]),
+    items: fulfillmentItemsSchema,
   }).parse(req.body);
+  const items = await assertEcommerceFulfillmentRequest(orderId, body.items);
 
   res.status(201).json(await storage.ecommerce.createFulfillment(
     {
       ...body.fulfillment,
-      orderId: paramString(req.params.orderId),
+      orderId,
       trackingUrl: inferCarrierTrackingUrl(body.fulfillment),
     },
-    body.items,
+    items,
   ));
 }));
 
