@@ -147,6 +147,28 @@ describe("Ecommerce CategoriesTab", () => {
     expect(container.textContent).toContain("Professional Training");
     expect(container.textContent).toContain("Family Resources");
     expect(container.textContent).toContain("Edit existing categories or add child categories under any parent.");
+    expect(container.textContent).toContain("Subcategories");
+  });
+
+  it("filters the category table by search term", () => {
+    renderCategoriesTab();
+
+    const searchInput = Array.from(container.querySelectorAll("input")).find(
+      (input) => input.placeholder === "Search categories, slugs, descriptions, or parents",
+    );
+
+    expect(searchInput).toBeTruthy();
+    const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    act(() => {
+      if (searchInput) {
+        valueSetter?.call(searchInput, "family");
+        searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    });
+
+    const tableRows = Array.from(container.querySelectorAll("tbody tr"));
+    expect(tableRows.some((row) => row.textContent?.includes("Family Resources"))).toBe(true);
+    expect(tableRows.some((row) => row.textContent?.includes("Professional Training"))).toBe(false);
   });
 
   it("hydrates the editor when an existing category is selected", () => {

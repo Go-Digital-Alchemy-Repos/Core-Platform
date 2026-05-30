@@ -791,6 +791,8 @@ export function CategoriesTab() {
   const { toast } = useToast();
   const { data: categories = [] } = useQuery<Category[]>({ queryKey: ["/api/admin/ecommerce/categories"] });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [categorySearch, setCategorySearch] = useState("");
+  const [categoryStatusFilter, setCategoryStatusFilter] = useState("all");
   const [form, setForm] = useState({
     name: "",
     slug: "",
@@ -844,6 +846,25 @@ export function CategoriesTab() {
 
   const blockedParentIds = editingId ? collectDescendantIds(editingId) : new Set<string>();
   if (editingId) blockedParentIds.add(editingId);
+
+  const categorySearchTerm = categorySearch.trim().toLowerCase();
+  const visibleCategories = flattenedCategories.filter((category) => {
+    const parentName = category.parentId ? categoryMap.get(category.parentId)?.name ?? "" : "";
+    const matchesSearch = !categorySearchTerm || [
+      category.name,
+      category.slug,
+      category.description ?? "",
+      parentName,
+    ].some((value) => value.toLowerCase().includes(categorySearchTerm));
+    const matchesStatus =
+      categoryStatusFilter === "all" ||
+      (categoryStatusFilter === "active" && category.active) ||
+      (categoryStatusFilter === "inactive" && !category.active);
+    return matchesSearch && matchesStatus;
+  });
+  const activeCategoryCount = categories.filter((category) => category.active).length;
+  const rootCategoryCount = categories.filter((category) => !category.parentId).length;
+  const subcategoryCount = categories.length - rootCategoryCount;
 
   const resetForm = () => {
     setEditingId(null);
@@ -1027,7 +1048,42 @@ export function CategoriesTab() {
           </CardTitle>
           <CardDescription>Edit existing categories or add child categories under any parent.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-5">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md border bg-muted/30 px-3 py-2">
+              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-lg font-semibold">{categories.length}</p>
+            </div>
+            <div className="rounded-md border bg-muted/30 px-3 py-2">
+              <p className="text-xs text-muted-foreground">Active</p>
+              <p className="text-lg font-semibold">{activeCategoryCount}</p>
+            </div>
+            <div className="rounded-md border bg-muted/30 px-3 py-2">
+              <p className="text-xs text-muted-foreground">Subcategories</p>
+              <p className="text-lg font-semibold">{subcategoryCount}</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 md:flex-row">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                value={categorySearch}
+                onChange={(event) => setCategorySearch(event.target.value)}
+                placeholder="Search categories, slugs, descriptions, or parents"
+              />
+            </div>
+            <Select value={categoryStatusFilter} onValueChange={setCategoryStatusFilter}>
+              <SelectTrigger className="w-full md:w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="active">Active only</SelectItem>
+                <SelectItem value="inactive">Inactive only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -1039,7 +1095,13 @@ export function CategoriesTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {flattenedCategories.map((category) => (
+              {visibleCategories.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                    No categories match the current filters.
+                  </TableCell>
+                </TableRow>
+              ) : visibleCategories.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell className="font-medium">
                     <span style={{ paddingLeft: `${category.depth * 1.25}rem` }}>{category.name}</span>
