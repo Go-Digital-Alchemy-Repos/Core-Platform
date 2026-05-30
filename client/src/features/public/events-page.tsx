@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import {
@@ -18,6 +18,7 @@ import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatEventDate, formatEventListDateLines, formatEventTime } from "@/lib/event-datetime";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
@@ -40,6 +41,8 @@ import {
   Video,
   User,
   Building,
+  Search,
+  X,
 } from "lucide-react";
 
 function str(v: unknown): string {
@@ -48,6 +51,26 @@ function str(v: unknown): string {
 
 function bool(v: unknown, fallback = false): boolean {
   return typeof v === "boolean" ? v : fallback;
+}
+
+function getInitialSearchParam(key: string, fallback = "all") {
+  if (typeof window === "undefined") return fallback;
+  return new URLSearchParams(window.location.search).get(key) || fallback;
+}
+
+function normalizeEventText(event: Event) {
+  return [
+    event.title,
+    event.description ? stripHtml(event.description) : "",
+    event.speakerName,
+    event.location,
+    event.locationName,
+    event.locationAddress,
+    Array.isArray(event.tags) ? event.tags.join(" ") : "",
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
 }
 
 function getRegistrationStatus(event: Event): { label: string; open: boolean } | null {
@@ -418,15 +441,20 @@ export function EventsArchiveSection({
 }: {
   props?: Record<string, unknown>;
 }) {
-  const initialView = str(props.defaultView) === "calendar" ? "calendar" : "list";
+  const [location] = useLocation();
+  const initialView =
+    getInitialSearchParam("view", str(props.defaultView) === "calendar" ? "calendar" : "list") === "calendar"
+      ? "calendar"
+      : "list";
   const [view, setView] = useState<"list" | "calendar">(initialView);
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [audienceFilter, setAudienceFilter] = useState("all");
-  const [deliveryFilter, setDeliveryFilter] = useState("all");
-  const [timeFilter, setTimeFilter] = useState("upcoming");
-  const [costFilter, setCostFilter] = useState("all");
-  const [recordingFilter, setRecordingFilter] = useState("all");
+  const [keywordFilter, setKeywordFilter] = useState(() => getInitialSearchParam("q", ""));
+  const [typeFilter, setTypeFilter] = useState(() => getInitialSearchParam("type"));
+  const [categoryFilter, setCategoryFilter] = useState(() => getInitialSearchParam("category"));
+  const [audienceFilter, setAudienceFilter] = useState(() => getInitialSearchParam("audience"));
+  const [deliveryFilter, setDeliveryFilter] = useState(() => getInitialSearchParam("delivery"));
+  const [timeFilter, setTimeFilter] = useState(() => getInitialSearchParam("when", "upcoming"));
+  const [costFilter, setCostFilter] = useState(() => getInitialSearchParam("cost"));
+  const [recordingFilter, setRecordingFilter] = useState(() => getInitialSearchParam("media"));
   const heading = str(props.heading) || "Upcoming Events";
   const subheading =
     str(props.subheading) ||
@@ -435,14 +463,60 @@ export function EventsArchiveSection({
   const { data: events, isLoading, error } = useQuery<Event[]>({
     queryKey: ["/api/events/all"],
   });
+  const isEventsPage = location.split("?")[0] === "/events";
+  const activeFilterCount = [
+    keywordFilter.trim(),
+    typeFilter !== "all",
+    categoryFilter !== "all",
+    audienceFilter !== "all",
+    deliveryFilter !== "all",
+    timeFilter !== "upcoming",
+    costFilter !== "all",
+    recordingFilter !== "all",
+    view !== (str(props.defaultView) === "calendar" ? "calendar" : "list"),
+  ].filter(Boolean).length;
+
+  useEffect(() => {
+    if (!isEventsPage || typeof window === "undefined") return;
+
+    const params = new URLSearchParams();
+    if (keywordFilter.trim()) params.set("q", keywordFilter.trim());
+    if (typeFilter !== "all") params.set("type", typeFilter);
+    if (categoryFilter !== "all") params.set("category", categoryFilter);
+    if (audienceFilter !== "all") params.set("audience", audienceFilter);
+    if (deliveryFilter !== "all") params.set("delivery", deliveryFilter);
+    if (timeFilter !== "upcoming") params.set("when", timeFilter);
+    if (costFilter !== "all") params.set("cost", costFilter);
+    if (recordingFilter !== "all") params.set("media", recordingFilter);
+    if (view !== "list") params.set("view", view);
+
+    const nextUrl = params.toString() ? `/events?${params.toString()}` : "/events";
+    if (`${window.location.pathname}${window.location.search}` !== nextUrl) {
+      window.history.replaceState(null, "", nextUrl);
+    }
+  }, [
+    audienceFilter,
+    categoryFilter,
+    costFilter,
+    deliveryFilter,
+    isEventsPage,
+    keywordFilter,
+    recordingFilter,
+    timeFilter,
+    typeFilter,
+    view,
+  ]);
+
   const filteredEvents = useMemo(() => {
     const now = new Date();
+    const keyword = keywordFilter.trim().toLowerCase();
     return (events ?? []).filter((event) => {
       const isPast = new Date(event.date) < now;
       const deliveryMode = getDeliveryMode(event);
       const isPaid = event.registrationEnabled && event.registrationType === "paid";
       const hasRecording = Boolean(event.recordingUrl);
 
+      if (keyword && !normalizeEventText(event).includes(keyword)) return false;
       if (typeFilter !== "all" && event.eventType !== typeFilter) return false;
       if (categoryFilter !== "all" && event.category !== categoryFilter) return false;
       if (audienceFilter !== "all" && event.audience !== audienceFilter) return false;
@@ -455,7 +529,19 @@ export function EventsArchiveSection({
 
       return true;
     });
-  }, [audienceFilter, categoryFilter, costFilter, deliveryFilter, events, recordingFilter, timeFilter, typeFilter]);
+  }, [audienceFilter, categoryFilter, costFilter, deliveryFilter, events, keywordFilter, recordingFilter, timeFilter, typeFilter]);
+
+  const resetFilters = () => {
+    setKeywordFilter("");
+    setTypeFilter("all");
+    setCategoryFilter("all");
+    setAudienceFilter("all");
+    setDeliveryFilter("all");
+    setTimeFilter("upcoming");
+    setCostFilter("all");
+    setRecordingFilter("all");
+    setView(str(props.defaultView) === "calendar" ? "calendar" : "list");
+  };
 
   return (
     <>
@@ -503,7 +589,30 @@ export function EventsArchiveSection({
 
       <section className="mx-auto max-w-4xl px-4 sm:px-6 py-10 sm:py-14" data-testid="section-events-content">
         {events && events.length > 0 && (
-          <div className="mb-6 grid gap-3 rounded-lg border bg-background p-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="events-filters">
+          <div className="mb-6 space-y-3 rounded-lg border bg-background p-3" data-testid="events-filters">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={keywordFilter}
+                  onChange={(event) => setKeywordFilter(event.target.value)}
+                  placeholder="Search events"
+                  className="pl-9"
+                  data-testid="filter-event-keyword"
+                />
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span data-testid="text-event-result-count">
+                  {filteredEvents.length} of {events.length} event{events.length === 1 ? "" : "s"}
+                </span>
+                {activeFilterCount > 0 && (
+                  <Badge variant="outline" data-testid="badge-active-filter-count">
+                    {activeFilterCount} active
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <select className="h-10 rounded-md border bg-background px-3 text-sm" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} data-testid="filter-event-type">
               <option value="all">All types</option>
               {EVENT_TYPES.map((eventType) => (
@@ -545,19 +654,13 @@ export function EventsArchiveSection({
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                setTypeFilter("all");
-                setCategoryFilter("all");
-                setAudienceFilter("all");
-                setDeliveryFilter("all");
-                setTimeFilter("upcoming");
-                setCostFilter("all");
-                setRecordingFilter("all");
-              }}
+              onClick={resetFilters}
               data-testid="button-reset-event-filters"
             >
+              <X className="mr-1.5 h-4 w-4" />
               Reset
             </Button>
+            </div>
           </div>
         )}
 
