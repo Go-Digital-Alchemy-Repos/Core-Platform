@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Loader2, Lock, ShoppingBag } from "lucide-react";
@@ -127,8 +127,14 @@ export default function CheckoutPage() {
   const [shippingQuoted, setShippingQuoted] = useState(false);
   const [intent, setIntent] = useState<PaymentIntentResponse | null>(null);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+  const lastShippingQuoteKey = useRef("");
   const { toast } = useToast();
-  useEffect(() => setItems(readCart()), []);
+  useEffect(() => {
+    const syncCart = () => setItems(readCart());
+    syncCart();
+    window.addEventListener("ecommerce-cart-changed", syncCart);
+    return () => window.removeEventListener("ecommerce-cart-changed", syncCart);
+  }, []);
 
   const { data: stripeConfig } = useQuery<StripeConfig>({
     queryKey: ["/api/ecommerce/stripe/config"],
@@ -143,10 +149,25 @@ export default function CheckoutPage() {
   const hasStripeConfig = Boolean(stripeConfig?.publishableKey);
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const selectedShippingRate = shippingRates.find((rate) => rate.id === form.shippingRateId);
+  const shippingQuoteKey = useMemo(() => JSON.stringify({
+    state: form.state.trim().toUpperCase(),
+    items: items.map((item) => ({
+      productId: item.productId,
+      variantId: item.variantId ?? null,
+      quantity: item.quantity,
+    })),
+  }), [form.state, items]);
   const elementsOptions = useMemo(
     () => intent?.clientSecret ? { clientSecret: intent.clientSecret, appearance: { theme: "stripe" as const } } : undefined,
     [intent?.clientSecret],
   );
+  useEffect(() => {
+    if (!shippingQuoted || shippingQuoteKey === lastShippingQuoteKey.current) return;
+    setShippingQuoted(false);
+    setShippingRates([]);
+    setIntent(null);
+    setForm((current) => ({ ...current, shippingRateId: "" }));
+  }, [shippingQuoteKey, shippingQuoted]);
   const mutation = useMutation({
     mutationFn: async () => {
       if (!shippingQuoted) {
@@ -180,6 +201,7 @@ export default function CheckoutPage() {
   });
   const shippingQuoteMutation = useMutation({
     mutationFn: async () => {
+      const quoteKey = shippingQuoteKey;
       const res = await apiRequest("POST", "/api/ecommerce/shipping/rates", {
         items: items.map((item) => ({ productId: item.productId, variantId: item.variantId ?? undefined, quantity: item.quantity })),
         address: {
@@ -187,9 +209,10 @@ export default function CheckoutPage() {
           state: form.state,
         },
       });
-      return res.json() as Promise<ShippingRateOption[]>;
+      return { rates: await res.json() as ShippingRateOption[], quoteKey };
     },
-    onSuccess: (rates) => {
+    onSuccess: ({ rates, quoteKey }) => {
+      lastShippingQuoteKey.current = quoteKey;
       setShippingRates(rates);
       setShippingQuoted(true);
       setForm((current) => ({
@@ -250,7 +273,6 @@ export default function CheckoutPage() {
                         disabled={Boolean(intent)}
                         onChange={(event) => {
                           setForm((current) => ({ ...current, [key]: event.target.value }));
-                          if (["state", "zip"].includes(key)) setShippingQuoted(false);
                         }}
                       />
                     </div>
