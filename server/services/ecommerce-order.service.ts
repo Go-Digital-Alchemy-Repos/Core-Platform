@@ -79,12 +79,21 @@ function assertAdminOrderStatusTransition(
   nextStatus?: string,
 ) {
   if (!nextStatus || nextStatus === previous.status) return;
+  if (previous.status === "cancelled") {
+    throw httpError("Cancelled orders cannot be reactivated", 400);
+  }
+  if (previous.status === "delivered") {
+    throw httpError("Delivered orders cannot be moved back to another status", 400);
+  }
+  if (previous.status === "shipped" && (nextStatus === "pending" || nextStatus === "paid")) {
+    throw httpError("Shipped orders cannot be moved back before fulfillment", 400);
+  }
+  if (nextStatus === "pending" && shippablePaymentStatuses.has(previous.paymentStatus)) {
+    throw httpError("Paid orders cannot be moved back to pending", 400);
+  }
   if (!fulfillmentCompleteStatuses.has(nextStatus)) return;
   if (!shippablePaymentStatuses.has(previous.paymentStatus)) {
     throw httpError("Only paid orders can be marked shipped or delivered", 400);
-  }
-  if (previous.status === "cancelled") {
-    throw httpError("Cancelled orders cannot be marked shipped or delivered", 400);
   }
 }
 

@@ -1651,6 +1651,36 @@ describe("ecommerce services", () => {
       .rejects.toThrow(/Cancelled/);
     await expect(updateAdminEcommerceOrder("order-admin-cancelled", { status: "delivered" }))
       .rejects.toThrow(/Cancelled/);
+    await expect(updateAdminEcommerceOrder("order-admin-cancelled", { status: "paid" }))
+      .rejects.toThrow(/Cancelled/);
+    expect(mockUpdateOrder).not.toHaveBeenCalled();
+  });
+
+  it("blocks admin backward transitions after payment or fulfillment", async () => {
+    const { updateAdminEcommerceOrder } = await import("../services/ecommerce-order.service");
+    mockGetOrder
+      .mockResolvedValueOnce({
+        id: "order-admin-paid",
+        status: "paid",
+        paymentStatus: "paid",
+      } as EcommerceOrder)
+      .mockResolvedValueOnce({
+        id: "order-admin-shipped",
+        status: "shipped",
+        paymentStatus: "paid",
+      } as EcommerceOrder)
+      .mockResolvedValueOnce({
+        id: "order-admin-delivered",
+        status: "delivered",
+        paymentStatus: "paid",
+      } as EcommerceOrder);
+
+    await expect(updateAdminEcommerceOrder("order-admin-paid", { status: "pending" }))
+      .rejects.toThrow(/Paid orders/);
+    await expect(updateAdminEcommerceOrder("order-admin-shipped", { status: "paid" }))
+      .rejects.toThrow(/Shipped orders/);
+    await expect(updateAdminEcommerceOrder("order-admin-delivered", { status: "shipped" }))
+      .rejects.toThrow(/Delivered orders/);
     expect(mockUpdateOrder).not.toHaveBeenCalled();
   });
 
