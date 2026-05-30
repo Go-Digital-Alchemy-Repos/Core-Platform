@@ -19,6 +19,11 @@ export async function processEcommerceStripeWebhook(payload: Buffer, signature?:
     event = JSON.parse(payload.toString()) as Stripe.Event;
   }
 
+  if (await storage.ecommerce.hasProcessedWebhook("stripe", event.id)) {
+    logger.stripe.info("Duplicate ecommerce webhook already reconciled", { eventId: event.id, eventType: event.type });
+    return;
+  }
+
   if (event.type === "payment_intent.succeeded") {
     const intent = event.data.object as Stripe.PaymentIntent;
     const orderId = intent.metadata?.orderId;

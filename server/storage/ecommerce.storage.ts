@@ -777,6 +777,18 @@ export class EcommerceStorage {
     })));
   }
 
+  async hasProcessedWebhook(provider: string, eventId: string): Promise<boolean> {
+    const [event] = await db
+      .select({ id: ecommerceProcessedWebhookEvents.id })
+      .from(ecommerceProcessedWebhookEvents)
+      .where(and(
+        eq(ecommerceProcessedWebhookEvents.provider, provider),
+        eq(ecommerceProcessedWebhookEvents.eventId, eventId),
+      ))
+      .limit(1);
+    return Boolean(event);
+  }
+
   async markWebhookProcessed(provider: string, eventId: string, eventType: string): Promise<boolean> {
     const inserted = await db
       .insert(ecommerceProcessedWebhookEvents)
