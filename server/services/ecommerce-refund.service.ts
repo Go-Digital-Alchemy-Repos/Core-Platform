@@ -127,8 +127,15 @@ export async function recordStripeRefundWebhook(params: {
   }
 
   if (!params.orderId || !params.amount || params.amount <= 0) return undefined;
-  const order = await storage.ecommerce.getOrder(params.orderId);
+  const order = await storage.ecommerce.getOrderWithDetails(params.orderId);
   if (!order) return undefined;
+  try {
+    assertEcommerceOrderCanRefund(order);
+  } catch {
+    return undefined;
+  }
+  const refundable = order.totalAmount - computeRefundedAmount(order.refunds);
+  if (params.amount > refundable) return undefined;
 
   const refund = await storage.ecommerce.createRefund({
     orderId: order.id,
