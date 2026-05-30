@@ -4,6 +4,10 @@ import rateLimit from "express-rate-limit";
 import { logger } from "../utils/logger";
 
 const isDev = process.env.NODE_ENV !== "production";
+const originCheckExemptPaths = new Set([
+  "/api/stripe/webhook",
+  "/api/ecommerce/webhook/stripe",
+]);
 
 export function enforceRequiredSecrets() {
   if (isDev) return;
@@ -230,7 +234,7 @@ export const originCheck: RequestHandler = (req: Request, res: Response, next: N
     return next();
   }
 
-  if (req.path === "/api/stripe/webhook") {
+  if (originCheckExemptPaths.has(req.path)) {
     return next();
   }
 
