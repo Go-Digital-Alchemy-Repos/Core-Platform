@@ -83,7 +83,7 @@ import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
 
-type SettingsData = Record<string, Record<string, { value: string; isSecret: boolean }>>;
+export type SettingsData = Record<string, Record<string, { value: string; isSecret: boolean }>>;
 
 type BrandingSettingKey = "frontend_logo_url" | "favicon_url";
 type BrandingCompanyInfoSettingKey =
@@ -295,14 +295,14 @@ interface IntegrationField {
   placeholder: string;
 }
 
-type IntegrationGroupKey =
+export type IntegrationGroupKey =
   | "commerce"
   | "shipping"
   | "marketing"
   | "communications"
   | "infrastructure";
 
-interface IntegrationConfig {
+export interface IntegrationConfig {
   category: string;
   title: string;
   description: string;
@@ -317,7 +317,7 @@ interface IntegrationConfig {
   supportsConnectionTest?: boolean;
 }
 
-const INTEGRATION_GROUPS: Array<{
+export const INTEGRATION_GROUPS: Array<{
   key: IntegrationGroupKey;
   title: string;
   description: string;
@@ -349,7 +349,19 @@ const INTEGRATION_GROUPS: Array<{
   },
 ];
 
-const INTEGRATIONS: IntegrationConfig[] = [
+export const ECOMMERCE_INTEGRATION_CATEGORIES = new Set([
+  "google_merchant_center",
+  "meta_ads",
+  "tiktok_ads",
+  "x_ads",
+  "shipstation",
+  "shippo",
+  "veeqo",
+  "easyship",
+  "pirate_ship",
+]);
+
+export const INTEGRATIONS: IntegrationConfig[] = [
   {
     category: "stripe",
     title: "Stripe",
@@ -897,7 +909,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
   },
 ];
 
-function IntegrationCard({
+export function IntegrationCard({
   config,
   settings,
 }: {
@@ -1143,7 +1155,10 @@ function IntegrationCard({
 }
 
 function IntegrationsTab({ settings }: { settings: SettingsData }) {
-  const configuredCount = INTEGRATIONS.filter((config) =>
+  const platformIntegrations = INTEGRATIONS.filter(
+    (config) => !ECOMMERCE_INTEGRATION_CATEGORIES.has(config.category),
+  );
+  const configuredCount = platformIntegrations.filter((config) =>
     config.fields.some((field) => {
       const setting = settings[config.category]?.[field.key];
       return setting?.value && setting.value !== "";
@@ -1157,13 +1172,14 @@ function IntegrationsTab({ settings }: { settings: SettingsData }) {
           Integrations
         </h3>
         <p className="text-sm text-muted-foreground">
-          Browse integrations by category. {configuredCount} of {INTEGRATIONS.length} connections
-          have saved settings, and secret values are encrypted at rest.
+          Browse platform-wide integrations by category. {configuredCount} of{" "}
+          {platformIntegrations.length} connections have saved settings, and secret values are
+          encrypted at rest. Ecommerce-specific integrations now live in Ecommerce.
         </p>
       </div>
       <div className="space-y-8">
         {INTEGRATION_GROUPS.map((group) => {
-          const groupIntegrations = INTEGRATIONS.filter((config) => config.group === group.key);
+          const groupIntegrations = platformIntegrations.filter((config) => config.group === group.key);
           if (groupIntegrations.length === 0) return null;
 
           return (

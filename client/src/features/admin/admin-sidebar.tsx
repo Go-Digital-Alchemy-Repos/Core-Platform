@@ -31,6 +31,7 @@ import {
   Handshake,
   ShoppingBag,
   Package,
+  Plug,
   TicketPercent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -196,6 +197,12 @@ function buildNavGroups(
                     href: "/admin/ecommerce/shipping",
                     icon: CalendarDays,
                     iconColor: "text-sky-600",
+                  },
+                  {
+                    title: "Integrations",
+                    href: "/admin/ecommerce/integrations",
+                    icon: Plug,
+                    iconColor: "text-blue-600",
                   },
                   {
                     title: "Settings",
