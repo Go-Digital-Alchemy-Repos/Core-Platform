@@ -17,7 +17,7 @@ import { getPublicProductCategories, toPublicEcommerceProduct } from "../service
 import { toPublicEcommerceOrderStatus } from "../services/ecommerce-public-order.service";
 import { getEcommerceStripePublishableKey, getEcommerceStripeMode } from "../services/ecommerce-stripe.service";
 import { requireEcommerceEnabled } from "../middleware/site-features";
-import { ecommerceCheckoutLimiter, ecommerceOrderLookupLimiter } from "../middleware/security";
+import { ecommerceCheckoutLimiter, ecommerceOrderLookupLimiter, ecommercePricingLimiter } from "../middleware/security";
 
 const router = Router();
 
@@ -72,6 +72,7 @@ router.get(
 
 router.post(
   "/cart/price",
+  ecommercePricingLimiter,
   asyncHandler(async (req, res) => {
     res.json(toPublicPricedCart(await priceCart(priceCartSchema.parse(req.body))));
   }),
@@ -79,6 +80,7 @@ router.post(
 
 router.post(
   "/shipping/rates",
+  ecommercePricingLimiter,
   asyncHandler(async (req, res) => {
     const data = z.object({
       items: priceCartSchema.shape.items,
@@ -94,6 +96,7 @@ router.post(
 
 router.post(
   "/coupons/validate",
+  ecommercePricingLimiter,
   asyncHandler(async (req, res) => {
     const data = z.object({
       code: z.string().min(1),

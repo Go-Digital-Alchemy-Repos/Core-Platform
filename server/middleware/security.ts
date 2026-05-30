@@ -161,6 +161,12 @@ export const ecommerceOrderLookupRateLimitPolicy = {
   message: { message: "Too many order lookup attempts. Please try again shortly." },
 };
 
+export const ecommercePricingRateLimitPolicy = {
+  windowMs: 10 * 60 * 1000,
+  max: 120,
+  message: { message: "Too many ecommerce pricing requests. Please try again shortly." },
+};
+
 export const ecommerceCheckoutLimiter = rateLimit({
   ...ecommerceCheckoutRateLimitPolicy,
   standardHeaders: true,
@@ -170,6 +176,13 @@ export const ecommerceCheckoutLimiter = rateLimit({
 
 export const ecommerceOrderLookupLimiter = rateLimit({
   ...ecommerceOrderLookupRateLimitPolicy,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => isDev,
+});
+
+export const ecommercePricingLimiter = rateLimit({
+  ...ecommercePricingRateLimitPolicy,
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => isDev,
