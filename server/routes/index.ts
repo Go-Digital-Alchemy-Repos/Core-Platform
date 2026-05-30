@@ -33,6 +33,10 @@ import {
   getDirectorySettings,
 } from "../services/directory-settings.service";
 import { getSiteFeatures } from "../services/site-features.service";
+import {
+  buildCurrentProductFeedXml,
+  isEcommerceProductFeedEnabled,
+} from "../services/ecommerce-product-feed.service";
 
 function escapeXml(str: string): string {
   return str
@@ -324,6 +328,24 @@ export function registerApiRoutes(app: Express) {
       res.send(xml);
     } catch (err) {
       res.status(500).send("Error generating sitemap");
+    }
+  });
+
+  app.get("/product-feed.xml", async (_req, res) => {
+    try {
+      const [siteFeatures, feedEnabled] = await Promise.all([
+        getSiteFeatures(),
+        isEcommerceProductFeedEnabled(),
+      ]);
+      if (!siteFeatures.ecommerceEnabled || !feedEnabled) {
+        res.status(404).send("Product feed is not enabled");
+        return;
+      }
+      res.set("Content-Type", "application/xml; charset=utf-8");
+      res.set("Cache-Control", "public, max-age=1800");
+      res.send(await buildCurrentProductFeedXml());
+    } catch (err) {
+      res.status(500).send("Error generating product feed");
     }
   });
 
