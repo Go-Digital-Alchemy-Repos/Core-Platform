@@ -213,11 +213,13 @@ export function registerApiRoutes(app: Express) {
 
   app.get("/sitemap.xml", async (_req, res) => {
     try {
-      const [seoSettings, pages, posts, events] = await Promise.all([
+      const [seoSettings, pages, posts, events, siteFeatures, products] = await Promise.all([
         storage.seoSettings.get(),
         storage.cmsPages.getAllPages(),
         storage.blog.getAllPosts(),
         storage.events.getAllEvents(),
+        getSiteFeatures(),
+        storage.ecommerce.getProducts({ publicOnly: true }),
       ]);
 
       const base = seoSettings?.siteUrl?.replace(/\/$/, "") || "";
@@ -238,6 +240,9 @@ export function registerApiRoutes(app: Express) {
       ];
       for (const r of staticRoutes) {
         urls.push({ loc: `${base}${r.path}`, changefreq: r.changefreq, priority: r.priority });
+      }
+      if (siteFeatures.ecommerceEnabled) {
+        urls.push({ loc: `${base}/shop`, changefreq: "daily", priority: "0.8" });
       }
 
       for (const page of pages) {
@@ -284,6 +289,20 @@ export function registerApiRoutes(app: Express) {
           changefreq: "weekly",
           priority: "0.7",
         });
+      }
+
+      if (siteFeatures.ecommerceEnabled) {
+        for (const product of products) {
+          if (product.robotsIndex === false) continue;
+          urls.push({
+            loc: `${base}/products/${product.urlSlug}`,
+            lastmod: product.updatedAt
+              ? new Date(product.updatedAt).toISOString().split("T")[0]
+              : undefined,
+            changefreq: "weekly",
+            priority: product.featured ? "0.8" : "0.7",
+          });
+        }
       }
 
       const xml = [
