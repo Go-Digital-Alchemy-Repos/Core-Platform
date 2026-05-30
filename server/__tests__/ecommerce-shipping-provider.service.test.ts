@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ECOMMERCE_SHIPPING_PROVIDER_REGISTRY,
+  getMissingShippingProviderCredentialLabels,
   getShippingProviderCredentialCategory,
   getShippingProvidersByCapability,
   mergeShippingProviderStatuses,
@@ -68,6 +69,13 @@ describe("ecommerce shipping provider registry", () => {
 
   it("uses provider-scoped encrypted settings categories", () => {
     expect(getShippingProviderCredentialCategory("shippo")).toBe("ecommerce_shipping_provider_shippo");
+  });
+
+  it("reports missing credential labels before provider activation", () => {
+    const definition = ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.find((provider) => provider.provider === "shipstation");
+    expect(definition).toBeDefined();
+    expect(getMissingShippingProviderCredentialLabels(definition!, { apiKey: "key" })).toEqual(["API secret"]);
+    expect(getMissingShippingProviderCredentialLabels(definition!, { apiKey: "key", apiSecret: "secret" })).toEqual([]);
   });
 
   it("exposes capability lookups for carrier-provider orchestration", () => {

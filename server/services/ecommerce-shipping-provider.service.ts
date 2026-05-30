@@ -168,6 +168,15 @@ export function shippingProviderSupportsCapability(provider: string, capability:
   return getShippingProviderDefinition(provider)?.capabilities.includes(capability) ?? false;
 }
 
+export function getMissingShippingProviderCredentialLabels(
+  definition: EcommerceShippingProviderDefinition,
+  settings: Record<string, string | undefined>,
+): string[] {
+  return definition.setupFields
+    .filter((field) => !settings[field.key])
+    .map((field) => field.label);
+}
+
 export function getShippingProviderCredentialCategory(provider: string): string {
   return `ecommerce_shipping_provider_${provider}`;
 }

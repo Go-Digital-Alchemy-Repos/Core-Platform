@@ -29,6 +29,7 @@ import {
 } from "../../services/ecommerce-email.service";
 import {
   ECOMMERCE_SHIPPING_PROVIDER_REGISTRY,
+  getMissingShippingProviderCredentialLabels,
   getShippingProviderCredentialCategory,
   getShippingProviderDefinition,
   mergeShippingProviderStatuses,
@@ -416,10 +417,28 @@ router.get("/shipping/providers/:provider/readiness", asyncHandler(async (req, r
 
 router.put("/shipping/providers/:provider", asyncHandler(async (req, res) => {
   const provider = paramString(req.params.provider);
+  const definition = getShippingProviderDefinition(provider);
+  if (!definition) {
+    res.status(404).json({ message: "Shipping provider not found" });
+    return;
+  }
+
   const data = insertEcommerceShippingProviderSchema.partial().extend({
     displayName: z.string().min(1),
     type: z.enum(["direct_carrier", "aggregator", "workflow", "marketplace"]),
   }).parse({ ...req.body, provider });
+
+  if (data.active) {
+    const settings = await storage.settings.getDecryptedCategory(getShippingProviderCredentialCategory(provider));
+    const missingCredentialLabels = getMissingShippingProviderCredentialLabels(definition, settings);
+    if (missingCredentialLabels.length > 0) {
+      res.status(400).json({
+        message: `Save ${missingCredentialLabels.join(", ")} before activating ${definition.displayName}.`,
+        missingCredentialLabels,
+      });
+      return;
+    }
+  }
 
   res.json(await storage.ecommerce.upsertShippingProvider({
     provider,
