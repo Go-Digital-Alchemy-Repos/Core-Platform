@@ -18,6 +18,7 @@ const mockUpdateOrder = vi.fn();
 const mockGetOrderWithDetails = vi.fn();
 const mockGetCustomer = vi.fn();
 const mockCreateOrder = vi.fn();
+const mockGetFulfillmentsForOrder = vi.fn();
 const mockGetRefundByStripeRefundId = vi.fn();
 const mockUpdateRefund = vi.fn();
 const mockCreateRefund = vi.fn();
@@ -53,6 +54,7 @@ vi.mock("../storage/index", () => ({
       getOrderWithDetails: mockGetOrderWithDetails,
       getCustomer: mockGetCustomer,
       createOrder: mockCreateOrder,
+      getFulfillmentsForOrder: mockGetFulfillmentsForOrder,
       recordCouponRedemptionForOrder: mockRecordCouponRedemptionForOrder,
       deductInventoryForPaidOrder: mockDeductInventoryForPaidOrder,
       getRefundByStripeRefundId: mockGetRefundByStripeRefundId,
@@ -80,6 +82,8 @@ describe("ecommerce services", () => {
     mockGetOrderWithDetails.mockReset();
     mockGetCustomer.mockReset();
     mockCreateOrder.mockReset();
+    mockGetFulfillmentsForOrder.mockReset();
+    mockGetFulfillmentsForOrder.mockResolvedValue([]);
     mockGetRefundByStripeRefundId.mockReset();
     mockUpdateRefund.mockReset();
     mockCreateRefund.mockReset();
@@ -860,6 +864,89 @@ describe("ecommerce services", () => {
     await expect(assertEcommerceFulfillmentRequest("order-fulfill-2", [
       { orderItemId: "item-1", quantity: 3 },
     ])).rejects.toThrow(/exceed/);
+  });
+
+  it("blocks fulfillment quantities that exceed the remaining unfulfilled quantity", async () => {
+    const { assertEcommerceFulfillmentRequest } = await import("../services/ecommerce-order.service");
+    mockGetOrder.mockResolvedValue({
+      id: "order-fulfill-3",
+      status: "paid",
+      paymentStatus: "paid",
+    } as EcommerceOrder);
+    mockGetOrderWithDetails.mockResolvedValue({
+      id: "order-fulfill-3",
+      customer: null,
+      items: [{ id: "item-1", quantity: 3 }],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+    });
+    mockGetFulfillmentsForOrder.mockResolvedValue([
+      {
+        id: "fulfillment-1",
+        status: "fulfilled",
+        items: [{ orderItemId: "item-1", quantity: 2 }],
+      },
+    ]);
+
+    await expect(assertEcommerceFulfillmentRequest("order-fulfill-3", [
+      { orderItemId: "item-1", quantity: 2 },
+    ])).rejects.toThrow(/remaining ordered quantity/);
+  });
+
+  it("aggregates duplicate fulfillment request lines before validating quantity", async () => {
+    const { assertEcommerceFulfillmentRequest } = await import("../services/ecommerce-order.service");
+    mockGetOrder.mockResolvedValue({
+      id: "order-fulfill-4",
+      status: "paid",
+      paymentStatus: "paid",
+    } as EcommerceOrder);
+    mockGetOrderWithDetails.mockResolvedValue({
+      id: "order-fulfill-4",
+      customer: null,
+      items: [{ id: "item-1", quantity: 3 }],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+    });
+
+    await expect(assertEcommerceFulfillmentRequest("order-fulfill-4", [
+      { orderItemId: "item-1", quantity: 2 },
+      { orderItemId: "item-1", quantity: 2 },
+    ])).rejects.toThrow(/remaining ordered quantity/);
+  });
+
+  it("ignores failed or cancelled fulfillments when checking remaining quantity", async () => {
+    const { assertEcommerceFulfillmentRequest } = await import("../services/ecommerce-order.service");
+    mockGetOrder.mockResolvedValue({
+      id: "order-fulfill-5",
+      status: "paid",
+      paymentStatus: "paid",
+    } as EcommerceOrder);
+    mockGetOrderWithDetails.mockResolvedValue({
+      id: "order-fulfill-5",
+      customer: null,
+      items: [{ id: "item-1", quantity: 3 }],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+    });
+    mockGetFulfillmentsForOrder.mockResolvedValue([
+      {
+        id: "fulfillment-1",
+        status: "failed",
+        items: [{ orderItemId: "item-1", quantity: 3 }],
+      },
+      {
+        id: "fulfillment-2",
+        status: "cancelled",
+        items: [{ orderItemId: "item-1", quantity: 3 }],
+      },
+    ]);
+
+    await expect(assertEcommerceFulfillmentRequest("order-fulfill-5", [
+      { orderItemId: "item-1", quantity: 3 },
+    ])).resolves.toEqual([{ orderItemId: "item-1", quantity: 3 }]);
   });
 
   it("creates manual paid orders through server-side pricing and inventory deduction", async () => {

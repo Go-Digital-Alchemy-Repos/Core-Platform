@@ -62,6 +62,8 @@ export const fulfillmentItemsSchema = z.array(z.object({
   quantity: z.number().int().min(1),
 })).default([]);
 
+const excludedFulfillmentStatuses = new Set(["cancelled", "canceled", "failed"]);
+
 const shippablePaymentStatuses = new Set(["paid", "partially_refunded"]);
 
 function httpError(message: string, statusCode: number) {
@@ -260,13 +262,36 @@ export async function assertEcommerceFulfillmentRequest(
   if (!details) throw httpError("Order not found", 404);
 
   const orderItemsById = new Map(details.items.map((item) => [item.id, item]));
+  const requestedByOrderItemId = new Map<string, number>();
   for (const item of items) {
     const orderItem = orderItemsById.get(item.orderItemId);
     if (!orderItem) {
       throw httpError("Fulfillment item does not belong to this order", 400);
     }
-    if (item.quantity > orderItem.quantity) {
-      throw httpError("Fulfillment quantity cannot exceed the ordered quantity", 400);
+    requestedByOrderItemId.set(
+      item.orderItemId,
+      (requestedByOrderItemId.get(item.orderItemId) ?? 0) + item.quantity,
+    );
+  }
+
+  const fulfillments = await storage.ecommerce.getFulfillmentsForOrder(orderId);
+  const fulfilledByOrderItemId = new Map<string, number>();
+  for (const fulfillment of fulfillments) {
+    if (excludedFulfillmentStatuses.has(fulfillment.status)) continue;
+    for (const item of fulfillment.items) {
+      fulfilledByOrderItemId.set(
+        item.orderItemId,
+        (fulfilledByOrderItemId.get(item.orderItemId) ?? 0) + item.quantity,
+      );
+    }
+  }
+
+  for (const [orderItemId, requestedQuantity] of requestedByOrderItemId) {
+    const orderItem = orderItemsById.get(orderItemId);
+    if (!orderItem) continue;
+    const alreadyFulfilled = fulfilledByOrderItemId.get(orderItemId) ?? 0;
+    if (requestedQuantity + alreadyFulfilled > orderItem.quantity) {
+      throw httpError("Fulfillment quantity cannot exceed the remaining ordered quantity", 400);
     }
   }
 
