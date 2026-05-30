@@ -260,6 +260,71 @@ describe("ecommerce services", () => {
     })).toThrow();
   });
 
+  it("trims and bounds public checkout payment intent requests", async () => {
+    const { checkoutSchema } = await import("../services/ecommerce-order.service");
+    const validCheckout = {
+      items: [{ productId: " product-1 ", quantity: 1 }],
+      customer: {
+        email: " Buyer@Example.com ",
+        name: " Buyer Name ",
+        phone: " 555-0100 ",
+      },
+      shippingAddress: {
+        name: " Buyer Name ",
+        company: " Acme ",
+        address: " 123 Main St ",
+        line2: " Suite 5 ",
+        city: " New York ",
+        state: " NY ",
+        zip: " 10001 ",
+        country: " US ",
+      },
+      shippingRateId: " shipping-rate-1 ",
+      metaTracking: {
+        marketingConsentGranted: true,
+        fbp: " fb.1.123 ",
+        fbc: " fb.1.456 ",
+        eventSourceUrl: " https://example.com/checkout ",
+        userAgent: " Mozilla/5.0 ",
+      },
+    };
+
+    expect(checkoutSchema.parse(validCheckout)).toMatchObject({
+      items: [{ productId: "product-1", quantity: 1 }],
+      customer: {
+        email: "Buyer@Example.com",
+        name: "Buyer Name",
+        phone: "555-0100",
+      },
+      shippingAddress: {
+        name: "Buyer Name",
+        company: "Acme",
+        address: "123 Main St",
+        line2: "Suite 5",
+        city: "New York",
+        state: "NY",
+        zip: "10001",
+        country: "US",
+      },
+      shippingRateId: "shipping-rate-1",
+      metaTracking: {
+        marketingConsentGranted: true,
+        fbp: "fb.1.123",
+        fbc: "fb.1.456",
+        eventSourceUrl: "https://example.com/checkout",
+        userAgent: "Mozilla/5.0",
+      },
+    });
+    expect(() => checkoutSchema.parse({
+      ...validCheckout,
+      customer: { ...validCheckout.customer, name: "B".repeat(161) },
+    })).toThrow();
+    expect(() => checkoutSchema.parse({
+      ...validCheckout,
+      metaTracking: { eventSourceUrl: "not-a-url" },
+    })).toThrow();
+  });
+
   it("rejects archived and hidden products during server-side cart pricing", async () => {
     const { priceCart } = await import("../services/ecommerce-pricing.service");
     mockProducts.push({

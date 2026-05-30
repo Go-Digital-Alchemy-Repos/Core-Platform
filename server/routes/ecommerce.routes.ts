@@ -13,7 +13,7 @@ import {
   toPublicPricedCart,
   validateCoupon,
 } from "../services/ecommerce-pricing.service";
-import { createEcommercePaymentIntent } from "../services/ecommerce-order.service";
+import { checkoutSchema, createEcommercePaymentIntent } from "../services/ecommerce-order.service";
 import { ecommerceOrderStatusLookupSchema } from "../services/ecommerce-order-lookup.service";
 import { getPublicProductCategories, toPublicEcommerceProduct } from "../services/ecommerce-public-product.service";
 import { toPublicEcommerceOrderStatus } from "../services/ecommerce-public-order.service";
@@ -118,6 +118,7 @@ router.post(
   "/checkout/payment-intent",
   ecommerceCheckoutLimiter,
   noStorePrivateResponse,
+  validateBody(checkoutSchema),
   asyncHandler(async (req, res) => {
     res.status(201).json(await createEcommercePaymentIntent(req.body, { ip: req.ip }));
   }),

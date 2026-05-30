@@ -15,33 +15,37 @@ import {
 } from "./ecommerce-email.service";
 import { logger } from "../utils/logger";
 
+const MAX_CHECKOUT_TEXT_LENGTH = 160;
+const MAX_CHECKOUT_ADDRESS_LENGTH = 240;
+const MAX_CHECKOUT_URL_LENGTH = 2048;
+const MAX_CHECKOUT_USER_AGENT_LENGTH = 512;
+
 const addressSchema = z.object({
-  name: z.string().min(1),
-  company: z.string().optional(),
-  address: z.string().min(1),
-  line2: z.string().optional(),
-  city: z.string().min(1),
-  state: z.string().min(1),
-  zip: z.string().min(1),
-  country: z.string().default("US"),
+  name: z.string().trim().min(1).max(MAX_CHECKOUT_TEXT_LENGTH),
+  company: z.string().trim().max(MAX_CHECKOUT_TEXT_LENGTH).optional(),
+  address: z.string().trim().min(1).max(MAX_CHECKOUT_ADDRESS_LENGTH),
+  line2: z.string().trim().max(MAX_CHECKOUT_ADDRESS_LENGTH).optional(),
+  city: z.string().trim().min(1).max(MAX_CHECKOUT_TEXT_LENGTH),
+  state: z.string().trim().min(1).max(MAX_CHECKOUT_TEXT_LENGTH),
+  zip: z.string().trim().min(1).max(40),
+  country: z.string().trim().min(1).max(80).default("US"),
 });
 
 export const checkoutSchema = priceCartSchema.extend({
   customer: z.object({
-    email: z.string().email(),
-    name: z.string().min(1),
-    phone: z.string().optional(),
+    email: z.string().trim().email().max(254),
+    name: z.string().trim().min(1).max(MAX_CHECKOUT_TEXT_LENGTH),
+    phone: z.string().trim().max(40).optional(),
   }),
   shippingAddress: addressSchema,
-  shippingRateId: z.string().optional(),
   billingSameAsShipping: z.boolean().default(true),
   billingAddress: addressSchema.optional(),
   metaTracking: z.object({
     marketingConsentGranted: z.boolean().optional(),
-    fbp: z.string().optional(),
-    fbc: z.string().optional(),
-    eventSourceUrl: z.string().optional(),
-    userAgent: z.string().optional(),
+    fbp: z.string().trim().max(MAX_CHECKOUT_TEXT_LENGTH).optional(),
+    fbc: z.string().trim().max(MAX_CHECKOUT_TEXT_LENGTH).optional(),
+    eventSourceUrl: z.string().trim().url().max(MAX_CHECKOUT_URL_LENGTH).optional(),
+    userAgent: z.string().trim().max(MAX_CHECKOUT_USER_AGENT_LENGTH).optional(),
   }).optional(),
 });
 
