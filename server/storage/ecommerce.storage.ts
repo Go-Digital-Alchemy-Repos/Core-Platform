@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, ilike, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import { requiresAtomicInventoryStockGuard } from "../services/ecommerce-inventory.service";
 import { isEcommerceOrderLookupAuthorized } from "../services/ecommerce-order-lookup.service";
@@ -549,6 +549,26 @@ export class EcommerceStorage {
       .update(ecommerceOrders)
       .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommerceOrders.$inferInsert>)
       .where(eq(ecommerceOrders.stripePaymentIntentId, paymentIntentId))
+      .returning();
+    return order;
+  }
+
+  async markOrderPaidIfUnpaid(id: string, paymentIntentId: string): Promise<EcommerceOrder | undefined> {
+    const [order] = await db
+      .update(ecommerceOrders)
+      .set({
+        status: "paid",
+        paymentStatus: "paid",
+        stripePaymentIntentId: paymentIntentId,
+        updatedAt: new Date(),
+      })
+      .where(and(
+        eq(ecommerceOrders.id, id),
+        or(
+          ne(ecommerceOrders.status, "paid"),
+          ne(ecommerceOrders.paymentStatus, "paid"),
+        ),
+      ))
       .returning();
     return order;
   }

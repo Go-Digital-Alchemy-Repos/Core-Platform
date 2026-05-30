@@ -352,16 +352,15 @@ export async function markEcommerceOrderPaid(orderId: string, paymentIntentId: s
   if (existing.stripePaymentIntentId && existing.stripePaymentIntentId !== paymentIntentId) {
     throw new Error("PaymentIntent does not match this order");
   }
-  const alreadyPaid = existing.status === "paid" && existing.paymentStatus === "paid";
+  const wasAlreadyPaid = existing.status === "paid" && existing.paymentStatus === "paid";
+  const transitioned = wasAlreadyPaid
+    ? undefined
+    : await storage.ecommerce.markOrderPaidIfUnpaid(orderId, paymentIntentId);
+  const shouldSendPaidEffects = Boolean(transitioned);
 
-  await storage.ecommerce.updateOrder(orderId, {
-    status: "paid",
-    paymentStatus: "paid",
-    stripePaymentIntentId: paymentIntentId,
-  });
-  if (!alreadyPaid) await storage.ecommerce.recordCouponRedemptionForOrder(orderId);
+  if (shouldSendPaidEffects) await storage.ecommerce.recordCouponRedemptionForOrder(orderId);
   await storage.ecommerce.deductInventoryForPaidOrder(orderId);
   const details = await storage.ecommerce.getOrderWithDetails(orderId);
-  if (details && !alreadyPaid) await sendEcommerceOrderConfirmation(details);
+  if (details && shouldSendPaidEffects) await sendEcommerceOrderConfirmation(details);
   return details;
 }
