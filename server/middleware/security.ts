@@ -192,6 +192,13 @@ export const ecommercePricingLimiter = rateLimit({
   skip: () => isDev,
 });
 
+export function noStorePrivateResponse(_req: Request, res: Response, next: NextFunction) {
+  res.setHeader("Cache-Control", "private, no-store, max-age=0");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+}
+
 function normalizeOrigin(raw: string): string | null {
   try {
     return new URL(raw).origin;

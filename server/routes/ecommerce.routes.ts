@@ -17,7 +17,7 @@ import { getPublicProductCategories, toPublicEcommerceProduct } from "../service
 import { toPublicEcommerceOrderStatus } from "../services/ecommerce-public-order.service";
 import { getEcommerceStripePublishableKey, getEcommerceStripeMode } from "../services/ecommerce-stripe.service";
 import { requireEcommerceEnabled } from "../middleware/site-features";
-import { ecommerceCheckoutLimiter, ecommerceOrderLookupLimiter, ecommercePricingLimiter } from "../middleware/security";
+import { ecommerceCheckoutLimiter, ecommerceOrderLookupLimiter, ecommercePricingLimiter, noStorePrivateResponse } from "../middleware/security";
 
 const router = Router();
 
@@ -62,6 +62,7 @@ router.get(
 
 router.get(
   "/stripe/config",
+  noStorePrivateResponse,
   asyncHandler(async (_req, res) => {
     res.json({
       publishableKey: await getEcommerceStripePublishableKey(),
@@ -73,6 +74,7 @@ router.get(
 router.post(
   "/cart/price",
   ecommercePricingLimiter,
+  noStorePrivateResponse,
   asyncHandler(async (req, res) => {
     res.json(toPublicPricedCart(await priceCart(priceCartSchema.parse(req.body))));
   }),
@@ -81,6 +83,7 @@ router.post(
 router.post(
   "/shipping/rates",
   ecommercePricingLimiter,
+  noStorePrivateResponse,
   asyncHandler(async (req, res) => {
     const data = z.object({
       items: priceCartSchema.shape.items,
@@ -97,6 +100,7 @@ router.post(
 router.post(
   "/coupons/validate",
   ecommercePricingLimiter,
+  noStorePrivateResponse,
   asyncHandler(async (req, res) => {
     const data = z.object({
       code: z.string().min(1),
@@ -116,6 +120,7 @@ router.post(
 router.post(
   "/checkout/payment-intent",
   ecommerceCheckoutLimiter,
+  noStorePrivateResponse,
   asyncHandler(async (req, res) => {
     res.status(201).json(await createEcommercePaymentIntent(req.body, { ip: req.ip }));
   }),
@@ -124,6 +129,7 @@ router.post(
 router.post(
   "/orders/status",
   ecommerceOrderLookupLimiter,
+  noStorePrivateResponse,
   asyncHandler(async (req, res) => {
     const data = z.object({
       orderId: z.string().min(1),
