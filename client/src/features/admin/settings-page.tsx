@@ -65,6 +65,9 @@ import {
   Pilcrow,
   Eraser,
   Code2,
+  Megaphone,
+  Store,
+  Truck,
 } from "lucide-react";
 import {
   BRANDING_FONT_OPTIONS,
@@ -435,6 +438,126 @@ const INTEGRATIONS: IntegrationConfig[] = [
     ],
   },
   {
+    category: "meta_ads",
+    title: "Meta Pixel & Conversions API",
+    description:
+      "Marketing pixel and server-side event credentials for Facebook and Instagram commerce campaigns",
+    icon: Megaphone,
+    accountUrl: "https://business.facebook.com/events_manager",
+    docsUrl: "https://developers.facebook.com/docs/meta-pixel/",
+    instructions: [
+      "Open Meta Events Manager and choose the dataset connected to this store.",
+      "Copy the Pixel ID for browser PageView tracking.",
+      "Create a Conversions API access token only when server-side purchase events are ready to be enabled.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "meta_pixel_id",
+        label: "Pixel ID",
+        isSecret: false,
+        placeholder: "123456789012345",
+      },
+      {
+        key: "meta_access_token",
+        label: "Conversions API Access Token",
+        isSecret: true,
+        placeholder: "EAAB...",
+      },
+      {
+        key: "meta_test_event_code",
+        label: "Test Event Code",
+        isSecret: false,
+        placeholder: "TEST12345",
+      },
+    ],
+  },
+  {
+    category: "tiktok_ads",
+    title: "TikTok Pixel & Events API",
+    description:
+      "TikTok browser pixel and Events API credentials for catalog, checkout, and purchase tracking",
+    icon: Megaphone,
+    accountUrl: "https://ads.tiktok.com/i18n/events_manager",
+    docsUrl: "https://business-api.tiktok.com/portal/docs?id=1739584855420929",
+    instructions: [
+      "Open TikTok Events Manager and choose the web event source for this store.",
+      "Copy the Pixel ID for consent-based browser tracking.",
+      "Create an Events API access token only when server-side purchase events are ready to be enabled.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "tiktok_pixel_id",
+        label: "Pixel ID",
+        isSecret: false,
+        placeholder: "CXXXXXXXXXXXXXXX",
+      },
+      {
+        key: "tiktok_access_token",
+        label: "Events API Access Token",
+        isSecret: true,
+        placeholder: "Act...",
+      },
+      {
+        key: "tiktok_test_event_code",
+        label: "Test Event Code",
+        isSecret: false,
+        placeholder: "TEST12345",
+      },
+    ],
+  },
+  {
+    category: "x_ads",
+    title: "X Ads Website Tag",
+    description: "Consent-based website tag configuration for X campaign measurement and remarketing",
+    icon: Megaphone,
+    accountUrl: "https://ads.x.com/conversion_tracking",
+    docsUrl: "https://business.x.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html",
+    instructions: [
+      "Open X Ads conversion tracking and create or select the website tag for this store.",
+      "Copy the website tag ID into this card.",
+      "Use the tag only after confirming marketing cookie consent requirements for the site.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "x_pixel_id",
+        label: "Website Tag ID",
+        isSecret: false,
+        placeholder: "o1234",
+      },
+    ],
+  },
+  {
+    category: "google_merchant_center",
+    title: "Google Merchant Center",
+    description: "Product feed readiness settings for Shopping surfaces and merchant diagnostics",
+    icon: Store,
+    accountUrl: "https://merchants.google.com/",
+    docsUrl: "https://support.google.com/merchants/answer/7052112",
+    instructions: [
+      "Create or open the Merchant Center account for this store.",
+      "Copy the Merchant Center ID for future feed publishing and diagnostics.",
+      "Keep feed publishing disabled until product inventory, tax, shipping, and return policies are final.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "merchant_center_id",
+        label: "Merchant Center ID",
+        isSecret: false,
+        placeholder: "123456789",
+      },
+      {
+        key: "product_feed_enabled",
+        label: "Product Feed Enabled",
+        isSecret: false,
+        placeholder: "false",
+      },
+    ],
+  },
+  {
     category: "crm",
     title: "CRM Inbound API",
     description: "API key used by external lead sources like social ads, Zapier, and landing-page tools",
@@ -453,6 +576,46 @@ const INTEGRATIONS: IntegrationConfig[] = [
         label: "Inbound API Key",
         isSecret: true,
         placeholder: "Generate a long random secret",
+      },
+    ],
+  },
+  {
+    category: "shipstation",
+    title: "ShipStation",
+    description: "Shipping label, fulfillment, and shipment sync configuration for ecommerce orders",
+    icon: Truck,
+    accountUrl: "https://shipstation.com/account/settings/api",
+    docsUrl: "https://docs.shipstation.com/api-overview",
+    instructions: [
+      "Open ShipStation API settings and copy the API key and API secret.",
+      "Copy the Store ID and Warehouse ID that should receive ecommerce orders.",
+      "Keep fulfillment automation disabled until carrier services, package defaults, and test orders are verified.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "shipstation_api_key",
+        label: "API Key",
+        isSecret: true,
+        placeholder: "ShipStation API key",
+      },
+      {
+        key: "shipstation_api_secret",
+        label: "API Secret",
+        isSecret: true,
+        placeholder: "ShipStation API secret",
+      },
+      {
+        key: "shipstation_store_id",
+        label: "Store ID",
+        isSecret: false,
+        placeholder: "123456",
+      },
+      {
+        key: "shipstation_warehouse_id",
+        label: "Warehouse ID",
+        isSecret: false,
+        placeholder: "123456",
       },
     ],
   },

@@ -74,6 +74,55 @@ export function buildBreadcrumbLd(
   };
 }
 
+export interface ProductLdInput {
+  name: string;
+  description?: string | null;
+  slug: string;
+  image?: string | null;
+  gallery?: string[];
+  sku?: string | null;
+  brandName?: string | null;
+  price: number;
+  salePrice?: number | null;
+  currency?: string;
+  active?: boolean;
+}
+
+export function buildProductLd(
+  product: ProductLdInput,
+  globalSeo?: SeoSettings | null,
+): JsonLdObject | null {
+  if (!product.name || !product.slug) return null;
+
+  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const productUrl = `${siteUrl}/products/${product.slug}`;
+  const effectivePrice = product.salePrice ?? product.price;
+  const images = [product.image, ...(product.gallery ?? [])]
+    .filter((src): src is string => Boolean(src))
+    .map((src) => absoluteUrl(src, siteUrl));
+
+  return compactObject({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description || undefined,
+    image: images.length > 0 ? images : undefined,
+    sku: product.sku || undefined,
+    brand: compactObject({
+      "@type": "Brand",
+      name: product.brandName || globalSeo?.organizationName || globalSeo?.siteName || "Core Platform",
+    }),
+    offers: compactObject({
+      "@type": "Offer",
+      url: productUrl,
+      priceCurrency: (product.currency || "USD").toUpperCase(),
+      price: (effectivePrice / 100).toFixed(2),
+      availability: product.active === false ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+      itemCondition: "https://schema.org/NewCondition",
+    }),
+  });
+}
+
 export function buildArticleLd(
   post: BlogPost,
   globalSeo?: SeoSettings | null

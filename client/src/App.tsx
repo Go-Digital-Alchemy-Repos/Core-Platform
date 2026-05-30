@@ -8,6 +8,8 @@ import { BrandingProvider } from "@/components/shared/branding-provider";
 import { CookieConsentBanner } from "@/components/shared/cookie-consent-banner";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import { useAuth } from "@/hooks/use-auth";
+import { loadGa4IfConsented, loadMarketingPixelsIfConsented } from "@/lib/analytics-runtime";
+import { subscribeToCookieConsent } from "@/lib/cookie-consent";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
 import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
@@ -462,6 +464,27 @@ function RouteAdminModeManager() {
   return null;
 }
 
+function RuntimeIntegrationsManager() {
+  const [location] = useLocation();
+
+  const loadRuntimeIntegrations = () => {
+    void loadGa4IfConsented().catch(() => undefined);
+    void loadMarketingPixelsIfConsented().catch(() => undefined);
+  };
+
+  useEffect(() => {
+    loadRuntimeIntegrations();
+  }, [location]);
+
+  useEffect(() => {
+    return subscribeToCookieConsent(() => {
+      loadRuntimeIntegrations();
+    });
+  }, []);
+
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -471,6 +494,7 @@ function App() {
           <SetupGuard>
             <RouteAdminModeManager />
             <RouteScrollManager />
+            <RuntimeIntegrationsManager />
             <Router />
             <CookieConsentBanner />
           </SetupGuard>

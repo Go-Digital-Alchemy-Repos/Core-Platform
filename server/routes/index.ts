@@ -154,8 +154,15 @@ export function registerApiRoutes(app: Express) {
   app.get("/api/runtime-integrations", async (_req, res) => {
     try {
       const analytics = await storage.settings.getDecryptedCategory("google_analytics");
+      const metaAds = await storage.settings.getDecryptedCategory("meta_ads");
+      const tiktokAds = await storage.settings.getDecryptedCategory("tiktok_ads");
+      const xAds = await storage.settings.getDecryptedCategory("x_ads");
+
       res.json({
         ga4MeasurementId: analytics.ga4_measurement_id || null,
+        metaPixelId: metaAds.meta_pixel_id || null,
+        tiktokPixelId: tiktokAds.tiktok_pixel_id || null,
+        xPixelId: xAds.x_pixel_id || null,
       });
     } catch (err) {
       logger.app.warn("Failed to retrieve runtime integrations, returning defaults", {
@@ -163,6 +170,9 @@ export function registerApiRoutes(app: Express) {
       });
       res.json({
         ga4MeasurementId: null,
+        metaPixelId: null,
+        tiktokPixelId: null,
+        xPixelId: null,
       });
     }
   });

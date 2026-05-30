@@ -1,5 +1,5 @@
 import sanitizeHtml from "sanitize-html";
-import type { BlogPost, CmsPage, Event, SeoSettings } from "@shared/schema";
+import type { BlogPost, CmsPage, EcommerceProduct, Event, SeoSettings } from "@shared/schema";
 import { getEventPath } from "@shared/event-url";
 import { storage } from "../storage";
 
@@ -486,6 +486,62 @@ function buildSearchSnapshot(
   };
 }
 
+function buildProductSnapshot(
+  product: EcommerceProduct,
+  seo: SeoSettings | null,
+  siteUrl: string,
+): PublicHtmlSnapshot {
+  const canonicalUrl = product.canonicalUrl || `${siteUrl}/products/${product.urlSlug}`;
+  const price = product.salePrice ?? product.price;
+  const description =
+    product.metaDescription ||
+    product.ogDescription ||
+    product.tagline ||
+    product.description ||
+    DEFAULT_DESCRIPTION;
+  const image = product.ogImage || product.primaryImage || seo?.defaultOgImageUrl || null;
+
+  return {
+    title: buildHeadTitle(product.metaTitle || product.ogTitle || product.name, seo),
+    description,
+    canonicalUrl,
+    ogImageUrl: image ? absoluteUrl(image, siteUrl) : null,
+    robots: product.robotsIndex === false ? "noindex,nofollow" : null,
+    bodyHtml: buildSimplePageBody(product.name, description, product.features),
+    jsonLd: [
+      buildOrganizationSchema(seo, siteUrl),
+      buildWebsiteSchema(seo, siteUrl),
+      buildBreadcrumbSchema([
+        { name: "Home", url: siteUrl },
+        { name: "Shop", url: `${siteUrl}/shop` },
+        { name: product.name, url: canonicalUrl },
+      ]),
+      {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: product.name,
+        description,
+        image: [product.primaryImage, ...(product.secondaryImages ?? [])]
+          .filter(Boolean)
+          .map((src) => absoluteUrl(src, siteUrl)),
+        sku: product.sku || undefined,
+        brand: {
+          "@type": "Brand",
+          name: seo?.organizationName || seo?.siteName || "Core Platform",
+        },
+        offers: {
+          "@type": "Offer",
+          url: canonicalUrl,
+          priceCurrency: "USD",
+          price: (price / 100).toFixed(2),
+          availability: "https://schema.org/InStock",
+          itemCondition: "https://schema.org/NewCondition",
+        },
+      },
+    ].filter(Boolean) as Array<Record<string, unknown>>,
+  };
+}
+
 function buildFallbackSnapshot(
   pathname: string,
   seo: SeoSettings | null,
@@ -540,6 +596,13 @@ export async function getPublicHtmlSnapshot(
   const therapistMatch = pathname.match(/^\/directory\/([^/]+)$/);
   if (therapistMatch) {
     return buildTherapistSnapshot(decodeURIComponent(therapistMatch[1]), seo, siteUrl);
+  }
+
+  const productMatch = pathname.match(/^\/products\/([^/]+)$/);
+  if (productMatch) {
+    const product = await storage.ecommerce.getProductBySlug(decodeURIComponent(productMatch[1]));
+    if (!product || !product.active || product.status !== "published") return null;
+    return buildProductSnapshot(product, seo, siteUrl);
   }
 
   const slug = pathname === "/" ? "home" : pathname.replace(/^\/+/, "");

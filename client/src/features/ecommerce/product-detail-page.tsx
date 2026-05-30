@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { addCartItem, formatMoney } from "./cart-store";
+import { useSeo } from "@/hooks/use-seo";
+import { JsonLd } from "@/components/shared/json-ld";
+import { buildBreadcrumbLd, buildProductLd } from "@/lib/structured-data";
+import type { SeoSettings } from "@shared/schema";
 
 interface Product {
   id: string;
@@ -21,6 +25,19 @@ interface Product {
   included: string[];
   tags: string[];
   urlSlug: string;
+  sku?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  canonicalUrl?: string | null;
+  ogTitle?: string | null;
+  ogDescription?: string | null;
+  ogImage?: string | null;
+}
+
+function absoluteStoreUrl(path: string | null | undefined, siteUrl: string) {
+  if (!path) return undefined;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${siteUrl}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
 export default function ProductDetailPage() {
@@ -29,6 +46,7 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [image, setImage] = useState<string | null>(null);
   const { data: product, isLoading } = useQuery<Product>({ queryKey: ["/api/ecommerce/products", slug], enabled: !!slug });
+  const { data: globalSeo } = useQuery<SeoSettings>({ queryKey: ["/api/seo/global"] });
 
   if (isLoading) return <PageLayout><div className="py-20"><LoadingSpinner /></div></PageLayout>;
   if (!product) {
@@ -40,6 +58,7 @@ export default function ProductDetailPage() {
 
   return (
     <PageLayout>
+      <ProductSeo product={product} globalSeo={globalSeo} price={price} />
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <Button asChild variant="ghost" className="mb-6">
           <Link href="/shop"><ArrowLeft className="mr-2 h-4 w-4" /> Shop</Link>
@@ -87,4 +106,55 @@ export default function ProductDetailPage() {
       </div>
     </PageLayout>
   );
+}
+
+function ProductSeo({
+  product,
+  globalSeo,
+  price,
+}: {
+  product: Product;
+  globalSeo?: SeoSettings;
+  price: number;
+}) {
+  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const canonical = product.canonicalUrl || `${siteUrl}/products/${product.urlSlug}`;
+  const seoTitle = product.metaTitle || product.ogTitle || product.name;
+  const seoDescription = product.metaDescription || product.ogDescription || product.tagline || product.description || undefined;
+  const seoImage = absoluteStoreUrl(product.ogImage || product.primaryImage, siteUrl);
+
+  useSeo({
+    title: seoTitle,
+    description: seoDescription,
+    ogImage: seoImage,
+    canonical,
+    ogType: "product",
+    extraMeta: [
+      { name: "og:url", content: canonical, property: true },
+      { name: "product:price:amount", content: (price / 100).toFixed(2), property: true },
+      { name: "product:price:currency", content: "USD", property: true },
+      { name: "product:availability", content: "in stock", property: true },
+      { name: "twitter:label1", content: "Price" },
+      { name: "twitter:data1", content: formatMoney(price) },
+    ],
+  });
+
+  const productLd = buildProductLd({
+    name: product.name,
+    description: seoDescription,
+    slug: product.urlSlug,
+    image: product.primaryImage,
+    gallery: product.secondaryImages,
+    sku: product.sku,
+    price: product.price,
+    salePrice: product.salePrice,
+    active: true,
+  }, globalSeo);
+  const breadcrumbs = buildBreadcrumbLd([
+    { name: "Home", url: siteUrl || "/" },
+    { name: "Shop", url: `${siteUrl}/shop` },
+    { name: product.name, url: canonical },
+  ]);
+
+  return <JsonLd schemas={[productLd, breadcrumbs]} />;
 }
