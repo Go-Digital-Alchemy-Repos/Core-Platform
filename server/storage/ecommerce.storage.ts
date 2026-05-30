@@ -540,6 +540,17 @@ export class EcommerceStorage {
       const items = await tx.select().from(ecommerceOrderItems).where(eq(ecommerceOrderItems.orderId, orderId));
       for (const item of items) {
         if (!item.variantId) continue;
+        const [existingAdjustment] = await tx
+          .select()
+          .from(ecommerceInventoryAdjustments)
+          .where(and(
+            eq(ecommerceInventoryAdjustments.orderId, orderId),
+            eq(ecommerceInventoryAdjustments.variantId, item.variantId),
+            eq(ecommerceInventoryAdjustments.reason, "order_paid"),
+          ))
+          .limit(1);
+        if (existingAdjustment) continue;
+
         const [variant] = await tx
           .select()
           .from(ecommerceProductVariants)
@@ -547,7 +558,7 @@ export class EcommerceStorage {
           .limit(1);
         if (!variant?.trackInventory) continue;
 
-        const nextQuantity = Math.max(0, variant.inventoryQuantity - item.quantity);
+        const nextQuantity = variant.inventoryQuantity - item.quantity;
         await tx
           .update(ecommerceProductVariants)
           .set({ inventoryQuantity: nextQuantity, updatedAt: new Date() })

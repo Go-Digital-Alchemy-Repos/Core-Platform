@@ -141,7 +141,7 @@ export async function markEcommerceOrderPaid(orderId: string, paymentIntentId: s
     stripePaymentIntentId: paymentIntentId,
   });
   if (!alreadyPaid) await storage.ecommerce.recordCouponRedemptionForOrder(orderId);
-  if (!alreadyPaid) await storage.ecommerce.deductInventoryForPaidOrder(orderId);
+  await storage.ecommerce.deductInventoryForPaidOrder(orderId);
   const details = await storage.ecommerce.getOrderWithDetails(orderId);
   if (details && !alreadyPaid) await sendEcommerceOrderConfirmation(details);
   return details;

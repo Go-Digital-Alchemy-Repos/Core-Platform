@@ -609,7 +609,7 @@ describe("ecommerce services", () => {
     ])).toBe(1500);
   });
 
-  it("marks an ecommerce order paid once and skips duplicate confirmation emails", async () => {
+  it("marks an ecommerce order paid once and retries idempotent inventory deduction", async () => {
     const { markEcommerceOrderPaid } = await import("../services/ecommerce-order.service");
     const pendingOrder = {
       id: "order-1",
@@ -630,7 +630,7 @@ describe("ecommerce services", () => {
 
     expect(mockUpdateOrder).toHaveBeenCalledTimes(2);
     expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledTimes(1);
-    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledTimes(1);
+    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledTimes(2);
     expect(mockSendEcommerceOrderConfirmation).toHaveBeenCalledTimes(1);
   });
 
