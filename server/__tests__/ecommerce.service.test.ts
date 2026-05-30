@@ -9,6 +9,9 @@ const mockGetOrderWithDetails = vi.fn();
 const mockGetRefundByStripeRefundId = vi.fn();
 const mockUpdateRefund = vi.fn();
 const mockCreateRefund = vi.fn();
+const mockGetProductCategories = vi.fn(async (_productId: string) => []);
+const mockCountCouponRedemptions = vi.fn(async () => 0);
+const mockRecordCouponRedemptionForOrder = vi.fn();
 const mockSendEcommerceOrderConfirmation = vi.fn();
 
 vi.mock("../storage/index", () => ({
@@ -16,9 +19,12 @@ vi.mock("../storage/index", () => ({
     ecommerce: {
       getProductsByIds: vi.fn(async (ids: string[]) => mockProducts.filter((product) => ids.includes(product.id))),
       getCouponByCode: vi.fn(async (code: string) => mockCoupons.find((coupon) => coupon.code === code.toUpperCase())),
+      getProductCategories: mockGetProductCategories,
+      countCouponRedemptions: mockCountCouponRedemptions,
       getOrder: mockGetOrder,
       updateOrder: mockUpdateOrder,
       getOrderWithDetails: mockGetOrderWithDetails,
+      recordCouponRedemptionForOrder: mockRecordCouponRedemptionForOrder,
       getRefundByStripeRefundId: mockGetRefundByStripeRefundId,
       updateRefund: mockUpdateRefund,
       createRefund: mockCreateRefund,
@@ -40,6 +46,11 @@ describe("ecommerce services", () => {
     mockGetRefundByStripeRefundId.mockReset();
     mockUpdateRefund.mockReset();
     mockCreateRefund.mockReset();
+    mockGetProductCategories.mockReset();
+    mockGetProductCategories.mockResolvedValue([]);
+    mockCountCouponRedemptions.mockReset();
+    mockCountCouponRedemptions.mockResolvedValue(0);
+    mockRecordCouponRedemptionForOrder.mockReset();
     mockSendEcommerceOrderConfirmation.mockReset();
   });
 
@@ -148,6 +159,71 @@ describe("ecommerce services", () => {
     expect(priced.coupon?.code).toBe("SAVE20");
   });
 
+  it("rejects expired and exhausted coupons with structured messages", async () => {
+    const { validateCoupon } = await import("../services/ecommerce-pricing.service");
+    mockCoupons.push({
+      id: "c-expired",
+      code: "OLD",
+      description: null,
+      type: "fixed",
+      value: 1000,
+      minOrderAmount: null,
+      maxDiscountAmount: null,
+      maxRedemptions: null,
+      perCustomerLimit: null,
+      timesUsed: 0,
+      startDate: null,
+      endDate: new Date(Date.now() - 1000),
+      active: true,
+      blockAffiliateCommission: false,
+      blockVipDiscount: false,
+      minMarginPercent: null,
+      autoExpireAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as EcommerceCoupon);
+
+    const result = await validateCoupon("old", 5000);
+    expect(result.valid).toBe(false);
+    expect(result.reasonCode).toBe("expired");
+    expect(result.message).toMatch(/expired/i);
+  });
+
+  it("honors per-customer coupon usage limits", async () => {
+    const { validateCouponForCart } = await import("../services/ecommerce-pricing.service");
+    mockCountCouponRedemptions.mockResolvedValue(1);
+    mockCoupons.push({
+      id: "c-limit",
+      code: "ONCE",
+      description: null,
+      type: "fixed",
+      value: 1000,
+      minOrderAmount: null,
+      maxDiscountAmount: null,
+      maxRedemptions: null,
+      perCustomerLimit: 1,
+      timesUsed: 0,
+      startDate: null,
+      endDate: null,
+      active: true,
+      blockAffiliateCommission: false,
+      blockVipDiscount: false,
+      minMarginPercent: null,
+      autoExpireAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as EcommerceCoupon);
+
+    const result = await validateCouponForCart({
+      code: "once",
+      lines: [],
+      subtotalAmount: 5000,
+      customerEmail: "buyer@example.com",
+    });
+    expect(result.valid).toBe(false);
+    expect(result.reasonCode).toBe("customer_usage_limit_reached");
+  });
+
   it("validates Stripe key mode separation", async () => {
     const { validateStripeKeyMode } = await import("../services/ecommerce-stripe.service");
     expect(validateStripeKeyMode("test", "pk_test_123", "sk_test_123")).toBeNull();
@@ -184,6 +260,7 @@ describe("ecommerce services", () => {
     await markEcommerceOrderPaid("order-1", "pi_123");
 
     expect(mockUpdateOrder).toHaveBeenCalledTimes(2);
+    expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledTimes(1);
     expect(mockSendEcommerceOrderConfirmation).toHaveBeenCalledTimes(1);
   });
 

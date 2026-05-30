@@ -109,16 +109,51 @@ router.delete("/categories/:id", asyncHandler(async (req, res) => {
   res.json({ success: true });
 }));
 
-router.get("/coupons", asyncHandler(async (_req, res) => {
-  res.json(await storage.ecommerce.getCoupons());
+router.get("/coupons", asyncHandler(async (req, res) => {
+  res.json(await storage.ecommerce.getCoupons({
+    includeArchived: req.query.includeArchived === "true",
+    search: typeof req.query.search === "string" ? req.query.search : undefined,
+  }));
+}));
+
+router.get("/coupons/:id/report", asyncHandler(async (req, res) => {
+  const report = await storage.ecommerce.getCouponReport(paramString(req.params.id));
+  if (!report) {
+    res.status(404).json({ message: "Coupon not found" });
+    return;
+  }
+  res.json(report);
+}));
+
+router.get("/coupons/:id", asyncHandler(async (req, res) => {
+  const coupon = await storage.ecommerce.getCoupon(paramString(req.params.id));
+  if (!coupon) {
+    res.status(404).json({ message: "Coupon not found" });
+    return;
+  }
+  res.json(coupon);
 }));
 
 router.post("/coupons", asyncHandler(async (req, res) => {
-  res.status(201).json(await storage.ecommerce.createCoupon(insertEcommerceCouponSchema.parse(req.body)));
+  const data = insertEcommerceCouponSchema.parse({ ...req.body, createdBy: req.user?.id, updatedBy: req.user?.id });
+  res.status(201).json(await storage.ecommerce.createCoupon(data));
+}));
+
+router.post("/coupons/:id/duplicate", asyncHandler(async (req, res) => {
+  const data = z.object({ code: z.string().min(1) }).parse(req.body);
+  const coupon = await storage.ecommerce.duplicateCoupon(paramString(req.params.id), data.code);
+  if (!coupon) {
+    res.status(404).json({ message: "Coupon not found" });
+    return;
+  }
+  res.status(201).json(coupon);
 }));
 
 router.put("/coupons/:id", asyncHandler(async (req, res) => {
-  const coupon = await storage.ecommerce.updateCoupon(paramString(req.params.id), insertEcommerceCouponSchema.partial().parse(req.body));
+  const coupon = await storage.ecommerce.updateCoupon(
+    paramString(req.params.id),
+    insertEcommerceCouponSchema.partial().parse({ ...req.body, updatedBy: req.user?.id }),
+  );
   if (!coupon) {
     res.status(404).json({ message: "Coupon not found" });
     return;

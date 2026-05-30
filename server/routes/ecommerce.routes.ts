@@ -63,8 +63,18 @@ router.post(
 router.post(
   "/coupons/validate",
   asyncHandler(async (req, res) => {
-    const data = z.object({ code: z.string().min(1), subtotalAmount: z.number().int().min(0) }).parse(req.body);
-    res.json(await validateCoupon(data.code, data.subtotalAmount));
+    const data = z.object({
+      code: z.string().min(1),
+      subtotalAmount: z.number().int().min(0).optional(),
+      items: priceCartSchema.shape.items.optional(),
+      customerEmail: z.string().email().optional(),
+    }).parse(req.body);
+    if (data.items?.length) {
+      const priced = await priceCart({ items: data.items, couponCode: data.code, customerEmail: data.customerEmail });
+      res.json(priced.couponValidation);
+      return;
+    }
+    res.json(await validateCoupon(data.code, data.subtotalAmount ?? 0));
   }),
 );
 

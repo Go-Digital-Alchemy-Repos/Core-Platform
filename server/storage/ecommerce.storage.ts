@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
   ecommerceCategories,
@@ -45,6 +45,21 @@ export interface EcommerceOrderWithDetails extends EcommerceOrder {
   items: EcommerceOrderItem[];
   refunds: EcommerceRefund[];
   shipments: EcommerceShipment[];
+}
+
+export interface EcommerceCouponReport {
+  coupon: EcommerceCoupon;
+  totalUses: number;
+  totalDiscountGiven: number;
+  totalRevenue: number;
+  remainingUses: number | null;
+  recentOrders: Array<{
+    orderId: string;
+    customerEmail: string | null;
+    totalAmount: number;
+    discountAmount: number;
+    redeemedAt: Date;
+  }>;
 }
 
 export class EcommerceStorage {
@@ -181,8 +196,15 @@ export class EcommerceStorage {
     return customer;
   }
 
-  async getCoupons(): Promise<EcommerceCoupon[]> {
-    return db.select().from(ecommerceCoupons).orderBy(desc(ecommerceCoupons.createdAt));
+  async getCoupons(options: { includeArchived?: boolean; search?: string } = {}): Promise<EcommerceCoupon[]> {
+    const clauses = [];
+    if (!options.includeArchived) clauses.push(isNull(ecommerceCoupons.archivedAt));
+    if (options.search?.trim()) {
+      const term = `%${options.search.trim()}%`;
+      clauses.push(sql`(${ecommerceCoupons.code} ILIKE ${term} OR ${ecommerceCoupons.name} ILIKE ${term})`);
+    }
+    const query = db.select().from(ecommerceCoupons).orderBy(desc(ecommerceCoupons.createdAt));
+    return clauses.length ? query.where(and(...clauses)) : query;
   }
 
   async getCoupon(id: string): Promise<EcommerceCoupon | undefined> {
@@ -216,32 +238,128 @@ export class EcommerceStorage {
   }
 
   async deleteCoupon(id: string): Promise<void> {
-    await db.delete(ecommerceCoupons).where(eq(ecommerceCoupons.id, id));
+    await db
+      .update(ecommerceCoupons)
+      .set({ active: false, archivedAt: new Date(), updatedAt: new Date() })
+      .where(eq(ecommerceCoupons.id, id));
+  }
+
+  async duplicateCoupon(id: string, code: string): Promise<EcommerceCoupon | undefined> {
+    const coupon = await this.getCoupon(id);
+    if (!coupon) return undefined;
+    const [copy] = await db
+      .insert(ecommerceCoupons)
+      .values({
+        ...coupon,
+        id: undefined,
+        code: code.trim().toUpperCase(),
+        name: coupon.name ? `${coupon.name} copy` : null,
+        timesUsed: 0,
+        archivedAt: null,
+        createdAt: undefined,
+        updatedAt: undefined,
+      })
+      .returning();
+    return copy;
+  }
+
+  async countCouponRedemptions(couponId: string, customerId?: string | null, customerEmail?: string | null): Promise<number> {
+    const clauses = [eq(ecommerceCouponRedemptions.couponId, couponId)];
+    if (customerId) clauses.push(eq(ecommerceCouponRedemptions.customerId, customerId));
+    else if (customerEmail) clauses.push(eq(ecommerceCouponRedemptions.customerEmail, customerEmail.trim().toLowerCase()));
+
+    const [row] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(ecommerceCouponRedemptions)
+      .where(and(...clauses));
+    return row?.count ?? 0;
+  }
+
+  async getCouponReport(id: string): Promise<EcommerceCouponReport | undefined> {
+    const coupon = await this.getCoupon(id);
+    if (!coupon) return undefined;
+
+    const [summary] = await db
+      .select({
+        totalUses: sql<number>`count(${ecommerceCouponRedemptions.id})::int`,
+        totalDiscountGiven: sql<number>`coalesce(sum(${ecommerceCouponRedemptions.discountAmount}), 0)::int`,
+        totalRevenue: sql<number>`coalesce(sum(${ecommerceOrders.totalAmount}), 0)::int`,
+      })
+      .from(ecommerceCouponRedemptions)
+      .leftJoin(ecommerceOrders, eq(ecommerceCouponRedemptions.orderId, ecommerceOrders.id))
+      .where(eq(ecommerceCouponRedemptions.couponId, id));
+
+    const recentOrders = await db
+      .select({
+        orderId: ecommerceOrders.id,
+        customerEmail: ecommerceCouponRedemptions.customerEmail,
+        totalAmount: ecommerceOrders.totalAmount,
+        discountAmount: ecommerceCouponRedemptions.discountAmount,
+        redeemedAt: ecommerceCouponRedemptions.redeemedAt,
+      })
+      .from(ecommerceCouponRedemptions)
+      .leftJoin(ecommerceOrders, eq(ecommerceCouponRedemptions.orderId, ecommerceOrders.id))
+      .where(eq(ecommerceCouponRedemptions.couponId, id))
+      .orderBy(desc(ecommerceCouponRedemptions.redeemedAt))
+      .limit(10);
+
+    return {
+      coupon,
+      totalUses: summary?.totalUses ?? 0,
+      totalDiscountGiven: summary?.totalDiscountGiven ?? 0,
+      totalRevenue: summary?.totalRevenue ?? 0,
+      remainingUses: coupon.maxRedemptions == null ? null : Math.max(0, coupon.maxRedemptions - coupon.timesUsed),
+      recentOrders: recentOrders
+        .filter((order) => order.orderId)
+        .map((order) => ({
+          orderId: order.orderId!,
+          customerEmail: order.customerEmail,
+          totalAmount: order.totalAmount ?? 0,
+          discountAmount: order.discountAmount,
+          redeemedAt: order.redeemedAt,
+        })),
+    };
+  }
+
+  async recordCouponRedemptionForOrder(orderId: string): Promise<void> {
+    await db.transaction(async (tx) => {
+      const [order] = await tx.select().from(ecommerceOrders).where(eq(ecommerceOrders.id, orderId));
+      if (!order?.couponCode || order.discountAmount <= 0) return;
+
+      const [existing] = await tx
+        .select()
+        .from(ecommerceCouponRedemptions)
+        .where(eq(ecommerceCouponRedemptions.orderId, orderId))
+        .limit(1);
+      if (existing) return;
+
+      const [coupon] = await tx
+        .select()
+        .from(ecommerceCoupons)
+        .where(eq(ecommerceCoupons.code, order.couponCode));
+      if (!coupon) return;
+
+      const [customer] = await tx.select().from(ecommerceCustomers).where(eq(ecommerceCustomers.id, order.customerId));
+      await tx
+        .update(ecommerceCoupons)
+        .set({ timesUsed: sql`${ecommerceCoupons.timesUsed} + 1`, updatedAt: new Date() })
+        .where(eq(ecommerceCoupons.id, coupon.id));
+      await tx.insert(ecommerceCouponRedemptions).values({
+        couponId: coupon.id,
+        orderId: order.id,
+        customerId: order.customerId,
+        couponCode: coupon.code,
+        customerEmail: customer?.email.trim().toLowerCase(),
+        discountAmount: order.discountAmount,
+      });
+    });
   }
 
   async createOrder(data: InsertEcommerceOrder, items: InsertEcommerceOrderItem[]): Promise<EcommerceOrderWithDetails> {
     return db.transaction(async (tx) => {
-      const [order] = await tx.insert(ecommerceOrders).values(data).returning();
+      const [order] = await tx.insert(ecommerceOrders).values(data as typeof ecommerceOrders.$inferInsert).returning();
       if (items.length) {
         await tx.insert(ecommerceOrderItems).values(items.map((item) => ({ ...item, orderId: order.id })));
-      }
-      if (data.couponCode) {
-        const [coupon] = await tx
-          .select()
-          .from(ecommerceCoupons)
-          .where(eq(ecommerceCoupons.code, data.couponCode));
-        if (coupon) {
-          await tx
-            .update(ecommerceCoupons)
-            .set({ timesUsed: sql`${ecommerceCoupons.timesUsed} + 1`, updatedAt: new Date() })
-            .where(eq(ecommerceCoupons.id, coupon.id));
-          await tx.insert(ecommerceCouponRedemptions).values({
-            couponId: coupon.id,
-            orderId: order.id,
-            customerId: order.customerId,
-            discountAmount: data.discountAmount ?? 0,
-          });
-        }
       }
       const orderItems = await tx.select().from(ecommerceOrderItems).where(eq(ecommerceOrderItems.orderId, order.id));
       const [customer] = await tx.select().from(ecommerceCustomers).where(eq(ecommerceCustomers.id, order.customerId));
@@ -292,7 +410,7 @@ export class EcommerceStorage {
   async updateOrder(id: string, data: Partial<InsertEcommerceOrder>): Promise<EcommerceOrder | undefined> {
     const [order] = await db
       .update(ecommerceOrders)
-      .set({ ...data, updatedAt: new Date() })
+      .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommerceOrders.$inferInsert>)
       .where(eq(ecommerceOrders.id, id))
       .returning();
     return order;
@@ -301,7 +419,7 @@ export class EcommerceStorage {
   async updateOrderByPaymentIntent(paymentIntentId: string, data: Partial<InsertEcommerceOrder>): Promise<EcommerceOrder | undefined> {
     const [order] = await db
       .update(ecommerceOrders)
-      .set({ ...data, updatedAt: new Date() })
+      .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommerceOrders.$inferInsert>)
       .where(eq(ecommerceOrders.stripePaymentIntentId, paymentIntentId))
       .returning();
     return order;
