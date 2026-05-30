@@ -11,6 +11,7 @@ import {
   validateCoupon,
 } from "../services/ecommerce-pricing.service";
 import { createEcommercePaymentIntent } from "../services/ecommerce-order.service";
+import { getPublicProductCategories, getPublicProductVariants } from "../services/ecommerce-public-product.service";
 import { getEcommerceStripePublishableKey, getEcommerceStripeMode } from "../services/ecommerce-stripe.service";
 import { requireEcommerceEnabled } from "../middleware/site-features";
 import { ecommerceCheckoutLimiter, ecommerceOrderLookupLimiter } from "../middleware/security";
@@ -25,8 +26,8 @@ router.get(
     const products = await storage.ecommerce.getProducts({ publicOnly: true });
     res.json(await Promise.all(products.map(async (product) => ({
       ...product,
-      categories: await storage.ecommerce.getProductCategories(product.id),
-      variants: (await storage.ecommerce.getProductVariants(product.id)).filter((variant) => variant.active && variant.status === "active"),
+      categories: getPublicProductCategories(await storage.ecommerce.getProductCategories(product.id)),
+      variants: getPublicProductVariants(await storage.ecommerce.getProductVariants(product.id)),
       media: await storage.ecommerce.getProductMedia(product.id),
     }))));
   }),
@@ -40,8 +41,8 @@ router.get(
       res.status(404).json({ message: "Product not found" });
       return;
     }
-    const categories = await storage.ecommerce.getProductCategories(product.id);
-    const variants = (await storage.ecommerce.getProductVariants(product.id)).filter((variant) => variant.active && variant.status === "active");
+    const categories = getPublicProductCategories(await storage.ecommerce.getProductCategories(product.id));
+    const variants = getPublicProductVariants(await storage.ecommerce.getProductVariants(product.id));
     const media = await storage.ecommerce.getProductMedia(product.id);
     res.json({ ...product, categories, variants, media });
   }),
