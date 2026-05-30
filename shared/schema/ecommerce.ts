@@ -103,6 +103,8 @@ export const ecommerceProducts = pgTable("ecommerce_products", {
   index("idx_ecommerce_products_status_active").on(table.status, table.active),
   index("idx_ecommerce_products_featured").on(table.featured),
   index("idx_ecommerce_products_vendor").on(table.vendor),
+  index("idx_ecommerce_products_storefront").on(table.visibility, table.status, table.active, table.publishedAt),
+  index("idx_ecommerce_products_published_at").on(table.publishedAt),
 ]);
 
 export const ecommerceProductOptions = pgTable("ecommerce_product_options", {
@@ -215,6 +217,7 @@ export const ecommerceInventoryAdjustments = pgTable("ecommerce_inventory_adjust
 }, (table) => [
   index("idx_ecommerce_inventory_adjustments_variant").on(table.variantId),
   index("idx_ecommerce_inventory_adjustments_order").on(table.orderId),
+  index("idx_ecommerce_inventory_adjustments_order_variant_reason").on(table.orderId, table.variantId, table.reason),
 ]);
 
 export const ecommerceCategories = pgTable("ecommerce_categories", {
@@ -231,6 +234,7 @@ export const ecommerceCategories = pgTable("ecommerce_categories", {
 }, (table) => [
   uniqueIndex("idx_ecommerce_categories_slug").on(table.slug),
   index("idx_ecommerce_categories_active").on(table.active),
+  index("idx_ecommerce_categories_parent_sort").on(table.parentId, table.sortOrder),
 ]);
 
 export const ecommerceProductCategories = pgTable("ecommerce_product_categories", {
@@ -313,6 +317,8 @@ export const ecommerceOrders = pgTable("ecommerce_orders", {
   index("idx_ecommerce_orders_status").on(table.status),
   index("idx_ecommerce_orders_payment_status").on(table.paymentStatus),
   index("idx_ecommerce_orders_created_at").on(table.createdAt),
+  index("idx_ecommerce_orders_status_created").on(table.status, table.createdAt),
+  index("idx_ecommerce_orders_payment_created").on(table.paymentStatus, table.createdAt),
   uniqueIndex("idx_ecommerce_orders_lookup_token").on(table.lookupToken),
   uniqueIndex("idx_ecommerce_orders_payment_intent").on(table.stripePaymentIntentId),
 ]);
@@ -445,6 +451,7 @@ export const ecommerceShippingRates = pgTable("ecommerce_shipping_rates", {
 }, (table) => [
   index("idx_ecommerce_shipping_rates_zone").on(table.zoneId),
   index("idx_ecommerce_shipping_rates_active").on(table.active),
+  index("idx_ecommerce_shipping_rates_zone_active_amount").on(table.zoneId, table.active, table.amount),
 ]);
 
 export const ecommerceShipments = pgTable("ecommerce_shipments", {
@@ -561,6 +568,7 @@ export const ecommerceProcessedWebhookEvents = pgTable("ecommerce_processed_webh
   processedAt: timestamp("processed_at").notNull().defaultNow(),
 }, (table) => [
   uniqueIndex("idx_ecommerce_webhook_events_provider_event").on(table.provider, table.eventId),
+  index("idx_ecommerce_webhook_events_processed_at").on(table.processedAt),
 ]);
 
 export const ecommerceProductsRelations = relations(ecommerceProducts, ({ many }) => ({
