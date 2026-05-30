@@ -7,7 +7,10 @@ import {
   type PricedCartLine,
 } from "./ecommerce-pricing.service";
 import { getEcommerceStripeClient } from "./ecommerce-stripe.service";
-import { sendEcommerceOrderConfirmation } from "./ecommerce-email.service";
+import {
+  sendEcommerceOrderConfirmation,
+  sendEcommerceOrderStatusEmail,
+} from "./ecommerce-email.service";
 
 const addressSchema = z.object({
   name: z.string().min(1),
@@ -46,6 +49,11 @@ export const manualOrderSchema = z.object({
     variantId: z.string().min(1).optional(),
     quantity: z.number().int().min(1).max(99),
   })).min(1),
+  notes: z.string().optional(),
+});
+
+export const adminOrderUpdateSchema = z.object({
+  status: z.enum(["pending", "paid", "shipped", "delivered", "cancelled"]).optional(),
   notes: z.string().optional(),
 });
 
@@ -186,6 +194,32 @@ export async function createManualEcommerceOrder(input: unknown) {
 
   const details = await storage.ecommerce.getOrderWithDetails(order.id);
   return details ?? order;
+}
+
+export async function updateAdminEcommerceOrder(orderId: string, input: unknown) {
+  const data = adminOrderUpdateSchema.parse(input);
+  const previous = await storage.ecommerce.getOrder(orderId);
+  if (!previous) return undefined;
+
+  const updateData = {
+    ...data,
+    paymentStatus: data.status === "paid" ? "paid" as const : undefined,
+  };
+  const order = await storage.ecommerce.updateOrder(orderId, updateData);
+  if (!order) return undefined;
+
+  const changedStatus = Boolean(data.status && previous.status !== data.status);
+  const newlyPaid = data.status === "paid" && previous.paymentStatus !== "paid";
+  if (newlyPaid) {
+    await storage.ecommerce.recordCouponRedemptionForOrder(order.id);
+    await storage.ecommerce.deductInventoryForPaidOrder(order.id);
+  }
+  if (changedStatus) {
+    const details = await storage.ecommerce.getOrderWithDetails(order.id);
+    if (details) await sendEcommerceOrderStatusEmail(details);
+  }
+
+  return order;
 }
 
 export async function markEcommerceOrderPaid(orderId: string, paymentIntentId: string) {

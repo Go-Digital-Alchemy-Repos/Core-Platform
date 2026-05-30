@@ -23,11 +23,13 @@ import {
   type EcommerceStripeMode,
 } from "../../services/ecommerce-stripe.service";
 import { createEcommerceRefund } from "../../services/ecommerce-refund.service";
-import { createManualEcommerceOrder, manualOrderSchema } from "../../services/ecommerce-order.service";
 import {
-  sendEcommerceOrderStatusEmail,
-  sendEcommerceShipmentEmail,
-} from "../../services/ecommerce-email.service";
+  adminOrderUpdateSchema,
+  createManualEcommerceOrder,
+  manualOrderSchema,
+  updateAdminEcommerceOrder,
+} from "../../services/ecommerce-order.service";
+import { sendEcommerceShipmentEmail } from "../../services/ecommerce-email.service";
 import {
   ECOMMERCE_SHIPPING_PROVIDER_REGISTRY,
   getMissingShippingProviderCredentialLabels,
@@ -236,19 +238,13 @@ router.get("/orders/:id", asyncHandler(async (req, res) => {
 }));
 
 router.put("/orders/:id", asyncHandler(async (req, res) => {
-  const data = z.object({
-    status: z.enum(["pending", "paid", "shipped", "delivered", "cancelled"]).optional(),
-    notes: z.string().optional(),
-  }).parse(req.body);
-  const previous = await storage.ecommerce.getOrder(paramString(req.params.id));
-  const order = await storage.ecommerce.updateOrder(paramString(req.params.id), data);
+  const order = await updateAdminEcommerceOrder(
+    paramString(req.params.id),
+    adminOrderUpdateSchema.parse(req.body),
+  );
   if (!order) {
     res.status(404).json({ message: "Order not found" });
     return;
-  }
-  if (data.status && previous?.status !== data.status) {
-    const details = await storage.ecommerce.getOrderWithDetails(order.id);
-    if (details) await sendEcommerceOrderStatusEmail(details);
   }
   res.json(order);
 }));

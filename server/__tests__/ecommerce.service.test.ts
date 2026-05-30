@@ -26,6 +26,7 @@ const mockCountCouponRedemptions = vi.fn(async () => 0);
 const mockRecordCouponRedemptionForOrder = vi.fn();
 const mockDeductInventoryForPaidOrder = vi.fn();
 const mockSendEcommerceOrderConfirmation = vi.fn();
+const mockSendEcommerceOrderStatusEmail = vi.fn();
 const mockGetDecryptedCategory = vi.fn(async (_category: string) => ({}));
 const mockUpsertSetting = vi.fn();
 const mockInvalidateCategory = vi.fn();
@@ -62,6 +63,7 @@ vi.mock("../storage/index", () => ({
 
 vi.mock("../services/ecommerce-email.service", () => ({
   sendEcommerceOrderConfirmation: mockSendEcommerceOrderConfirmation,
+  sendEcommerceOrderStatusEmail: mockSendEcommerceOrderStatusEmail,
 }));
 
 describe("ecommerce services", () => {
@@ -86,6 +88,7 @@ describe("ecommerce services", () => {
     mockRecordCouponRedemptionForOrder.mockReset();
     mockDeductInventoryForPaidOrder.mockReset();
     mockSendEcommerceOrderConfirmation.mockReset();
+    mockSendEcommerceOrderStatusEmail.mockReset();
     mockGetDecryptedCategory.mockReset();
     mockGetDecryptedCategory.mockResolvedValue({});
     mockUpsertSetting.mockReset();
@@ -644,6 +647,63 @@ describe("ecommerce services", () => {
     expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledTimes(1);
     expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledTimes(2);
     expect(mockSendEcommerceOrderConfirmation).toHaveBeenCalledTimes(1);
+  });
+
+  it("finalizes inventory and payment status when an admin marks an order paid", async () => {
+    const { updateAdminEcommerceOrder } = await import("../services/ecommerce-order.service");
+    const pendingOrder = {
+      id: "order-admin-1",
+      status: "pending",
+      paymentStatus: "unpaid",
+    } as EcommerceOrder;
+    const paidOrder = {
+      ...pendingOrder,
+      status: "paid",
+      paymentStatus: "paid",
+    } as EcommerceOrder;
+    mockGetOrder.mockResolvedValue(pendingOrder);
+    mockUpdateOrder.mockResolvedValue(paidOrder);
+    mockGetOrderWithDetails.mockResolvedValue({
+      ...paidOrder,
+      customer: null,
+      items: [],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+    });
+
+    const order = await updateAdminEcommerceOrder("order-admin-1", { status: "paid" });
+
+    expect(order).toBe(paidOrder);
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-admin-1", {
+      status: "paid",
+      paymentStatus: "paid",
+    });
+    expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledWith("order-admin-1");
+    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledWith("order-admin-1");
+    expect(mockSendEcommerceOrderStatusEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not refinalize inventory when an admin saves an already-paid order", async () => {
+    const { updateAdminEcommerceOrder } = await import("../services/ecommerce-order.service");
+    const paidOrder = {
+      id: "order-admin-2",
+      status: "paid",
+      paymentStatus: "paid",
+    } as EcommerceOrder;
+    mockGetOrder.mockResolvedValue(paidOrder);
+    mockUpdateOrder.mockResolvedValue(paidOrder);
+
+    await updateAdminEcommerceOrder("order-admin-2", { status: "paid", notes: "Already handled" });
+
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-admin-2", {
+      status: "paid",
+      notes: "Already handled",
+      paymentStatus: "paid",
+    });
+    expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+    expect(mockSendEcommerceOrderStatusEmail).not.toHaveBeenCalled();
   });
 
   it("creates manual paid orders through server-side pricing and inventory deduction", async () => {
