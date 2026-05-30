@@ -82,6 +82,17 @@ async function validateCategoryParent(categoryId: string | null, parentId: strin
   }
 }
 
+async function validateCategorySlug(categoryId: string | null, slug: string | null | undefined) {
+  if (!slug) return;
+
+  const normalizedSlug = slug.trim().toLowerCase();
+  const categories = await storage.ecommerce.getCategories(false);
+  const existingCategory = categories.find((category) => category.slug.toLowerCase() === normalizedSlug);
+  if (existingCategory && existingCategory.id !== categoryId) {
+    throw Object.assign(new Error("A category with this slug already exists"), { statusCode: 409 });
+  }
+}
+
 router.get("/products", asyncHandler(async (_req, res) => {
   const products = await storage.ecommerce.getProducts();
   const withCategories = await Promise.all(products.map(async (product) => ({
@@ -153,6 +164,7 @@ router.get("/categories", asyncHandler(async (_req, res) => {
 router.post("/categories", asyncHandler(async (req, res) => {
   const data = insertEcommerceCategorySchema.parse(req.body);
   await validateCategoryParent(null, data.parentId);
+  await validateCategorySlug(null, data.slug);
   res.status(201).json(await storage.ecommerce.createCategory(data));
 }));
 
@@ -160,6 +172,7 @@ router.put("/categories/:id", asyncHandler(async (req, res) => {
   const categoryId = paramString(req.params.id);
   const data = insertEcommerceCategorySchema.partial().parse(req.body);
   await validateCategoryParent(categoryId, data.parentId);
+  await validateCategorySlug(categoryId, data.slug);
   const category = await storage.ecommerce.updateCategory(categoryId, data);
   if (!category) {
     res.status(404).json({ message: "Category not found" });
