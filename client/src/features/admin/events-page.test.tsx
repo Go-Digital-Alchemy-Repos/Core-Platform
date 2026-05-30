@@ -46,6 +46,18 @@ const mockEvents = [
   },
 ];
 
+const mockForms = [
+  {
+    id: "form-1",
+    name: "Training Intake",
+    slug: "training-intake",
+    kind: "custom",
+    isActive: true,
+    fields: [],
+    settings: {},
+  },
+];
+
 vi.mock("@tanstack/react-query", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-query")>();
   return {
@@ -120,6 +132,10 @@ describe("AdminEventsPage", () => {
     useQueryMock.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
       if (queryKey[0] === "/api/admin/events") {
         return { data: mockEvents, isLoading: false };
+      }
+
+      if (queryKey[0] === "/api/admin/forms") {
+        return { data: mockForms, isLoading: false };
       }
 
       if (queryKey[0] === "/api/admin/events" && queryKey[2] === "registrations") {
@@ -225,5 +241,25 @@ describe("AdminEventsPage", () => {
         }),
       })
     );
+  });
+
+  it("shows guided event preset and custom intake form controls", async () => {
+    editorLockState.isReadOnly = false;
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(AdminEventsPage));
+    });
+
+    const createButton = document.body.querySelector('[data-testid="button-create-event"]') as HTMLButtonElement | null;
+    expect(createButton).not.toBeNull();
+
+    await act(async () => {
+      createButton?.click();
+    });
+
+    expect(document.body.querySelector('[data-testid="select-event-type"]')).not.toBeNull();
+    expect(document.body.querySelector('[data-testid="select-event-category"]')).not.toBeNull();
+    expect(document.body.querySelector('[data-testid="input-event-tags"]')).not.toBeNull();
   });
 });

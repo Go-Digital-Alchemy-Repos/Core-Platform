@@ -79,7 +79,6 @@ import {
   Video,
   Repeat,
   DollarSign,
-  Globe,
 } from "lucide-react";
 import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
 import { CmsRichTextEditor } from "@/features/admin/cms/builder/cms-rich-text-editor";
@@ -94,7 +93,25 @@ import {
   getDefaultEventTimeZone,
   toDateTimeLocalValue,
 } from "@/lib/event-datetime";
-import type { Event, EventRegistration } from "@shared/schema";
+import {
+  EVENT_AUDIENCE_LABELS,
+  EVENT_AUDIENCES,
+  EVENT_CATEGORY_LABELS,
+  EVENT_CATEGORIES,
+  EVENT_DELIVERY_MODE_LABELS,
+  EVENT_DELIVERY_MODES,
+  EVENT_FORMAT_LABELS,
+  EVENT_FORMATS,
+  EVENT_PRESET_DEFAULTS,
+  EVENT_REGISTRATION_APPROVAL_MODE_LABELS,
+  EVENT_REGISTRATION_APPROVAL_MODES,
+  EVENT_TYPE_LABELS,
+  EVENT_TYPES,
+  type CmsForm,
+  type Event,
+  type EventRegistration,
+  type EventType,
+} from "@shared/schema";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { useEditorSaveState } from "@/hooks/use-editor-save-state";
@@ -116,6 +133,13 @@ const eventFormSchema = z
     imagePositionY: z.number().default(50),
     status: z.string().optional(),
     visibility: z.string().optional(),
+    eventType: z.string().optional(),
+    category: z.string().optional(),
+    audience: z.string().optional(),
+    format: z.string().optional(),
+    deliveryMode: z.string().optional(),
+    tags: z.string().optional(),
+    registrationFormId: z.string().optional(),
     timezone: z.string().optional(),
     locationName: z.string().optional(),
     locationAddress: z.string().optional(),
@@ -131,6 +155,7 @@ const eventFormSchema = z
     registrationClosesAt: z.string().optional(),
     capacity: z.coerce.number().optional(),
     waitlistEnabled: z.boolean().optional(),
+    registrationApprovalMode: z.string().optional(),
     recordingUrl: z.string().optional(),
     showInArchives: z.boolean().optional(),
     recordingAccess: z.string().optional(),
@@ -192,6 +217,13 @@ const defaultFormValues: EventFormValues = {
   imagePositionY: 50,
   status: "published",
   visibility: "public",
+  eventType: "training",
+  category: EVENT_PRESET_DEFAULTS.training.category,
+  audience: EVENT_PRESET_DEFAULTS.training.audience,
+  format: EVENT_PRESET_DEFAULTS.training.format,
+  deliveryMode: EVENT_PRESET_DEFAULTS.training.deliveryMode,
+  tags: "",
+  registrationFormId: "",
   timezone: getDefaultEventTimeZone(),
   locationName: "",
   locationAddress: "",
@@ -199,7 +231,7 @@ const defaultFormValues: EventFormValues = {
   longitude: "",
   virtualJoinUrl: "",
   virtualDialInInfo: "",
-  registrationEnabled: false,
+  registrationEnabled: EVENT_PRESET_DEFAULTS.training.registrationEnabled,
   registrationType: "free",
   registrationFee: undefined,
   registrationCurrency: "usd",
@@ -207,6 +239,7 @@ const defaultFormValues: EventFormValues = {
   registrationClosesAt: "",
   capacity: undefined,
   waitlistEnabled: false,
+  registrationApprovalMode: EVENT_PRESET_DEFAULTS.training.registrationApprovalMode,
   recordingUrl: "",
   showInArchives: false,
   recordingAccess: "free",
@@ -233,6 +266,7 @@ function statusVariant(
     case "canceled":
       return "destructive";
     case "completed":
+    case "archived":
       return "secondary";
     default:
       return "default";
@@ -262,11 +296,15 @@ function slugifyEventTitle(value: string): string {
     .replace(/-{2,}/g, "-");
 }
 
-export default function AdminEventsPage() {
+interface AdminEventsPageProps {
+  initialCreate?: boolean;
+}
+
+export default function AdminEventsPage({ initialCreate = false }: AdminEventsPageProps) {
   return (
     <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
       <AdminSidebar>
-        <EventsContent />
+        <EventsContent initialCreate={initialCreate} />
       </AdminSidebar>
     </ProtectedRoute>
   );
@@ -280,6 +318,8 @@ function registrationStatusVariant(
       return "default";
     case "waitlisted":
       return "secondary";
+    case "pending":
+      return "outline";
     case "canceled":
       return "destructive";
     default:
@@ -413,12 +453,13 @@ const DAYS_OF_WEEK = [
   { value: "SU", label: "Sun" },
 ];
 
-function EventsContent() {
+function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Event | null>(null);
   const [activeTab, setActiveTab] = useState("details");
+  const initialCreateOpenedRef = useRef(false);
   const saveFeedbackRef = useRef({
     markSaved: () => {},
     markError: () => {},
@@ -435,6 +476,11 @@ function EventsContent() {
     staleTime: STALE_TIMES.OPERATIONAL,
     refetchOnWindowFocus: true,
   });
+  const { data: forms = [] } = useQuery<CmsForm[]>({
+    queryKey: ["/api/admin/forms"],
+    staleTime: STALE_TIMES.OPERATIONAL,
+  });
+  const activeForms = forms.filter((managedForm) => managedForm.isActive);
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -562,6 +608,7 @@ function EventsContent() {
   });
 
   const confirmedCount = registrations?.filter((r) => r.status === "confirmed").length ?? 0;
+  const pendingCount = registrations?.filter((r) => r.status === "pending").length ?? 0;
   const waitlistedCount = registrations?.filter((r) => r.status === "waitlisted").length ?? 0;
   const attendedCount = registrations?.filter((r) => r.attended).length ?? 0;
 
@@ -619,9 +666,22 @@ function EventsContent() {
   });
 
   function buildPayload(data: EventFormValues) {
+    const tags = (data.tags ?? "")
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+    const deliveryMode = data.deliveryMode || (data.isVirtual ? "virtual" : "in_person");
+
     return {
       ...data,
       slug: data.slug?.trim() ?? "",
+      tags,
+      registrationFormId:
+        data.registrationFormId && data.registrationFormId !== "none"
+          ? data.registrationFormId
+          : null,
+      isVirtual: deliveryMode === "virtual" || deliveryMode === "hybrid",
+      deliveryMode,
       timezone: data.timezone?.trim() || "",
       date: fromDateTimeLocalValue(data.date, data.timezone),
       endDate: fromDateTimeLocalValue(data.endDate, data.timezone),
@@ -664,6 +724,24 @@ function EventsContent() {
     setDialogOpen(true);
   }
 
+  function applyPreset(eventType: EventType) {
+    const defaults = EVENT_PRESET_DEFAULTS[eventType];
+    form.setValue("eventType", eventType, { shouldDirty: true });
+    form.setValue("category", defaults.category, { shouldDirty: true });
+    form.setValue("audience", defaults.audience, { shouldDirty: true });
+    form.setValue("format", defaults.format, { shouldDirty: true });
+    form.setValue("deliveryMode", defaults.deliveryMode, { shouldDirty: true });
+    form.setValue("isVirtual", defaults.deliveryMode !== "in_person", { shouldDirty: true });
+    form.setValue("registrationEnabled", defaults.registrationEnabled, { shouldDirty: true });
+    form.setValue("registrationApprovalMode", defaults.registrationApprovalMode, { shouldDirty: true });
+  }
+
+  useEffect(() => {
+    if (!initialCreate || initialCreateOpenedRef.current) return;
+    initialCreateOpenedRef.current = true;
+    openCreate();
+  }, [initialCreate]);
+
   function openEdit(event: Event) {
     setEditingEvent(event);
     const eventTimeZone = event.timezone ?? "";
@@ -682,6 +760,13 @@ function EventsContent() {
       imagePositionY: event.imagePositionY ?? 50,
       status: event.status ?? "published",
       visibility: event.visibility ?? "public",
+      eventType: event.eventType ?? "",
+      category: event.category ?? "",
+      audience: event.audience ?? "",
+      format: event.format ?? "",
+      deliveryMode: event.deliveryMode ?? (event.isVirtual ? "virtual" : "in_person"),
+      tags: Array.isArray(event.tags) ? event.tags.join(", ") : "",
+      registrationFormId: event.registrationFormId ?? "none",
       timezone: eventTimeZone,
       locationName: event.locationName ?? "",
       locationAddress: event.locationAddress ?? "",
@@ -697,6 +782,7 @@ function EventsContent() {
       registrationClosesAt: toDateTimeLocalValue(event.registrationClosesAt, eventTimeZone),
       capacity: event.capacity ?? undefined,
       waitlistEnabled: event.waitlistEnabled ?? false,
+      registrationApprovalMode: event.registrationApprovalMode ?? "automatic",
       recordingUrl: event.recordingUrl ?? "",
       showInArchives: event.showInArchives ?? false,
       recordingAccess: event.recordingAccess ?? "free",
@@ -911,6 +997,21 @@ function EventsContent() {
                     <Badge variant="outline" data-testid={`badge-visibility-${event.id}`}>
                       {visibilityLabel(event.visibility)}
                     </Badge>
+                    {event.eventType && (
+                      <Badge variant="secondary" data-testid={`badge-event-type-${event.id}`}>
+                        {EVENT_TYPE_LABELS[event.eventType] ?? event.eventType}
+                      </Badge>
+                    )}
+                    {event.category && (
+                      <Badge variant="outline" data-testid={`badge-event-category-${event.id}`}>
+                        {EVENT_CATEGORY_LABELS[event.category] ?? event.category}
+                      </Badge>
+                    )}
+                    {event.registrationApprovalMode === "manual" && (
+                      <Badge variant="outline" data-testid={`badge-manual-approval-${event.id}`}>
+                        Manual Approval
+                      </Badge>
+                    )}
                     {event.isVirtual && (
                       <Badge variant="secondary" data-testid={`badge-virtual-${event.id}`}>
                         Virtual
@@ -1134,6 +1235,163 @@ function EventsContent() {
                                   }}
                                 />
                               )}
+                              <div className="space-y-4 rounded-lg border bg-muted/20 p-4">
+                                <div className="space-y-1">
+                                  <p className="text-sm font-medium">Event Preset</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Choose a services/education template to prefill the flexible event settings.
+                                  </p>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  <FormField
+                                    control={form.control}
+                                    name="eventType"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Event Type</FormLabel>
+                                        <Select
+                                          onValueChange={(value: EventType) => applyPreset(value)}
+                                          value={field.value || ""}
+                                        >
+                                          <FormControl>
+                                            <SelectTrigger data-testid="select-event-type">
+                                              <SelectValue placeholder="Select a preset" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {EVENT_TYPES.map((eventType) => (
+                                              <SelectItem key={eventType} value={eventType}>
+                                                {EVENT_TYPE_LABELS[eventType]}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={form.control}
+                                    name="deliveryMode"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Delivery Mode</FormLabel>
+                                        <Select
+                                          onValueChange={(value) => {
+                                            field.onChange(value);
+                                            form.setValue("isVirtual", value !== "in_person", { shouldDirty: true });
+                                          }}
+                                          value={field.value || ""}
+                                        >
+                                          <FormControl>
+                                            <SelectTrigger data-testid="select-event-delivery-mode">
+                                              <SelectValue placeholder="Select delivery" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {EVENT_DELIVERY_MODES.map((mode) => (
+                                              <SelectItem key={mode} value={mode}>
+                                                {EVENT_DELIVERY_MODE_LABELS[mode]}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={form.control}
+                                    name="category"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Category</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                                          <FormControl>
+                                            <SelectTrigger data-testid="select-event-category">
+                                              <SelectValue placeholder="Select category" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {EVENT_CATEGORIES.map((category) => (
+                                              <SelectItem key={category} value={category}>
+                                                {EVENT_CATEGORY_LABELS[category]}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={form.control}
+                                    name="audience"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Audience</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                                          <FormControl>
+                                            <SelectTrigger data-testid="select-event-audience">
+                                              <SelectValue placeholder="Select audience" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {EVENT_AUDIENCES.map((audience) => (
+                                              <SelectItem key={audience} value={audience}>
+                                                {EVENT_AUDIENCE_LABELS[audience]}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={form.control}
+                                    name="format"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Format</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                                          <FormControl>
+                                            <SelectTrigger data-testid="select-event-format">
+                                              <SelectValue placeholder="Select format" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {EVENT_FORMATS.map((format) => (
+                                              <SelectItem key={format} value={format}>
+                                                {EVENT_FORMAT_LABELS[format]}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={form.control}
+                                    name="tags"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Tags</FormLabel>
+                                        <FormControl>
+                                          <Input
+                                            {...field}
+                                            placeholder="leadership, CE, onboarding"
+                                            data-testid="input-event-tags"
+                                          />
+                                        </FormControl>
+                                        <p className="text-xs text-muted-foreground">Separate tags with commas.</p>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </div>
+                              </div>
                               <div className="grid grid-cols-2 gap-4">
                                 <FormField
                                   control={form.control}
@@ -1155,6 +1413,7 @@ function EventsContent() {
                                           <SelectItem value="published">Published</SelectItem>
                                           <SelectItem value="canceled">Canceled</SelectItem>
                                           <SelectItem value="completed">Completed</SelectItem>
+                                          <SelectItem value="archived">Archived</SelectItem>
                                         </SelectContent>
                                       </Select>
                                       <FormMessage />
@@ -1647,6 +1906,67 @@ function EventsContent() {
                                 />
                                 <FormField
                                   control={form.control}
+                                  name="registrationApprovalMode"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Confirmation Rule</FormLabel>
+                                      <Select
+                                        onValueChange={field.onChange}
+                                        value={field.value || "automatic"}
+                                      >
+                                        <FormControl>
+                                          <SelectTrigger data-testid="select-registration-approval-mode">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          {EVENT_REGISTRATION_APPROVAL_MODES.map((mode) => (
+                                            <SelectItem key={mode} value={mode}>
+                                              {EVENT_REGISTRATION_APPROVAL_MODE_LABELS[mode]}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <p className="text-xs text-muted-foreground">
+                                        Manual approval creates pending registrations for review.
+                                      </p>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name="registrationFormId"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Custom Intake Form</FormLabel>
+                                      <Select
+                                        onValueChange={field.onChange}
+                                        value={field.value || "none"}
+                                      >
+                                        <FormControl>
+                                          <SelectTrigger data-testid="select-registration-form">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          <SelectItem value="none">No custom form</SelectItem>
+                                          {activeForms.map((managedForm) => (
+                                            <SelectItem key={managedForm.id} value={managedForm.id}>
+                                              {managedForm.name}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <p className="text-xs text-muted-foreground">
+                                        Use Forms to collect event-specific intake details.
+                                      </p>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
                                   name="waitlistEnabled"
                                   render={({ field }) => (
                                     <FormItem className="flex items-center justify-between rounded-lg border p-3">
@@ -1728,6 +2048,14 @@ function EventsContent() {
                                   >
                                     <Clock className="h-3 w-3" />
                                     {waitlistedCount} Waitlisted
+                                  </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    data-testid="badge-pending-count"
+                                    className="flex items-center gap-1"
+                                  >
+                                    <Clock className="h-3 w-3" />
+                                    {pendingCount} Pending
                                   </Badge>
                                   <Badge
                                     variant="outline"

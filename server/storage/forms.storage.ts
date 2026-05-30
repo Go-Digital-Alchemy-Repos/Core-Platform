@@ -40,6 +40,17 @@ export class FormsStorage {
     return normalizeForm(form);
   }
 
+  async getPublicById(id: string): Promise<CmsForm | undefined> {
+    const [form] = await db
+      .select()
+      .from(cmsForms)
+      .where(and(eq(cmsForms.id, id), eq(cmsForms.isActive, true)))
+      .limit(1);
+    const normalized = normalizeForm(form);
+    if (!normalized || normalized.kind === "application") return undefined;
+    return normalized;
+  }
+
   async getBySlug(slug: string): Promise<CmsForm | undefined> {
     const [form] = await db.select().from(cmsForms).where(eq(cmsForms.slug, slug)).limit(1);
     return normalizeForm(form);

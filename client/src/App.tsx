@@ -233,6 +233,11 @@ function Router() {
         <Route path="/admin/membership-tiers">
           <Redirect to="/admin/directory/settings" />
         </Route>
+        <Route path="/admin/events/new">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
+            {siteFeatures.eventsEnabled ? <AdminEventsPage initialCreate /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
         <Route path="/admin/events">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             {siteFeatures.eventsEnabled ? <AdminEventsPage /> : <NotFound />}

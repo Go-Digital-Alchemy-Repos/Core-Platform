@@ -9,6 +9,7 @@ import {
   sendWaitlistEmail,
   sendRegistrationCanceledEmail,
 } from "../services/email.service";
+import { submitManagedFormById } from "../services/forms.service";
 
 import type { Event } from "@shared/schema/events";
 
@@ -80,7 +81,7 @@ router.post(
       return res.status(400).json({ message: "User not found" });
     }
 
-    let status = "confirmed";
+    let status = event.registrationApprovalMode === "manual" ? "pending" : "confirmed";
     if (event.capacity) {
       const confirmedCount = await storage.eventRegistrations.getConfirmedCount(eventId);
       if (confirmedCount >= event.capacity) {
@@ -90,6 +91,12 @@ router.post(
           return res.status(400).json({ message: "This event is full" });
         }
       }
+    }
+
+    if (event.registrationFormId) {
+      await submitManagedFormById(event.registrationFormId, req.body?.formData ?? {}, {
+        source: `event:${eventId}`,
+      });
     }
 
     const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;

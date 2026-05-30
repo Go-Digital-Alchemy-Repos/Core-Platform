@@ -2,7 +2,33 @@ export { users, insertUserSchema, type InsertUser, type User } from "./users";
 export { therapistProfiles, insertTherapistProfileSchema, type InsertTherapistProfile, type TherapistProfile } from "./therapist-profiles";
 export { membershipTiers, insertMembershipTierSchema, type InsertMembershipTier, type MembershipTier } from "./membership-tiers";
 export { therapistSubscriptions, insertSubscriptionSchema, type InsertSubscription, type TherapistSubscription } from "./subscriptions";
-export { events, insertEventSchema, type InsertEvent, type Event } from "./events";
+export {
+  events,
+  insertEventSchema,
+  EVENT_AUDIENCES,
+  EVENT_AUDIENCE_LABELS,
+  EVENT_CATEGORIES,
+  EVENT_CATEGORY_LABELS,
+  EVENT_DELIVERY_MODES,
+  EVENT_DELIVERY_MODE_LABELS,
+  EVENT_FORMATS,
+  EVENT_FORMAT_LABELS,
+  EVENT_PRESET_DEFAULTS,
+  EVENT_REGISTRATION_APPROVAL_MODES,
+  EVENT_REGISTRATION_APPROVAL_MODE_LABELS,
+  EVENT_STATUSES,
+  EVENT_TYPES,
+  EVENT_TYPE_LABELS,
+  type Event,
+  type EventAudience,
+  type EventCategory,
+  type EventDeliveryMode,
+  type EventFormat,
+  type EventRegistrationApprovalMode,
+  type EventStatus,
+  type EventType,
+  type InsertEvent,
+} from "./events";
 export { contactMessages, insertContactMessageSchema, type InsertContactMessage, type ContactMessage } from "./contact-messages";
 export {
   CRM_CLIENT_STATUS_LABELS,

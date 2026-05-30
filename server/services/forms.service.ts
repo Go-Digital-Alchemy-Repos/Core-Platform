@@ -435,6 +435,35 @@ export async function submitManagedFormBySlug(
   };
 }
 
+export async function submitManagedFormById(
+  id: string,
+  data: unknown,
+  options: { baseUrl?: string; source?: string } = {}
+) {
+  const form = await storage.forms.getPublicById(id);
+  if (!form) {
+    throw new AppError("Form not found", 404);
+  }
+
+  const validated = validateSubmissionData(form, data);
+  const submission = await storage.forms.createSubmission({
+    formId: form.id,
+    data: validated,
+    source: options.source ?? null,
+  });
+
+  await maybeSyncFormToMailchimp(form, validated);
+  await handleContactFormEffects(form, validated, options.baseUrl);
+  await maybeCreateCrmLead(form, validated, submission.id);
+  await notifyAssignedUsers(form, validated, options.baseUrl);
+
+  return {
+    form,
+    submission,
+    successMessage: normalizeFormSettings(form).successMessage,
+  };
+}
+
 export async function syncSystemFormToMailchimp(
   slug: string,
   data: {

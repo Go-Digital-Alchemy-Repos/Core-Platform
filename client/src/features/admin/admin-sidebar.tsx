@@ -7,6 +7,7 @@ import {
   UserCheck,
   CreditCard,
   CalendarDays,
+  CalendarPlus,
   FileText,
   Settings,
   LogOut,
@@ -136,6 +137,14 @@ function buildNavGroups(
                 href: "/admin/events",
                 icon: CalendarDays,
                 iconColor: "text-purple-600",
+                children: [
+                  {
+                    title: "Create Event",
+                    href: "/admin/events/new",
+                    icon: CalendarPlus,
+                    iconColor: "text-purple-500",
+                  },
+                ],
               },
             ],
           },

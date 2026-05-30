@@ -10,10 +10,20 @@ import {
   sendRecordingAvailableEmail,
 } from "../../services/email.service";
 import * as r2Service from "../../services/r2.service";
+import {
+  EVENT_AUDIENCES,
+  EVENT_CATEGORIES,
+  EVENT_DELIVERY_MODES,
+  EVENT_FORMATS,
+  EVENT_REGISTRATION_APPROVAL_MODES,
+  EVENT_STATUSES,
+  EVENT_TYPES,
+  type InsertEvent,
+} from "@shared/schema";
 
 const router = Router();
 
-const VALID_STATUSES = ["draft", "published", "canceled", "completed"] as const;
+const VALID_STATUSES = EVENT_STATUSES;
 const VALID_VISIBILITIES = ["public", "members_only", "counselors_only", "admins_only"] as const;
 const VALID_REGISTRATION_TYPES = ["free", "paid"] as const;
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -77,34 +87,104 @@ function coerceDates(data: Record<string, unknown>): Record<string, unknown> {
   return result;
 }
 
-function validateEventData(data: any): string | null {
-  if (data.status && !VALID_STATUSES.includes(data.status)) {
+type EventRequestData = Record<string, unknown> & {
+  title?: string;
+  slug?: string | null;
+  tags?: unknown;
+};
+
+function textField(data: EventRequestData, field: string): string | undefined {
+  const value = data[field];
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function numberField(data: EventRequestData, field: string): number | undefined {
+  const value = data[field];
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function dateField(data: EventRequestData, field: string): string | number | Date | undefined {
+  const value = data[field];
+  if (typeof value === "string" || typeof value === "number" || value instanceof Date) return value;
+  return undefined;
+}
+
+function validateEventData(data: EventRequestData): string | null {
+  const status = textField(data, "status");
+  const visibility = textField(data, "visibility");
+  const registrationType = textField(data, "registrationType");
+  const eventType = textField(data, "eventType");
+  const category = textField(data, "category");
+  const audience = textField(data, "audience");
+  const format = textField(data, "format");
+  const deliveryMode = textField(data, "deliveryMode");
+  const registrationApprovalMode = textField(data, "registrationApprovalMode");
+  const slug = textField(data, "slug");
+  const timezone = textField(data, "timezone");
+  const virtualJoinUrl = textField(data, "virtualJoinUrl");
+
+  if (status && !VALID_STATUSES.includes(status as (typeof VALID_STATUSES)[number])) {
     return `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`;
   }
 
-  if (data.visibility && !VALID_VISIBILITIES.includes(data.visibility)) {
+  if (visibility && !VALID_VISIBILITIES.includes(visibility as (typeof VALID_VISIBILITIES)[number])) {
     return `Invalid visibility. Must be one of: ${VALID_VISIBILITIES.join(", ")}`;
   }
 
-  if (data.registrationType && !VALID_REGISTRATION_TYPES.includes(data.registrationType)) {
+  if (registrationType && !VALID_REGISTRATION_TYPES.includes(registrationType as (typeof VALID_REGISTRATION_TYPES)[number])) {
     return `Invalid registration type. Must be one of: ${VALID_REGISTRATION_TYPES.join(", ")}`;
   }
 
-  if (data.slug && !SLUG_PATTERN.test(data.slug)) {
+  if (eventType && !EVENT_TYPES.includes(eventType as (typeof EVENT_TYPES)[number])) {
+    return `Invalid event type. Must be one of: ${EVENT_TYPES.join(", ")}`;
+  }
+
+  if (category && !EVENT_CATEGORIES.includes(category as (typeof EVENT_CATEGORIES)[number])) {
+    return `Invalid event category. Must be one of: ${EVENT_CATEGORIES.join(", ")}`;
+  }
+
+  if (audience && !EVENT_AUDIENCES.includes(audience as (typeof EVENT_AUDIENCES)[number])) {
+    return `Invalid event audience. Must be one of: ${EVENT_AUDIENCES.join(", ")}`;
+  }
+
+  if (format && !EVENT_FORMATS.includes(format as (typeof EVENT_FORMATS)[number])) {
+    return `Invalid event format. Must be one of: ${EVENT_FORMATS.join(", ")}`;
+  }
+
+  if (deliveryMode && !EVENT_DELIVERY_MODES.includes(deliveryMode as (typeof EVENT_DELIVERY_MODES)[number])) {
+    return `Invalid delivery mode. Must be one of: ${EVENT_DELIVERY_MODES.join(", ")}`;
+  }
+
+  if (
+    registrationApprovalMode &&
+    !EVENT_REGISTRATION_APPROVAL_MODES.includes(registrationApprovalMode as (typeof EVENT_REGISTRATION_APPROVAL_MODES)[number])
+  ) {
+    return `Invalid registration approval mode. Must be one of: ${EVENT_REGISTRATION_APPROVAL_MODES.join(", ")}`;
+  }
+
+  if (data.tags !== undefined && data.tags !== null) {
+    if (!Array.isArray(data.tags) || data.tags.some((tag: unknown) => typeof tag !== "string")) {
+      return "Tags must be a list of text values";
+    }
+  }
+
+  if (slug && !SLUG_PATTERN.test(slug)) {
     return "Slug must use lowercase letters, numbers, and hyphens only";
   }
 
-  if (data.registrationType === "paid" && (!data.registrationFee || data.registrationFee <= 0)) {
+  if (registrationType === "paid" && (!numberField(data, "registrationFee") || numberField(data, "registrationFee")! <= 0)) {
     return "Registration fee must be greater than 0 for paid events";
   }
 
-  if (data.timezone && !isValidTimeZone(data.timezone)) {
+  if (timezone && !isValidTimeZone(timezone)) {
     return "Timezone must be a valid IANA timezone, such as America/New_York";
   }
 
-  if (data.registrationOpensAt && data.registrationClosesAt) {
-    const opens = new Date(data.registrationOpensAt);
-    const closes = new Date(data.registrationClosesAt);
+  const registrationOpensAt = dateField(data, "registrationOpensAt");
+  const registrationClosesAt = dateField(data, "registrationClosesAt");
+  if (registrationOpensAt && registrationClosesAt) {
+    const opens = new Date(registrationOpensAt);
+    const closes = new Date(registrationClosesAt);
     if (!isValidDate(opens) || !isValidDate(closes)) {
       return "Invalid registration date format";
     }
@@ -113,9 +193,11 @@ function validateEventData(data: any): string | null {
     }
   }
 
-  if (data.date && data.endDate) {
-    const start = new Date(data.date);
-    const end = new Date(data.endDate);
+  const date = dateField(data, "date");
+  const endDate = dateField(data, "endDate");
+  if (date && endDate) {
+    const start = new Date(date);
+    const end = new Date(endDate);
     if (!isValidDate(start) || !isValidDate(end)) {
       return "Invalid date format";
     }
@@ -124,9 +206,10 @@ function validateEventData(data: any): string | null {
     }
   }
 
-  if (data.date && data.recurrenceEndDate) {
-    const start = new Date(data.date);
-    const recurrenceEnd = new Date(data.recurrenceEndDate);
+  const recurrenceEndDate = dateField(data, "recurrenceEndDate");
+  if (date && recurrenceEndDate) {
+    const start = new Date(date);
+    const recurrenceEnd = new Date(recurrenceEndDate);
     if (!isValidDate(start) || !isValidDate(recurrenceEnd)) {
       return "Invalid recurrence end date format";
     }
@@ -135,9 +218,9 @@ function validateEventData(data: any): string | null {
     }
   }
 
-  if (data.virtualJoinUrl) {
+  if (virtualJoinUrl) {
     try {
-      new URL(data.virtualJoinUrl);
+      new URL(virtualJoinUrl);
     } catch {
       return "Virtual join URL must be a valid URL";
     }
@@ -161,9 +244,12 @@ router.post(
     if (error) {
       return res.status(400).json({ message: error });
     }
-    const payload = coerceDates(req.body) as any;
-    payload.slug = await buildUniqueEventSlug(payload.title, payload.slug);
-    const event = await storage.events.createEvent(payload);
+    const payload = coerceDates(req.body) as EventRequestData;
+    if (Array.isArray(payload.tags)) {
+      payload.tags = payload.tags.map((tag: string) => tag.trim()).filter(Boolean);
+    }
+    payload.slug = await buildUniqueEventSlug(payload.title ?? "Event", payload.slug);
+    const event = await storage.events.createEvent(payload as InsertEvent);
     res.status(201).json(await normalizeEventImage(event));
   })
 );
@@ -181,7 +267,10 @@ router.put(
       return notFound(res, "Event");
     }
 
-    const payload = coerceDates(req.body) as any;
+    const payload = coerceDates(req.body) as EventRequestData;
+    if (Array.isArray(payload.tags)) {
+      payload.tags = payload.tags.map((tag: string) => tag.trim()).filter(Boolean);
+    }
     if (payload.slug !== undefined || payload.title !== undefined) {
       const requestedSlug =
         payload.slug !== undefined
@@ -194,7 +283,7 @@ router.put(
       );
     }
 
-    const event = await storage.events.updateEvent(id, payload);
+    const event = await storage.events.updateEvent(id, payload as Partial<InsertEvent>);
     if (!event) {
       notFound(res, "Event");
       return;
@@ -255,7 +344,7 @@ router.post(
       registrationOpensAt: null,
       registrationClosesAt: null,
       recordingUrl: null,
-    } as any);
+    } as InsertEvent);
 
     res.status(201).json(await normalizeEventImage(newEvent));
   })
