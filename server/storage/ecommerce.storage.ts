@@ -288,7 +288,10 @@ export class EcommerceStorage {
         .update(ecommerceCategories)
         .set({ parentId: null, updatedAt: new Date() })
         .where(eq(ecommerceCategories.parentId, id));
-      await tx.delete(ecommerceCategories).where(eq(ecommerceCategories.id, id));
+      await tx
+        .update(ecommerceCategories)
+        .set({ active: false, updatedAt: new Date() })
+        .where(eq(ecommerceCategories.id, id));
     });
   }
 
@@ -642,7 +645,16 @@ export class EcommerceStorage {
   }
 
   async deleteShippingZone(id: string): Promise<void> {
-    await db.delete(ecommerceShippingZones).where(eq(ecommerceShippingZones.id, id));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(ecommerceShippingZones)
+        .set({ active: false, updatedAt: new Date() })
+        .where(eq(ecommerceShippingZones.id, id));
+      await tx
+        .update(ecommerceShippingRates)
+        .set({ active: false, updatedAt: new Date() })
+        .where(eq(ecommerceShippingRates.zoneId, id));
+    });
   }
 
   async getShippingRates(zoneId?: string): Promise<EcommerceShippingRate[]> {
@@ -665,7 +677,10 @@ export class EcommerceStorage {
   }
 
   async deleteShippingRate(id: string): Promise<void> {
-    await db.delete(ecommerceShippingRates).where(eq(ecommerceShippingRates.id, id));
+    await db
+      .update(ecommerceShippingRates)
+      .set({ active: false, updatedAt: new Date() })
+      .where(eq(ecommerceShippingRates.id, id));
   }
 
   async createShipment(data: InsertEcommerceShipment): Promise<EcommerceShipment> {

@@ -880,7 +880,7 @@ export function CategoriesTab() {
     mutationFn: async (categoryId: string) => apiRequest("DELETE", `/api/admin/ecommerce/categories/${categoryId}`),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/categories"] });
-      toast({ title: "Category deleted" });
+      toast({ title: "Category deactivated" });
       resetForm();
     },
   });
@@ -1040,7 +1040,7 @@ export function CategoriesTab() {
                         disabled={deleteMutation.isPending}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        Deactivate
                       </Button>
                     </div>
                   </TableCell>
