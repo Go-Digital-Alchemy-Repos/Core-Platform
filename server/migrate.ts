@@ -3,6 +3,7 @@ import { db } from "./db";
 import { logger } from "./utils/logger";
 import { sql } from "drizzle-orm";
 import path from "path";
+import fs from "fs/promises";
 
 async function getMigrationBootstrapState() {
   const journalResult = await db.execute(sql<{ exists: boolean }>`
@@ -289,6 +290,35 @@ async function ensureCrmTables() {
   await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_client_tasks_completed" ON "crm_client_tasks" ("completed")`);
 }
 
+async function tableExists(tableName: string) {
+  const result = await db.execute(sql<{ exists: boolean }>`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+        AND table_name = ${tableName}
+    ) AS exists
+  `);
+
+  return Boolean((result.rows[0] as { exists?: boolean } | undefined)?.exists);
+}
+
+async function runSqlMigrationFile(migrationsFolder: string, filename: string) {
+  const migrationPath = path.join(migrationsFolder, filename);
+  const migrationSql = await fs.readFile(migrationPath, "utf8");
+  await db.execute(sql.raw(migrationSql));
+}
+
+async function ensureEcommerceTables(migrationsFolder: string) {
+  const hasEcommerceTables = await tableExists("ecommerce_categories");
+  if (hasEcommerceTables) return;
+
+  logger.app.info("Applying ecommerce migrations for legacy database without Drizzle journal");
+  await runSqlMigrationFile(migrationsFolder, "0024_ecommerce.sql");
+  await runSqlMigrationFile(migrationsFolder, "0025_ecommerce_indexes.sql");
+  logger.app.info("Ecommerce migrations applied successfully");
+}
+
 export async function runMigrations() {
   const migrationsFolder = path.resolve(
     process.env.NODE_ENV === "production" ? __dirname : process.cwd(),
@@ -299,6 +329,7 @@ export async function runMigrations() {
   if (bootstrapState.publicTableCount > 0) {
     await ensureEventSlugs();
     await ensureCrmTables();
+    await ensureEcommerceTables(migrationsFolder);
   }
 
   if (!bootstrapState.hasJournal && bootstrapState.publicTableCount > 0) {
