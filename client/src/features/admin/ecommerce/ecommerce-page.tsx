@@ -1327,6 +1327,9 @@ function OrdersTab() {
     queryKey: ["/api/admin/ecommerce/shipping/locations"],
   });
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
+  const [orderSearch, setOrderSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
   const [shipmentForm, setShipmentForm] = useState({
     carrier: "",
     trackingNumber: "",
@@ -1338,11 +1341,31 @@ function OrdersTab() {
     status: "",
     notes: "",
   });
-  const selectedOrder = orders.find((order) => order.id === selectedOrderId) ?? orders[0] ?? null;
+  const filteredOrders = orders.filter((order) => {
+    const query = orderSearch.trim().toLowerCase();
+    const matchesSearch = !query || [
+      order.id,
+      order.customer?.email,
+      order.customer?.name,
+      ...order.items.map((item) => item.productName),
+      ...(order.shipments ?? []).map((shipment) => shipment.trackingNumber ?? ""),
+    ].some((value) => value?.toLowerCase().includes(query));
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+    const matchesPayment = paymentFilter === "all" || order.paymentStatus === paymentFilter;
+    return matchesSearch && matchesStatus && matchesPayment;
+  });
+  const selectedOrder = filteredOrders.find((order) => order.id === selectedOrderId)
+    ?? orders.find((order) => order.id === selectedOrderId)
+    ?? filteredOrders[0]
+    ?? null;
+  const visibleRevenue = filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const unfulfilledCount = orders.filter((order) => !["shipped", "delivered", "cancelled"].includes(order.status)).length;
 
   useEffect(() => {
-    if (!selectedOrderId && orders[0]?.id) setSelectedOrderId(orders[0].id);
-  }, [orders, selectedOrderId]);
+    if ((!selectedOrderId || !filteredOrders.some((order) => order.id === selectedOrderId)) && filteredOrders[0]?.id) {
+      setSelectedOrderId(filteredOrders[0].id);
+    }
+  }, [filteredOrders, selectedOrderId]);
 
   useEffect(() => {
     if (selectedOrder) {
@@ -1414,7 +1437,46 @@ function OrdersTab() {
           <CardTitle className="flex items-center gap-2"><ShoppingBag className="h-5 w-5" /> Orders</CardTitle>
           <CardDescription>Select an order to review items and create a shipment.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-5">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Metric label="Visible orders" value={String(filteredOrders.length)} />
+            <Metric label="Visible revenue" value={formatMoney(visibleRevenue)} />
+            <Metric label="Needs fulfillment" value={String(unfulfilledCount)} />
+          </div>
+          <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px]">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                value={orderSearch}
+                onChange={(event) => setOrderSearch(event.target.value)}
+                placeholder="Search order, customer, item, or tracking"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="shipped">Shipped</SelectItem>
+                <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All payments</SelectItem>
+                <SelectItem value="unpaid">Unpaid</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="refund_pending">Refund pending</SelectItem>
+                <SelectItem value="partially_refunded">Partially refunded</SelectItem>
+                <SelectItem value="refunded">Refunded</SelectItem>
+                <SelectItem value="refund_failed">Refund failed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -1426,7 +1488,7 @@ function OrdersTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders.map((order) => (
+              {filteredOrders.map((order) => (
                 <TableRow key={order.id} className={selectedOrder?.id === order.id ? "bg-muted/50" : undefined}>
                   <TableCell>
                     <div className="font-mono text-xs">{order.id}</div>
@@ -1443,6 +1505,13 @@ function OrdersTab() {
                   </TableCell>
                 </TableRow>
               ))}
+              {filteredOrders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                    No orders match the current filters.
+                  </TableCell>
+                </TableRow>
+              ) : null}
             </TableBody>
           </Table>
         </CardContent>
