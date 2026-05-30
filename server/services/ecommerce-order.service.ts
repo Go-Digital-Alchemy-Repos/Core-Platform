@@ -2,6 +2,7 @@ import { z } from "zod";
 import { storage } from "../storage/index";
 import {
   buildCouponSnapshot,
+  getShippingRateOptions,
   priceCart,
   priceCartSchema,
   type PricedCartLine,
@@ -110,16 +111,24 @@ function pricedLinesToOrderItems(lines: PricedCartLine[]) {
 
 export async function createEcommercePaymentIntent(input: unknown, requestMeta: { ip?: string | null } = {}) {
   const data = checkoutSchema.parse(input);
+  const shippingAddress = {
+    country: data.shippingAddress.country,
+    state: data.shippingAddress.state,
+  };
   const priced = await priceCart({
     items: data.items,
     couponCode: data.couponCode,
     customerEmail: data.customer.email,
     shippingRateId: data.shippingRateId,
-    shippingAddress: {
-      country: data.shippingAddress.country,
-      state: data.shippingAddress.state,
-    },
+    shippingAddress,
   });
+  if (!data.shippingRateId && priced.lines.some((line) => line.requiresShipping)) {
+    const rates = await getShippingRateOptions({
+      subtotalAmount: priced.subtotalAmount,
+      address: shippingAddress,
+    });
+    if (rates.length > 0) throw new Error("Select a shipping method before checkout");
+  }
   if (priced.totalAmount <= 0) throw new Error("Order total must be greater than zero");
 
   const customer = await storage.ecommerce.findOrCreateCustomer({

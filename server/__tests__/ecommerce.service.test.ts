@@ -521,6 +521,106 @@ describe("ecommerce services", () => {
     })).rejects.toThrow(/shipping rate is unavailable/);
   });
 
+  it("requires a selected shipping rate for checkout when shippable rates match", async () => {
+    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+    mockProducts.push({
+      id: "p1",
+      name: "Shippable Product",
+      tagline: null,
+      description: null,
+      price: 10000,
+      primaryImage: null,
+      secondaryImages: [],
+      features: [],
+      included: [],
+      active: true,
+      status: "published",
+      sku: null,
+      tags: [],
+      salePrice: null,
+      discountType: "NONE",
+      discountValue: null,
+      saleStartAt: null,
+      saleEndAt: null,
+      metaTitle: null,
+      metaDescription: null,
+      metaKeywords: null,
+      urlSlug: "shippable-product",
+      canonicalUrl: null,
+      robotsIndex: true,
+      robotsFollow: true,
+      ogTitle: null,
+      ogDescription: null,
+      ogImage: null,
+      mediaId: null,
+      requiresShipping: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as EcommerceProduct);
+    mockVariants.push({
+      id: "v1",
+      productId: "p1",
+      title: "Default",
+      optionSignature: "default",
+      optionValues: {},
+      sku: null,
+      barcode: null,
+      price: 10000,
+      salePrice: null,
+      compareAtPrice: null,
+      costPerItem: null,
+      inventoryQuantity: 0,
+      trackInventory: false,
+      lowStockThreshold: null,
+      allowBackorder: false,
+      weight: null,
+      weightUnit: "oz",
+      image: null,
+      status: "active",
+      active: true,
+      sortOrder: 0,
+      isDefault: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockShippingZones.push({
+      id: "zone-us",
+      name: "United States",
+      countries: ["US"],
+      states: [],
+      active: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockShippingRates.push({
+      id: "rate-standard",
+      zoneId: "zone-us",
+      name: "Standard",
+      description: "Ground shipping",
+      amount: 995,
+      minOrderAmount: null,
+      maxOrderAmount: null,
+      active: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await expect(createEcommercePaymentIntent({
+      items: [{ productId: "p1", quantity: 1 }],
+      customer: { email: "buyer@example.com", name: "Buyer" },
+      shippingAddress: {
+        name: "Buyer",
+        address: "123 Main St",
+        city: "Detroit",
+        state: "MI",
+        zip: "48201",
+        country: "US",
+      },
+      billingSameAsShipping: true,
+    })).rejects.toThrow(/Select a shipping method/);
+    expect(mockCreateOrder).not.toHaveBeenCalled();
+  });
+
   it("calculates manual tax server-side after discounts and optional shipping tax", async () => {
     const { priceCart } = await import("../services/ecommerce-pricing.service");
     mockGetDecryptedCategory.mockResolvedValue({
