@@ -7,6 +7,8 @@ import CmsMenusPage from "@/features/admin/cms/cms-menus-page";
 
 const useQueryMock = vi.fn();
 const useMutationMock = vi.fn();
+const navigateMock = vi.fn();
+let locationMock = "/admin/cms/menus";
 const queryClientMock = vi.hoisted(() => ({
   apiRequest: vi.fn(() => Promise.resolve(new Response("{}"))),
   invalidateQueries: vi.fn(),
@@ -26,6 +28,10 @@ vi.mock("@/lib/queryClient", () => ({
   queryClient: {
     invalidateQueries: queryClientMock.invalidateQueries,
   },
+}));
+
+vi.mock("wouter", () => ({
+  useLocation: () => [locationMock, navigateMock],
 }));
 
 vi.mock("@/features/admin/admin-sidebar", () => ({
@@ -118,6 +124,8 @@ describe("CmsMenusPage", () => {
   let root: Root | null = null;
 
   beforeEach(() => {
+    locationMock = "/admin/cms/menus";
+    navigateMock.mockReset();
     useQueryMock.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
       if (queryKey[0] === "/api/admin/cms/pages") {
         return { data: pages, isLoading: false };
@@ -226,5 +234,16 @@ describe("CmsMenusPage", () => {
         ],
       }),
     );
+  });
+
+  it("opens a menu from the editMenu query parameter", () => {
+    locationMock = "/admin/cms/menus?editMenu=menu-main";
+
+    act(() => {
+      root = createRoot(container);
+      root.render(<CmsMenusPage />);
+    });
+
+    expect(container.querySelector('[data-testid="text-menu-editor-title"]')?.textContent).toContain("Edit: Main Navigation");
   });
 });

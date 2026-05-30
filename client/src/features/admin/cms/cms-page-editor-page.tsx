@@ -59,6 +59,7 @@ import {
   Settings,
   Link2,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import {
   Popover,
@@ -1027,6 +1028,16 @@ export default function CmsPageEditorPage() {
                               <p className="mt-1 text-muted-foreground">
                                 {reference.menuName} · {reference.itemUrl}
                               </p>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="mt-2 h-7 px-2 text-xs"
+                                onClick={() => navigate(`/admin/cms/menus?editMenu=${reference.menuId}&item=${reference.itemId}`)}
+                                data-testid={`button-edit-reference-menu-${reference.itemId}`}
+                              >
+                                <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                                Edit menu
+                              </Button>
                             </div>
                           ))}
                           <Button

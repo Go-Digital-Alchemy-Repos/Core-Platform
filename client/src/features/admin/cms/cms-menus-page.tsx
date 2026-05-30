@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
@@ -651,6 +652,7 @@ function MenuEditor({
 
 export default function CmsMenusPage() {
   const { toast } = useToast();
+  const [currentPath, navigate] = useLocation();
   const [editingMenu, setEditingMenu] = useState<CmsMenu | null | "new">(null);
   const [draftMenuDefaults, setDraftMenuDefaults] = useState<Partial<Pick<CmsMenu, "name" | "location">> | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<CmsMenu | null>(null);
@@ -691,6 +693,19 @@ export default function CmsMenusPage() {
     }
   }
 
+  useEffect(() => {
+    if (!menus || editingMenu !== null) return;
+    const query = currentPath.includes("?") ? currentPath.slice(currentPath.indexOf("?")) : window.location.search;
+    const editMenuId = new URLSearchParams(query).get("editMenu");
+    if (!editMenuId) return;
+
+    const menu = menus.find((entry) => entry.id === editMenuId);
+    if (menu) {
+      setEditingMenu(menu);
+      setDraftMenuDefaults(null);
+    }
+  }, [currentPath, editingMenu, menus]);
+
   if (editingMenu !== null) {
     return (
       <AdminSidebar>
@@ -701,6 +716,7 @@ export default function CmsMenusPage() {
             onClose={() => {
               setEditingMenu(null);
               setDraftMenuDefaults(null);
+              navigate("/admin/cms/menus");
             }}
           />
         </div>
