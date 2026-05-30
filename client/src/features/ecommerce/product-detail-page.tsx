@@ -24,6 +24,7 @@ interface Product {
   features: string[];
   included: string[];
   tags: string[];
+  categories?: Array<{ id: string; name: string; slug: string }>;
   urlSlug: string;
   sku?: string | null;
   metaTitle?: string | null;
@@ -140,12 +141,15 @@ function ProductSeo({
   });
 
   const productLd = buildProductLd({
+    id: product.id,
     name: product.name,
     description: seoDescription,
     slug: product.urlSlug,
     image: product.primaryImage,
     gallery: product.secondaryImages,
     sku: product.sku,
+    categories: product.categories ?? [],
+    tags: product.tags,
     price: product.price,
     salePrice: product.salePrice,
     active: true,

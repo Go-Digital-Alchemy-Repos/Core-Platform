@@ -11,6 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { addCartItem, formatMoney } from "./cart-store";
+import { useSeo } from "@/hooks/use-seo";
+import { JsonLd } from "@/components/shared/json-ld";
+import { buildBreadcrumbLd, buildItemListLd } from "@/lib/structured-data";
+import type { SeoSettings } from "@shared/schema";
 
 interface Product {
   id: string;
@@ -26,6 +30,7 @@ interface Product {
 
 export default function ShopPage() {
   const { data: products = [], isLoading } = useQuery<Product[]>({ queryKey: ["/api/ecommerce/products"] });
+  const { data: globalSeo } = useQuery<SeoSettings>({ queryKey: ["/api/seo/global"] });
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [tag, setTag] = useState("all");
@@ -75,9 +80,27 @@ export default function ShopPage() {
     setTag("all");
     setShowSaleOnly(false);
   };
+  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const canonical = `${siteUrl}/shop`;
+  useSeo({
+    title: "Shop",
+    description: "Browse products and checkout securely.",
+    canonical,
+    ogType: "website",
+  });
+  const itemListLd = buildItemListLd(products.map((product) => ({
+    name: product.name,
+    url: `${siteUrl}/products/${product.urlSlug}`,
+    image: product.primaryImage || undefined,
+  })));
+  const breadcrumbLd = buildBreadcrumbLd([
+    { name: "Home", url: siteUrl || "/" },
+    { name: "Shop", url: canonical },
+  ]);
 
   return (
     <PageLayout>
+      <JsonLd schemas={[itemListLd, breadcrumbLd]} />
       <section className="border-b bg-muted/20">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

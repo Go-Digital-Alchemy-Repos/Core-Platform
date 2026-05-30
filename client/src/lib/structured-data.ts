@@ -75,6 +75,7 @@ export function buildBreadcrumbLd(
 }
 
 export interface ProductLdInput {
+  id?: string | null;
   name: string;
   description?: string | null;
   slug: string;
@@ -82,10 +83,13 @@ export interface ProductLdInput {
   gallery?: string[];
   sku?: string | null;
   brandName?: string | null;
+  categories?: Array<{ name: string; slug?: string | null }> | string[];
+  tags?: string[];
   price: number;
   salePrice?: number | null;
   currency?: string;
   active?: boolean;
+  inventoryQuantity?: number | null;
 }
 
 export function buildProductLd(
@@ -100,14 +104,25 @@ export function buildProductLd(
   const images = [product.image, ...(product.gallery ?? [])]
     .filter((src): src is string => Boolean(src))
     .map((src) => absoluteUrl(src, siteUrl));
+  const categoryNames = (product.categories ?? []).map((category) =>
+    typeof category === "string" ? category : category.name,
+  ).filter(Boolean);
+  const availability = product.active === false || product.inventoryQuantity === 0
+    ? "https://schema.org/OutOfStock"
+    : "https://schema.org/InStock";
 
   return compactObject({
     "@context": "https://schema.org",
     "@type": "Product",
+    "@id": `${productUrl}#product`,
+    url: productUrl,
+    productID: product.id || undefined,
     name: product.name,
     description: product.description || undefined,
     image: images.length > 0 ? images : undefined,
     sku: product.sku || undefined,
+    category: categoryNames.length > 0 ? categoryNames.join(" > ") : undefined,
+    keywords: product.tags?.length ? product.tags.join(", ") : undefined,
     brand: compactObject({
       "@type": "Brand",
       name: product.brandName || globalSeo?.organizationName || globalSeo?.siteName || "Core Platform",
@@ -117,10 +132,28 @@ export function buildProductLd(
       url: productUrl,
       priceCurrency: (product.currency || "USD").toUpperCase(),
       price: (effectivePrice / 100).toFixed(2),
-      availability: product.active === false ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+      availability,
       itemCondition: "https://schema.org/NewCondition",
     }),
   });
+}
+
+export function buildItemListLd(
+  items: Array<{ name: string; url: string; image?: string | null }>,
+): JsonLdObject | null {
+  if (items.length === 0) return null;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: items.map((item, index) => compactObject({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      url: item.url,
+      image: item.image || undefined,
+    })),
+  };
 }
 
 export function buildArticleLd(

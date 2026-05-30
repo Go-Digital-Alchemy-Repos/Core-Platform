@@ -519,12 +519,16 @@ function buildProductSnapshot(
       {
         "@context": "https://schema.org",
         "@type": "Product",
+        "@id": `${canonicalUrl}#product`,
+        url: canonicalUrl,
+        productID: product.id,
         name: product.name,
         description,
         image: [product.primaryImage, ...(product.secondaryImages ?? [])]
           .filter(Boolean)
           .map((src) => absoluteUrl(src, siteUrl)),
         sku: product.sku || undefined,
+        keywords: product.tags?.length ? product.tags.join(", ") : undefined,
         brand: {
           "@type": "Brand",
           name: seo?.organizationName || seo?.siteName || "Core Platform",
