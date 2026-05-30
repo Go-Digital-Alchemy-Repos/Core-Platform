@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
+import { ZodError } from "zod";
 import { logger } from "../utils/logger";
 
 export class AppError extends Error {
@@ -19,7 +20,8 @@ export function asyncHandler(
 }
 
 export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
-  const status = err.statusCode || err.status || 500;
+  const isValidationError = err instanceof ZodError;
+  const status = isValidationError ? 400 : err.statusCode || err.status || 500;
 
   logger.app.error(`${req.method} ${req.path} ${status}`, err, {
     requestId: req.requestId,
@@ -29,6 +31,17 @@ export function errorHandler(err: any, req: Request, res: Response, _next: NextF
   });
 
   if (!res.headersSent) {
+    if (isValidationError) {
+      res.status(status).json({
+        message: "Validation error",
+        errors: err.errors.map((e) => ({
+          field: e.path.join("."),
+          message: e.message,
+        })),
+      });
+      return;
+    }
+
     const isProduction = process.env.NODE_ENV === "production";
     const message =
       status >= 500 && isProduction
