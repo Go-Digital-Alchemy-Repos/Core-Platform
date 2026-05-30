@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { storage } from "../storage/index";
 import { asyncHandler } from "../middleware/error-handler";
+import { validateBody } from "../middleware/validation";
 import { paramString } from "../utils/params";
 import {
   getShippingRateOptions,
@@ -131,9 +132,9 @@ router.post(
   "/orders/status",
   ecommerceOrderLookupLimiter,
   noStorePrivateResponse,
+  validateBody(ecommerceOrderStatusLookupSchema),
   asyncHandler(async (req, res) => {
-    const data = ecommerceOrderStatusLookupSchema.parse(req.body);
-    const order = await storage.ecommerce.getOrderForLookup(data);
+    const order = await storage.ecommerce.getOrderForLookup(req.body);
     if (!order) {
       res.status(404).json({ message: "Order not found" });
       return;
