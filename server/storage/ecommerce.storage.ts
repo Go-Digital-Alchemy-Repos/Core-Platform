@@ -123,6 +123,11 @@ export class EcommerceStorage {
       .where(eq(ecommerceProductCategories.productId, productId));
   }
 
+  async getCategory(id: string): Promise<EcommerceCategory | undefined> {
+    const [category] = await db.select().from(ecommerceCategories).where(eq(ecommerceCategories.id, id));
+    return category;
+  }
+
   async getCategories(publicOnly = false): Promise<EcommerceCategory[]> {
     const query = db.select().from(ecommerceCategories).orderBy(ecommerceCategories.sortOrder, ecommerceCategories.name);
     return publicOnly ? query.where(eq(ecommerceCategories.active, true)) : query;
@@ -143,7 +148,13 @@ export class EcommerceStorage {
   }
 
   async deleteCategory(id: string): Promise<void> {
-    await db.delete(ecommerceCategories).where(eq(ecommerceCategories.id, id));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(ecommerceCategories)
+        .set({ parentId: null, updatedAt: new Date() })
+        .where(eq(ecommerceCategories.parentId, id));
+      await tx.delete(ecommerceCategories).where(eq(ecommerceCategories.id, id));
+    });
   }
 
   async findOrCreateCustomer(data: InsertEcommerceCustomer): Promise<EcommerceCustomer> {
