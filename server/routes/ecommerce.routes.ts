@@ -12,7 +12,11 @@ const router = Router();
 router.get(
   "/products",
   asyncHandler(async (_req, res) => {
-    res.json(await storage.ecommerce.getProducts({ publicOnly: true }));
+    const products = await storage.ecommerce.getProducts({ publicOnly: true });
+    res.json(await Promise.all(products.map(async (product) => ({
+      ...product,
+      categories: await storage.ecommerce.getProductCategories(product.id),
+    }))));
   }),
 );
 

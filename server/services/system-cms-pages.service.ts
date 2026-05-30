@@ -81,6 +81,25 @@ function buildRecordingsContent() {
   };
 }
 
+function buildShopContent() {
+  return {
+    blocks: [
+      {
+        id: id(),
+        type: "section-header",
+        props: {
+          eyebrow: "Shop",
+          title: "Core Platform Resources",
+          subtitle:
+            "Browse practical guides, trainings, and family tools for cross-cultural transitions, belonging, and Core Platform-informed care.",
+          alignment: "center",
+          headingLevel: "h1",
+        },
+      },
+    ],
+  };
+}
+
 function buildDirectoryContent() {
   return {
     blocks: [
@@ -342,6 +361,30 @@ export async function ensureSystemCmsPages() {
       seoTitle: "Video Archives | Core Platform",
       seoDescription: "Watch past Core Platform trainings and webinars from the video archives.",
       seoKeywords: "",
+      ogImageUrl: "",
+      canonicalUrl: "",
+      noindex: false,
+      publishedAt: new Date(),
+      scheduledAt: null,
+      createdBy: null,
+      updatedBy: null,
+      sidebarId: null,
+    });
+  }
+
+  const existingShop = await storage.cmsPages.getPageBySlug("shop");
+  if (!existingShop) {
+    await storage.cmsPages.createPage({
+      title: "Shop",
+      slug: "shop",
+      pageType: "custom",
+      template: "full-width",
+      status: "published",
+      content: buildShopContent(),
+      seoTitle: "Shop Core Platform Resources | Core Platform",
+      seoDescription:
+        "Browse Core Platform resources, digital workbooks, family tools, and provider training products.",
+      seoKeywords: "Core Platform shop, digital resources, provider training, family transition tools",
       ogImageUrl: "",
       canonicalUrl: "",
       noindex: false,

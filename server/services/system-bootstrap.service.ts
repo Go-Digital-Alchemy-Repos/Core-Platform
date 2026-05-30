@@ -5,6 +5,7 @@ import { ensureSystemCmsSections } from "./system-cms-sections.service";
 import { ensureSystemDocs } from "./system-docs.service";
 import { ensureSystemEmailTemplates } from "./system-email-templates.service";
 import { ensureSystemForms } from "./system-forms.service";
+import { ensureSystemEcommerce } from "./system-ecommerce.service";
 
 export async function runSystemBootstrap() {
   logger.app.info("Running system bootstrap");
@@ -13,6 +14,7 @@ export async function runSystemBootstrap() {
   await ensureSystemCmsMenus();
   await ensureSystemCmsSections();
   await ensureSystemForms();
+  await ensureSystemEcommerce();
   await ensureSystemDocs({ refreshExisting: false });
   await ensureSystemEmailTemplates(false);
 
