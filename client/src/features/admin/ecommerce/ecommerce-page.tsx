@@ -138,6 +138,28 @@ interface Category {
   active: boolean;
 }
 
+interface FulfillmentLocation {
+  id: string;
+  name: string;
+  type: string;
+  city?: string | null;
+  state?: string | null;
+  country: string;
+  isPrimary: boolean;
+  active: boolean;
+}
+
+interface ShippingProvider {
+  provider: string;
+  displayName: string;
+  type: string;
+  recommendedFor: string;
+  capabilities: string[];
+  active: boolean;
+  testMode: boolean;
+  connectedAt?: string | null;
+}
+
 interface Coupon {
   id: string;
   code: string;
@@ -1287,13 +1309,121 @@ function OrdersTab() {
 }
 
 function ShippingTab() {
-  const { data: zones = [] } = useQuery<Array<{ id: string; name: string; active: boolean }>>({ queryKey: ["/api/admin/ecommerce/shipping/zones"] });
+  const { data: zones = [] } = useQuery<Array<{ id: string; name: string; active: boolean }>>({
+    queryKey: ["/api/admin/ecommerce/shipping/zones"],
+  });
+  const { data: locations = [] } = useQuery<FulfillmentLocation[]>({
+    queryKey: ["/api/admin/ecommerce/shipping/locations"],
+  });
+  const { data: providers = [] } = useQuery<ShippingProvider[]>({
+    queryKey: ["/api/admin/ecommerce/shipping/providers"],
+  });
   const [name, setName] = useState("");
   const mutation = useMutation({
     mutationFn: async () => apiRequest("POST", "/api/admin/ecommerce/shipping/zones", { name, countries: ["US"], states: [], active: true }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/zones"] }),
+    onSuccess: () => {
+      setName("");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/zones"] });
+    },
   });
-  return <CrudList title="Shipping zones" icon={<Truck className="h-5 w-5" />} value={name} setValue={setName} onCreate={() => mutation.mutate()} rows={zones.map((z) => [z.name, "US", z.active ? "Active" : "Inactive"])} />;
+
+  const groupedProviders = providers.reduce<Record<string, ShippingProvider[]>>((groups, provider) => {
+    const key = provider.type.replace(/_/g, " ");
+    groups[key] = [...(groups[key] ?? []), provider];
+    return groups;
+  }, {});
+
+  return (
+    <div className="grid gap-6">
+      <CrudList
+        title="Shipping zones"
+        icon={<Truck className="h-5 w-5" />}
+        value={name}
+        setValue={setName}
+        onCreate={() => mutation.mutate()}
+        rows={zones.map((z) => [z.name, "US", z.active ? "Active" : "Inactive"])}
+      />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Fulfillment locations
+          </CardTitle>
+          <CardDescription>Locations are the foundation for future warehouse routing, local delivery, split shipments, and 3PL workflows.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {locations.length ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Region</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {locations.map((location) => (
+                  <TableRow key={location.id}>
+                    <TableCell className="font-medium">{location.name}</TableCell>
+                    <TableCell className="capitalize">{location.type.replace(/_/g, " ")}</TableCell>
+                    <TableCell>{[location.city, location.state, location.country].filter(Boolean).join(", ")}</TableCell>
+                    <TableCell>
+                      <Badge variant={location.active ? "default" : "secondary"}>
+                        {location.isPrimary ? "Primary" : location.active ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="text-sm text-muted-foreground">No fulfillment locations have been added yet.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Plug className="h-5 w-5" />
+            Carrier and fulfillment providers
+          </CardTitle>
+          <CardDescription>Provider connections are modeled separately from zones so checkout, labels, tracking, and fulfillment automation can share the same engine.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-5">
+          {Object.entries(groupedProviders).map(([group, groupProviders]) => (
+            <div key={group} className="space-y-3">
+              <h3 className="text-sm font-semibold capitalize">{group}</h3>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {groupProviders.map((provider) => (
+                  <div key={provider.provider} className="rounded-lg border p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-semibold">{provider.displayName}</div>
+                        <p className="mt-1 text-sm text-muted-foreground">{provider.recommendedFor}</p>
+                      </div>
+                      <Badge variant={provider.active ? "default" : "secondary"}>
+                        {provider.active ? "Connected" : "Available"}
+                      </Badge>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {provider.capabilities.map((capability) => (
+                        <Badge key={capability} variant="outline" className="capitalize">
+                          {capability.replace(/_/g, " ")}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 function RefundsTab() {

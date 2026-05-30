@@ -31,6 +31,16 @@ export const ECOMMERCE_COUPON_TYPES = ["percentage", "fixed", "freeShipping"] as
 export const ECOMMERCE_COUPON_STATUSES = ["active", "inactive", "scheduled", "expired", "exhausted", "archived"] as const;
 export const ECOMMERCE_REFUND_STATUSES = ["pending", "processed", "rejected", "failed"] as const;
 export const ECOMMERCE_REFUND_TYPES = ["full", "partial"] as const;
+export const ECOMMERCE_SHIPPING_PROVIDER_TYPES = ["direct_carrier", "aggregator", "workflow", "marketplace"] as const;
+export const ECOMMERCE_FULFILLMENT_LOCATION_TYPES = ["merchant", "warehouse", "store", "third_party_logistics"] as const;
+export const ECOMMERCE_FULFILLMENT_STATUSES = [
+  "pending",
+  "ready",
+  "in_progress",
+  "fulfilled",
+  "partially_fulfilled",
+  "cancelled",
+] as const;
 
 export const ecommerceProducts = pgTable("ecommerce_products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -446,6 +456,84 @@ export const ecommerceShipments = pgTable("ecommerce_shipments", {
   index("idx_ecommerce_shipments_tracking").on(table.trackingNumber),
 ]);
 
+export const ecommerceFulfillmentLocations = pgTable("ecommerce_fulfillment_locations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  code: text("code"),
+  type: text("type").notNull().default("merchant"),
+  phone: text("phone"),
+  email: text("email"),
+  address: text("address"),
+  line2: text("line2"),
+  city: text("city"),
+  state: text("state"),
+  postalCode: text("postal_code"),
+  country: text("country").notNull().default("US"),
+  timezone: text("timezone").notNull().default("America/New_York"),
+  isPrimary: boolean("is_primary").notNull().default(false),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_ecommerce_fulfillment_locations_code").on(table.code),
+  index("idx_ecommerce_fulfillment_locations_active").on(table.active),
+  index("idx_ecommerce_fulfillment_locations_type").on(table.type),
+]);
+
+export const ecommerceShippingProviders = pgTable("ecommerce_shipping_providers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  provider: text("provider").notNull(),
+  displayName: text("display_name").notNull(),
+  type: text("type").notNull().default("aggregator"),
+  capabilities: text("capabilities").array().notNull().default(sql`ARRAY[]::text[]`),
+  settings: jsonb("settings").$type<Record<string, unknown>>().default(sql`'{}'::jsonb`).notNull(),
+  testMode: boolean("test_mode").notNull().default(true),
+  active: boolean("active").notNull().default(false),
+  connectedAt: timestamp("connected_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_ecommerce_shipping_providers_provider").on(table.provider),
+  index("idx_ecommerce_shipping_providers_active").on(table.active),
+  index("idx_ecommerce_shipping_providers_type").on(table.type),
+]);
+
+export const ecommerceFulfillments = pgTable("ecommerce_fulfillments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => ecommerceOrders.id, { onDelete: "cascade" }),
+  locationId: varchar("location_id").references(() => ecommerceFulfillmentLocations.id, { onDelete: "set null" }),
+  providerId: varchar("provider_id").references(() => ecommerceShippingProviders.id, { onDelete: "set null" }),
+  shipmentId: varchar("shipment_id").references(() => ecommerceShipments.id, { onDelete: "set null" }),
+  status: text("status").notNull().default("pending"),
+  method: text("method"),
+  serviceLevel: text("service_level"),
+  carrier: text("carrier"),
+  trackingNumber: text("tracking_number"),
+  trackingUrl: text("tracking_url"),
+  labelUrl: text("label_url"),
+  labelCost: integer("label_cost"),
+  estimatedDeliveryAt: timestamp("estimated_delivery_at"),
+  fulfilledAt: timestamp("fulfilled_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_fulfillments_order").on(table.orderId),
+  index("idx_ecommerce_fulfillments_location").on(table.locationId),
+  index("idx_ecommerce_fulfillments_provider").on(table.providerId),
+  index("idx_ecommerce_fulfillments_status").on(table.status),
+  index("idx_ecommerce_fulfillments_tracking").on(table.trackingNumber),
+]);
+
+export const ecommerceFulfillmentItems = pgTable("ecommerce_fulfillment_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  fulfillmentId: varchar("fulfillment_id").notNull().references(() => ecommerceFulfillments.id, { onDelete: "cascade" }),
+  orderItemId: varchar("order_item_id").notNull().references(() => ecommerceOrderItems.id, { onDelete: "cascade" }),
+  quantity: integer("quantity").notNull(),
+}, (table) => [
+  index("idx_ecommerce_fulfillment_items_fulfillment").on(table.fulfillmentId),
+  index("idx_ecommerce_fulfillment_items_order_item").on(table.orderItemId),
+]);
+
 export const ecommerceIntegrationSettings = pgTable("ecommerce_integration_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   provider: text("provider").notNull(),
@@ -491,6 +579,27 @@ export const ecommerceOrdersRelations = relations(ecommerceOrders, ({ one, many 
   items: many(ecommerceOrderItems),
   refunds: many(ecommerceRefunds),
   shipments: many(ecommerceShipments),
+  fulfillments: many(ecommerceFulfillments),
+}));
+
+export const ecommerceFulfillmentsRelations = relations(ecommerceFulfillments, ({ one, many }) => ({
+  order: one(ecommerceOrders, {
+    fields: [ecommerceFulfillments.orderId],
+    references: [ecommerceOrders.id],
+  }),
+  location: one(ecommerceFulfillmentLocations, {
+    fields: [ecommerceFulfillments.locationId],
+    references: [ecommerceFulfillmentLocations.id],
+  }),
+  provider: one(ecommerceShippingProviders, {
+    fields: [ecommerceFulfillments.providerId],
+    references: [ecommerceShippingProviders.id],
+  }),
+  shipment: one(ecommerceShipments, {
+    fields: [ecommerceFulfillments.shipmentId],
+    references: [ecommerceShipments.id],
+  }),
+  items: many(ecommerceFulfillmentItems),
 }));
 
 export const insertEcommerceProductSchema = createInsertSchema(ecommerceProducts).omit({ id: true, createdAt: true, updatedAt: true });
@@ -509,6 +618,10 @@ export const insertEcommerceRefundSchema = createInsertSchema(ecommerceRefunds).
 export const insertEcommerceShippingZoneSchema = createInsertSchema(ecommerceShippingZones).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertEcommerceShippingRateSchema = createInsertSchema(ecommerceShippingRates).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertEcommerceShipmentSchema = createInsertSchema(ecommerceShipments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceFulfillmentLocationSchema = createInsertSchema(ecommerceFulfillmentLocations).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceShippingProviderSchema = createInsertSchema(ecommerceShippingProviders).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceFulfillmentSchema = createInsertSchema(ecommerceFulfillments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceFulfillmentItemSchema = createInsertSchema(ecommerceFulfillmentItems).omit({ id: true });
 
 export const ecommerceCartItemSchema = z.object({
   productId: z.string().min(1),
@@ -548,4 +661,12 @@ export type EcommerceShippingRate = typeof ecommerceShippingRates.$inferSelect;
 export type InsertEcommerceShippingRate = z.infer<typeof insertEcommerceShippingRateSchema>;
 export type EcommerceShipment = typeof ecommerceShipments.$inferSelect;
 export type InsertEcommerceShipment = z.infer<typeof insertEcommerceShipmentSchema>;
+export type EcommerceFulfillmentLocation = typeof ecommerceFulfillmentLocations.$inferSelect;
+export type InsertEcommerceFulfillmentLocation = z.infer<typeof insertEcommerceFulfillmentLocationSchema>;
+export type EcommerceShippingProvider = typeof ecommerceShippingProviders.$inferSelect;
+export type InsertEcommerceShippingProvider = z.infer<typeof insertEcommerceShippingProviderSchema>;
+export type EcommerceFulfillment = typeof ecommerceFulfillments.$inferSelect;
+export type InsertEcommerceFulfillment = z.infer<typeof insertEcommerceFulfillmentSchema>;
+export type EcommerceFulfillmentItem = typeof ecommerceFulfillmentItems.$inferSelect;
+export type InsertEcommerceFulfillmentItem = z.infer<typeof insertEcommerceFulfillmentItemSchema>;
 export type EcommerceCartItem = z.infer<typeof ecommerceCartItemSchema>;

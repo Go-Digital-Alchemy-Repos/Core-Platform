@@ -6,10 +6,13 @@ import { paramString } from "../../utils/params";
 import {
   insertEcommerceCategorySchema,
   insertEcommerceCouponSchema,
+  insertEcommerceFulfillmentLocationSchema,
+  insertEcommerceFulfillmentSchema,
   insertEcommerceProductMediaSchema,
   insertEcommerceProductSchema,
   insertEcommerceProductVariantSchema,
   insertEcommerceShipmentSchema,
+  insertEcommerceShippingProviderSchema,
   insertEcommerceShippingRateSchema,
   insertEcommerceShippingZoneSchema,
 } from "@shared/schema";
@@ -21,6 +24,7 @@ import {
 } from "../../services/ecommerce-stripe.service";
 import { createEcommerceRefund } from "../../services/ecommerce-refund.service";
 import { sendEcommerceOrderStatusEmail } from "../../services/ecommerce-email.service";
+import { mergeShippingProviderStatuses } from "../../services/ecommerce-shipping-provider.service";
 import { requireEcommerceEnabled } from "../../middleware/site-features";
 
 const router = Router();
@@ -324,6 +328,51 @@ router.delete("/shipping/rates/:id", asyncHandler(async (req, res) => {
   res.json({ success: true });
 }));
 
+router.get("/shipping/locations", asyncHandler(async (_req, res) => {
+  res.json(await storage.ecommerce.getFulfillmentLocations());
+}));
+
+router.post("/shipping/locations", asyncHandler(async (req, res) => {
+  res.status(201).json(await storage.ecommerce.createFulfillmentLocation(
+    insertEcommerceFulfillmentLocationSchema.parse(req.body),
+  ));
+}));
+
+router.put("/shipping/locations/:id", asyncHandler(async (req, res) => {
+  const location = await storage.ecommerce.updateFulfillmentLocation(
+    paramString(req.params.id),
+    insertEcommerceFulfillmentLocationSchema.partial().parse(req.body),
+  );
+  if (!location) {
+    res.status(404).json({ message: "Fulfillment location not found" });
+    return;
+  }
+  res.json(location);
+}));
+
+router.get("/shipping/providers", asyncHandler(async (_req, res) => {
+  res.json(mergeShippingProviderStatuses(await storage.ecommerce.getShippingProviders()));
+}));
+
+router.put("/shipping/providers/:provider", asyncHandler(async (req, res) => {
+  const provider = paramString(req.params.provider);
+  const data = insertEcommerceShippingProviderSchema.partial().extend({
+    displayName: z.string().min(1),
+    type: z.enum(["direct_carrier", "aggregator", "workflow", "marketplace"]),
+  }).parse({ ...req.body, provider });
+
+  res.json(await storage.ecommerce.upsertShippingProvider({
+    provider,
+    displayName: data.displayName,
+    type: data.type,
+    capabilities: data.capabilities ?? [],
+    settings: data.settings ?? {},
+    testMode: data.testMode ?? true,
+    active: data.active ?? false,
+    connectedAt: data.active ? data.connectedAt ?? new Date() : data.connectedAt ?? null,
+  }));
+}));
+
 router.post("/orders/:orderId/shipments", asyncHandler(async (req, res) => {
   const shipment = await storage.ecommerce.createShipment(insertEcommerceShipmentSchema.parse({
     ...req.body,
@@ -332,6 +381,28 @@ router.post("/orders/:orderId/shipments", asyncHandler(async (req, res) => {
   }));
   await storage.ecommerce.updateOrder(paramString(req.params.orderId), { status: "shipped" });
   res.status(201).json(shipment);
+}));
+
+router.get("/orders/:orderId/fulfillments", asyncHandler(async (req, res) => {
+  res.json(await storage.ecommerce.getFulfillmentsForOrder(paramString(req.params.orderId)));
+}));
+
+router.post("/orders/:orderId/fulfillments", asyncHandler(async (req, res) => {
+  const body = z.object({
+    fulfillment: insertEcommerceFulfillmentSchema.omit({ orderId: true }),
+    items: z.array(z.object({
+      orderItemId: z.string().min(1),
+      quantity: z.number().int().min(1),
+    })).default([]),
+  }).parse(req.body);
+
+  res.status(201).json(await storage.ecommerce.createFulfillment(
+    {
+      ...body.fulfillment,
+      orderId: paramString(req.params.orderId),
+    },
+    body.items,
+  ));
 }));
 
 router.get("/settings/stripe", asyncHandler(async (_req, res) => {

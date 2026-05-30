@@ -5,6 +5,9 @@ import {
   ecommerceCouponRedemptions,
   ecommerceCoupons,
   ecommerceCustomers,
+  ecommerceFulfillmentItems,
+  ecommerceFulfillmentLocations,
+  ecommerceFulfillments,
   ecommerceOrderItems,
   ecommerceOrders,
   ecommerceProcessedWebhookEvents,
@@ -15,11 +18,15 @@ import {
   ecommerceProducts,
   ecommerceRefunds,
   ecommerceShipments,
+  ecommerceShippingProviders,
   ecommerceShippingRates,
   ecommerceShippingZones,
   type EcommerceCategory,
   type EcommerceCoupon,
   type EcommerceCustomer,
+  type EcommerceFulfillment,
+  type EcommerceFulfillmentItem,
+  type EcommerceFulfillmentLocation,
   type EcommerceOrder,
   type EcommerceOrderItem,
   type EcommerceProduct,
@@ -27,11 +34,15 @@ import {
   type EcommerceProductVariant,
   type EcommerceRefund,
   type EcommerceShipment,
+  type EcommerceShippingProvider,
   type EcommerceShippingRate,
   type EcommerceShippingZone,
   type InsertEcommerceCategory,
   type InsertEcommerceCoupon,
   type InsertEcommerceCustomer,
+  type InsertEcommerceFulfillment,
+  type InsertEcommerceFulfillmentItem,
+  type InsertEcommerceFulfillmentLocation,
   type InsertEcommerceOrder,
   type InsertEcommerceOrderItem,
   type InsertEcommerceProduct,
@@ -39,6 +50,7 @@ import {
   type InsertEcommerceProductVariant,
   type InsertEcommerceRefund,
   type InsertEcommerceShipment,
+  type InsertEcommerceShippingProvider,
   type InsertEcommerceShippingRate,
   type InsertEcommerceShippingZone,
 } from "@shared/schema";
@@ -54,6 +66,11 @@ export interface EcommerceOrderWithDetails extends EcommerceOrder {
   items: EcommerceOrderItem[];
   refunds: EcommerceRefund[];
   shipments: EcommerceShipment[];
+  fulfillments: EcommerceFulfillment[];
+}
+
+export interface EcommerceFulfillmentWithItems extends EcommerceFulfillment {
+  items: EcommerceFulfillmentItem[];
 }
 
 export interface EcommerceCouponReport {
@@ -450,7 +467,7 @@ export class EcommerceStorage {
       }
       const orderItems = await tx.select().from(ecommerceOrderItems).where(eq(ecommerceOrderItems.orderId, order.id));
       const [customer] = await tx.select().from(ecommerceCustomers).where(eq(ecommerceCustomers.id, order.customerId));
-      return { ...order, customer: customer ?? null, items: orderItems, refunds: [], shipments: [] };
+      return { ...order, customer: customer ?? null, items: orderItems, refunds: [], shipments: [], fulfillments: [] };
     });
   }
 
@@ -485,13 +502,14 @@ export class EcommerceStorage {
   async getOrderWithDetails(id: string): Promise<EcommerceOrderWithDetails | undefined> {
     const [order] = await db.select().from(ecommerceOrders).where(eq(ecommerceOrders.id, id));
     if (!order) return undefined;
-    const [customer, items, refunds, shipments] = await Promise.all([
+    const [customer, items, refunds, shipments, fulfillments] = await Promise.all([
       this.getCustomer(order.customerId),
       db.select().from(ecommerceOrderItems).where(eq(ecommerceOrderItems.orderId, id)),
       db.select().from(ecommerceRefunds).where(eq(ecommerceRefunds.orderId, id)),
       db.select().from(ecommerceShipments).where(eq(ecommerceShipments.orderId, id)),
+      db.select().from(ecommerceFulfillments).where(eq(ecommerceFulfillments.orderId, id)),
     ]);
-    return { ...order, customer: customer ?? null, items, refunds, shipments };
+    return { ...order, customer: customer ?? null, items, refunds, shipments, fulfillments };
   }
 
   async updateOrder(id: string, data: Partial<InsertEcommerceOrder>): Promise<EcommerceOrder | undefined> {
@@ -626,6 +644,82 @@ export class EcommerceStorage {
       .where(eq(ecommerceShipments.id, id))
       .returning();
     return shipment;
+  }
+
+  async getFulfillmentLocations(): Promise<EcommerceFulfillmentLocation[]> {
+    return db
+      .select()
+      .from(ecommerceFulfillmentLocations)
+      .orderBy(desc(ecommerceFulfillmentLocations.isPrimary), ecommerceFulfillmentLocations.name);
+  }
+
+  async createFulfillmentLocation(data: InsertEcommerceFulfillmentLocation): Promise<EcommerceFulfillmentLocation> {
+    const [location] = await db.insert(ecommerceFulfillmentLocations).values(data).returning();
+    return location;
+  }
+
+  async updateFulfillmentLocation(
+    id: string,
+    data: Partial<InsertEcommerceFulfillmentLocation>,
+  ): Promise<EcommerceFulfillmentLocation | undefined> {
+    const [location] = await db
+      .update(ecommerceFulfillmentLocations)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(ecommerceFulfillmentLocations.id, id))
+      .returning();
+    return location;
+  }
+
+  async getShippingProviders(): Promise<EcommerceShippingProvider[]> {
+    return db.select().from(ecommerceShippingProviders).orderBy(ecommerceShippingProviders.displayName);
+  }
+
+  async upsertShippingProvider(data: InsertEcommerceShippingProvider): Promise<EcommerceShippingProvider> {
+    const [provider] = await db
+      .insert(ecommerceShippingProviders)
+      .values(data)
+      .onConflictDoUpdate({
+        target: ecommerceShippingProviders.provider,
+        set: { ...data, updatedAt: new Date() },
+      })
+      .returning();
+    return provider;
+  }
+
+  async createFulfillment(
+    data: InsertEcommerceFulfillment,
+    items: Array<Omit<InsertEcommerceFulfillmentItem, "fulfillmentId">> = [],
+  ): Promise<EcommerceFulfillmentWithItems> {
+    return db.transaction(async (tx) => {
+      const [fulfillment] = await tx.insert(ecommerceFulfillments).values(data).returning();
+      if (items.length) {
+        await tx.insert(ecommerceFulfillmentItems).values(items.map((item) => ({
+          ...item,
+          fulfillmentId: fulfillment.id,
+        })));
+      }
+      const fulfillmentItems = await tx
+        .select()
+        .from(ecommerceFulfillmentItems)
+        .where(eq(ecommerceFulfillmentItems.fulfillmentId, fulfillment.id));
+      return { ...fulfillment, items: fulfillmentItems };
+    });
+  }
+
+  async getFulfillmentsForOrder(orderId: string): Promise<EcommerceFulfillmentWithItems[]> {
+    const fulfillments = await db
+      .select()
+      .from(ecommerceFulfillments)
+      .where(eq(ecommerceFulfillments.orderId, orderId))
+      .orderBy(desc(ecommerceFulfillments.createdAt));
+
+    return Promise.all(fulfillments.map(async (fulfillment) => ({
+      ...fulfillment,
+      items: await db
+        .select()
+        .from(ecommerceFulfillmentItems)
+        .where(eq(ecommerceFulfillmentItems.fulfillmentId, fulfillment.id)),
+    })));
   }
 
   async markWebhookProcessed(provider: string, eventId: string, eventType: string): Promise<boolean> {
