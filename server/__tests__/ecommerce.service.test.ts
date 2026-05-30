@@ -1022,6 +1022,72 @@ describe("ecommerce services", () => {
     expect(mockStripePaymentIntentCancel).toHaveBeenCalledWith("pi_test");
   });
 
+  it("cancels a PaymentIntent when Stripe omits the client secret", async () => {
+    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+    const customer = { id: "customer-1", email: "buyer@example.com", name: "Buyer" };
+    const order = {
+      id: "order-checkout-1",
+      customerId: customer.id,
+      status: "pending",
+      paymentStatus: "unpaid",
+      totalAmount: 5000,
+      subtotalAmount: 5000,
+      taxAmount: 0,
+      shippingAmount: 0,
+      discountAmount: 0,
+      lookupToken: "lookup-token",
+    } as EcommerceOrder;
+    mockFindOrCreateCustomer.mockResolvedValue(customer);
+    mockCreateOrder.mockResolvedValue(order);
+    mockStripePaymentIntentCreate.mockResolvedValueOnce({ id: "pi_missing_secret", client_secret: null });
+    mockProducts.push({
+      id: "p-digital",
+      name: "Digital Guide",
+      price: 5000,
+      active: true,
+      status: "published",
+      visibility: "online",
+      archivedAt: null,
+      requiresShipping: false,
+      productType: "digital",
+      fulfillmentType: "digital",
+    } as EcommerceProduct);
+    mockVariants.push({
+      id: "v-digital",
+      productId: "p-digital",
+      title: "Default",
+      price: 5000,
+      active: true,
+      status: "active",
+      isDefault: true,
+      trackInventory: false,
+      inventoryQuantity: 0,
+      allowBackorder: false,
+      optionValues: {},
+    } as EcommerceProductVariant);
+
+    await expect(createEcommercePaymentIntent({
+      items: [{ productId: "p-digital", quantity: 1 }],
+      customer: { email: customer.email, name: customer.name },
+      shippingAddress: {
+        name: "Buyer",
+        address: "123 Main St",
+        city: "Detroit",
+        state: "MI",
+        zip: "48201",
+        country: "US",
+      },
+      billingSameAsShipping: true,
+    })).rejects.toThrow(/client secret/);
+
+    expect(mockStripePaymentIntentCancel).toHaveBeenCalledWith("pi_missing_secret");
+    expect(mockUpdateOrder).toHaveBeenCalledWith(order.id, expect.objectContaining({
+      status: "cancelled",
+      paymentStatus: "failed",
+      notes: expect.stringContaining("client secret"),
+    }));
+  });
+
   it("calculates manual tax server-side after discounts and optional shipping tax", async () => {
     const { priceCart } = await import("../services/ecommerce-pricing.service");
     mockGetDecryptedCategory.mockResolvedValue({

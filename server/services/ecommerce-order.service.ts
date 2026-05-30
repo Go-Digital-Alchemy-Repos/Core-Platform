@@ -199,6 +199,17 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
       throw new Error("Stripe did not return a client secret for this PaymentIntent");
     }
   } catch (err) {
+    if (intent?.id && stripe) {
+      try {
+        await stripe.paymentIntents.cancel(intent.id);
+      } catch (cancelErr) {
+        logger.stripe.warn("Failed to cancel ecommerce PaymentIntent without a client secret", {
+          orderId: order.id,
+          paymentIntentId: intent.id,
+          error: cancelErr instanceof Error ? cancelErr.message : String(cancelErr),
+        });
+      }
+    }
     try {
       await storage.ecommerce.updateOrder(order.id, {
         status: "cancelled",
