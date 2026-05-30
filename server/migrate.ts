@@ -311,12 +311,20 @@ async function runSqlMigrationFile(migrationsFolder: string, filename: string) {
 
 async function ensureEcommerceTables(migrationsFolder: string) {
   const hasEcommerceTables = await tableExists("ecommerce_categories");
-  if (hasEcommerceTables) return;
 
-  logger.app.info("Applying ecommerce migrations for legacy database without Drizzle journal");
-  await runSqlMigrationFile(migrationsFolder, "0024_ecommerce.sql");
-  await runSqlMigrationFile(migrationsFolder, "0025_ecommerce_indexes.sql");
-  logger.app.info("Ecommerce migrations applied successfully");
+  if (!hasEcommerceTables) {
+    logger.app.info("Applying ecommerce base migrations for legacy database without Drizzle journal");
+    await runSqlMigrationFile(migrationsFolder, "0024_ecommerce.sql");
+    await runSqlMigrationFile(migrationsFolder, "0025_ecommerce_indexes.sql");
+  }
+
+  logger.app.info("Reconciling ecommerce schema for legacy database without Drizzle journal");
+  await runSqlMigrationFile(migrationsFolder, "0026_ecommerce_coupons.sql");
+  await runSqlMigrationFile(migrationsFolder, "0027_ecommerce_catalog_foundation.sql");
+  await runSqlMigrationFile(migrationsFolder, "0028_ecommerce_fulfillment_foundation.sql");
+  await runSqlMigrationFile(migrationsFolder, "0029_ecommerce_order_item_snapshots.sql");
+  await runSqlMigrationFile(migrationsFolder, "0030_ecommerce_operational_indexes.sql");
+  logger.app.info("Ecommerce schema reconciled successfully");
 }
 
 export async function runMigrations() {
