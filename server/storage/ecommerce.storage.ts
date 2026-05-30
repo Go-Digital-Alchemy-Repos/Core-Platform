@@ -565,6 +565,10 @@ export class EcommerceStorage {
       .where(and(
         eq(ecommerceOrders.id, id),
         or(
+          isNull(ecommerceOrders.stripePaymentIntentId),
+          eq(ecommerceOrders.stripePaymentIntentId, paymentIntentId),
+        ),
+        or(
           ne(ecommerceOrders.status, "paid"),
           ne(ecommerceOrders.paymentStatus, "paid"),
         ),

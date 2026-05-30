@@ -1228,6 +1228,29 @@ describe("ecommerce services", () => {
     expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
   });
 
+  it("rejects paid-order finalization if a different PaymentIntent wins the transition race", async () => {
+    const { markEcommerceOrderPaid } = await import("../services/ecommerce-order.service");
+    const pendingOrder = {
+      id: "order-1",
+      status: "pending",
+      paymentStatus: "unpaid",
+      stripePaymentIntentId: null,
+    } as EcommerceOrder;
+    const mismatchedOrder = {
+      ...pendingOrder,
+      stripePaymentIntentId: "pi_other",
+    } as EcommerceOrder;
+    mockGetOrder.mockResolvedValueOnce(pendingOrder).mockResolvedValueOnce(mismatchedOrder);
+    mockMarkOrderPaidIfUnpaid.mockResolvedValue(undefined);
+
+    await expect(markEcommerceOrderPaid("order-1", "pi_123")).rejects.toThrow(/PaymentIntent/);
+
+    expect(mockMarkOrderPaidIfUnpaid).toHaveBeenCalledWith("order-1", "pi_123");
+    expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+    expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
+  });
+
   it("finalizes inventory and payment status when an admin marks an order paid", async () => {
     const { updateAdminEcommerceOrder } = await import("../services/ecommerce-order.service");
     const pendingOrder = {

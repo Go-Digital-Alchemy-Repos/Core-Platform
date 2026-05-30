@@ -356,6 +356,12 @@ export async function markEcommerceOrderPaid(orderId: string, paymentIntentId: s
   const transitioned = wasAlreadyPaid
     ? undefined
     : await storage.ecommerce.markOrderPaidIfUnpaid(orderId, paymentIntentId);
+  if (!wasAlreadyPaid && !transitioned) {
+    const current = await storage.ecommerce.getOrder(orderId);
+    if (current?.stripePaymentIntentId && current.stripePaymentIntentId !== paymentIntentId) {
+      throw new Error("PaymentIntent does not match this order");
+    }
+  }
   const shouldSendPaidEffects = Boolean(transitioned);
 
   if (shouldSendPaidEffects) await storage.ecommerce.recordCouponRedemptionForOrder(orderId);
