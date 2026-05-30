@@ -149,6 +149,32 @@ export const apiLimiter = rateLimit({
   skip: () => isDev,
 });
 
+export const ecommerceCheckoutRateLimitPolicy = {
+  windowMs: 10 * 60 * 1000,
+  max: 20,
+  message: { message: "Too many checkout attempts. Please try again shortly." },
+};
+
+export const ecommerceOrderLookupRateLimitPolicy = {
+  windowMs: 10 * 60 * 1000,
+  max: 30,
+  message: { message: "Too many order lookup attempts. Please try again shortly." },
+};
+
+export const ecommerceCheckoutLimiter = rateLimit({
+  ...ecommerceCheckoutRateLimitPolicy,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => isDev,
+});
+
+export const ecommerceOrderLookupLimiter = rateLimit({
+  ...ecommerceOrderLookupRateLimitPolicy,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => isDev,
+});
+
 function normalizeOrigin(raw: string): string | null {
   try {
     return new URL(raw).origin;

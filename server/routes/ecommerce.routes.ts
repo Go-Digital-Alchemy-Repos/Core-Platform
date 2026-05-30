@@ -13,6 +13,7 @@ import {
 import { createEcommercePaymentIntent } from "../services/ecommerce-order.service";
 import { getEcommerceStripePublishableKey, getEcommerceStripeMode } from "../services/ecommerce-stripe.service";
 import { requireEcommerceEnabled } from "../middleware/site-features";
+import { ecommerceCheckoutLimiter, ecommerceOrderLookupLimiter } from "../middleware/security";
 
 const router = Router();
 
@@ -105,6 +106,7 @@ router.post(
 
 router.post(
   "/checkout/payment-intent",
+  ecommerceCheckoutLimiter,
   asyncHandler(async (req, res) => {
     res.status(201).json(await createEcommercePaymentIntent(req.body, { ip: req.ip }));
   }),
@@ -112,6 +114,7 @@ router.post(
 
 router.post(
   "/orders/status",
+  ecommerceOrderLookupLimiter,
   asyncHandler(async (req, res) => {
     const data = z.object({
       orderId: z.string().min(1),
