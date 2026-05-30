@@ -50,7 +50,13 @@ export function buildProductFeedItems(
   const siteUrl = (seo?.siteUrl || "").replace(/\/$/, "");
   const brand = seo?.organizationName || seo?.siteName || "Core Platform";
   return products
-    .filter((product) => product.active && product.status === "published" && product.robotsIndex !== false)
+    .filter((product) =>
+      !product.archivedAt &&
+      product.active &&
+      product.status === "published" &&
+      product.visibility === "online" &&
+      product.robotsIndex !== false,
+    )
     .map((product) => {
       const link = absoluteUrl(`/products/${product.urlSlug}`, siteUrl) || `/products/${product.urlSlug}`;
       return {

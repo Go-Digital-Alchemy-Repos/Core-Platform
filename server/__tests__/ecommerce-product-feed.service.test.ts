@@ -22,6 +22,7 @@ const baseProduct = {
   status: "published",
   sku: "WORKBOOK-1",
   productType: "Guides > Workbooks",
+  visibility: "online",
   tags: [],
   features: [],
   included: [],
@@ -49,6 +50,11 @@ describe("ecommerce product feed", () => {
   it("excludes noindex products from public product feeds", () => {
     const items = buildProductFeedItems([{ ...baseProduct, robotsIndex: false }], seo);
     expect(items).toHaveLength(0);
+  });
+
+  it("excludes non-storefront and archived products from public product feeds", () => {
+    expect(buildProductFeedItems([{ ...baseProduct, visibility: "hidden" }], seo)).toHaveLength(0);
+    expect(buildProductFeedItems([{ ...baseProduct, archivedAt: new Date() }], seo)).toHaveLength(0);
   });
 
   it("renders escaped Google Merchant RSS XML", () => {

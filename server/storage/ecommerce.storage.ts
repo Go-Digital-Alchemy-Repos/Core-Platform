@@ -95,7 +95,11 @@ export class EcommerceStorage {
     const clauses = [];
     if (!options.includeArchived) clauses.push(isNull(ecommerceProducts.archivedAt));
     if (options.publicOnly) {
-      clauses.push(eq(ecommerceProducts.active, true), eq(ecommerceProducts.status, "published"));
+      clauses.push(
+        eq(ecommerceProducts.active, true),
+        eq(ecommerceProducts.status, "published"),
+        eq(ecommerceProducts.visibility, "online"),
+      );
     }
     if (options.search) clauses.push(ilike(ecommerceProducts.name, `%${options.search}%`));
     const query = db.select().from(ecommerceProducts).orderBy(desc(ecommerceProducts.createdAt));

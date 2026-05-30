@@ -198,7 +198,7 @@ describe("ecommerce services", () => {
     });
   });
 
-  it("rejects archived products during server-side cart pricing", async () => {
+  it("rejects archived and hidden products during server-side cart pricing", async () => {
     const { priceCart } = await import("../services/ecommerce-pricing.service");
     mockProducts.push({
       id: "p1",
@@ -261,6 +261,9 @@ describe("ecommerce services", () => {
       updatedAt: new Date(),
     });
 
+    await expect(priceCart({ items: [{ productId: "p1", quantity: 1 }] })).rejects.toThrow(/unavailable/);
+    mockProducts[0].archivedAt = null;
+    mockProducts[0].visibility = "hidden";
     await expect(priceCart({ items: [{ productId: "p1", quantity: 1 }] })).rejects.toThrow(/unavailable/);
   });
 

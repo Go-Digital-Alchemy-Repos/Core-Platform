@@ -40,7 +40,7 @@ router.get(
   "/products/:slug",
   asyncHandler(async (req, res) => {
     const product = await storage.ecommerce.getProductBySlug(paramString(req.params.slug));
-    if (!product || product.archivedAt || !product.active || product.status !== "published") {
+    if (!product || product.archivedAt || !product.active || product.status !== "published" || product.visibility !== "online") {
       res.status(404).json({ message: "Product not found" });
       return;
     }
