@@ -48,10 +48,12 @@ import {
   saveEcommerceTaxSettings,
 } from "../../services/ecommerce-tax.service";
 import { requireEcommerceEnabled } from "../../middleware/site-features";
+import { noStorePrivateResponse } from "../../middleware/security";
 
 const router = Router();
 
 router.use(requireEcommerceEnabled);
+router.use(noStorePrivateResponse);
 
 const productPayloadSchema = insertEcommerceProductSchema.extend({
   categoryIds: z.array(z.string()).default([]),
