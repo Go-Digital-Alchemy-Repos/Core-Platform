@@ -1334,11 +1334,41 @@ function OrdersTab() {
     locationId: "",
     serviceLevel: "",
   });
+  const [statusForm, setStatusForm] = useState({
+    status: "",
+    notes: "",
+  });
   const selectedOrder = orders.find((order) => order.id === selectedOrderId) ?? orders[0] ?? null;
 
   useEffect(() => {
     if (!selectedOrderId && orders[0]?.id) setSelectedOrderId(orders[0].id);
   }, [orders, selectedOrderId]);
+
+  useEffect(() => {
+    if (selectedOrder) {
+      setStatusForm({ status: selectedOrder.status, notes: "" });
+    }
+  }, [selectedOrder?.id]);
+
+  const statusMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedOrder) throw new Error("Select an order first.");
+      return apiRequest("PUT", `/api/admin/ecommerce/orders/${selectedOrder.id}`, {
+        status: statusForm.status,
+        notes: statusForm.notes.trim() || undefined,
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/orders"] });
+      toast({ title: "Order updated" });
+      setStatusForm((current) => ({ ...current, notes: "" }));
+    },
+    onError: (error) => toast({
+      title: "Order could not be updated",
+      description: error instanceof Error ? error.message : "Please review the order status.",
+      variant: "destructive",
+    }),
+  });
 
   const shipmentMutation = useMutation({
     mutationFn: async () => {
@@ -1378,7 +1408,7 @@ function OrdersTab() {
   });
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
+    <div className="grid gap-6 xl:grid-cols-[1fr_460px]">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><ShoppingBag className="h-5 w-5" /> Orders</CardTitle>
@@ -1420,10 +1450,10 @@ function OrdersTab() {
 
       <Card className="h-fit">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5" /> Fulfillment</CardTitle>
-          <CardDescription>{selectedOrder ? `Order ${selectedOrder.id}` : "Select an order to fulfill."}</CardDescription>
+          <CardTitle className="flex items-center gap-2"><ClipboardList className="h-5 w-5" /> Order detail</CardTitle>
+          <CardDescription>{selectedOrder ? `Order ${selectedOrder.id}` : "Select an order to manage."}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-6">
           {selectedOrder ? (
             <>
               <div className="space-y-3">
@@ -1439,6 +1469,12 @@ function OrdersTab() {
                     <span>{formatMoney(selectedOrder.totalAmount)}</span>
                   </div>
                 </div>
+                <div className="grid gap-2 rounded-lg border p-3 text-sm">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatMoney(selectedOrder.subtotalAmount ?? 0)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Discount</span><span>-{formatMoney(selectedOrder.discountAmount ?? 0)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{formatMoney(selectedOrder.shippingAmount ?? 0)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>{formatMoney(selectedOrder.taxAmount ?? 0)}</span></div>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {(selectedOrder.shipments ?? []).map((shipment) => (
                     <Badge key={shipment.id} variant="outline">
@@ -1452,12 +1488,50 @@ function OrdersTab() {
               </div>
 
               <form
-                className="grid gap-4"
+                className="grid gap-4 rounded-lg border p-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  statusMutation.mutate();
+                }}
+              >
+                <div>
+                  <h3 className="text-sm font-semibold">Status</h3>
+                  <p className="text-xs text-muted-foreground">Changing status sends the customer an order status email.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Order status</Label>
+                  <Select value={statusForm.status || selectedOrder.status} onValueChange={(status) => setStatusForm((current) => ({ ...current, status }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="shipped">Shipped</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Internal note</Label>
+                  <Textarea value={statusForm.notes} onChange={(event) => setStatusForm((current) => ({ ...current, notes: event.target.value }))} rows={3} />
+                </div>
+                <Button type="submit" variant="outline" disabled={statusMutation.isPending || !statusForm.status}>
+                  <Save className="mr-2 h-4 w-4" />
+                  Update order
+                </Button>
+              </form>
+
+              <form
+                className="grid gap-4 rounded-lg border p-4"
                 onSubmit={(event) => {
                   event.preventDefault();
                   shipmentMutation.mutate();
                 }}
               >
+                <div>
+                  <h3 className="text-sm font-semibold">Fulfillment</h3>
+                  <p className="text-xs text-muted-foreground">Creates a shipment, fulfillment record, and customer shipping email.</p>
+                </div>
                 <div className="space-y-2">
                   <Label>Fulfillment location</Label>
                   <Select value={shipmentForm.locationId || "__none"} onValueChange={(locationId) => setShipmentForm((current) => ({ ...current, locationId: locationId === "__none" ? "" : locationId }))}>
