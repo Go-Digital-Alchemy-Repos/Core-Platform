@@ -54,6 +54,7 @@ export function securityHeaders(): RequestHandler {
           "https://*.tile.openstreetmap.org",
           "https://unpkg.com",
           "https://*.basemaps.cartocdn.com",
+          "https://images.unsplash.com",
           "https://www.facebook.com",
           "https://analytics.tiktok.com",
           "https://t.co",
