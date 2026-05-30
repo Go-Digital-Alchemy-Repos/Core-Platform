@@ -1010,7 +1010,7 @@ function EventsContent() {
                         className="text-xs sm:text-sm"
                         data-testid="tab-details"
                       >
-                        <CalendarDays className="h-3.5 w-3.5 mr-1.5 hidden sm:inline-block" />
+                        <CalendarDays className="h-3.5 w-3.5 mr-1.5 hidden text-purple-600 sm:inline-block" />
                         Details
                       </TabsTrigger>
                       <TabsTrigger
@@ -1018,7 +1018,7 @@ function EventsContent() {
                         className="text-xs sm:text-sm"
                         data-testid="tab-registrations"
                       >
-                        <Users className="h-3.5 w-3.5 mr-1.5 hidden sm:inline-block" />
+                        <Users className="h-3.5 w-3.5 mr-1.5 hidden text-blue-600 sm:inline-block" />
                         Registrants
                       </TabsTrigger>
                       <TabsTrigger
@@ -1026,7 +1026,7 @@ function EventsContent() {
                         className="text-xs sm:text-sm"
                         data-testid="tab-video-archive"
                       >
-                        <Video className="h-3.5 w-3.5 mr-1.5 hidden sm:inline-block" />
+                        <Video className="h-3.5 w-3.5 mr-1.5 hidden text-rose-600 sm:inline-block" />
                         Video Archive
                       </TabsTrigger>
                       <TabsTrigger
@@ -1034,7 +1034,7 @@ function EventsContent() {
                         className="text-xs sm:text-sm"
                         data-testid="tab-recurring"
                       >
-                        <Repeat className="h-3.5 w-3.5 mr-1.5 hidden sm:inline-block" />
+                        <Repeat className="h-3.5 w-3.5 mr-1.5 hidden text-emerald-600 sm:inline-block" />
                         Recurring
                       </TabsTrigger>
                     </TabsList>

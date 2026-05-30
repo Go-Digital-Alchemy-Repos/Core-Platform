@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarClock, ClipboardList, Search, UserRound } from "lucide-react";
+import { Building2, CalendarClock, ClipboardList, CreditCard, Database, Mail, MessageSquare, Search, UserRound } from "lucide-react";
 
 type ClientDetail = CrmClient & {
   sourceLead?: CrmLead;
@@ -172,13 +172,34 @@ function ClientDetailSheet({ clientId, onClose }: { clientId: string | null; onC
             <>
               <Tabs defaultValue="overview" className="space-y-4">
                 <TabsList className="flex h-auto flex-wrap justify-start">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="contact">Contact</TabsTrigger>
-                  <TabsTrigger value="company">Company</TabsTrigger>
-                  <TabsTrigger value="billing">Billing/Admin</TabsTrigger>
-                  <TabsTrigger value="notes">Notes</TabsTrigger>
-                  <TabsTrigger value="tasks">Tasks</TabsTrigger>
-                  <TabsTrigger value="data">Data</TabsTrigger>
+                  <TabsTrigger value="overview">
+                    <UserRound className="mr-1.5 h-4 w-4 text-blue-600" />
+                    Overview
+                  </TabsTrigger>
+                  <TabsTrigger value="contact">
+                    <Mail className="mr-1.5 h-4 w-4 text-rose-600" />
+                    Contact
+                  </TabsTrigger>
+                  <TabsTrigger value="company">
+                    <Building2 className="mr-1.5 h-4 w-4 text-indigo-600" />
+                    Company
+                  </TabsTrigger>
+                  <TabsTrigger value="billing">
+                    <CreditCard className="mr-1.5 h-4 w-4 text-amber-600" />
+                    Billing/Admin
+                  </TabsTrigger>
+                  <TabsTrigger value="notes">
+                    <MessageSquare className="mr-1.5 h-4 w-4 text-emerald-600" />
+                    Notes
+                  </TabsTrigger>
+                  <TabsTrigger value="tasks">
+                    <ClipboardList className="mr-1.5 h-4 w-4 text-orange-600" />
+                    Tasks
+                  </TabsTrigger>
+                  <TabsTrigger value="data">
+                    <Database className="mr-1.5 h-4 w-4 text-cyan-600" />
+                    Data
+                  </TabsTrigger>
                 </TabsList>
                 <TabsContent value="overview" className="space-y-4">
                   <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2">

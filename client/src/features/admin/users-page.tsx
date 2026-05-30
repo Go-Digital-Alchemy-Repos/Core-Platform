@@ -58,6 +58,7 @@ import {
   PanelsTopLeft,
   Palette,
   FolderKanban,
+  UserRound,
 } from "lucide-react";
 
 type SafeUser = Omit<User, "password"> & { country?: string | null };
@@ -751,9 +752,11 @@ function UserDetailSheet({
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="w-full mb-4">
                 <TabsTrigger value="profile" className="flex-1" data-testid="tab-detail-profile">
+                  <UserRound className="mr-1.5 h-4 w-4 text-blue-600" />
                   Profile
                 </TabsTrigger>
                 <TabsTrigger value="security" className="flex-1" data-testid="tab-detail-security">
+                  <ShieldCheck className="mr-1.5 h-4 w-4 text-emerald-600" />
                   Access &amp; Security
                 </TabsTrigger>
               </TabsList>

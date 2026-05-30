@@ -50,7 +50,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarClock, ClipboardList, Handshake, Plus, Search, UserRound } from "lucide-react";
+import { CalendarClock, ClipboardList, Database, Handshake, MessageSquare, Plus, Search, UserRound } from "lucide-react";
 
 type LeadDetail = CrmLead & { notes: CrmLeadNote[]; tasks: CrmLeadTask[]; client?: CrmClient };
 
@@ -293,9 +293,18 @@ function LeadDetailSheet({ leadId, onClose }: { leadId: string | null; onClose: 
 
               <Tabs defaultValue="notes">
                 <TabsList>
-                  <TabsTrigger value="notes">Notes</TabsTrigger>
-                  <TabsTrigger value="tasks">Tasks</TabsTrigger>
-                  <TabsTrigger value="data">Data</TabsTrigger>
+                  <TabsTrigger value="notes">
+                    <MessageSquare className="mr-1.5 h-4 w-4 text-emerald-600" />
+                    Notes
+                  </TabsTrigger>
+                  <TabsTrigger value="tasks">
+                    <ClipboardList className="mr-1.5 h-4 w-4 text-orange-600" />
+                    Tasks
+                  </TabsTrigger>
+                  <TabsTrigger value="data">
+                    <Database className="mr-1.5 h-4 w-4 text-cyan-600" />
+                    Data
+                  </TabsTrigger>
                 </TabsList>
                 <TabsContent value="notes" className="space-y-3">
                   <Textarea rows={3} placeholder="Add an internal note..." value={note} onChange={(event) => setNote(event.target.value)} />

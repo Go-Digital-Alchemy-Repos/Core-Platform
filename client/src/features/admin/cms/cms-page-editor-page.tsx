@@ -56,6 +56,7 @@ import {
   ExternalLink,
   AlertTriangle,
   Sparkles,
+  Settings,
 } from "lucide-react";
 import {
   Popover,
@@ -724,18 +725,19 @@ export default function CmsPageEditorPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="builder" data-testid="tab-builder">
-              <Layers className="h-4 w-4 mr-1.5" />
+              <Layers className="h-4 w-4 mr-1.5 text-indigo-600" />
               Builder
             </TabsTrigger>
             <TabsTrigger value="settings" data-testid="tab-settings">
+              <Settings className="h-4 w-4 mr-1.5 text-slate-500" />
               Page Settings
             </TabsTrigger>
             <TabsTrigger value="seo" data-testid="tab-seo">
-              <Globe className="h-4 w-4 mr-1.5" />
+              <Globe className="h-4 w-4 mr-1.5 text-blue-600" />
               SEO
             </TabsTrigger>
             <TabsTrigger value="quality" data-testid="tab-quality">
-              <Sparkles className="h-4 w-4 mr-1.5" />
+              <Sparkles className="h-4 w-4 mr-1.5 text-amber-600" />
               Quality
             </TabsTrigger>
           </TabsList>

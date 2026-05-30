@@ -69,6 +69,7 @@ import {
   Megaphone,
   Store,
   Truck,
+  Settings,
 } from "lucide-react";
 import {
   BRANDING_FONT_OPTIONS,
@@ -1880,12 +1881,15 @@ export function BrandingTab({
       <Tabs defaultValue={initialSubtab} className="space-y-6">
         <TabsList className="grid w-full max-w-lg grid-cols-3" data-testid="tabs-branding-subtabs">
           <TabsTrigger value="branding" data-testid="tab-branding-subtab-branding">
+            <ImageIcon className="mr-1.5 h-4 w-4 text-teal-600" />
             Branding
           </TabsTrigger>
           <TabsTrigger value="colors" data-testid="tab-branding-subtab-colors">
+            <Palette className="mr-1.5 h-4 w-4 text-violet-600" />
             Color Palette
           </TabsTrigger>
           <TabsTrigger value="typography" data-testid="tab-branding-subtab-typography">
+            <Type className="mr-1.5 h-4 w-4 text-indigo-600" />
             Typography
           </TabsTrigger>
         </TabsList>
@@ -2626,7 +2630,7 @@ function TemplateEditor({
                         className="rounded-full px-3 text-xs"
                         data-testid="tab-email-visual"
                       >
-                        <Eye className="mr-1.5 h-3.5 w-3.5" />
+                        <Eye className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
                         Visual
                       </TabsTrigger>
                       <TabsTrigger
@@ -2634,7 +2638,7 @@ function TemplateEditor({
                         className="rounded-full px-3 text-xs"
                         data-testid="tab-email-html"
                       >
-                        <Code2 className="mr-1.5 h-3.5 w-3.5" />
+                        <Code2 className="mr-1.5 h-3.5 w-3.5 text-violet-600" />
                         HTML
                       </TabsTrigger>
                     </TabsList>
@@ -3317,15 +3321,19 @@ export default function AdminSettingsPage() {
         >
           <TabsList data-testid="tabs-settings">
             <TabsTrigger value="integrations" data-testid="tab-integrations">
+              <Plug className="mr-1.5 h-4 w-4 text-blue-600" />
               Integrations
             </TabsTrigger>
             <TabsTrigger value="head-tags" data-testid="tab-head-tag-additions">
+              <Code2 className="mr-1.5 h-4 w-4 text-violet-600" />
               Head Tag Additions
             </TabsTrigger>
             <TabsTrigger value="system" data-testid="tab-system-configuration">
+              <Settings className="mr-1.5 h-4 w-4 text-slate-500" />
               System Configuration
             </TabsTrigger>
             <TabsTrigger value="email-templates" data-testid="tab-templates">
+              <Mail className="mr-1.5 h-4 w-4 text-rose-600" />
               Email Templates
             </TabsTrigger>
           </TabsList>
