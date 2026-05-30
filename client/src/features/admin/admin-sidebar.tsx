@@ -328,7 +328,7 @@ function buildNavGroups(
               },
               {
                 title: "Settings",
-                href: "/admin/settings",
+                href: "/admin/settings/integrations",
                 icon: Settings,
                 iconColor: "text-slate-500",
               },

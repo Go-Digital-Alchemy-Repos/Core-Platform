@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -111,6 +112,18 @@ type BrandingColorSettingKey =
   | "text_tertiary_foreground_color";
 
 type SystemConfigurationSettingKey = "enable_directory" | "enable_blog" | "enable_events" | "enable_crm" | "enable_ecommerce";
+type SettingsTab = "integrations" | "head-tags" | "system" | "email-templates";
+
+const SETTINGS_TABS = new Set<SettingsTab>([
+  "integrations",
+  "head-tags",
+  "system",
+  "email-templates",
+]);
+
+function normalizeSettingsTab(tab: string | undefined): SettingsTab {
+  return SETTINGS_TABS.has(tab as SettingsTab) ? (tab as SettingsTab) : "integrations";
+}
 
 const BRANDING_CORE_COLOR_FIELDS: Array<{
   key: BrandingColorSettingKey;
@@ -3021,9 +3034,20 @@ export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean
 }
 
 export default function AdminSettingsPage() {
+  const [, setLocation] = useLocation();
+  const [, params] = useRoute("/admin/settings/:tab");
+  const activeTab = normalizeSettingsTab(params?.tab);
+  const shouldLoadSettings = activeTab !== "email-templates";
   const { data: settings, isLoading } = useQuery<SettingsData>({
     queryKey: ["/api/admin/settings"],
+    enabled: shouldLoadSettings,
   });
+
+  useEffect(() => {
+    if (params?.tab && !SETTINGS_TABS.has(params.tab as SettingsTab)) {
+      setLocation("/admin/settings/integrations");
+    }
+  }, [params?.tab, setLocation]);
 
   return (
     <AdminSidebar>
@@ -3035,7 +3059,10 @@ export default function AdminSettingsPage() {
           Manage integrations, head markup, system configuration, and system email templates.
         </p>
 
-        <Tabs defaultValue="integrations">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setLocation(`/admin/settings/${value}`)}
+        >
           <TabsList data-testid="tabs-settings">
             <TabsTrigger value="integrations" data-testid="tab-integrations">
               Integrations
@@ -3043,10 +3070,10 @@ export default function AdminSettingsPage() {
             <TabsTrigger value="head-tags" data-testid="tab-head-tag-additions">
               Head Tag Additions
             </TabsTrigger>
-            <TabsTrigger value="configuration" data-testid="tab-system-configuration">
+            <TabsTrigger value="system" data-testid="tab-system-configuration">
               System Configuration
             </TabsTrigger>
-            <TabsTrigger value="templates" data-testid="tab-templates">
+            <TabsTrigger value="email-templates" data-testid="tab-templates">
               Email Templates
             </TabsTrigger>
           </TabsList>
@@ -3061,7 +3088,7 @@ export default function AdminSettingsPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="templates" className="mt-6">
+          <TabsContent value="email-templates" className="mt-6">
             <EmailTemplatesTab />
           </TabsContent>
 
@@ -3075,7 +3102,7 @@ export default function AdminSettingsPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="configuration" className="mt-6">
+          <TabsContent value="system" className="mt-6">
             {isLoading ? (
               <div className="flex items-center justify-center p-12">
                 <Loader2 className="h-6 w-6 animate-spin" />
