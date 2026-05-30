@@ -26,9 +26,12 @@ export async function getEcommerceStripeMode(): Promise<EcommerceStripeMode> {
 export async function getEcommerceStripePublishableKey(): Promise<string> {
   const settings = await getEcommerceStripeSettings();
   const mode = settings.active_mode === "live" ? "live" : "test";
-  return mode === "live"
+  const key = mode === "live"
     ? settings.live_publishable_key || ""
     : settings.test_publishable_key || "";
+  const error = validateStripeKeyMode(mode, key);
+  if (error) throw new Error(error);
+  return key;
 }
 
 export async function getEcommerceStripeSecretKey(): Promise<string> {
@@ -75,6 +78,18 @@ export function validateStripeKeyMode(mode: EcommerceStripeMode, publishableKey?
     if (secretKey && isTestKey(secretKey)) return "Live mode cannot use a test secret key";
   }
   return null;
+}
+
+export function validateStripeSettingsKeyModes(input: {
+  testPublishableKey?: string;
+  testSecretKey?: string;
+  livePublishableKey?: string;
+  liveSecretKey?: string;
+}): string | null {
+  return (
+    validateStripeKeyMode("test", input.testPublishableKey, input.testSecretKey) ??
+    validateStripeKeyMode("live", input.livePublishableKey, input.liveSecretKey)
+  );
 }
 
 export async function testEcommerceStripeConnection(): Promise<{ success: boolean; message: string }> {

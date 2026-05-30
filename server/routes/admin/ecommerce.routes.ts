@@ -20,6 +20,7 @@ import {
   getMaskedEcommerceStripeStatus,
   testEcommerceStripeConnection,
   validateStripeKeyMode,
+  validateStripeSettingsKeyModes,
   type EcommerceStripeMode,
 } from "../../services/ecommerce-stripe.service";
 import { createEcommerceRefund } from "../../services/ecommerce-refund.service";
@@ -500,8 +501,9 @@ router.put("/settings/stripe", asyncHandler(async (req, res) => {
     data.activeMode === "live" ? data.livePublishableKey : data.testPublishableKey,
     data.activeMode === "live" ? data.liveSecretKey : data.testSecretKey,
   );
-  if (activeError) {
-    res.status(400).json({ message: activeError });
+  const keyModeError = activeError ?? validateStripeSettingsKeyModes(data);
+  if (keyModeError) {
+    res.status(400).json({ message: keyModeError });
     return;
   }
 

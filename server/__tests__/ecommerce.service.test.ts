@@ -812,10 +812,28 @@ describe("ecommerce services", () => {
   });
 
   it("validates Stripe key mode separation", async () => {
-    const { validateStripeKeyMode } = await import("../services/ecommerce-stripe.service");
+    const {
+      getEcommerceStripePublishableKey,
+      validateStripeKeyMode,
+      validateStripeSettingsKeyModes,
+    } = await import("../services/ecommerce-stripe.service");
     expect(validateStripeKeyMode("test", "pk_test_123", "sk_test_123")).toBeNull();
     expect(validateStripeKeyMode("test", "pk_live_123", "sk_test_123")).toMatch(/Test mode/);
     expect(validateStripeKeyMode("live", "pk_live_123", "sk_test_123")).toMatch(/Live mode/);
+    expect(validateStripeSettingsKeyModes({
+      testPublishableKey: "pk_live_123",
+      livePublishableKey: "pk_live_456",
+    })).toMatch(/Test mode/);
+    expect(validateStripeSettingsKeyModes({
+      testPublishableKey: "pk_test_123",
+      liveSecretKey: "sk_test_456",
+    })).toMatch(/Live mode/);
+
+    mockGetDecryptedCategory.mockResolvedValue({
+      active_mode: "live",
+      live_publishable_key: "pk_test_wrong",
+    });
+    await expect(getEcommerceStripePublishableKey()).rejects.toThrow(/Live mode/);
   });
 
   it("computes pending and processed refunds against refundable balance", async () => {
