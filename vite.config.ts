@@ -13,7 +13,7 @@ function preambleFixPlugin(): Plugin {
       if (id.includes("node_modules") || !code.includes("can't detect preamble")) return;
       return code.replace(
         /if\s*\(!window\.\$RefreshReg\$\)\s*\{[^}]*can't detect preamble[^}]*\}/s,
-        `if (!window.$RefreshReg$) { window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (t) => t; }`
+        `if (!window.$RefreshReg$) { window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (t) => t; }`,
       );
     },
   };
@@ -25,15 +25,9 @@ export default defineConfig({
     preambleFixPlugin(),
     ...(isReplit && process.env.NODE_ENV !== "production"
       ? [
-          await import("@replit/vite-plugin-runtime-error-modal").then((m) =>
-            m.default(),
-          ),
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
-          await import("@replit/vite-plugin-dev-banner").then((m) =>
-            m.devBanner(),
-          ),
+          await import("@replit/vite-plugin-runtime-error-modal").then((m) => m.default()),
+          await import("@replit/vite-plugin-cartographer").then((m) => m.cartographer()),
+          await import("@replit/vite-plugin-dev-banner").then((m) => m.devBanner()),
         ]
       : []),
   ],
@@ -71,6 +65,14 @@ export default defineConfig({
 
           if (id.includes("/embla-carousel")) {
             return "carousel";
+          }
+
+          if (id.includes("/@stripe/") || id.includes("/stripe-js/")) {
+            return "stripe";
+          }
+
+          if (id.includes("/leaflet/") || id.includes("/react-leaflet/")) {
+            return "maps";
           }
 
           return "vendor";

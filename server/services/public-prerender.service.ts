@@ -13,7 +13,6 @@ interface PublicHtmlSnapshot {
   jsonLd?: Array<Record<string, unknown>>;
 }
 
-const DEFAULT_TITLE = "Core Platform - Find Your Core Platform-Informed Therapist";
 const DEFAULT_DESCRIPTION =
   "Core Platform connects people with culturally informed care, featured articles, and upcoming events.";
 
@@ -41,78 +40,64 @@ const FALLBACK_STATIC_PAGES: Record<
     title: "Home",
     description:
       "Explore Core Platform-informed mental health support, featured articles, and upcoming events from Core Platform.",
-    body:
-      "Core Platform connects people with culturally informed care, featured articles, and upcoming events.",
+    body: "Core Platform connects people with culturally informed care, featured articles, and upcoming events.",
   },
   "/about": {
     title: "About",
     description:
       "Learn what it means for a provider to be vetted and how Core Platform supports cross-cultural mental health care.",
-    body:
-      "Learn what it means for a provider to be vetted and how Core Platform supports cross-cultural mental health care.",
+    body: "Learn what it means for a provider to be vetted and how Core Platform supports cross-cultural mental health care.",
   },
   "/contact": {
     title: "Contact Us",
     description:
       "Get in touch with Core Platform through the contact form and company information.",
-    body:
-      "Contact Core Platform with questions, feedback, or partnership inquiries through the contact form and company information.",
+    body: "Contact Core Platform with questions, feedback, or partnership inquiries through the contact form and company information.",
   },
   "/join": {
     title: "Join the Network",
     description:
       "Learn about membership, the application process, and how Core Platform-informed mental health professionals can join the network.",
-    body:
-      "Join the network to learn about membership benefits and the application process, including submitting your application, credential verification, Core Platform competency review, profile setup, and going live in the directory.",
+    body: "Join the network to learn about membership benefits and the application process, including submitting your application, credential verification, Core Platform competency review, profile setup, and going live in the directory.",
   },
   "/directory": {
     title: "Find a Mental Health Professional",
     description:
       "Search for Core Platform-informed mental health professionals by specialty, location, language, or session format.",
-    body:
-      "Find a mental health professional by searching specialties, locations, languages, and session formats in the Core Platform directory.",
+    body: "Find a mental health professional by searching specialties, locations, languages, and session formats in the Core Platform directory.",
   },
   "/insights": {
     title: "Insights & Articles",
-    description:
-      "Browse articles, guidance, and insights focused on culturally informed care.",
-    body:
-      "Browse insights and articles focused on culturally informed care and mental health support.",
+    description: "Browse articles, guidance, and insights focused on culturally informed care.",
+    body: "Browse insights and articles focused on culturally informed care and mental health support.",
   },
   "/events": {
     title: "Events",
-    description:
-      "Explore public events, trainings, and community gatherings from Core Platform.",
-    body:
-      "Explore public events, trainings, and community gatherings from Core Platform.",
+    description: "Explore public events, trainings, and community gatherings from Core Platform.",
+    body: "Explore public events, trainings, and community gatherings from Core Platform.",
   },
   "/recordings": {
     title: "Recording Archives",
-    description:
-      "Watch archived event recordings and educational content from Core Platform.",
-    body:
-      "Watch archived event recordings and educational content from Core Platform.",
+    description: "Watch archived event recordings and educational content from Core Platform.",
+    body: "Watch archived event recordings and educational content from Core Platform.",
   },
   "/privacy-policy": {
     title: "Privacy Policy",
     description:
       "Review how Core Platform collects, uses, stores, and protects information across the website and related services.",
-    body:
-      "Review how Core Platform collects, uses, stores, and protects information across the website and related services.",
+    body: "Review how Core Platform collects, uses, stores, and protects information across the website and related services.",
   },
   "/terms-of-service": {
     title: "Terms of Service",
     description:
       "Review the terms governing use of the Core Platform website, directory, events, and related services.",
-    body:
-      "Review the terms governing use of the Core Platform website, directory, events, and related services.",
+    body: "Review the terms governing use of the Core Platform website, directory, events, and related services.",
   },
   "/disclaimer": {
     title: "Disclaimer",
     description:
       "Review emergency guidance, directory vetting limitations, and important information about using the Core Platform directory and related services.",
-    body:
-      "Review emergency guidance, directory vetting limitations, and important information about using the Core Platform directory and related services.",
+    body: "Review emergency guidance, directory vetting limitations, and important information about using the Core Platform directory and related services.",
   },
 };
 
@@ -126,7 +111,10 @@ function escapeHtml(value: string) {
 }
 
 function stripHtml(value: string) {
-  return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function truncate(value: string, length = 240) {
@@ -163,20 +151,7 @@ function uniqueFragments(fragments: string[]) {
 
 function sanitizeRichHtml(value: string) {
   return sanitizeHtml(value, {
-    allowedTags: [
-      "p",
-      "br",
-      "strong",
-      "em",
-      "ul",
-      "ol",
-      "li",
-      "blockquote",
-      "a",
-      "h2",
-      "h3",
-      "h4",
-    ],
+    allowedTags: ["p", "br", "strong", "em", "ul", "ol", "li", "blockquote", "a", "h2", "h3", "h4"],
     allowedAttributes: {
       a: ["href", "target", "rel"],
     },
@@ -225,10 +200,12 @@ export async function getPublicHeadAdditions(): Promise<string | null> {
 function normalizeHeadMarkup(value?: string | null) {
   if (!value) return null;
 
-  return value
-    .trim()
-    // Repair a common paste mistake where </script is missing its closing angle bracket.
-    .replace(/<\/script(?!>)(?=(\s*<)|\s*$)/gi, "</script>");
+  return (
+    value
+      .trim()
+      // Repair a common paste mistake where </script is missing its closing angle bracket.
+      .replace(/<\/script(?!>)(?=(\s*<)|\s*$)/gi, "</script>")
+  );
 }
 
 function buildWebsiteSchema(seo: SeoSettings | null, siteUrl: string) {
@@ -268,7 +245,11 @@ function buildSimplePageBody(title: string, description: string, fragments: stri
   ].join("");
 }
 
-function buildCmsSnapshot(page: CmsPage, seo: SeoSettings | null, siteUrl: string): PublicHtmlSnapshot {
+function buildCmsSnapshot(
+  page: CmsPage,
+  seo: SeoSettings | null,
+  siteUrl: string,
+): PublicHtmlSnapshot {
   const title = page.seoTitle || page.title || "Page";
   const description =
     page.seoDescription ||
@@ -297,17 +278,26 @@ function buildCmsSnapshot(page: CmsPage, seo: SeoSettings | null, siteUrl: strin
     ogImageUrl: page.ogImageUrl || seo?.defaultOgImageUrl || null,
     robots: page.noindex ? "noindex,nofollow" : null,
     bodyHtml,
-    jsonLd: [buildOrganizationSchema(seo, siteUrl), buildWebsiteSchema(seo, siteUrl), breadcrumbs].filter(
-      Boolean,
-    ) as Array<Record<string, unknown>>,
+    jsonLd: [
+      buildOrganizationSchema(seo, siteUrl),
+      buildWebsiteSchema(seo, siteUrl),
+      breadcrumbs,
+    ].filter(Boolean) as Array<Record<string, unknown>>,
   };
 }
 
-function buildPostSnapshot(post: BlogPost, seo: SeoSettings | null, siteUrl: string): PublicHtmlSnapshot {
+function buildPostSnapshot(
+  post: BlogPost,
+  seo: SeoSettings | null,
+  siteUrl: string,
+): PublicHtmlSnapshot {
   const canonicalUrl = `${siteUrl}/insights/${post.slug}`;
   const title = post.seoTitle || post.title;
   const description =
-    post.seoDescription || post.excerpt || truncate(stripHtml(post.content), 180) || DEFAULT_DESCRIPTION;
+    post.seoDescription ||
+    post.excerpt ||
+    truncate(stripHtml(post.content), 180) ||
+    DEFAULT_DESCRIPTION;
   const bodyHtml = [
     `<main class="seo-prerender-content">`,
     `<article>`,
@@ -353,7 +343,11 @@ function buildPostSnapshot(post: BlogPost, seo: SeoSettings | null, siteUrl: str
   };
 }
 
-function buildEventSnapshot(event: Event, seo: SeoSettings | null, siteUrl: string): PublicHtmlSnapshot {
+function buildEventSnapshot(
+  event: Event,
+  seo: SeoSettings | null,
+  siteUrl: string,
+): PublicHtmlSnapshot {
   const canonicalUrl = `${siteUrl}${getEventPath(event)}`;
   const title = event.title;
   const description = truncate(stripHtml(event.description || ""), 180) || DEFAULT_DESCRIPTION;
@@ -425,7 +419,11 @@ async function buildTherapistSnapshot(
   const canonicalUrl = `${siteUrl}/directory/${profile.id}`;
   const description =
     truncate(
-      stripHtml(profile.bio || profile.title || "View this Core Platform-informed mental health professional profile."),
+      stripHtml(
+        profile.bio ||
+          profile.title ||
+          "View this Core Platform-informed mental health professional profile.",
+      ),
       180,
     ) || "View this Core Platform-informed mental health professional profile.";
 
@@ -460,7 +458,11 @@ async function buildTherapistSnapshot(
   };
 }
 
-function buildSearchSnapshot(query: string, seo: SeoSettings | null, siteUrl: string): PublicHtmlSnapshot {
+function buildSearchSnapshot(
+  query: string,
+  seo: SeoSettings | null,
+  siteUrl: string,
+): PublicHtmlSnapshot {
   const term = query.trim();
   const title = term ? `Search Results for "${term}"` : "Site Search";
   const description = term
@@ -470,7 +472,9 @@ function buildSearchSnapshot(query: string, seo: SeoSettings | null, siteUrl: st
   return {
     title: buildHeadTitle(title, seo),
     description,
-    canonicalUrl: term ? `${siteUrl}/search?query=${encodeURIComponent(term)}` : `${siteUrl}/search`,
+    canonicalUrl: term
+      ? `${siteUrl}/search?query=${encodeURIComponent(term)}`
+      : `${siteUrl}/search`,
     robots: "noindex,follow",
     bodyHtml: buildSimplePageBody(title, description, [
       "Search the site for pages, articles, and events.",
