@@ -42,7 +42,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Search, Loader2, Trash2, CheckCircle, ThumbsDown, Pencil, Camera, Calendar, LogIn, FileEdit, Clock, X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Search, Loader2, Trash2, CheckCircle, ThumbsDown, Pencil, Camera, Calendar, LogIn, FileEdit, Clock, X, ArrowUpDown, ArrowUp, ArrowDown, CreditCard, Activity } from "lucide-react";
 import { SiInstagram, SiFacebook, SiX, SiLinkedin, SiYoutube, SiTiktok } from "react-icons/si";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -335,10 +335,22 @@ function TherapistsContent() {
       <div className="flex flex-col gap-4 mb-6">
         <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
           <TabsList data-testid="tabs-status-filter">
-            <TabsTrigger value="all" data-testid="tab-all">All</TabsTrigger>
-            <TabsTrigger value="pending" data-testid="tab-pending">Pending</TabsTrigger>
-            <TabsTrigger value="approved" data-testid="tab-approved">Approved</TabsTrigger>
-            <TabsTrigger value="rejected" data-testid="tab-rejected">Rejected/Inactive</TabsTrigger>
+            <TabsTrigger value="all" data-testid="tab-all">
+              <Search className="mr-1.5 h-4 w-4 text-teal-600" />
+              All
+            </TabsTrigger>
+            <TabsTrigger value="pending" data-testid="tab-pending">
+              <Clock className="mr-1.5 h-4 w-4 text-amber-600" />
+              Pending
+            </TabsTrigger>
+            <TabsTrigger value="approved" data-testid="tab-approved">
+              <CheckCircle className="mr-1.5 h-4 w-4 text-emerald-600" />
+              Approved
+            </TabsTrigger>
+            <TabsTrigger value="rejected" data-testid="tab-rejected">
+              <X className="mr-1.5 h-4 w-4 text-rose-600" />
+              Rejected/Inactive
+            </TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -1748,9 +1760,18 @@ function EditTherapistSheet({
         <SheetBody>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList data-testid="tabs-edit-therapist">
-              <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-              <TabsTrigger value="membership" data-testid="tab-membership">Membership</TabsTrigger>
-              <TabsTrigger value="activity" data-testid="tab-activity">Activity</TabsTrigger>
+              <TabsTrigger value="overview" data-testid="tab-overview">
+                <FileEdit className="mr-1.5 h-4 w-4 text-emerald-600" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="membership" data-testid="tab-membership">
+                <CreditCard className="mr-1.5 h-4 w-4 text-amber-600" />
+                Membership
+              </TabsTrigger>
+              <TabsTrigger value="activity" data-testid="tab-activity">
+                <Activity className="mr-1.5 h-4 w-4 text-blue-600" />
+                Activity
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="mt-4">
               <OverviewTab

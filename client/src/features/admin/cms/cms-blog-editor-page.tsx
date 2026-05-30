@@ -48,6 +48,7 @@ import {
   CalendarClock,
   Plus,
   Settings2,
+  LayoutTemplate,
 } from "lucide-react";
 import {
   Popover,
@@ -463,10 +464,16 @@ export default function CmsBlogEditorPage() {
             <Tabs defaultValue="content" className="space-y-4">
               <div className="flex items-center gap-4 flex-wrap">
                 <TabsList>
-                  <TabsTrigger value="content" data-testid="tab-content">Content</TabsTrigger>
-                  <TabsTrigger value="layout" data-testid="tab-layout">Layout</TabsTrigger>
+                  <TabsTrigger value="content" data-testid="tab-content">
+                    <BookOpen className="h-4 w-4 mr-1.5 text-blue-600" />
+                    Content
+                  </TabsTrigger>
+                  <TabsTrigger value="layout" data-testid="tab-layout">
+                    <LayoutTemplate className="h-4 w-4 mr-1.5 text-indigo-600" />
+                    Layout
+                  </TabsTrigger>
                   <TabsTrigger value="seo" data-testid="tab-seo">
-                    <Globe className="h-3.5 w-3.5 mr-1.5" />
+                    <Globe className="h-4 w-4 mr-1.5 text-blue-600" />
                     SEO
                   </TabsTrigger>
                 </TabsList>

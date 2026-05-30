@@ -139,14 +139,15 @@ export default function CmsBlogPage() {
         >
           <TabsList>
             <TabsTrigger value="posts" data-testid="tab-blog-posts">
+              <BookOpen className="mr-1.5 h-4 w-4 text-blue-600" />
               Blog Posts
             </TabsTrigger>
             <TabsTrigger value="settings" data-testid="tab-blog-settings">
-              <Settings className="mr-1.5 h-3.5 w-3.5" />
+              <Settings className="mr-1.5 h-4 w-4 text-slate-500" />
               Blog Settings
             </TabsTrigger>
             <TabsTrigger value="comments" data-testid="tab-blog-comments">
-              <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
+              <MessageSquare className="mr-1.5 h-4 w-4 text-emerald-600" />
               Comments
             </TabsTrigger>
           </TabsList>

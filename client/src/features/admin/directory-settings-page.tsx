@@ -315,9 +315,11 @@ export default function DirectorySettingsPage() {
         <Tabs defaultValue="tiers" className="space-y-6">
           <TabsList>
             <TabsTrigger value="tiers">
+              <CreditCard className="mr-1.5 h-4 w-4 text-amber-600" />
               Membership Tiers
             </TabsTrigger>
             <TabsTrigger value="application">
+              <ClipboardList className="mr-1.5 h-4 w-4 text-orange-600" />
               Application Settings
             </TabsTrigger>
           </TabsList>

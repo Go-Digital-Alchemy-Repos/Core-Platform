@@ -69,6 +69,7 @@ import {
   Megaphone,
   Store,
   Truck,
+  Settings,
 } from "lucide-react";
 import {
   BRANDING_FONT_OPTIONS,
@@ -81,8 +82,29 @@ import {
 import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
+import type { IconType } from "react-icons";
+import {
+  SiAdyen,
+  SiAfterpay,
+  SiAmazonpay,
+  SiApplepay,
+  SiBraintree,
+  SiCloudflare,
+  SiGoogle,
+  SiGoogleanalytics,
+  SiGooglepay,
+  SiKlarna,
+  SiMailchimp,
+  SiMailgun,
+  SiMeta,
+  SiPaypal,
+  SiSquare,
+  SiStripe,
+  SiTiktok,
+  SiX,
+} from "react-icons/si";
 
-type SettingsData = Record<string, Record<string, { value: string; isSecret: boolean }>>;
+export type SettingsData = Record<string, Record<string, { value: string; isSecret: boolean }>>;
 
 type BrandingSettingKey = "frontend_logo_url" | "favicon_url";
 type BrandingCompanyInfoSettingKey =
@@ -294,19 +316,22 @@ interface IntegrationField {
   placeholder: string;
 }
 
-type IntegrationGroupKey =
+export type IntegrationGroupKey =
   | "commerce"
   | "shipping"
   | "marketing"
   | "communications"
   | "infrastructure";
 
-interface IntegrationConfig {
+export interface IntegrationConfig {
   category: string;
   title: string;
   description: string;
   group: IntegrationGroupKey;
   icon: typeof CreditCard;
+  brandIcon?: IconType;
+  brandColor?: string;
+  logoText?: string;
   badge?: string;
   accountUrl: string;
   docsUrl?: string;
@@ -316,15 +341,16 @@ interface IntegrationConfig {
   supportsConnectionTest?: boolean;
 }
 
-const INTEGRATION_GROUPS: Array<{
+export const INTEGRATION_GROUPS: Array<{
   key: IntegrationGroupKey;
   title: string;
   description: string;
 }> = [
   {
     key: "commerce",
-    title: "Commerce & Payments",
-    description: "Payment, merchant catalog, and product discovery connections.",
+    title: "Global Payment Processors",
+    description:
+      "Shared transaction providers used by ecommerce, paid events, subscriptions, and future paid modules.",
   },
   {
     key: "shipping",
@@ -348,13 +374,27 @@ const INTEGRATION_GROUPS: Array<{
   },
 ];
 
-const INTEGRATIONS: IntegrationConfig[] = [
+export const ECOMMERCE_INTEGRATION_CATEGORIES = new Set([
+  "google_merchant_center",
+  "meta_ads",
+  "tiktok_ads",
+  "x_ads",
+  "shipstation",
+  "shippo",
+  "veeqo",
+  "easyship",
+  "pirate_ship",
+]);
+
+export const INTEGRATIONS: IntegrationConfig[] = [
   {
     category: "stripe",
     title: "Stripe",
-    description: "Payment processing for therapist subscriptions",
+    description: "Global card, wallet, subscription, and checkout payment processing",
     group: "commerce",
     icon: CreditCard,
+    brandIcon: SiStripe,
+    brandColor: "text-[#635BFF]",
     accountUrl: "https://dashboard.stripe.com/apikeys",
     docsUrl: "https://docs.stripe.com/keys",
     instructions: [
@@ -385,11 +425,485 @@ const INTEGRATIONS: IntegrationConfig[] = [
     ],
   },
   {
+    category: "paypal",
+    title: "PayPal",
+    description: "Global PayPal checkout, wallet payment, and webhook credentials",
+    group: "commerce",
+    icon: CreditCard,
+    brandIcon: SiPaypal,
+    brandColor: "text-[#003087]",
+    accountUrl: "https://developer.paypal.com/dashboard/applications/live",
+    docsUrl: "https://developer.paypal.com/api/rest/",
+    instructions: [
+      "Create or open a REST app in the PayPal Developer Dashboard.",
+      "Copy the Client ID and Secret for the active sandbox or live environment.",
+      "Create webhooks for payment capture, refund, and dispute events before enabling live payments.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "paypal_active_mode",
+        label: "Active Mode",
+        isSecret: false,
+        placeholder: "sandbox",
+      },
+      {
+        key: "paypal_client_id",
+        label: "Client ID",
+        isSecret: false,
+        placeholder: "PayPal client ID",
+      },
+      {
+        key: "paypal_client_secret",
+        label: "Client Secret",
+        isSecret: true,
+        placeholder: "PayPal client secret",
+      },
+      {
+        key: "paypal_webhook_id",
+        label: "Webhook ID",
+        isSecret: false,
+        placeholder: "Webhook ID",
+      },
+    ],
+  },
+  {
+    category: "square",
+    title: "Square",
+    description: "Global Square Payments API, location, and webhook configuration",
+    group: "commerce",
+    icon: CreditCard,
+    brandIcon: SiSquare,
+    brandColor: "text-[#3E4348]",
+    accountUrl: "https://developer.squareup.com/apps",
+    docsUrl: "https://developer.squareup.com/docs/payments-api/overview",
+    instructions: [
+      "Create or open a Square application and confirm sandbox or production mode.",
+      "Copy the Application ID, Access Token, and Location ID used for payments.",
+      "Configure webhook signature verification before routing production payment events.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "square_active_mode",
+        label: "Active Mode",
+        isSecret: false,
+        placeholder: "sandbox",
+      },
+      {
+        key: "square_application_id",
+        label: "Application ID",
+        isSecret: false,
+        placeholder: "Square application ID",
+      },
+      {
+        key: "square_access_token",
+        label: "Access Token",
+        isSecret: true,
+        placeholder: "Square access token",
+      },
+      {
+        key: "square_location_id",
+        label: "Location ID",
+        isSecret: false,
+        placeholder: "Square location ID",
+      },
+      {
+        key: "square_webhook_signature_key",
+        label: "Webhook Signature Key",
+        isSecret: true,
+        placeholder: "Square webhook signature key",
+      },
+    ],
+  },
+  {
+    category: "authorize_net",
+    title: "Authorize.net",
+    description: "Global Authorize.net API, transaction key, and webhook signature settings",
+    group: "commerce",
+    icon: CreditCard,
+    logoText: "Authorize.net",
+    brandColor: "text-sky-700",
+    accountUrl: "https://account.authorize.net/",
+    docsUrl: "https://developer.authorize.net/api/reference/",
+    instructions: [
+      "Open Authorize.net account settings and confirm sandbox or production mode.",
+      "Copy the API Login ID, Transaction Key, and Public Client Key.",
+      "Copy the Signature Key so webhooks can be verified before updating transactions.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "authorize_net_active_mode",
+        label: "Active Mode",
+        isSecret: false,
+        placeholder: "sandbox",
+      },
+      {
+        key: "authorize_net_api_login_id",
+        label: "API Login ID",
+        isSecret: false,
+        placeholder: "API login ID",
+      },
+      {
+        key: "authorize_net_transaction_key",
+        label: "Transaction Key",
+        isSecret: true,
+        placeholder: "Transaction key",
+      },
+      {
+        key: "authorize_net_signature_key",
+        label: "Signature Key",
+        isSecret: true,
+        placeholder: "Webhook signature key",
+      },
+      {
+        key: "authorize_net_public_client_key",
+        label: "Public Client Key",
+        isSecret: false,
+        placeholder: "Public client key",
+      },
+    ],
+  },
+  {
+    category: "braintree",
+    title: "Braintree",
+    description: "Global Braintree merchant, card, PayPal, and wallet payment credentials",
+    group: "commerce",
+    icon: CreditCard,
+    brandIcon: SiBraintree,
+    brandColor: "text-[#000000]",
+    accountUrl: "https://www.braintreegateway.com/login",
+    docsUrl: "https://developer.paypal.com/braintree/docs/",
+    instructions: [
+      "Open Braintree API settings and confirm sandbox or production environment.",
+      "Copy the Merchant ID, Public Key, and Private Key.",
+      "Use Braintree when module checkouts need vaulting, PayPal, Venmo, or wallet support through one gateway.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "braintree_environment",
+        label: "Environment",
+        isSecret: false,
+        placeholder: "sandbox",
+      },
+      {
+        key: "braintree_merchant_id",
+        label: "Merchant ID",
+        isSecret: false,
+        placeholder: "Merchant ID",
+      },
+      {
+        key: "braintree_public_key",
+        label: "Public Key",
+        isSecret: false,
+        placeholder: "Public key",
+      },
+      {
+        key: "braintree_private_key",
+        label: "Private Key",
+        isSecret: true,
+        placeholder: "Private key",
+      },
+    ],
+  },
+  {
+    category: "adyen",
+    title: "Adyen",
+    description: "Global Adyen checkout, payment method, and webhook settings",
+    group: "commerce",
+    icon: CreditCard,
+    brandIcon: SiAdyen,
+    brandColor: "text-[#0ABF53]",
+    accountUrl: "https://ca-live.adyen.com/",
+    docsUrl: "https://docs.adyen.com/online-payments/",
+    instructions: [
+      "Open Adyen Customer Area and copy the Merchant Account and API key for the active environment.",
+      "Copy the Client Key used by web checkout components.",
+      "Configure webhook HMAC signing before enabling Adyen for module transactions.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "adyen_active_mode",
+        label: "Active Mode",
+        isSecret: false,
+        placeholder: "test",
+      },
+      {
+        key: "adyen_merchant_account",
+        label: "Merchant Account",
+        isSecret: false,
+        placeholder: "YourMerchantAccount",
+      },
+      {
+        key: "adyen_api_key",
+        label: "API Key",
+        isSecret: true,
+        placeholder: "Adyen API key",
+      },
+      {
+        key: "adyen_client_key",
+        label: "Client Key",
+        isSecret: false,
+        placeholder: "Adyen client key",
+      },
+      {
+        key: "adyen_webhook_hmac_key",
+        label: "Webhook HMAC Key",
+        isSecret: true,
+        placeholder: "Webhook HMAC key",
+      },
+    ],
+  },
+  {
+    category: "amazon_pay",
+    title: "Amazon Pay",
+    description: "Global Amazon Pay merchant, checkout, and signing key configuration",
+    group: "commerce",
+    icon: CreditCard,
+    brandIcon: SiAmazonpay,
+    brandColor: "text-[#FF9900]",
+    accountUrl: "https://pay.amazon.com/",
+    docsUrl: "https://developer.amazon.com/docs/amazon-pay/intro.html",
+    instructions: [
+      "Open Amazon Pay merchant integration settings and confirm sandbox or live mode.",
+      "Copy the Merchant ID, Store ID, Public Key ID, and private signing key.",
+      "Use module-level settings to decide where Amazon Pay appears during checkout.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "amazon_pay_active_mode",
+        label: "Active Mode",
+        isSecret: false,
+        placeholder: "sandbox",
+      },
+      {
+        key: "amazon_pay_merchant_id",
+        label: "Merchant ID",
+        isSecret: false,
+        placeholder: "Amazon Pay merchant ID",
+      },
+      {
+        key: "amazon_pay_store_id",
+        label: "Store ID",
+        isSecret: false,
+        placeholder: "Amazon Pay store ID",
+      },
+      {
+        key: "amazon_pay_public_key_id",
+        label: "Public Key ID",
+        isSecret: false,
+        placeholder: "Public key ID",
+      },
+      {
+        key: "amazon_pay_private_key",
+        label: "Private Key",
+        isSecret: true,
+        placeholder: "-----BEGIN PRIVATE KEY-----",
+      },
+    ],
+  },
+  {
+    category: "apple_pay",
+    title: "Apple Pay",
+    description: "Global Apple Pay merchant identity and domain verification settings",
+    group: "commerce",
+    icon: CreditCard,
+    brandIcon: SiApplepay,
+    brandColor: "text-black",
+    accountUrl: "https://developer.apple.com/account/resources/identifiers/list/merchant",
+    docsUrl: "https://developer.apple.com/documentation/apple_pay_on_the_web",
+    instructions: [
+      "Create or open the Apple Pay Merchant ID in Apple Developer.",
+      "Verify the production checkout domain before enabling Apple Pay for a module.",
+      "Store certificate references here; certificate file handling should use secure secrets or object storage.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "apple_pay_merchant_id",
+        label: "Merchant ID",
+        isSecret: false,
+        placeholder: "merchant.com.yourdomain",
+      },
+      {
+        key: "apple_pay_display_name",
+        label: "Display Name",
+        isSecret: false,
+        placeholder: "Store or organization name",
+      },
+      {
+        key: "apple_pay_domain",
+        label: "Verified Domain",
+        isSecret: false,
+        placeholder: "https://yourdomain.com",
+      },
+      {
+        key: "apple_pay_payment_processing_cert_ref",
+        label: "Payment Processing Certificate Reference",
+        isSecret: true,
+        placeholder: "Secure certificate reference",
+      },
+    ],
+  },
+  {
+    category: "google_pay",
+    title: "Google Pay",
+    description: "Global Google Pay merchant profile and gateway mapping",
+    group: "commerce",
+    icon: CreditCard,
+    brandIcon: SiGooglepay,
+    brandColor: "text-[#4285F4]",
+    accountUrl: "https://pay.google.com/business/console/",
+    docsUrl: "https://developers.google.com/pay/api/web/overview",
+    instructions: [
+      "Create or open the Google Pay Business Console merchant profile.",
+      "Copy the Merchant ID and merchant name approved for web payments.",
+      "Set the gateway name and merchant identifier used by the selected processor, such as Stripe, Braintree, or Adyen.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "google_pay_environment",
+        label: "Environment",
+        isSecret: false,
+        placeholder: "TEST",
+      },
+      {
+        key: "google_pay_merchant_id",
+        label: "Merchant ID",
+        isSecret: false,
+        placeholder: "Google Pay merchant ID",
+      },
+      {
+        key: "google_pay_merchant_name",
+        label: "Merchant Name",
+        isSecret: false,
+        placeholder: "Store or organization name",
+      },
+      {
+        key: "google_pay_gateway",
+        label: "Gateway",
+        isSecret: false,
+        placeholder: "stripe",
+      },
+      {
+        key: "google_pay_gateway_merchant_id",
+        label: "Gateway Merchant ID",
+        isSecret: false,
+        placeholder: "Gateway merchant ID",
+      },
+    ],
+  },
+  {
+    category: "klarna",
+    title: "Klarna",
+    description: "Global Klarna payments, buy-now-pay-later, and order management credentials",
+    group: "commerce",
+    icon: CreditCard,
+    brandIcon: SiKlarna,
+    brandColor: "text-[#FFB3C7]",
+    accountUrl: "https://portal.klarna.com/",
+    docsUrl: "https://docs.klarna.com/",
+    instructions: [
+      "Open Klarna Merchant Portal and confirm test or production environment.",
+      "Copy the API username and password for payments.",
+      "Set region and merchant ID so module checkouts can route eligible transactions correctly.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "klarna_active_mode",
+        label: "Active Mode",
+        isSecret: false,
+        placeholder: "test",
+      },
+      {
+        key: "klarna_region",
+        label: "Region",
+        isSecret: false,
+        placeholder: "na",
+      },
+      {
+        key: "klarna_merchant_id",
+        label: "Merchant ID",
+        isSecret: false,
+        placeholder: "Klarna merchant ID",
+      },
+      {
+        key: "klarna_api_username",
+        label: "API Username",
+        isSecret: false,
+        placeholder: "API username",
+      },
+      {
+        key: "klarna_api_password",
+        label: "API Password",
+        isSecret: true,
+        placeholder: "API password",
+      },
+    ],
+  },
+  {
+    category: "afterpay",
+    title: "Afterpay",
+    description: "Global Afterpay/Clearpay merchant and buy-now-pay-later API settings",
+    group: "commerce",
+    icon: CreditCard,
+    brandIcon: SiAfterpay,
+    brandColor: "text-[#00C9B7]",
+    accountUrl: "https://portal.afterpay.com/",
+    docsUrl: "https://developers.afterpay.com/",
+    instructions: [
+      "Open the Afterpay merchant portal and confirm sandbox or production mode.",
+      "Copy the merchant ID and secret key for API access.",
+      "Set country and currency defaults so modules can determine checkout eligibility.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      {
+        key: "afterpay_active_mode",
+        label: "Active Mode",
+        isSecret: false,
+        placeholder: "sandbox",
+      },
+      {
+        key: "afterpay_merchant_id",
+        label: "Merchant ID",
+        isSecret: false,
+        placeholder: "Afterpay merchant ID",
+      },
+      {
+        key: "afterpay_secret_key",
+        label: "Secret Key",
+        isSecret: true,
+        placeholder: "Afterpay secret key",
+      },
+      {
+        key: "afterpay_country_code",
+        label: "Country Code",
+        isSecret: false,
+        placeholder: "US",
+      },
+      {
+        key: "afterpay_currency",
+        label: "Currency",
+        isSecret: false,
+        placeholder: "USD",
+      },
+    ],
+  },
+  {
     category: "mailgun",
     title: "Mailgun",
     description: "Transactional email delivery service",
     group: "communications",
     icon: Mail,
+    brandIcon: SiMailgun,
+    brandColor: "text-[#F06B66]",
     accountUrl: "https://app.mailgun.com/app/account/security/api_keys",
     docsUrl:
       "https://help.mailgun.com/hc/en-us/articles/203380100-Where-can-I-find-my-API-keys-and-SMTP-credentials",
@@ -425,6 +939,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
     description: "Audience sync used by managed forms and lifecycle tagging",
     group: "marketing",
     icon: Tag,
+    brandIcon: SiMailchimp,
+    brandColor: "text-[#FFE01B]",
     accountUrl: "https://admin.mailchimp.com/account/api/",
     docsUrl: "https://mailchimp.com/help/about-api-keys/",
     instructions: [
@@ -460,6 +976,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
       "Reserve the GA4 tracking and reporting configuration used by future public analytics and the planned admin Analytics area.",
     group: "marketing",
     icon: BarChart3,
+    brandIcon: SiGoogleanalytics,
+    brandColor: "text-[#E37400]",
     accountUrl: "https://analytics.google.com/analytics/web/",
     docsUrl: "https://support.google.com/analytics/answer/9539598",
     instructions: [
@@ -502,6 +1020,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
       "Marketing pixel and server-side event credentials for Facebook and Instagram commerce campaigns",
     group: "marketing",
     icon: Megaphone,
+    brandIcon: SiMeta,
+    brandColor: "text-[#0467DF]",
     accountUrl: "https://business.facebook.com/events_manager",
     docsUrl: "https://developers.facebook.com/docs/meta-pixel/",
     instructions: [
@@ -538,6 +1058,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
       "TikTok browser pixel and Events API credentials for catalog, checkout, and purchase tracking",
     group: "marketing",
     icon: Megaphone,
+    brandIcon: SiTiktok,
+    brandColor: "text-black",
     accountUrl: "https://ads.tiktok.com/i18n/events_manager",
     docsUrl: "https://business-api.tiktok.com/portal/docs?id=1739584855420929",
     instructions: [
@@ -573,6 +1095,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
     description: "Consent-based website tag configuration for X campaign measurement and remarketing",
     group: "marketing",
     icon: Megaphone,
+    brandIcon: SiX,
+    brandColor: "text-black",
     accountUrl: "https://ads.x.com/conversion_tracking",
     docsUrl: "https://business.x.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html",
     instructions: [
@@ -596,6 +1120,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
     description: "Product feed readiness settings for Shopping surfaces and merchant diagnostics",
     group: "commerce",
     icon: Store,
+    brandIcon: SiGoogle,
+    brandColor: "text-[#4285F4]",
     accountUrl: "https://merchants.google.com/",
     docsUrl: "https://support.google.com/merchants/answer/7052112",
     instructions: [
@@ -625,6 +1151,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
     description: "API key used by external lead sources like social ads, Zapier, and landing-page tools",
     group: "communications",
     icon: Plug,
+    logoText: "CRM",
+    brandColor: "text-blue-700",
     accountUrl: "https://core-platform-production-0848.up.railway.app/admin/settings",
     docsUrl: "https://core-platform-production-0848.up.railway.app/admin/settings",
     instructions: [
@@ -648,6 +1176,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
     description: "Shipping label, fulfillment, and shipment sync configuration for ecommerce orders",
     group: "shipping",
     icon: Truck,
+    logoText: "ShipStation",
+    brandColor: "text-teal-700",
     badge: "Best workflow automation",
     accountUrl: "https://shipstation.com/account/settings/api",
     docsUrl: "https://docs.shipstation.com/api-overview",
@@ -690,6 +1220,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
     description: "Carrier rates, label purchasing, address validation, and tracking through a developer-first shipping API",
     group: "shipping",
     icon: Truck,
+    logoText: "Shippo",
+    brandColor: "text-purple-700",
     badge: "Best API strategy",
     accountUrl: "https://apps.goshippo.com/settings/api",
     docsUrl: "https://docs.goshippo.com/docs/Guides_general/authentication/",
@@ -732,6 +1264,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
     description: "Inventory, warehouse, order, shipping, and marketplace operations for multi-channel ecommerce",
     group: "shipping",
     icon: Store,
+    logoText: "Veeqo",
+    brandColor: "text-emerald-700",
     badge: "Best inventory + shipping",
     accountUrl: "https://app.veeqo.com/",
     docsUrl: "https://developers.veeqo.com/getting-started/authentication",
@@ -774,6 +1308,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
     description: "International shipping rates, duties, taxes, courier options, and cross-border delivery workflows",
     group: "shipping",
     icon: Truck,
+    logoText: "Easyship",
+    brandColor: "text-sky-700",
     badge: "Best international features",
     accountUrl: "https://www.easyship.com/developers",
     docsUrl: "https://www.easyship.com/developers",
@@ -816,6 +1352,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
     description: "Simple manual shipping workflow using order exports and tracking imports instead of a public API",
     group: "shipping",
     icon: Truck,
+    logoText: "Pirate Ship",
+    brandColor: "text-orange-700",
     badge: "Best simplicity",
     accountUrl: "https://www.pirateship.com/",
     docsUrl: "https://support.pirateship.com/en/articles/2309246-does-pirate-ship-have-an-api",
@@ -852,6 +1390,8 @@ const INTEGRATIONS: IntegrationConfig[] = [
     description: "Object storage for images and file uploads",
     group: "infrastructure",
     icon: Cloud,
+    brandIcon: SiCloudflare,
+    brandColor: "text-[#F38020]",
     accountUrl: "https://dash.cloudflare.com/?to=/:account/r2/api-tokens",
     docsUrl: "https://developers.cloudflare.com/r2/api/s3/tokens/",
     instructions: [
@@ -896,7 +1436,7 @@ const INTEGRATIONS: IntegrationConfig[] = [
   },
 ];
 
-function IntegrationCard({
+export function IntegrationCard({
   config,
   settings,
 }: {
@@ -964,16 +1504,34 @@ function IntegrationCard({
   const supportsConnectionTest = config.supportsConnectionTest !== false;
 
   const Icon = config.icon;
+  const BrandIcon = config.brandIcon;
 
   return (
     <Card data-testid={`card-integration-${config.category}`}>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-md bg-primary/10">
-              <Icon className="h-5 w-5 text-primary" />
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-4">
+            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg border bg-background shadow-sm">
+              {BrandIcon ? (
+                <BrandIcon
+                  aria-label={`${config.title} logo`}
+                  className={cn("h-8 w-8", config.brandColor || "text-primary")}
+                />
+              ) : config.logoText ? (
+                <span
+                  aria-label={`${config.title} logo`}
+                  className={cn(
+                    "px-1 text-center text-[11px] font-bold leading-tight tracking-normal",
+                    config.brandColor || "text-primary",
+                  )}
+                >
+                  {config.logoText}
+                </span>
+              ) : (
+                <Icon className={cn("h-7 w-7", config.brandColor || "text-primary")} />
+              )}
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <CardTitle className="text-lg">{config.title}</CardTitle>
                 {config.badge ? (
@@ -1142,7 +1700,10 @@ function IntegrationCard({
 }
 
 function IntegrationsTab({ settings }: { settings: SettingsData }) {
-  const configuredCount = INTEGRATIONS.filter((config) =>
+  const platformIntegrations = INTEGRATIONS.filter(
+    (config) => !ECOMMERCE_INTEGRATION_CATEGORIES.has(config.category),
+  );
+  const configuredCount = platformIntegrations.filter((config) =>
     config.fields.some((field) => {
       const setting = settings[config.category]?.[field.key];
       return setting?.value && setting.value !== "";
@@ -1156,13 +1717,14 @@ function IntegrationsTab({ settings }: { settings: SettingsData }) {
           Integrations
         </h3>
         <p className="text-sm text-muted-foreground">
-          Browse integrations by category. {configuredCount} of {INTEGRATIONS.length} connections
-          have saved settings, and secret values are encrypted at rest.
+          Browse platform-wide integrations by category. {configuredCount} of{" "}
+          {platformIntegrations.length} connections have saved settings, and secret values are
+          encrypted at rest. Ecommerce-specific integrations now live in Ecommerce.
         </p>
       </div>
       <div className="space-y-8">
         {INTEGRATION_GROUPS.map((group) => {
-          const groupIntegrations = INTEGRATIONS.filter((config) => config.group === group.key);
+          const groupIntegrations = platformIntegrations.filter((config) => config.group === group.key);
           if (groupIntegrations.length === 0) return null;
 
           return (
@@ -1880,12 +2442,15 @@ export function BrandingTab({
       <Tabs defaultValue={initialSubtab} className="space-y-6">
         <TabsList className="grid w-full max-w-lg grid-cols-3" data-testid="tabs-branding-subtabs">
           <TabsTrigger value="branding" data-testid="tab-branding-subtab-branding">
+            <ImageIcon className="mr-1.5 h-4 w-4 text-teal-600" />
             Branding
           </TabsTrigger>
           <TabsTrigger value="colors" data-testid="tab-branding-subtab-colors">
+            <Palette className="mr-1.5 h-4 w-4 text-violet-600" />
             Color Palette
           </TabsTrigger>
           <TabsTrigger value="typography" data-testid="tab-branding-subtab-typography">
+            <Type className="mr-1.5 h-4 w-4 text-indigo-600" />
             Typography
           </TabsTrigger>
         </TabsList>
@@ -2626,7 +3191,7 @@ function TemplateEditor({
                         className="rounded-full px-3 text-xs"
                         data-testid="tab-email-visual"
                       >
-                        <Eye className="mr-1.5 h-3.5 w-3.5" />
+                        <Eye className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
                         Visual
                       </TabsTrigger>
                       <TabsTrigger
@@ -2634,7 +3199,7 @@ function TemplateEditor({
                         className="rounded-full px-3 text-xs"
                         data-testid="tab-email-html"
                       >
-                        <Code2 className="mr-1.5 h-3.5 w-3.5" />
+                        <Code2 className="mr-1.5 h-3.5 w-3.5 text-violet-600" />
                         HTML
                       </TabsTrigger>
                     </TabsList>
@@ -3317,15 +3882,19 @@ export default function AdminSettingsPage() {
         >
           <TabsList data-testid="tabs-settings">
             <TabsTrigger value="integrations" data-testid="tab-integrations">
+              <Plug className="mr-1.5 h-4 w-4 text-blue-600" />
               Integrations
             </TabsTrigger>
             <TabsTrigger value="head-tags" data-testid="tab-head-tag-additions">
+              <Code2 className="mr-1.5 h-4 w-4 text-violet-600" />
               Head Tag Additions
             </TabsTrigger>
             <TabsTrigger value="system" data-testid="tab-system-configuration">
+              <Settings className="mr-1.5 h-4 w-4 text-slate-500" />
               System Configuration
             </TabsTrigger>
             <TabsTrigger value="email-templates" data-testid="tab-templates">
+              <Mail className="mr-1.5 h-4 w-4 text-rose-600" />
               Email Templates
             </TabsTrigger>
           </TabsList>

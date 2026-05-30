@@ -222,11 +222,26 @@ export default function CmsSeoPage() {
 
         <Tabs defaultValue="settings">
           <TabsList className="flex-wrap h-auto gap-1">
-            <TabsTrigger value="settings" data-testid="tab-seo-settings">Global Settings</TabsTrigger>
-            <TabsTrigger value="audit" data-testid="tab-seo-audit">SEO Audit</TabsTrigger>
-            <TabsTrigger value="redirects" data-testid="tab-seo-redirects">Redirects</TabsTrigger>
-            <TabsTrigger value="sitemap" data-testid="tab-seo-sitemap">Sitemap</TabsTrigger>
-            <TabsTrigger value="roadmap" data-testid="tab-seo-roadmap">Architecture & Roadmap</TabsTrigger>
+            <TabsTrigger value="settings" data-testid="tab-seo-settings">
+              <Globe className="mr-1.5 h-4 w-4 text-blue-600" />
+              Global Settings
+            </TabsTrigger>
+            <TabsTrigger value="audit" data-testid="tab-seo-audit">
+              <BarChart2 className="mr-1.5 h-4 w-4 text-emerald-600" />
+              SEO Audit
+            </TabsTrigger>
+            <TabsTrigger value="redirects" data-testid="tab-seo-redirects">
+              <ArrowUpRight className="mr-1.5 h-4 w-4 text-amber-600" />
+              Redirects
+            </TabsTrigger>
+            <TabsTrigger value="sitemap" data-testid="tab-seo-sitemap">
+              <Map className="mr-1.5 h-4 w-4 text-cyan-600" />
+              Sitemap
+            </TabsTrigger>
+            <TabsTrigger value="roadmap" data-testid="tab-seo-roadmap">
+              <Code2 className="mr-1.5 h-4 w-4 text-violet-600" />
+              Architecture & Roadmap
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="settings" className="space-y-5 mt-5">

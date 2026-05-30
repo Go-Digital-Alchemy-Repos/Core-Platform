@@ -1008,9 +1008,11 @@ function FormsPageContent() {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList>
           <TabsTrigger value="builder" data-testid="tab-forms-builder">
+            <LayoutTemplate className="mr-1.5 h-4 w-4 text-indigo-600" />
             Form Builder
           </TabsTrigger>
           <TabsTrigger value="entries" data-testid="tab-forms-entries">
+            <Inbox className="mr-1.5 h-4 w-4 text-cyan-600" />
             Form Entries
           </TabsTrigger>
         </TabsList>

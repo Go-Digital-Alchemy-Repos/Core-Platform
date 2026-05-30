@@ -1,7 +1,20 @@
-import { FormEvent, useEffect, useState } from "react";
+import { type ElementType, FormEvent, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Package, Plus, Save, Settings, ShoppingBag, TicketPercent, Truck, Undo2 } from "lucide-react";
+import {
+  CalendarDays,
+  ClipboardList,
+  Package,
+  Plug,
+  Plus,
+  Save,
+  Settings,
+  ShoppingBag,
+  Tag,
+  TicketPercent,
+  Truck,
+  Undo2,
+} from "lucide-react";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,8 +29,24 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatMoney } from "@/features/ecommerce/cart-store";
+import { cn } from "@/lib/utils";
+import {
+  ECOMMERCE_INTEGRATION_CATEGORIES,
+  INTEGRATION_GROUPS,
+  INTEGRATIONS,
+  IntegrationCard,
+  type SettingsData,
+} from "@/features/admin/settings-page";
 
-type View = "products" | "categories" | "coupons" | "orders" | "shipping" | "refunds" | "settings";
+type View =
+  | "products"
+  | "categories"
+  | "coupons"
+  | "orders"
+  | "shipping"
+  | "refunds"
+  | "integrations"
+  | "settings";
 
 interface Product {
   id: string;
@@ -67,14 +96,15 @@ interface StripeSettingsStatus {
   hasLiveWebhookSecret: boolean;
 }
 
-const nav: Array<{ view: View; label: string }> = [
-  { view: "products", label: "Products" },
-  { view: "categories", label: "Categories" },
-  { view: "coupons", label: "Coupons" },
-  { view: "orders", label: "Orders" },
-  { view: "shipping", label: "Shipping" },
-  { view: "refunds", label: "Refunds" },
-  { view: "settings", label: "Settings" },
+const nav: Array<{ view: View; label: string; icon: ElementType; iconColor: string }> = [
+  { view: "products", label: "Products", icon: Package, iconColor: "text-emerald-600" },
+  { view: "categories", label: "Categories", icon: Tag, iconColor: "text-emerald-500" },
+  { view: "coupons", label: "Coupons", icon: TicketPercent, iconColor: "text-amber-600" },
+  { view: "orders", label: "Orders", icon: ClipboardList, iconColor: "text-blue-600" },
+  { view: "shipping", label: "Shipping", icon: CalendarDays, iconColor: "text-sky-600" },
+  { view: "refunds", label: "Refunds", icon: Undo2, iconColor: "text-rose-600" },
+  { view: "integrations", label: "Integrations", icon: Plug, iconColor: "text-blue-600" },
+  { view: "settings", label: "Settings", icon: Settings, iconColor: "text-slate-500" },
 ];
 
 function cents(value: string): number {
@@ -247,6 +277,65 @@ function RefundsTab() {
   );
 }
 
+function IntegrationsTab() {
+  const { data: settings = {} } = useQuery<SettingsData>({
+    queryKey: ["/api/admin/settings"],
+  });
+  const ecommerceIntegrations = INTEGRATIONS.filter((config) =>
+    ECOMMERCE_INTEGRATION_CATEGORIES.has(config.category),
+  );
+  const configuredCount = ecommerceIntegrations.filter((config) =>
+    config.fields.some((field) => {
+      const setting = settings[config.category]?.[field.key];
+      return setting?.value && setting.value !== "";
+    }),
+  ).length;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-semibold">Ecommerce Integrations</h2>
+        <p className="text-sm text-muted-foreground">
+          Connect store-specific marketing, product feed, shipping, inventory, and fulfillment
+          providers. {configuredCount} of {ecommerceIntegrations.length} ecommerce integrations
+          have saved settings.
+        </p>
+      </div>
+      <div className="space-y-8">
+        {INTEGRATION_GROUPS.map((group) => {
+          const groupIntegrations = ecommerceIntegrations.filter(
+            (config) => config.group === group.key,
+          );
+          if (groupIntegrations.length === 0) return null;
+
+          return (
+            <section
+              key={group.key}
+              className="space-y-4"
+              data-testid={`ecommerce-integration-group-${group.key}`}
+            >
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b pb-3">
+                <div>
+                  <h3 className="text-base font-semibold">{group.title}</h3>
+                  <p className="text-sm text-muted-foreground">{group.description}</p>
+                </div>
+                <Badge variant="outline">
+                  {groupIntegrations.length} {groupIntegrations.length === 1 ? "option" : "options"}
+                </Badge>
+              </div>
+              <div className="grid gap-4 xl:grid-cols-2">
+                {groupIntegrations.map((config) => (
+                  <IntegrationCard key={config.category} config={config} settings={settings} />
+                ))}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function SettingsTab() {
   const { data } = useQuery<StripeSettingsStatus>({ queryKey: ["/api/admin/ecommerce/settings/stripe"] });
   const [activeMode, setActiveMode] = useState("test");
@@ -319,7 +408,17 @@ export default function AdminEcommercePage() {
         </div>
         <Tabs value={activeView}>
           <TabsList className="flex h-auto flex-wrap justify-start">
-            {nav.map((item) => <TabsTrigger key={item.view} value={item.view} asChild><Link href={`/admin/ecommerce/${item.view}`}>{item.label}</Link></TabsTrigger>)}
+            {nav.map((item) => {
+              const Icon = item.icon;
+              return (
+                <TabsTrigger key={item.view} value={item.view} asChild>
+                  <Link href={`/admin/ecommerce/${item.view}`} className="gap-2">
+                    <Icon className={cn("h-4 w-4", item.iconColor)} />
+                    <span>{item.label}</span>
+                  </Link>
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
         </Tabs>
         {activeView === "products" ? <ProductsTab /> : null}
@@ -328,6 +427,7 @@ export default function AdminEcommercePage() {
         {activeView === "orders" ? <OrdersTab /> : null}
         {activeView === "shipping" ? <ShippingTab /> : null}
         {activeView === "refunds" ? <RefundsTab /> : null}
+        {activeView === "integrations" ? <IntegrationsTab /> : null}
         {activeView === "settings" ? <SettingsTab /> : null}
       </div>
     </AdminSidebar>

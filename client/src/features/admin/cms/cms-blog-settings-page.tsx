@@ -839,11 +839,11 @@ export default function CmsBlogSettingsPage() {
         <Tabs defaultValue="taxonomy" className="space-y-4">
           <TabsList>
             <TabsTrigger value="taxonomy" data-testid="tab-blog-taxonomy">
-              <BookOpen className="h-3.5 w-3.5 mr-1.5" />
+              <BookOpen className="h-4 w-4 mr-1.5 text-blue-600" />
               Categories & Tags
             </TabsTrigger>
             <TabsTrigger value="comments" data-testid="tab-blog-comments">
-              <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+              <MessageSquare className="h-4 w-4 mr-1.5 text-emerald-600" />
               Comments
             </TabsTrigger>
           </TabsList>
