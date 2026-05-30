@@ -65,9 +65,24 @@ export const fulfillmentItemsSchema = z.array(z.object({
 const excludedFulfillmentStatuses = new Set(["cancelled", "canceled", "failed"]);
 
 const shippablePaymentStatuses = new Set(["paid", "partially_refunded"]);
+const fulfillmentCompleteStatuses = new Set(["shipped", "delivered"]);
 
 function httpError(message: string, statusCode: number) {
   return Object.assign(new Error(message), { statusCode });
+}
+
+function assertAdminOrderStatusTransition(
+  previous: { status: string; paymentStatus: string },
+  nextStatus?: string,
+) {
+  if (!nextStatus || nextStatus === previous.status) return;
+  if (!fulfillmentCompleteStatuses.has(nextStatus)) return;
+  if (!shippablePaymentStatuses.has(previous.paymentStatus)) {
+    throw httpError("Only paid orders can be marked shipped or delivered", 400);
+  }
+  if (previous.status === "cancelled") {
+    throw httpError("Cancelled orders cannot be marked shipped or delivered", 400);
+  }
 }
 
 function pricedLinesToOrderItems(lines: PricedCartLine[]) {
@@ -213,6 +228,7 @@ export async function updateAdminEcommerceOrder(orderId: string, input: unknown)
   const data = adminOrderUpdateSchema.parse(input);
   const previous = await storage.ecommerce.getOrder(orderId);
   if (!previous) return undefined;
+  assertAdminOrderStatusTransition(previous, data.status);
 
   const updateData = {
     ...data,

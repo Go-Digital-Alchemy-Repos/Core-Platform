@@ -767,6 +767,57 @@ describe("ecommerce services", () => {
     expect(mockSendEcommerceOrderStatusEmail).not.toHaveBeenCalled();
   });
 
+  it("blocks admin shipped or delivered transitions for unpaid orders", async () => {
+    const { updateAdminEcommerceOrder } = await import("../services/ecommerce-order.service");
+    mockGetOrder.mockResolvedValue({
+      id: "order-admin-unpaid",
+      status: "pending",
+      paymentStatus: "unpaid",
+    } as EcommerceOrder);
+
+    await expect(updateAdminEcommerceOrder("order-admin-unpaid", { status: "shipped" }))
+      .rejects.toThrow(/Only paid orders/);
+    await expect(updateAdminEcommerceOrder("order-admin-unpaid", { status: "delivered" }))
+      .rejects.toThrow(/Only paid orders/);
+    expect(mockUpdateOrder).not.toHaveBeenCalled();
+  });
+
+  it("blocks admin shipped or delivered transitions for cancelled orders", async () => {
+    const { updateAdminEcommerceOrder } = await import("../services/ecommerce-order.service");
+    mockGetOrder.mockResolvedValue({
+      id: "order-admin-cancelled",
+      status: "cancelled",
+      paymentStatus: "paid",
+    } as EcommerceOrder);
+
+    await expect(updateAdminEcommerceOrder("order-admin-cancelled", { status: "shipped" }))
+      .rejects.toThrow(/Cancelled/);
+    await expect(updateAdminEcommerceOrder("order-admin-cancelled", { status: "delivered" }))
+      .rejects.toThrow(/Cancelled/);
+    expect(mockUpdateOrder).not.toHaveBeenCalled();
+  });
+
+  it("allows admin shipped transitions for paid active orders", async () => {
+    const { updateAdminEcommerceOrder } = await import("../services/ecommerce-order.service");
+    mockGetOrder.mockResolvedValue({
+      id: "order-admin-shippable",
+      status: "paid",
+      paymentStatus: "paid",
+    } as EcommerceOrder);
+    mockUpdateOrder.mockResolvedValue({
+      id: "order-admin-shippable",
+      status: "shipped",
+      paymentStatus: "paid",
+    } as EcommerceOrder);
+
+    await expect(updateAdminEcommerceOrder("order-admin-shippable", { status: "shipped" }))
+      .resolves.toMatchObject({ status: "shipped" });
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-admin-shippable", {
+      status: "shipped",
+      paymentStatus: undefined,
+    });
+  });
+
   it("allows shipments only for paid, active ecommerce orders", async () => {
     const { assertEcommerceOrderCanShip } = await import("../services/ecommerce-order.service");
 
