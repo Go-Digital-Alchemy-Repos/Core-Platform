@@ -34,6 +34,7 @@ import {
   getShippingProviderDefinition,
   mergeShippingProviderStatuses,
 } from "../../services/ecommerce-shipping-provider.service";
+import { inferCarrierTrackingUrl } from "../../services/ecommerce-shipping-carrier.service";
 import {
   ecommerceTaxSettingsSchema,
   getEcommerceTaxSettings,
@@ -484,11 +485,15 @@ router.put("/shipping/providers/:provider/credentials", asyncHandler(async (req,
 
 router.post("/orders/:orderId/shipments", asyncHandler(async (req, res) => {
   const orderId = paramString(req.params.orderId);
-  const shipment = await storage.ecommerce.createShipment(insertEcommerceShipmentSchema.parse({
+  const shipmentPayload = insertEcommerceShipmentSchema.parse({
     ...req.body,
     orderId,
     shippedBy: req.user?.id,
-  }));
+  });
+  const shipment = await storage.ecommerce.createShipment({
+    ...shipmentPayload,
+    trackingUrl: inferCarrierTrackingUrl(shipmentPayload),
+  });
   await storage.ecommerce.updateOrder(orderId, { status: "shipped" });
   const details = await storage.ecommerce.getOrderWithDetails(orderId);
   if (details && await sendEcommerceShipmentEmail(details, shipment)) {
@@ -516,6 +521,7 @@ router.post("/orders/:orderId/fulfillments", asyncHandler(async (req, res) => {
     {
       ...body.fulfillment,
       orderId: paramString(req.params.orderId),
+      trackingUrl: inferCarrierTrackingUrl(body.fulfillment),
     },
     body.items,
   ));

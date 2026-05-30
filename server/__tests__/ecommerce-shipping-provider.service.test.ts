@@ -7,7 +7,11 @@ import {
   mergeShippingProviderStatuses,
   shippingProviderSupportsCapability,
 } from "../services/ecommerce-shipping-provider.service";
-import { createShippingProviderClient, EasyPostShippingProviderClient } from "../services/ecommerce-shipping-carrier.service";
+import {
+  createShippingProviderClient,
+  EasyPostShippingProviderClient,
+  inferCarrierTrackingUrl,
+} from "../services/ecommerce-shipping-carrier.service";
 import type { EcommerceShippingProvider } from "@shared/schema";
 
 describe("ecommerce shipping provider registry", () => {
@@ -116,5 +120,27 @@ describe("ecommerce shipping provider registry", () => {
         parcel: { mass_unit: "oz", distance_unit: "in", weight: 16 },
       },
     });
+  });
+
+  it("infers tracking URLs for common direct carriers when admins omit a URL", () => {
+    expect(inferCarrierTrackingUrl({ carrier: "UPS", trackingNumber: "1Z 999" })).toBe(
+      "https://www.ups.com/track?tracknum=1Z%20999",
+    );
+    expect(inferCarrierTrackingUrl({ carrier: "USPS", trackingNumber: "9400" })).toBe(
+      "https://tools.usps.com/go/TrackConfirmAction?tLabels=9400",
+    );
+    expect(inferCarrierTrackingUrl({ carrier: "FedEx Ground", trackingNumber: "123456" })).toBe(
+      "https://www.fedex.com/fedextrack/?trknbr=123456",
+    );
+  });
+
+  it("keeps explicit tracking URLs and ignores unknown carriers", () => {
+    expect(inferCarrierTrackingUrl({
+      carrier: "UPS",
+      trackingNumber: "1Z999",
+      trackingUrl: "https://example.com/track/1Z999",
+    })).toBe("https://example.com/track/1Z999");
+    expect(inferCarrierTrackingUrl({ carrier: "Local Courier", trackingNumber: "LOCAL-1" })).toBeNull();
+    expect(inferCarrierTrackingUrl({ carrier: "UPS" })).toBeNull();
   });
 });

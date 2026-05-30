@@ -147,6 +147,44 @@ export function createShippingProviderClient(provider: string, credentials: Reco
   return new UnsupportedShippingProviderClient(provider);
 }
 
+export function inferCarrierTrackingUrl(params: {
+  carrier?: string | null;
+  trackingNumber?: string | null;
+  trackingUrl?: string | null;
+}): string | null {
+  const explicitUrl = params.trackingUrl?.trim();
+  if (explicitUrl) return explicitUrl;
+
+  const trackingNumber = params.trackingNumber?.trim();
+  if (!trackingNumber) return null;
+
+  const carrier = normalizeCarrier(params.carrier);
+  if (!carrier) return null;
+
+  const encodedTrackingNumber = encodeURIComponent(trackingNumber);
+  if (carrier.includes("ups")) {
+    return `https://www.ups.com/track?tracknum=${encodedTrackingNumber}`;
+  }
+  if (carrier.includes("usps") || carrier.includes("postal")) {
+    return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${encodedTrackingNumber}`;
+  }
+  if (carrier.includes("fedex") || carrier.includes("federal express")) {
+    return `https://www.fedex.com/fedextrack/?trknbr=${encodedTrackingNumber}`;
+  }
+  if (carrier.includes("dhl")) {
+    return `https://www.dhl.com/us-en/home/tracking/tracking-express.html?tracking-id=${encodedTrackingNumber}`;
+  }
+  if (carrier.includes("ontrac")) {
+    return `https://www.ontrac.com/tracking/?number=${encodedTrackingNumber}`;
+  }
+
+  return null;
+}
+
+function normalizeCarrier(carrier?: string | null): string {
+  return carrier?.trim().toLowerCase().replace(/[^a-z0-9]+/g, " ") ?? "";
+}
+
 function toEasyPostAddress(address: ShippingProviderAddress) {
   return {
     name: address.name,
