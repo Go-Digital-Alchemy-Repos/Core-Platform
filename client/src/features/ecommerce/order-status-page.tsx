@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { formatMoney } from "./cart-store";
+import { getEcommerceOrderStatusBadge, getEcommercePaymentStatusBadge } from "./order-status-labels";
 
 interface OrderDetails {
   id: string;
@@ -43,6 +44,18 @@ function orderStepIndex(status: string): number {
   if (status === "cancelled") return -1;
   const index = ORDER_STEPS.findIndex((step) => step.key === status);
   return index >= 0 ? index : 0;
+}
+
+function OrderStatusBadges({ status, paymentStatus }: { status: string; paymentStatus: string }) {
+  const orderStatus = getEcommerceOrderStatusBadge(status);
+  const payment = getEcommercePaymentStatusBadge(paymentStatus);
+
+  return (
+    <div className="flex flex-wrap justify-end gap-2">
+      <Badge variant={orderStatus.variant} className={orderStatus.className}>{orderStatus.label}</Badge>
+      <Badge variant={payment.variant} className={payment.className}>{payment.label}</Badge>
+    </div>
+  );
 }
 
 export default function OrderStatusPage() {
@@ -96,7 +109,7 @@ export default function OrderStatusPage() {
                   <h2 className="text-2xl font-semibold">Order details</h2>
                   {order.createdAt ? <p className="text-sm text-muted-foreground">Placed {new Date(order.createdAt).toLocaleDateString()}</p> : null}
                 </div>
-                <div className="flex gap-2"><Badge>{order.status}</Badge><Badge variant="outline">{order.paymentStatus}</Badge></div>
+                <OrderStatusBadges status={order.status} paymentStatus={order.paymentStatus} />
               </div>
 
               {order.status === "cancelled" ? (

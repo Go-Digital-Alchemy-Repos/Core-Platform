@@ -36,6 +36,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatMoney } from "@/features/ecommerce/cart-store";
+import { getEcommerceOrderStatusBadge, getEcommercePaymentStatusBadge } from "@/features/ecommerce/order-status-labels";
 import { cn } from "@/lib/utils";
 import {
   ECOMMERCE_INTEGRATION_CATEGORIES,
@@ -259,6 +260,34 @@ interface TaxSettingsStatus {
   manualRateBps: number;
   taxShipping: boolean;
   stripeTaxEnabled: boolean;
+}
+
+function OrderTableRow({ order, selected, onSelect }: { order: Order; selected: boolean; onSelect: () => void }) {
+  const orderStatus = getEcommerceOrderStatusBadge(order.status);
+  const paymentStatus = getEcommercePaymentStatusBadge(order.paymentStatus);
+
+  return (
+    <TableRow className={selected ? "bg-muted/50" : undefined}>
+      <TableCell>
+        <div className="font-mono text-xs">{order.id}</div>
+        <div className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</div>
+      </TableCell>
+      <TableCell>{order.customer?.email || "-"}</TableCell>
+      <TableCell>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant={orderStatus.variant} className={orderStatus.className}>{orderStatus.label}</Badge>
+          <Badge variant={paymentStatus.variant} className={paymentStatus.className}>{paymentStatus.label}</Badge>
+        </div>
+      </TableCell>
+      <TableCell>{formatMoney(order.totalAmount)}</TableCell>
+      <TableCell className="text-right">
+        <Button type="button" variant="outline" size="sm" onClick={onSelect}>
+          <Eye className="mr-2 h-4 w-4" />
+          View
+        </Button>
+      </TableCell>
+    </TableRow>
+  );
 }
 
 const nav: Array<{ view: View; label: string; icon: ElementType; iconColor: string }> = [
@@ -1501,21 +1530,12 @@ function OrdersTab() {
             </TableHeader>
             <TableBody>
               {filteredOrders.map((order) => (
-                <TableRow key={order.id} className={selectedOrder?.id === order.id ? "bg-muted/50" : undefined}>
-                  <TableCell>
-                    <div className="font-mono text-xs">{order.id}</div>
-                    <div className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</div>
-                  </TableCell>
-                  <TableCell>{order.customer?.email || "-"}</TableCell>
-                  <TableCell><Badge>{order.status}</Badge> <Badge variant="outline">{order.paymentStatus}</Badge></TableCell>
-                  <TableCell>{formatMoney(order.totalAmount)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button type="button" variant="outline" size="sm" onClick={() => setSelectedOrderId(order.id)}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      View
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                <OrderTableRow
+                  key={order.id}
+                  order={order}
+                  selected={selectedOrder?.id === order.id}
+                  onSelect={() => setSelectedOrderId(order.id)}
+                />
               ))}
               {filteredOrders.length === 0 ? (
                 <TableRow>
