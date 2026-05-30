@@ -82,6 +82,27 @@ import {
 import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
+import type { IconType } from "react-icons";
+import {
+  SiAdyen,
+  SiAfterpay,
+  SiAmazonpay,
+  SiApplepay,
+  SiBraintree,
+  SiCloudflare,
+  SiGoogle,
+  SiGoogleanalytics,
+  SiGooglepay,
+  SiKlarna,
+  SiMailchimp,
+  SiMailgun,
+  SiMeta,
+  SiPaypal,
+  SiSquare,
+  SiStripe,
+  SiTiktok,
+  SiX,
+} from "react-icons/si";
 
 export type SettingsData = Record<string, Record<string, { value: string; isSecret: boolean }>>;
 
@@ -308,6 +329,9 @@ export interface IntegrationConfig {
   description: string;
   group: IntegrationGroupKey;
   icon: typeof CreditCard;
+  brandIcon?: IconType;
+  brandColor?: string;
+  logoText?: string;
   badge?: string;
   accountUrl: string;
   docsUrl?: string;
@@ -369,6 +393,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Global card, wallet, subscription, and checkout payment processing",
     group: "commerce",
     icon: CreditCard,
+    brandIcon: SiStripe,
+    brandColor: "text-[#635BFF]",
     accountUrl: "https://dashboard.stripe.com/apikeys",
     docsUrl: "https://docs.stripe.com/keys",
     instructions: [
@@ -404,6 +430,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Global PayPal checkout, wallet payment, and webhook credentials",
     group: "commerce",
     icon: CreditCard,
+    brandIcon: SiPaypal,
+    brandColor: "text-[#003087]",
     accountUrl: "https://developer.paypal.com/dashboard/applications/live",
     docsUrl: "https://developer.paypal.com/api/rest/",
     instructions: [
@@ -445,6 +473,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Global Square Payments API, location, and webhook configuration",
     group: "commerce",
     icon: CreditCard,
+    brandIcon: SiSquare,
+    brandColor: "text-[#3E4348]",
     accountUrl: "https://developer.squareup.com/apps",
     docsUrl: "https://developer.squareup.com/docs/payments-api/overview",
     instructions: [
@@ -492,6 +522,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Global Authorize.net API, transaction key, and webhook signature settings",
     group: "commerce",
     icon: CreditCard,
+    logoText: "Authorize.net",
+    brandColor: "text-sky-700",
     accountUrl: "https://account.authorize.net/",
     docsUrl: "https://developer.authorize.net/api/reference/",
     instructions: [
@@ -539,6 +571,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Global Braintree merchant, card, PayPal, and wallet payment credentials",
     group: "commerce",
     icon: CreditCard,
+    brandIcon: SiBraintree,
+    brandColor: "text-[#000000]",
     accountUrl: "https://www.braintreegateway.com/login",
     docsUrl: "https://developer.paypal.com/braintree/docs/",
     instructions: [
@@ -580,6 +614,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Global Adyen checkout, payment method, and webhook settings",
     group: "commerce",
     icon: CreditCard,
+    brandIcon: SiAdyen,
+    brandColor: "text-[#0ABF53]",
     accountUrl: "https://ca-live.adyen.com/",
     docsUrl: "https://docs.adyen.com/online-payments/",
     instructions: [
@@ -627,6 +663,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Global Amazon Pay merchant, checkout, and signing key configuration",
     group: "commerce",
     icon: CreditCard,
+    brandIcon: SiAmazonpay,
+    brandColor: "text-[#FF9900]",
     accountUrl: "https://pay.amazon.com/",
     docsUrl: "https://developer.amazon.com/docs/amazon-pay/intro.html",
     instructions: [
@@ -674,6 +712,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Global Apple Pay merchant identity and domain verification settings",
     group: "commerce",
     icon: CreditCard,
+    brandIcon: SiApplepay,
+    brandColor: "text-black",
     accountUrl: "https://developer.apple.com/account/resources/identifiers/list/merchant",
     docsUrl: "https://developer.apple.com/documentation/apple_pay_on_the_web",
     instructions: [
@@ -715,6 +755,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Global Google Pay merchant profile and gateway mapping",
     group: "commerce",
     icon: CreditCard,
+    brandIcon: SiGooglepay,
+    brandColor: "text-[#4285F4]",
     accountUrl: "https://pay.google.com/business/console/",
     docsUrl: "https://developers.google.com/pay/api/web/overview",
     instructions: [
@@ -762,6 +804,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Global Klarna payments, buy-now-pay-later, and order management credentials",
     group: "commerce",
     icon: CreditCard,
+    brandIcon: SiKlarna,
+    brandColor: "text-[#FFB3C7]",
     accountUrl: "https://portal.klarna.com/",
     docsUrl: "https://docs.klarna.com/",
     instructions: [
@@ -809,6 +853,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Global Afterpay/Clearpay merchant and buy-now-pay-later API settings",
     group: "commerce",
     icon: CreditCard,
+    brandIcon: SiAfterpay,
+    brandColor: "text-[#00C9B7]",
     accountUrl: "https://portal.afterpay.com/",
     docsUrl: "https://developers.afterpay.com/",
     instructions: [
@@ -856,6 +902,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Transactional email delivery service",
     group: "communications",
     icon: Mail,
+    brandIcon: SiMailgun,
+    brandColor: "text-[#F06B66]",
     accountUrl: "https://app.mailgun.com/app/account/security/api_keys",
     docsUrl:
       "https://help.mailgun.com/hc/en-us/articles/203380100-Where-can-I-find-my-API-keys-and-SMTP-credentials",
@@ -891,6 +939,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Audience sync used by managed forms and lifecycle tagging",
     group: "marketing",
     icon: Tag,
+    brandIcon: SiMailchimp,
+    brandColor: "text-[#FFE01B]",
     accountUrl: "https://admin.mailchimp.com/account/api/",
     docsUrl: "https://mailchimp.com/help/about-api-keys/",
     instructions: [
@@ -926,6 +976,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
       "Reserve the GA4 tracking and reporting configuration used by future public analytics and the planned admin Analytics area.",
     group: "marketing",
     icon: BarChart3,
+    brandIcon: SiGoogleanalytics,
+    brandColor: "text-[#E37400]",
     accountUrl: "https://analytics.google.com/analytics/web/",
     docsUrl: "https://support.google.com/analytics/answer/9539598",
     instructions: [
@@ -968,6 +1020,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
       "Marketing pixel and server-side event credentials for Facebook and Instagram commerce campaigns",
     group: "marketing",
     icon: Megaphone,
+    brandIcon: SiMeta,
+    brandColor: "text-[#0467DF]",
     accountUrl: "https://business.facebook.com/events_manager",
     docsUrl: "https://developers.facebook.com/docs/meta-pixel/",
     instructions: [
@@ -1004,6 +1058,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
       "TikTok browser pixel and Events API credentials for catalog, checkout, and purchase tracking",
     group: "marketing",
     icon: Megaphone,
+    brandIcon: SiTiktok,
+    brandColor: "text-black",
     accountUrl: "https://ads.tiktok.com/i18n/events_manager",
     docsUrl: "https://business-api.tiktok.com/portal/docs?id=1739584855420929",
     instructions: [
@@ -1039,6 +1095,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Consent-based website tag configuration for X campaign measurement and remarketing",
     group: "marketing",
     icon: Megaphone,
+    brandIcon: SiX,
+    brandColor: "text-black",
     accountUrl: "https://ads.x.com/conversion_tracking",
     docsUrl: "https://business.x.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html",
     instructions: [
@@ -1062,6 +1120,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Product feed readiness settings for Shopping surfaces and merchant diagnostics",
     group: "commerce",
     icon: Store,
+    brandIcon: SiGoogle,
+    brandColor: "text-[#4285F4]",
     accountUrl: "https://merchants.google.com/",
     docsUrl: "https://support.google.com/merchants/answer/7052112",
     instructions: [
@@ -1091,6 +1151,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "API key used by external lead sources like social ads, Zapier, and landing-page tools",
     group: "communications",
     icon: Plug,
+    logoText: "CRM",
+    brandColor: "text-blue-700",
     accountUrl: "https://core-platform-production-0848.up.railway.app/admin/settings",
     docsUrl: "https://core-platform-production-0848.up.railway.app/admin/settings",
     instructions: [
@@ -1114,6 +1176,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Shipping label, fulfillment, and shipment sync configuration for ecommerce orders",
     group: "shipping",
     icon: Truck,
+    logoText: "ShipStation",
+    brandColor: "text-teal-700",
     badge: "Best workflow automation",
     accountUrl: "https://shipstation.com/account/settings/api",
     docsUrl: "https://docs.shipstation.com/api-overview",
@@ -1156,6 +1220,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Carrier rates, label purchasing, address validation, and tracking through a developer-first shipping API",
     group: "shipping",
     icon: Truck,
+    logoText: "Shippo",
+    brandColor: "text-purple-700",
     badge: "Best API strategy",
     accountUrl: "https://apps.goshippo.com/settings/api",
     docsUrl: "https://docs.goshippo.com/docs/Guides_general/authentication/",
@@ -1198,6 +1264,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Inventory, warehouse, order, shipping, and marketplace operations for multi-channel ecommerce",
     group: "shipping",
     icon: Store,
+    logoText: "Veeqo",
+    brandColor: "text-emerald-700",
     badge: "Best inventory + shipping",
     accountUrl: "https://app.veeqo.com/",
     docsUrl: "https://developers.veeqo.com/getting-started/authentication",
@@ -1240,6 +1308,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "International shipping rates, duties, taxes, courier options, and cross-border delivery workflows",
     group: "shipping",
     icon: Truck,
+    logoText: "Easyship",
+    brandColor: "text-sky-700",
     badge: "Best international features",
     accountUrl: "https://www.easyship.com/developers",
     docsUrl: "https://www.easyship.com/developers",
@@ -1282,6 +1352,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Simple manual shipping workflow using order exports and tracking imports instead of a public API",
     group: "shipping",
     icon: Truck,
+    logoText: "Pirate Ship",
+    brandColor: "text-orange-700",
     badge: "Best simplicity",
     accountUrl: "https://www.pirateship.com/",
     docsUrl: "https://support.pirateship.com/en/articles/2309246-does-pirate-ship-have-an-api",
@@ -1318,6 +1390,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     description: "Object storage for images and file uploads",
     group: "infrastructure",
     icon: Cloud,
+    brandIcon: SiCloudflare,
+    brandColor: "text-[#F38020]",
     accountUrl: "https://dash.cloudflare.com/?to=/:account/r2/api-tokens",
     docsUrl: "https://developers.cloudflare.com/r2/api/s3/tokens/",
     instructions: [
@@ -1430,16 +1504,34 @@ export function IntegrationCard({
   const supportsConnectionTest = config.supportsConnectionTest !== false;
 
   const Icon = config.icon;
+  const BrandIcon = config.brandIcon;
 
   return (
     <Card data-testid={`card-integration-${config.category}`}>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-md bg-primary/10">
-              <Icon className="h-5 w-5 text-primary" />
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-4">
+            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg border bg-background shadow-sm">
+              {BrandIcon ? (
+                <BrandIcon
+                  aria-label={`${config.title} logo`}
+                  className={cn("h-8 w-8", config.brandColor || "text-primary")}
+                />
+              ) : config.logoText ? (
+                <span
+                  aria-label={`${config.title} logo`}
+                  className={cn(
+                    "px-1 text-center text-[11px] font-bold leading-tight tracking-normal",
+                    config.brandColor || "text-primary",
+                  )}
+                >
+                  {config.logoText}
+                </span>
+              ) : (
+                <Icon className={cn("h-7 w-7", config.brandColor || "text-primary")} />
+              )}
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <CardTitle className="text-lg">{config.title}</CardTitle>
                 {config.badge ? (
