@@ -1,7 +1,19 @@
-import { FormEvent, useEffect, useState } from "react";
+import { type ElementType, FormEvent, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Package, Plus, Save, Settings, ShoppingBag, TicketPercent, Truck, Undo2 } from "lucide-react";
+import {
+  CalendarDays,
+  ClipboardList,
+  Package,
+  Plus,
+  Save,
+  Settings,
+  ShoppingBag,
+  Tag,
+  TicketPercent,
+  Truck,
+  Undo2,
+} from "lucide-react";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +28,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatMoney } from "@/features/ecommerce/cart-store";
+import { cn } from "@/lib/utils";
 
 type View = "products" | "categories" | "coupons" | "orders" | "shipping" | "refunds" | "settings";
 
@@ -67,14 +80,14 @@ interface StripeSettingsStatus {
   hasLiveWebhookSecret: boolean;
 }
 
-const nav: Array<{ view: View; label: string }> = [
-  { view: "products", label: "Products" },
-  { view: "categories", label: "Categories" },
-  { view: "coupons", label: "Coupons" },
-  { view: "orders", label: "Orders" },
-  { view: "shipping", label: "Shipping" },
-  { view: "refunds", label: "Refunds" },
-  { view: "settings", label: "Settings" },
+const nav: Array<{ view: View; label: string; icon: ElementType; iconColor: string }> = [
+  { view: "products", label: "Products", icon: Package, iconColor: "text-emerald-600" },
+  { view: "categories", label: "Categories", icon: Tag, iconColor: "text-emerald-500" },
+  { view: "coupons", label: "Coupons", icon: TicketPercent, iconColor: "text-amber-600" },
+  { view: "orders", label: "Orders", icon: ClipboardList, iconColor: "text-blue-600" },
+  { view: "shipping", label: "Shipping", icon: CalendarDays, iconColor: "text-sky-600" },
+  { view: "refunds", label: "Refunds", icon: Undo2, iconColor: "text-rose-600" },
+  { view: "settings", label: "Settings", icon: Settings, iconColor: "text-slate-500" },
 ];
 
 function cents(value: string): number {
@@ -319,7 +332,17 @@ export default function AdminEcommercePage() {
         </div>
         <Tabs value={activeView}>
           <TabsList className="flex h-auto flex-wrap justify-start">
-            {nav.map((item) => <TabsTrigger key={item.view} value={item.view} asChild><Link href={`/admin/ecommerce/${item.view}`}>{item.label}</Link></TabsTrigger>)}
+            {nav.map((item) => {
+              const Icon = item.icon;
+              return (
+                <TabsTrigger key={item.view} value={item.view} asChild>
+                  <Link href={`/admin/ecommerce/${item.view}`} className="gap-2">
+                    <Icon className={cn("h-4 w-4", item.iconColor)} />
+                    <span>{item.label}</span>
+                  </Link>
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
         </Tabs>
         {activeView === "products" ? <ProductsTab /> : null}
