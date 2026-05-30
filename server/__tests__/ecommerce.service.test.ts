@@ -482,13 +482,43 @@ describe("ecommerce services", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+    mockShippingZones.push({
+      id: "zone-ca",
+      name: "California",
+      countries: ["US"],
+      states: ["CA"],
+      active: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockShippingRates.push({
+      id: "rate-california",
+      zoneId: "zone-ca",
+      name: "California local",
+      description: "California-only delivery",
+      amount: 100,
+      minOrderAmount: null,
+      maxOrderAmount: null,
+      active: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     const options = await getShippingRateOptions({ subtotalAmount: 10000, address: { country: "US", state: "MI" } });
     expect(options).toEqual([expect.objectContaining({ id: "rate-standard", amount: 995 })]);
 
-    const priced = await priceCart({ items: [{ productId: "p1", quantity: 1 }], shippingRateId: "rate-standard" });
+    const priced = await priceCart({
+      items: [{ productId: "p1", quantity: 1 }],
+      shippingRateId: "rate-standard",
+      shippingAddress: { country: "US", state: "MI" },
+    });
     expect(priced.shippingAmount).toBe(995);
     expect(priced.totalAmount).toBe(10995);
+    await expect(priceCart({
+      items: [{ productId: "p1", quantity: 1 }],
+      shippingRateId: "rate-california",
+      shippingAddress: { country: "US", state: "MI" },
+    })).rejects.toThrow(/shipping rate is unavailable/);
   });
 
   it("calculates manual tax server-side after discounts and optional shipping tax", async () => {

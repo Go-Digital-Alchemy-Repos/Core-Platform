@@ -115,6 +115,10 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
     couponCode: data.couponCode,
     customerEmail: data.customer.email,
     shippingRateId: data.shippingRateId,
+    shippingAddress: {
+      country: data.shippingAddress.country,
+      state: data.shippingAddress.state,
+    },
   });
   if (priced.totalAmount <= 0) throw new Error("Order total must be greater than zero");
 

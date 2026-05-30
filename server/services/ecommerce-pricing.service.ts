@@ -11,17 +11,18 @@ import {
 } from "@shared/schema";
 import { calculateEcommerceTax, type EcommerceTaxCalculation } from "./ecommerce-tax.service";
 
+export const shippingAddressQuoteSchema = z.object({
+  country: z.string().default("US"),
+  state: z.string().optional(),
+});
+
 export const priceCartSchema = z.object({
   items: z.array(ecommerceCartItemSchema).min(1),
   couponCode: z.string().optional(),
   customerId: z.string().optional(),
   customerEmail: z.string().email().optional(),
   shippingRateId: z.string().optional(),
-});
-
-export const shippingAddressQuoteSchema = z.object({
-  country: z.string().default("US"),
-  state: z.string().optional(),
+  shippingAddress: shippingAddressQuoteSchema.optional(),
 });
 
 export interface PricedCartLine {
@@ -310,13 +311,18 @@ export async function getShippingRateOptions(input: {
 export async function resolveShippingRate(input: {
   shippingRateId?: string;
   subtotalAmount: number;
+  address?: z.infer<typeof shippingAddressQuoteSchema>;
 }): Promise<ShippingRateOption | null> {
   if (!input.shippingRateId) return null;
   const [zones, rates] = await Promise.all([
     storage.ecommerce.getShippingZones(),
     storage.ecommerce.getShippingRates(),
   ]);
-  const activeZoneIds = new Set(zones.filter((zone) => zone.active).map((zone) => zone.id));
+  const address = input.address;
+  const activeZones = address
+    ? zones.filter((zone) => matchesShippingZone(zone, address))
+    : zones.filter((zone) => zone.active);
+  const activeZoneIds = new Set(activeZones.map((zone) => zone.id));
   const rate = rates.find((candidate) => candidate.id === input.shippingRateId);
   if (!rate || !activeZoneIds.has(rate.zoneId) || !rateAppliesToSubtotal(rate, input.subtotalAmount)) {
     throw new Error("Selected shipping rate is unavailable");
@@ -402,6 +408,7 @@ export async function priceCart(input: z.infer<typeof priceCartSchema>): Promise
   const shippingRate = await resolveShippingRate({
     shippingRateId: parsed.shippingRateId,
     subtotalAmount,
+    address: parsed.shippingAddress,
   });
   const shippingAmount = shippingRate?.amount ?? 0;
   let coupon: EcommerceCoupon | null = null;
