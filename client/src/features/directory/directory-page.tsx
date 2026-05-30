@@ -85,12 +85,20 @@ function TherapistRow({
   user,
   isHighlighted,
   acceptingLabel,
+  showSpecialties,
+  showPracticeMode,
+  showAvailabilityStatus,
+  showLocationFields,
   onHover,
 }: {
   profile: TherapistProfile;
   user: { firstName: string | null; lastName: string | null; profileImageUrl: string | null };
   isHighlighted: boolean;
   acceptingLabel: string;
+  showSpecialties: boolean;
+  showPracticeMode: boolean;
+  showAvailabilityStatus: boolean;
+  showLocationFields: boolean;
   onHover: (id: string | null) => void;
 }) {
   const initials = `${(user.firstName || "")[0] || ""}${(user.lastName || "")[0] || ""}`.toUpperCase();
@@ -127,7 +135,7 @@ function TherapistRow({
             <h3 className="font-semibold text-sm leading-tight truncate" data-testid={`text-name-${profile.id}`}>
               {fullName}
             </h3>
-            {profile.acceptingClients && (
+            {showAvailabilityStatus && profile.acceptingClients && (
               <span className="h-2 w-2 rounded-full bg-green-500 flex-shrink-0" title={acceptingLabel} />
             )}
           </div>
@@ -137,23 +145,30 @@ function TherapistRow({
             </p>
           )}
           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-            {locationText ? (
+            {showLocationFields && (
+              locationText ? (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground max-w-[160px] sm:max-w-none">
                 <MapPin className="h-3 w-3 flex-shrink-0" />
                 <span className="truncate" data-testid={`text-location-${profile.id}`}>{locationText}</span>
               </span>
-            ) : (
+              ) : (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <Monitor className="h-3 w-3 flex-shrink-0" />
                 <span data-testid={`text-location-${profile.id}`}>Virtual Only</span>
               </span>
+              )
             )}
-            <span className="text-muted-foreground/40 hidden sm:inline">·</span>
-            <span className="text-xs text-muted-foreground hidden sm:inline">
-              {getSessionFormatShortLabel(profile.practiceMode)}
-            </span>
+            {showPracticeMode && (
+              <>
+                <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+                <span className="text-xs text-muted-foreground hidden sm:inline">
+                  {getSessionFormatShortLabel(profile.practiceMode)}
+                </span>
+              </>
+            )}
           </div>
 
+          {showSpecialties && (
           <div className="flex items-center gap-1 mt-1.5 flex-wrap">
             {displayedSpecs.map((spec) => (
               <Badge key={spec} variant="secondary" className="text-[10px] px-1.5 py-0 leading-4 whitespace-nowrap">
@@ -166,6 +181,7 @@ function TherapistRow({
               </Badge>
             )}
           </div>
+          )}
         </div>
 
         <ChevronRight className="h-4 w-4 text-muted-foreground/50 flex-shrink-0 mt-1 hidden sm:block" />
@@ -210,6 +226,12 @@ export function DirectoryBrowserSection({
   const queryString = useSearch();
   const [, navigate] = useLocation();
   const { settings: directorySettings } = useDirectorySettings();
+  const showSpecialties = directorySettings.showSpecialties;
+  const showLanguages = directorySettings.showLanguages;
+  const showPracticeMode = directorySettings.showPracticeMode;
+  const showAvailabilityStatus = directorySettings.showAvailabilityStatus;
+  const showTravelOption = directorySettings.showTravelOption;
+  const showLocationFields = directorySettings.showLocationFields;
   const heading = str(props.heading) || `Find ${directorySettings.participantLabelPlural}`;
   const subheading = str(props.subheading);
   const showCategoryChips = bool(props.showCategoryChips, true);
@@ -242,17 +264,17 @@ export function DirectoryBrowserSection({
     }
     const sp = new URLSearchParams(queryString);
     const specVal = sp.get("specialization");
-    setSpecializations(specVal ? specVal.split(",").filter(Boolean) : []);
-    setLanguage(sp.get("language") || "all");
-    setSessionFormat(sp.get("practiceMode") || "all");
+    setSpecializations(showSpecialties && specVal ? specVal.split(",").filter(Boolean) : []);
+    setLanguage(showLanguages ? sp.get("language") || "all" : "all");
+    setSessionFormat(showPracticeMode ? sp.get("practiceMode") || "all" : "all");
     setCountry(sp.get("country") || "all");
-    setAcceptingClients(sp.get("acceptingClients") === "true");
-    setWillingToTravel(sp.get("willingToTravel") === "true");
+    setAcceptingClients(showAvailabilityStatus && sp.get("acceptingClients") === "true");
+    setWillingToTravel(showTravelOption && sp.get("willingToTravel") === "true");
     const searchParam = sp.get("search") || "";
     if (searchParam !== search) setSearch(searchParam);
     const pageParam = parseInt(sp.get("page") || "1") || 1;
     setPage(pageParam);
-  }, [queryString, syncUrl]);
+  }, [queryString, search, showAvailabilityStatus, showLanguages, showPracticeMode, showSpecialties, showTravelOption, syncUrl]);
 
   useEffect(() => {
     setPage(1);
@@ -262,34 +284,34 @@ export function DirectoryBrowserSection({
     if (!syncUrl) return;
     const p = new URLSearchParams();
     if (debouncedSearch) p.set("search", debouncedSearch);
-    if (specializations.length > 0) p.set("specialization", specializations.join(","));
-    if (sessionFormat !== "all") p.set("practiceMode", sessionFormat);
-    if (language !== "all") p.set("language", language);
+    if (showSpecialties && specializations.length > 0) p.set("specialization", specializations.join(","));
+    if (showPracticeMode && sessionFormat !== "all") p.set("practiceMode", sessionFormat);
+    if (showLanguages && language !== "all") p.set("language", language);
     if (country !== "all") p.set("country", country);
-    if (acceptingClients) p.set("acceptingClients", "true");
-    if (willingToTravel) p.set("willingToTravel", "true");
+    if (showAvailabilityStatus && acceptingClients) p.set("acceptingClients", "true");
+    if (showTravelOption && willingToTravel) p.set("willingToTravel", "true");
     if (page > 1) p.set("page", String(page));
     const qs = p.toString();
     const newPath = qs ? `/directory?${qs}` : "/directory";
     isInternalUpdate.current = true;
     navigate(newPath, { replace: true });
-  }, [debouncedSearch, specializations, sessionFormat, language, country, acceptingClients, willingToTravel, page, navigate, syncUrl]);
+  }, [debouncedSearch, specializations, sessionFormat, language, country, acceptingClients, willingToTravel, page, navigate, showAvailabilityStatus, showLanguages, showPracticeMode, showSpecialties, showTravelOption, syncUrl]);
 
   const { specializations: specList } = useSpecializations();
 
   const queryParams = useMemo(() => {
     const p = new URLSearchParams();
     if (debouncedSearch) p.set("search", debouncedSearch);
-    if (specializations.length > 0) p.set("specialization", specializations.join(","));
-    if (sessionFormat !== "all") p.set("practiceMode", sessionFormat);
-    if (language !== "all") p.set("language", language);
+    if (showSpecialties && specializations.length > 0) p.set("specialization", specializations.join(","));
+    if (showPracticeMode && sessionFormat !== "all") p.set("practiceMode", sessionFormat);
+    if (showLanguages && language !== "all") p.set("language", language);
     if (country !== "all") p.set("country", country);
-    if (acceptingClients) p.set("acceptingClients", "true");
-    if (willingToTravel) p.set("willingToTravel", "true");
+    if (showAvailabilityStatus && acceptingClients) p.set("acceptingClients", "true");
+    if (showTravelOption && willingToTravel) p.set("willingToTravel", "true");
     p.set("page", String(page));
     p.set("pageSize", "20");
     return p.toString();
-  }, [debouncedSearch, specializations, sessionFormat, language, country, acceptingClients, willingToTravel, page]);
+  }, [debouncedSearch, specializations, sessionFormat, language, country, acceptingClients, willingToTravel, page, showAvailabilityStatus, showLanguages, showPracticeMode, showSpecialties, showTravelOption]);
 
   const { data, isLoading } = useQuery<PaginatedTherapists>({
     queryKey: ["/api/therapists", queryParams],
@@ -329,12 +351,12 @@ export function DirectoryBrowserSection({
   }, []);
 
   const activeFilterCount = [
-    sessionFormat !== "all",
-    specializations.length > 0,
-    language !== "all",
+    showPracticeMode && sessionFormat !== "all",
+    showSpecialties && specializations.length > 0,
+    showLanguages && language !== "all",
     country !== "all",
-    acceptingClients,
-    willingToTravel,
+    showAvailabilityStatus && acceptingClients,
+    showTravelOption && willingToTravel,
   ].filter(Boolean).length;
 
   const clearAllFilters = () => {
@@ -349,7 +371,7 @@ export function DirectoryBrowserSection({
 
   return (
     <>
-      {showCategoryChips && (
+      {showCategoryChips && showSpecialties && (
         <div className="border-b bg-muted/30 overflow-x-auto" data-testid="section-categories">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2">
             <div className="flex items-center gap-1 min-w-max">
@@ -450,7 +472,7 @@ export function DirectoryBrowserSection({
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder={`Search name, ${directorySettings.specialtyLabelPlural.toLowerCase()}, language...`}
+                placeholder={`Search name${showSpecialties ? `, ${directorySettings.specialtyLabelPlural.toLowerCase()}` : ""}${showLanguages ? ", language" : ""}...`}
                 className="pl-9 h-9 text-sm"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -462,6 +484,7 @@ export function DirectoryBrowserSection({
             {showFilters && (
               <div className="space-y-2.5 pt-0.5" data-testid="panel-filters">
                 <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
+                  {showSpecialties && (
                   <div>
                     <Label className="text-[11px] text-muted-foreground mb-1 block">
                       {directorySettings.specialtyLabelPlural} {specializations.length > 0 && `(${specializations.length})`}
@@ -495,6 +518,8 @@ export function DirectoryBrowserSection({
                       })}
                     </div>
                   </div>
+                  )}
+                  {showLanguages && (
                   <div>
                     <Label className="text-[11px] text-muted-foreground mb-1 block">Language</Label>
                     <Select value={language} onValueChange={setLanguage}>
@@ -509,6 +534,7 @@ export function DirectoryBrowserSection({
                       </SelectContent>
                     </Select>
                   </div>
+                  )}
                   <div>
                     <Label className="text-[11px] text-muted-foreground mb-1 block">Location</Label>
                     <Select value={country} onValueChange={setCountry}>
@@ -523,6 +549,7 @@ export function DirectoryBrowserSection({
                       </SelectContent>
                     </Select>
                   </div>
+                  {showPracticeMode && (
                   <div>
                     <Label className="text-[11px] text-muted-foreground mb-1 block">{directorySettings.practiceModeLabel}</Label>
                     <Select value={sessionFormat} onValueChange={setSessionFormat}>
@@ -537,10 +564,12 @@ export function DirectoryBrowserSection({
                       </SelectContent>
                     </Select>
                   </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
+                    {showAvailabilityStatus && (
                     <div className="flex items-center gap-1.5">
                       <Checkbox
                         id="filter-accepting"
@@ -553,6 +582,8 @@ export function DirectoryBrowserSection({
                         {directorySettings.acceptingClientsLabel}
                       </Label>
                     </div>
+                    )}
+                    {showTravelOption && (
                     <div className="flex items-center gap-1.5">
                       <Checkbox
                         id="filter-willing-travel"
@@ -565,6 +596,7 @@ export function DirectoryBrowserSection({
                         {directorySettings.willingToTravelLabel}
                       </Label>
                     </div>
+                    )}
                   </div>
                   {activeFilterCount > 0 && (
                     <Button
@@ -584,7 +616,7 @@ export function DirectoryBrowserSection({
 
             {!showFilters && activeFilterCount > 0 && (
               <div className="flex flex-wrap gap-1.5" data-testid="active-filter-badges">
-                {specializations.map((spec) => (
+                {showSpecialties && specializations.map((spec) => (
                   <Badge key={spec} variant="secondary" className="text-xs gap-1 max-w-[140px]">
                     <span className="truncate">{spec}</span>
                     <button
@@ -596,7 +628,7 @@ export function DirectoryBrowserSection({
                     </button>
                   </Badge>
                 ))}
-                {language !== "all" && (
+                {showLanguages && language !== "all" && (
                   <Badge variant="secondary" className="text-xs gap-1">
                     {language}
                     <button onClick={() => setLanguage("all")} aria-label={`Remove ${language} filter`} className="flex-shrink-0 ml-0.5">
@@ -612,7 +644,7 @@ export function DirectoryBrowserSection({
                     </button>
                   </Badge>
                 )}
-                {sessionFormat !== "all" && (
+                {showPracticeMode && sessionFormat !== "all" && (
                   <Badge variant="secondary" className="text-xs gap-1">
                     {getSessionFormatLabel(sessionFormat)}
                     <button onClick={() => setSessionFormat("all")} aria-label="Remove session format filter" className="flex-shrink-0 ml-0.5">
@@ -620,7 +652,7 @@ export function DirectoryBrowserSection({
                     </button>
                   </Badge>
                 )}
-                {acceptingClients && (
+                {showAvailabilityStatus && acceptingClients && (
                   <Badge variant="secondary" className="text-xs gap-1">
                     {directorySettings.acceptingClientsLabel}
                     <button onClick={() => setAcceptingClients(false)} aria-label={`Remove ${directorySettings.acceptingClientsLabel.toLowerCase()} filter`} className="flex-shrink-0 ml-0.5">
@@ -628,7 +660,7 @@ export function DirectoryBrowserSection({
                     </button>
                   </Badge>
                 )}
-                {willingToTravel && (
+                {showTravelOption && willingToTravel && (
                   <Badge variant="secondary" className="text-xs gap-1">
                     {directorySettings.willingToTravelLabel}
                     <button onClick={() => setWillingToTravel(false)} aria-label={`Remove ${directorySettings.willingToTravelLabel.toLowerCase()} filter`} className="flex-shrink-0 ml-0.5">
@@ -672,6 +704,10 @@ export function DirectoryBrowserSection({
                   }}
                   isHighlighted={hoveredId === t.id}
                   acceptingLabel={directorySettings.acceptingClientsLabel}
+                  showSpecialties={showSpecialties}
+                  showPracticeMode={showPracticeMode}
+                  showAvailabilityStatus={showAvailabilityStatus}
+                  showLocationFields={showLocationFields}
                   onHover={handleHover}
                 />
               ))

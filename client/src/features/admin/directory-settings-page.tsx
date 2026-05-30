@@ -15,7 +15,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
   DIRECTORY_LABEL_PRESETS,
+  DIRECTORY_PRIMARY_CTA_TYPES,
   type DirectoryMode,
+  type DirectoryPrimaryCtaType,
 } from "@shared/types/directory-settings";
 import { useDirectorySettings } from "@/hooks/use-directory-settings";
 
@@ -48,6 +50,31 @@ type DirectorySettingsValues = {
   willing_to_travel_label: string;
   willing_to_travel_help_text: string;
   location_contact_label: string;
+  primary_cta_type: DirectoryPrimaryCtaType;
+  primary_cta_label: string;
+  show_profile_title: boolean;
+  require_profile_title: boolean;
+  show_profile_bio: boolean;
+  require_profile_bio: boolean;
+  show_specialties: boolean;
+  require_specialties: boolean;
+  show_languages: boolean;
+  require_languages: boolean;
+  show_credentials: boolean;
+  require_credentials: boolean;
+  show_license_number: boolean;
+  require_license_number: boolean;
+  show_practice_mode: boolean;
+  require_practice_mode: boolean;
+  show_availability_status: boolean;
+  show_travel_option: boolean;
+  show_location_fields: boolean;
+  require_location_fields: boolean;
+  show_phone: boolean;
+  require_phone: boolean;
+  show_website: boolean;
+  require_website: boolean;
+  show_social_links: boolean;
   application_fee_amount_usd: string;
   application_fee_notice_title: string;
   application_fee_notice_body: string;
@@ -86,6 +113,31 @@ const DEFAULT_VALUES: DirectorySettingsValues = {
   willing_to_travel_label: DIRECTORY_LABEL_PRESETS.therapists.willingToTravelLabel,
   willing_to_travel_help_text: DIRECTORY_LABEL_PRESETS.therapists.willingToTravelHelpText,
   location_contact_label: DIRECTORY_LABEL_PRESETS.therapists.locationContactLabel,
+  primary_cta_type: DIRECTORY_LABEL_PRESETS.therapists.primaryCtaType,
+  primary_cta_label: DIRECTORY_LABEL_PRESETS.therapists.primaryCtaLabel,
+  show_profile_title: DIRECTORY_LABEL_PRESETS.therapists.showProfileTitle,
+  require_profile_title: DIRECTORY_LABEL_PRESETS.therapists.requireProfileTitle,
+  show_profile_bio: DIRECTORY_LABEL_PRESETS.therapists.showProfileBio,
+  require_profile_bio: DIRECTORY_LABEL_PRESETS.therapists.requireProfileBio,
+  show_specialties: DIRECTORY_LABEL_PRESETS.therapists.showSpecialties,
+  require_specialties: DIRECTORY_LABEL_PRESETS.therapists.requireSpecialties,
+  show_languages: DIRECTORY_LABEL_PRESETS.therapists.showLanguages,
+  require_languages: DIRECTORY_LABEL_PRESETS.therapists.requireLanguages,
+  show_credentials: DIRECTORY_LABEL_PRESETS.therapists.showCredentials,
+  require_credentials: DIRECTORY_LABEL_PRESETS.therapists.requireCredentials,
+  show_license_number: DIRECTORY_LABEL_PRESETS.therapists.showLicenseNumber,
+  require_license_number: DIRECTORY_LABEL_PRESETS.therapists.requireLicenseNumber,
+  show_practice_mode: DIRECTORY_LABEL_PRESETS.therapists.showPracticeMode,
+  require_practice_mode: DIRECTORY_LABEL_PRESETS.therapists.requirePracticeMode,
+  show_availability_status: DIRECTORY_LABEL_PRESETS.therapists.showAvailabilityStatus,
+  show_travel_option: DIRECTORY_LABEL_PRESETS.therapists.showTravelOption,
+  show_location_fields: DIRECTORY_LABEL_PRESETS.therapists.showLocationFields,
+  require_location_fields: DIRECTORY_LABEL_PRESETS.therapists.requireLocationFields,
+  show_phone: DIRECTORY_LABEL_PRESETS.therapists.showPhone,
+  require_phone: DIRECTORY_LABEL_PRESETS.therapists.requirePhone,
+  show_website: DIRECTORY_LABEL_PRESETS.therapists.showWebsite,
+  require_website: DIRECTORY_LABEL_PRESETS.therapists.requireWebsite,
+  show_social_links: DIRECTORY_LABEL_PRESETS.therapists.showSocialLinks,
   application_fee_amount_usd: "150.00",
   application_fee_notice_title: "Application Fee",
   application_fee_notice_body:
@@ -114,6 +166,12 @@ function normalizeDirectoryMode(value: string | undefined): DirectoryMode {
   return value && value in DIRECTORY_LABEL_PRESETS ? (value as DirectoryMode) : DEFAULT_VALUES.directory_mode;
 }
 
+function normalizePrimaryCtaType(value: string | undefined, fallback: DirectoryPrimaryCtaType) {
+  return DIRECTORY_PRIMARY_CTA_TYPES.includes(value as DirectoryPrimaryCtaType)
+    ? (value as DirectoryPrimaryCtaType)
+    : fallback;
+}
+
 function presetToStoredValues(mode: DirectoryMode): Pick<
   DirectorySettingsValues,
   | "directory_label_singular"
@@ -138,6 +196,31 @@ function presetToStoredValues(mode: DirectoryMode): Pick<
   | "willing_to_travel_label"
   | "willing_to_travel_help_text"
   | "location_contact_label"
+  | "primary_cta_type"
+  | "primary_cta_label"
+  | "show_profile_title"
+  | "require_profile_title"
+  | "show_profile_bio"
+  | "require_profile_bio"
+  | "show_specialties"
+  | "require_specialties"
+  | "show_languages"
+  | "require_languages"
+  | "show_credentials"
+  | "require_credentials"
+  | "show_license_number"
+  | "require_license_number"
+  | "show_practice_mode"
+  | "require_practice_mode"
+  | "show_availability_status"
+  | "show_travel_option"
+  | "show_location_fields"
+  | "require_location_fields"
+  | "show_phone"
+  | "require_phone"
+  | "show_website"
+  | "require_website"
+  | "show_social_links"
 > {
   const preset = DIRECTORY_LABEL_PRESETS[mode];
   return {
@@ -163,6 +246,31 @@ function presetToStoredValues(mode: DirectoryMode): Pick<
     willing_to_travel_label: preset.willingToTravelLabel,
     willing_to_travel_help_text: preset.willingToTravelHelpText,
     location_contact_label: preset.locationContactLabel,
+    primary_cta_type: preset.primaryCtaType,
+    primary_cta_label: preset.primaryCtaLabel,
+    show_profile_title: preset.showProfileTitle,
+    require_profile_title: preset.requireProfileTitle,
+    show_profile_bio: preset.showProfileBio,
+    require_profile_bio: preset.requireProfileBio,
+    show_specialties: preset.showSpecialties,
+    require_specialties: preset.requireSpecialties,
+    show_languages: preset.showLanguages,
+    require_languages: preset.requireLanguages,
+    show_credentials: preset.showCredentials,
+    require_credentials: preset.requireCredentials,
+    show_license_number: preset.showLicenseNumber,
+    require_license_number: preset.requireLicenseNumber,
+    show_practice_mode: preset.showPracticeMode,
+    require_practice_mode: preset.requirePracticeMode,
+    show_availability_status: preset.showAvailabilityStatus,
+    show_travel_option: preset.showTravelOption,
+    show_location_fields: preset.showLocationFields,
+    require_location_fields: preset.requireLocationFields,
+    show_phone: preset.showPhone,
+    require_phone: preset.requirePhone,
+    show_website: preset.showWebsite,
+    require_website: preset.requireWebsite,
+    show_social_links: preset.showSocialLinks,
   };
 }
 
@@ -202,6 +310,31 @@ function DirectoryApplicationSettingsTab() {
       willing_to_travel_label: stored.willing_to_travel_label?.value || preset.willing_to_travel_label,
       willing_to_travel_help_text: stored.willing_to_travel_help_text?.value || preset.willing_to_travel_help_text,
       location_contact_label: stored.location_contact_label?.value || preset.location_contact_label,
+      primary_cta_type: normalizePrimaryCtaType(stored.primary_cta_type?.value, preset.primary_cta_type),
+      primary_cta_label: stored.primary_cta_label?.value || preset.primary_cta_label,
+      show_profile_title: normalizeBoolean(stored.show_profile_title?.value, preset.show_profile_title),
+      require_profile_title: normalizeBoolean(stored.require_profile_title?.value, preset.require_profile_title),
+      show_profile_bio: normalizeBoolean(stored.show_profile_bio?.value, preset.show_profile_bio),
+      require_profile_bio: normalizeBoolean(stored.require_profile_bio?.value, preset.require_profile_bio),
+      show_specialties: normalizeBoolean(stored.show_specialties?.value, preset.show_specialties),
+      require_specialties: normalizeBoolean(stored.require_specialties?.value, preset.require_specialties),
+      show_languages: normalizeBoolean(stored.show_languages?.value, preset.show_languages),
+      require_languages: normalizeBoolean(stored.require_languages?.value, preset.require_languages),
+      show_credentials: normalizeBoolean(stored.show_credentials?.value, preset.show_credentials),
+      require_credentials: normalizeBoolean(stored.require_credentials?.value, preset.require_credentials),
+      show_license_number: normalizeBoolean(stored.show_license_number?.value, preset.show_license_number),
+      require_license_number: normalizeBoolean(stored.require_license_number?.value, preset.require_license_number),
+      show_practice_mode: normalizeBoolean(stored.show_practice_mode?.value, preset.show_practice_mode),
+      require_practice_mode: normalizeBoolean(stored.require_practice_mode?.value, preset.require_practice_mode),
+      show_availability_status: normalizeBoolean(stored.show_availability_status?.value, preset.show_availability_status),
+      show_travel_option: normalizeBoolean(stored.show_travel_option?.value, preset.show_travel_option),
+      show_location_fields: normalizeBoolean(stored.show_location_fields?.value, preset.show_location_fields),
+      require_location_fields: normalizeBoolean(stored.require_location_fields?.value, preset.require_location_fields),
+      show_phone: normalizeBoolean(stored.show_phone?.value, preset.show_phone),
+      require_phone: normalizeBoolean(stored.require_phone?.value, preset.require_phone),
+      show_website: normalizeBoolean(stored.show_website?.value, preset.show_website),
+      require_website: normalizeBoolean(stored.require_website?.value, preset.require_website),
+      show_social_links: normalizeBoolean(stored.show_social_links?.value, preset.show_social_links),
       application_fee_amount_usd: stored.application_fee_amount_usd?.value || DEFAULT_VALUES.application_fee_amount_usd,
       application_fee_notice_title: stored.application_fee_notice_title?.value || DEFAULT_VALUES.application_fee_notice_title,
       application_fee_notice_body: stored.application_fee_notice_body?.value || DEFAULT_VALUES.application_fee_notice_body,
@@ -264,6 +397,31 @@ function DirectoryApplicationSettingsTab() {
         { key: "willing_to_travel_label", value: values.willing_to_travel_label },
         { key: "willing_to_travel_help_text", value: values.willing_to_travel_help_text },
         { key: "location_contact_label", value: values.location_contact_label },
+        { key: "primary_cta_type", value: values.primary_cta_type },
+        { key: "primary_cta_label", value: values.primary_cta_label },
+        { key: "show_profile_title", value: values.show_profile_title ? "true" : "false" },
+        { key: "require_profile_title", value: values.require_profile_title ? "true" : "false" },
+        { key: "show_profile_bio", value: values.show_profile_bio ? "true" : "false" },
+        { key: "require_profile_bio", value: values.require_profile_bio ? "true" : "false" },
+        { key: "show_specialties", value: values.show_specialties ? "true" : "false" },
+        { key: "require_specialties", value: values.require_specialties ? "true" : "false" },
+        { key: "show_languages", value: values.show_languages ? "true" : "false" },
+        { key: "require_languages", value: values.require_languages ? "true" : "false" },
+        { key: "show_credentials", value: values.show_credentials ? "true" : "false" },
+        { key: "require_credentials", value: values.require_credentials ? "true" : "false" },
+        { key: "show_license_number", value: values.show_license_number ? "true" : "false" },
+        { key: "require_license_number", value: values.require_license_number ? "true" : "false" },
+        { key: "show_practice_mode", value: values.show_practice_mode ? "true" : "false" },
+        { key: "require_practice_mode", value: values.require_practice_mode ? "true" : "false" },
+        { key: "show_availability_status", value: values.show_availability_status ? "true" : "false" },
+        { key: "show_travel_option", value: values.show_travel_option ? "true" : "false" },
+        { key: "show_location_fields", value: values.show_location_fields ? "true" : "false" },
+        { key: "require_location_fields", value: values.require_location_fields ? "true" : "false" },
+        { key: "show_phone", value: values.show_phone ? "true" : "false" },
+        { key: "require_phone", value: values.require_phone ? "true" : "false" },
+        { key: "show_website", value: values.show_website ? "true" : "false" },
+        { key: "require_website", value: values.require_website ? "true" : "false" },
+        { key: "show_social_links", value: values.show_social_links ? "true" : "false" },
         { key: "application_fee_amount_usd", value: values.application_fee_amount_usd },
         { key: "application_fee_notice_title", value: values.application_fee_notice_title },
         { key: "application_fee_notice_body", value: values.application_fee_notice_body },
@@ -329,6 +487,23 @@ function DirectoryApplicationSettingsTab() {
     { key: "license_number_placeholder" as const, label: "License/Reference Placeholder" },
     { key: "accepting_clients_help_text" as const, label: "Availability Help Text" },
     { key: "willing_to_travel_help_text" as const, label: "Travel/Mobile Help Text" },
+  ];
+  const profileFieldControls = [
+    { label: values.profile_title_label, showKey: "show_profile_title" as const, requireKey: "require_profile_title" as const },
+    { label: values.profile_bio_label, showKey: "show_profile_bio" as const, requireKey: "require_profile_bio" as const },
+    { label: values.specialty_label_plural, showKey: "show_specialties" as const, requireKey: "require_specialties" as const },
+    { label: "Languages", showKey: "show_languages" as const, requireKey: "require_languages" as const },
+    { label: values.credentials_label, showKey: "show_credentials" as const, requireKey: "require_credentials" as const },
+    { label: values.license_number_label, showKey: "show_license_number" as const, requireKey: "require_license_number" as const },
+    { label: values.practice_mode_label, showKey: "show_practice_mode" as const, requireKey: "require_practice_mode" as const },
+    { label: values.location_contact_label, showKey: "show_location_fields" as const, requireKey: "require_location_fields" as const },
+    { label: "Phone", showKey: "show_phone" as const, requireKey: "require_phone" as const },
+    { label: "Website", showKey: "show_website" as const, requireKey: "require_website" as const },
+  ];
+  const profileToggleControls = [
+    { label: values.accepting_clients_label, key: "show_availability_status" as const },
+    { label: values.willing_to_travel_label, key: "show_travel_option" as const },
+    { label: "Social links", key: "show_social_links" as const },
   ];
 
   return (
@@ -452,6 +627,105 @@ function DirectoryApplicationSettingsTab() {
                 />
               </div>
             ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Settings2 className="h-4 w-4 text-primary" />
+            Profile Field Visibility
+          </CardTitle>
+          <CardDescription>
+            Choose which fields appear on participant edit screens and which visible fields must be completed.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="overflow-hidden rounded-lg border">
+            <div className="grid grid-cols-[1fr_92px_92px] gap-3 bg-muted/40 px-4 py-2 text-xs font-medium text-muted-foreground">
+              <span>Field</span>
+              <span className="text-center">Show</span>
+              <span className="text-center">Required</span>
+            </div>
+            {profileFieldControls.map((field) => (
+              <div key={field.showKey} className="grid grid-cols-[1fr_92px_92px] items-center gap-3 border-t px-4 py-3">
+                <span className="text-sm font-medium">{field.label}</span>
+                <div className="flex justify-center">
+                  <Switch
+                    checked={values[field.showKey]}
+                    onCheckedChange={(checked) => setValues((current) => ({
+                      ...current,
+                      [field.showKey]: checked,
+                      [field.requireKey]: checked ? current[field.requireKey] : false,
+                    }))}
+                  />
+                </div>
+                <div className="flex justify-center">
+                  <Switch
+                    checked={values[field.requireKey]}
+                    disabled={!values[field.showKey]}
+                    onCheckedChange={(checked) => setValues((current) => ({ ...current, [field.requireKey]: checked }))}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            {profileToggleControls.map((field) => (
+              <div key={field.key} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                <Label className="text-sm">{field.label}</Label>
+                <Switch
+                  checked={values[field.key]}
+                  onCheckedChange={(checked) => setValues((current) => ({ ...current, [field.key]: checked }))}
+                />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Settings2 className="h-4 w-4 text-primary" />
+            Profile Actions
+          </CardTitle>
+          <CardDescription>
+            Configure the primary call to action shown on public {values.listing_label_plural.toLowerCase()}.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="primary_cta_type">Primary Action</Label>
+            <Select
+              value={values.primary_cta_type}
+              onValueChange={(value) => setValues((current) => ({
+                ...current,
+                primary_cta_type: value as DirectoryPrimaryCtaType,
+              }))}
+            >
+              <SelectTrigger id="primary_cta_type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="contact_form">Contact Form</SelectItem>
+                <SelectItem value="website">Website</SelectItem>
+                <SelectItem value="phone">Phone</SelectItem>
+                <SelectItem value="directions">Directions</SelectItem>
+                <SelectItem value="none">None</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="primary_cta_label">Action Button Label</Label>
+            <Input
+              id="primary_cta_label"
+              value={values.primary_cta_label}
+              disabled={values.primary_cta_type === "none"}
+              onChange={(event) => setValues((current) => ({ ...current, primary_cta_label: event.target.value }))}
+            />
           </div>
         </CardContent>
       </Card>

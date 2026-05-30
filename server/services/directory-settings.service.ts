@@ -2,7 +2,9 @@ import { storage } from "../storage";
 import {
   DIRECTORY_LABEL_PRESETS,
   DIRECTORY_MODES,
+  DIRECTORY_PRIMARY_CTA_TYPES,
   type DirectoryMode,
+  type DirectoryPrimaryCtaType,
   type PublicDirectorySettings,
 } from "@shared/types/directory-settings";
 
@@ -28,6 +30,12 @@ function parseMoneyToCents(value: string | undefined, fallbackCents: number): nu
 
 function parseDirectoryMode(value: string | undefined): DirectoryMode {
   return DIRECTORY_MODES.includes(value as DirectoryMode) ? (value as DirectoryMode) : "therapists";
+}
+
+function parsePrimaryCtaType(value: string | undefined, fallback: DirectoryPrimaryCtaType): DirectoryPrimaryCtaType {
+  return DIRECTORY_PRIMARY_CTA_TYPES.includes(value as DirectoryPrimaryCtaType)
+    ? (value as DirectoryPrimaryCtaType)
+    : fallback;
 }
 
 function parseLabel(value: string | undefined, fallback: string): string {
@@ -85,6 +93,31 @@ export async function getDirectorySettings(): Promise<DirectorySettings> {
     willingToTravelLabel: parseLabel(settings.willing_to_travel_label, labelDefaults.willingToTravelLabel),
     willingToTravelHelpText: parseLabel(settings.willing_to_travel_help_text, labelDefaults.willingToTravelHelpText),
     locationContactLabel: parseLabel(settings.location_contact_label, labelDefaults.locationContactLabel),
+    primaryCtaType: parsePrimaryCtaType(settings.primary_cta_type, labelDefaults.primaryCtaType),
+    primaryCtaLabel: parseLabel(settings.primary_cta_label, labelDefaults.primaryCtaLabel),
+    showProfileTitle: parseBoolean(settings.show_profile_title, labelDefaults.showProfileTitle),
+    requireProfileTitle: parseBoolean(settings.require_profile_title, labelDefaults.requireProfileTitle),
+    showProfileBio: parseBoolean(settings.show_profile_bio, labelDefaults.showProfileBio),
+    requireProfileBio: parseBoolean(settings.require_profile_bio, labelDefaults.requireProfileBio),
+    showSpecialties: parseBoolean(settings.show_specialties, labelDefaults.showSpecialties),
+    requireSpecialties: parseBoolean(settings.require_specialties, labelDefaults.requireSpecialties),
+    showLanguages: parseBoolean(settings.show_languages, labelDefaults.showLanguages),
+    requireLanguages: parseBoolean(settings.require_languages, labelDefaults.requireLanguages),
+    showCredentials: parseBoolean(settings.show_credentials, labelDefaults.showCredentials),
+    requireCredentials: parseBoolean(settings.require_credentials, labelDefaults.requireCredentials),
+    showLicenseNumber: parseBoolean(settings.show_license_number, labelDefaults.showLicenseNumber),
+    requireLicenseNumber: parseBoolean(settings.require_license_number, labelDefaults.requireLicenseNumber),
+    showPracticeMode: parseBoolean(settings.show_practice_mode, labelDefaults.showPracticeMode),
+    requirePracticeMode: parseBoolean(settings.require_practice_mode, labelDefaults.requirePracticeMode),
+    showAvailabilityStatus: parseBoolean(settings.show_availability_status, labelDefaults.showAvailabilityStatus),
+    showTravelOption: parseBoolean(settings.show_travel_option, labelDefaults.showTravelOption),
+    showLocationFields: parseBoolean(settings.show_location_fields, labelDefaults.showLocationFields),
+    requireLocationFields: parseBoolean(settings.require_location_fields, labelDefaults.requireLocationFields),
+    showPhone: parseBoolean(settings.show_phone, labelDefaults.showPhone),
+    requirePhone: parseBoolean(settings.require_phone, labelDefaults.requirePhone),
+    showWebsite: parseBoolean(settings.show_website, labelDefaults.showWebsite),
+    requireWebsite: parseBoolean(settings.require_website, labelDefaults.requireWebsite),
+    showSocialLinks: parseBoolean(settings.show_social_links, labelDefaults.showSocialLinks),
     applicationFeeAmountCents: parseMoneyToCents(
       settings.application_fee_amount_usd,
       DEFAULT_DIRECTORY_SETTINGS.applicationFeeAmountCents,

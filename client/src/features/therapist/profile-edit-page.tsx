@@ -132,6 +132,19 @@ export default function ProfileEditPage() {
       willingToTravel: false,
     },
   });
+  const showBasicInformation =
+    directorySettings.showProfileTitle ||
+    directorySettings.showProfileBio ||
+    directorySettings.showCredentials ||
+    directorySettings.showLicenseNumber;
+  const showPracticeDetails =
+    directorySettings.showPracticeMode ||
+    directorySettings.showAvailabilityStatus ||
+    directorySettings.showTravelOption;
+  const showLocationContact =
+    directorySettings.showLocationFields ||
+    directorySettings.showPhone ||
+    directorySettings.showWebsite;
 
   const updateMutation = useMutation({
     mutationFn: async (data: ProfileFormValues) => {
@@ -170,6 +183,47 @@ export default function ProfileEditPage() {
       predefined.push(...customEntries);
     }
     const unique = Array.from(new Set(predefined));
+
+    const missingFields = [
+      directorySettings.showProfileTitle && directorySettings.requireProfileTitle && !data.title?.trim()
+        ? directorySettings.profileTitleLabel
+        : null,
+      directorySettings.showProfileBio && directorySettings.requireProfileBio && !data.bio?.trim()
+        ? directorySettings.profileBioLabel
+        : null,
+      directorySettings.showSpecialties && directorySettings.requireSpecialties && unique.length === 0
+        ? directorySettings.specialtyLabelPlural
+        : null,
+      directorySettings.showLanguages && directorySettings.requireLanguages && !(data.languages ?? []).length
+        ? "Languages"
+        : null,
+      directorySettings.showCredentials && directorySettings.requireCredentials && !data.credentials?.trim()
+        ? directorySettings.credentialsLabel
+        : null,
+      directorySettings.showLicenseNumber && directorySettings.requireLicenseNumber && !data.licenseNumber?.trim()
+        ? directorySettings.licenseNumberLabel
+        : null,
+      directorySettings.showPracticeMode && directorySettings.requirePracticeMode && !data.practiceMode?.trim()
+        ? directorySettings.practiceModeLabel
+        : null,
+      directorySettings.showLocationFields &&
+      directorySettings.requireLocationFields &&
+      (!data.addressLine1?.trim() || !data.city?.trim() || !data.country?.trim())
+        ? `${directorySettings.locationContactLabel} address, city, and country`
+        : null,
+      directorySettings.showPhone && directorySettings.requirePhone && !data.phone?.trim() ? "Phone" : null,
+      directorySettings.showWebsite && directorySettings.requireWebsite && !data.website?.trim() ? "Website" : null,
+    ].filter(Boolean);
+
+    if (missingFields.length > 0) {
+      toast({
+        title: "Required fields missing",
+        description: `Please complete: ${missingFields.join(", ")}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     updateMutation.mutate({ ...data, specializations: unique });
   }
 
@@ -215,17 +269,19 @@ export default function ProfileEditPage() {
             </CardContent>
           </Card>
 
+          {showBasicInformation && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Basic Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FormField
+              {directorySettings.showProfileTitle && (
+                <FormField
                 control={form.control}
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{directorySettings.profileTitleLabel}</FormLabel>
+                    <FormLabel>{directorySettings.profileTitleLabel}{directorySettings.requireProfileTitle ? " *" : ""}</FormLabel>
                     <FormControl>
                       <Input placeholder={directorySettings.profileTitlePlaceholder} {...field} data-testid="input-title" />
                     </FormControl>
@@ -233,12 +289,14 @@ export default function ProfileEditPage() {
                   </FormItem>
                 )}
               />
-              <FormField
+              )}
+              {directorySettings.showProfileBio && (
+                <FormField
                 control={form.control}
                 name="bio"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{directorySettings.profileBioLabel}</FormLabel>
+                    <FormLabel>{directorySettings.profileBioLabel}{directorySettings.requireProfileBio ? " *" : ""}</FormLabel>
                     <FormControl>
                       <CmsRichTextEditor
                         value={field.value ?? ""}
@@ -251,13 +309,15 @@ export default function ProfileEditPage() {
                   </FormItem>
                 )}
               />
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
+                {directorySettings.showCredentials && (
+                  <FormField
                   control={form.control}
                   name="credentials"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{directorySettings.credentialsLabel}</FormLabel>
+                      <FormLabel>{directorySettings.credentialsLabel}{directorySettings.requireCredentials ? " *" : ""}</FormLabel>
                       <FormControl>
                         <Input placeholder={directorySettings.credentialsPlaceholder} {...field} data-testid="input-credentials" />
                       </FormControl>
@@ -265,12 +325,14 @@ export default function ProfileEditPage() {
                     </FormItem>
                   )}
                 />
-                <FormField
+                )}
+                {directorySettings.showLicenseNumber && (
+                  <FormField
                   control={form.control}
                   name="licenseNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{directorySettings.licenseNumberLabel}</FormLabel>
+                      <FormLabel>{directorySettings.licenseNumberLabel}{directorySettings.requireLicenseNumber ? " *" : ""}</FormLabel>
                       <FormControl>
                         <Input placeholder={directorySettings.licenseNumberPlaceholder} {...field} data-testid="input-license" />
                       </FormControl>
@@ -278,13 +340,16 @@ export default function ProfileEditPage() {
                     </FormItem>
                   )}
                 />
+                )}
               </div>
             </CardContent>
           </Card>
+          )}
 
+          {directorySettings.showSpecialties && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{directorySettings.specialtyLabelPlural}</CardTitle>
+              <CardTitle className="text-base">{directorySettings.specialtyLabelPlural}{directorySettings.requireSpecialties ? " *" : ""}</CardTitle>
             </CardHeader>
             <CardContent>
               <FormField
@@ -347,10 +412,12 @@ export default function ProfileEditPage() {
               />
             </CardContent>
           </Card>
+          )}
 
+          {directorySettings.showLanguages && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Languages</CardTitle>
+              <CardTitle className="text-base">Languages{directorySettings.requireLanguages ? " *" : ""}</CardTitle>
             </CardHeader>
             <CardContent>
               <FormField
@@ -470,18 +537,21 @@ export default function ProfileEditPage() {
               />
             </CardContent>
           </Card>
+          )}
 
+          {showPracticeDetails && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">{directorySettings.practiceDetailsLabel}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FormField
+              {directorySettings.showPracticeMode && (
+                <FormField
                 control={form.control}
                 name="practiceMode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{directorySettings.practiceModeLabel}</FormLabel>
+                    <FormLabel>{directorySettings.practiceModeLabel}{directorySettings.requirePracticeMode ? " *" : ""}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-practice-mode">
@@ -498,7 +568,9 @@ export default function ProfileEditPage() {
                   </FormItem>
                 )}
               />
-              <FormField
+              )}
+              {directorySettings.showAvailabilityStatus && (
+                <FormField
                 control={form.control}
                 name="acceptingClients"
                 render={({ field }) => (
@@ -517,7 +589,9 @@ export default function ProfileEditPage() {
                   </FormItem>
                 )}
               />
-              <FormField
+              )}
+              {directorySettings.showTravelOption && (
+                <FormField
                 control={form.control}
                 name="willingToTravel"
                 render={({ field }) => (
@@ -536,14 +610,19 @@ export default function ProfileEditPage() {
                   </FormItem>
                 )}
               />
+              )}
             </CardContent>
           </Card>
+          )}
 
+          {showLocationContact && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{directorySettings.locationContactLabel}</CardTitle>
+              <CardTitle className="text-base">{directorySettings.locationContactLabel}{directorySettings.requireLocationFields ? " *" : ""}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {directorySettings.showLocationFields && (
+                <>
               <FormField
                 control={form.control}
                 name="addressLine1"
@@ -624,13 +703,16 @@ export default function ProfileEditPage() {
                   )}
                 />
               </div>
+                </>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
+                {directorySettings.showPhone && (
+                  <FormField
                   control={form.control}
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone</FormLabel>
+                      <FormLabel>Phone{directorySettings.requirePhone ? " *" : ""}</FormLabel>
                       <FormControl>
                         <PhoneInput {...field} data-testid="input-phone" />
                       </FormControl>
@@ -638,12 +720,14 @@ export default function ProfileEditPage() {
                     </FormItem>
                   )}
                 />
-                <FormField
+                )}
+                {directorySettings.showWebsite && (
+                  <FormField
                   control={form.control}
                   name="website"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Website</FormLabel>
+                      <FormLabel>Website{directorySettings.requireWebsite ? " *" : ""}</FormLabel>
                       <FormControl>
                         <Input placeholder="https://example.com" {...field} data-testid="input-website" />
                       </FormControl>
@@ -651,10 +735,13 @@ export default function ProfileEditPage() {
                     </FormItem>
                   )}
                 />
+                )}
               </div>
             </CardContent>
           </Card>
+          )}
 
+          {directorySettings.showSocialLinks && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Social Media</CardTitle>
@@ -707,6 +794,7 @@ export default function ProfileEditPage() {
               </div>
             </CardContent>
           </Card>
+          )}
 
           <Button type="submit" disabled={updateMutation.isPending} className="w-full" data-testid="button-save-profile">
             {updateMutation.isPending ? (

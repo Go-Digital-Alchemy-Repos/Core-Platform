@@ -28,6 +28,10 @@ describe("directory-settings.service", () => {
     expect(settings.specialtyLabelPlural).toBe("Specializations");
     expect(settings.profileTitleLabel).toBe("Professional Title");
     expect(settings.acceptingClientsLabel).toBe("Accepting New Clients");
+    expect(settings.primaryCtaType).toBe("contact_form");
+    expect(settings.primaryCtaLabel).toBe("Contact Provider");
+    expect(settings.showLanguages).toBe(true);
+    expect(settings.requireProfileBio).toBe(false);
     expect(settings.directoryRequiresApplicationProcess).toBe(true);
     expect(settings.directoryRequiresApprovedApplication).toBe(true);
   });
@@ -52,6 +56,10 @@ describe("directory-settings.service", () => {
     expect(settings.profileTitleLabel).toBe("Location Name");
     expect(settings.credentialsLabel).toBe("Location Features");
     expect(settings.acceptingClientsLabel).toBe("Accepting Visitors");
+    expect(settings.primaryCtaType).toBe("directions");
+    expect(settings.primaryCtaLabel).toBe("Get Directions");
+    expect(settings.showLanguages).toBe(false);
+    expect(settings.showLocationFields).toBe(true);
     expect(settings.directoryRequiresApplicationProcess).toBe(false);
     expect(settings.directoryRequiresApprovedApplication).toBe(false);
     expect(settings.directoryRequiresActiveSubscription).toBe(true);
@@ -66,6 +74,10 @@ describe("directory-settings.service", () => {
       participant_label_plural: "Partners",
       profile_title_label: "Partner Headline",
       accepting_clients_label: "Taking New Projects",
+      primary_cta_type: "website",
+      primary_cta_label: "Visit Partner",
+      show_license_number: "false",
+      require_phone: "yes",
     });
     const { getDirectorySettings } = await import("../services/directory-settings.service");
 
@@ -78,5 +90,9 @@ describe("directory-settings.service", () => {
     expect(settings.profileTitleLabel).toBe("Partner Headline");
     expect(settings.acceptingClientsLabel).toBe("Taking New Projects");
     expect(settings.specialtyLabelPlural).toBe("Services");
+    expect(settings.primaryCtaType).toBe("website");
+    expect(settings.primaryCtaLabel).toBe("Visit Partner");
+    expect(settings.showLicenseNumber).toBe(false);
+    expect(settings.requirePhone).toBe(true);
   });
 });

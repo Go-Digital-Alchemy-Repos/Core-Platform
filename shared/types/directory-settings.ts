@@ -2,6 +2,10 @@ export const DIRECTORY_MODES = ["therapists", "locations", "service_providers", 
 
 export type DirectoryMode = (typeof DIRECTORY_MODES)[number];
 
+export const DIRECTORY_PRIMARY_CTA_TYPES = ["contact_form", "website", "phone", "directions", "none"] as const;
+
+export type DirectoryPrimaryCtaType = (typeof DIRECTORY_PRIMARY_CTA_TYPES)[number];
+
 export type DirectoryLabelPreset = {
   directoryLabelSingular: string;
   directoryLabelPlural: string;
@@ -25,6 +29,31 @@ export type DirectoryLabelPreset = {
   willingToTravelLabel: string;
   willingToTravelHelpText: string;
   locationContactLabel: string;
+  primaryCtaType: DirectoryPrimaryCtaType;
+  primaryCtaLabel: string;
+  showProfileTitle: boolean;
+  requireProfileTitle: boolean;
+  showProfileBio: boolean;
+  requireProfileBio: boolean;
+  showSpecialties: boolean;
+  requireSpecialties: boolean;
+  showLanguages: boolean;
+  requireLanguages: boolean;
+  showCredentials: boolean;
+  requireCredentials: boolean;
+  showLicenseNumber: boolean;
+  requireLicenseNumber: boolean;
+  showPracticeMode: boolean;
+  requirePracticeMode: boolean;
+  showAvailabilityStatus: boolean;
+  showTravelOption: boolean;
+  showLocationFields: boolean;
+  requireLocationFields: boolean;
+  showPhone: boolean;
+  requirePhone: boolean;
+  showWebsite: boolean;
+  requireWebsite: boolean;
+  showSocialLinks: boolean;
 };
 
 export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset> = {
@@ -51,6 +80,31 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     willingToTravelLabel: "Willing to Travel",
     willingToTravelHelpText: "Toggle whether you are willing to travel for sessions",
     locationContactLabel: "Location & Contact",
+    primaryCtaType: "contact_form",
+    primaryCtaLabel: "Contact Provider",
+    showProfileTitle: true,
+    requireProfileTitle: false,
+    showProfileBio: true,
+    requireProfileBio: false,
+    showSpecialties: true,
+    requireSpecialties: false,
+    showLanguages: true,
+    requireLanguages: false,
+    showCredentials: true,
+    requireCredentials: false,
+    showLicenseNumber: true,
+    requireLicenseNumber: false,
+    showPracticeMode: true,
+    requirePracticeMode: false,
+    showAvailabilityStatus: true,
+    showTravelOption: true,
+    showLocationFields: true,
+    requireLocationFields: false,
+    showPhone: true,
+    requirePhone: false,
+    showWebsite: true,
+    requireWebsite: false,
+    showSocialLinks: true,
   },
   locations: {
     directoryLabelSingular: "Location Directory",
@@ -75,6 +129,31 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     willingToTravelLabel: "Mobile Service Available",
     willingToTravelHelpText: "Toggle whether this location or team can travel to customers",
     locationContactLabel: "Address & Contact",
+    primaryCtaType: "directions",
+    primaryCtaLabel: "Get Directions",
+    showProfileTitle: true,
+    requireProfileTitle: false,
+    showProfileBio: true,
+    requireProfileBio: false,
+    showSpecialties: true,
+    requireSpecialties: false,
+    showLanguages: false,
+    requireLanguages: false,
+    showCredentials: true,
+    requireCredentials: false,
+    showLicenseNumber: true,
+    requireLicenseNumber: false,
+    showPracticeMode: true,
+    requirePracticeMode: false,
+    showAvailabilityStatus: true,
+    showTravelOption: true,
+    showLocationFields: true,
+    requireLocationFields: false,
+    showPhone: true,
+    requirePhone: false,
+    showWebsite: true,
+    requireWebsite: false,
+    showSocialLinks: true,
   },
   service_providers: {
     directoryLabelSingular: "Provider Directory",
@@ -99,6 +178,31 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     willingToTravelLabel: "Willing to Travel",
     willingToTravelHelpText: "Toggle whether you provide services at customer locations",
     locationContactLabel: "Location & Contact",
+    primaryCtaType: "contact_form",
+    primaryCtaLabel: "Request Information",
+    showProfileTitle: true,
+    requireProfileTitle: false,
+    showProfileBio: true,
+    requireProfileBio: false,
+    showSpecialties: true,
+    requireSpecialties: false,
+    showLanguages: true,
+    requireLanguages: false,
+    showCredentials: true,
+    requireCredentials: false,
+    showLicenseNumber: true,
+    requireLicenseNumber: false,
+    showPracticeMode: true,
+    requirePracticeMode: false,
+    showAvailabilityStatus: true,
+    showTravelOption: true,
+    showLocationFields: true,
+    requireLocationFields: false,
+    showPhone: true,
+    requirePhone: false,
+    showWebsite: true,
+    requireWebsite: false,
+    showSocialLinks: true,
   },
   custom: {
     directoryLabelSingular: "Directory",
@@ -123,6 +227,31 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     willingToTravelLabel: "Travel Available",
     willingToTravelHelpText: "Toggle whether travel or mobile service is available",
     locationContactLabel: "Location & Contact",
+    primaryCtaType: "contact_form",
+    primaryCtaLabel: "Contact",
+    showProfileTitle: true,
+    requireProfileTitle: false,
+    showProfileBio: true,
+    requireProfileBio: false,
+    showSpecialties: true,
+    requireSpecialties: false,
+    showLanguages: true,
+    requireLanguages: false,
+    showCredentials: true,
+    requireCredentials: false,
+    showLicenseNumber: true,
+    requireLicenseNumber: false,
+    showPracticeMode: true,
+    requirePracticeMode: false,
+    showAvailabilityStatus: true,
+    showTravelOption: true,
+    showLocationFields: true,
+    requireLocationFields: false,
+    showPhone: true,
+    requirePhone: false,
+    showWebsite: true,
+    requireWebsite: false,
+    showSocialLinks: true,
   },
 };
 
