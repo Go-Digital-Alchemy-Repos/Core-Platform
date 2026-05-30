@@ -1,14 +1,14 @@
 import { Router } from "express";
-import { z } from "zod";
 import { storage } from "../storage/index";
 import { asyncHandler } from "../middleware/error-handler";
 import { validateBody } from "../middleware/validation";
 import { paramString } from "../utils/params";
 import {
   getShippingRateOptions,
+  couponValidationRequestSchema,
   priceCart,
   priceCartSchema,
-  shippingAddressQuoteSchema,
+  shippingRateQuoteRequestSchema,
   toPublicCouponValidationResult,
   toPublicPricedCart,
   validateCoupon,
@@ -77,8 +77,9 @@ router.post(
   "/cart/price",
   ecommercePricingLimiter,
   noStorePrivateResponse,
+  validateBody(priceCartSchema),
   asyncHandler(async (req, res) => {
-    res.json(toPublicPricedCart(await priceCart(priceCartSchema.parse(req.body))));
+    res.json(toPublicPricedCart(await priceCart(req.body)));
   }),
 );
 
@@ -86,11 +87,9 @@ router.post(
   "/shipping/rates",
   ecommercePricingLimiter,
   noStorePrivateResponse,
+  validateBody(shippingRateQuoteRequestSchema),
   asyncHandler(async (req, res) => {
-    const data = z.object({
-      items: priceCartSchema.shape.items,
-      address: shippingAddressQuoteSchema,
-    }).parse(req.body);
+    const data = req.body;
     const priced = await priceCart({ items: data.items });
     res.json(await getShippingRateOptions({
       subtotalAmount: priced.subtotalAmount,
@@ -103,13 +102,9 @@ router.post(
   "/coupons/validate",
   ecommercePricingLimiter,
   noStorePrivateResponse,
+  validateBody(couponValidationRequestSchema),
   asyncHandler(async (req, res) => {
-    const data = z.object({
-      code: z.string().min(1),
-      subtotalAmount: z.number().int().min(0).optional(),
-      items: priceCartSchema.shape.items.optional(),
-      customerEmail: z.string().email().optional(),
-    }).parse(req.body);
+    const data = req.body;
     if (data.items?.length) {
       const priced = await priceCart({ items: data.items, couponCode: data.code, customerEmail: data.customerEmail });
       res.json(toPublicCouponValidationResult(priced.couponValidation));

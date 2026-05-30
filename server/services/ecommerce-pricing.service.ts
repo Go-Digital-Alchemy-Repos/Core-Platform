@@ -12,19 +12,34 @@ import {
 import { calculateEcommerceTax, type EcommerceTaxCalculation } from "./ecommerce-tax.service";
 
 export const MAX_ECOMMERCE_CART_LINES = 50;
+export const MAX_ECOMMERCE_LOOKUP_ID_LENGTH = 128;
+export const MAX_ECOMMERCE_COUPON_CODE_LENGTH = 80;
+export const MAX_ECOMMERCE_CUSTOMER_EMAIL_LENGTH = 254;
 
 export const shippingAddressQuoteSchema = z.object({
-  country: z.string().default("US"),
-  state: z.string().optional(),
+  country: z.string().trim().min(1).max(80).default("US"),
+  state: z.string().trim().min(1).max(80).optional(),
 });
 
 export const priceCartSchema = z.object({
   items: z.array(ecommerceCartItemSchema).min(1).max(MAX_ECOMMERCE_CART_LINES),
-  couponCode: z.string().optional(),
-  customerId: z.string().optional(),
-  customerEmail: z.string().email().optional(),
-  shippingRateId: z.string().optional(),
+  couponCode: z.string().trim().max(MAX_ECOMMERCE_COUPON_CODE_LENGTH).optional(),
+  customerId: z.string().trim().min(1).max(MAX_ECOMMERCE_LOOKUP_ID_LENGTH).optional(),
+  customerEmail: z.string().trim().email().max(MAX_ECOMMERCE_CUSTOMER_EMAIL_LENGTH).optional(),
+  shippingRateId: z.string().trim().min(1).max(MAX_ECOMMERCE_LOOKUP_ID_LENGTH).optional(),
   shippingAddress: shippingAddressQuoteSchema.optional(),
+});
+
+export const couponValidationRequestSchema = z.object({
+  code: z.string().trim().min(1).max(MAX_ECOMMERCE_COUPON_CODE_LENGTH),
+  subtotalAmount: z.number().int().min(0).optional(),
+  items: priceCartSchema.shape.items.optional(),
+  customerEmail: z.string().trim().email().max(MAX_ECOMMERCE_CUSTOMER_EMAIL_LENGTH).optional(),
+});
+
+export const shippingRateQuoteRequestSchema = z.object({
+  items: priceCartSchema.shape.items,
+  address: shippingAddressQuoteSchema,
 });
 
 type EcommerceCartItem = z.infer<typeof ecommerceCartItemSchema>;

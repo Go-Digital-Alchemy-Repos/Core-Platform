@@ -215,6 +215,51 @@ describe("ecommerce services", () => {
     expect(() => priceCartSchema.parse({ items: tooManyItems })).toThrow();
   });
 
+  it("trims and bounds public cart pricing identifiers", async () => {
+    const { MAX_ECOMMERCE_COUPON_CODE_LENGTH, MAX_ECOMMERCE_LOOKUP_ID_LENGTH, priceCartSchema } = await import("../services/ecommerce-pricing.service");
+
+    expect(priceCartSchema.parse({
+      items: [{ productId: " product-1 ", variantId: " variant-1 ", quantity: 1 }],
+      couponCode: " SAVE20 ",
+      customerEmail: " Buyer@Example.com ",
+      customerId: " customer-1 ",
+      shippingRateId: " shipping-rate-1 ",
+      shippingAddress: { country: " US ", state: " NY " },
+    })).toMatchObject({
+      items: [{ productId: "product-1", variantId: "variant-1", quantity: 1 }],
+      couponCode: "SAVE20",
+      customerEmail: "Buyer@Example.com",
+      customerId: "customer-1",
+      shippingRateId: "shipping-rate-1",
+      shippingAddress: { country: "US", state: "NY" },
+    });
+
+    expect(() => priceCartSchema.parse({
+      items: [{ productId: "p".repeat(MAX_ECOMMERCE_LOOKUP_ID_LENGTH + 1), quantity: 1 }],
+    })).toThrow();
+    expect(() => priceCartSchema.parse({
+      items: [{ productId: "product-1", quantity: 1 }],
+      couponCode: "C".repeat(MAX_ECOMMERCE_COUPON_CODE_LENGTH + 1),
+    })).toThrow();
+  });
+
+  it("trims and bounds public coupon validation requests", async () => {
+    const { MAX_ECOMMERCE_COUPON_CODE_LENGTH, couponValidationRequestSchema } = await import("../services/ecommerce-pricing.service");
+
+    expect(couponValidationRequestSchema.parse({
+      code: " SAVE20 ",
+      customerEmail: " Buyer@Example.com ",
+      items: [{ productId: " product-1 ", quantity: 1 }],
+    })).toEqual({
+      code: "SAVE20",
+      customerEmail: "Buyer@Example.com",
+      items: [{ productId: "product-1", quantity: 1 }],
+    });
+    expect(() => couponValidationRequestSchema.parse({
+      code: "C".repeat(MAX_ECOMMERCE_COUPON_CODE_LENGTH + 1),
+    })).toThrow();
+  });
+
   it("rejects archived and hidden products during server-side cart pricing", async () => {
     const { priceCart } = await import("../services/ecommerce-pricing.service");
     mockProducts.push({
