@@ -11,7 +11,7 @@ import {
   validateCoupon,
 } from "../services/ecommerce-pricing.service";
 import { createEcommercePaymentIntent } from "../services/ecommerce-order.service";
-import { toPublicEcommerceProduct } from "../services/ecommerce-public-product.service";
+import { getPublicProductCategories, toPublicEcommerceProduct } from "../services/ecommerce-public-product.service";
 import { toPublicEcommerceOrderStatus } from "../services/ecommerce-public-order.service";
 import { getEcommerceStripePublishableKey, getEcommerceStripeMode } from "../services/ecommerce-stripe.service";
 import { requireEcommerceEnabled } from "../middleware/site-features";
@@ -54,7 +54,7 @@ router.get(
 router.get(
   "/categories",
   asyncHandler(async (_req, res) => {
-    res.json(await storage.ecommerce.getCategories(true));
+    res.json(getPublicProductCategories(await storage.ecommerce.getCategories(true)));
   }),
 );
 

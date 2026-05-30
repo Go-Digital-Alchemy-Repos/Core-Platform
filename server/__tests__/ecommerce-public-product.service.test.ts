@@ -13,8 +13,21 @@ describe("ecommerce public product filters", () => {
       { id: "cat-active", name: "Active", slug: "active", description: null, parentId: null, image: null, sortOrder: 0, active: true, createdAt: now, updatedAt: now },
       { id: "cat-inactive", name: "Inactive", slug: "inactive", description: null, parentId: null, image: null, sortOrder: 1, active: false, createdAt: now, updatedAt: now },
     ] as EcommerceCategory[];
+    const publicCategories = getPublicProductCategories(categories);
 
-    expect(getPublicProductCategories(categories).map((category) => category.id)).toEqual(["cat-active"]);
+    expect(publicCategories.map((category) => category.id)).toEqual(["cat-active"]);
+    expect(publicCategories[0]).toEqual({
+      id: "cat-active",
+      name: "Active",
+      slug: "active",
+      description: null,
+      parentId: null,
+      image: null,
+      sortOrder: 0,
+    });
+    expect(publicCategories[0]).not.toHaveProperty("active");
+    expect(publicCategories[0]).not.toHaveProperty("createdAt");
+    expect(publicCategories[0]).not.toHaveProperty("updatedAt");
   });
 
   it("hides inactive and non-active variants from public product payloads", () => {
