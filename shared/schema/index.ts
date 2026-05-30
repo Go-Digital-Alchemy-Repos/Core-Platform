@@ -4,7 +4,11 @@ export { membershipTiers, insertMembershipTierSchema, type InsertMembershipTier,
 export { therapistSubscriptions, insertSubscriptionSchema, type InsertSubscription, type TherapistSubscription } from "./subscriptions";
 export {
   events,
+  eventOrganizers,
+  eventVenues,
   insertEventSchema,
+  insertEventOrganizerSchema,
+  insertEventVenueSchema,
   EVENT_AUDIENCES,
   EVENT_AUDIENCE_LABELS,
   EVENT_CATEGORIES,
@@ -24,10 +28,14 @@ export {
   type EventCategory,
   type EventDeliveryMode,
   type EventFormat,
+  type EventOrganizer,
   type EventRegistrationApprovalMode,
   type EventStatus,
   type EventType,
+  type EventVenue,
   type InsertEvent,
+  type InsertEventOrganizer,
+  type InsertEventVenue,
 } from "./events";
 export { contactMessages, insertContactMessageSchema, type InsertContactMessage, type ContactMessage } from "./contact-messages";
 export {

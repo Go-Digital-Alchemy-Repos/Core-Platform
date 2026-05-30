@@ -19,6 +19,8 @@ import {
   EVENT_STATUSES,
   EVENT_TYPES,
   type InsertEvent,
+  type InsertEventOrganizer,
+  type InsertEventVenue,
 } from "@shared/schema";
 
 const router = Router();
@@ -67,6 +69,34 @@ async function buildUniqueEventSlug(title: string, requestedSlug?: string | null
   return `${base}-${Date.now().toString(36)}`;
 }
 
+async function buildUniqueVenueSlug(name: string, requestedSlug?: string | null, currentVenueId?: string): Promise<string> {
+  const base = slugifyEventTitle(requestedSlug || name) || "venue";
+
+  for (let i = 0; i < 100; i += 1) {
+    const candidate = i === 0 ? base : `${base}-${i + 1}`;
+    const owner = await storage.eventVenues.getVenueSlugOwner(candidate);
+    if (!owner || owner.id === currentVenueId) {
+      return candidate;
+    }
+  }
+
+  return `${base}-${Date.now().toString(36)}`;
+}
+
+async function buildUniqueOrganizerSlug(name: string, requestedSlug?: string | null, currentOrganizerId?: string): Promise<string> {
+  const base = slugifyEventTitle(requestedSlug || name) || "organizer";
+
+  for (let i = 0; i < 100; i += 1) {
+    const candidate = i === 0 ? base : `${base}-${i + 1}`;
+    const owner = await storage.eventOrganizers.getOrganizerSlugOwner(candidate);
+    if (!owner || owner.id === currentOrganizerId) {
+      return candidate;
+    }
+  }
+
+  return `${base}-${Date.now().toString(36)}`;
+}
+
 async function normalizeEventImage<T extends { imageUrl?: string | null }>(event: T): Promise<T> {
   return {
     ...event,
@@ -85,6 +115,15 @@ function coerceDates(data: Record<string, unknown>): Record<string, unknown> {
     }
   }
   return result;
+}
+
+function normalizeBlankStrings(data: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(data).map(([key, value]) => [
+      key,
+      typeof value === "string" && value.trim() === "" ? null : value,
+    ])
+  );
 }
 
 type EventRequestData = Record<string, unknown> & {
@@ -229,6 +268,21 @@ function validateEventData(data: EventRequestData): string | null {
   return null;
 }
 
+async function validateEventReferences(data: EventRequestData): Promise<string | null> {
+  const venueId = textField(data, "venueId");
+  const organizerId = textField(data, "organizerId");
+
+  if (venueId && !(await storage.eventVenues.getVenue(venueId))) {
+    return "Selected venue was not found";
+  }
+
+  if (organizerId && !(await storage.eventOrganizers.getOrganizer(organizerId))) {
+    return "Selected organizer was not found";
+  }
+
+  return null;
+}
+
 router.get(
   "/",
   asyncHandler(async (_req, res) => {
@@ -244,6 +298,10 @@ router.post(
     if (error) {
       return res.status(400).json({ message: error });
     }
+    const referenceError = await validateEventReferences(req.body);
+    if (referenceError) {
+      return res.status(400).json({ message: referenceError });
+    }
     const payload = coerceDates(req.body) as EventRequestData;
     if (Array.isArray(payload.tags)) {
       payload.tags = payload.tags.map((tag: string) => tag.trim()).filter(Boolean);
@@ -254,12 +312,162 @@ router.post(
   })
 );
 
+router.get(
+  "/venues",
+  asyncHandler(async (_req, res) => {
+    res.json(await storage.eventVenues.getAllVenues());
+  })
+);
+
+router.post(
+  "/venues",
+  asyncHandler(async (req, res) => {
+    const name = textField(req.body, "name");
+    if (!name) {
+      return res.status(400).json({ message: "Venue name is required" });
+    }
+    const slug = textField(req.body, "slug");
+    if (slug && !SLUG_PATTERN.test(slug)) {
+      return res.status(400).json({ message: "Slug must use lowercase letters, numbers, and hyphens only" });
+    }
+
+    const payload = normalizeBlankStrings(req.body) as InsertEventVenue & { slug?: string | null };
+    payload.name = name;
+    payload.slug = await buildUniqueVenueSlug(name, payload.slug);
+    const venue = await storage.eventVenues.createVenue(payload);
+    res.status(201).json(venue);
+  })
+);
+
+router.put(
+  "/venues/:venueId",
+  asyncHandler(async (req, res) => {
+    const id = paramString(req.params.venueId);
+    const venue = await storage.eventVenues.getVenue(id);
+    if (!venue) {
+      return notFound(res, "Venue");
+    }
+    const name = textField(req.body, "name");
+    const slug = textField(req.body, "slug");
+    if (req.body.name !== undefined && !name) {
+      return res.status(400).json({ message: "Venue name is required" });
+    }
+    if (slug && !SLUG_PATTERN.test(slug)) {
+      return res.status(400).json({ message: "Slug must use lowercase letters, numbers, and hyphens only" });
+    }
+
+    const payload = normalizeBlankStrings(req.body) as Partial<InsertEventVenue> & { slug?: string | null };
+    if (name) {
+      payload.name = name;
+    }
+    if (payload.slug !== undefined || name) {
+      payload.slug = await buildUniqueVenueSlug(name || venue.name, payload.slug ?? venue.slug, id);
+    }
+    const updated = await storage.eventVenues.updateVenue(id, payload);
+    res.json(updated);
+  })
+);
+
+router.delete(
+  "/venues/:venueId",
+  asyncHandler(async (req, res) => {
+    const deleted = await storage.eventVenues.deleteVenue(paramString(req.params.venueId));
+    if (!deleted) {
+      return notFound(res, "Venue");
+    }
+    res.json({ message: "Venue deleted" });
+  })
+);
+
+router.get(
+  "/organizers",
+  asyncHandler(async (_req, res) => {
+    const organizers = await storage.eventOrganizers.getAllOrganizers();
+    res.json(
+      await Promise.all(
+        organizers.map(async (organizer) => ({
+          ...organizer,
+          imageUrl: (await r2Service.normalizePublicUrl(organizer.imageUrl)) ?? null,
+        }))
+      )
+    );
+  })
+);
+
+router.post(
+  "/organizers",
+  asyncHandler(async (req, res) => {
+    const name = textField(req.body, "name");
+    if (!name) {
+      return res.status(400).json({ message: "Organizer name is required" });
+    }
+    const slug = textField(req.body, "slug");
+    if (slug && !SLUG_PATTERN.test(slug)) {
+      return res.status(400).json({ message: "Slug must use lowercase letters, numbers, and hyphens only" });
+    }
+
+    const payload = normalizeBlankStrings(req.body) as InsertEventOrganizer & { slug?: string | null };
+    payload.name = name;
+    payload.slug = await buildUniqueOrganizerSlug(name, payload.slug);
+    payload.imageUrl = (await r2Service.normalizePublicUrl(payload.imageUrl)) ?? null;
+    const organizer = await storage.eventOrganizers.createOrganizer(payload);
+    res.status(201).json(organizer);
+  })
+);
+
+router.put(
+  "/organizers/:organizerId",
+  asyncHandler(async (req, res) => {
+    const id = paramString(req.params.organizerId);
+    const organizer = await storage.eventOrganizers.getOrganizer(id);
+    if (!organizer) {
+      return notFound(res, "Organizer");
+    }
+    const name = textField(req.body, "name");
+    const slug = textField(req.body, "slug");
+    if (req.body.name !== undefined && !name) {
+      return res.status(400).json({ message: "Organizer name is required" });
+    }
+    if (slug && !SLUG_PATTERN.test(slug)) {
+      return res.status(400).json({ message: "Slug must use lowercase letters, numbers, and hyphens only" });
+    }
+
+    const payload = normalizeBlankStrings(req.body) as Partial<InsertEventOrganizer> & { slug?: string | null };
+    if (name) {
+      payload.name = name;
+    }
+    if (payload.slug !== undefined || name) {
+      payload.slug = await buildUniqueOrganizerSlug(name || organizer.name, payload.slug ?? organizer.slug, id);
+    }
+    if (payload.imageUrl !== undefined) {
+      payload.imageUrl = (await r2Service.normalizePublicUrl(payload.imageUrl)) ?? null;
+    }
+    const updated = await storage.eventOrganizers.updateOrganizer(id, payload);
+    res.json(updated);
+  })
+);
+
+router.delete(
+  "/organizers/:organizerId",
+  asyncHandler(async (req, res) => {
+    const deleted = await storage.eventOrganizers.deleteOrganizer(paramString(req.params.organizerId));
+    if (!deleted) {
+      return notFound(res, "Organizer");
+    }
+    res.json({ message: "Organizer deleted" });
+  })
+);
+
 router.put(
   "/:id",
   asyncHandler(async (req, res) => {
     const error = validateEventData(req.body);
     if (error) {
       return res.status(400).json({ message: error });
+    }
+    const referenceError = await validateEventReferences(req.body);
+    if (referenceError) {
+      return res.status(400).json({ message: referenceError });
     }
     const id = paramString(req.params.id);
     const oldEvent = await storage.events.getEvent(id);

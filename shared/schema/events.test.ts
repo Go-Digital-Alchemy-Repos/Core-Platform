@@ -4,6 +4,8 @@ import {
   EVENT_PRESET_DEFAULTS,
   EVENT_REGISTRATION_APPROVAL_MODES,
   EVENT_TYPES,
+  insertEventOrganizerSchema,
+  insertEventVenueSchema,
 } from "./events";
 
 describe("event flexibility constants", () => {
@@ -27,5 +29,29 @@ describe("event flexibility constants", () => {
       expect(EVENT_REGISTRATION_APPROVAL_MODES).toContain(defaults.registrationApprovalMode);
       expect(typeof defaults.registrationEnabled).toBe("boolean");
     }
+  });
+
+  it("validates reusable venues and organizers for event reuse", () => {
+    expect(
+      insertEventVenueSchema.parse({
+        name: "Main Training Room",
+        slug: "main-training-room",
+        isVirtual: false,
+      })
+    ).toMatchObject({
+      name: "Main Training Room",
+      slug: "main-training-room",
+    });
+
+    expect(
+      insertEventOrganizerSchema.parse({
+        name: "Education Team",
+        slug: "education-team",
+        email: "events@example.com",
+      })
+    ).toMatchObject({
+      name: "Education Team",
+      slug: "education-team",
+    });
   });
 });

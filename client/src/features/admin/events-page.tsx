@@ -109,8 +109,10 @@ import {
   EVENT_TYPES,
   type CmsForm,
   type Event,
+  type EventOrganizer,
   type EventRegistration,
   type EventType,
+  type EventVenue,
 } from "@shared/schema";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
@@ -141,6 +143,8 @@ const eventFormSchema = z
     tags: z.string().optional(),
     registrationFormId: z.string().optional(),
     timezone: z.string().optional(),
+    venueId: z.string().optional(),
+    organizerId: z.string().optional(),
     locationName: z.string().optional(),
     locationAddress: z.string().optional(),
     latitude: z.string().optional(),
@@ -225,6 +229,8 @@ const defaultFormValues: EventFormValues = {
   tags: "",
   registrationFormId: "",
   timezone: getDefaultEventTimeZone(),
+  venueId: "none",
+  organizerId: "none",
   locationName: "",
   locationAddress: "",
   latitude: "",
@@ -480,6 +486,14 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
     queryKey: ["/api/admin/forms"],
     staleTime: STALE_TIMES.OPERATIONAL,
   });
+  const { data: venues = [] } = useQuery<EventVenue[]>({
+    queryKey: ["/api/admin/events/venues"],
+    staleTime: STALE_TIMES.OPERATIONAL,
+  });
+  const { data: organizers = [] } = useQuery<EventOrganizer[]>({
+    queryKey: ["/api/admin/events/organizers"],
+    staleTime: STALE_TIMES.OPERATIONAL,
+  });
   const activeForms = forms.filter((managedForm) => managedForm.isActive);
 
   const form = useForm<EventFormValues>({
@@ -680,6 +694,8 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
         data.registrationFormId && data.registrationFormId !== "none"
           ? data.registrationFormId
           : null,
+      venueId: data.venueId && data.venueId !== "none" ? data.venueId : null,
+      organizerId: data.organizerId && data.organizerId !== "none" ? data.organizerId : null,
       isVirtual: deliveryMode === "virtual" || deliveryMode === "hybrid",
       deliveryMode,
       timezone: data.timezone?.trim() || "",
@@ -736,6 +752,41 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
     form.setValue("registrationApprovalMode", defaults.registrationApprovalMode, { shouldDirty: true });
   }
 
+  function applyVenue(venueId: string) {
+    form.setValue("venueId", venueId, { shouldDirty: true });
+    if (venueId === "none") return;
+
+    const venue = venues.find((item) => item.id === venueId);
+    if (!venue) return;
+
+    const addressParts = [venue.address, venue.city, venue.region, venue.postalCode, venue.country]
+      .filter(Boolean)
+      .join(", ");
+    form.setValue("locationName", venue.name, { shouldDirty: true });
+    form.setValue("locationAddress", addressParts, { shouldDirty: true });
+    form.setValue("location", venue.isVirtual ? "Virtual" : venue.name, { shouldDirty: true });
+    form.setValue("latitude", venue.latitude ?? "", { shouldDirty: true });
+    form.setValue("longitude", venue.longitude ?? "", { shouldDirty: true });
+    form.setValue("isVirtual", Boolean(venue.isVirtual), { shouldDirty: true });
+    if (venue.isVirtual) {
+      form.setValue("deliveryMode", "virtual", { shouldDirty: true });
+    } else if (form.getValues("deliveryMode") === "virtual") {
+      form.setValue("deliveryMode", "in_person", { shouldDirty: true });
+    }
+  }
+
+  function applyOrganizer(organizerId: string) {
+    form.setValue("organizerId", organizerId, { shouldDirty: true });
+    if (organizerId === "none") return;
+
+    const organizer = organizers.find((item) => item.id === organizerId);
+    if (!organizer) return;
+
+    form.setValue("speakerName", organizer.name, { shouldDirty: true });
+    form.setValue("speakerBio", organizer.description ?? "", { shouldDirty: true });
+    form.setValue("speakerImageUrl", organizer.imageUrl ?? "", { shouldDirty: true });
+  }
+
   useEffect(() => {
     if (!initialCreate || initialCreateOpenedRef.current) return;
     initialCreateOpenedRef.current = true;
@@ -768,6 +819,8 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
       tags: Array.isArray(event.tags) ? event.tags.join(", ") : "",
       registrationFormId: event.registrationFormId ?? "none",
       timezone: eventTimeZone,
+      venueId: event.venueId ?? "none",
+      organizerId: event.organizerId ?? "none",
       locationName: event.locationName ?? "",
       locationAddress: event.locationAddress ?? "",
       latitude: event.latitude ?? "",
@@ -1558,6 +1611,34 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                             <CardContent className="space-y-4">
                               <FormField
                                 control={form.control}
+                                name="venueId"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Saved Venue</FormLabel>
+                                    <Select
+                                      onValueChange={applyVenue}
+                                      value={field.value || "none"}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger data-testid="select-event-venue">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="none">No saved venue</SelectItem>
+                                        {venues.map((venue) => (
+                                          <SelectItem key={venue.id} value={venue.id}>
+                                            {venue.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
                                 name="isVirtual"
                                 render={({ field }) => (
                                   <FormItem className="flex items-center gap-2">
@@ -1707,6 +1788,34 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                               <CardTitle className="text-base">Speaker / Host</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
+                              <FormField
+                                control={form.control}
+                                name="organizerId"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Saved Organizer</FormLabel>
+                                    <Select
+                                      onValueChange={applyOrganizer}
+                                      value={field.value || "none"}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger data-testid="select-event-organizer">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="none">No saved organizer</SelectItem>
+                                        {organizers.map((organizer) => (
+                                          <SelectItem key={organizer.id} value={organizer.id}>
+                                            {organizer.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
                               <FormField
                                 control={form.control}
                                 name="speakerName"
