@@ -33,7 +33,6 @@ export function toPublicEcommerceOrderStatus(order: EcommerceOrderWithDetails) {
       id: refund.id,
       amount: refund.amount,
       status: refund.status,
-      reason: refund.reason,
       createdAt: refund.createdAt,
     })),
   };

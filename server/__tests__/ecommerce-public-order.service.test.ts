@@ -89,7 +89,21 @@ describe("ecommerce public order status serializer", () => {
         unitPrice: 10000,
         lineTotal: 10000,
       }],
-      refunds: [],
+      refunds: [{
+        id: "refund-1",
+        orderId: "order-1",
+        amount: 2500,
+        reason: "Internal goodwill adjustment note",
+        reasonCode: "other",
+        type: "partial",
+        source: "manual",
+        stripeRefundId: null,
+        status: "processed",
+        processedBy: "admin-1",
+        processedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      }],
       shipments: [],
       fulfillments: [],
     } as EcommerceOrderWithDetails);
@@ -104,5 +118,8 @@ describe("ecommerce public order status serializer", () => {
     expect(JSON.stringify(publicOrder)).not.toContain("buyer@example.com");
     expect(JSON.stringify(publicOrder)).not.toContain("127.0.0.1");
     expect(JSON.stringify(publicOrder)).not.toContain("pi_secret");
+    expect(JSON.stringify(publicOrder)).not.toContain("Internal goodwill");
+    expect(JSON.stringify(publicOrder)).not.toContain("admin-1");
+    expect(publicOrder.refunds[0]).toMatchObject({ id: "refund-1", amount: 2500, status: "processed" });
   });
 });
