@@ -4,12 +4,14 @@ This document describes the quality checks available in the Core Platform codeba
 
 ## Available Scripts
 
-| Script           | Command              | Purpose                                          |
-| ---------------- | -------------------- | ------------------------------------------------ |
-| Type-check       | `npm run check`      | Runs `tsc` to validate TypeScript types           |
-| Lint             | `npm run lint`       | Runs ESLint across client, server, and shared code |
-| Format (check)   | `npm run format`     | Runs Prettier in check mode (reports issues only)  |
-| Test             | `npm test`           | Runs Vitest unit tests                            |
+| Script         | Command          | Purpose                                            |
+| -------------- | ---------------- | -------------------------------------------------- |
+| Type-check     | `npm run check`  | Runs `tsc` to validate TypeScript types            |
+| Lint           | `npm run lint`   | Runs ESLint across client, server, and shared code |
+| Format (check) | `npm run format` | Runs Prettier in check mode (reports issues only)  |
+| Test           | `npm test`       | Runs Vitest unit tests                             |
+| Build          | `npm run build`  | Builds the production client and server bundles    |
+| Bundle budget  | `npm run budget` | Checks production asset sizes after a build        |
 
 ## Running Checks Locally
 
@@ -20,9 +22,11 @@ npm run check
 npm run lint
 npm run format
 npm test
+npm run build
+npm run budget
 ```
 
-All four commands must pass cleanly before a pull request will be merged.
+All commands must pass cleanly before a pull request is ready to merge. The format check currently remains advisory in CI until the repository has a formatting baseline.
 
 ## Lint
 
@@ -68,15 +72,23 @@ Test files are included in type validation via `tsconfig.test.json`, which exten
 npx vitest --watch
 ```
 
+## Bundle Budget
+
+`npm run budget` reads `dist/public/assets`, so run `npm run build` first. The budget is intentionally practical rather than theoretical: it watches the first-load entry files, the shared vendor chunk, and known heavy optional chunks such as Stripe, maps, charts, Tiptap, and ProseMirror.
+
+When a budget fails, do not simply raise the number. First check whether a module-only dependency has drifted into a shared chunk, whether a page is importing a heavy editor/chart/map library eagerly, or whether a new feature should be lazy-loaded behind route or component boundaries.
+
 ## CI Workflow
 
-A GitHub Actions workflow (`.github/workflows/ci.yml`) runs automatically on every push to `main` and on every pull request targeting `main`. It executes:
+The CI quality workflow should run automatically on every push to `main` and on every pull request targeting `main`. It should execute:
 
 1. `npm ci` — clean install of dependencies
 2. `npm run check` — type-checking
 3. `npm run lint` — linting
 4. `npm run format` — formatting check (non-blocking, see note below)
 5. `npm test` — unit tests
+6. `npm run build` — production bundle verification
+7. `npm run budget` — production asset size budget
 
 All steps must pass for the CI run to be green.
 

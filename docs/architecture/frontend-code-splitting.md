@@ -13,9 +13,18 @@ const TherapistProfilePage = lazy(() => import("@/features/directory/therapist-p
 
 A `<Suspense>` wrapper with a `<PageLoader>` spinner displays while chunks load.
 
-### Exceptions
+### Heavy Dependency Chunks
 
-`CmsHybridPage` is eagerly imported because it's used on the home route and needs to be available immediately for CMS-rendered pages.
+Vite manual chunk rules keep common heavy dependencies out of unrelated routes:
+
+- `stripe` — checkout-only payment libraries
+- `maps` — Leaflet and React Leaflet
+- `charts` — Recharts
+- `tiptap` and `prosemirror` — CMS/editor tooling
+- `carousel` — Embla carousel
+- `vendor` — shared React/admin dependencies
+
+When adding a new module, avoid importing heavyweight libraries from shared layout, route registration, navigation, or generic utility files. Import them from the lazy page/component that actually needs them.
 
 ### Component Organization
 
@@ -38,12 +47,23 @@ retry: false,
 
 ### Query Categories
 
-| Category | Example Queries | Effective staleTime |
-|----------|----------------|-------------------|
-| Static | Specializations list, theme presets, SEO settings | 5 min (global default) |
-| Session | Current user (`/api/auth/me`), setup status | 5 min (with selective invalidation on auth events) |
-| Live | Notifications | 5 min (global default) |
-| Paginated | Directory results, admin lists | 5 min (cache key includes page/filters) |
+| Category  | Example Queries                                   | Effective staleTime                              |
+| --------- | ------------------------------------------------- | ------------------------------------------------ |
+| Static    | Specializations list, theme presets, SEO settings | `STALE_TIMES.STATIC` where explicitly configured |
+| Session   | Current user (`/api/auth/me`), setup status       | 5 min global default                             |
+| Live      | Notifications, dashboards                         | 1 min where explicitly configured                |
+| Paginated | Directory results, admin lists                    | Cache key includes page/filters                  |
+
+## Bundle Budget
+
+Run production bundle checks after a build:
+
+```bash
+npm run build
+npm run budget
+```
+
+The budget script reports the largest assets and fails when route chunks or known vendor chunks exceed their thresholds. Treat a failure as a design signal: split the dependency, move it behind a lazy boundary, or remove it from the route before raising the budget.
 
 ### Cache Invalidation Patterns
 

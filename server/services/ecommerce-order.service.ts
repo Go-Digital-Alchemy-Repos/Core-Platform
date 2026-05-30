@@ -1,0 +1,135 @@
+import { z } from "zod";
+import { storage } from "../storage/index";
+import { priceCart, priceCartSchema } from "./ecommerce-pricing.service";
+import { getEcommerceStripeClient } from "./ecommerce-stripe.service";
+import { sendEcommerceOrderConfirmation } from "./ecommerce-email.service";
+
+const addressSchema = z.object({
+  name: z.string().min(1),
+  company: z.string().optional(),
+  address: z.string().min(1),
+  line2: z.string().optional(),
+  city: z.string().min(1),
+  state: z.string().min(1),
+  zip: z.string().min(1),
+  country: z.string().default("US"),
+});
+
+export const checkoutSchema = priceCartSchema.extend({
+  customer: z.object({
+    email: z.string().email(),
+    name: z.string().min(1),
+    phone: z.string().optional(),
+  }),
+  shippingAddress: addressSchema,
+  billingSameAsShipping: z.boolean().default(true),
+  billingAddress: addressSchema.optional(),
+  metaTracking: z.object({
+    marketingConsentGranted: z.boolean().optional(),
+    fbp: z.string().optional(),
+    fbc: z.string().optional(),
+    eventSourceUrl: z.string().optional(),
+    userAgent: z.string().optional(),
+  }).optional(),
+});
+
+export async function createEcommercePaymentIntent(input: unknown, requestMeta: { ip?: string | null } = {}) {
+  const data = checkoutSchema.parse(input);
+  const priced = await priceCart({ items: data.items, couponCode: data.couponCode });
+  if (priced.totalAmount <= 0) throw new Error("Order total must be greater than zero");
+
+  const customer = await storage.ecommerce.findOrCreateCustomer({
+    email: data.customer.email,
+    name: data.customer.name,
+    phone: data.customer.phone,
+    address: data.shippingAddress.address,
+    line2: data.shippingAddress.line2,
+    city: data.shippingAddress.city,
+    state: data.shippingAddress.state,
+    zipCode: data.shippingAddress.zip,
+    country: data.shippingAddress.country,
+  });
+
+  const billing = data.billingSameAsShipping ? data.shippingAddress : data.billingAddress;
+  const order = await storage.ecommerce.createOrder({
+    customerId: customer.id,
+    status: "pending",
+    paymentStatus: "unpaid",
+    totalAmount: priced.totalAmount,
+    subtotalAmount: priced.subtotalAmount,
+    taxAmount: priced.taxAmount,
+    shippingAmount: priced.shippingAmount,
+    discountAmount: priced.discountAmount,
+    couponCode: priced.coupon?.code,
+    customerIp: requestMeta.ip ?? null,
+    shippingName: data.shippingAddress.name,
+    shippingCompany: data.shippingAddress.company,
+    shippingAddress: data.shippingAddress.address,
+    shippingLine2: data.shippingAddress.line2,
+    shippingCity: data.shippingAddress.city,
+    shippingState: data.shippingAddress.state,
+    shippingZip: data.shippingAddress.zip,
+    shippingCountry: data.shippingAddress.country,
+    billingSameAsShipping: data.billingSameAsShipping,
+    billingName: billing?.name,
+    billingCompany: billing?.company,
+    billingAddress: billing?.address,
+    billingLine2: billing?.line2,
+    billingCity: billing?.city,
+    billingState: billing?.state,
+    billingZip: billing?.zip,
+    billingCountry: billing?.country,
+    marketingConsentGranted: data.metaTracking?.marketingConsentGranted ?? false,
+    metaFbp: data.metaTracking?.fbp,
+    metaFbc: data.metaTracking?.fbc,
+    metaEventSourceUrl: data.metaTracking?.eventSourceUrl,
+    customerUserAgent: data.metaTracking?.userAgent,
+  }, priced.lines.map((line) => ({
+    orderId: "",
+    productId: line.productId,
+    productName: line.name,
+    quantity: line.quantity,
+    unitPrice: line.unitPrice,
+    lineTotal: line.lineTotal,
+  })));
+
+  const stripe = await getEcommerceStripeClient();
+  const intent = await stripe.paymentIntents.create({
+    amount: order.totalAmount,
+    currency: "usd",
+    automatic_payment_methods: { enabled: true },
+    receipt_email: customer.email,
+    metadata: { orderId: order.id },
+  });
+  if (!intent.client_secret) {
+    throw new Error("Stripe did not return a client secret for this PaymentIntent");
+  }
+
+  await storage.ecommerce.updateOrder(order.id, { stripePaymentIntentId: intent.id });
+
+  return {
+    clientSecret: intent.client_secret,
+    paymentIntentId: intent.id,
+    orderId: order.id,
+    lookupToken: order.lookupToken,
+    priced,
+  };
+}
+
+export async function markEcommerceOrderPaid(orderId: string, paymentIntentId: string) {
+  const existing = await storage.ecommerce.getOrder(orderId);
+  if (!existing) return undefined;
+  if (existing.stripePaymentIntentId && existing.stripePaymentIntentId !== paymentIntentId) {
+    throw new Error("PaymentIntent does not match this order");
+  }
+  const alreadyPaid = existing.status === "paid" && existing.paymentStatus === "paid";
+
+  await storage.ecommerce.updateOrder(orderId, {
+    status: "paid",
+    paymentStatus: "paid",
+    stripePaymentIntentId: paymentIntentId,
+  });
+  const details = await storage.ecommerce.getOrderWithDetails(orderId);
+  if (details && !alreadyPaid) await sendEcommerceOrderConfirmation(details);
+  return details;
+}

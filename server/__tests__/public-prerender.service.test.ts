@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { BlogPost, CmsPage, Event, SeoSettings } from "@shared/schema";
+import type { BlogPost, CmsPage, EcommerceProduct, Event, SeoSettings } from "@shared/schema";
 
 const mockGetSeo = vi.fn();
 const mockGetSetting = vi.fn();
@@ -7,6 +7,7 @@ const mockGetPageBySlug = vi.fn();
 const mockGetPostBySlug = vi.fn();
 const mockGetEventByIdentifier = vi.fn();
 const mockGetProfileWithUser = vi.fn();
+const mockGetProductBySlug = vi.fn();
 
 vi.mock("../storage", () => ({
   storage: {
@@ -27,6 +28,9 @@ vi.mock("../storage", () => ({
     },
     therapists: {
       getProfileWithUser: mockGetProfileWithUser,
+    },
+    ecommerce: {
+      getProductBySlug: mockGetProductBySlug,
     },
   },
 }));
@@ -152,6 +156,40 @@ const event: Event = {
   parentEventId: null,
 };
 
+const product: EcommerceProduct = {
+  id: "product-1",
+  name: "Core Commerce Workbook",
+  tagline: "A focused digital resource for store setup.",
+  description: "Plan your product catalog, checkout flow, and post-purchase operations.",
+  price: 4900,
+  primaryImage: "/uploads/products/workbook.jpg",
+  secondaryImages: ["/uploads/products/workbook-preview.jpg"],
+  features: ["Catalog planning", "Checkout checklist"],
+  included: ["PDF workbook"],
+  active: true,
+  status: "published",
+  sku: "CORE-WORKBOOK",
+  tags: ["Digital", "Planning"],
+  salePrice: 3900,
+  discountType: "NONE",
+  discountValue: null,
+  saleStartAt: null,
+  saleEndAt: null,
+  metaTitle: "Core Commerce Workbook",
+  metaDescription: "A practical workbook for planning ecommerce launches.",
+  metaKeywords: "ecommerce workbook",
+  urlSlug: "core-commerce-workbook",
+  canonicalUrl: null,
+  robotsIndex: true,
+  robotsFollow: true,
+  ogTitle: null,
+  ogDescription: null,
+  ogImage: null,
+  mediaId: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
 describe("public-prerender.service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -161,6 +199,7 @@ describe("public-prerender.service", () => {
     mockGetPostBySlug.mockResolvedValue(undefined);
     mockGetEventByIdentifier.mockResolvedValue(undefined);
     mockGetProfileWithUser.mockResolvedValue(undefined);
+    mockGetProductBySlug.mockResolvedValue(undefined);
   });
 
   it("returns a prerender snapshot for published CMS pages", async () => {
@@ -174,6 +213,18 @@ describe("public-prerender.service", () => {
     expect(snapshot?.canonicalUrl).toBe("https://coreplatform.com/join");
   });
 
+  it("skips prerender snapshots for private app routes", async () => {
+    const { getPublicHtmlSnapshot, isPublicPrerenderPath } = await import(
+      "../services/public-prerender.service"
+    );
+
+    await expect(getPublicHtmlSnapshot("/admin/settings")).resolves.toBeNull();
+    await expect(getPublicHtmlSnapshot("/auth/login")).resolves.toBeNull();
+    expect(isPublicPrerenderPath("/admin/settings")).toBe(false);
+    expect(isPublicPrerenderPath("/shop")).toBe(true);
+    expect(mockGetPageBySlug).not.toHaveBeenCalled();
+  });
+
   it("returns a prerender snapshot for blog posts and event detail pages", async () => {
     mockGetPostBySlug.mockResolvedValue(blogPost);
     mockGetEventByIdentifier.mockResolvedValue(event);
@@ -185,6 +236,20 @@ describe("public-prerender.service", () => {
     expect(postSnapshot?.bodyHtml).toContain("This article explains the application process");
     expect(eventSnapshot?.bodyHtml).toContain("Application Process Webinar");
     expect(eventSnapshot?.canonicalUrl).toBe("https://coreplatform.com/events/application-process-webinar");
+  });
+
+  it("returns ecommerce product metadata and Product structured data for published products", async () => {
+    mockGetProductBySlug.mockResolvedValue(product);
+    const { getPublicHtmlSnapshot } = await import("../services/public-prerender.service");
+
+    const snapshot = await getPublicHtmlSnapshot("/products/core-commerce-workbook");
+
+    expect(snapshot?.title).toContain("Core Commerce Workbook");
+    expect(snapshot?.canonicalUrl).toBe("https://coreplatform.com/products/core-commerce-workbook");
+    expect(snapshot?.ogImageUrl).toBe("https://coreplatform.com/uploads/products/workbook.jpg");
+    expect(JSON.stringify(snapshot?.jsonLd)).toContain('"@type":"Product"');
+    expect(JSON.stringify(snapshot?.jsonLd)).toContain('"sku":"CORE-WORKBOOK"');
+    expect(JSON.stringify(snapshot?.jsonLd)).toContain('"price":"39.00"');
   });
 
   it("marks search result pages as noindex in the injected head", async () => {

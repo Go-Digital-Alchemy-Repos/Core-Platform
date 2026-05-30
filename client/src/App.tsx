@@ -8,6 +8,8 @@ import { BrandingProvider } from "@/components/shared/branding-provider";
 import { CookieConsentBanner } from "@/components/shared/cookie-consent-banner";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import { useAuth } from "@/hooks/use-auth";
+import { loadGa4IfConsented, loadMarketingPixelsIfConsented } from "@/lib/analytics-runtime";
+import { subscribeToCookieConsent } from "@/lib/cookie-consent";
 import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
 import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
@@ -73,6 +75,13 @@ const InsightsPostPage = lazy(() => import("@/features/public/insights-post-page
 const RecordingArchivesPage = lazy(() => import("@/features/public/recording-archives-page"));
 const SearchResultsPage = lazy(() => import("@/features/public/search-results-page"));
 const LegalFallbackPage = lazy(() => import("@/features/public/legal-fallback-page"));
+const ShopPage = lazy(() => import("@/features/ecommerce/shop-page"));
+const ProductDetailPage = lazy(() => import("@/features/ecommerce/product-detail-page"));
+const CartPage = lazy(() => import("@/features/ecommerce/cart-page"));
+const CheckoutPage = lazy(() => import("@/features/ecommerce/checkout-page"));
+const OrderSuccessPage = lazy(() => import("@/features/ecommerce/order-success-page"));
+const OrderStatusPage = lazy(() => import("@/features/ecommerce/order-status-page"));
+const AdminEcommercePage = lazy(() => import("@/features/admin/ecommerce/ecommerce-page"));
 
 function PageLoader() {
   return (
@@ -130,6 +139,12 @@ function Router() {
         <Route path="/events/:id" component={() => siteFeatures.eventsEnabled ? <EventDetailPage /> : <NotFound />} />
         <Route path="/recordings" component={() => <CmsHybridPage slug="recordings" fallback={<RecordingArchivesPage />} />} />
         <Route path="/search" component={SearchResultsPage} />
+        <Route path="/shop" component={() => siteFeatures.ecommerceEnabled ? <ShopPage /> : <NotFound />} />
+        <Route path="/products/:slug" component={() => siteFeatures.ecommerceEnabled ? <ProductDetailPage /> : <NotFound />} />
+        <Route path="/cart" component={() => siteFeatures.ecommerceEnabled ? <CartPage /> : <NotFound />} />
+        <Route path="/checkout" component={() => siteFeatures.ecommerceEnabled ? <CheckoutPage /> : <NotFound />} />
+        <Route path="/order-success" component={() => siteFeatures.ecommerceEnabled ? <OrderSuccessPage /> : <NotFound />} />
+        <Route path="/orders/status" component={() => siteFeatures.ecommerceEnabled ? <OrderStatusPage /> : <NotFound />} />
         <Route path="/insights" component={() => siteFeatures.blogEnabled ? <CmsHybridPage slug="insights" fallback={<InsightsPage />} /> : <NotFound />} />
         <Route path="/insights/:slug" component={() => siteFeatures.blogEnabled ? <InsightsPostPage /> : <NotFound />} />
         <Route path="/directory" component={() => siteFeatures.directoryEnabled ? <CmsHybridPage slug="directory" fallback={<DirectoryPage />} /> : <NotFound />} />
@@ -214,6 +229,16 @@ function Router() {
             {siteFeatures.crmEnabled ? <AdminCrmPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
+        <Route path="/admin/ecommerce/:view">
+          <ProtectedRoute roles={["admin"]}>
+            {siteFeatures.ecommerceEnabled ? <AdminEcommercePage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/ecommerce">
+          <ProtectedRoute roles={["admin"]}>
+            {siteFeatures.ecommerceEnabled ? <AdminEcommercePage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
         <Route path="/admin/blog">
           <Redirect to="/admin/cms/blog" />
         </Route>
@@ -222,10 +247,13 @@ function Router() {
             <DocsPage />
           </ProtectedRoute>
         </Route>
-        <Route path="/admin/settings">
+        <Route path="/admin/settings/:tab">
           <ProtectedRoute roles={["admin"]}>
             <AdminSettingsPage />
           </ProtectedRoute>
+        </Route>
+        <Route path="/admin/settings">
+          <Redirect to="/admin/settings/integrations" />
         </Route>
         <Route path="/admin/design/branding">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
@@ -439,6 +467,27 @@ function RouteAdminModeManager() {
   return null;
 }
 
+function RuntimeIntegrationsManager() {
+  const [location] = useLocation();
+
+  const loadRuntimeIntegrations = () => {
+    void loadGa4IfConsented().catch(() => undefined);
+    void loadMarketingPixelsIfConsented().catch(() => undefined);
+  };
+
+  useEffect(() => {
+    loadRuntimeIntegrations();
+  }, [location]);
+
+  useEffect(() => {
+    return subscribeToCookieConsent(() => {
+      loadRuntimeIntegrations();
+    });
+  }, []);
+
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -448,6 +497,7 @@ function App() {
           <SetupGuard>
             <RouteAdminModeManager />
             <RouteScrollManager />
+            <RuntimeIntegrationsManager />
             <Router />
             <CookieConsentBanner />
           </SetupGuard>

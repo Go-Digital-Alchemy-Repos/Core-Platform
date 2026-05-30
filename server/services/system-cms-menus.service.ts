@@ -71,6 +71,17 @@ function patchLegalItemUrls(items: MenuItem[]): { items: MenuItem[]; changed: bo
   return { items: nextItems, changed };
 }
 
+function patchShopItem(items: MenuItem[]): { items: MenuItem[]; changed: boolean } {
+  const hasShop = items.some((entry) => entry.label.trim().toLowerCase() === "shop" || entry.url === "/shop");
+  if (hasShop) return { items, changed: false };
+
+  const nextItems = [...items];
+  const contactIndex = nextItems.findIndex((entry) => entry.label.trim().toLowerCase() === "contact");
+  const insertIndex = contactIndex >= 0 ? contactIndex : nextItems.length;
+  nextItems.splice(insertIndex, 0, item("Shop", "/shop"));
+  return { items: nextItems, changed: true };
+}
+
 const defaultMenus: Array<InsertCmsMenu & { location: StandardMenuLocation }> = [
   {
     name: "Main Navigation",
@@ -83,6 +94,7 @@ const defaultMenus: Array<InsertCmsMenu & { location: StandardMenuLocation }> = 
         item("Events", "/events"),
         item("Insights & Articles", "/insights"),
       ]),
+      item("Shop", "/shop"),
       item("Contact", "/contact"),
     ],
   },
@@ -163,6 +175,16 @@ export async function ensureSystemCmsMenus() {
     const patched = patchLegalItemUrls((legalMenu.items as MenuItem[]) || []);
     if (patched.changed) {
       await storage.cmsMenus.update(legalMenu.id, {
+        items: patched.items,
+      });
+    }
+  }
+
+  const mainMenu = await storage.cmsMenus.getByLocation("main_navigation");
+  if (mainMenu?.items) {
+    const patched = patchShopItem((mainMenu.items as MenuItem[]) || []);
+    if (patched.changed) {
+      await storage.cmsMenus.update(mainMenu.id, {
         items: patched.items,
       });
     }

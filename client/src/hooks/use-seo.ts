@@ -6,6 +6,9 @@ interface SeoOptions {
   ogImage?: string;
   canonical?: string;
   noindex?: boolean;
+  ogType?: string;
+  twitterCard?: "summary" | "summary_large_image";
+  extraMeta?: Array<{ name: string; content: string; property?: boolean }>;
 }
 
 function setMeta(name: string, content: string, property = false) {
@@ -25,7 +28,16 @@ function removeMeta(name: string, property = false) {
   if (el) el.remove();
 }
 
-export function useSeo({ title, description, ogImage, canonical, noindex }: SeoOptions) {
+export function useSeo({
+  title,
+  description,
+  ogImage,
+  canonical,
+  noindex,
+  ogType,
+  twitterCard = "summary_large_image",
+  extraMeta = [],
+}: SeoOptions) {
   useEffect(() => {
     const prevTitle = document.title;
 
@@ -36,12 +48,21 @@ export function useSeo({ title, description, ogImage, canonical, noindex }: SeoO
       setMeta("og:description", description, true);
     }
 
-    if (title) setMeta("og:title", title, true);
+    if (title) {
+      setMeta("og:title", title, true);
+      setMeta("twitter:title", title);
+    }
+
+    if (description) setMeta("twitter:description", description);
+    if (ogType) setMeta("og:type", ogType, true);
+    setMeta("twitter:card", twitterCard);
 
     if (ogImage) {
       setMeta("og:image", ogImage, true);
+      setMeta("twitter:image", ogImage);
     } else {
       removeMeta("og:image", true);
+      removeMeta("twitter:image");
     }
 
     if (canonical) {
@@ -52,6 +73,8 @@ export function useSeo({ title, description, ogImage, canonical, noindex }: SeoO
         document.head.appendChild(link);
       }
       link.setAttribute("href", canonical);
+    } else {
+      document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.remove();
     }
 
     if (noindex) {
@@ -60,8 +83,16 @@ export function useSeo({ title, description, ogImage, canonical, noindex }: SeoO
       removeMeta("robots");
     }
 
+    for (const meta of extraMeta) {
+      setMeta(meta.name, meta.content, meta.property);
+    }
+
     return () => {
       document.title = prevTitle;
+      if (ogType) removeMeta("og:type", true);
+      for (const meta of extraMeta) {
+        removeMeta(meta.name, meta.property);
+      }
     };
-  }, [title, description, ogImage, canonical, noindex]);
+  }, [title, description, ogImage, canonical, noindex, ogType, twitterCard, JSON.stringify(extraMeta)]);
 }

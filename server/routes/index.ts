@@ -23,15 +23,16 @@ import applicationRoutes from "./application.routes";
 import referenceRoutes from "./reference.routes";
 import formsRoutes from "./forms.routes";
 import crmRoutes from "./crm.routes";
+import ecommerceRoutes from "./ecommerce.routes";
 import { searchPublicSite } from "../services/public-search.service";
 import { buildRobotsTxtPayload } from "../services/robots-txt.service";
 import { storage } from "../storage/index";
-import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
 import { getEventPath } from "@shared/event-url";
 import {
   DEFAULT_DIRECTORY_SETTINGS,
   getDirectorySettings,
 } from "../services/directory-settings.service";
+import { getSiteFeatures } from "../services/site-features.service";
 
 function escapeXml(str: string): string {
   return str
@@ -54,6 +55,7 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/contact", contactRoutes);
   app.use("/api/forms", formsRoutes);
   app.use("/api/crm", crmRoutes);
+  app.use("/api/ecommerce", ecommerceRoutes);
   app.use("/api/admin/docs", docsRoutes);
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/notifications", notificationsRoutes);
@@ -146,39 +148,21 @@ export function registerApiRoutes(app: Express) {
   });
 
   app.get("/api/site-config", async (_req, res) => {
-    try {
-      const settings = await storage.settings.getDecryptedCategory("system_configuration");
-      res.json({
-        directoryEnabled: normalizeBooleanSetting(
-          settings.enable_directory,
-          DEFAULT_SITE_FEATURES.directoryEnabled,
-        ),
-        blogEnabled: normalizeBooleanSetting(
-          settings.enable_blog,
-          DEFAULT_SITE_FEATURES.blogEnabled,
-        ),
-        eventsEnabled: normalizeBooleanSetting(
-          settings.enable_events,
-          DEFAULT_SITE_FEATURES.eventsEnabled,
-        ),
-        crmEnabled: normalizeBooleanSetting(
-          settings.enable_crm,
-          DEFAULT_SITE_FEATURES.crmEnabled,
-        ),
-      });
-    } catch (err) {
-      logger.app.warn("Failed to retrieve system configuration, returning defaults", {
-        error: err instanceof Error ? err.message : String(err),
-      });
-      res.json(DEFAULT_SITE_FEATURES);
-    }
+    res.json(await getSiteFeatures());
   });
 
   app.get("/api/runtime-integrations", async (_req, res) => {
     try {
       const analytics = await storage.settings.getDecryptedCategory("google_analytics");
+      const metaAds = await storage.settings.getDecryptedCategory("meta_ads");
+      const tiktokAds = await storage.settings.getDecryptedCategory("tiktok_ads");
+      const xAds = await storage.settings.getDecryptedCategory("x_ads");
+
       res.json({
         ga4MeasurementId: analytics.ga4_measurement_id || null,
+        metaPixelId: metaAds.meta_pixel_id || null,
+        tiktokPixelId: tiktokAds.tiktok_pixel_id || null,
+        xPixelId: xAds.x_pixel_id || null,
       });
     } catch (err) {
       logger.app.warn("Failed to retrieve runtime integrations, returning defaults", {
@@ -186,6 +170,9 @@ export function registerApiRoutes(app: Express) {
       });
       res.json({
         ga4MeasurementId: null,
+        metaPixelId: null,
+        tiktokPixelId: null,
+        xPixelId: null,
       });
     }
   });

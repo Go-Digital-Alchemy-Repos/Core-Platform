@@ -1,0 +1,356 @@
+import { relations, sql } from "drizzle-orm";
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  varchar,
+} from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+import { cmsMedia } from "./cms-media";
+import { users } from "./users";
+
+export const ECOMMERCE_PRODUCT_STATUSES = ["draft", "published"] as const;
+export const ECOMMERCE_ORDER_STATUSES = ["pending", "paid", "shipped", "delivered", "cancelled"] as const;
+export const ECOMMERCE_PAYMENT_STATUSES = [
+  "unpaid",
+  "paid",
+  "refund_pending",
+  "partially_refunded",
+  "refunded",
+  "refund_failed",
+] as const;
+export const ECOMMERCE_COUPON_TYPES = ["percentage", "fixed", "freeShipping"] as const;
+export const ECOMMERCE_REFUND_STATUSES = ["pending", "processed", "rejected", "failed"] as const;
+export const ECOMMERCE_REFUND_TYPES = ["full", "partial"] as const;
+
+export const ecommerceProducts = pgTable("ecommerce_products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  tagline: text("tagline"),
+  description: text("description"),
+  price: integer("price").notNull(),
+  primaryImage: text("primary_image"),
+  secondaryImages: text("secondary_images").array().notNull().default(sql`ARRAY[]::text[]`),
+  features: text("features").array().notNull().default(sql`ARRAY[]::text[]`),
+  included: text("included").array().notNull().default(sql`ARRAY[]::text[]`),
+  active: boolean("active").notNull().default(true),
+  status: text("status").notNull().default("draft"),
+  sku: text("sku"),
+  tags: text("tags").array().notNull().default(sql`ARRAY[]::text[]`),
+  salePrice: integer("sale_price"),
+  discountType: text("discount_type").notNull().default("NONE"),
+  discountValue: integer("discount_value"),
+  saleStartAt: timestamp("sale_start_at"),
+  saleEndAt: timestamp("sale_end_at"),
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  metaKeywords: text("meta_keywords"),
+  urlSlug: text("url_slug").notNull(),
+  canonicalUrl: text("canonical_url"),
+  robotsIndex: boolean("robots_index").notNull().default(true),
+  robotsFollow: boolean("robots_follow").notNull().default(true),
+  ogTitle: text("og_title"),
+  ogDescription: text("og_description"),
+  ogImage: text("og_image"),
+  mediaId: varchar("media_id").references(() => cmsMedia.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_ecommerce_products_url_slug").on(table.urlSlug),
+  index("idx_ecommerce_products_status_active").on(table.status, table.active),
+]);
+
+export const ecommerceCategories = pgTable("ecommerce_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  description: text("description"),
+  parentId: varchar("parent_id"),
+  image: text("image"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_ecommerce_categories_slug").on(table.slug),
+  index("idx_ecommerce_categories_active").on(table.active),
+]);
+
+export const ecommerceProductCategories = pgTable("ecommerce_product_categories", {
+  productId: varchar("product_id").notNull().references(() => ecommerceProducts.id, { onDelete: "cascade" }),
+  categoryId: varchar("category_id").notNull().references(() => ecommerceCategories.id, { onDelete: "cascade" }),
+}, (table) => [
+  uniqueIndex("idx_ecommerce_product_categories_unique").on(table.productId, table.categoryId),
+  index("idx_ecommerce_product_categories_category").on(table.categoryId),
+]);
+
+export const ecommerceCustomers = pgTable("ecommerce_customers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  email: text("email").notNull(),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  address: text("address"),
+  line2: text("line2"),
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
+  country: text("country").default("US"),
+  avatarUrl: text("avatar_url"),
+  isDisabled: boolean("is_disabled").notNull().default(false),
+  passwordHash: text("password_hash"),
+  sessionInvalidatedAt: timestamp("session_invalidated_at"),
+  mergedIntoCustomerId: varchar("merged_into_customer_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_customers_email").on(table.email),
+  index("idx_ecommerce_customers_user_id").on(table.userId),
+]);
+
+export const ecommerceOrders = pgTable("ecommerce_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").notNull().references(() => ecommerceCustomers.id),
+  status: text("status").notNull().default("pending"),
+  paymentStatus: text("payment_status").notNull().default("unpaid"),
+  totalAmount: integer("total_amount").notNull(),
+  subtotalAmount: integer("subtotal_amount").notNull().default(0),
+  taxAmount: integer("tax_amount").notNull().default(0),
+  shippingAmount: integer("shipping_amount").notNull().default(0),
+  discountAmount: integer("discount_amount").notNull().default(0),
+  stripeTaxCalculationId: text("stripe_tax_calculation_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  stripeSessionId: text("stripe_session_id"),
+  couponCode: text("coupon_code"),
+  isManualOrder: boolean("is_manual_order").notNull().default(false),
+  notes: text("notes"),
+  customerIp: text("customer_ip"),
+  shippingName: text("shipping_name"),
+  shippingCompany: text("shipping_company"),
+  shippingAddress: text("shipping_address"),
+  shippingLine2: text("shipping_line2"),
+  shippingCity: text("shipping_city"),
+  shippingState: text("shipping_state"),
+  shippingZip: text("shipping_zip"),
+  shippingCountry: text("shipping_country").default("US"),
+  billingSameAsShipping: boolean("billing_same_as_shipping").notNull().default(true),
+  billingName: text("billing_name"),
+  billingCompany: text("billing_company"),
+  billingAddress: text("billing_address"),
+  billingLine2: text("billing_line2"),
+  billingCity: text("billing_city"),
+  billingState: text("billing_state"),
+  billingZip: text("billing_zip"),
+  billingCountry: text("billing_country").default("US"),
+  marketingConsentGranted: boolean("marketing_consent_granted").notNull().default(false),
+  metaFbp: text("meta_fbp"),
+  metaFbc: text("meta_fbc"),
+  metaEventSourceUrl: text("meta_event_source_url"),
+  customerUserAgent: text("customer_user_agent"),
+  lookupToken: text("lookup_token").notNull().default(sql`encode(gen_random_bytes(18), 'hex')`),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_orders_customer_id").on(table.customerId),
+  index("idx_ecommerce_orders_status").on(table.status),
+  index("idx_ecommerce_orders_payment_status").on(table.paymentStatus),
+  index("idx_ecommerce_orders_created_at").on(table.createdAt),
+  uniqueIndex("idx_ecommerce_orders_lookup_token").on(table.lookupToken),
+  uniqueIndex("idx_ecommerce_orders_payment_intent").on(table.stripePaymentIntentId),
+]);
+
+export const ecommerceOrderItems = pgTable("ecommerce_order_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => ecommerceOrders.id, { onDelete: "cascade" }),
+  productId: varchar("product_id").notNull().references(() => ecommerceProducts.id),
+  productName: text("product_name").notNull(),
+  quantity: integer("quantity").notNull(),
+  unitPrice: integer("unit_price").notNull(),
+  lineTotal: integer("line_total").notNull(),
+}, (table) => [
+  index("idx_ecommerce_order_items_order").on(table.orderId),
+  index("idx_ecommerce_order_items_product").on(table.productId),
+]);
+
+export const ecommerceCoupons = pgTable("ecommerce_coupons", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull(),
+  description: text("description"),
+  type: text("type").notNull().default("fixed"),
+  value: integer("value").notNull().default(0),
+  minOrderAmount: integer("min_order_amount"),
+  maxDiscountAmount: integer("max_discount_amount"),
+  maxRedemptions: integer("max_redemptions"),
+  perCustomerLimit: integer("per_customer_limit"),
+  timesUsed: integer("times_used").notNull().default(0),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  active: boolean("active").notNull().default(true),
+  blockAffiliateCommission: boolean("block_affiliate_commission").notNull().default(false),
+  blockVipDiscount: boolean("block_vip_discount").notNull().default(false),
+  minMarginPercent: integer("min_margin_percent"),
+  autoExpireAt: timestamp("auto_expire_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_ecommerce_coupons_code").on(table.code),
+  index("idx_ecommerce_coupons_active").on(table.active),
+]);
+
+export const ecommerceCouponRedemptions = pgTable("ecommerce_coupon_redemptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  couponId: varchar("coupon_id").notNull().references(() => ecommerceCoupons.id),
+  orderId: varchar("order_id").notNull().references(() => ecommerceOrders.id),
+  customerId: varchar("customer_id").references(() => ecommerceCustomers.id),
+  discountAmount: integer("discount_amount").notNull(),
+  redeemedAt: timestamp("redeemed_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_coupon_redemptions_coupon").on(table.couponId),
+  index("idx_ecommerce_coupon_redemptions_order").on(table.orderId),
+  index("idx_ecommerce_coupon_redemptions_customer").on(table.customerId),
+]);
+
+export const ecommerceRefunds = pgTable("ecommerce_refunds", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => ecommerceOrders.id, { onDelete: "cascade" }),
+  amount: integer("amount").notNull(),
+  reason: text("reason"),
+  reasonCode: text("reason_code"),
+  type: text("type").notNull().default("partial"),
+  source: text("source").notNull().default("manual"),
+  stripeRefundId: text("stripe_refund_id"),
+  status: text("status").notNull().default("pending"),
+  processedBy: varchar("processed_by").references(() => users.id, { onDelete: "set null" }),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_refunds_order").on(table.orderId),
+  index("idx_ecommerce_refunds_status").on(table.status),
+  uniqueIndex("idx_ecommerce_refunds_stripe_refund").on(table.stripeRefundId),
+]);
+
+export const ecommerceShippingZones = pgTable("ecommerce_shipping_zones", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  countries: text("countries").array().notNull().default(sql`ARRAY[]::text[]`),
+  states: text("states").array().notNull().default(sql`ARRAY[]::text[]`),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_shipping_zones_active").on(table.active),
+]);
+
+export const ecommerceShippingRates = pgTable("ecommerce_shipping_rates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  zoneId: varchar("zone_id").notNull().references(() => ecommerceShippingZones.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  amount: integer("amount").notNull().default(0),
+  minOrderAmount: integer("min_order_amount"),
+  maxOrderAmount: integer("max_order_amount"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_shipping_rates_zone").on(table.zoneId),
+  index("idx_ecommerce_shipping_rates_active").on(table.active),
+]);
+
+export const ecommerceShipments = pgTable("ecommerce_shipments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => ecommerceOrders.id, { onDelete: "cascade" }),
+  carrier: text("carrier"),
+  trackingNumber: text("tracking_number"),
+  trackingUrl: text("tracking_url"),
+  status: text("status").notNull().default("shipped"),
+  shippedBy: varchar("shipped_by").references(() => users.id, { onDelete: "set null" }),
+  shippedAt: timestamp("shipped_at").notNull().defaultNow(),
+  emailSentAt: timestamp("email_sent_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_shipments_order").on(table.orderId),
+  index("idx_ecommerce_shipments_tracking").on(table.trackingNumber),
+]);
+
+export const ecommerceIntegrationSettings = pgTable("ecommerce_integration_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  provider: text("provider").notNull(),
+  settings: jsonb("settings").$type<Record<string, unknown>>().default(sql`'{}'::jsonb`).notNull(),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_ecommerce_integration_provider").on(table.provider),
+]);
+
+export const ecommerceProcessedWebhookEvents = pgTable("ecommerce_processed_webhook_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  provider: text("provider").notNull().default("stripe"),
+  eventId: text("event_id").notNull(),
+  eventType: text("event_type").notNull(),
+  processedAt: timestamp("processed_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_ecommerce_webhook_events_provider_event").on(table.provider, table.eventId),
+]);
+
+export const ecommerceProductsRelations = relations(ecommerceProducts, ({ many }) => ({
+  categories: many(ecommerceProductCategories),
+  items: many(ecommerceOrderItems),
+}));
+
+export const ecommerceOrdersRelations = relations(ecommerceOrders, ({ one, many }) => ({
+  customer: one(ecommerceCustomers, {
+    fields: [ecommerceOrders.customerId],
+    references: [ecommerceCustomers.id],
+  }),
+  items: many(ecommerceOrderItems),
+  refunds: many(ecommerceRefunds),
+  shipments: many(ecommerceShipments),
+}));
+
+export const insertEcommerceProductSchema = createInsertSchema(ecommerceProducts).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceCategorySchema = createInsertSchema(ecommerceCategories).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceCustomerSchema = createInsertSchema(ecommerceCustomers).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceOrderSchema = createInsertSchema(ecommerceOrders).omit({ id: true, lookupToken: true, createdAt: true, updatedAt: true });
+export const insertEcommerceOrderItemSchema = createInsertSchema(ecommerceOrderItems).omit({ id: true });
+export const insertEcommerceCouponSchema = createInsertSchema(ecommerceCoupons).omit({ id: true, timesUsed: true, createdAt: true, updatedAt: true });
+export const insertEcommerceRefundSchema = createInsertSchema(ecommerceRefunds).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceShippingZoneSchema = createInsertSchema(ecommerceShippingZones).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceShippingRateSchema = createInsertSchema(ecommerceShippingRates).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEcommerceShipmentSchema = createInsertSchema(ecommerceShipments).omit({ id: true, createdAt: true, updatedAt: true });
+
+export const ecommerceCartItemSchema = z.object({
+  productId: z.string().min(1),
+  quantity: z.number().int().min(1).max(99),
+});
+
+export type EcommerceProduct = typeof ecommerceProducts.$inferSelect;
+export type InsertEcommerceProduct = z.infer<typeof insertEcommerceProductSchema>;
+export type EcommerceCategory = typeof ecommerceCategories.$inferSelect;
+export type InsertEcommerceCategory = z.infer<typeof insertEcommerceCategorySchema>;
+export type EcommerceCustomer = typeof ecommerceCustomers.$inferSelect;
+export type InsertEcommerceCustomer = z.infer<typeof insertEcommerceCustomerSchema>;
+export type EcommerceOrder = typeof ecommerceOrders.$inferSelect;
+export type InsertEcommerceOrder = z.infer<typeof insertEcommerceOrderSchema>;
+export type EcommerceOrderItem = typeof ecommerceOrderItems.$inferSelect;
+export type InsertEcommerceOrderItem = z.infer<typeof insertEcommerceOrderItemSchema>;
+export type EcommerceCoupon = typeof ecommerceCoupons.$inferSelect;
+export type InsertEcommerceCoupon = z.infer<typeof insertEcommerceCouponSchema>;
+export type EcommerceRefund = typeof ecommerceRefunds.$inferSelect;
+export type InsertEcommerceRefund = z.infer<typeof insertEcommerceRefundSchema>;
+export type EcommerceShippingZone = typeof ecommerceShippingZones.$inferSelect;
+export type InsertEcommerceShippingZone = z.infer<typeof insertEcommerceShippingZoneSchema>;
+export type EcommerceShippingRate = typeof ecommerceShippingRates.$inferSelect;
+export type InsertEcommerceShippingRate = z.infer<typeof insertEcommerceShippingRateSchema>;
+export type EcommerceShipment = typeof ecommerceShipments.$inferSelect;
+export type InsertEcommerceShipment = z.infer<typeof insertEcommerceShipmentSchema>;
+export type EcommerceCartItem = z.infer<typeof ecommerceCartItemSchema>;
