@@ -54,14 +54,14 @@ export default function OrderStatusPage() {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/ecommerce/orders/status", { orderId, email, token: token || undefined });
+      const res = await apiRequest("POST", "/api/ecommerce/orders/status", { orderId, email, token });
       return res.json() as Promise<OrderDetails>;
     },
     onSuccess: setOrder,
   });
 
   useEffect(() => {
-    if (orderId && email) mutation.mutate();
+    if (orderId && email && token) mutation.mutate();
   }, []);
 
   const submit = (event: FormEvent) => {
@@ -82,7 +82,7 @@ export default function OrderStatusPage() {
             <form onSubmit={submit} className="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
               <div className="space-y-2"><Label>Order ID</Label><Input value={orderId} onChange={(e) => setOrderId(e.target.value)} required /></div>
               <div className="space-y-2"><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
-              <div className="space-y-2"><Label>Token</Label><Input value={token} onChange={(e) => setToken(e.target.value)} /></div>
+              <div className="space-y-2"><Label>Token</Label><Input value={token} onChange={(e) => setToken(e.target.value)} required /></div>
               <Button type="submit" disabled={mutation.isPending} className="sm:col-span-3">Find order</Button>
             </form>
           </CardContent>

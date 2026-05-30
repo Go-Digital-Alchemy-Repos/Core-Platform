@@ -116,7 +116,7 @@ router.post(
     const data = z.object({
       orderId: z.string().min(1),
       email: z.string().email(),
-      token: z.string().optional(),
+      token: z.string().min(1),
     }).parse(req.body);
     const order = await storage.ecommerce.getOrderForLookup(data);
     if (!order) {

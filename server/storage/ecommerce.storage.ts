@@ -1,6 +1,7 @@
 import { and, desc, eq, gte, ilike, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "../db";
 import { requiresAtomicInventoryStockGuard } from "../services/ecommerce-inventory.service";
+import { isEcommerceOrderLookupAuthorized } from "../services/ecommerce-order-lookup.service";
 import {
   ecommerceCategories,
   ecommerceCouponRedemptions,
@@ -492,11 +493,9 @@ export class EcommerceStorage {
     return order;
   }
 
-  async getOrderForLookup(params: { orderId: string; email: string; token?: string }): Promise<EcommerceOrderWithDetails | undefined> {
+  async getOrderForLookup(params: { orderId: string; email: string; token: string }): Promise<EcommerceOrderWithDetails | undefined> {
     const details = await this.getOrderWithDetails(params.orderId);
-    if (!details?.customer) return undefined;
-    if (details.customer.email.toLowerCase() !== params.email.trim().toLowerCase()) return undefined;
-    if (params.token && details.lookupToken !== params.token) return undefined;
+    if (!details || !isEcommerceOrderLookupAuthorized(details, params)) return undefined;
     return details;
   }
 
