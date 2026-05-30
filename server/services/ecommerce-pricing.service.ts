@@ -11,13 +11,15 @@ import {
 } from "@shared/schema";
 import { calculateEcommerceTax, type EcommerceTaxCalculation } from "./ecommerce-tax.service";
 
+export const MAX_ECOMMERCE_CART_LINES = 50;
+
 export const shippingAddressQuoteSchema = z.object({
   country: z.string().default("US"),
   state: z.string().optional(),
 });
 
 export const priceCartSchema = z.object({
-  items: z.array(ecommerceCartItemSchema).min(1),
+  items: z.array(ecommerceCartItemSchema).min(1).max(MAX_ECOMMERCE_CART_LINES),
   couponCode: z.string().optional(),
   customerId: z.string().optional(),
   customerEmail: z.string().email().optional(),

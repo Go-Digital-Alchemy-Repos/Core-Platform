@@ -205,6 +205,16 @@ describe("ecommerce services", () => {
     });
   });
 
+  it("caps public cart pricing requests to a reasonable number of line items", async () => {
+    const { MAX_ECOMMERCE_CART_LINES, priceCartSchema } = await import("../services/ecommerce-pricing.service");
+    const tooManyItems = Array.from({ length: MAX_ECOMMERCE_CART_LINES + 1 }, (_, index) => ({
+      productId: `product-${index}`,
+      quantity: 1,
+    }));
+
+    expect(() => priceCartSchema.parse({ items: tooManyItems })).toThrow();
+  });
+
   it("rejects archived and hidden products during server-side cart pricing", async () => {
     const { priceCart } = await import("../services/ecommerce-pricing.service");
     mockProducts.push({
