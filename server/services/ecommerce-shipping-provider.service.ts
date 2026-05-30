@@ -15,14 +15,21 @@ export interface EcommerceShippingProviderDefinition {
   type: "direct_carrier" | "aggregator" | "workflow" | "marketplace";
   recommendedFor: string;
   capabilities: EcommerceShippingProviderCapability[];
-  setupFields: Array<{
+  setupFields: EcommerceShippingProviderSetupField[];
+}
+
+export interface EcommerceShippingProviderSetupField {
     key: string;
     label: string;
     secret?: boolean;
-  }>;
+}
+
+export interface EcommerceShippingProviderSetupFieldStatus extends EcommerceShippingProviderSetupField {
+  hasValue: boolean;
 }
 
 export interface EcommerceShippingProviderStatus extends EcommerceShippingProviderDefinition {
+  setupFields: EcommerceShippingProviderSetupFieldStatus[];
   active: boolean;
   testMode: boolean;
   connectedAt: Date | null;
@@ -116,6 +123,7 @@ export const ECOMMERCE_SHIPPING_PROVIDER_REGISTRY: EcommerceShippingProviderDefi
 
 export function mergeShippingProviderStatuses(
   configuredProviders: EcommerceShippingProvider[],
+  credentialStatus: Record<string, Record<string, boolean>> = {},
 ): EcommerceShippingProviderStatus[] {
   const configuredByProvider = new Map(configuredProviders.map((provider) => [provider.provider, provider]));
 
@@ -123,9 +131,21 @@ export function mergeShippingProviderStatuses(
     const configured = configuredByProvider.get(definition.provider);
     return {
       ...definition,
+      setupFields: definition.setupFields.map((field) => ({
+        ...field,
+        hasValue: Boolean(credentialStatus[definition.provider]?.[field.key]),
+      })),
       active: configured?.active ?? false,
       testMode: configured?.testMode ?? true,
       connectedAt: configured?.connectedAt ?? null,
     };
   });
+}
+
+export function getShippingProviderDefinition(provider: string): EcommerceShippingProviderDefinition | undefined {
+  return ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.find((definition) => definition.provider === provider);
+}
+
+export function getShippingProviderCredentialCategory(provider: string): string {
+  return `ecommerce_shipping_provider_${provider}`;
 }

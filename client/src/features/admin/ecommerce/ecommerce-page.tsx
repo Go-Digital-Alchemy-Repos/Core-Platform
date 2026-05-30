@@ -155,7 +155,7 @@ interface ShippingProvider {
   type: string;
   recommendedFor: string;
   capabilities: string[];
-  setupFields: Array<{ key: string; label: string; secret?: boolean }>;
+  setupFields: Array<{ key: string; label: string; secret?: boolean; hasValue?: boolean }>;
   active: boolean;
   testMode: boolean;
   connectedAt?: string | null;
@@ -1331,6 +1331,7 @@ function ShippingTab() {
     isPrimary: false,
     active: true,
   });
+  const [providerCredentialForms, setProviderCredentialForms] = useState<Record<string, Record<string, string>>>({});
 
   const resetLocationForm = () => setLocationForm({
     id: "",
@@ -1391,6 +1392,33 @@ function ShippingTab() {
       toast({ title: "Shipping provider updated" });
     },
   });
+  const credentialMutation = useMutation({
+    mutationFn: async (provider: ShippingProvider) => apiRequest(
+      "PUT",
+      `/api/admin/ecommerce/shipping/providers/${provider.provider}/credentials`,
+      { credentials: providerCredentialForms[provider.provider] ?? {} },
+    ),
+    onSuccess: async (_response, provider) => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/providers"] });
+      setProviderCredentialForms((current) => ({ ...current, [provider.provider]: {} }));
+      toast({ title: `${provider.displayName} credentials saved` });
+    },
+    onError: (error) => toast({
+      title: "Credentials could not be saved",
+      description: error instanceof Error ? error.message : "Please review the provider credentials.",
+      variant: "destructive",
+    }),
+  });
+
+  const updateProviderCredential = (provider: string, key: string, value: string) => {
+    setProviderCredentialForms((current) => ({
+      ...current,
+      [provider]: {
+        ...(current[provider] ?? {}),
+        [key]: value,
+      },
+    }));
+  };
 
   const groupedProviders = providers.reduce<Record<string, ShippingProvider[]>>((groups, provider) => {
     const key = provider.type.replace(/_/g, " ");
@@ -1603,8 +1631,34 @@ function ShippingTab() {
                       </label>
                       {provider.setupFields.length ? (
                         <p className="text-xs text-muted-foreground">
-                          Requires {provider.setupFields.map((field) => field.label).join(", ")} in the encrypted credential setup.
+                          Requires {provider.setupFields.map((field) => field.label).join(", ")} in encrypted credential storage.
                         </p>
+                      ) : null}
+                      {provider.setupFields.length ? (
+                        <div className="grid gap-2">
+                          {provider.setupFields.map((field) => (
+                            <Input
+                              key={field.key}
+                              type={field.secret ? "password" : "text"}
+                              value={providerCredentialForms[provider.provider]?.[field.key] ?? ""}
+                              onChange={(event) => updateProviderCredential(provider.provider, field.key, event.target.value)}
+                              placeholder={field.hasValue ? `${field.label} saved` : field.label}
+                            />
+                          ))}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => credentialMutation.mutate(provider)}
+                            disabled={
+                              credentialMutation.isPending ||
+                              !Object.values(providerCredentialForms[provider.provider] ?? {}).some((value) => value.trim())
+                            }
+                          >
+                            <Save className="mr-2 h-4 w-4" />
+                            Save credentials
+                          </Button>
+                        </div>
                       ) : null}
                     </div>
                   </div>

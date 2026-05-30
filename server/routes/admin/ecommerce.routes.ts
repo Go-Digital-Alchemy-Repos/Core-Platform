@@ -24,7 +24,12 @@ import {
 } from "../../services/ecommerce-stripe.service";
 import { createEcommerceRefund } from "../../services/ecommerce-refund.service";
 import { sendEcommerceOrderStatusEmail } from "../../services/ecommerce-email.service";
-import { mergeShippingProviderStatuses } from "../../services/ecommerce-shipping-provider.service";
+import {
+  ECOMMERCE_SHIPPING_PROVIDER_REGISTRY,
+  getShippingProviderCredentialCategory,
+  getShippingProviderDefinition,
+  mergeShippingProviderStatuses,
+} from "../../services/ecommerce-shipping-provider.service";
 import { requireEcommerceEnabled } from "../../middleware/site-features";
 
 const router = Router();
@@ -351,7 +356,16 @@ router.put("/shipping/locations/:id", asyncHandler(async (req, res) => {
 }));
 
 router.get("/shipping/providers", asyncHandler(async (_req, res) => {
-  res.json(mergeShippingProviderStatuses(await storage.ecommerce.getShippingProviders()));
+  const credentialStatus: Record<string, Record<string, boolean>> = {};
+  await Promise.all(ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.map(async (definition) => {
+    const settings = await storage.settings.getDecryptedCategory(
+      getShippingProviderCredentialCategory(definition.provider),
+    );
+    credentialStatus[definition.provider] = Object.fromEntries(
+      definition.setupFields.map((field) => [field.key, Boolean(settings[field.key])]),
+    );
+  }));
+  res.json(mergeShippingProviderStatuses(await storage.ecommerce.getShippingProviders(), credentialStatus));
 }));
 
 router.put("/shipping/providers/:provider", asyncHandler(async (req, res) => {
@@ -371,6 +385,36 @@ router.put("/shipping/providers/:provider", asyncHandler(async (req, res) => {
     active: data.active ?? false,
     connectedAt: data.active ? data.connectedAt ?? new Date() : data.connectedAt ?? null,
   }));
+}));
+
+router.put("/shipping/providers/:provider/credentials", asyncHandler(async (req, res) => {
+  const provider = paramString(req.params.provider);
+  const definition = getShippingProviderDefinition(provider);
+  if (!definition) {
+    res.status(404).json({ message: "Shipping provider not found" });
+    return;
+  }
+
+  const credentials = z.record(z.string(), z.string()).parse(req.body.credentials ?? {});
+  const category = getShippingProviderCredentialCategory(provider);
+  const writes = definition.setupFields
+    .map((field) => ({ field, value: credentials[field.key]?.trim() }))
+    .filter((entry): entry is { field: typeof definition.setupFields[number]; value: string } => Boolean(entry.value))
+    .map(({ field, value }) => storage.settings.upsertSetting(field.key, value, category, field.secret ?? true));
+
+  await Promise.all(writes);
+  storage.settings.invalidateCategory(category);
+
+  const settings = await storage.settings.getDecryptedCategory(category);
+  res.json({
+    provider,
+    setupFields: definition.setupFields.map((field) => ({
+      key: field.key,
+      label: field.label,
+      secret: field.secret ?? true,
+      hasValue: Boolean(settings[field.key]),
+    })),
+  });
 }));
 
 router.post("/orders/:orderId/shipments", asyncHandler(async (req, res) => {
