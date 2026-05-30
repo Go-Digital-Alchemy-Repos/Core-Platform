@@ -146,6 +146,14 @@ export function getShippingProviderDefinition(provider: string): EcommerceShippi
   return ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.find((definition) => definition.provider === provider);
 }
 
+export function getShippingProvidersByCapability(capability: EcommerceShippingProviderCapability): EcommerceShippingProviderDefinition[] {
+  return ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.filter((definition) => definition.capabilities.includes(capability));
+}
+
+export function shippingProviderSupportsCapability(provider: string, capability: EcommerceShippingProviderCapability): boolean {
+  return getShippingProviderDefinition(provider)?.capabilities.includes(capability) ?? false;
+}
+
 export function getShippingProviderCredentialCategory(provider: string): string {
   return `ecommerce_shipping_provider_${provider}`;
 }
