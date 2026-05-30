@@ -238,6 +238,8 @@ export default function CmsPageEditorPage() {
     onSuccess: async (res, variables) => {
       const created: CmsPage = await res.json();
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/menus"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cms/menus"] });
       toast({ title: "Page created successfully" });
       setDraftPreviewUrl("");
       applySavedState(
@@ -274,6 +276,8 @@ export default function CmsPageEditorPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id, "revisions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/menus"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cms/menus"] });
       toast({ title: "Page saved" });
       setDraftPreviewUrl("");
       applySavedState(

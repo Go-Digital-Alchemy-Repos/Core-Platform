@@ -5,6 +5,7 @@ import { paramString } from "../../utils/params";
 import { insertCmsPageSchema } from "@shared/schema";
 import { logger } from "../../utils/logger";
 import { createCmsPreviewToken } from "../../utils/cms-preview-token";
+import { syncCmsPageRelationships } from "../../services/cms-relationships.service";
 
 const router = Router();
 
@@ -155,6 +156,9 @@ router.put("/pages/:id", async (req, res) => {
     });
 
     const updated = await storage.cmsPages.updatePage(page.id, { ...data, updatedBy: adminId });
+    if (updated) {
+      await syncCmsPageRelationships(page, updated);
+    }
     res.json(updated);
   } catch (error) {
     logger.cms.error("Failed to update page", error, { requestId: req.requestId });

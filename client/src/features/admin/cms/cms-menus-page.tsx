@@ -46,6 +46,7 @@ import {
   STANDARD_MENU_LOCATIONS,
   LEGACY_MENU_LOCATIONS,
   type CmsMenu,
+  type CmsPage,
   type MenuItem,
   type MenuLocation,
 } from "@shared/schema";
@@ -66,8 +67,14 @@ const LEGACY_LOCATION_OPTIONS = LEGACY_MENU_LOCATIONS.map((location) => ({
   label: MENU_LOCATION_LABELS[location],
 }));
 
+function cmsPagePath(slug: string): string {
+  const cleanSlug = slug.trim().replace(/^\/+/, "").replace(/\/+$/, "");
+  return cleanSlug ? `/${cleanSlug}` : "/";
+}
+
 function MenuItemEditor({
   item,
+  pages,
   depth,
   index,
   totalSiblings,
@@ -79,6 +86,7 @@ function MenuItemEditor({
   onOutdent,
 }: {
   item: MenuItem;
+  pages: CmsPage[];
   depth: number;
   index: number;
   totalSiblings: number;
@@ -92,6 +100,7 @@ function MenuItemEditor({
   const [expanded, setExpanded] = useState(true);
   const hasChildren = item.children && item.children.length > 0;
   const canNest = depth < 3;
+  const selectedPageId = item.pageId ?? "";
 
   const updateChild = useCallback(
     (childId: string, updates: Partial<MenuItem>) => {
@@ -134,12 +143,47 @@ function MenuItemEditor({
     [item, onUpdate]
   );
 
+  const updateLabel = (label: string) => {
+    onUpdate(item.id, {
+      label,
+      labelSource: item.pageId ? "custom" : item.labelSource,
+    });
+  };
+
+  const updateUrl = (url: string) => {
+    onUpdate(item.id, {
+      url,
+      pageId: null,
+      labelSource: item.pageId ? "custom" : item.labelSource,
+    });
+  };
+
+  const selectPage = (pageId: string) => {
+    if (!pageId) {
+      onUpdate(item.id, { pageId: null, labelSource: "custom" });
+      return;
+    }
+
+    const page = pages.find((entry) => entry.id === pageId);
+    if (!page) return;
+
+    onUpdate(item.id, {
+      pageId: page.id,
+      label: page.title,
+      url: cmsPagePath(page.slug),
+      labelSource: "page",
+      openInNewTab: false,
+    });
+  };
+
   const addChild = useCallback(() => {
     const newChild: MenuItem = {
       id: generateId(),
       label: "",
       url: "/",
       openInNewTab: false,
+      pageId: null,
+      labelSource: "custom",
       children: [],
     };
     onUpdate(item.id, { children: [...item.children, newChild] });
@@ -166,17 +210,30 @@ function MenuItemEditor({
           <div className="w-4 shrink-0" />
         )}
 
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-center">
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
+          <select
+            value={selectedPageId}
+            onChange={(e) => selectPage(e.target.value)}
+            className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            data-testid={`select-page-${item.id}`}
+          >
+            <option value="">Manual link</option>
+            {pages.map((page) => (
+              <option key={page.id} value={page.id}>
+                {page.title}
+              </option>
+            ))}
+          </select>
           <Input
             value={item.label}
-            onChange={(e) => onUpdate(item.id, { label: e.target.value })}
+            onChange={(e) => updateLabel(e.target.value)}
             placeholder="Label"
             className="h-8 text-sm"
             data-testid={`input-label-${item.id}`}
           />
           <Input
             value={item.url}
-            onChange={(e) => onUpdate(item.id, { url: e.target.value })}
+            onChange={(e) => updateUrl(e.target.value)}
             placeholder="/url or https://..."
             className="h-8 text-sm"
             data-testid={`input-url-${item.id}`}
@@ -238,6 +295,7 @@ function MenuItemEditor({
             <MenuItemEditor
               key={child.id}
               item={child}
+              pages={pages}
               depth={depth + 1}
               index={cIdx}
               totalSiblings={item.children.length}
@@ -277,6 +335,9 @@ function MenuEditor({
   const [name, setName] = useState(menu?.name || draft?.name || "");
   const [location, setLocation] = useState<MenuLocation>((menu?.location as MenuLocation) || (draft?.location as MenuLocation) || "unassigned");
   const [items, setItems] = useState<MenuItem[]>((menu?.items as MenuItem[]) || []);
+  const { data: pages = [] } = useQuery<CmsPage[]>({
+    queryKey: ["/api/admin/cms/pages"],
+  });
   const editorLock = useEditorLock({
     resourceType: "cms_menu",
     resourceId: isNew ? null : menu?.id ?? null,
@@ -405,6 +466,8 @@ function MenuEditor({
         label: "",
         url: "/",
         openInNewTab: false,
+        pageId: null,
+        labelSource: "custom",
         children: [],
       },
     ]);
@@ -499,6 +562,7 @@ function MenuEditor({
               <MenuItemEditor
                 key={item.id}
                 item={item}
+                pages={pages}
                 depth={1}
                 index={idx}
                 totalSiblings={items.length}
