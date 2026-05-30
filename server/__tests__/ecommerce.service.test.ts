@@ -772,6 +772,131 @@ describe("ecommerce services", () => {
     }));
   });
 
+  it("creates checkout PaymentIntents with a deterministic Stripe idempotency key", async () => {
+    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+    const customer = { id: "customer-1", email: "buyer@example.com", name: "Buyer" };
+    const order = {
+      id: "order-checkout-1",
+      customerId: customer.id,
+      status: "pending",
+      paymentStatus: "unpaid",
+      totalAmount: 5000,
+      subtotalAmount: 5000,
+      taxAmount: 0,
+      shippingAmount: 0,
+      discountAmount: 0,
+      lookupToken: "lookup-token",
+    } as EcommerceOrder;
+    mockFindOrCreateCustomer.mockResolvedValue(customer);
+    mockCreateOrder.mockResolvedValue(order);
+    mockProducts.push({
+      id: "p-digital",
+      name: "Digital Guide",
+      tagline: null,
+      description: null,
+      shortDescription: null,
+      productType: "digital",
+      vendor: null,
+      price: 5000,
+      compareAtPrice: null,
+      costPerItem: null,
+      taxable: true,
+      taxCategory: null,
+      featured: false,
+      visibility: "online",
+      publishedAt: null,
+      archivedAt: null,
+      primaryImage: null,
+      secondaryImages: [],
+      features: [],
+      included: [],
+      active: true,
+      status: "published",
+      sku: "DIGITAL-1",
+      tags: [],
+      salePrice: null,
+      discountType: "NONE",
+      discountValue: null,
+      saleStartAt: null,
+      saleEndAt: null,
+      metaTitle: null,
+      metaDescription: null,
+      metaKeywords: null,
+      urlSlug: "digital-guide",
+      canonicalUrl: null,
+      robotsIndex: true,
+      robotsFollow: true,
+      ogTitle: null,
+      ogDescription: null,
+      ogImage: null,
+      physicalProduct: false,
+      requiresShipping: false,
+      weight: null,
+      weightUnit: "oz",
+      length: null,
+      width: null,
+      height: null,
+      dimensionUnit: "in",
+      shippingProfile: null,
+      fulfillmentType: "digital",
+      relatedProductIds: [],
+      upsellProductIds: [],
+      badgeText: null,
+      mediaId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockVariants.push({
+      id: "v-digital",
+      productId: "p-digital",
+      title: "Default",
+      optionSignature: "default",
+      optionValues: {},
+      sku: "DIGITAL-1",
+      barcode: null,
+      price: 5000,
+      salePrice: null,
+      compareAtPrice: null,
+      costPerItem: null,
+      inventoryQuantity: 0,
+      trackInventory: false,
+      lowStockThreshold: null,
+      allowBackorder: false,
+      weight: null,
+      weightUnit: "oz",
+      image: null,
+      status: "active",
+      active: true,
+      sortOrder: 0,
+      isDefault: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await createEcommercePaymentIntent({
+      items: [{ productId: "p-digital", quantity: 1 }],
+      customer: { email: customer.email, name: customer.name },
+      shippingAddress: {
+        name: "Buyer",
+        address: "123 Main St",
+        city: "Detroit",
+        state: "MI",
+        zip: "48201",
+        country: "US",
+      },
+      billingSameAsShipping: true,
+    });
+
+    expect(mockStripePaymentIntentCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amount: 5000,
+        metadata: { orderId: order.id },
+      }),
+      { idempotencyKey: `ecommerce_order_${order.id}_payment_intent` },
+    );
+    expect(mockUpdateOrder).toHaveBeenCalledWith(order.id, { stripePaymentIntentId: "pi_test" });
+  });
+
   it("calculates manual tax server-side after discounts and optional shipping tax", async () => {
     const { priceCart } = await import("../services/ecommerce-pricing.service");
     mockGetDecryptedCategory.mockResolvedValue({

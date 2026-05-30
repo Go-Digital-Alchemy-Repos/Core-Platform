@@ -191,6 +191,8 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
       automatic_payment_methods: { enabled: true },
       receipt_email: customer.email,
       metadata: { orderId: order.id },
+    }, {
+      idempotencyKey: `ecommerce_order_${order.id}_payment_intent`,
     });
     if (!intent.client_secret) {
       throw new Error("Stripe did not return a client secret for this PaymentIntent");
