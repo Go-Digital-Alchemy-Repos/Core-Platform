@@ -252,6 +252,13 @@ describe("public-prerender.service", () => {
     expect(JSON.stringify(snapshot?.jsonLd)).toContain('"price":"39.00"');
   });
 
+  it("skips ecommerce product prerender snapshots for archived products", async () => {
+    mockGetProductBySlug.mockResolvedValue({ ...product, archivedAt: new Date() });
+    const { getPublicHtmlSnapshot } = await import("../services/public-prerender.service");
+
+    await expect(getPublicHtmlSnapshot("/products/core-commerce-workbook")).resolves.toBeNull();
+  });
+
   it("marks search result pages as noindex in the injected head", async () => {
     const { getPublicHtmlSnapshot, injectPublicHtmlSnapshot } = await import("../services/public-prerender.service");
     const template = "<html><head><title>Default</title><!--APP_DYNAMIC_HEAD--></head><body><!--APP_PRERENDER_CONTENT--><div id=\"root\"></div></body></html>";

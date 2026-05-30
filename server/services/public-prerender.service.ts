@@ -605,7 +605,7 @@ export async function getPublicHtmlSnapshot(
   const productMatch = pathname.match(/^\/products\/([^/]+)$/);
   if (productMatch) {
     const product = await storage.ecommerce.getProductBySlug(decodeURIComponent(productMatch[1]));
-    if (!product || !product.active || product.status !== "published") return null;
+    if (!product || product.archivedAt || !product.active || product.status !== "published") return null;
     return buildProductSnapshot(product, seo, siteUrl);
   }
 
