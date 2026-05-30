@@ -29,6 +29,9 @@ import {
   Type,
   Tag,
   Handshake,
+  ShoppingBag,
+  Package,
+  TicketPercent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -148,6 +151,59 @@ function buildNavGroups(
                 href: "/admin/crm/clients",
                 icon: UserCheck,
                 iconColor: "text-emerald-600",
+              },
+            ],
+          },
+        ] satisfies NavGroup[])
+      : []),
+    ...(siteFeatures.ecommerceEnabled && user?.role === "admin"
+      ? ([
+          {
+            label: "Ecommerce",
+            items: [
+              {
+                title: "Store",
+                href: "/admin/ecommerce",
+                icon: ShoppingBag,
+                iconColor: "text-emerald-600",
+                children: [
+                  {
+                    title: "Products",
+                    href: "/admin/ecommerce/products",
+                    icon: Package,
+                    iconColor: "text-emerald-600",
+                  },
+                  {
+                    title: "Categories",
+                    href: "/admin/ecommerce/categories",
+                    icon: Tag,
+                    iconColor: "text-emerald-500",
+                  },
+                  {
+                    title: "Coupons",
+                    href: "/admin/ecommerce/coupons",
+                    icon: TicketPercent,
+                    iconColor: "text-amber-600",
+                  },
+                  {
+                    title: "Orders",
+                    href: "/admin/ecommerce/orders",
+                    icon: ClipboardList,
+                    iconColor: "text-blue-600",
+                  },
+                  {
+                    title: "Shipping",
+                    href: "/admin/ecommerce/shipping",
+                    icon: CalendarDays,
+                    iconColor: "text-sky-600",
+                  },
+                  {
+                    title: "Settings",
+                    href: "/admin/ecommerce/settings",
+                    icon: Settings,
+                    iconColor: "text-slate-500",
+                  },
+                ],
               },
             ],
           },

@@ -23,6 +23,7 @@ import applicationRoutes from "./application.routes";
 import referenceRoutes from "./reference.routes";
 import formsRoutes from "./forms.routes";
 import crmRoutes from "./crm.routes";
+import ecommerceRoutes from "./ecommerce.routes";
 import { searchPublicSite } from "../services/public-search.service";
 import { buildRobotsTxtPayload } from "../services/robots-txt.service";
 import { storage } from "../storage/index";
@@ -54,6 +55,7 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/contact", contactRoutes);
   app.use("/api/forms", formsRoutes);
   app.use("/api/crm", crmRoutes);
+  app.use("/api/ecommerce", ecommerceRoutes);
   app.use("/api/admin/docs", docsRoutes);
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/notifications", notificationsRoutes);
@@ -164,6 +166,10 @@ export function registerApiRoutes(app: Express) {
         crmEnabled: normalizeBooleanSetting(
           settings.enable_crm,
           DEFAULT_SITE_FEATURES.crmEnabled,
+        ),
+        ecommerceEnabled: normalizeBooleanSetting(
+          settings.enable_ecommerce,
+          DEFAULT_SITE_FEATURES.ecommerceEnabled,
         ),
       });
     } catch (err) {

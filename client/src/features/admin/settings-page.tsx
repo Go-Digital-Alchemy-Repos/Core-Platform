@@ -107,7 +107,7 @@ type BrandingColorSettingKey =
   | "text_secondary_foreground_color"
   | "text_tertiary_foreground_color";
 
-type SystemConfigurationSettingKey = "enable_directory" | "enable_blog" | "enable_events" | "enable_crm";
+type SystemConfigurationSettingKey = "enable_directory" | "enable_blog" | "enable_events" | "enable_crm" | "enable_ecommerce";
 
 const BRANDING_CORE_COLOR_FIELDS: Array<{
   key: BrandingColorSettingKey;
@@ -250,6 +250,12 @@ const SYSTEM_CONFIGURATION_FIELDS: Array<{
     label: "Enable CRM",
     description:
       "Turns the CRM pipeline app on or off, including admin navigation and inbound lead routes.",
+  },
+  {
+    key: "enable_ecommerce",
+    label: "Enable Ecommerce",
+    description:
+      "Turns the ecommerce app on or off, including the storefront, checkout, and admin ecommerce routes.",
   },
 ];
 
@@ -777,6 +783,12 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
         DEFAULT_SITE_FEATURES.crmEnabled,
       );
     }
+    if (key === "enable_ecommerce") {
+      return normalizeBooleanSetting(
+        systemConfig.enable_ecommerce?.value,
+        DEFAULT_SITE_FEATURES.ecommerceEnabled,
+      );
+    }
     return normalizeBooleanSetting(
       systemConfig.enable_events?.value,
       DEFAULT_SITE_FEATURES.eventsEnabled,
@@ -787,6 +799,7 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
     enable_blog: getStoredValue("enable_blog"),
     enable_events: getStoredValue("enable_events"),
     enable_crm: getStoredValue("enable_crm"),
+    enable_ecommerce: getStoredValue("enable_ecommerce"),
   });
 
   useEffect(() => {
@@ -795,12 +808,14 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
       enable_blog: getStoredValue("enable_blog"),
       enable_events: getStoredValue("enable_events"),
       enable_crm: getStoredValue("enable_crm"),
+      enable_ecommerce: getStoredValue("enable_ecommerce"),
     });
   }, [
     systemConfig.enable_directory?.value,
     systemConfig.enable_blog?.value,
     systemConfig.enable_events?.value,
     systemConfig.enable_crm?.value,
+    systemConfig.enable_ecommerce?.value,
   ]);
 
   const saveMutation = useMutation({

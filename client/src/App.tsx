@@ -73,6 +73,13 @@ const InsightsPostPage = lazy(() => import("@/features/public/insights-post-page
 const RecordingArchivesPage = lazy(() => import("@/features/public/recording-archives-page"));
 const SearchResultsPage = lazy(() => import("@/features/public/search-results-page"));
 const LegalFallbackPage = lazy(() => import("@/features/public/legal-fallback-page"));
+const ShopPage = lazy(() => import("@/features/ecommerce/shop-page"));
+const ProductDetailPage = lazy(() => import("@/features/ecommerce/product-detail-page"));
+const CartPage = lazy(() => import("@/features/ecommerce/cart-page"));
+const CheckoutPage = lazy(() => import("@/features/ecommerce/checkout-page"));
+const OrderSuccessPage = lazy(() => import("@/features/ecommerce/order-success-page"));
+const OrderStatusPage = lazy(() => import("@/features/ecommerce/order-status-page"));
+const AdminEcommercePage = lazy(() => import("@/features/admin/ecommerce/ecommerce-page"));
 
 function PageLoader() {
   return (
@@ -130,6 +137,12 @@ function Router() {
         <Route path="/events/:id" component={() => siteFeatures.eventsEnabled ? <EventDetailPage /> : <NotFound />} />
         <Route path="/recordings" component={() => <CmsHybridPage slug="recordings" fallback={<RecordingArchivesPage />} />} />
         <Route path="/search" component={SearchResultsPage} />
+        <Route path="/shop" component={() => siteFeatures.ecommerceEnabled ? <ShopPage /> : <NotFound />} />
+        <Route path="/products/:slug" component={() => siteFeatures.ecommerceEnabled ? <ProductDetailPage /> : <NotFound />} />
+        <Route path="/cart" component={() => siteFeatures.ecommerceEnabled ? <CartPage /> : <NotFound />} />
+        <Route path="/checkout" component={() => siteFeatures.ecommerceEnabled ? <CheckoutPage /> : <NotFound />} />
+        <Route path="/order-success" component={() => siteFeatures.ecommerceEnabled ? <OrderSuccessPage /> : <NotFound />} />
+        <Route path="/orders/status" component={() => siteFeatures.ecommerceEnabled ? <OrderStatusPage /> : <NotFound />} />
         <Route path="/insights" component={() => siteFeatures.blogEnabled ? <CmsHybridPage slug="insights" fallback={<InsightsPage />} /> : <NotFound />} />
         <Route path="/insights/:slug" component={() => siteFeatures.blogEnabled ? <InsightsPostPage /> : <NotFound />} />
         <Route path="/directory" component={() => siteFeatures.directoryEnabled ? <CmsHybridPage slug="directory" fallback={<DirectoryPage />} /> : <NotFound />} />
@@ -212,6 +225,16 @@ function Router() {
         <Route path="/admin/crm">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["crm"]}>
             {siteFeatures.crmEnabled ? <AdminCrmPage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/ecommerce/:view">
+          <ProtectedRoute roles={["admin"]}>
+            {siteFeatures.ecommerceEnabled ? <AdminEcommercePage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/ecommerce">
+          <ProtectedRoute roles={["admin"]}>
+            {siteFeatures.ecommerceEnabled ? <AdminEcommercePage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/blog">
