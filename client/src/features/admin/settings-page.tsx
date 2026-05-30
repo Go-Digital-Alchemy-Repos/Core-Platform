@@ -314,6 +314,7 @@ interface IntegrationField {
   label: string;
   isSecret: boolean;
   placeholder: string;
+  type?: "text" | "boolean";
 }
 
 export type IntegrationGroupKey =
@@ -1142,6 +1143,7 @@ export const INTEGRATIONS: IntegrationConfig[] = [
         label: "Product Feed Enabled",
         isSecret: false,
         placeholder: "false",
+        type: "boolean",
       },
     ],
   },
@@ -1612,6 +1614,10 @@ export function IntegrationCard({
           const existing = categorySettings[field.key];
           const hasExisting = existing && existing.value && existing.value !== "";
           const currentVal = values[field.key] ?? "";
+          const normalizedExisting = existing?.value?.trim().toLowerCase();
+          const isBooleanEnabled = values[field.key] !== undefined
+            ? values[field.key] === "true"
+            : ["true", "1", "yes", "on"].includes(normalizedExisting ?? "");
           const isVisible = showSecrets[field.key];
           const shouldAutoPrependHttps =
             /url/i.test(field.label) ||
@@ -1621,42 +1627,58 @@ export function IntegrationCard({
           return (
             <div key={field.key} className="space-y-1.5">
               <Label htmlFor={field.key}>{field.label}</Label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Input
+              {field.type === "boolean" ? (
+                <div className="flex items-center justify-between rounded-md border bg-muted/20 px-3 py-2">
+                  <span className="text-sm text-muted-foreground">
+                    {isBooleanEnabled ? "Enabled" : "Disabled"}
+                  </span>
+                  <Switch
                     id={field.key}
-                    type={field.isSecret && !isVisible ? "password" : "text"}
-                    placeholder={
-                      hasExisting
-                        ? field.isSecret
-                          ? "••••••••  (saved — enter new value to update)"
-                          : existing.value
-                        : field.placeholder
+                    checked={isBooleanEnabled}
+                    onCheckedChange={(checked) =>
+                      setValues((prev) => ({ ...prev, [field.key]: checked ? "true" : "false" }))
                     }
-                    value={currentVal}
-                    onChange={(e) =>
-                      setValues((prev) => ({ ...prev, [field.key]: e.target.value }))
-                    }
-                    autoPrependHttps={shouldAutoPrependHttps}
-                    data-testid={`input-${field.key}`}
+                    data-testid={`switch-${field.key}`}
                   />
                 </div>
-                {field.isSecret && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() =>
-                      setShowSecrets((prev) => ({
-                        ...prev,
-                        [field.key]: !prev[field.key],
-                      }))
-                    }
-                    data-testid={`button-toggle-${field.key}`}
-                  >
-                    {isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                )}
-              </div>
+              ) : (
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      id={field.key}
+                      type={field.isSecret && !isVisible ? "password" : "text"}
+                      placeholder={
+                        hasExisting
+                          ? field.isSecret
+                            ? "••••••••  (saved — enter new value to update)"
+                            : existing.value
+                          : field.placeholder
+                      }
+                      value={currentVal}
+                      onChange={(e) =>
+                        setValues((prev) => ({ ...prev, [field.key]: e.target.value }))
+                      }
+                      autoPrependHttps={shouldAutoPrependHttps}
+                      data-testid={`input-${field.key}`}
+                    />
+                  </div>
+                  {field.isSecret && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        setShowSecrets((prev) => ({
+                          ...prev,
+                          [field.key]: !prev[field.key],
+                        }))
+                      }
+                      data-testid={`button-toggle-${field.key}`}
+                    >
+                      {isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
