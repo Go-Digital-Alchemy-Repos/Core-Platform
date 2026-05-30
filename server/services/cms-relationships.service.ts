@@ -6,6 +6,17 @@ export interface CmsPageRelationshipSyncResult {
   itemsUpdated: number;
 }
 
+export interface CmsPageMenuReference {
+  menuId: string;
+  menuName: string;
+  menuLocation: string;
+  itemId: string;
+  itemLabel: string;
+  itemUrl: string;
+  labelSource?: "page" | "custom";
+  depth: number;
+}
+
 function pagePath(slug: string | null | undefined): string {
   const cleanSlug = String(slug ?? "").trim().replace(/^\/+/, "").replace(/\/+$/, "");
   return cleanSlug ? `/${cleanSlug}` : "/";
@@ -78,8 +89,49 @@ function syncMenuItemsForPage(items: MenuItem[], oldPage: CmsPage, newPage: CmsP
   return { items: nextItems, changed, itemsUpdated };
 }
 
+function collectMenuReferences(
+  items: MenuItem[],
+  page: CmsPage,
+  menu: { id: string; name: string; location: string },
+  depth = 1,
+): CmsPageMenuReference[] {
+  const path = pagePath(page.slug);
+  const references: CmsPageMenuReference[] = [];
+
+  for (const item of items) {
+    const isReference = item.pageId === page.id || (!item.pageId && normalizeUrlForMatch(item.url) === path);
+    if (isReference) {
+      references.push({
+        menuId: menu.id,
+        menuName: menu.name,
+        menuLocation: menu.location,
+        itemId: item.id,
+        itemLabel: item.label,
+        itemUrl: item.url,
+        labelSource: item.labelSource,
+        depth,
+      });
+    }
+
+    references.push(...collectMenuReferences(item.children ?? [], page, menu, depth + 1));
+  }
+
+  return references;
+}
+
 export function syncMenuItemsWithPage(items: MenuItem[], oldPage: CmsPage, newPage: CmsPage) {
   return syncMenuItemsForPage(items, oldPage, newPage);
+}
+
+export async function getCmsPageMenuReferences(page: CmsPage): Promise<CmsPageMenuReference[]> {
+  const menus = await storage.cmsMenus.getAll();
+  return menus.flatMap((menu) =>
+    collectMenuReferences((menu.items as MenuItem[]) || [], page, {
+      id: menu.id,
+      name: menu.name,
+      location: menu.location,
+    }),
+  );
 }
 
 export async function syncCmsPageRelationships(

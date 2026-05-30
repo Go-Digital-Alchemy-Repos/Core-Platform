@@ -10,7 +10,8 @@ vi.mock("../storage", () => ({
   },
 }));
 
-import { syncMenuItemsWithPage } from "../services/cms-relationships.service";
+import { getCmsPageMenuReferences, syncMenuItemsWithPage } from "../services/cms-relationships.service";
+import { storage } from "../storage";
 
 function page(overrides: Partial<CmsPage>): CmsPage {
   return {
@@ -105,6 +106,21 @@ describe("cms relationship sync", () => {
     expect(result.items[0]?.url).toBe("/about-us");
   });
 
+  it("does not treat absolute external URLs as legacy page references", () => {
+    const result = syncMenuItemsWithPage(
+      [item({ label: "External About", url: "https://example.com/about", pageId: undefined })],
+      page({ title: "About", slug: "about" }),
+      page({ title: "About Us", slug: "about-us" }),
+    );
+
+    expect(result.changed).toBe(false);
+    expect(result.items[0]).toMatchObject({
+      label: "External About",
+      url: "https://example.com/about",
+      pageId: undefined,
+    });
+  });
+
   it("updates nested children recursively", () => {
     const result = syncMenuItemsWithPage(
       [
@@ -124,6 +140,32 @@ describe("cms relationship sync", () => {
       url: "/about-us",
       pageId: "page-1",
       labelSource: "page",
+    });
+  });
+
+  it("finds linked and legacy menu references for a page", async () => {
+    vi.mocked(storage.cmsMenus.getAll).mockResolvedValue([
+      {
+        id: "menu-main",
+        name: "Main Navigation",
+        location: "main_navigation",
+        items: [
+          item({ id: "linked", pageId: "page-1", labelSource: "page" }),
+          item({ id: "legacy", pageId: undefined, labelSource: undefined }),
+          item({ id: "other", label: "Other", url: "/other" }),
+        ],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
+
+    const references = await getCmsPageMenuReferences(page({ title: "About", slug: "about" }));
+
+    expect(references.map((reference) => reference.itemId)).toEqual(["linked", "legacy"]);
+    expect(references[0]).toMatchObject({
+      menuName: "Main Navigation",
+      menuLocation: "main_navigation",
+      depth: 1,
     });
   });
 });

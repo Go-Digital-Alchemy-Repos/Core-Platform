@@ -38,6 +38,7 @@ import {
   Loader2,
   MapPin,
   LayoutTemplate,
+  Link2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -101,6 +102,8 @@ function MenuItemEditor({
   const hasChildren = item.children && item.children.length > 0;
   const canNest = depth < 3;
   const selectedPageId = item.pageId ?? "";
+  const selectedPage = selectedPageId ? pages.find((entry) => entry.id === selectedPageId) : null;
+  const isPageSynced = Boolean(selectedPage && item.labelSource === "page");
 
   const updateChild = useCallback(
     (childId: string, updates: Partial<MenuItem>) => {
@@ -176,6 +179,16 @@ function MenuItemEditor({
     });
   };
 
+  const useSelectedPageTitle = () => {
+    if (!selectedPage) return;
+    onUpdate(item.id, {
+      label: selectedPage.title,
+      url: cmsPagePath(selectedPage.slug),
+      labelSource: "page",
+      pageId: selectedPage.id,
+    });
+  };
+
   const addChild = useCallback(() => {
     const newChild: MenuItem = {
       id: generateId(),
@@ -210,20 +223,42 @@ function MenuItemEditor({
           <div className="w-4 shrink-0" />
         )}
 
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
-          <select
-            value={selectedPageId}
-            onChange={(e) => selectPage(e.target.value)}
-            className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            data-testid={`select-page-${item.id}`}
-          >
-            <option value="">Manual link</option>
-            {pages.map((page) => (
-              <option key={page.id} value={page.id}>
-                {page.title}
-              </option>
-            ))}
-          </select>
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-start">
+          <div className="space-y-1">
+            <select
+              value={selectedPageId}
+              onChange={(e) => selectPage(e.target.value)}
+              className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              data-testid={`select-page-${item.id}`}
+            >
+              <option value="">Manual link</option>
+              {pages.map((page) => (
+                <option key={page.id} value={page.id}>
+                  {page.title}
+                </option>
+              ))}
+            </select>
+            <div className="flex min-h-4 items-center gap-1.5 text-[11px] text-muted-foreground">
+              {selectedPage ? (
+                <>
+                  <Link2 className="h-3 w-3" />
+                  <span>{isPageSynced ? "Synced from page" : "Custom label"}</span>
+                  {!isPageSynced && (
+                    <button
+                      type="button"
+                      className="font-medium text-primary hover:underline"
+                      onClick={useSelectedPageTitle}
+                      data-testid={`button-use-page-title-${item.id}`}
+                    >
+                      Use page title
+                    </button>
+                  )}
+                </>
+              ) : (
+                <span>Manual URL</span>
+              )}
+            </div>
+          </div>
           <Input
             value={item.label}
             onChange={(e) => updateLabel(e.target.value)}

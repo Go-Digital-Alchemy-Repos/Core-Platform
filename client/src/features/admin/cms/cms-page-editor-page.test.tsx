@@ -226,6 +226,10 @@ describe("CmsPageEditorPage", () => {
         return { data: [], isLoading: false };
       }
 
+      if (queryKey[0] === "/api/admin/cms/pages" && queryKey[2] === "relationships") {
+        return { data: { menuReferences: [], counts: { menuItems: 0 } }, isLoading: false };
+      }
+
       if (queryKey[0] === "/api/admin/cms/pages") {
         return {
           data: mockPage,
