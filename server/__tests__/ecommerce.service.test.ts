@@ -1433,7 +1433,7 @@ describe("ecommerce services", () => {
     });
     await expect(getEcommerceStripePublishableKey()).rejects.toMatchObject({
       message: "Ecommerce Stripe publishable key is not configured",
-      statusCode: 503,
+      statusCode: 409,
     });
   });
 

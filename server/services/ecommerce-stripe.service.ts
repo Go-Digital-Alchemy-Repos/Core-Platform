@@ -15,7 +15,7 @@ function isLiveKey(key: string): boolean {
 }
 
 function stripeConfigurationError(message: string) {
-  return Object.assign(new Error(message), { statusCode: 503 });
+  return Object.assign(new Error(message), { statusCode: 409 });
 }
 
 export async function getEcommerceStripeSettings(): Promise<Record<string, string>> {
