@@ -758,7 +758,7 @@ function ProductEditorSection({ title, children }: { title: string; children: Re
   );
 }
 
-function CategoriesTab() {
+export function CategoriesTab() {
   const { toast } = useToast();
   const { data: categories = [] } = useQuery<Category[]>({ queryKey: ["/api/admin/ecommerce/categories"] });
   const [editingId, setEditingId] = useState<string | null>(null);
