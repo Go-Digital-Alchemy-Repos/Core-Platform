@@ -392,6 +392,28 @@ router.get("/shipping/providers", asyncHandler(async (_req, res) => {
   res.json(mergeShippingProviderStatuses(await storage.ecommerce.getShippingProviders(), credentialStatus));
 }));
 
+router.get("/shipping/providers/:provider/readiness", asyncHandler(async (req, res) => {
+  const provider = paramString(req.params.provider);
+  const definition = getShippingProviderDefinition(provider);
+  if (!definition) {
+    res.status(404).json({ message: "Shipping provider not found" });
+    return;
+  }
+
+  const [settings, configuredProviders] = await Promise.all([
+    storage.settings.getDecryptedCategory(getShippingProviderCredentialCategory(provider)),
+    storage.ecommerce.getShippingProviders(),
+  ]);
+  const credentialStatus = {
+    [provider]: Object.fromEntries(definition.setupFields.map((field) => [field.key, Boolean(settings[field.key])])),
+  };
+  const [status] = mergeShippingProviderStatuses(
+    configuredProviders.filter((configuredProvider) => configuredProvider.provider === provider),
+    credentialStatus,
+  ).filter((candidate) => candidate.provider === provider);
+  res.json(status);
+}));
+
 router.put("/shipping/providers/:provider", asyncHandler(async (req, res) => {
   const provider = paramString(req.params.provider);
   const data = insertEcommerceShippingProviderSchema.partial().extend({

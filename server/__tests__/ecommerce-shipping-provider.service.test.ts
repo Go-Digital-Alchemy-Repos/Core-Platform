@@ -51,6 +51,19 @@ describe("ecommerce shipping provider registry", () => {
     expect(easypost).toMatchObject({ active: true, testMode: false, connectedAt });
     expect(easypost).not.toHaveProperty("settings");
     expect(easypost?.setupFields[0]).toMatchObject({ key: "apiKey", hasValue: true });
+    expect(easypost).toMatchObject({
+      configured: true,
+      operational: true,
+      readyCapabilities: expect.arrayContaining(["rates", "labels", "tracking"]),
+      missingCredentialLabels: [],
+    });
+    const shipstation = statuses.find((status) => status.provider === "shipstation");
+    expect(shipstation).toMatchObject({
+      configured: false,
+      operational: false,
+      readyCapabilities: [],
+      missingCredentialLabels: ["API key", "API secret"],
+    });
   });
 
   it("uses provider-scoped encrypted settings categories", () => {

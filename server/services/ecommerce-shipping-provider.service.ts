@@ -33,6 +33,10 @@ export interface EcommerceShippingProviderStatus extends EcommerceShippingProvid
   active: boolean;
   testMode: boolean;
   connectedAt: Date | null;
+  configured: boolean;
+  operational: boolean;
+  readyCapabilities: EcommerceShippingProviderCapability[];
+  missingCredentialLabels: string[];
 }
 
 export const ECOMMERCE_SHIPPING_PROVIDER_REGISTRY: EcommerceShippingProviderDefinition[] = [
@@ -129,15 +133,25 @@ export function mergeShippingProviderStatuses(
 
   return ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.map((definition) => {
     const configured = configuredByProvider.get(definition.provider);
+    const setupFields = definition.setupFields.map((field) => ({
+      ...field,
+      hasValue: Boolean(credentialStatus[definition.provider]?.[field.key]),
+    }));
+    const missingCredentialLabels = setupFields
+      .filter((field) => !field.hasValue)
+      .map((field) => field.label);
+    const hasRequiredCredentials = missingCredentialLabels.length === 0;
+    const active = configured?.active ?? false;
     return {
       ...definition,
-      setupFields: definition.setupFields.map((field) => ({
-        ...field,
-        hasValue: Boolean(credentialStatus[definition.provider]?.[field.key]),
-      })),
-      active: configured?.active ?? false,
+      setupFields,
+      active,
       testMode: configured?.testMode ?? true,
       connectedAt: configured?.connectedAt ?? null,
+      configured: hasRequiredCredentials,
+      operational: active && hasRequiredCredentials,
+      readyCapabilities: active && hasRequiredCredentials ? definition.capabilities : [],
+      missingCredentialLabels,
     };
   });
 }

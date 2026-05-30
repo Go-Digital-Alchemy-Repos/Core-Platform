@@ -179,6 +179,10 @@ interface ShippingProvider {
   active: boolean;
   testMode: boolean;
   connectedAt?: string | null;
+  configured?: boolean;
+  operational?: boolean;
+  readyCapabilities?: string[];
+  missingCredentialLabels?: string[];
 }
 
 interface Coupon {
@@ -2264,7 +2268,7 @@ function ShippingTab() {
                         <p className="mt-1 text-sm text-muted-foreground">{provider.recommendedFor}</p>
                       </div>
                       <Badge variant={provider.active ? "default" : "secondary"}>
-                        {provider.active ? "Connected" : "Available"}
+                        {provider.operational ? "Operational" : provider.active ? "Needs setup" : "Available"}
                       </Badge>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -2299,7 +2303,9 @@ function ShippingTab() {
                       </label>
                       {provider.setupFields.length ? (
                         <p className="text-xs text-muted-foreground">
-                          Requires {provider.setupFields.map((field) => field.label).join(", ")} in encrypted credential storage.
+                          {provider.configured
+                            ? `Ready for ${provider.readyCapabilities?.map((capability) => capability.replace(/_/g, " ")).join(", ") || "provider workflows"}.`
+                            : `Missing ${provider.missingCredentialLabels?.join(", ") || provider.setupFields.map((field) => field.label).join(", ")} in encrypted credential storage.`}
                         </p>
                       ) : null}
                       {provider.setupFields.length ? (
