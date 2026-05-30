@@ -12,6 +12,7 @@ import {
 } from "../services/ecommerce-pricing.service";
 import { createEcommercePaymentIntent } from "../services/ecommerce-order.service";
 import { getPublicProductCategories, getPublicProductVariants } from "../services/ecommerce-public-product.service";
+import { toPublicEcommerceOrderStatus } from "../services/ecommerce-public-order.service";
 import { getEcommerceStripePublishableKey, getEcommerceStripeMode } from "../services/ecommerce-stripe.service";
 import { requireEcommerceEnabled } from "../middleware/site-features";
 import { ecommerceCheckoutLimiter, ecommerceOrderLookupLimiter } from "../middleware/security";
@@ -127,7 +128,7 @@ router.post(
       res.status(404).json({ message: "Order not found" });
       return;
     }
-    res.json(order);
+    res.json(toPublicEcommerceOrderStatus(order));
   }),
 );
 
