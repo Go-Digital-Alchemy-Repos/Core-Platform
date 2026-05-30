@@ -155,6 +155,7 @@ interface ShippingProvider {
   type: string;
   recommendedFor: string;
   capabilities: string[];
+  setupFields: Array<{ key: string; label: string; secret?: boolean }>;
   active: boolean;
   testMode: boolean;
   connectedAt?: string | null;
@@ -1309,6 +1310,7 @@ function OrdersTab() {
 }
 
 function ShippingTab() {
+  const { toast } = useToast();
   const { data: zones = [] } = useQuery<Array<{ id: string; name: string; active: boolean }>>({
     queryKey: ["/api/admin/ecommerce/shipping/zones"],
   });
@@ -1319,11 +1321,74 @@ function ShippingTab() {
     queryKey: ["/api/admin/ecommerce/shipping/providers"],
   });
   const [name, setName] = useState("");
-  const mutation = useMutation({
+  const [locationForm, setLocationForm] = useState({
+    id: "",
+    name: "",
+    type: "merchant",
+    city: "",
+    state: "",
+    country: "US",
+    isPrimary: false,
+    active: true,
+  });
+
+  const resetLocationForm = () => setLocationForm({
+    id: "",
+    name: "",
+    type: "merchant",
+    city: "",
+    state: "",
+    country: "US",
+    isPrimary: false,
+    active: true,
+  });
+
+  const zoneMutation = useMutation({
     mutationFn: async () => apiRequest("POST", "/api/admin/ecommerce/shipping/zones", { name, countries: ["US"], states: [], active: true }),
     onSuccess: () => {
       setName("");
       queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/zones"] });
+    },
+  });
+  const locationMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        name: locationForm.name.trim(),
+        type: locationForm.type,
+        city: locationForm.city.trim() || null,
+        state: locationForm.state.trim() || null,
+        country: locationForm.country.trim().toUpperCase() || "US",
+        isPrimary: locationForm.isPrimary,
+        active: locationForm.active,
+      };
+      return locationForm.id
+        ? apiRequest("PUT", `/api/admin/ecommerce/shipping/locations/${locationForm.id}`, payload)
+        : apiRequest("POST", "/api/admin/ecommerce/shipping/locations", payload);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/locations"] });
+      toast({ title: locationForm.id ? "Fulfillment location updated" : "Fulfillment location created" });
+      resetLocationForm();
+    },
+    onError: (error) => toast({
+      title: "Location could not be saved",
+      description: error instanceof Error ? error.message : "Please review the fulfillment location.",
+      variant: "destructive",
+    }),
+  });
+  const providerMutation = useMutation({
+    mutationFn: async ({ provider, active, testMode }: { provider: ShippingProvider; active: boolean; testMode: boolean }) =>
+      apiRequest("PUT", `/api/admin/ecommerce/shipping/providers/${provider.provider}`, {
+        displayName: provider.displayName,
+        type: provider.type,
+        capabilities: provider.capabilities,
+        settings: {},
+        active,
+        testMode,
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/providers"] });
+      toast({ title: "Shipping provider updated" });
     },
   });
 
@@ -1340,49 +1405,147 @@ function ShippingTab() {
         icon={<Truck className="h-5 w-5" />}
         value={name}
         setValue={setName}
-        onCreate={() => mutation.mutate()}
+        onCreate={() => zoneMutation.mutate()}
         rows={zones.map((z) => [z.name, "US", z.active ? "Active" : "Inactive"])}
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Fulfillment locations
-          </CardTitle>
-          <CardDescription>Locations are the foundation for future warehouse routing, local delivery, split shipments, and 3PL workflows.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {locations.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Region</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {locations.map((location) => (
-                  <TableRow key={location.id}>
-                    <TableCell className="font-medium">{location.name}</TableCell>
-                    <TableCell className="capitalize">{location.type.replace(/_/g, " ")}</TableCell>
-                    <TableCell>{[location.city, location.state, location.country].filter(Boolean).join(", ")}</TableCell>
-                    <TableCell>
-                      <Badge variant={location.active ? "default" : "secondary"}>
-                        {location.isPrimary ? "Primary" : location.active ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
+      <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              {locationForm.id ? "Edit location" : "Fulfillment location"}
+            </CardTitle>
+            <CardDescription>Create merchant, store, warehouse, or future 3PL fulfillment locations.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              className="grid gap-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                locationMutation.mutate();
+              }}
+            >
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input
+                  value={locationForm.name}
+                  onChange={(event) => setLocationForm((current) => ({ ...current, name: event.target.value }))}
+                  placeholder="Main warehouse"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select
+                  value={locationForm.type}
+                  onValueChange={(type) => setLocationForm((current) => ({ ...current, type }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="merchant">Merchant</SelectItem>
+                    <SelectItem value="store">Store</SelectItem>
+                    <SelectItem value="warehouse">Warehouse</SelectItem>
+                    <SelectItem value="third_party_logistics">3PL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="space-y-2 sm:col-span-1">
+                  <Label>City</Label>
+                  <Input value={locationForm.city} onChange={(event) => setLocationForm((current) => ({ ...current, city: event.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>State</Label>
+                  <Input value={locationForm.state} onChange={(event) => setLocationForm((current) => ({ ...current, state: event.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Country</Label>
+                  <Input value={locationForm.country} onChange={(event) => setLocationForm((current) => ({ ...current, country: event.target.value }))} />
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="flex items-center gap-3 rounded-lg border p-3">
+                  <Switch checked={locationForm.isPrimary} onCheckedChange={(isPrimary) => setLocationForm((current) => ({ ...current, isPrimary }))} />
+                  <span className="text-sm font-medium">Primary location</span>
+                </label>
+                <label className="flex items-center gap-3 rounded-lg border p-3">
+                  <Switch checked={locationForm.active} onCheckedChange={(active) => setLocationForm((current) => ({ ...current, active }))} />
+                  <span className="text-sm font-medium">Active</span>
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" disabled={locationMutation.isPending || !locationForm.name.trim()}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {locationForm.id ? "Update location" : "Create location"}
+                </Button>
+                {locationForm.id ? <Button type="button" variant="outline" onClick={resetLocationForm}>Cancel</Button> : null}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Fulfillment locations
+            </CardTitle>
+            <CardDescription>Locations are the foundation for future warehouse routing, local delivery, split shipments, and 3PL workflows.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {locations.length ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Region</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <p className="text-sm text-muted-foreground">No fulfillment locations have been added yet.</p>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {locations.map((location) => (
+                    <TableRow key={location.id}>
+                      <TableCell className="font-medium">{location.name}</TableCell>
+                      <TableCell className="capitalize">{location.type.replace(/_/g, " ")}</TableCell>
+                      <TableCell>{[location.city, location.state, location.country].filter(Boolean).join(", ")}</TableCell>
+                      <TableCell>
+                        <Badge variant={location.active ? "default" : "secondary"}>
+                          {location.isPrimary ? "Primary" : location.active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setLocationForm({
+                            id: location.id,
+                            name: location.name,
+                            type: location.type,
+                            city: location.city ?? "",
+                            state: location.state ?? "",
+                            country: location.country,
+                            isPrimary: location.isPrimary,
+                            active: location.active,
+                          })}
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-sm text-muted-foreground">No fulfillment locations have been added yet.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader>
@@ -1414,6 +1577,35 @@ function ShippingTab() {
                           {capability.replace(/_/g, " ")}
                         </Badge>
                       ))}
+                    </div>
+                    <div className="mt-4 grid gap-3 rounded-lg bg-muted/40 p-3">
+                      <label className="flex items-center justify-between gap-3 text-sm">
+                        <span className="font-medium">Enabled</span>
+                        <Switch
+                          checked={provider.active}
+                          onCheckedChange={(active) => providerMutation.mutate({
+                            provider,
+                            active,
+                            testMode: provider.testMode,
+                          })}
+                        />
+                      </label>
+                      <label className="flex items-center justify-between gap-3 text-sm">
+                        <span className="font-medium">Test mode</span>
+                        <Switch
+                          checked={provider.testMode}
+                          onCheckedChange={(testMode) => providerMutation.mutate({
+                            provider,
+                            active: provider.active,
+                            testMode,
+                          })}
+                        />
+                      </label>
+                      {provider.setupFields.length ? (
+                        <p className="text-xs text-muted-foreground">
+                          Requires {provider.setupFields.map((field) => field.label).join(", ")} in the encrypted credential setup.
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 ))}
