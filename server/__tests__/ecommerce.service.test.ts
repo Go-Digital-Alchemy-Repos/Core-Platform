@@ -16,6 +16,8 @@ const mockShippingRates: EcommerceShippingRate[] = [];
 const mockGetOrder = vi.fn();
 const mockUpdateOrder = vi.fn();
 const mockGetOrderWithDetails = vi.fn();
+const mockGetCustomer = vi.fn();
+const mockCreateOrder = vi.fn();
 const mockGetRefundByStripeRefundId = vi.fn();
 const mockUpdateRefund = vi.fn();
 const mockCreateRefund = vi.fn();
@@ -47,6 +49,8 @@ vi.mock("../storage/index", () => ({
       getOrder: mockGetOrder,
       updateOrder: mockUpdateOrder,
       getOrderWithDetails: mockGetOrderWithDetails,
+      getCustomer: mockGetCustomer,
+      createOrder: mockCreateOrder,
       recordCouponRedemptionForOrder: mockRecordCouponRedemptionForOrder,
       deductInventoryForPaidOrder: mockDeductInventoryForPaidOrder,
       getRefundByStripeRefundId: mockGetRefundByStripeRefundId,
@@ -70,6 +74,8 @@ describe("ecommerce services", () => {
     mockGetOrder.mockReset();
     mockUpdateOrder.mockReset();
     mockGetOrderWithDetails.mockReset();
+    mockGetCustomer.mockReset();
+    mockCreateOrder.mockReset();
     mockGetRefundByStripeRefundId.mockReset();
     mockUpdateRefund.mockReset();
     mockCreateRefund.mockReset();
@@ -638,6 +644,147 @@ describe("ecommerce services", () => {
     expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledTimes(1);
     expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledTimes(2);
     expect(mockSendEcommerceOrderConfirmation).toHaveBeenCalledTimes(1);
+  });
+
+  it("creates manual paid orders through server-side pricing and inventory deduction", async () => {
+    const { createManualEcommerceOrder } = await import("../services/ecommerce-order.service");
+    const customer = { id: "customer-1", email: "buyer@example.com", name: "Buyer" };
+    const createdOrder = {
+      id: "order-manual-1",
+      customerId: customer.id,
+      status: "paid",
+      paymentStatus: "paid",
+      totalAmount: 5000,
+      lookupToken: "lookup-token",
+    } as EcommerceOrder;
+    mockGetCustomer.mockResolvedValue(customer);
+    mockCreateOrder.mockResolvedValue({ ...createdOrder, customer, items: [], refunds: [], shipments: [], fulfillments: [] });
+    mockGetOrderWithDetails.mockResolvedValue({ ...createdOrder, customer, items: [], refunds: [], shipments: [], fulfillments: [] });
+    mockProducts.push({
+      id: "p-manual",
+      name: "Manual Product",
+      tagline: null,
+      description: null,
+      shortDescription: null,
+      productType: null,
+      vendor: null,
+      price: 2500,
+      compareAtPrice: null,
+      costPerItem: null,
+      taxable: true,
+      taxCategory: null,
+      featured: false,
+      visibility: "online",
+      publishedAt: null,
+      archivedAt: null,
+      primaryImage: null,
+      secondaryImages: [],
+      features: [],
+      included: [],
+      active: true,
+      status: "published",
+      sku: "SKU-MANUAL",
+      tags: [],
+      salePrice: null,
+      discountType: "NONE",
+      discountValue: null,
+      saleStartAt: null,
+      saleEndAt: null,
+      metaTitle: null,
+      metaDescription: null,
+      metaKeywords: null,
+      urlSlug: "manual-product",
+      canonicalUrl: null,
+      robotsIndex: true,
+      robotsFollow: true,
+      ogTitle: null,
+      ogDescription: null,
+      ogImage: null,
+      physicalProduct: true,
+      requiresShipping: true,
+      weight: null,
+      weightUnit: "oz",
+      length: null,
+      width: null,
+      height: null,
+      dimensionUnit: "in",
+      shippingProfile: null,
+      fulfillmentType: "merchant",
+      relatedProductIds: [],
+      upsellProductIds: [],
+      badgeText: null,
+      mediaId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockVariants.push({
+      id: "v-manual",
+      productId: "p-manual",
+      title: "Default",
+      optionSignature: "default",
+      optionValues: {},
+      sku: "SKU-MANUAL",
+      barcode: null,
+      price: 2500,
+      salePrice: null,
+      compareAtPrice: null,
+      costPerItem: null,
+      inventoryQuantity: 10,
+      trackInventory: true,
+      lowStockThreshold: null,
+      allowBackorder: false,
+      weight: null,
+      weightUnit: "oz",
+      image: null,
+      status: "active",
+      active: true,
+      sortOrder: 0,
+      isDefault: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const order = await createManualEcommerceOrder({
+      customerId: customer.id,
+      items: [{ productId: "p-manual", quantity: 2 }],
+      notes: "Counter sale",
+    });
+
+    expect(order.id).toBe("order-manual-1");
+    expect(mockCreateOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId: customer.id,
+        status: "paid",
+        paymentStatus: "paid",
+        subtotalAmount: 5000,
+        totalAmount: 5000,
+        isManualOrder: true,
+        notes: "Counter sale",
+      }),
+      [expect.objectContaining({
+        productId: "p-manual",
+        variantId: "v-manual",
+        sku: "SKU-MANUAL",
+        quantity: 2,
+        unitPrice: 2500,
+        lineTotal: 5000,
+      })],
+    );
+    expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledWith("order-manual-1");
+    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledWith("order-manual-1");
+  });
+
+  it("rejects manual orders for unknown customers before creating orders", async () => {
+    const { createManualEcommerceOrder } = await import("../services/ecommerce-order.service");
+    mockGetCustomer.mockResolvedValue(undefined);
+
+    await expect(createManualEcommerceOrder({
+      customerId: "missing-customer",
+      items: [{ productId: "p1", quantity: 1 }],
+    })).rejects.toThrow(/Customer not found/);
+
+    expect(mockCreateOrder).not.toHaveBeenCalled();
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
   });
 
   it("rejects a paid webhook when the PaymentIntent does not match the order", async () => {

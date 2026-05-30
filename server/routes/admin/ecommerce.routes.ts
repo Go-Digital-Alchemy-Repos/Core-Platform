@@ -23,6 +23,7 @@ import {
   type EcommerceStripeMode,
 } from "../../services/ecommerce-stripe.service";
 import { createEcommerceRefund } from "../../services/ecommerce-refund.service";
+import { createManualEcommerceOrder, manualOrderSchema } from "../../services/ecommerce-order.service";
 import {
   sendEcommerceOrderStatusEmail,
   sendEcommerceShipmentEmail,
@@ -253,54 +254,7 @@ router.put("/orders/:id", asyncHandler(async (req, res) => {
 }));
 
 router.post("/orders/manual", asyncHandler(async (req, res) => {
-  const data = z.object({
-    customerId: z.string().min(1),
-    items: z.array(z.object({ productId: z.string(), quantity: z.number().int().min(1) })).min(1),
-    notes: z.string().optional(),
-  }).parse(req.body);
-  const products = await storage.ecommerce.getProductsByIds(data.items.map((item) => item.productId));
-  const productMap = new Map(products.map((product) => [product.id, product]));
-  const lines = data.items.map((item) => {
-    const product = productMap.get(item.productId);
-    if (!product) throw new Error("Product not found");
-    return { product, quantity: item.quantity, lineTotal: product.price * item.quantity };
-  });
-  const total = lines.reduce((sum, line) => sum + line.lineTotal, 0);
-  res.status(201).json(await storage.ecommerce.createOrder({
-    customerId: data.customerId,
-    status: "paid",
-    paymentStatus: "paid",
-    subtotalAmount: total,
-    totalAmount: total,
-    taxAmount: 0,
-    shippingAmount: 0,
-    discountAmount: 0,
-    isManualOrder: true,
-    notes: data.notes,
-  }, lines.map((line) => ({
-    orderId: "",
-    productId: line.product.id,
-    productName: line.product.name,
-    productSlug: line.product.urlSlug,
-    image: line.product.primaryImage,
-    productSnapshot: {
-      productId: line.product.id,
-      productName: line.product.name,
-      slug: line.product.urlSlug,
-      image: line.product.primaryImage,
-      taxable: line.product.taxable,
-      taxCategory: line.product.taxCategory,
-      requiresShipping: line.product.requiresShipping,
-      fulfillmentType: line.product.fulfillmentType,
-    },
-    taxable: line.product.taxable,
-    taxCategory: line.product.taxCategory,
-    requiresShipping: line.product.requiresShipping,
-    fulfillmentType: line.product.fulfillmentType,
-    quantity: line.quantity,
-    unitPrice: line.product.price,
-    lineTotal: line.lineTotal,
-  }))));
+  res.status(201).json(await createManualEcommerceOrder(manualOrderSchema.parse(req.body)));
 }));
 
 router.post("/refunds", asyncHandler(async (req, res) => {

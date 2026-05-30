@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { storage } from "../storage/index";
-import { buildCouponSnapshot, priceCart, priceCartSchema } from "./ecommerce-pricing.service";
+import {
+  buildCouponSnapshot,
+  priceCart,
+  priceCartSchema,
+  type PricedCartLine,
+} from "./ecommerce-pricing.service";
 import { getEcommerceStripeClient } from "./ecommerce-stripe.service";
 import { sendEcommerceOrderConfirmation } from "./ecommerce-email.service";
 
@@ -33,6 +38,39 @@ export const checkoutSchema = priceCartSchema.extend({
     userAgent: z.string().optional(),
   }).optional(),
 });
+
+export const manualOrderSchema = z.object({
+  customerId: z.string().min(1),
+  items: z.array(z.object({
+    productId: z.string().min(1),
+    variantId: z.string().min(1).optional(),
+    quantity: z.number().int().min(1).max(99),
+  })).min(1),
+  notes: z.string().optional(),
+});
+
+function pricedLinesToOrderItems(lines: PricedCartLine[]) {
+  return lines.map((line) => ({
+    orderId: "",
+    productId: line.productId,
+    variantId: line.variantId,
+    productName: line.name,
+    variantTitle: line.variantTitle,
+    sku: line.sku,
+    optionsSnapshot: line.optionsSnapshot,
+    productSlug: line.slug,
+    image: line.image,
+    productSnapshot: line.productSnapshot,
+    taxable: line.taxable,
+    taxCategory: line.taxCategory,
+    taxAmount: line.taxAmount,
+    requiresShipping: line.requiresShipping,
+    fulfillmentType: line.fulfillmentType,
+    quantity: line.quantity,
+    unitPrice: line.unitPrice,
+    lineTotal: line.lineTotal,
+  }));
+}
 
 export async function createEcommercePaymentIntent(input: unknown, requestMeta: { ip?: string | null } = {}) {
   const data = checkoutSchema.parse(input);
@@ -91,26 +129,7 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
     metaFbc: data.metaTracking?.fbc,
     metaEventSourceUrl: data.metaTracking?.eventSourceUrl,
     customerUserAgent: data.metaTracking?.userAgent,
-  }, priced.lines.map((line) => ({
-    orderId: "",
-    productId: line.productId,
-    variantId: line.variantId,
-    productName: line.name,
-    variantTitle: line.variantTitle,
-    sku: line.sku,
-    optionsSnapshot: line.optionsSnapshot,
-    productSlug: line.slug,
-    image: line.image,
-    productSnapshot: line.productSnapshot,
-    taxable: line.taxable,
-    taxCategory: line.taxCategory,
-    taxAmount: line.taxAmount,
-    requiresShipping: line.requiresShipping,
-    fulfillmentType: line.fulfillmentType,
-    quantity: line.quantity,
-    unitPrice: line.unitPrice,
-    lineTotal: line.lineTotal,
-  })));
+  }, pricedLinesToOrderItems(priced.lines));
 
   const stripe = await getEcommerceStripeClient();
   const intent = await stripe.paymentIntents.create({
@@ -133,6 +152,40 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
     lookupToken: order.lookupToken,
     priced,
   };
+}
+
+export async function createManualEcommerceOrder(input: unknown) {
+  const data = manualOrderSchema.parse(input);
+  const customer = await storage.ecommerce.getCustomer(data.customerId);
+  if (!customer) {
+    throw Object.assign(new Error("Customer not found"), { statusCode: 404 });
+  }
+
+  const priced = await priceCart({
+    items: data.items,
+    customerId: customer.id,
+    customerEmail: customer.email,
+  });
+  const order = await storage.ecommerce.createOrder({
+    customerId: customer.id,
+    status: "paid",
+    paymentStatus: "paid",
+    subtotalAmount: priced.subtotalAmount,
+    totalAmount: priced.totalAmount,
+    taxAmount: priced.taxAmount,
+    shippingAmount: 0,
+    discountAmount: priced.discountAmount,
+    couponCode: priced.coupon?.code,
+    couponSnapshot: buildCouponSnapshot(priced.coupon),
+    isManualOrder: true,
+    notes: data.notes,
+  }, pricedLinesToOrderItems(priced.lines));
+
+  await storage.ecommerce.recordCouponRedemptionForOrder(order.id);
+  await storage.ecommerce.deductInventoryForPaidOrder(order.id);
+
+  const details = await storage.ecommerce.getOrderWithDetails(order.id);
+  return details ?? order;
 }
 
 export async function markEcommerceOrderPaid(orderId: string, paymentIntentId: string) {
