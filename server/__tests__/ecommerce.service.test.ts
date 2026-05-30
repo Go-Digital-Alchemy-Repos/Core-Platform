@@ -1492,6 +1492,42 @@ describe("ecommerce services", () => {
     expect(mockCreateRefund).not.toHaveBeenCalled();
   });
 
+  it("does not double count a newly created refund returned by the refreshed order", async () => {
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    const createdRefund = {
+      id: "refund-manual-1",
+      orderId: "order-partial-refund",
+      amount: 3000,
+      status: "processed",
+    };
+    mockCreateRefund.mockResolvedValue(createdRefund);
+    mockGetOrderWithDetails.mockResolvedValueOnce({
+      id: "order-partial-refund",
+      status: "paid",
+      paymentStatus: "paid",
+      totalAmount: 5000,
+      stripePaymentIntentId: null,
+      refunds: [],
+    }).mockResolvedValueOnce({
+      id: "order-partial-refund",
+      status: "paid",
+      paymentStatus: "paid",
+      totalAmount: 5000,
+      stripePaymentIntentId: null,
+      refunds: [createdRefund],
+    });
+
+    await createEcommerceRefund({
+      orderId: "order-partial-refund",
+      amount: 3000,
+      source: "manual",
+    });
+
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-partial-refund", {
+      paymentStatus: "partially_refunded",
+    });
+  });
+
   it("marks an ecommerce order paid once and retries idempotent inventory deduction", async () => {
     const { markEcommerceOrderPaid } = await import("../services/ecommerce-order.service");
     const pendingOrder = {

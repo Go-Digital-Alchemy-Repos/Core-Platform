@@ -120,8 +120,11 @@ export async function createEcommerceRefund(params: {
 
   const refreshed = await storage.ecommerce.getOrderWithDetails(order.id);
   if (refreshed) {
+    const refundsForStatus = refreshed.refunds.some((existingRefund) => existingRefund.id === refund.id)
+      ? refreshed.refunds
+      : [...refreshed.refunds, refund];
     await storage.ecommerce.updateOrder(order.id, {
-      paymentStatus: deriveRefundPaymentStatus(order, [...refreshed.refunds, refund]),
+      paymentStatus: deriveRefundPaymentStatus(order, refundsForStatus),
     });
     await sendEcommerceRefundEmail(refreshed, params.amount);
   }
