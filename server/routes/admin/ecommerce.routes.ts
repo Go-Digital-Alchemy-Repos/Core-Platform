@@ -23,7 +23,10 @@ import {
   type EcommerceStripeMode,
 } from "../../services/ecommerce-stripe.service";
 import { createEcommerceRefund } from "../../services/ecommerce-refund.service";
-import { sendEcommerceOrderStatusEmail } from "../../services/ecommerce-email.service";
+import {
+  sendEcommerceOrderStatusEmail,
+  sendEcommerceShipmentEmail,
+} from "../../services/ecommerce-email.service";
 import {
   ECOMMERCE_SHIPPING_PROVIDER_REGISTRY,
   getShippingProviderCredentialCategory,
@@ -418,12 +421,19 @@ router.put("/shipping/providers/:provider/credentials", asyncHandler(async (req,
 }));
 
 router.post("/orders/:orderId/shipments", asyncHandler(async (req, res) => {
+  const orderId = paramString(req.params.orderId);
   const shipment = await storage.ecommerce.createShipment(insertEcommerceShipmentSchema.parse({
     ...req.body,
-    orderId: paramString(req.params.orderId),
+    orderId,
     shippedBy: req.user?.id,
   }));
-  await storage.ecommerce.updateOrder(paramString(req.params.orderId), { status: "shipped" });
+  await storage.ecommerce.updateOrder(orderId, { status: "shipped" });
+  const details = await storage.ecommerce.getOrderWithDetails(orderId);
+  if (details && await sendEcommerceShipmentEmail(details, shipment)) {
+    const updatedShipment = await storage.ecommerce.updateShipment(shipment.id, { emailSentAt: new Date() });
+    res.status(201).json(updatedShipment ?? shipment);
+    return;
+  }
   res.status(201).json(shipment);
 }));
 

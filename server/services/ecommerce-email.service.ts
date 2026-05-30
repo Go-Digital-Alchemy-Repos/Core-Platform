@@ -1,6 +1,7 @@
 import { renderEmailShell, sendEmail } from "./email.service";
 import { logger } from "../utils/logger";
 import type { EcommerceOrderWithDetails } from "../storage/ecommerce.storage";
+import type { EcommerceShipment } from "@shared/schema";
 
 function money(cents: number): string {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -34,6 +35,32 @@ export async function sendEcommerceOrderStatusEmail(order: EcommerceOrderWithDet
   const body = `<p>Your order status is now <strong>${order.status}</strong>.</p><p><a href="${orderUrl(order, order.customer.email)}">View order status</a></p>`;
   const html = await renderEmailShell("Order status updated", body);
   await sendEmail(order.customer.email, `Order status updated #${order.id.slice(0, 8)}`, html);
+}
+
+export async function sendEcommerceShipmentEmail(
+  order: EcommerceOrderWithDetails,
+  shipment: EcommerceShipment,
+): Promise<boolean> {
+  if (!order.customer?.email) return false;
+  const trackingMarkup = shipment.trackingUrl
+    ? `<p><a href="${shipment.trackingUrl}">Track your shipment</a></p>`
+    : shipment.trackingNumber
+      ? `<p><strong>Tracking number:</strong> ${shipment.trackingNumber}</p>`
+      : "";
+  const body = `
+    <p>Hi ${order.customer.name || "there"},</p>
+    <p>Your order has shipped.</p>
+    <p><strong>Carrier:</strong> ${shipment.carrier || "Carrier pending"}</p>
+    ${trackingMarkup}
+    <p><a href="${orderUrl(order, order.customer.email)}">View order status</a></p>
+  `;
+  const html = await renderEmailShell("Shipping notification", body);
+  const ok = await sendEmail(order.customer.email, `Order shipped #${order.id.slice(0, 8)}`, html);
+  if (!ok) logger.email.warn("Failed to send ecommerce shipment notification", {
+    orderId: order.id,
+    shipmentId: shipment.id,
+  });
+  return ok;
 }
 
 export async function sendEcommerceRefundEmail(order: EcommerceOrderWithDetails, amount: number): Promise<void> {
