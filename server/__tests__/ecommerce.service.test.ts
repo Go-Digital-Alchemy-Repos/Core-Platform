@@ -6,6 +6,9 @@ const mockCoupons: EcommerceCoupon[] = [];
 const mockGetOrder = vi.fn();
 const mockUpdateOrder = vi.fn();
 const mockGetOrderWithDetails = vi.fn();
+const mockGetRefundByStripeRefundId = vi.fn();
+const mockUpdateRefund = vi.fn();
+const mockCreateRefund = vi.fn();
 const mockSendEcommerceOrderConfirmation = vi.fn();
 
 vi.mock("../storage/index", () => ({
@@ -16,6 +19,9 @@ vi.mock("../storage/index", () => ({
       getOrder: mockGetOrder,
       updateOrder: mockUpdateOrder,
       getOrderWithDetails: mockGetOrderWithDetails,
+      getRefundByStripeRefundId: mockGetRefundByStripeRefundId,
+      updateRefund: mockUpdateRefund,
+      createRefund: mockCreateRefund,
     },
   },
 }));
@@ -31,6 +37,9 @@ describe("ecommerce services", () => {
     mockGetOrder.mockReset();
     mockUpdateOrder.mockReset();
     mockGetOrderWithDetails.mockReset();
+    mockGetRefundByStripeRefundId.mockReset();
+    mockUpdateRefund.mockReset();
+    mockCreateRefund.mockReset();
     mockSendEcommerceOrderConfirmation.mockReset();
   });
 
@@ -190,5 +199,38 @@ describe("ecommerce services", () => {
     await expect(markEcommerceOrderPaid("order-1", "pi_other")).rejects.toThrow(/PaymentIntent/);
     expect(mockUpdateOrder).not.toHaveBeenCalled();
     expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
+  });
+
+  it("records a Stripe refund webhook and updates order payment status", async () => {
+    const { recordStripeRefundWebhook } = await import("../services/ecommerce-refund.service");
+    mockGetRefundByStripeRefundId.mockResolvedValue(undefined);
+    mockGetOrder.mockResolvedValue({ id: "order-1", totalAmount: 5000 } as EcommerceOrder);
+    mockCreateRefund.mockResolvedValue({
+      id: "refund-1",
+      orderId: "order-1",
+      amount: 5000,
+      status: "processed",
+    });
+    mockGetOrderWithDetails.mockResolvedValue({
+      id: "order-1",
+      totalAmount: 5000,
+      paymentStatus: "paid",
+      refunds: [{ amount: 5000, status: "processed" }],
+    });
+
+    await recordStripeRefundWebhook({
+      stripeRefundId: "re_123",
+      orderId: "order-1",
+      amount: 5000,
+      status: "succeeded",
+    });
+
+    expect(mockCreateRefund).toHaveBeenCalledWith(expect.objectContaining({
+      orderId: "order-1",
+      stripeRefundId: "re_123",
+      status: "processed",
+      type: "full",
+    }));
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-1", { paymentStatus: "refunded" });
   });
 });

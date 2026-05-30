@@ -3,6 +3,7 @@ import { storage } from "../storage/index";
 import { logger } from "../utils/logger";
 import { getEcommerceStripeClient, getEcommerceStripeWebhookSecret } from "../services/ecommerce-stripe.service";
 import { markEcommerceOrderPaid } from "../services/ecommerce-order.service";
+import { recordStripeRefundWebhook } from "../services/ecommerce-refund.service";
 
 export async function processEcommerceStripeWebhook(payload: Buffer, signature?: string) {
   const stripe = await getEcommerceStripeClient();
@@ -50,12 +51,19 @@ export async function processEcommerceStripeWebhook(payload: Buffer, signature?:
     return;
   }
 
-  if (event.type === "charge.refunded" || event.type === "refund.updated") {
+  if (event.type === "refund.created" || event.type === "refund.updated") {
     const firstProcessing = await storage.ecommerce.markWebhookProcessed("stripe", event.id, event.type);
     if (!firstProcessing) {
       logger.stripe.info("Duplicate ecommerce webhook ignored", { eventId: event.id, eventType: event.type });
       return;
     }
-    logger.stripe.info("Ecommerce refund webhook received", { eventId: event.id, eventType: event.type });
+    const refund = event.data.object as Stripe.Refund;
+    await recordStripeRefundWebhook({
+      stripeRefundId: refund.id,
+      orderId: typeof refund.metadata?.orderId === "string" ? refund.metadata.orderId : undefined,
+      amount: refund.amount,
+      status: refund.status,
+    });
+    logger.stripe.info("Ecommerce refund webhook processed", { eventId: event.id, eventType: event.type });
   }
 }

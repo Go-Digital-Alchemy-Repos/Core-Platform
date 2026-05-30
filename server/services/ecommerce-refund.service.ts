@@ -2,10 +2,27 @@ import { storage } from "../storage/index";
 import { getEcommerceStripeClient } from "./ecommerce-stripe.service";
 import { sendEcommerceRefundEmail } from "./ecommerce-email.service";
 
+type RefundStatus = "pending" | "processed" | "failed";
+
 export function computeRefundedAmount(refunds: Array<{ amount: number; status: string }>): number {
   return refunds
     .filter((refund) => refund.status === "processed" || refund.status === "pending")
     .reduce((sum, refund) => sum + refund.amount, 0);
+}
+
+export function mapStripeRefundStatus(status: string | null | undefined): RefundStatus {
+  if (status === "succeeded") return "processed";
+  if (status === "failed" || status === "canceled") return "failed";
+  return "pending";
+}
+
+async function syncOrderRefundPaymentStatus(orderId: string) {
+  const order = await storage.ecommerce.getOrderWithDetails(orderId);
+  if (!order) return;
+  const refunded = computeRefundedAmount(order.refunds);
+  await storage.ecommerce.updateOrder(order.id, {
+    paymentStatus: refunded >= order.totalAmount ? "refunded" : refunded > 0 ? "partially_refunded" : order.paymentStatus,
+  });
 }
 
 export async function createEcommerceRefund(params: {
@@ -61,5 +78,39 @@ export async function createEcommerceRefund(params: {
     });
     await sendEcommerceRefundEmail(refreshed, params.amount);
   }
+  return refund;
+}
+
+export async function recordStripeRefundWebhook(params: {
+  stripeRefundId: string;
+  orderId?: string;
+  amount?: number | null;
+  status?: string | null;
+}) {
+  const status = mapStripeRefundStatus(params.status);
+  const existing = await storage.ecommerce.getRefundByStripeRefundId(params.stripeRefundId);
+  if (existing) {
+    const refund = await storage.ecommerce.updateRefund(existing.id, {
+      status,
+      processedAt: status === "processed" ? new Date() : existing.processedAt ?? undefined,
+    });
+    await syncOrderRefundPaymentStatus(existing.orderId);
+    return refund;
+  }
+
+  if (!params.orderId || !params.amount || params.amount <= 0) return undefined;
+  const order = await storage.ecommerce.getOrder(params.orderId);
+  if (!order) return undefined;
+
+  const refund = await storage.ecommerce.createRefund({
+    orderId: order.id,
+    amount: params.amount,
+    type: params.amount >= order.totalAmount ? "full" : "partial",
+    source: "stripe",
+    stripeRefundId: params.stripeRefundId,
+    status,
+    processedAt: status === "processed" ? new Date() : undefined,
+  });
+  await syncOrderRefundPaymentStatus(order.id);
   return refund;
 }

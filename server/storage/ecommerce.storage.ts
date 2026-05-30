@@ -315,6 +315,14 @@ export class EcommerceStorage {
     return refund;
   }
 
+  async getRefundByStripeRefundId(stripeRefundId: string): Promise<EcommerceRefund | undefined> {
+    const [refund] = await db
+      .select()
+      .from(ecommerceRefunds)
+      .where(eq(ecommerceRefunds.stripeRefundId, stripeRefundId));
+    return refund;
+  }
+
   async getShippingZones(): Promise<EcommerceShippingZone[]> {
     return db.select().from(ecommerceShippingZones).orderBy(ecommerceShippingZones.name);
   }
