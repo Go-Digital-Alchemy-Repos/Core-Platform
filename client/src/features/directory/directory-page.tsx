@@ -84,11 +84,13 @@ function TherapistRow({
   profile,
   user,
   isHighlighted,
+  acceptingLabel,
   onHover,
 }: {
   profile: TherapistProfile;
   user: { firstName: string | null; lastName: string | null; profileImageUrl: string | null };
   isHighlighted: boolean;
+  acceptingLabel: string;
   onHover: (id: string | null) => void;
 }) {
   const initials = `${(user.firstName || "")[0] || ""}${(user.lastName || "")[0] || ""}`.toUpperCase();
@@ -126,7 +128,7 @@ function TherapistRow({
               {fullName}
             </h3>
             {profile.acceptingClients && (
-              <span className="h-2 w-2 rounded-full bg-green-500 flex-shrink-0" title="Accepting clients" />
+              <span className="h-2 w-2 rounded-full bg-green-500 flex-shrink-0" title={acceptingLabel} />
             )}
           </div>
           {profile.title && (
@@ -522,7 +524,7 @@ export function DirectoryBrowserSection({
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-[11px] text-muted-foreground mb-1 block">Session Format</Label>
+                    <Label className="text-[11px] text-muted-foreground mb-1 block">{directorySettings.practiceModeLabel}</Label>
                     <Select value={sessionFormat} onValueChange={setSessionFormat}>
                       <SelectTrigger className="h-9 text-xs w-full" data-testid="select-session-format">
                         <SelectValue placeholder="All Formats" />
@@ -548,7 +550,7 @@ export function DirectoryBrowserSection({
                         className="h-4 w-4"
                       />
                       <Label htmlFor="filter-accepting" className="text-xs cursor-pointer whitespace-nowrap">
-                        Accepting clients
+                        {directorySettings.acceptingClientsLabel}
                       </Label>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -560,7 +562,7 @@ export function DirectoryBrowserSection({
                         className="h-4 w-4"
                       />
                       <Label htmlFor="filter-willing-travel" className="text-xs cursor-pointer whitespace-nowrap">
-                        Willing to travel
+                        {directorySettings.willingToTravelLabel}
                       </Label>
                     </div>
                   </div>
@@ -620,16 +622,16 @@ export function DirectoryBrowserSection({
                 )}
                 {acceptingClients && (
                   <Badge variant="secondary" className="text-xs gap-1">
-                    Accepting
-                    <button onClick={() => setAcceptingClients(false)} aria-label="Remove accepting clients filter" className="flex-shrink-0 ml-0.5">
+                    {directorySettings.acceptingClientsLabel}
+                    <button onClick={() => setAcceptingClients(false)} aria-label={`Remove ${directorySettings.acceptingClientsLabel.toLowerCase()} filter`} className="flex-shrink-0 ml-0.5">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
                 )}
                 {willingToTravel && (
                   <Badge variant="secondary" className="text-xs gap-1">
-                    Willing to Travel
-                    <button onClick={() => setWillingToTravel(false)} aria-label="Remove willing to travel filter" className="flex-shrink-0 ml-0.5">
+                    {directorySettings.willingToTravelLabel}
+                    <button onClick={() => setWillingToTravel(false)} aria-label={`Remove ${directorySettings.willingToTravelLabel.toLowerCase()} filter`} className="flex-shrink-0 ml-0.5">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -669,6 +671,7 @@ export function DirectoryBrowserSection({
                     profileImageUrl: t.user?.profileImageUrl ?? null,
                   }}
                   isHighlighted={hoveredId === t.id}
+                  acceptingLabel={directorySettings.acceptingClientsLabel}
                   onHover={handleHover}
                 />
               ))

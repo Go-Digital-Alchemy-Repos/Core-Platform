@@ -10,6 +10,21 @@ export type DirectoryLabelPreset = {
   participantLabelSingular: string;
   participantLabelPlural: string;
   specialtyLabelPlural: string;
+  profileTitleLabel: string;
+  profileTitlePlaceholder: string;
+  profileBioLabel: string;
+  profileBioPlaceholder: string;
+  credentialsLabel: string;
+  credentialsPlaceholder: string;
+  licenseNumberLabel: string;
+  licenseNumberPlaceholder: string;
+  practiceDetailsLabel: string;
+  practiceModeLabel: string;
+  acceptingClientsLabel: string;
+  acceptingClientsHelpText: string;
+  willingToTravelLabel: string;
+  willingToTravelHelpText: string;
+  locationContactLabel: string;
 };
 
 export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset> = {
@@ -21,6 +36,21 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     participantLabelSingular: "Therapist",
     participantLabelPlural: "Therapists",
     specialtyLabelPlural: "Specializations",
+    profileTitleLabel: "Professional Title",
+    profileTitlePlaceholder: "e.g. Licensed Clinical Psychologist",
+    profileBioLabel: "Bio",
+    profileBioPlaceholder: "Tell clients about your practice and approach...",
+    credentialsLabel: "Credentials",
+    credentialsPlaceholder: "e.g. PhD, LMFT",
+    licenseNumberLabel: "License Number",
+    licenseNumberPlaceholder: "e.g. PSY12345",
+    practiceDetailsLabel: "Practice Details",
+    practiceModeLabel: "Session Format",
+    acceptingClientsLabel: "Accepting New Clients",
+    acceptingClientsHelpText: "Toggle whether you are currently accepting new clients",
+    willingToTravelLabel: "Willing to Travel",
+    willingToTravelHelpText: "Toggle whether you are willing to travel for sessions",
+    locationContactLabel: "Location & Contact",
   },
   locations: {
     directoryLabelSingular: "Location Directory",
@@ -30,6 +60,21 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     participantLabelSingular: "Location Manager",
     participantLabelPlural: "Location Managers",
     specialtyLabelPlural: "Services",
+    profileTitleLabel: "Location Name",
+    profileTitlePlaceholder: "e.g. Downtown Flagship Store",
+    profileBioLabel: "Location Description",
+    profileBioPlaceholder: "Describe this location, services, amenities, and what visitors can expect...",
+    credentialsLabel: "Location Features",
+    credentialsPlaceholder: "e.g. Curbside pickup, showroom, repairs",
+    licenseNumberLabel: "Store or Location ID",
+    licenseNumberPlaceholder: "e.g. STORE-1024",
+    practiceDetailsLabel: "Service Details",
+    practiceModeLabel: "Service Format",
+    acceptingClientsLabel: "Accepting Visitors",
+    acceptingClientsHelpText: "Toggle whether this location is currently open to new visitors or customers",
+    willingToTravelLabel: "Mobile Service Available",
+    willingToTravelHelpText: "Toggle whether this location or team can travel to customers",
+    locationContactLabel: "Address & Contact",
   },
   service_providers: {
     directoryLabelSingular: "Provider Directory",
@@ -39,6 +84,21 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     participantLabelSingular: "Service Provider",
     participantLabelPlural: "Service Providers",
     specialtyLabelPlural: "Services",
+    profileTitleLabel: "Provider Title",
+    profileTitlePlaceholder: "e.g. Certified Relocation Consultant",
+    profileBioLabel: "Provider Bio",
+    profileBioPlaceholder: "Describe your services, approach, and who you serve...",
+    credentialsLabel: "Certifications",
+    credentialsPlaceholder: "e.g. PMP, CLC, Certified Coach",
+    licenseNumberLabel: "License or Certification Number",
+    licenseNumberPlaceholder: "e.g. CERT-12345",
+    practiceDetailsLabel: "Service Details",
+    practiceModeLabel: "Delivery Format",
+    acceptingClientsLabel: "Accepting New Customers",
+    acceptingClientsHelpText: "Toggle whether you are currently accepting new customers",
+    willingToTravelLabel: "Willing to Travel",
+    willingToTravelHelpText: "Toggle whether you provide services at customer locations",
+    locationContactLabel: "Location & Contact",
   },
   custom: {
     directoryLabelSingular: "Directory",
@@ -48,6 +108,21 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     participantLabelSingular: "Provider",
     participantLabelPlural: "Providers",
     specialtyLabelPlural: "Specialties",
+    profileTitleLabel: "Listing Title",
+    profileTitlePlaceholder: "e.g. Featured provider, location, or service",
+    profileBioLabel: "Description",
+    profileBioPlaceholder: "Describe this listing...",
+    credentialsLabel: "Qualifications",
+    credentialsPlaceholder: "e.g. Certifications, features, or qualifications",
+    licenseNumberLabel: "Reference Number",
+    licenseNumberPlaceholder: "e.g. REF-12345",
+    practiceDetailsLabel: "Details",
+    practiceModeLabel: "Format",
+    acceptingClientsLabel: "Accepting New Inquiries",
+    acceptingClientsHelpText: "Toggle whether this listing is currently accepting new inquiries",
+    willingToTravelLabel: "Travel Available",
+    willingToTravelHelpText: "Toggle whether travel or mobile service is available",
+    locationContactLabel: "Location & Contact",
   },
 };
 

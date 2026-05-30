@@ -26,6 +26,8 @@ describe("directory-settings.service", () => {
     expect(settings.listingLabelPlural).toBe("Profiles");
     expect(settings.participantLabelSingular).toBe("Therapist");
     expect(settings.specialtyLabelPlural).toBe("Specializations");
+    expect(settings.profileTitleLabel).toBe("Professional Title");
+    expect(settings.acceptingClientsLabel).toBe("Accepting New Clients");
     expect(settings.directoryRequiresApplicationProcess).toBe(true);
     expect(settings.directoryRequiresApprovedApplication).toBe(true);
   });
@@ -47,6 +49,9 @@ describe("directory-settings.service", () => {
     expect(settings.listingLabelSingular).toBe("Location");
     expect(settings.participantLabelSingular).toBe("Location Manager");
     expect(settings.specialtyLabelPlural).toBe("Services");
+    expect(settings.profileTitleLabel).toBe("Location Name");
+    expect(settings.credentialsLabel).toBe("Location Features");
+    expect(settings.acceptingClientsLabel).toBe("Accepting Visitors");
     expect(settings.directoryRequiresApplicationProcess).toBe(false);
     expect(settings.directoryRequiresApprovedApplication).toBe(false);
     expect(settings.directoryRequiresActiveSubscription).toBe(true);
@@ -59,6 +64,8 @@ describe("directory-settings.service", () => {
       directory_label_singular: "Partner Network",
       listing_label_plural: "Partner Pages",
       participant_label_plural: "Partners",
+      profile_title_label: "Partner Headline",
+      accepting_clients_label: "Taking New Projects",
     });
     const { getDirectorySettings } = await import("../services/directory-settings.service");
 
@@ -68,6 +75,8 @@ describe("directory-settings.service", () => {
     expect(settings.directoryLabelSingular).toBe("Partner Network");
     expect(settings.listingLabelPlural).toBe("Partner Pages");
     expect(settings.participantLabelPlural).toBe("Partners");
+    expect(settings.profileTitleLabel).toBe("Partner Headline");
+    expect(settings.acceptingClientsLabel).toBe("Taking New Projects");
     expect(settings.specialtyLabelPlural).toBe("Services");
   });
 });

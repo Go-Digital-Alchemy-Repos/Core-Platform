@@ -225,9 +225,9 @@ export default function ProfileEditPage() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Professional Title</FormLabel>
+                    <FormLabel>{directorySettings.profileTitleLabel}</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Licensed Clinical Psychologist" {...field} data-testid="input-title" />
+                      <Input placeholder={directorySettings.profileTitlePlaceholder} {...field} data-testid="input-title" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -238,12 +238,12 @@ export default function ProfileEditPage() {
                 name="bio"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Bio</FormLabel>
+                    <FormLabel>{directorySettings.profileBioLabel}</FormLabel>
                     <FormControl>
                       <CmsRichTextEditor
                         value={field.value ?? ""}
                         onChange={field.onChange}
-                        placeholder="Tell clients about your practice and approach..."
+                        placeholder={directorySettings.profileBioPlaceholder}
                         data-testid="input-bio"
                       />
                     </FormControl>
@@ -257,9 +257,9 @@ export default function ProfileEditPage() {
                   name="credentials"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Credentials</FormLabel>
+                      <FormLabel>{directorySettings.credentialsLabel}</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. PhD, LMFT" {...field} data-testid="input-credentials" />
+                        <Input placeholder={directorySettings.credentialsPlaceholder} {...field} data-testid="input-credentials" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -270,9 +270,9 @@ export default function ProfileEditPage() {
                   name="licenseNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>License Number</FormLabel>
+                      <FormLabel>{directorySettings.licenseNumberLabel}</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. PSY12345" {...field} data-testid="input-license" />
+                        <Input placeholder={directorySettings.licenseNumberPlaceholder} {...field} data-testid="input-license" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -284,7 +284,7 @@ export default function ProfileEditPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Specializations</CardTitle>
+              <CardTitle className="text-base">{directorySettings.specialtyLabelPlural}</CardTitle>
             </CardHeader>
             <CardContent>
               <FormField
@@ -334,7 +334,7 @@ export default function ProfileEditPage() {
                     {otherChecked && (
                       <div className="mt-3">
                         <Input
-                          placeholder="Enter custom specialty (comma-separated for multiple)"
+                          placeholder={`Enter custom ${directorySettings.specialtyLabelPlural.toLowerCase()} (comma-separated for multiple)`}
                           value={otherValue}
                           onChange={(e) => setOtherValue(e.target.value)}
                           data-testid="input-spec-other"
@@ -473,7 +473,7 @@ export default function ProfileEditPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Practice Details</CardTitle>
+              <CardTitle className="text-base">{directorySettings.practiceDetailsLabel}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField
@@ -481,11 +481,11 @@ export default function ProfileEditPage() {
                 name="practiceMode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Session Format</FormLabel>
+                    <FormLabel>{directorySettings.practiceModeLabel}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-practice-mode">
-                          <SelectValue placeholder="Select session format" />
+                          <SelectValue placeholder={`Select ${directorySettings.practiceModeLabel.toLowerCase()}`} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -504,8 +504,8 @@ export default function ProfileEditPage() {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between gap-2 rounded-md border p-3">
                     <div>
-                      <FormLabel>Accepting New Clients</FormLabel>
-                      <p className="text-sm text-muted-foreground">Toggle whether you are currently accepting new clients</p>
+                      <FormLabel>{directorySettings.acceptingClientsLabel}</FormLabel>
+                      <p className="text-sm text-muted-foreground">{directorySettings.acceptingClientsHelpText}</p>
                     </div>
                     <FormControl>
                       <Switch
@@ -523,8 +523,8 @@ export default function ProfileEditPage() {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between gap-2 rounded-md border p-3">
                     <div>
-                      <FormLabel>Willing to Travel</FormLabel>
-                      <p className="text-sm text-muted-foreground">Toggle whether you are willing to travel for sessions</p>
+                      <FormLabel>{directorySettings.willingToTravelLabel}</FormLabel>
+                      <p className="text-sm text-muted-foreground">{directorySettings.willingToTravelHelpText}</p>
                     </div>
                     <FormControl>
                       <Switch
@@ -541,7 +541,7 @@ export default function ProfileEditPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Location & Contact</CardTitle>
+              <CardTitle className="text-base">{directorySettings.locationContactLabel}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField
@@ -714,7 +714,7 @@ export default function ProfileEditPage() {
             ) : (
               <Save className="w-4 h-4 mr-2" />
             )}
-            Save Profile
+            Save {directorySettings.listingLabelSingular}
           </Button>
         </form>
       </Form>

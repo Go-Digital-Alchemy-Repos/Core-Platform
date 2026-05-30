@@ -33,6 +33,21 @@ type DirectorySettingsValues = {
   participant_label_singular: string;
   participant_label_plural: string;
   specialty_label_plural: string;
+  profile_title_label: string;
+  profile_title_placeholder: string;
+  profile_bio_label: string;
+  profile_bio_placeholder: string;
+  credentials_label: string;
+  credentials_placeholder: string;
+  license_number_label: string;
+  license_number_placeholder: string;
+  practice_details_label: string;
+  practice_mode_label: string;
+  accepting_clients_label: string;
+  accepting_clients_help_text: string;
+  willing_to_travel_label: string;
+  willing_to_travel_help_text: string;
+  location_contact_label: string;
   application_fee_amount_usd: string;
   application_fee_notice_title: string;
   application_fee_notice_body: string;
@@ -56,6 +71,21 @@ const DEFAULT_VALUES: DirectorySettingsValues = {
   participant_label_singular: DIRECTORY_LABEL_PRESETS.therapists.participantLabelSingular,
   participant_label_plural: DIRECTORY_LABEL_PRESETS.therapists.participantLabelPlural,
   specialty_label_plural: DIRECTORY_LABEL_PRESETS.therapists.specialtyLabelPlural,
+  profile_title_label: DIRECTORY_LABEL_PRESETS.therapists.profileTitleLabel,
+  profile_title_placeholder: DIRECTORY_LABEL_PRESETS.therapists.profileTitlePlaceholder,
+  profile_bio_label: DIRECTORY_LABEL_PRESETS.therapists.profileBioLabel,
+  profile_bio_placeholder: DIRECTORY_LABEL_PRESETS.therapists.profileBioPlaceholder,
+  credentials_label: DIRECTORY_LABEL_PRESETS.therapists.credentialsLabel,
+  credentials_placeholder: DIRECTORY_LABEL_PRESETS.therapists.credentialsPlaceholder,
+  license_number_label: DIRECTORY_LABEL_PRESETS.therapists.licenseNumberLabel,
+  license_number_placeholder: DIRECTORY_LABEL_PRESETS.therapists.licenseNumberPlaceholder,
+  practice_details_label: DIRECTORY_LABEL_PRESETS.therapists.practiceDetailsLabel,
+  practice_mode_label: DIRECTORY_LABEL_PRESETS.therapists.practiceModeLabel,
+  accepting_clients_label: DIRECTORY_LABEL_PRESETS.therapists.acceptingClientsLabel,
+  accepting_clients_help_text: DIRECTORY_LABEL_PRESETS.therapists.acceptingClientsHelpText,
+  willing_to_travel_label: DIRECTORY_LABEL_PRESETS.therapists.willingToTravelLabel,
+  willing_to_travel_help_text: DIRECTORY_LABEL_PRESETS.therapists.willingToTravelHelpText,
+  location_contact_label: DIRECTORY_LABEL_PRESETS.therapists.locationContactLabel,
   application_fee_amount_usd: "150.00",
   application_fee_notice_title: "Application Fee",
   application_fee_notice_body:
@@ -93,6 +123,21 @@ function presetToStoredValues(mode: DirectoryMode): Pick<
   | "participant_label_singular"
   | "participant_label_plural"
   | "specialty_label_plural"
+  | "profile_title_label"
+  | "profile_title_placeholder"
+  | "profile_bio_label"
+  | "profile_bio_placeholder"
+  | "credentials_label"
+  | "credentials_placeholder"
+  | "license_number_label"
+  | "license_number_placeholder"
+  | "practice_details_label"
+  | "practice_mode_label"
+  | "accepting_clients_label"
+  | "accepting_clients_help_text"
+  | "willing_to_travel_label"
+  | "willing_to_travel_help_text"
+  | "location_contact_label"
 > {
   const preset = DIRECTORY_LABEL_PRESETS[mode];
   return {
@@ -103,6 +148,21 @@ function presetToStoredValues(mode: DirectoryMode): Pick<
     participant_label_singular: preset.participantLabelSingular,
     participant_label_plural: preset.participantLabelPlural,
     specialty_label_plural: preset.specialtyLabelPlural,
+    profile_title_label: preset.profileTitleLabel,
+    profile_title_placeholder: preset.profileTitlePlaceholder,
+    profile_bio_label: preset.profileBioLabel,
+    profile_bio_placeholder: preset.profileBioPlaceholder,
+    credentials_label: preset.credentialsLabel,
+    credentials_placeholder: preset.credentialsPlaceholder,
+    license_number_label: preset.licenseNumberLabel,
+    license_number_placeholder: preset.licenseNumberPlaceholder,
+    practice_details_label: preset.practiceDetailsLabel,
+    practice_mode_label: preset.practiceModeLabel,
+    accepting_clients_label: preset.acceptingClientsLabel,
+    accepting_clients_help_text: preset.acceptingClientsHelpText,
+    willing_to_travel_label: preset.willingToTravelLabel,
+    willing_to_travel_help_text: preset.willingToTravelHelpText,
+    location_contact_label: preset.locationContactLabel,
   };
 }
 
@@ -127,6 +187,21 @@ function DirectoryApplicationSettingsTab() {
       participant_label_singular: stored.participant_label_singular?.value || preset.participant_label_singular,
       participant_label_plural: stored.participant_label_plural?.value || preset.participant_label_plural,
       specialty_label_plural: stored.specialty_label_plural?.value || preset.specialty_label_plural,
+      profile_title_label: stored.profile_title_label?.value || preset.profile_title_label,
+      profile_title_placeholder: stored.profile_title_placeholder?.value || preset.profile_title_placeholder,
+      profile_bio_label: stored.profile_bio_label?.value || preset.profile_bio_label,
+      profile_bio_placeholder: stored.profile_bio_placeholder?.value || preset.profile_bio_placeholder,
+      credentials_label: stored.credentials_label?.value || preset.credentials_label,
+      credentials_placeholder: stored.credentials_placeholder?.value || preset.credentials_placeholder,
+      license_number_label: stored.license_number_label?.value || preset.license_number_label,
+      license_number_placeholder: stored.license_number_placeholder?.value || preset.license_number_placeholder,
+      practice_details_label: stored.practice_details_label?.value || preset.practice_details_label,
+      practice_mode_label: stored.practice_mode_label?.value || preset.practice_mode_label,
+      accepting_clients_label: stored.accepting_clients_label?.value || preset.accepting_clients_label,
+      accepting_clients_help_text: stored.accepting_clients_help_text?.value || preset.accepting_clients_help_text,
+      willing_to_travel_label: stored.willing_to_travel_label?.value || preset.willing_to_travel_label,
+      willing_to_travel_help_text: stored.willing_to_travel_help_text?.value || preset.willing_to_travel_help_text,
+      location_contact_label: stored.location_contact_label?.value || preset.location_contact_label,
       application_fee_amount_usd: stored.application_fee_amount_usd?.value || DEFAULT_VALUES.application_fee_amount_usd,
       application_fee_notice_title: stored.application_fee_notice_title?.value || DEFAULT_VALUES.application_fee_notice_title,
       application_fee_notice_body: stored.application_fee_notice_body?.value || DEFAULT_VALUES.application_fee_notice_body,
@@ -174,6 +249,21 @@ function DirectoryApplicationSettingsTab() {
         { key: "participant_label_singular", value: values.participant_label_singular },
         { key: "participant_label_plural", value: values.participant_label_plural },
         { key: "specialty_label_plural", value: values.specialty_label_plural },
+        { key: "profile_title_label", value: values.profile_title_label },
+        { key: "profile_title_placeholder", value: values.profile_title_placeholder },
+        { key: "profile_bio_label", value: values.profile_bio_label },
+        { key: "profile_bio_placeholder", value: values.profile_bio_placeholder },
+        { key: "credentials_label", value: values.credentials_label },
+        { key: "credentials_placeholder", value: values.credentials_placeholder },
+        { key: "license_number_label", value: values.license_number_label },
+        { key: "license_number_placeholder", value: values.license_number_placeholder },
+        { key: "practice_details_label", value: values.practice_details_label },
+        { key: "practice_mode_label", value: values.practice_mode_label },
+        { key: "accepting_clients_label", value: values.accepting_clients_label },
+        { key: "accepting_clients_help_text", value: values.accepting_clients_help_text },
+        { key: "willing_to_travel_label", value: values.willing_to_travel_label },
+        { key: "willing_to_travel_help_text", value: values.willing_to_travel_help_text },
+        { key: "location_contact_label", value: values.location_contact_label },
         { key: "application_fee_amount_usd", value: values.application_fee_amount_usd },
         { key: "application_fee_notice_title", value: values.application_fee_notice_title },
         { key: "application_fee_notice_body", value: values.application_fee_notice_body },
@@ -220,6 +310,25 @@ function DirectoryApplicationSettingsTab() {
     { key: "participant_label_singular" as const, label: "Single Participant Label" },
     { key: "participant_label_plural" as const, label: "Multiple Participants Label" },
     { key: "specialty_label_plural" as const, label: "Specialty/Category Label" },
+  ];
+  const profileFieldLabels = [
+    { key: "profile_title_label" as const, label: "Title Field Label" },
+    { key: "profile_bio_label" as const, label: "Bio/Description Label" },
+    { key: "credentials_label" as const, label: "Credentials/Features Label" },
+    { key: "license_number_label" as const, label: "License/Reference Label" },
+    { key: "practice_details_label" as const, label: "Details Section Label" },
+    { key: "practice_mode_label" as const, label: "Format Field Label" },
+    { key: "accepting_clients_label" as const, label: "Availability Toggle Label" },
+    { key: "willing_to_travel_label" as const, label: "Travel/Mobile Toggle Label" },
+    { key: "location_contact_label" as const, label: "Location Section Label" },
+  ];
+  const profileFieldPlaceholders = [
+    { key: "profile_title_placeholder" as const, label: "Title Placeholder" },
+    { key: "profile_bio_placeholder" as const, label: "Bio/Description Placeholder" },
+    { key: "credentials_placeholder" as const, label: "Credentials/Features Placeholder" },
+    { key: "license_number_placeholder" as const, label: "License/Reference Placeholder" },
+    { key: "accepting_clients_help_text" as const, label: "Availability Help Text" },
+    { key: "willing_to_travel_help_text" as const, label: "Travel/Mobile Help Text" },
   ];
 
   return (
@@ -283,6 +392,53 @@ function DirectoryApplicationSettingsTab() {
 
           <div className="grid gap-4 md:grid-cols-2">
             {labelFields.map((field) => (
+              <div key={field.key} className="space-y-2">
+                <Label htmlFor={field.key}>{field.label}</Label>
+                <Input
+                  id={field.key}
+                  value={values[field.key]}
+                  onChange={(event) => setValues((current) => ({
+                    ...current,
+                    directory_mode: "custom",
+                    [field.key]: event.target.value,
+                  }))}
+                />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Settings2 className="h-4 w-4 text-primary" />
+            Profile Field Labels
+          </CardTitle>
+          <CardDescription>
+            Customize the visible labels and hints used when participants edit a {values.listing_label_singular.toLowerCase()}.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            {profileFieldLabels.map((field) => (
+              <div key={field.key} className="space-y-2">
+                <Label htmlFor={field.key}>{field.label}</Label>
+                <Input
+                  id={field.key}
+                  value={values[field.key]}
+                  onChange={(event) => setValues((current) => ({
+                    ...current,
+                    directory_mode: "custom",
+                    [field.key]: event.target.value,
+                  }))}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {profileFieldPlaceholders.map((field) => (
               <div key={field.key} className="space-y-2">
                 <Label htmlFor={field.key}>{field.label}</Label>
                 <Input
