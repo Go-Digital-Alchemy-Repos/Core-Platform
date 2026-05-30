@@ -27,6 +27,7 @@ const mockRecordCouponRedemptionForOrder = vi.fn();
 const mockDeductInventoryForPaidOrder = vi.fn();
 const mockSendEcommerceOrderConfirmation = vi.fn();
 const mockSendEcommerceOrderStatusEmail = vi.fn();
+const mockSendEcommerceRefundEmail = vi.fn();
 const mockGetDecryptedCategory = vi.fn(async (_category: string) => ({}));
 const mockUpsertSetting = vi.fn();
 const mockInvalidateCategory = vi.fn();
@@ -64,6 +65,7 @@ vi.mock("../storage/index", () => ({
 vi.mock("../services/ecommerce-email.service", () => ({
   sendEcommerceOrderConfirmation: mockSendEcommerceOrderConfirmation,
   sendEcommerceOrderStatusEmail: mockSendEcommerceOrderStatusEmail,
+  sendEcommerceRefundEmail: mockSendEcommerceRefundEmail,
 }));
 
 describe("ecommerce services", () => {
@@ -89,6 +91,7 @@ describe("ecommerce services", () => {
     mockDeductInventoryForPaidOrder.mockReset();
     mockSendEcommerceOrderConfirmation.mockReset();
     mockSendEcommerceOrderStatusEmail.mockReset();
+    mockSendEcommerceRefundEmail.mockReset();
     mockGetDecryptedCategory.mockReset();
     mockGetDecryptedCategory.mockResolvedValue({});
     mockUpsertSetting.mockReset();
@@ -622,6 +625,60 @@ describe("ecommerce services", () => {
       { amount: 500, status: "pending" },
       { amount: 200, status: "failed" },
     ])).toBe(1500);
+  });
+
+  it("blocks manual refunds before payment capture or after full refund", async () => {
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    mockGetOrderWithDetails.mockResolvedValueOnce({
+      id: "order-unpaid",
+      status: "pending",
+      paymentStatus: "unpaid",
+      totalAmount: 5000,
+      stripePaymentIntentId: null,
+      refunds: [],
+    });
+
+    await expect(createEcommerceRefund({
+      orderId: "order-unpaid",
+      amount: 1000,
+      source: "manual",
+    })).rejects.toThrow(/not been captured/);
+    expect(mockCreateRefund).not.toHaveBeenCalled();
+
+    mockGetOrderWithDetails.mockResolvedValueOnce({
+      id: "order-refunded",
+      status: "paid",
+      paymentStatus: "refunded",
+      totalAmount: 5000,
+      stripePaymentIntentId: "pi_123",
+      refunds: [{ amount: 5000, status: "processed" }],
+    });
+
+    await expect(createEcommerceRefund({
+      orderId: "order-refunded",
+      amount: 1000,
+      source: "manual",
+    })).rejects.toThrow(/fully refunded/);
+    expect(mockCreateRefund).not.toHaveBeenCalled();
+  });
+
+  it("creates manual refunds only against remaining refundable balance", async () => {
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    mockGetOrderWithDetails.mockResolvedValueOnce({
+      id: "order-paid",
+      status: "paid",
+      paymentStatus: "paid",
+      totalAmount: 5000,
+      stripePaymentIntentId: null,
+      refunds: [{ amount: 1500, status: "processed" }],
+    });
+
+    await expect(createEcommerceRefund({
+      orderId: "order-paid",
+      amount: 4000,
+      source: "manual",
+    })).rejects.toThrow(/exceeds refundable balance/);
+    expect(mockCreateRefund).not.toHaveBeenCalled();
   });
 
   it("marks an ecommerce order paid once and retries idempotent inventory deduction", async () => {

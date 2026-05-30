@@ -4,6 +4,14 @@ import { sendEcommerceRefundEmail } from "./ecommerce-email.service";
 
 type RefundStatus = "pending" | "processed" | "failed";
 
+const refundablePaymentStatuses = new Set(["paid", "partially_refunded", "refund_pending", "refund_failed"]);
+
+function refundError(message: string, statusCode: number) {
+  const error = new Error(message) as Error & { statusCode: number };
+  error.statusCode = statusCode;
+  return error;
+}
+
 export function computeRefundedAmount(refunds: Array<{ amount: number; status: string }>): number {
   return refunds
     .filter((refund) => refund.status === "processed" || refund.status === "pending")
@@ -14,6 +22,25 @@ export function mapStripeRefundStatus(status: string | null | undefined): Refund
   if (status === "succeeded") return "processed";
   if (status === "failed" || status === "canceled") return "failed";
   return "pending";
+}
+
+export function assertEcommerceOrderCanRefund(order: {
+  status?: string | null;
+  paymentStatus?: string | null;
+  totalAmount: number;
+}) {
+  if (order.status === "cancelled") {
+    throw refundError("Cancelled orders cannot be refunded from ecommerce", 400);
+  }
+  if (order.paymentStatus === "refunded") {
+    throw refundError("Order has already been fully refunded", 400);
+  }
+  if (!refundablePaymentStatuses.has(order.paymentStatus ?? "")) {
+    throw refundError("Order payment has not been captured and cannot be refunded", 400);
+  }
+  if (order.totalAmount <= 0) {
+    throw refundError("Order does not have a refundable balance", 400);
+  }
 }
 
 async function syncOrderRefundPaymentStatus(orderId: string) {
@@ -36,6 +63,7 @@ export async function createEcommerceRefund(params: {
 }) {
   const order = await storage.ecommerce.getOrderWithDetails(params.orderId);
   if (!order) throw new Error("Order not found");
+  assertEcommerceOrderCanRefund(order);
   if (params.amount <= 0) throw new Error("Refund amount must be greater than zero");
   const refundable = order.totalAmount - computeRefundedAmount(order.refunds);
   if (params.amount > refundable) throw new Error("Refund amount exceeds refundable balance");
