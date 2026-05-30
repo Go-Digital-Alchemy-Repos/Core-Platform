@@ -13,6 +13,7 @@ import {
   validateCoupon,
 } from "../services/ecommerce-pricing.service";
 import { createEcommercePaymentIntent } from "../services/ecommerce-order.service";
+import { ecommerceOrderStatusLookupSchema } from "../services/ecommerce-order-lookup.service";
 import { getPublicProductCategories, toPublicEcommerceProduct } from "../services/ecommerce-public-product.service";
 import { toPublicEcommerceOrderStatus } from "../services/ecommerce-public-order.service";
 import { getEcommerceStripePublishableKey, getEcommerceStripeMode } from "../services/ecommerce-stripe.service";
@@ -131,11 +132,7 @@ router.post(
   ecommerceOrderLookupLimiter,
   noStorePrivateResponse,
   asyncHandler(async (req, res) => {
-    const data = z.object({
-      orderId: z.string().min(1),
-      email: z.string().email(),
-      token: z.string().min(1),
-    }).parse(req.body);
+    const data = ecommerceOrderStatusLookupSchema.parse(req.body);
     const order = await storage.ecommerce.getOrderForLookup(data);
     if (!order) {
       res.status(404).json({ message: "Order not found" });
