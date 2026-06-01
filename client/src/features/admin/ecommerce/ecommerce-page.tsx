@@ -1,4 +1,4 @@
-import { type ElementType, FormEvent, useEffect, useState } from "react";
+import { type ElementType, FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -34,6 +34,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -1615,6 +1625,7 @@ function formatOrderNoteAuthor(note: NonNullable<Order["internalNotes"]>[number]
 
 function OrdersTab() {
   const { toast } = useToast();
+  const trackingNumberInputRef = useRef<HTMLInputElement>(null);
   const { data: orders = [] } = useQuery<Order[]>({ queryKey: ["/api/admin/ecommerce/orders"] });
   const { data: locations = [] } = useQuery<FulfillmentLocation[]>({
     queryKey: ["/api/admin/ecommerce/shipping/locations"],
@@ -1635,6 +1646,7 @@ function OrdersTab() {
     status: "",
     notes: "",
   });
+  const [trackingPromptAction, setTrackingPromptAction] = useState<"status" | "shipment" | null>(null);
   const filteredOrders = orders.filter((order) => {
     const query = orderSearch.trim().toLowerCase();
     const matchesSearch = !query || [
@@ -1676,6 +1688,48 @@ function OrdersTab() {
   const openOrderDetail = (orderId: string) => {
     setSelectedOrderId(orderId);
     setDetailOpen(true);
+  };
+
+  const hasTrackingData = Boolean(
+    shipmentForm.trackingNumber.trim()
+      || shipmentForm.trackingUrl.trim()
+      || selectedOrder?.shipments?.some((shipment) => shipment.trackingNumber || shipment.trackingUrl),
+  );
+
+  const focusTrackingNumber = () => {
+    setTrackingPromptAction(null);
+    setTimeout(() => {
+      trackingNumberInputRef.current?.focus();
+      trackingNumberInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  };
+
+  const submitStatusUpdate = (force = false) => {
+    if (statusForm.status === "shipped" && !hasTrackingData && !force) {
+      setTrackingPromptAction("status");
+      return;
+    }
+    statusMutation.mutate();
+  };
+
+  const submitShipment = (force = false) => {
+    if (!hasTrackingData && !force) {
+      setTrackingPromptAction("shipment");
+      return;
+    }
+    shipmentMutation.mutate();
+  };
+
+  const proceedWithoutTracking = () => {
+    const action = trackingPromptAction;
+    setTrackingPromptAction(null);
+    if (action === "status") {
+      submitStatusUpdate(true);
+      return;
+    }
+    if (action === "shipment") {
+      submitShipment(true);
+    }
   };
 
   const statusMutation = useMutation({
@@ -1894,7 +1948,7 @@ function OrdersTab() {
                       className="grid gap-4 rounded-lg border p-4"
                       onSubmit={(event) => {
                         event.preventDefault();
-                        statusMutation.mutate();
+                        submitStatusUpdate();
                       }}
                     >
                       <div>
@@ -1949,7 +2003,7 @@ function OrdersTab() {
                       className="grid gap-4 rounded-lg border p-4"
                       onSubmit={(event) => {
                         event.preventDefault();
-                        shipmentMutation.mutate();
+                        submitShipment();
                       }}
                     >
                       <div>
@@ -1978,7 +2032,7 @@ function OrdersTab() {
                       </div>
                       <div className="space-y-2">
                         <Label>Tracking number</Label>
-                        <Input value={shipmentForm.trackingNumber} onChange={(event) => setShipmentForm((current) => ({ ...current, trackingNumber: event.target.value }))} />
+                        <Input ref={trackingNumberInputRef} value={shipmentForm.trackingNumber} onChange={(event) => setShipmentForm((current) => ({ ...current, trackingNumber: event.target.value }))} />
                       </div>
                       <div className="space-y-2">
                         <Label>Tracking URL</Label>
@@ -2006,6 +2060,20 @@ function OrdersTab() {
           )}
         </SheetContent>
       </Sheet>
+      <AlertDialog open={trackingPromptAction !== null} onOpenChange={(open) => { if (!open) setTrackingPromptAction(null); }}>
+        <AlertDialogContent className="z-[1200]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add tracking before marking shipped?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This order does not have tracking information yet. Would you like to add a tracking number before marking it as shipped?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={focusTrackingNumber}>Yes, add tracking</AlertDialogCancel>
+            <AlertDialogAction onClick={proceedWithoutTracking}>No, mark shipped</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
