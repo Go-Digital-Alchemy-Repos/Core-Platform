@@ -145,6 +145,191 @@ function buildDirectoryContent() {
   };
 }
 
+function buildAboutContent() {
+  return {
+    blocks: [
+      {
+        id: id(),
+        type: "text-image",
+        props: {
+          heading: "History",
+          body:
+            'Core Platform was born from the lived experience of growing up between cultures. Our founders, Adult Core Platforms and mental health advocates, experienced firsthand how difficult it is to find a mental health professional who truly understands what it means to call multiple countries "home." In 2024, they set out to build a bridge between Third Culture Kids and the culturally competent professionals who serve them.',
+          imageUrl:
+            "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1200&h=1200&fit=crop&crop=faces",
+          imageAlt: "Core Platform community",
+          imagePosition: "right",
+        },
+      },
+      {
+        id: id(),
+        type: "rich-text",
+        props: {
+          title: "Vision & Mission",
+          alignment: "left",
+          content:
+            "<p>Our vision is a world where every Third Culture Kid has access to mental health support that honors their multicultural identity. Our mission is to build the most trusted directory of Core Platform-informed mental health professionals: vetted, accessible, and global, so that no one has to navigate the complexities of cross-cultural life alone.</p>",
+        },
+      },
+      {
+        id: id(),
+        type: "cards-grid",
+        props: {
+          title: "The Stats Speak for Themselves",
+          subtitle:
+            "According to Core Platform Training's 2024 research survey of 1600+ adult Core Platforms:",
+          columns: "3",
+          cards: [
+            {
+              title: "60%",
+              description: "of Core Platforms experienced symptoms of anxiety.",
+              icon: "CircleGauge",
+            },
+            {
+              title: "59%",
+              description: "of Core Platforms experienced symptoms of depression.",
+              icon: "CircleGauge",
+            },
+            {
+              title: "47%",
+              description: "of Core Platforms experienced symptoms of suicidal ideation.",
+              icon: "CircleGauge",
+            },
+          ],
+        },
+      },
+      {
+        id: id(),
+        type: "rich-text",
+        props: {
+          alignment: "center",
+          content:
+            "<p>However, significantly smaller numbers get diagnosed. While we can only speculate on why, due to our decades of observations and expertise in the field, we think a large reason is due to lack of accessibility to proper mental health services. <strong>Which is a major driver in why we do what we do!</strong></p>",
+        },
+      },
+      {
+        id: id(),
+        type: "text-image",
+        props: {
+          heading: "Why Core Platform Informed?",
+          body:
+            "Traditional therapy models were developed within a single cultural framework. When Core Platforms bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A Core Platform-informed mental health professional understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges, and they know how to work with both.",
+          imageUrl:
+            "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1200&h=1200&fit=crop&crop=faces",
+          imageAlt: "Core Platform-informed counseling",
+          imagePosition: "left",
+        },
+      },
+      {
+        id: id(),
+        type: "rich-text",
+        props: {
+          title: 'What does it mean to be "vetted"?',
+          subtitle: 'And just as importantly, what it does not mean.',
+          content:
+            "<h3>What does it mean to be &ldquo;vetted&rdquo;?</h3><ul><li>Every mental health professional completes a detailed application process</li><li>Credentials and licensure are verified</li><li>Training or lived experience with Core Platform/cross-cultural populations is required</li><li>Profiles are reviewed by our team before being published</li></ul><h3>What does it NOT mean to be &ldquo;vetted&rdquo;?</h3><ul><li>We are not a licensing or credentialing body</li><li>We do not provide clinical supervision</li><li>Listing does not constitute an endorsement of specific therapeutic outcomes</li><li>We do not guarantee a therapeutic match, but we make finding one easier</li></ul>",
+          alignment: "left",
+        },
+      },
+      {
+        id: id(),
+        type: "testimonials",
+        props: {
+          title: "What Are People Saying?",
+          subtitle:
+            "Hear from Core Platforms, expat families, and mental health professionals who have found their match.",
+          items: [
+            {
+              quote:
+                "For the first time, I didn't have to explain what it means to grow up between cultures. My mental health professional just understood.",
+              name: "Sarah M.",
+              role: "Adult Core Platform",
+              location: "Singapore",
+            },
+            {
+              quote:
+                "Core Platform connected me with a mental health professional who speaks my language, literally and figuratively. It's been life-changing.",
+              name: "James K.",
+              role: "Expat Parent",
+              location: "Dubai",
+            },
+            {
+              quote:
+                "As a mental health professional, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
+              name: "Dr. Amara O.",
+              role: "Licensed Mental Health Professional",
+              location: "Nairobi",
+            },
+          ],
+        },
+      },
+      {
+        id: id(),
+        type: "blog-preview",
+        props: {
+          title: "Featured On",
+          subtitle: "",
+          limit: 3,
+          enableHoverMotion: true,
+        },
+      },
+      {
+        id: id(),
+        type: "faq",
+        props: {
+          title: "FAQs",
+          items: [
+            {
+              question: "What is a Third Culture Kid (Core Platform)?",
+              answer:
+                "A Third Culture Kid (Core Platform) is a person who has spent a significant part of their developmental years outside their parents' culture. They build relationships with multiple cultures while not having full ownership of any, creating what is often called a third culture.",
+            },
+            {
+              question: "Who can use Core Platform to find a mental health professional?",
+              answer:
+                "Core Platform is for anyone who has had a cross-cultural upbringing or is navigating globally-mobile life: Core Platforms of all ages, expat families, international students, military families, missionary kids, diplomats' children, and cross-cultural professionals.",
+            },
+            {
+              question: "How are mental health professionals vetted before joining the directory?",
+              answer:
+                "Every mental health professional completes an application process, provides verified credentials, and must demonstrate training or lived experience with Core Platform and cross-cultural populations. Our team reviews each profile before it goes live in the directory.",
+            },
+            {
+              question: "Is Core Platform a therapy service?",
+              answer:
+                "No. Core Platform is a directory and community platform. We connect individuals with qualified mental health professionals; we do not provide therapy directly.",
+            },
+          ],
+        },
+      },
+      {
+        id: id(),
+        type: "cta",
+        props: {
+          heading: "Donate to Core Platform",
+          subheading:
+            "Your support helps us maintain this platform, expand our directory, and provide resources to the global Core Platform community.",
+          primaryText: "Donate",
+          primaryLink: "/donate",
+          primaryAction: "internal-link",
+          primaryOpenInNewTab: false,
+          primaryFormSlug: "contact-form",
+          primaryModalTitle: "",
+          primaryModalDescription: "",
+          secondaryText: "",
+          secondaryLink: "",
+          secondaryAction: "internal-link",
+          secondaryOpenInNewTab: false,
+          secondaryFormSlug: "contact-form",
+          secondaryModalTitle: "",
+          secondaryModalDescription: "",
+          variant: "light",
+        },
+      },
+    ],
+  };
+}
+
 function buildPrivacyPolicyContent() {
   return {
     blocks: [
@@ -428,6 +613,30 @@ export async function ensureSystemCmsPages() {
         updatedBy: existingJoin.updatedBy,
       });
     }
+  }
+
+  const existingAbout = await storage.cmsPages.getPageBySlug("about");
+  if (!existingAbout) {
+    await storage.cmsPages.createPage({
+      title: "About",
+      slug: "about",
+      pageType: "custom",
+      template: "full-width",
+      status: "published",
+      content: buildAboutContent(),
+      seoTitle: "About | Core Platform",
+      seoDescription:
+        "Learn about Core Platform, our mission, and how we connect Third Culture Kids with culturally informed mental health professionals.",
+      seoKeywords: "about Core Platform, Third Culture Kids, culturally informed care, mental health directory",
+      ogImageUrl: "",
+      canonicalUrl: "",
+      noindex: false,
+      publishedAt: new Date(),
+      scheduledAt: null,
+      createdBy: null,
+      updatedBy: null,
+      sidebarId: null,
+    });
   }
 
   const existingPrivacyPolicy = await storage.cmsPages.getPageBySlug("privacy-policy");
