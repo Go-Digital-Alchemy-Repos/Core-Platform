@@ -32,6 +32,9 @@ async function buildAll() {
 
   console.log("copying docs...");
   await cp("docs", "dist/docs", { recursive: true });
+
+  console.log("copying PDF font data...");
+  await cp("node_modules/pdfkit/js/data", "dist/data", { recursive: true });
 }
 
 buildAll().catch((err) => {
