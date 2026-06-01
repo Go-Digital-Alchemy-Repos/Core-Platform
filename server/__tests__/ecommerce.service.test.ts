@@ -20,6 +20,7 @@ const mockGetOrderWithDetails = vi.fn();
 const mockGetCustomer = vi.fn();
 const mockFindOrCreateCustomer = vi.fn();
 const mockCreateOrder = vi.fn();
+const mockCreateOrderNote = vi.fn();
 const mockGetFulfillmentsForOrder = vi.fn();
 const mockGetRefundByStripeRefundId = vi.fn();
 const mockUpdateRefund = vi.fn();
@@ -63,6 +64,7 @@ vi.mock("../storage/index", () => ({
       getCustomer: mockGetCustomer,
       findOrCreateCustomer: mockFindOrCreateCustomer,
       createOrder: mockCreateOrder,
+      createOrderNote: mockCreateOrderNote,
       getFulfillmentsForOrder: mockGetFulfillmentsForOrder,
       recordCouponRedemptionForOrder: mockRecordCouponRedemptionForOrder,
       deductInventoryForPaidOrder: mockDeductInventoryForPaidOrder,
@@ -101,6 +103,7 @@ describe("ecommerce services", () => {
     mockGetCustomer.mockReset();
     mockFindOrCreateCustomer.mockReset();
     mockCreateOrder.mockReset();
+    mockCreateOrderNote.mockReset();
     mockGetFulfillmentsForOrder.mockReset();
     mockGetFulfillmentsForOrder.mockResolvedValue([]);
     mockGetRefundByStripeRefundId.mockReset();
@@ -2010,12 +2013,17 @@ describe("ecommerce services", () => {
     mockGetOrder.mockResolvedValue(paidOrder);
     mockUpdateOrder.mockResolvedValue(paidOrder);
 
-    await updateAdminEcommerceOrder("order-admin-2", { status: "paid", notes: "Already handled" });
+    await updateAdminEcommerceOrder("order-admin-2", { status: "paid", notes: "Already handled" }, { id: "admin-1" });
 
     expect(mockUpdateOrder).toHaveBeenCalledWith("order-admin-2", {
       status: "paid",
       notes: "Already handled",
       paymentStatus: "paid",
+    });
+    expect(mockCreateOrderNote).toHaveBeenCalledWith({
+      orderId: "order-admin-2",
+      authorId: "admin-1",
+      body: "Already handled",
     });
     expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
     expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();

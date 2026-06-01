@@ -373,6 +373,17 @@ export const ecommerceOrderItems = pgTable("ecommerce_order_items", {
   index("idx_ecommerce_order_items_variant").on(table.variantId),
 ]);
 
+export const ecommerceOrderNotes = pgTable("ecommerce_order_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => ecommerceOrders.id, { onDelete: "cascade" }),
+  authorId: varchar("author_id").references(() => users.id, { onDelete: "set null" }),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_order_notes_order").on(table.orderId),
+  index("idx_ecommerce_order_notes_created").on(table.createdAt),
+]);
+
 export const ecommerceCoupons = pgTable("ecommerce_coupons", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   code: text("code").notNull(),
@@ -620,6 +631,18 @@ export const ecommerceOrdersRelations = relations(ecommerceOrders, ({ one, many 
   refunds: many(ecommerceRefunds),
   shipments: many(ecommerceShipments),
   fulfillments: many(ecommerceFulfillments),
+  notes: many(ecommerceOrderNotes),
+}));
+
+export const ecommerceOrderNotesRelations = relations(ecommerceOrderNotes, ({ one }) => ({
+  order: one(ecommerceOrders, {
+    fields: [ecommerceOrderNotes.orderId],
+    references: [ecommerceOrders.id],
+  }),
+  author: one(users, {
+    fields: [ecommerceOrderNotes.authorId],
+    references: [users.id],
+  }),
 }));
 
 export const ecommerceCustomerAddressesRelations = relations(ecommerceCustomerAddresses, ({ one }) => ({
@@ -661,6 +684,7 @@ export const insertEcommerceCustomerSchema = createInsertSchema(ecommerceCustome
 export const insertEcommerceCustomerAddressSchema = createInsertSchema(ecommerceCustomerAddresses).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertEcommerceOrderSchema = createInsertSchema(ecommerceOrders).omit({ id: true, lookupToken: true, createdAt: true, updatedAt: true });
 export const insertEcommerceOrderItemSchema = createInsertSchema(ecommerceOrderItems).omit({ id: true });
+export const insertEcommerceOrderNoteSchema = createInsertSchema(ecommerceOrderNotes).omit({ id: true, createdAt: true });
 export const insertEcommerceCouponSchema = createInsertSchema(ecommerceCoupons).omit({ id: true, timesUsed: true, createdAt: true, updatedAt: true });
 export const insertEcommerceRefundSchema = createInsertSchema(ecommerceRefunds).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertEcommerceShippingZoneSchema = createInsertSchema(ecommerceShippingZones).omit({ id: true, createdAt: true, updatedAt: true });
@@ -701,6 +725,8 @@ export type EcommerceOrder = typeof ecommerceOrders.$inferSelect;
 export type InsertEcommerceOrder = z.infer<typeof insertEcommerceOrderSchema>;
 export type EcommerceOrderItem = typeof ecommerceOrderItems.$inferSelect;
 export type InsertEcommerceOrderItem = z.infer<typeof insertEcommerceOrderItemSchema>;
+export type EcommerceOrderNote = typeof ecommerceOrderNotes.$inferSelect;
+export type InsertEcommerceOrderNote = z.infer<typeof insertEcommerceOrderNoteSchema>;
 export type EcommerceCoupon = typeof ecommerceCoupons.$inferSelect;
 export type InsertEcommerceCoupon = z.infer<typeof insertEcommerceCouponSchema>;
 export type EcommerceRefund = typeof ecommerceRefunds.$inferSelect;

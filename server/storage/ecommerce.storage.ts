@@ -12,6 +12,7 @@ import {
   ecommerceFulfillmentLocations,
   ecommerceFulfillments,
   ecommerceOrderItems,
+  ecommerceOrderNotes,
   ecommerceOrders,
   ecommerceProcessedWebhookEvents,
   ecommerceProductCategories,
@@ -24,6 +25,7 @@ import {
   ecommerceShippingProviders,
   ecommerceShippingRates,
   ecommerceShippingZones,
+  users,
   type EcommerceCategory,
   type EcommerceCoupon,
   type EcommerceCustomerAddress,
@@ -33,6 +35,7 @@ import {
   type EcommerceFulfillmentLocation,
   type EcommerceOrder,
   type EcommerceOrderItem,
+  type EcommerceOrderNote,
   type EcommerceProduct,
   type EcommerceProductMedia,
   type EcommerceProductVariant,
@@ -50,6 +53,7 @@ import {
   type InsertEcommerceFulfillmentLocation,
   type InsertEcommerceOrder,
   type InsertEcommerceOrderItem,
+  type InsertEcommerceOrderNote,
   type InsertEcommerceProduct,
   type InsertEcommerceProductMedia,
   type InsertEcommerceProductVariant,
@@ -72,6 +76,16 @@ export interface EcommerceOrderWithDetails extends EcommerceOrder {
   refunds: EcommerceRefund[];
   shipments: EcommerceShipment[];
   fulfillments: EcommerceFulfillment[];
+  internalNotes: EcommerceOrderNoteWithAuthor[];
+}
+
+export interface EcommerceOrderNoteWithAuthor extends EcommerceOrderNote {
+  author: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
 }
 
 export interface EcommerceFulfillmentWithItems extends EcommerceFulfillment {
@@ -707,7 +721,7 @@ export class EcommerceStorage {
       }
       const orderItems = await tx.select().from(ecommerceOrderItems).where(eq(ecommerceOrderItems.orderId, order.id));
       const [customer] = await tx.select().from(ecommerceCustomers).where(eq(ecommerceCustomers.id, order.customerId));
-      return { ...order, customer: customer ?? null, items: orderItems, refunds: [], shipments: [], fulfillments: [] };
+      return { ...order, customer: customer ?? null, items: orderItems, refunds: [], shipments: [], fulfillments: [], internalNotes: [] };
     });
   }
 
@@ -751,14 +765,54 @@ export class EcommerceStorage {
   async getOrderWithDetails(id: string): Promise<EcommerceOrderWithDetails | undefined> {
     const [order] = await db.select().from(ecommerceOrders).where(eq(ecommerceOrders.id, id));
     if (!order) return undefined;
-    const [customer, items, refunds, shipments, fulfillments] = await Promise.all([
+    const [customer, items, refunds, shipments, fulfillments, internalNotes] = await Promise.all([
       this.getCustomer(order.customerId),
       db.select().from(ecommerceOrderItems).where(eq(ecommerceOrderItems.orderId, id)),
       db.select().from(ecommerceRefunds).where(eq(ecommerceRefunds.orderId, id)),
       db.select().from(ecommerceShipments).where(eq(ecommerceShipments.orderId, id)),
       db.select().from(ecommerceFulfillments).where(eq(ecommerceFulfillments.orderId, id)),
+      this.getOrderNotes(id),
     ]);
-    return { ...order, customer: customer ?? null, items, refunds, shipments, fulfillments };
+    return { ...order, customer: customer ?? null, items, refunds, shipments, fulfillments, internalNotes };
+  }
+
+  async getOrderNotes(orderId: string): Promise<EcommerceOrderNoteWithAuthor[]> {
+    const rows = await db
+      .select({
+        id: ecommerceOrderNotes.id,
+        orderId: ecommerceOrderNotes.orderId,
+        authorId: ecommerceOrderNotes.authorId,
+        body: ecommerceOrderNotes.body,
+        createdAt: ecommerceOrderNotes.createdAt,
+        authorEmail: users.email,
+        authorFirstName: users.firstName,
+        authorLastName: users.lastName,
+      })
+      .from(ecommerceOrderNotes)
+      .leftJoin(users, eq(ecommerceOrderNotes.authorId, users.id))
+      .where(eq(ecommerceOrderNotes.orderId, orderId))
+      .orderBy(desc(ecommerceOrderNotes.createdAt));
+
+    return rows.map((row) => ({
+      id: row.id,
+      orderId: row.orderId,
+      authorId: row.authorId,
+      body: row.body,
+      createdAt: row.createdAt,
+      author: row.authorEmail
+        ? {
+            id: row.authorId ?? "",
+            email: row.authorEmail,
+            firstName: row.authorFirstName,
+            lastName: row.authorLastName,
+          }
+        : null,
+    }));
+  }
+
+  async createOrderNote(data: InsertEcommerceOrderNote): Promise<EcommerceOrderNote> {
+    const [note] = await db.insert(ecommerceOrderNotes).values(data).returning();
+    return note;
   }
 
   async updateOrder(id: string, data: Partial<InsertEcommerceOrder>): Promise<EcommerceOrder | undefined> {

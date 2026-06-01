@@ -69,7 +69,7 @@ export const manualOrderSchema = z.object({
 
 export const adminOrderUpdateSchema = z.object({
   status: z.enum(["pending", "paid", "shipped", "delivered", "cancelled"]).optional(),
-  notes: z.string().optional(),
+  notes: z.string().trim().max(2000).optional(),
 });
 
 export const fulfillmentItemsSchema = z.array(z.object({
@@ -355,18 +355,28 @@ export async function createManualEcommerceOrder(input: unknown) {
   return details ?? order;
 }
 
-export async function updateAdminEcommerceOrder(orderId: string, input: unknown) {
+export async function updateAdminEcommerceOrder(orderId: string, input: unknown, actor?: Pick<User, "id"> | null) {
   const data = adminOrderUpdateSchema.parse(input);
   const previous = await storage.ecommerce.getOrder(orderId);
   if (!previous) return undefined;
   assertAdminOrderStatusTransition(previous, data.status);
 
+  const noteBody = data.notes?.trim();
   const updateData = {
-    ...data,
+    status: data.status,
+    notes: noteBody || undefined,
     paymentStatus: data.status === "paid" ? "paid" as const : undefined,
   };
   const order = await storage.ecommerce.updateOrder(orderId, updateData);
   if (!order) return undefined;
+
+  if (noteBody) {
+    await storage.ecommerce.createOrderNote({
+      orderId: order.id,
+      authorId: actor?.id ?? null,
+      body: noteBody,
+    });
+  }
 
   const changedStatus = Boolean(data.status && previous.status !== data.status);
   const newlyPaid = data.status === "paid" && previous.paymentStatus !== "paid";

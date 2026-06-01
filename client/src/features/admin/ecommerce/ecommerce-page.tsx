@@ -254,6 +254,16 @@ interface Order {
   items: Array<{ id: string; productName: string; quantity: number; lineTotal: number }>;
   shipments?: Array<{ id: string; carrier?: string | null; trackingNumber?: string | null; trackingUrl?: string | null; status: string; shippedAt: string }>;
   fulfillments?: Array<{ id: string; status: string; carrier?: string | null; trackingNumber?: string | null; fulfilledAt?: string | null }>;
+  internalNotes?: Array<{
+    id: string;
+    body: string;
+    createdAt: string;
+    author?: {
+      email: string;
+      firstName?: string | null;
+      lastName?: string | null;
+    } | null;
+  }>;
 }
 
 interface StripeSettingsStatus {
@@ -1575,6 +1585,11 @@ function Metric({ label, value }: { label: string; value: string }) {
   return <div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">{label}</div><div className="text-lg font-semibold">{value}</div></div>;
 }
 
+function formatOrderNoteAuthor(note: NonNullable<Order["internalNotes"]>[number]) {
+  const name = [note.author?.firstName, note.author?.lastName].filter(Boolean).join(" ").trim();
+  return name || note.author?.email || "Unknown user";
+}
+
 function OrdersTab() {
   const { toast } = useToast();
   const { data: orders = [] } = useQuery<Order[]>({ queryKey: ["/api/admin/ecommerce/orders"] });
@@ -1877,7 +1892,7 @@ function OrdersTab() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Internal note</Label>
+                        <Label>Add internal note</Label>
                         <Textarea value={statusForm.notes} onChange={(event) => setStatusForm((current) => ({ ...current, notes: event.target.value }))} rows={3} />
                       </div>
                       <Button type="submit" variant="outline" disabled={statusMutation.isPending || !statusForm.status}>
@@ -1885,6 +1900,27 @@ function OrdersTab() {
                         Update order
                       </Button>
                     </form>
+
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base">Internal notes</CardTitle>
+                        <CardDescription>Private order notes for admins and operators.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {(selectedOrder.internalNotes ?? []).length > 0 ? (
+                          selectedOrder.internalNotes?.map((note) => (
+                            <div key={note.id} className="rounded-lg border p-3">
+                              <p className="whitespace-pre-wrap text-sm">{note.body}</p>
+                              <p className="mt-2 text-xs text-muted-foreground">
+                                {formatOrderNoteAuthor(note)} · {new Date(note.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No internal notes have been added yet.</p>
+                        )}
+                      </CardContent>
+                    </Card>
 
                     <form
                       className="grid gap-4 rounded-lg border p-4"

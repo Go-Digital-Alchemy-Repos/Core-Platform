@@ -284,6 +284,7 @@ router.put("/orders/:id", asyncHandler(async (req, res) => {
   const order = await updateAdminEcommerceOrder(
     paramString(req.params.id),
     adminOrderUpdateSchema.parse(req.body),
+    req.user,
   );
   if (!order) {
     res.status(404).json({ message: "Order not found" });
