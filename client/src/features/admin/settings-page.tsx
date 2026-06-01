@@ -3729,7 +3729,7 @@ export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean
             </Button>
           </CardContent>
         )}
-        <CardContent>
+        <CardContent className="[padding-top:15px]">
           {isLoading ? (
             <div className="flex justify-center py-10">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
