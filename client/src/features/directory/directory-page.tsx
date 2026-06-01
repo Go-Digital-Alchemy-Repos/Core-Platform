@@ -784,7 +784,7 @@ export function DirectoryBrowserSection({
               </span>
             </div>
             <div className="min-h-[55vh] flex-1 md:min-h-0">
-              <MapView therapists={mapTherapists} height="100%" highlightedId={hoveredId} zoom={2} center={[20, 0]} />
+              <MapView therapists={mapTherapists} height="100%" highlightedId={hoveredId} zoom={3} center={[20, 0]} />
             </div>
           </div>
         )}
