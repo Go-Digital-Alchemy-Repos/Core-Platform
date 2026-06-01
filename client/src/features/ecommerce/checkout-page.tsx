@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Loader2, Lock, ShoppingBag, UserPlus } from "lucide-react";
+import { Loader2, Lock, MapPin, ShoppingBag, UserPlus } from "lucide-react";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { PageLayout } from "@/components/layout/page-layout";
@@ -85,6 +85,21 @@ interface CheckoutSettings {
   store?: EcommerceStoreSettings;
 }
 
+interface AccountAddress {
+  id: string;
+  label: string;
+  name?: string | null;
+  company?: string | null;
+  phone?: string | null;
+  address: string;
+  line2?: string | null;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  isDefault: boolean;
+}
+
 export function getStripeCheckoutUnavailableMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
     return "Secure card checkout is temporarily unavailable. Please contact support before placing this order.";
@@ -154,6 +169,7 @@ export default function CheckoutPage() {
   const [shippingQuoted, setShippingQuoted] = useState(false);
   const [intent, setIntent] = useState<PaymentIntentResponse | null>(null);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState("custom");
   const lastShippingQuoteKey = useRef("");
   const { toast } = useToast();
   const { user } = useAuth();
@@ -169,6 +185,10 @@ export default function CheckoutPage() {
   });
   const { data: checkoutSettings } = useQuery<CheckoutSettings>({
     queryKey: ["/api/ecommerce/checkout/settings"],
+  });
+  const { data: savedAddresses = [] } = useQuery<AccountAddress[]>({
+    queryKey: ["/api/ecommerce/account/addresses"],
+    enabled: Boolean(user),
   });
 
   useEffect(() => {
@@ -188,6 +208,7 @@ export default function CheckoutPage() {
     ? checkoutSettings.store.allowedCountries
     : ["US"];
   const countryOptions = allowedCountries.map((code) => [code, getCountryLabel(code)] as const);
+  const eligibleSavedAddresses = savedAddresses.filter((address) => allowedCountries.includes(address.country));
   const regionOptions = getRegionOptions(form.country);
   const regionLabel = form.country === "CA" ? "Province / territory" : form.country === "US" ? "State" : "Region";
   const shippingQuoteKey = useMemo(() => JSON.stringify({
@@ -219,6 +240,29 @@ export default function CheckoutPage() {
       shippingRateId: "",
     }));
   }, [allowedCountries, form.country]);
+  const applySavedAddress = (address: AccountAddress) => {
+    setSelectedAddressId(address.id);
+    setForm((current) => ({
+      ...current,
+      name: address.name || current.name,
+      phone: address.phone || current.phone,
+      address: address.address,
+      line2: address.line2 ?? "",
+      city: address.city,
+      state: address.state,
+      zip: address.zipCode,
+      country: address.country,
+      shippingRateId: "",
+    }));
+    setShippingQuoted(false);
+    setShippingRates([]);
+    setIntent(null);
+  };
+  useEffect(() => {
+    if (!user || selectedAddressId !== "custom" || form.address || !eligibleSavedAddresses.length) return;
+    const defaultAddress = eligibleSavedAddresses.find((address) => address.isDefault) ?? eligibleSavedAddresses[0];
+    applySavedAddress(defaultAddress);
+  }, [eligibleSavedAddresses, form.address, selectedAddressId, user]);
   const mutation = useMutation({
     mutationFn: async () => {
       const normalizedAccountMode: CheckoutAccountMode = isGuestOnly
@@ -382,6 +426,48 @@ export default function CheckoutPage() {
                   <CheckoutTextField id="email" label="Email" type="email" value={form.email} disabled={Boolean(intent)} onChange={(email) => setForm((current) => ({ ...current, email }))} />
                   <CheckoutTextField id="name" label="Full name" value={form.name} disabled={Boolean(intent)} onChange={(name) => setForm((current) => ({ ...current, name }))} />
                   <CheckoutTextField id="phone" label="Phone" value={form.phone} required={false} disabled={Boolean(intent)} onChange={(phone) => setForm((current) => ({ ...current, phone }))} />
+                  {user && eligibleSavedAddresses.length ? (
+                    <div className="space-y-3 sm:col-span-2">
+                      <div>
+                        <Label>Delivery address</Label>
+                        <p className="text-sm text-muted-foreground">Choose a saved address or enter a different delivery address below.</p>
+                      </div>
+                      <RadioGroup
+                        value={selectedAddressId}
+                        onValueChange={(value) => {
+                          if (value === "custom") {
+                            setSelectedAddressId("custom");
+                            return;
+                          }
+                          const savedAddress = eligibleSavedAddresses.find((item) => item.id === value);
+                          if (savedAddress) applySavedAddress(savedAddress);
+                        }}
+                        className="grid gap-3 md:grid-cols-2"
+                      >
+                        {eligibleSavedAddresses.map((address) => (
+                          <label key={address.id} className="flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+                            <RadioGroupItem value={address.id} className="mt-1" disabled={Boolean(intent)} />
+                            <span>
+                              <span className="flex items-center gap-2 font-medium">
+                                <MapPin className="h-4 w-4" />
+                                {address.label}
+                              </span>
+                              <span className="block text-sm text-muted-foreground">
+                                {[address.address, address.line2, address.city, address.state, address.zipCode].filter(Boolean).join(", ")}
+                              </span>
+                            </span>
+                          </label>
+                        ))}
+                        <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+                          <RadioGroupItem value="custom" className="mt-1" disabled={Boolean(intent)} />
+                          <span>
+                            <span className="font-medium">Use a different address</span>
+                            <span className="block text-sm text-muted-foreground">Enter a one-time delivery address for this order.</span>
+                          </span>
+                        </label>
+                      </RadioGroup>
+                    </div>
+                  ) : null}
                   <div className="space-y-2">
                     <Label htmlFor="country">Country</Label>
                     <Select

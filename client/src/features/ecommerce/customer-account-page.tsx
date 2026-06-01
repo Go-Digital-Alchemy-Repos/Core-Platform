@@ -1,19 +1,21 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Home, Lock, MapPin, Package, Settings, ShieldCheck, ShoppingBag, Truck, User } from "lucide-react";
+import { ArrowLeft, Bell, Home, Lock, MapPin, Package, Pencil, Plus, ShieldCheck, ShoppingBag, Star, Trash2, Truck, User } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { formatMoney } from "./cart-store";
 import { getEcommerceOrderStatusBadge, getEcommercePaymentStatusBadge } from "./order-status-labels";
+import { COMMON_ECOMMERCE_COUNTRIES, getRegionOptions } from "@shared/ecommerce-shipping-settings";
 
 type AccountView = "dashboard" | "orders" | "order" | "profile" | "addresses" | "security" | "preferences";
 
@@ -29,6 +31,21 @@ interface AccountCustomer {
   country?: string | null;
   marketingEmailOptIn: boolean;
   orderSmsOptIn: boolean;
+}
+
+interface AccountAddress {
+  id: string;
+  label: string;
+  name?: string | null;
+  company?: string | null;
+  phone?: string | null;
+  address: string;
+  line2?: string | null;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  isDefault: boolean;
 }
 
 interface AccountOrder {
@@ -48,10 +65,25 @@ interface AccountOrder {
 
 interface AccountOverview {
   customer: AccountCustomer;
+  addresses: AccountAddress[];
   recentOrders: AccountOrder[];
   orderCount: number;
   openShipmentCount: number;
 }
+
+const emptyAddressForm = {
+  label: "Home",
+  name: "",
+  company: "",
+  phone: "",
+  address: "",
+  line2: "",
+  city: "",
+  state: "",
+  zipCode: "",
+  country: "US",
+  isDefault: false,
+};
 
 function accountPath(view: AccountView) {
   if (view === "dashboard") return "/account";
@@ -211,10 +243,12 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
   const { toast } = useToast();
   const { data: overview } = useQuery<AccountOverview>({ queryKey: ["/api/ecommerce/account"] });
   const { data: orders = [] } = useQuery<AccountOrder[]>({ queryKey: ["/api/ecommerce/account/orders"], enabled: view === "orders" });
+  const { data: savedAddresses } = useQuery<AccountAddress[]>({ queryKey: ["/api/ecommerce/account/addresses"], enabled: view === "addresses" });
   const orderId = useMemo(() => location.split("/").at(-1) ?? "", [location]);
   const customer = overview?.customer;
   const [profile, setProfile] = useState({ firstName: "", lastName: "", phone: "" });
-  const [address, setAddress] = useState({ address: "", line2: "", city: "", state: "", zipCode: "", country: "US" });
+  const [address, setAddress] = useState(emptyAddressForm);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [preferences, setPreferences] = useState({ marketingEmailOptIn: false, orderSmsOptIn: false });
 
   useEffect(() => {
@@ -222,12 +256,14 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
     const [firstName, ...rest] = customer.name.split(" ");
     setProfile({ firstName: firstName || "", lastName: rest.join(" "), phone: customer.phone ?? "" });
     setAddress({
+      ...emptyAddressForm,
       address: customer.address ?? "",
       line2: customer.line2 ?? "",
       city: customer.city ?? "",
       state: customer.state ?? "",
       zipCode: customer.zipCode ?? "",
       country: customer.country ?? "US",
+      isDefault: true,
     });
     setPreferences({
       marketingEmailOptIn: customer.marketingEmailOptIn,
@@ -236,25 +272,64 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
   }, [customer]);
 
   const saveMutation = useMutation({
-    mutationFn: async ({ path, body }: { path: string; body: unknown }) => {
-      const res = await apiRequest("PUT", path, body);
+    mutationFn: async ({ method = "PUT", path, body }: { method?: string; path: string; body?: unknown }) => {
+      const res = await apiRequest(method, path, body);
+      if (res.status === 204) return null;
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/ecommerce/account"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ecommerce/account/addresses"] });
       toast({ title: "Account updated" });
     },
   });
 
-  const submit = (path: string, body: unknown) => (event: FormEvent) => {
+  const submit = (path: string, body: unknown, method = "PUT") => (event: FormEvent) => {
     event.preventDefault();
-    saveMutation.mutate({ path, body });
+    saveMutation.mutate({ method, path, body });
+  };
+
+  const resetAddressForm = () => {
+    setEditingAddressId(null);
+    setAddress(emptyAddressForm);
+  };
+
+  const editAddress = (item: AccountAddress) => {
+    setEditingAddressId(item.id);
+    setAddress({
+      label: item.label,
+      name: item.name ?? "",
+      company: item.company ?? "",
+      phone: item.phone ?? "",
+      address: item.address,
+      line2: item.line2 ?? "",
+      city: item.city,
+      state: item.state,
+      zipCode: item.zipCode,
+      country: item.country || "US",
+      isDefault: item.isDefault,
+    });
+  };
+
+  const saveAddress = (event: FormEvent) => {
+    event.preventDefault();
+    saveMutation.mutate(
+      {
+        method: editingAddressId ? "PUT" : "POST",
+        path: editingAddressId ? `/api/ecommerce/account/addresses/${editingAddressId}` : "/api/ecommerce/account/addresses",
+        body: address,
+      },
+      { onSuccess: resetAddressForm },
+    );
   };
 
   if (!overview || !user) {
     return <AccountShell view={view}><Card><CardContent className="p-8 text-muted-foreground">Loading account...</CardContent></Card></AccountShell>;
   }
   const activeCustomer = overview.customer;
+  const addresses = savedAddresses ?? overview.addresses ?? [];
+  const addressRegionOptions = getRegionOptions(address.country);
+  const addressRegionLabel = address.country === "CA" ? "Province / territory" : address.country === "US" ? "State" : "Region";
 
   return (
     <AccountShell view={view}>
@@ -281,16 +356,96 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
       ) : null}
       {view === "addresses" ? (
         <Card>
-          <CardHeader><CardTitle>Addresses</CardTitle><CardDescription>Save the shipping address used for future orders.</CardDescription></CardHeader>
+          <CardHeader><CardTitle>Addresses</CardTitle><CardDescription>Save labeled shipping addresses and choose the default used for future orders.</CardDescription></CardHeader>
           <CardContent>
-            <form onSubmit={submit("/api/ecommerce/account/address", address)} className="grid gap-4 sm:grid-cols-2">
+            <div className="mb-6 grid gap-3">
+              {addresses.length ? addresses.map((item) => (
+                <div key={item.id} className="flex flex-col gap-4 rounded-lg border p-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold">{item.label}</p>
+                      {item.isDefault ? <Badge variant="secondary">Default</Badge> : null}
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {[item.address, item.line2, item.city, item.state, item.zipCode, item.country].filter(Boolean).join(", ")}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {!item.isDefault ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => saveMutation.mutate({ method: "POST", path: `/api/ecommerce/account/addresses/${item.id}/default` })}
+                      >
+                        <Star className="mr-2 h-4 w-4" />
+                        Make default
+                      </Button>
+                    ) : null}
+                    <Button type="button" variant="outline" size="sm" onClick={() => editAddress(item)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (window.confirm("Remove this saved address?")) {
+                          saveMutation.mutate({ method: "DELETE", path: `/api/ecommerce/account/addresses/${item.id}` });
+                        }
+                      }}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              )) : (
+                <p className="rounded-lg border p-4 text-sm text-muted-foreground">No saved addresses yet. Add one below for faster checkout.</p>
+              )}
+            </div>
+            <form onSubmit={saveAddress} className="grid gap-4 sm:grid-cols-2">
+              <div className="flex items-center gap-2 sm:col-span-2">
+                <Plus className="h-4 w-4" />
+                <h3 className="font-semibold">{editingAddressId ? "Edit address" : "Add address"}</h3>
+              </div>
+              <div className="space-y-2"><Label>Label</Label><Input value={address.label} onChange={(e) => setAddress((current) => ({ ...current, label: e.target.value }))} placeholder="Home, Work, Studio" required /></div>
+              <div className="space-y-2"><Label>Recipient name</Label><Input value={address.name} onChange={(e) => setAddress((current) => ({ ...current, name: e.target.value }))} placeholder={activeCustomer.name} /></div>
               <div className="space-y-2 sm:col-span-2"><Label>Address</Label><Input value={address.address} onChange={(e) => setAddress((current) => ({ ...current, address: e.target.value }))} required /></div>
               <div className="space-y-2"><Label>Address line 2</Label><Input value={address.line2} onChange={(e) => setAddress((current) => ({ ...current, line2: e.target.value }))} /></div>
               <div className="space-y-2"><Label>City</Label><Input value={address.city} onChange={(e) => setAddress((current) => ({ ...current, city: e.target.value }))} required /></div>
-              <div className="space-y-2"><Label>State</Label><Input value={address.state} onChange={(e) => setAddress((current) => ({ ...current, state: e.target.value }))} required /></div>
+              <div className="space-y-2">
+                <Label>{addressRegionLabel}</Label>
+                {addressRegionOptions.length ? (
+                  <Select value={address.state} onValueChange={(state) => setAddress((current) => ({ ...current, state }))}>
+                    <SelectTrigger><SelectValue placeholder={`Select ${addressRegionLabel.toLowerCase()}`} /></SelectTrigger>
+                    <SelectContent>
+                      {addressRegionOptions.map(([code, name]) => (
+                        <SelectItem key={code} value={code}>{name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={address.state} onChange={(e) => setAddress((current) => ({ ...current, state: e.target.value }))} required />
+                )}
+              </div>
               <div className="space-y-2"><Label>ZIP</Label><Input value={address.zipCode} onChange={(e) => setAddress((current) => ({ ...current, zipCode: e.target.value }))} required /></div>
-              <div className="space-y-2"><Label>Country</Label><Input value={address.country} onChange={(e) => setAddress((current) => ({ ...current, country: e.target.value }))} required /></div>
-              <Button type="submit" className="w-fit">Save address</Button>
+              <div className="space-y-2">
+                <Label>Country</Label>
+                <Select value={address.country} onValueChange={(country) => setAddress((current) => ({ ...current, country, state: "" }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {COMMON_ECOMMERCE_COUNTRIES.map(([code, name]) => (
+                      <SelectItem key={code} value={code}>{name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-wrap gap-2 sm:col-span-2">
+                <Button type="submit" className="w-fit" disabled={saveMutation.isPending}>{editingAddressId ? "Save changes" : "Add address"}</Button>
+                {editingAddressId ? <Button type="button" variant="outline" onClick={resetAddressForm}>Cancel</Button> : null}
+              </div>
             </form>
           </CardContent>
         </Card>

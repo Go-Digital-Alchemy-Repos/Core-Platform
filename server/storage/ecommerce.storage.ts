@@ -6,6 +6,7 @@ import {
   ecommerceCategories,
   ecommerceCouponRedemptions,
   ecommerceCoupons,
+  ecommerceCustomerAddresses,
   ecommerceCustomers,
   ecommerceFulfillmentItems,
   ecommerceFulfillmentLocations,
@@ -25,6 +26,7 @@ import {
   ecommerceShippingZones,
   type EcommerceCategory,
   type EcommerceCoupon,
+  type EcommerceCustomerAddress,
   type EcommerceCustomer,
   type EcommerceFulfillment,
   type EcommerceFulfillmentItem,
@@ -41,6 +43,7 @@ import {
   type EcommerceShippingZone,
   type InsertEcommerceCategory,
   type InsertEcommerceCoupon,
+  type InsertEcommerceCustomerAddress,
   type InsertEcommerceCustomer,
   type InsertEcommerceFulfillment,
   type InsertEcommerceFulfillmentItem,
@@ -351,6 +354,188 @@ export class EcommerceStorage {
       .where(eq(ecommerceCustomers.id, id))
       .returning();
     return customer;
+  }
+
+  async getCustomerAddresses(customerId: string): Promise<EcommerceCustomerAddress[]> {
+    return db
+      .select()
+      .from(ecommerceCustomerAddresses)
+      .where(and(eq(ecommerceCustomerAddresses.customerId, customerId), isNull(ecommerceCustomerAddresses.archivedAt)))
+      .orderBy(desc(ecommerceCustomerAddresses.isDefault), desc(ecommerceCustomerAddresses.updatedAt));
+  }
+
+  async getCustomerAddress(customerId: string, addressId: string): Promise<EcommerceCustomerAddress | undefined> {
+    const [address] = await db
+      .select()
+      .from(ecommerceCustomerAddresses)
+      .where(and(
+        eq(ecommerceCustomerAddresses.customerId, customerId),
+        eq(ecommerceCustomerAddresses.id, addressId),
+        isNull(ecommerceCustomerAddresses.archivedAt),
+      ))
+      .limit(1);
+    return address;
+  }
+
+  async createCustomerAddress(data: InsertEcommerceCustomerAddress): Promise<EcommerceCustomerAddress> {
+    return db.transaction(async (tx) => {
+      const existingActiveAddresses = await tx
+        .select({ id: ecommerceCustomerAddresses.id })
+        .from(ecommerceCustomerAddresses)
+        .where(and(eq(ecommerceCustomerAddresses.customerId, data.customerId), isNull(ecommerceCustomerAddresses.archivedAt)))
+        .limit(1);
+      const shouldBeDefault = data.isDefault === true || existingActiveAddresses.length === 0;
+      if (shouldBeDefault) {
+        await tx
+          .update(ecommerceCustomerAddresses)
+          .set({ isDefault: false, updatedAt: new Date() })
+          .where(eq(ecommerceCustomerAddresses.customerId, data.customerId));
+      }
+      const [address] = await tx
+        .insert(ecommerceCustomerAddresses)
+        .values({ ...data, isDefault: shouldBeDefault })
+        .returning();
+      if (address.isDefault) {
+        await tx.update(ecommerceCustomers).set({
+          address: address.address,
+          line2: address.line2,
+          city: address.city,
+          state: address.state,
+          zipCode: address.zipCode,
+          country: address.country,
+          updatedAt: new Date(),
+        }).where(eq(ecommerceCustomers.id, address.customerId));
+      }
+      return address;
+    });
+  }
+
+  async updateCustomerAddress(
+    customerId: string,
+    addressId: string,
+    data: Partial<InsertEcommerceCustomerAddress>,
+  ): Promise<EcommerceCustomerAddress | undefined> {
+    return db.transaction(async (tx) => {
+      if (data.isDefault === true) {
+        await tx
+          .update(ecommerceCustomerAddresses)
+          .set({ isDefault: false, updatedAt: new Date() })
+          .where(eq(ecommerceCustomerAddresses.customerId, customerId));
+      }
+      const [address] = await tx
+        .update(ecommerceCustomerAddresses)
+        .set({ ...data, customerId, updatedAt: new Date() } as Partial<typeof ecommerceCustomerAddresses.$inferInsert>)
+        .where(and(
+          eq(ecommerceCustomerAddresses.customerId, customerId),
+          eq(ecommerceCustomerAddresses.id, addressId),
+          isNull(ecommerceCustomerAddresses.archivedAt),
+        ))
+        .returning();
+      if (address?.isDefault) {
+        await tx.update(ecommerceCustomers).set({
+          address: address.address,
+          line2: address.line2,
+          city: address.city,
+          state: address.state,
+          zipCode: address.zipCode,
+          country: address.country,
+          updatedAt: new Date(),
+        }).where(eq(ecommerceCustomers.id, customerId));
+      }
+      return address;
+    });
+  }
+
+  async deleteCustomerAddress(customerId: string, addressId: string): Promise<EcommerceCustomerAddress | undefined> {
+    return db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(ecommerceCustomerAddresses)
+        .where(and(
+          eq(ecommerceCustomerAddresses.customerId, customerId),
+          eq(ecommerceCustomerAddresses.id, addressId),
+          isNull(ecommerceCustomerAddresses.archivedAt),
+        ))
+        .limit(1);
+      if (!existing) return undefined;
+      const [archived] = await tx
+        .update(ecommerceCustomerAddresses)
+        .set({ archivedAt: new Date(), isDefault: false, updatedAt: new Date() })
+        .where(and(
+          eq(ecommerceCustomerAddresses.customerId, customerId),
+          eq(ecommerceCustomerAddresses.id, addressId),
+          isNull(ecommerceCustomerAddresses.archivedAt),
+        ))
+        .returning();
+      if (existing.isDefault) {
+        const [fallback] = await tx
+          .select()
+          .from(ecommerceCustomerAddresses)
+          .where(and(eq(ecommerceCustomerAddresses.customerId, customerId), isNull(ecommerceCustomerAddresses.archivedAt)))
+          .orderBy(desc(ecommerceCustomerAddresses.updatedAt))
+          .limit(1);
+        if (fallback) {
+          await tx
+            .update(ecommerceCustomerAddresses)
+            .set({ isDefault: true, updatedAt: new Date() })
+            .where(eq(ecommerceCustomerAddresses.id, fallback.id));
+          await tx.update(ecommerceCustomers).set({
+            address: fallback.address,
+            line2: fallback.line2,
+            city: fallback.city,
+            state: fallback.state,
+            zipCode: fallback.zipCode,
+            country: fallback.country,
+            updatedAt: new Date(),
+          }).where(eq(ecommerceCustomers.id, customerId));
+        } else {
+          await tx.update(ecommerceCustomers).set({
+            address: null,
+            line2: null,
+            city: null,
+            state: null,
+            zipCode: null,
+            country: "US",
+            updatedAt: new Date(),
+          }).where(eq(ecommerceCustomers.id, customerId));
+        }
+      }
+      return archived;
+    });
+  }
+
+  async setDefaultCustomerAddress(customerId: string, addressId: string): Promise<EcommerceCustomerAddress | undefined> {
+    return db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(ecommerceCustomerAddresses)
+        .where(and(
+          eq(ecommerceCustomerAddresses.customerId, customerId),
+          eq(ecommerceCustomerAddresses.id, addressId),
+          isNull(ecommerceCustomerAddresses.archivedAt),
+        ))
+        .limit(1);
+      if (!existing) return undefined;
+      await tx
+        .update(ecommerceCustomerAddresses)
+        .set({ isDefault: false, updatedAt: new Date() })
+        .where(eq(ecommerceCustomerAddresses.customerId, customerId));
+      const [address] = await tx
+        .update(ecommerceCustomerAddresses)
+        .set({ isDefault: true, updatedAt: new Date() })
+        .where(eq(ecommerceCustomerAddresses.id, addressId))
+        .returning();
+      await tx.update(ecommerceCustomers).set({
+        address: address.address,
+        line2: address.line2,
+        city: address.city,
+        state: address.state,
+        zipCode: address.zipCode,
+        country: address.country,
+        updatedAt: new Date(),
+      }).where(eq(ecommerceCustomers.id, customerId));
+      return address;
+    });
   }
 
   async getCoupons(options: { includeArchived?: boolean; search?: string } = {}): Promise<EcommerceCoupon[]> {

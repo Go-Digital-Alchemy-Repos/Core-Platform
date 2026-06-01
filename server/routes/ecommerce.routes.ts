@@ -42,12 +42,17 @@ const accountProfileSchema = z.object({
 });
 
 const accountAddressSchema = z.object({
+  label: z.string().trim().min(1).max(80).default("Home"),
+  name: z.string().trim().max(160).optional(),
+  company: z.string().trim().max(160).optional(),
+  phone: z.string().trim().max(40).optional(),
   address: z.string().trim().min(1).max(240),
   line2: z.string().trim().max(240).optional(),
   city: z.string().trim().min(1).max(160),
   state: z.string().trim().min(1).max(160),
   zipCode: z.string().trim().min(1).max(40),
-  country: z.string().trim().min(1).max(80).default("US"),
+  country: z.string().trim().length(2).default("US").transform((value) => value.toUpperCase()),
+  isDefault: z.boolean().default(false),
 });
 
 const accountPreferencesSchema = z.object({
@@ -80,6 +85,23 @@ function toAccountCustomer(customer: Awaited<ReturnType<typeof getOrCreateSigned
     country: customer.country,
     marketingEmailOptIn: customer.marketingEmailOptIn,
     orderSmsOptIn: customer.orderSmsOptIn,
+  };
+}
+
+function toAccountAddress(address: Awaited<ReturnType<typeof storage.ecommerce.createCustomerAddress>>) {
+  return {
+    id: address.id,
+    label: address.label,
+    name: address.name,
+    company: address.company,
+    phone: address.phone,
+    address: address.address,
+    line2: address.line2,
+    city: address.city,
+    state: address.state,
+    zipCode: address.zipCode,
+    country: address.country,
+    isDefault: address.isDefault,
   };
 }
 
@@ -238,6 +260,7 @@ router.get(
     const orders = await storage.ecommerce.getOrdersForCustomer(customer.id);
     res.json({
       customer: toAccountCustomer(customer),
+      addresses: (await storage.ecommerce.getCustomerAddresses(customer.id)).map(toAccountAddress),
       recentOrders: orders.slice(0, 5).map(toPublicEcommerceOrderStatus),
       orderCount: orders.length,
       openShipmentCount: orders.filter((order) => !["delivered", "cancelled"].includes(order.status)).length,
@@ -267,6 +290,64 @@ router.get(
   }),
 );
 
+router.get(
+  "/account/addresses",
+  asyncHandler(async (req, res) => {
+    const customer = await getOrCreateSignedInCustomer(req.user!);
+    res.json((await storage.ecommerce.getCustomerAddresses(customer.id)).map(toAccountAddress));
+  }),
+);
+
+router.post(
+  "/account/addresses",
+  validateBody(accountAddressSchema),
+  asyncHandler(async (req, res) => {
+    const customer = await getOrCreateSignedInCustomer(req.user!);
+    const address = await storage.ecommerce.createCustomerAddress({ ...req.body, customerId: customer.id });
+    res.status(201).json(toAccountAddress(address));
+  }),
+);
+
+router.put(
+  "/account/addresses/:id",
+  validateBody(accountAddressSchema),
+  asyncHandler(async (req, res) => {
+    const customer = await getOrCreateSignedInCustomer(req.user!);
+    const address = await storage.ecommerce.updateCustomerAddress(customer.id, paramString(req.params.id), req.body);
+    if (!address) {
+      res.status(404).json({ message: "Address not found" });
+      return;
+    }
+    res.json(toAccountAddress(address));
+  }),
+);
+
+router.delete(
+  "/account/addresses/:id",
+  asyncHandler(async (req, res) => {
+    const customer = await getOrCreateSignedInCustomer(req.user!);
+    const address = await storage.ecommerce.deleteCustomerAddress(customer.id, paramString(req.params.id));
+    if (!address) {
+      res.status(404).json({ message: "Address not found" });
+      return;
+    }
+    res.status(204).end();
+  }),
+);
+
+router.post(
+  "/account/addresses/:id/default",
+  asyncHandler(async (req, res) => {
+    const customer = await getOrCreateSignedInCustomer(req.user!);
+    const address = await storage.ecommerce.setDefaultCustomerAddress(customer.id, paramString(req.params.id));
+    if (!address) {
+      res.status(404).json({ message: "Address not found" });
+      return;
+    }
+    res.json(toAccountAddress(address));
+  }),
+);
+
 router.put(
   "/account/profile",
   validateBody(accountProfileSchema),
@@ -290,7 +371,21 @@ router.put(
   validateBody(accountAddressSchema),
   asyncHandler(async (req, res) => {
     const customer = await getOrCreateSignedInCustomer(req.user!);
-    const updated = await storage.ecommerce.updateCustomer(customer.id, req.body);
+    const customerAddress = {
+      address: req.body.address,
+      line2: req.body.line2,
+      city: req.body.city,
+      state: req.body.state,
+      zipCode: req.body.zipCode,
+      country: req.body.country,
+    };
+    const updated = await storage.ecommerce.updateCustomer(customer.id, customerAddress);
+    const [defaultAddress] = await storage.ecommerce.getCustomerAddresses(customer.id);
+    if (defaultAddress) {
+      await storage.ecommerce.updateCustomerAddress(customer.id, defaultAddress.id, { ...req.body, isDefault: true });
+    } else {
+      await storage.ecommerce.createCustomerAddress({ ...req.body, customerId: customer.id, isDefault: true });
+    }
     res.json(toAccountCustomer(updated ?? customer));
   }),
 );
