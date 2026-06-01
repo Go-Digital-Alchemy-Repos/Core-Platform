@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { storage } from "../storage/index";
 import { asyncHandler } from "../middleware/error-handler";
 import { validateBody } from "../middleware/validation";
@@ -17,13 +18,69 @@ import { checkoutSchema, createEcommercePaymentIntent } from "../services/ecomme
 import { ecommerceOrderStatusLookupSchema } from "../services/ecommerce-order-lookup.service";
 import { getPublicProductCategories, toPublicEcommerceProduct } from "../services/ecommerce-public-product.service";
 import { toPublicEcommerceOrderStatus } from "../services/ecommerce-public-order.service";
+import { getEcommerceCustomerAccountSettings } from "../services/ecommerce-customer-account.service";
+import { sendEcommerceOrderStatusLinkEmail } from "../services/ecommerce-email.service";
 import { getEcommerceStripePublishableKey, getEcommerceStripeMode } from "../services/ecommerce-stripe.service";
 import { requireEcommerceEnabled } from "../middleware/site-features";
+import { authenticateToken, generateToken, optionalAuth, requireRole, setTokenCookie } from "../middleware/auth";
 import { ecommerceCheckoutLimiter, ecommerceOrderLookupLimiter, ecommercePricingLimiter, noStorePrivateResponse } from "../middleware/security";
 
 const router = Router();
 
 router.use(requireEcommerceEnabled);
+
+const orderStatusLinkSchema = z.object({
+  orderId: z.string().trim().min(1).max(128),
+  email: z.string().trim().email().max(254),
+});
+
+const accountProfileSchema = z.object({
+  firstName: z.string().trim().min(1).max(160),
+  lastName: z.string().trim().max(160).optional().default(""),
+  phone: z.string().trim().max(40).optional(),
+});
+
+const accountAddressSchema = z.object({
+  address: z.string().trim().min(1).max(240),
+  line2: z.string().trim().max(240).optional(),
+  city: z.string().trim().min(1).max(160),
+  state: z.string().trim().min(1).max(160),
+  zipCode: z.string().trim().min(1).max(40),
+  country: z.string().trim().min(1).max(80).default("US"),
+});
+
+const accountPreferencesSchema = z.object({
+  marketingEmailOptIn: z.boolean().default(false),
+  orderSmsOptIn: z.boolean().default(false),
+});
+
+async function getOrCreateSignedInCustomer(user: NonNullable<Express.Request["user"]>) {
+  const existing = await storage.ecommerce.getCustomerByUserId(user.id);
+  if (existing) return existing;
+  const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || user.email;
+  return storage.ecommerce.findOrCreateCustomer({
+    userId: user.id,
+    email: user.email,
+    name: displayName,
+  });
+}
+
+function toAccountCustomer(customer: Awaited<ReturnType<typeof getOrCreateSignedInCustomer>>) {
+  return {
+    id: customer.id,
+    email: customer.email,
+    name: customer.name,
+    phone: customer.phone,
+    address: customer.address,
+    line2: customer.line2,
+    city: customer.city,
+    state: customer.state,
+    zipCode: customer.zipCode,
+    country: customer.country,
+    marketingEmailOptIn: customer.marketingEmailOptIn,
+    orderSmsOptIn: customer.orderSmsOptIn,
+  };
+}
 
 router.get(
   "/products",
@@ -73,6 +130,14 @@ router.get(
   }),
 );
 
+router.get(
+  "/checkout/settings",
+  noStorePrivateResponse,
+  asyncHandler(async (_req, res) => {
+    res.json(await getEcommerceCustomerAccountSettings());
+  }),
+);
+
 router.post(
   "/cart/price",
   ecommercePricingLimiter,
@@ -117,10 +182,30 @@ router.post(
 router.post(
   "/checkout/payment-intent",
   ecommerceCheckoutLimiter,
+  optionalAuth,
   noStorePrivateResponse,
   validateBody(checkoutSchema),
   asyncHandler(async (req, res) => {
-    res.status(201).json(await createEcommercePaymentIntent(req.body, { ip: req.ip }));
+    const result = await createEcommercePaymentIntent(req.body, { ip: req.ip, user: req.user ?? null });
+    if (result.accountUser) {
+      setTokenCookie(res, generateToken(result.accountUser));
+    }
+    const { accountUser: _accountUser, ...payload } = result;
+    res.status(201).json(payload);
+  }),
+);
+
+router.post(
+  "/orders/status-link",
+  ecommerceOrderLookupLimiter,
+  noStorePrivateResponse,
+  validateBody(orderStatusLinkSchema),
+  asyncHandler(async (req, res) => {
+    const details = await storage.ecommerce.getOrderWithDetails(req.body.orderId);
+    if (details && details.customer?.email.trim().toLowerCase() === req.body.email.trim().toLowerCase()) {
+      await sendEcommerceOrderStatusLinkEmail(details);
+    }
+    res.json({ message: "If that order matches this email, a secure status link has been sent." });
   }),
 );
 
@@ -136,6 +221,82 @@ router.post(
       return;
     }
     res.json(toPublicEcommerceOrderStatus(order));
+  }),
+);
+
+router.use("/account", authenticateToken, requireRole("client"), noStorePrivateResponse);
+
+router.get(
+  "/account",
+  asyncHandler(async (req, res) => {
+    const customer = await getOrCreateSignedInCustomer(req.user!);
+    const orders = await storage.ecommerce.getOrdersForCustomer(customer.id);
+    res.json({
+      customer: toAccountCustomer(customer),
+      recentOrders: orders.slice(0, 5).map(toPublicEcommerceOrderStatus),
+      orderCount: orders.length,
+      openShipmentCount: orders.filter((order) => !["delivered", "cancelled"].includes(order.status)).length,
+    });
+  }),
+);
+
+router.get(
+  "/account/orders",
+  asyncHandler(async (req, res) => {
+    const customer = await getOrCreateSignedInCustomer(req.user!);
+    const orders = await storage.ecommerce.getOrdersForCustomer(customer.id);
+    res.json(orders.map(toPublicEcommerceOrderStatus));
+  }),
+);
+
+router.get(
+  "/account/orders/:id",
+  asyncHandler(async (req, res) => {
+    const customer = await getOrCreateSignedInCustomer(req.user!);
+    const order = await storage.ecommerce.getOrderWithDetails(paramString(req.params.id));
+    if (!order || order.customerId !== customer.id) {
+      res.status(404).json({ message: "Order not found" });
+      return;
+    }
+    res.json(toPublicEcommerceOrderStatus(order));
+  }),
+);
+
+router.put(
+  "/account/profile",
+  validateBody(accountProfileSchema),
+  asyncHandler(async (req, res) => {
+    const customer = await getOrCreateSignedInCustomer(req.user!);
+    const name = [req.body.firstName, req.body.lastName].filter(Boolean).join(" ").trim();
+    await storage.users.updateUser(req.user!.id, {
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+    });
+    const updated = await storage.ecommerce.updateCustomer(customer.id, {
+      name,
+      phone: req.body.phone,
+    });
+    res.json(toAccountCustomer(updated ?? customer));
+  }),
+);
+
+router.put(
+  "/account/address",
+  validateBody(accountAddressSchema),
+  asyncHandler(async (req, res) => {
+    const customer = await getOrCreateSignedInCustomer(req.user!);
+    const updated = await storage.ecommerce.updateCustomer(customer.id, req.body);
+    res.json(toAccountCustomer(updated ?? customer));
+  }),
+);
+
+router.put(
+  "/account/preferences",
+  validateBody(accountPreferencesSchema),
+  asyncHandler(async (req, res) => {
+    const customer = await getOrCreateSignedInCustomer(req.user!);
+    const updated = await storage.ecommerce.updateCustomer(customer.id, req.body);
+    res.json(toAccountCustomer(updated ?? customer));
   }),
 );
 

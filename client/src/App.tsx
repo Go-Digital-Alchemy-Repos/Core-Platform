@@ -83,6 +83,7 @@ const CartPage = lazy(() => import("@/features/ecommerce/cart-page"));
 const CheckoutPage = lazy(() => import("@/features/ecommerce/checkout-page"));
 const OrderSuccessPage = lazy(() => import("@/features/ecommerce/order-success-page"));
 const OrderStatusPage = lazy(() => import("@/features/ecommerce/order-status-page"));
+const CustomerAccountPage = lazy(() => import("@/features/ecommerce/customer-account-page"));
 const AdminEcommercePage = lazy(() => import("@/features/admin/ecommerce/ecommerce-page"));
 
 function PageLoader() {
@@ -175,6 +176,55 @@ function Router() {
         <Route path="/checkout" component={() => siteFeatures.ecommerceEnabled ? <CheckoutPage /> : <NotFound />} />
         <Route path="/order-success" component={() => siteFeatures.ecommerceEnabled ? <OrderSuccessPage /> : <NotFound />} />
         <Route path="/orders/status" component={() => siteFeatures.ecommerceEnabled ? <OrderStatusPage /> : <NotFound />} />
+        <Route path="/account">
+          {siteFeatures.ecommerceEnabled ? (
+            <ProtectedRoute roles={["client"]}>
+              <CustomerAccountPage view="dashboard" />
+            </ProtectedRoute>
+          ) : <NotFound />}
+        </Route>
+        <Route path="/account/orders">
+          {siteFeatures.ecommerceEnabled ? (
+            <ProtectedRoute roles={["client"]}>
+              <CustomerAccountPage view="orders" />
+            </ProtectedRoute>
+          ) : <NotFound />}
+        </Route>
+        <Route path="/account/orders/:id">
+          {siteFeatures.ecommerceEnabled ? (
+            <ProtectedRoute roles={["client"]}>
+              <CustomerAccountPage view="order" />
+            </ProtectedRoute>
+          ) : <NotFound />}
+        </Route>
+        <Route path="/account/profile">
+          {siteFeatures.ecommerceEnabled ? (
+            <ProtectedRoute roles={["client"]}>
+              <CustomerAccountPage view="profile" />
+            </ProtectedRoute>
+          ) : <NotFound />}
+        </Route>
+        <Route path="/account/addresses">
+          {siteFeatures.ecommerceEnabled ? (
+            <ProtectedRoute roles={["client"]}>
+              <CustomerAccountPage view="addresses" />
+            </ProtectedRoute>
+          ) : <NotFound />}
+        </Route>
+        <Route path="/account/security">
+          {siteFeatures.ecommerceEnabled ? (
+            <ProtectedRoute roles={["client"]}>
+              <CustomerAccountPage view="security" />
+            </ProtectedRoute>
+          ) : <NotFound />}
+        </Route>
+        <Route path="/account/preferences">
+          {siteFeatures.ecommerceEnabled ? (
+            <ProtectedRoute roles={["client"]}>
+              <CustomerAccountPage view="preferences" />
+            </ProtectedRoute>
+          ) : <NotFound />}
+        </Route>
         <Route path="/insights" component={() => siteFeatures.blogEnabled ? <CmsHybridPage slug="insights" fallback={<InsightsPage />} enabled={siteFeatures.cmsEnabled} /> : <NotFound />} />
         <Route path="/insights/:slug" component={() => siteFeatures.blogEnabled ? <InsightsPostPage /> : <NotFound />} />
         <Route path="/directory" component={() => siteFeatures.directoryEnabled ? <CmsHybridPage slug="directory" fallback={<DirectoryPage />} enabled={siteFeatures.cmsEnabled} /> : <NotFound />} />

@@ -13,7 +13,10 @@ import {
   sendEcommerceOrderConfirmation,
   sendEcommerceOrderStatusEmail,
 } from "./ecommerce-email.service";
+import { getEcommerceCustomerAccountSettings } from "./ecommerce-customer-account.service";
 import { logger } from "../utils/logger";
+import { hashPassword } from "../middleware/auth";
+import type { User } from "@shared/schema";
 
 const MAX_CHECKOUT_TEXT_LENGTH = 160;
 const MAX_CHECKOUT_ADDRESS_LENGTH = 240;
@@ -40,6 +43,10 @@ export const checkoutSchema = priceCartSchema.extend({
   shippingAddress: addressSchema,
   billingSameAsShipping: z.boolean().default(true),
   billingAddress: addressSchema.optional(),
+  account: z.object({
+    mode: z.enum(["guest", "create_account"]).default("guest"),
+    password: z.string().min(8).max(128).optional(),
+  }).optional(),
   metaTracking: z.object({
     marketingConsentGranted: z.boolean().optional(),
     fbp: z.string().trim().max(MAX_CHECKOUT_TEXT_LENGTH).optional(),
@@ -76,6 +83,12 @@ const fulfillmentCompleteStatuses = new Set(["shipped", "delivered"]);
 
 function httpError(message: string, statusCode: number) {
   return Object.assign(new Error(message), { statusCode });
+}
+
+function splitCustomerName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return { firstName: parts[0] || "Customer", lastName: "" };
+  return { firstName: parts.slice(0, -1).join(" "), lastName: parts.at(-1) ?? "" };
 }
 
 function assertAdminOrderStatusTransition(
@@ -124,8 +137,39 @@ function pricedLinesToOrderItems(lines: PricedCartLine[]) {
   }));
 }
 
-export async function createEcommercePaymentIntent(input: unknown, requestMeta: { ip?: string | null } = {}) {
+export async function createEcommercePaymentIntent(
+  input: unknown,
+  requestMeta: { ip?: string | null; user?: User | null } = {},
+) {
   const data = checkoutSchema.parse(input);
+  const accountSettings = await getEcommerceCustomerAccountSettings();
+  const requestedAccountMode = data.account?.mode ?? "guest";
+  const checkoutEmail = data.customer.email.trim().toLowerCase();
+  const authenticatedUser = requestMeta.user?.role === "client" ? requestMeta.user : null;
+  let accountUser = authenticatedUser;
+  let accountCreated = false;
+  let accountNameParts: { firstName: string; lastName: string } | null = null;
+
+  if (accountSettings.customerAccountMode === "guest_only" && requestedAccountMode === "create_account") {
+    throw httpError("Customer accounts are disabled for this store.", 400);
+  }
+  if (accountSettings.customerAccountMode === "required" && !authenticatedUser && requestedAccountMode !== "create_account") {
+    throw httpError("Create or sign in to an account before checkout.", 400);
+  }
+  if (authenticatedUser && authenticatedUser.email.trim().toLowerCase() !== checkoutEmail) {
+    throw httpError("Use the email address attached to your signed-in account.", 400);
+  }
+  if (!authenticatedUser && requestedAccountMode === "create_account") {
+    if (!data.account?.password) {
+      throw httpError("Password is required to create an account.", 400);
+    }
+    const existingUser = await storage.users.getUserByEmail(checkoutEmail);
+    if (existingUser) {
+      throw httpError("An account already exists for this email. Sign in or reset your password to continue.", 409);
+    }
+    accountNameParts = splitCustomerName(data.customer.name);
+  }
+
   const shippingAddress = {
     country: data.shippingAddress.country,
     state: data.shippingAddress.state,
@@ -147,7 +191,18 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
   if (priced.totalAmount <= 0) throw httpError("Order total must be greater than zero", 400);
 
   const stripe = await getEcommerceStripeClient();
+  if (accountNameParts && data.account?.password) {
+    accountUser = await storage.users.createUser({
+      email: checkoutEmail,
+      password: await hashPassword(data.account.password),
+      firstName: accountNameParts.firstName,
+      lastName: accountNameParts.lastName,
+      role: "client",
+    });
+    accountCreated = true;
+  }
   const customer = await storage.ecommerce.findOrCreateCustomer({
+    userId: accountUser?.id,
     email: data.customer.email,
     name: data.customer.name,
     phone: data.customer.phone,
@@ -259,6 +314,8 @@ export async function createEcommercePaymentIntent(input: unknown, requestMeta: 
     orderId: order.id,
     lookupToken: order.lookupToken,
     priced: toPublicPricedCart(priced),
+    accountCreated,
+    accountUser: accountCreated ? accountUser : null,
   };
 }
 

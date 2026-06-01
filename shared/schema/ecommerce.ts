@@ -259,6 +259,8 @@ export const ecommerceCustomers = pgTable("ecommerce_customers", {
   country: text("country").default("US"),
   avatarUrl: text("avatar_url"),
   isDisabled: boolean("is_disabled").notNull().default(false),
+  marketingEmailOptIn: boolean("marketing_email_opt_in").notNull().default(false),
+  orderSmsOptIn: boolean("order_sms_opt_in").notNull().default(false),
   passwordHash: text("password_hash"),
   sessionInvalidatedAt: timestamp("session_invalidated_at"),
   mergedIntoCustomerId: varchar("merged_into_customer_id"),

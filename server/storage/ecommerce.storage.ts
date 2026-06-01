@@ -301,6 +301,9 @@ export class EcommerceStorage {
 
   async findOrCreateCustomer(data: InsertEcommerceCustomer): Promise<EcommerceCustomer> {
     const normalizedEmail = data.email.trim().toLowerCase();
+    const updateData = Object.fromEntries(
+      Object.entries(data).filter(([, value]) => value !== undefined),
+    ) as Partial<InsertEcommerceCustomer>;
     const [existing] = await db
       .select()
       .from(ecommerceCustomers)
@@ -309,7 +312,7 @@ export class EcommerceStorage {
     if (existing) {
       const [updated] = await db
         .update(ecommerceCustomers)
-        .set({ ...data, email: normalizedEmail, updatedAt: new Date() })
+        .set({ ...updateData, email: normalizedEmail, updatedAt: new Date() })
         .where(eq(ecommerceCustomers.id, existing.id))
         .returning();
       return updated;
@@ -318,8 +321,35 @@ export class EcommerceStorage {
     return customer;
   }
 
+  async getCustomerByEmail(email: string): Promise<EcommerceCustomer | undefined> {
+    const [customer] = await db
+      .select()
+      .from(ecommerceCustomers)
+      .where(eq(ecommerceCustomers.email, email.trim().toLowerCase()))
+      .limit(1);
+    return customer;
+  }
+
+  async getCustomerByUserId(userId: string): Promise<EcommerceCustomer | undefined> {
+    const [customer] = await db
+      .select()
+      .from(ecommerceCustomers)
+      .where(eq(ecommerceCustomers.userId, userId))
+      .limit(1);
+    return customer;
+  }
+
   async getCustomer(id: string): Promise<EcommerceCustomer | undefined> {
     const [customer] = await db.select().from(ecommerceCustomers).where(eq(ecommerceCustomers.id, id));
+    return customer;
+  }
+
+  async updateCustomer(id: string, data: Partial<InsertEcommerceCustomer>): Promise<EcommerceCustomer | undefined> {
+    const [customer] = await db
+      .update(ecommerceCustomers)
+      .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommerceCustomers.$inferInsert>)
+      .where(eq(ecommerceCustomers.id, id))
+      .returning();
     return customer;
   }
 
@@ -498,6 +528,17 @@ export class EcommerceStorage {
 
   async getOrders(): Promise<EcommerceOrderWithDetails[]> {
     const orders = await db.select().from(ecommerceOrders).orderBy(desc(ecommerceOrders.createdAt));
+    return Promise.all(orders.map((order) => this.getOrderWithDetails(order.id))).then((rows) =>
+      rows.filter((row): row is EcommerceOrderWithDetails => Boolean(row)),
+    );
+  }
+
+  async getOrdersForCustomer(customerId: string): Promise<EcommerceOrderWithDetails[]> {
+    const orders = await db
+      .select()
+      .from(ecommerceOrders)
+      .where(eq(ecommerceOrders.customerId, customerId))
+      .orderBy(desc(ecommerceOrders.createdAt));
     return Promise.all(orders.map((order) => this.getOrderWithDetails(order.id))).then((rows) =>
       rows.filter((row): row is EcommerceOrderWithDetails => Boolean(row)),
     );

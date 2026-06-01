@@ -23,6 +23,7 @@ import {
   Trash2,
   Truck,
   Undo2,
+  UserPlus,
 } from "lucide-react";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
 import { Button } from "@/components/ui/button";
@@ -263,6 +264,12 @@ interface TaxSettingsStatus {
   manualRateBps: number;
   taxShipping: boolean;
   stripeTaxEnabled: boolean;
+}
+
+type CustomerAccountMode = "optional" | "required" | "guest_only";
+
+interface CustomerAccountSettingsStatus {
+  customerAccountMode: CustomerAccountMode;
 }
 
 function OrderTableRow({ order, selected, onSelect }: { order: Order; selected: boolean; onSelect: () => void }) {
@@ -2573,6 +2580,7 @@ function IntegrationsTab() {
 function SettingsTab() {
   const { data } = useQuery<StripeSettingsStatus>({ queryKey: ["/api/admin/ecommerce/settings/stripe"] });
   const { data: taxData } = useQuery<TaxSettingsStatus>({ queryKey: ["/api/admin/ecommerce/settings/tax"] });
+  const { data: customerAccountData } = useQuery<CustomerAccountSettingsStatus>({ queryKey: ["/api/admin/ecommerce/settings/customer-accounts"] });
   const { toast } = useToast();
   const [activeMode, setActiveMode] = useState("test");
   const [testPublishableKey, setTestPublishableKey] = useState("");
@@ -2585,6 +2593,7 @@ function SettingsTab() {
   const [manualRate, setManualRate] = useState("");
   const [taxShipping, setTaxShipping] = useState(false);
   const [stripeTaxEnabled, setStripeTaxEnabled] = useState(false);
+  const [customerAccountMode, setCustomerAccountMode] = useState<CustomerAccountMode>("optional");
   useEffect(() => {
     if (data) {
       setActiveMode(data.activeMode || "test");
@@ -2600,6 +2609,11 @@ function SettingsTab() {
       setStripeTaxEnabled(taxData.stripeTaxEnabled);
     }
   }, [taxData]);
+  useEffect(() => {
+    if (customerAccountData) {
+      setCustomerAccountMode(customerAccountData.customerAccountMode);
+    }
+  }, [customerAccountData]);
   const mutation = useMutation({
     mutationFn: async () => apiRequest("PUT", "/api/admin/ecommerce/settings/stripe", {
       activeMode,
@@ -2627,8 +2641,42 @@ function SettingsTab() {
       toast({ title: "Tax settings saved" });
     },
   });
+  const customerAccountMutation = useMutation({
+    mutationFn: async () => apiRequest("PUT", "/api/admin/ecommerce/settings/customer-accounts", {
+      customerAccountMode,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/settings/customer-accounts"] });
+      toast({ title: "Customer account settings saved" });
+    },
+  });
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-blue-600" /> Customer accounts</CardTitle>
+          <CardDescription>Choose whether buyers can check out as guests, create accounts, or must sign in before payment.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="space-y-2">
+            <Label>Checkout account mode</Label>
+            <Select value={customerAccountMode} onValueChange={(value) => setCustomerAccountMode(value as CustomerAccountMode)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="optional">Optional accounts and guest checkout</SelectItem>
+                <SelectItem value="required">Require account before checkout</SelectItem>
+                <SelectItem value="guest_only">Guest checkout only</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              Optional is recommended for conversion. Required works best for subscriptions, restricted products, and account-managed stores.
+            </p>
+          </div>
+          <Button onClick={() => customerAccountMutation.mutate()} disabled={customerAccountMutation.isPending} className="w-fit"><Save className="mr-2 h-4 w-4" /> Save customer accounts</Button>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5 text-slate-500" /> Stripe settings</CardTitle><CardDescription>Secret values are encrypted and masked after save.</CardDescription></CardHeader>
         <CardContent className="grid gap-4">

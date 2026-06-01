@@ -64,6 +64,7 @@ export default function OrderStatusPage() {
   const [email, setEmail] = useState(params.get("email") || "");
   const [token, setToken] = useState(params.get("token") || "");
   const [order, setOrder] = useState<OrderDetails | null>(null);
+  const [linkMessage, setLinkMessage] = useState("");
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -72,6 +73,16 @@ export default function OrderStatusPage() {
     },
     onSuccess: setOrder,
   });
+  const linkMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/ecommerce/orders/status-link", { orderId, email });
+      return res.json() as Promise<{ message: string }>;
+    },
+    onSuccess: (data) => {
+      setLinkMessage(data.message);
+      setOrder(null);
+    },
+  });
 
   useEffect(() => {
     if (orderId && email && token) mutation.mutate();
@@ -79,7 +90,11 @@ export default function OrderStatusPage() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    mutation.mutate();
+    if (token.trim()) {
+      mutation.mutate();
+      return;
+    }
+    linkMutation.mutate();
   };
 
   return (
@@ -95,9 +110,12 @@ export default function OrderStatusPage() {
             <form onSubmit={submit} className="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
               <div className="space-y-2"><Label>Order ID</Label><Input value={orderId} onChange={(e) => setOrderId(e.target.value)} required /></div>
               <div className="space-y-2"><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
-              <div className="space-y-2"><Label>Token</Label><Input value={token} onChange={(e) => setToken(e.target.value)} required /></div>
-              <Button type="submit" disabled={mutation.isPending} className="sm:col-span-3">Find order</Button>
+              <div className="space-y-2"><Label>Secure token</Label><Input value={token} onChange={(e) => setToken(e.target.value)} placeholder="Optional if requesting a secure link" /></div>
+              <Button type="submit" disabled={mutation.isPending || linkMutation.isPending} className="sm:col-span-3">
+                {token.trim() ? "Find order" : "Email secure status link"}
+              </Button>
             </form>
+            {linkMessage ? <p className="mt-4 rounded-lg border p-3 text-sm text-muted-foreground">{linkMessage}</p> : null}
           </CardContent>
         </Card>
         {order ? (

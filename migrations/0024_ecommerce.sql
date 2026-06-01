@@ -71,6 +71,8 @@ CREATE TABLE IF NOT EXISTS "ecommerce_customers" (
   "country" text DEFAULT 'US',
   "avatar_url" text,
   "is_disabled" boolean NOT NULL DEFAULT false,
+  "marketing_email_opt_in" boolean NOT NULL DEFAULT false,
+  "order_sms_opt_in" boolean NOT NULL DEFAULT false,
   "password_hash" text,
   "session_invalidated_at" timestamp,
   "merged_into_customer_id" varchar,

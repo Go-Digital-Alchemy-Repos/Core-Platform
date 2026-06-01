@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Loader2, Lock, ShoppingBag } from "lucide-react";
+import { Loader2, Lock, ShoppingBag, UserPlus } from "lucide-react";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { PageLayout } from "@/components/layout/page-layout";
@@ -11,8 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 import { CartItem, clearCart, formatMoney, readCart } from "./cart-store";
+
+type CheckoutAccountMode = "guest" | "create_account";
+type CustomerAccountMode = "optional" | "required" | "guest_only";
 
 interface FormState {
   email: string;
@@ -25,6 +29,9 @@ interface FormState {
   zip: string;
   couponCode: string;
   shippingRateId: string;
+  accountMode: CheckoutAccountMode;
+  password: string;
+  confirmPassword: string;
 }
 
 const initialForm: FormState = {
@@ -38,6 +45,9 @@ const initialForm: FormState = {
   zip: "",
   couponCode: "",
   shippingRateId: "",
+  accountMode: "create_account",
+  password: "",
+  confirmPassword: "",
 };
 
 interface StripeConfig {
@@ -49,6 +59,7 @@ interface PaymentIntentResponse {
   orderId: string;
   lookupToken: string;
   clientSecret: string;
+  accountCreated?: boolean;
   priced: {
     subtotalAmount: number;
     discountAmount: number;
@@ -63,6 +74,10 @@ interface ShippingRateOption {
   name: string;
   description?: string | null;
   amount: number;
+}
+
+interface CheckoutSettings {
+  customerAccountMode: CustomerAccountMode;
 }
 
 export function getStripeCheckoutUnavailableMessage(error: unknown): string {
@@ -136,6 +151,7 @@ export default function CheckoutPage() {
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const lastShippingQuoteKey = useRef("");
   const { toast } = useToast();
+  const { user } = useAuth();
   useEffect(() => {
     const syncCart = () => setItems(readCart());
     syncCart();
@@ -146,6 +162,9 @@ export default function CheckoutPage() {
   const { data: stripeConfig, error: stripeConfigError, isLoading: isStripeConfigLoading } = useQuery<StripeConfig>({
     queryKey: ["/api/ecommerce/stripe/config"],
   });
+  const { data: checkoutSettings } = useQuery<CheckoutSettings>({
+    queryKey: ["/api/ecommerce/checkout/settings"],
+  });
 
   useEffect(() => {
     if (stripeConfig?.publishableKey) {
@@ -154,6 +173,9 @@ export default function CheckoutPage() {
   }, [stripeConfig?.publishableKey]);
 
   const hasStripeConfig = Boolean(stripeConfig?.publishableKey);
+  const customerAccountMode = checkoutSettings?.customerAccountMode ?? "optional";
+  const isAccountRequired = customerAccountMode === "required";
+  const isGuestOnly = customerAccountMode === "guest_only";
   const canCreatePayment = hasStripeConfig && !isStripeConfigLoading;
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const selectedShippingRate = shippingRates.find((rate) => rate.id === form.shippingRateId);
@@ -178,6 +200,15 @@ export default function CheckoutPage() {
   }, [shippingQuoteKey, shippingQuoted]);
   const mutation = useMutation({
     mutationFn: async () => {
+      const normalizedAccountMode: CheckoutAccountMode = isGuestOnly
+        ? "guest"
+        : isAccountRequired
+          ? "create_account"
+          : form.accountMode;
+      if (normalizedAccountMode === "create_account" && !user) {
+        if (form.password.length < 8) throw new Error("Use at least 8 characters for your account password.");
+        if (form.password !== form.confirmPassword) throw new Error("Password confirmation does not match.");
+      }
       if (!shippingQuoted) {
         throw new Error("Update shipping rates before continuing.");
       }
@@ -189,6 +220,10 @@ export default function CheckoutPage() {
         couponCode: form.couponCode || undefined,
         shippingRateId: form.shippingRateId || undefined,
         customer: { email: form.email, name: form.name, phone: form.phone || undefined },
+        account: {
+          mode: user ? "guest" : normalizedAccountMode,
+          password: !user && normalizedAccountMode === "create_account" ? form.password : undefined,
+        },
         shippingAddress: {
           name: form.name,
           address: form.address,
@@ -204,6 +239,9 @@ export default function CheckoutPage() {
     },
     onSuccess: (data) => {
       setIntent(data);
+      if (data.accountCreated) {
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      }
     },
     onError: (error: Error) => toast({ title: "Checkout failed", description: error.message, variant: "destructive" }),
   });
@@ -255,10 +293,70 @@ export default function CheckoutPage() {
           <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
             <Card>
               <CardHeader>
-                <CardTitle>Customer and shipping</CardTitle>
-                <CardDescription>Guest checkout is supported. Use your email to look up the order later.</CardDescription>
+                <CardTitle>Account setup</CardTitle>
+                <CardDescription>
+                  {user?.role === "client"
+                    ? "You are signed in. This order will be saved to your account."
+                    : isGuestOnly
+                      ? "This store supports guest checkout only. Use your email to receive order updates."
+                      : isAccountRequired
+                        ? "Create an account to continue checkout and track future orders."
+                        : "Create an account for order history, saved details, and faster future checkout."}
+                </CardDescription>
               </CardHeader>
               <CardContent>
+                {!user && !isGuestOnly ? (
+                  <div className="mb-6 space-y-4 rounded-lg border p-4">
+                    <RadioGroup
+                      value={isAccountRequired ? "create_account" : form.accountMode}
+                      onValueChange={(accountMode) => setForm((current) => ({ ...current, accountMode: accountMode as CheckoutAccountMode }))}
+                      className="grid gap-3 md:grid-cols-2"
+                    >
+                      <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+                        <RadioGroupItem value="create_account" className="mt-1" disabled={Boolean(intent) || isAccountRequired} />
+                        <span>
+                          <span className="flex items-center gap-2 font-medium"><UserPlus className="h-4 w-4" /> Create account</span>
+                          <span className="text-sm text-muted-foreground">Save orders and shipping details for next time.</span>
+                        </span>
+                      </label>
+                      {!isAccountRequired ? (
+                        <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+                          <RadioGroupItem value="guest" className="mt-1" disabled={Boolean(intent)} />
+                          <span>
+                            <span className="font-medium">Continue as guest</span>
+                            <span className="block text-sm text-muted-foreground">We will email secure order status links.</span>
+                          </span>
+                        </label>
+                      ) : null}
+                    </RadioGroup>
+                    {(isAccountRequired || form.accountMode === "create_account") ? (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="password">Password</Label>
+                          <Input
+                            id="password"
+                            type="password"
+                            minLength={8}
+                            value={form.password}
+                            disabled={Boolean(intent)}
+                            onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="confirmPassword">Confirm password</Label>
+                          <Input
+                            id="confirmPassword"
+                            type="password"
+                            minLength={8}
+                            value={form.confirmPassword}
+                            disabled={Boolean(intent)}
+                            onChange={(event) => setForm((current) => ({ ...current, confirmPassword: event.target.value }))}
+                          />
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
                 <form id="checkout-details-form" onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
                   {([
                     ["email", "Email"],

@@ -37,6 +37,18 @@ export async function sendEcommerceOrderStatusEmail(order: EcommerceOrderWithDet
   await sendEmail(order.customer.email, `Order status updated #${order.id.slice(0, 8)}`, html);
 }
 
+export async function sendEcommerceOrderStatusLinkEmail(order: EcommerceOrderWithDetails): Promise<void> {
+  if (!order.customer?.email) return;
+  const body = `
+    <p>Hi ${order.customer.name || "there"},</p>
+    <p>Use the secure link below to view tracking, shipment, refund, and payment status for your order.</p>
+    <p><a href="${orderUrl(order, order.customer.email)}">View order status</a></p>
+    <p>If you did not request this link, you can safely ignore this email.</p>
+  `;
+  const html = await renderEmailShell("Your secure order status link", body);
+  await sendEmail(order.customer.email, `Order status link #${order.id.slice(0, 8)}`, html);
+}
+
 export async function sendEcommerceShipmentEmail(
   order: EcommerceOrderWithDetails,
   shipment: EcommerceShipment,

@@ -32,6 +32,7 @@ const mockSendEcommerceOrderConfirmation = vi.fn();
 const mockSendEcommerceOrderStatusEmail = vi.fn();
 const mockSendEcommerceRefundEmail = vi.fn();
 const mockGetDecryptedCategory = vi.fn(async (_category: string) => ({}));
+const mockGetSetting = vi.fn(async (_key: string) => null);
 const mockUpsertSetting = vi.fn();
 const mockInvalidateCategory = vi.fn();
 const mockGetEcommerceStripeClient = vi.fn();
@@ -42,6 +43,7 @@ vi.mock("../storage/index", () => ({
   storage: {
     settings: {
       getDecryptedCategory: mockGetDecryptedCategory,
+      getSetting: mockGetSetting,
       upsertSetting: mockUpsertSetting,
       invalidateCategory: mockInvalidateCategory,
     },
@@ -115,6 +117,8 @@ describe("ecommerce services", () => {
     mockSendEcommerceRefundEmail.mockReset();
     mockGetDecryptedCategory.mockReset();
     mockGetDecryptedCategory.mockResolvedValue({});
+    mockGetSetting.mockReset();
+    mockGetSetting.mockResolvedValue(null);
     mockUpsertSetting.mockReset();
     mockInvalidateCategory.mockReset();
     mockGetEcommerceStripeClient.mockReset();
@@ -326,6 +330,31 @@ describe("ecommerce services", () => {
       ...validCheckout,
       metaTracking: { eventSourceUrl: "not-a-url" },
     })).toThrow();
+  });
+
+  it("rejects guest checkout when customer accounts are required", async () => {
+    const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
+    mockGetSetting.mockResolvedValue("required");
+
+    await expect(createEcommercePaymentIntent({
+      items: [{ productId: "p-required-account", quantity: 1 }],
+      customer: { email: "buyer@example.com", name: "Buyer" },
+      shippingAddress: {
+        name: "Buyer",
+        address: "123 Main",
+        city: "Austin",
+        state: "TX",
+        zip: "78701",
+        country: "US",
+      },
+      billingSameAsShipping: true,
+      account: { mode: "guest" },
+    })).rejects.toMatchObject({
+      message: "Create or sign in to an account before checkout.",
+      statusCode: 400,
+    });
+    expect(mockFindOrCreateCustomer).not.toHaveBeenCalled();
+    expect(mockCreateOrder).not.toHaveBeenCalled();
   });
 
   it("rejects archived and hidden products during server-side cart pricing", async () => {

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, ChevronDown, Bell, ShoppingCart } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, ChevronDown, Bell, ShoppingBag, ShoppingCart } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
@@ -369,6 +369,22 @@ export function Navbar() {
                       </Link>
                     </DropdownMenuItem>
                   )}
+                  {isClient && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/account" data-testid="link-customer-account">
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          My Account
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/account/orders" data-testid="link-customer-orders">
+                          <ShoppingBag className="mr-2 h-4 w-4" />
+                          Orders
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => setNotifOpen(true)}
@@ -384,11 +400,21 @@ export function Navbar() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => setProfileOpen(true)}
+                    onClick={() => isClient ? undefined : setProfileOpen(true)}
                     data-testid="button-my-profile"
+                    asChild={Boolean(isClient)}
                   >
-                    <UserCog className="mr-2 h-4 w-4" />
-                    My Profile
+                    {isClient ? (
+                      <Link href="/account/profile">
+                        <UserCog className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                    ) : (
+                      <>
+                        <UserCog className="mr-2 h-4 w-4" />
+                        My Profile
+                      </>
+                    )}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -548,6 +574,22 @@ export function Navbar() {
                         </Button>
                       </Link>
                     )}
+                    {isClient && (
+                      <>
+                        <Link href="/account" onClick={() => setMobileOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-customer-account">
+                            <LayoutDashboard className="mr-2 h-4 w-4" />
+                            My Account
+                          </Button>
+                        </Link>
+                        <Link href="/account/orders" onClick={() => setMobileOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-customer-orders">
+                            <ShoppingBag className="mr-2 h-4 w-4" />
+                            Orders
+                          </Button>
+                        </Link>
+                      </>
+                    )}
                     <Button
                       variant="ghost"
                       className="w-full justify-start"
@@ -569,13 +611,27 @@ export function Navbar() {
                       variant="ghost"
                       className="w-full justify-start"
                       onClick={() => {
+                        if (isClient) {
+                          setMobileOpen(false);
+                          return;
+                        }
                         setProfileOpen(true);
                         setMobileOpen(false);
                       }}
                       data-testid="button-mobile-profile"
+                      asChild={Boolean(isClient)}
                     >
-                      <UserCog className="mr-2 h-4 w-4" />
-                      My Profile
+                      {isClient ? (
+                        <Link href="/account/profile">
+                          <UserCog className="mr-2 h-4 w-4" />
+                          Profile
+                        </Link>
+                      ) : (
+                        <>
+                          <UserCog className="mr-2 h-4 w-4" />
+                          My Profile
+                        </>
+                      )}
                     </Button>
                     <div className="my-1 border-t" />
                     <Button

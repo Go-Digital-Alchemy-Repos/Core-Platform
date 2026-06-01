@@ -47,6 +47,11 @@ import {
   getEcommerceTaxSettings,
   saveEcommerceTaxSettings,
 } from "../../services/ecommerce-tax.service";
+import {
+  ecommerceCustomerAccountSettingsSchema,
+  getEcommerceCustomerAccountSettings,
+  saveEcommerceCustomerAccountSettings,
+} from "../../services/ecommerce-customer-account.service";
 import { requireEcommerceEnabled } from "../../middleware/site-features";
 import { noStorePrivateResponse } from "../../middleware/security";
 
@@ -560,6 +565,14 @@ router.get("/settings/tax", asyncHandler(async (_req, res) => {
 
 router.put("/settings/tax", asyncHandler(async (req, res) => {
   res.json(await saveEcommerceTaxSettings(ecommerceTaxSettingsSchema.parse(req.body)));
+}));
+
+router.get("/settings/customer-accounts", asyncHandler(async (_req, res) => {
+  res.json(await getEcommerceCustomerAccountSettings());
+}));
+
+router.put("/settings/customer-accounts", asyncHandler(async (req, res) => {
+  res.json(await saveEcommerceCustomerAccountSettings(ecommerceCustomerAccountSettingsSchema.parse(req.body)));
 }));
 
 export default router;
