@@ -245,11 +245,6 @@ export default function CustomerAccountPage({ view }: { view: AccountView }) {
     <AccountShell view={view}>
       {view === "dashboard" ? (
         <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card><CardHeader><CardTitle>{overview.orderCount}</CardTitle><CardDescription>Total orders</CardDescription></CardHeader></Card>
-            <Card><CardHeader><CardTitle>{overview.openShipmentCount}</CardTitle><CardDescription>Open orders</CardDescription></CardHeader></Card>
-            <Card><CardHeader><CardTitle>{activeCustomer.email}</CardTitle><CardDescription>Account email</CardDescription></CardHeader></Card>
-          </div>
           <Card><CardHeader><CardTitle>Recent orders</CardTitle></CardHeader><CardContent><OrderList orders={overview.recentOrders} /></CardContent></Card>
         </div>
       ) : null}
