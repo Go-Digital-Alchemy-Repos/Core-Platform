@@ -49,6 +49,7 @@ import {
   STANDARD_MENU_LOCATIONS,
   LEGACY_MENU_LOCATIONS,
   type CmsMenu,
+  type CmsForm,
   type CmsPage,
   type MenuItem,
   type MenuLocation,
@@ -73,6 +74,27 @@ const LEGACY_LOCATION_OPTIONS = LEGACY_MENU_LOCATIONS.map((location) => ({
 function cmsPagePath(slug: string): string {
   const cleanSlug = slug.trim().replace(/^\/+/, "").replace(/\/+$/, "");
   return cleanSlug ? `/${cleanSlug}` : "/";
+}
+
+type MenuItemLinkType = "existing-page" | "custom-url" | "form-modal";
+
+function getMenuItemLinkType(item: MenuItem): MenuItemLinkType {
+  if (item.action === "form-modal" || item.formSlug) return "form-modal";
+  if (item.action === "internal-link" || item.pageId) return "existing-page";
+  return "custom-url";
+}
+
+function createMenuItem(): MenuItem {
+  return {
+    id: generateId(),
+    label: "",
+    url: "/",
+    openInNewTab: false,
+    action: "custom-link",
+    pageId: null,
+    labelSource: "custom",
+    children: [],
+  };
 }
 
 export function promoteMenuItemToRoot(items: MenuItem[], targetId: string): MenuItem[] {
@@ -115,9 +137,21 @@ export function promoteMenuItemToRoot(items: MenuItem[], targetId: string): Menu
   ];
 }
 
+export function reorderMenuItems(items: MenuItem[], activeId: string, overId: string): MenuItem[] {
+  if (activeId === overId) return items;
+  const fromIndex = items.findIndex((item) => item.id === activeId);
+  const toIndex = items.findIndex((item) => item.id === overId);
+  if (fromIndex < 0 || toIndex < 0) return items;
+  const nextItems = [...items];
+  const [moved] = nextItems.splice(fromIndex, 1);
+  nextItems.splice(toIndex, 0, moved);
+  return nextItems;
+}
+
 function MenuItemEditor({
   item,
   pages,
+  forms,
   depth,
   index,
   totalSiblings,
@@ -128,9 +162,11 @@ function MenuItemEditor({
   onIndent,
   onOutdent,
   onPromoteToRoot,
+  onReorder,
 }: {
   item: MenuItem;
   pages: CmsPage[];
+  forms: CmsForm[];
   depth: number;
   index: number;
   totalSiblings: number;
@@ -141,11 +177,13 @@ function MenuItemEditor({
   onIndent: (id: string) => void;
   onOutdent: (id: string) => void;
   onPromoteToRoot: (id: string) => void;
+  onReorder: (activeId: string, overId: string) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
   const hasChildren = item.children && item.children.length > 0;
   const canNest = depth < 3;
   const selectedPageId = item.pageId ?? "";
+  const linkType = getMenuItemLinkType(item);
   const selectedPage = selectedPageId ? pages.find((entry) => entry.id === selectedPageId) : null;
   const hasMissingPage = Boolean(selectedPageId && !selectedPage);
   const isUnpublishedPage = Boolean(selectedPage && selectedPage.status !== "published");
@@ -192,6 +230,13 @@ function MenuItemEditor({
     [item, onUpdate]
   );
 
+  const reorderChild = useCallback(
+    (activeId: string, overId: string) => {
+      onUpdate(item.id, { children: reorderMenuItems(item.children, activeId, overId) });
+    },
+    [item, onUpdate]
+  );
+
   const updateLabel = (label: string) => {
     onUpdate(item.id, {
       label,
@@ -209,7 +254,14 @@ function MenuItemEditor({
 
   const selectPage = (pageId: string) => {
     if (!pageId) {
-      onUpdate(item.id, { pageId: null, labelSource: "custom" });
+      onUpdate(item.id, {
+        action: "internal-link",
+        pageId: null,
+        labelSource: "custom",
+        formSlug: null,
+        modalTitle: null,
+        modalDescription: null,
+      });
       return;
     }
 
@@ -217,10 +269,60 @@ function MenuItemEditor({
     if (!page) return;
 
     onUpdate(item.id, {
+      action: "internal-link",
       pageId: page.id,
       label: page.title,
       url: cmsPagePath(page.slug),
       labelSource: "page",
+      openInNewTab: false,
+      formSlug: null,
+      modalTitle: null,
+      modalDescription: null,
+    });
+  };
+
+  const selectLinkType = (nextType: MenuItemLinkType) => {
+    if (nextType === "existing-page") {
+      onUpdate(item.id, {
+        action: "internal-link",
+        pageId: null,
+        labelSource: "custom",
+        formSlug: null,
+        modalTitle: null,
+        modalDescription: null,
+      });
+      return;
+    }
+    if (nextType === "form-modal") {
+      onUpdate(item.id, {
+        action: "form-modal",
+        url: "#",
+        pageId: null,
+        labelSource: "custom",
+        openInNewTab: false,
+      });
+      return;
+    }
+    onUpdate(item.id, {
+      action: "custom-link",
+      pageId: null,
+      labelSource: "custom",
+      formSlug: null,
+      modalTitle: null,
+      modalDescription: null,
+    });
+  };
+
+  const selectForm = (formSlug: string) => {
+    const form = forms.find((entry) => entry.slug === formSlug);
+    onUpdate(item.id, {
+      action: "form-modal",
+      formSlug: formSlug || null,
+      url: "#",
+      label: item.label || form?.name || "",
+      modalTitle: item.modalTitle || form?.name || null,
+      pageId: null,
+      labelSource: "custom",
       openInNewTab: false,
     });
   };
@@ -243,22 +345,34 @@ function MenuItemEditor({
   };
 
   const addChild = useCallback(() => {
-    const newChild: MenuItem = {
-      id: generateId(),
-      label: "",
-      url: "/",
-      openInNewTab: false,
-      pageId: null,
-      labelSource: "custom",
-      children: [],
-    };
-    onUpdate(item.id, { children: [...item.children, newChild] });
+    onUpdate(item.id, { children: [...item.children, createMenuItem()] });
   }, [item, onUpdate]);
 
   return (
-    <div className="border rounded-lg bg-card" data-testid={`menu-item-${item.id}`}>
+    <div
+      className="border rounded-lg bg-card"
+      data-testid={`menu-item-${item.id}`}
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => {
+        event.preventDefault();
+        const activeId = event.dataTransfer.getData("text/plain");
+        if (activeId) onReorder(activeId, item.id);
+      }}
+    >
       <div className="flex items-center gap-2 p-3">
-        <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab" />
+        <button
+          type="button"
+          draggable
+          onDragStart={(event) => {
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", item.id);
+          }}
+          className="shrink-0 cursor-grab rounded p-1 text-muted-foreground hover:text-foreground active:cursor-grabbing"
+          aria-label={`Drag ${item.label || "menu item"}`}
+          data-testid={`drag-menu-item-${item.id}`}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
 
         {hasChildren ? (
           <button
@@ -276,21 +390,54 @@ function MenuItemEditor({
           <div className="w-4 shrink-0" />
         )}
 
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-start">
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-[0.9fr_1fr_1fr_1fr_auto] gap-2 items-start">
+          <select
+            value={linkType}
+            onChange={(e) => selectLinkType(e.target.value as MenuItemLinkType)}
+            className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            data-testid={`select-link-type-${item.id}`}
+          >
+            <option value="existing-page">Existing page</option>
+            <option value="custom-url">Custom URL</option>
+            <option value="form-modal">Open modal</option>
+          </select>
           <div className="space-y-1">
-            <select
-              value={selectedPageId}
-              onChange={(e) => selectPage(e.target.value)}
-              className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              data-testid={`select-page-${item.id}`}
-            >
-              <option value="">Manual link</option>
-              {pages.map((page) => (
-                <option key={page.id} value={page.id}>
-                  {page.title}
-                </option>
-              ))}
-            </select>
+            {linkType === "existing-page" ? (
+              <select
+                value={selectedPageId}
+                onChange={(e) => selectPage(e.target.value)}
+                className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                data-testid={`select-page-${item.id}`}
+              >
+                <option value="">Choose page</option>
+                {pages.map((page) => (
+                  <option key={page.id} value={page.id}>
+                    {page.title}
+                  </option>
+                ))}
+              </select>
+            ) : linkType === "form-modal" ? (
+              <select
+                value={item.formSlug ?? ""}
+                onChange={(e) => selectForm(e.target.value)}
+                className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                data-testid={`select-form-${item.id}`}
+              >
+                <option value="">Choose form</option>
+                {forms.map((form) => (
+                  <option key={form.id} value={form.slug}>
+                    {form.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div
+                className="flex h-8 w-full items-center rounded-md border border-input bg-muted/40 px-2 py-1 text-sm text-muted-foreground"
+                data-testid={`text-custom-url-type-${item.id}`}
+              >
+                Custom URL
+              </div>
+            )}
             <div className="flex min-h-4 items-center gap-1.5 text-[11px] text-muted-foreground">
               {hasMissingPage ? (
                 <>
@@ -331,7 +478,7 @@ function MenuItemEditor({
                   )}
                 </>
               ) : (
-                <span>Manual URL</span>
+                <span>{linkType === "form-modal" ? "Form opens in modal" : "Manual URL"}</span>
               )}
             </div>
           </div>
@@ -342,24 +489,39 @@ function MenuItemEditor({
             className="h-8 text-sm"
             data-testid={`input-label-${item.id}`}
           />
-          <Input
-            value={item.url}
-            onChange={(e) => updateUrl(e.target.value)}
-            placeholder="/url or https://..."
-            className="h-8 text-sm"
-            data-testid={`input-url-${item.id}`}
-          />
-          <label className="flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap cursor-pointer">
-            <input
-              type="checkbox"
-              checked={item.openInNewTab}
-              onChange={(e) => onUpdate(item.id, { openInNewTab: e.target.checked })}
-              className="rounded"
-              data-testid={`checkbox-newtab-${item.id}`}
+          {linkType === "form-modal" ? (
+            <Input
+              value={item.modalTitle ?? ""}
+              onChange={(e) => onUpdate(item.id, { modalTitle: e.target.value })}
+              placeholder="Modal title"
+              className="h-8 text-sm"
+              data-testid={`input-modal-title-${item.id}`}
             />
-            <ExternalLink className="h-3 w-3" />
-            New tab
-          </label>
+          ) : (
+            <Input
+              value={item.url}
+              onChange={(e) => updateUrl(e.target.value)}
+              placeholder="/url or https://..."
+              className="h-8 text-sm"
+              disabled={linkType === "existing-page"}
+              data-testid={`input-url-${item.id}`}
+            />
+          )}
+          {linkType === "form-modal" ? (
+            <div className="h-8" />
+          ) : (
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap cursor-pointer">
+              <input
+                type="checkbox"
+                checked={item.openInNewTab}
+                onChange={(e) => onUpdate(item.id, { openInNewTab: e.target.checked })}
+                className="rounded"
+                data-testid={`checkbox-newtab-${item.id}`}
+              />
+              <ExternalLink className="h-3 w-3" />
+              New tab
+            </label>
+          )}
         </div>
 
         <DropdownMenu>
@@ -412,6 +574,7 @@ function MenuItemEditor({
               key={child.id}
               item={child}
               pages={pages}
+              forms={forms}
               depth={depth + 1}
               index={cIdx}
               totalSiblings={item.children.length}
@@ -419,6 +582,7 @@ function MenuItemEditor({
               onDelete={deleteChild}
               onMoveUp={moveChildUp}
               onMoveDown={moveChildDown}
+              onReorder={reorderChild}
               onIndent={(childId) => {
                 if (cIdx === 0) return;
                 const arr = [...item.children];
@@ -454,6 +618,9 @@ function MenuEditor({
   const [items, setItems] = useState<MenuItem[]>((menu?.items as MenuItem[]) || []);
   const { data: pages = [] } = useQuery<CmsPage[]>({
     queryKey: ["/api/admin/cms/pages"],
+  });
+  const { data: forms = [] } = useQuery<CmsForm[]>({
+    queryKey: ["/api/admin/forms"],
   });
   const editorLock = useEditorLock({
     resourceType: "cms_menu",
@@ -580,18 +747,7 @@ function MenuEditor({
   }
 
   const addItem = useCallback(() => {
-    setItems((prev) => [
-      ...prev,
-      {
-        id: generateId(),
-        label: "",
-        url: "/",
-        openInNewTab: false,
-        pageId: null,
-        labelSource: "custom",
-        children: [],
-      },
-    ]);
+    setItems((prev) => [...prev, createMenuItem()]);
   }, []);
 
   return (
@@ -680,18 +836,22 @@ function MenuEditor({
         ) : (
           <div className="space-y-2">
             {items.map((item, idx) => (
-              <MenuItemEditor
-                key={item.id}
-                item={item}
-                pages={pages}
-                depth={1}
-                index={idx}
+            <MenuItemEditor
+              key={item.id}
+              item={item}
+              pages={pages}
+              forms={forms}
+              depth={1}
+              index={idx}
                 totalSiblings={items.length}
                 onUpdate={updateItem}
                 onDelete={deleteItem}
-                onMoveUp={moveItemUp}
-                onMoveDown={moveItemDown}
-                onIndent={indentItem}
+              onMoveUp={moveItemUp}
+              onMoveDown={moveItemDown}
+              onReorder={(activeId, overId) => {
+                setItems((prev) => reorderMenuItems(prev, activeId, overId));
+              }}
+              onIndent={indentItem}
                 onOutdent={outdentItem}
                 onPromoteToRoot={promoteItemToRoot}
               />

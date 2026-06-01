@@ -3,7 +3,7 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import CmsMenusPage, { promoteMenuItemToRoot } from "@/features/admin/cms/cms-menus-page";
+import CmsMenusPage, { promoteMenuItemToRoot, reorderMenuItems } from "@/features/admin/cms/cms-menus-page";
 import type { MenuItem } from "@shared/schema";
 
 const useQueryMock = vi.fn();
@@ -166,6 +166,13 @@ describe("CmsMenusPage", () => {
       container.querySelector<HTMLButtonElement>('[data-testid="button-edit-menu-menu-main"]')?.click();
     });
 
+    const linkTypeSelect = container.querySelector<HTMLSelectElement>('[data-testid="select-link-type-item-about"]');
+    expect(linkTypeSelect).not.toBeNull();
+
+    act(() => {
+      changeValue(linkTypeSelect!, "existing-page");
+    });
+
     const pageSelect = container.querySelector<HTMLSelectElement>('[data-testid="select-page-item-about"]');
     expect(pageSelect).not.toBeNull();
 
@@ -324,5 +331,21 @@ describe("promoteMenuItemToRoot", () => {
       id: "learn",
       children: [],
     }));
+  });
+});
+
+describe("reorderMenuItems", () => {
+  it("reorders sibling menu items by dragged and dropped ids", () => {
+    const items: MenuItem[] = [
+      { id: "about", label: "About", url: "/about", openInNewTab: false, children: [] },
+      { id: "directory", label: "Directory", url: "/directory", openInNewTab: false, children: [] },
+      { id: "contact", label: "Contact", url: "/contact", openInNewTab: false, children: [] },
+    ];
+
+    expect(reorderMenuItems(items, "contact", "about").map((item) => item.id)).toEqual([
+      "contact",
+      "about",
+      "directory",
+    ]);
   });
 });

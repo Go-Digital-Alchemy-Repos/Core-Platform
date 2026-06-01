@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { NavbarSearchPopover } from "@/components/layout/navbar-search-popover";
+import { FormModalButton } from "@/components/forms/form-modal-button";
 import { getCartItemCount, readCart, type CartItem } from "@/features/ecommerce/cart-store";
 import { MiniCartDrawer } from "@/features/ecommerce/mini-cart-drawer";
 import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
@@ -54,6 +55,65 @@ function isActiveRecursive(items: MenuItem[], currentPath: string): boolean {
   return false;
 }
 
+function menuTestId(item: MenuItem, prefix = "link-nav") {
+  return `${prefix}-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+}
+
+function isModalMenuItem(item: MenuItem) {
+  return item.action === "form-modal" && Boolean(item.formSlug);
+}
+
+function DynamicMenuButton({
+  item,
+  location: currentPath,
+  child = false,
+}: {
+  item: MenuItem;
+  location: string;
+  child?: boolean;
+}) {
+  if (isModalMenuItem(item)) {
+    return (
+      <FormModalButton
+        label={item.label}
+        action="form-modal"
+        formSlug={item.formSlug}
+        modalTitle={item.modalTitle}
+        modalDescription={item.modalDescription}
+        variant="ghost"
+        className={child ? "h-auto w-full justify-start px-0 py-0 font-normal" : undefined}
+        testId={child ? `link-nav-child-${item.id}` : menuTestId(item)}
+      />
+    );
+  }
+
+  if (item.openInNewTab) {
+    return (
+      <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer">
+        <Button
+          variant="ghost"
+          data-testid={child ? `link-nav-child-${item.id}` : menuTestId(item)}
+        >
+          {item.label}
+        </Button>
+      </a>
+    );
+  }
+
+  return (
+    <Link key={item.id} href={item.url}>
+      <Button
+        variant="ghost"
+        className={currentPath === item.url ? "toggle-elevate toggle-elevated" : ""}
+        data-testid={child ? `link-nav-child-${item.id}` : menuTestId(item)}
+        aria-current={currentPath === item.url ? "page" : undefined}
+      >
+        {item.label}
+      </Button>
+    </Link>
+  );
+}
+
 function DynamicDropdown({ item, location: currentPath }: { item: MenuItem; location: string }) {
   const isActive = isActiveRecursive(item.children || [], currentPath);
   const flatChildren = flattenItems(item.children || []);
@@ -71,8 +131,17 @@ function DynamicDropdown({ item, location: currentPath }: { item: MenuItem; loca
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="z-[1000]">
         {flatChildren.map(({ item: child, depth }) => (
-          <DropdownMenuItem key={child.id} asChild className={depth > 0 ? `pl-${4 + depth * 4}` : ""}>
-            {child.openInNewTab ? (
+          <DropdownMenuItem
+            key={child.id}
+            asChild={!isModalMenuItem(child)}
+            className={depth > 0 ? `pl-${4 + depth * 4}` : ""}
+            onSelect={isModalMenuItem(child) ? (event) => event.preventDefault() : undefined}
+          >
+            {isModalMenuItem(child) ? (
+              <div style={depth > 0 ? { paddingLeft: `${12 + depth * 16}px` } : undefined}>
+                <DynamicMenuButton item={child} location={currentPath} child />
+              </div>
+            ) : child.openInNewTab ? (
               <a
                 href={child.url}
                 target="_blank"
@@ -206,26 +275,8 @@ export function Navbar() {
             dynamicItems.map((item) =>
               item.children && item.children.length > 0 ? (
                 <DynamicDropdown key={item.id} item={item} location={location} />
-              ) : item.openInNewTab ? (
-                <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer">
-                  <Button
-                    variant="ghost"
-                    data-testid={`link-nav-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
-                  >
-                    {item.label}
-                  </Button>
-                </a>
               ) : (
-                <Link key={item.id} href={item.url}>
-                  <Button
-                    variant="ghost"
-                    className={location === item.url ? "toggle-elevate toggle-elevated" : ""}
-                    data-testid={`link-nav-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
-                    aria-current={location === item.url ? "page" : undefined}
-                  >
-                    {item.label}
-                  </Button>
-                </Link>
+                <DynamicMenuButton key={item.id} item={item} location={location} />
               )
             )
           ) : (

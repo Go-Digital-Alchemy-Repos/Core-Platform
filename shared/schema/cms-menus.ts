@@ -48,8 +48,12 @@ export interface MenuItem {
   label: string;
   url: string;
   openInNewTab: boolean;
+  action?: "internal-link" | "custom-link" | "form-modal";
   pageId?: string | null;
   labelSource?: "page" | "custom";
+  formSlug?: string | null;
+  modalTitle?: string | null;
+  modalDescription?: string | null;
   children: MenuItem[];
 }
 
@@ -59,8 +63,12 @@ export const menuItemSchema: z.ZodType<MenuItem> = z.lazy(() =>
     label: z.string().min(1),
     url: z.string().min(1),
     openInNewTab: z.preprocess((v) => v ?? false, z.boolean()),
+    action: z.enum(["internal-link", "custom-link", "form-modal"]).optional(),
     pageId: z.string().nullable().optional(),
     labelSource: z.enum(["page", "custom"]).optional(),
+    formSlug: z.string().nullable().optional(),
+    modalTitle: z.string().nullable().optional(),
+    modalDescription: z.string().nullable().optional(),
     children: z.preprocess((v) => v ?? [], z.array(menuItemSchema)),
   })
 ) as z.ZodType<MenuItem>;
