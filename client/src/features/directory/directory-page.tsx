@@ -252,9 +252,23 @@ export function DirectoryBrowserSection({
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [page, setPage] = useState(parseInt(initParams.get("page") || "1") || 1);
+  const sectionRef = useRef<HTMLDivElement | null>(null);
+  const [sectionHeight, setSectionHeight] = useState<number | null>(null);
 
   const debouncedSearch = useDebounce(search, 300);
   const isInternalUpdate = useRef(false);
+
+  useEffect(() => {
+    const updateSectionHeight = () => {
+      if (!sectionRef.current) return;
+      const { top } = sectionRef.current.getBoundingClientRect();
+      setSectionHeight(Math.max(520, Math.round(window.innerHeight - top)));
+    };
+
+    updateSectionHeight();
+    window.addEventListener("resize", updateSectionHeight);
+    return () => window.removeEventListener("resize", updateSectionHeight);
+  }, []);
 
   useEffect(() => {
     if (!syncUrl) return;
@@ -370,9 +384,14 @@ export function DirectoryBrowserSection({
   };
 
   return (
-    <>
+    <div
+      ref={sectionRef}
+      className="flex min-h-0 flex-col"
+      style={sectionHeight ? { height: `${sectionHeight}px` } : undefined}
+      data-testid="directory-browser-section"
+    >
       {showCategoryChips && showSpecialties && (
-        <div className="border-b bg-muted/30 overflow-x-auto" data-testid="section-categories">
+        <div className="flex-none border-b bg-muted/30 overflow-x-auto" data-testid="section-categories">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2">
             <div className="flex items-center gap-1 min-w-max">
               {categories.map((cat) => {
@@ -401,7 +420,7 @@ export function DirectoryBrowserSection({
           </div>
         </div>
       )}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="min-h-0 flex-1 flex overflow-hidden">
         <div
           className={`${
             mobileView === "list" || !showMap ? "flex" : "hidden"
@@ -770,7 +789,7 @@ export function DirectoryBrowserSection({
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
