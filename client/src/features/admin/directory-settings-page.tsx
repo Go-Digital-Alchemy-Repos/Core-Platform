@@ -281,6 +281,7 @@ function DirectoryApplicationSettingsTab() {
   });
 
   const stored = settings?.directory_settings || {};
+  const storedSnapshot = useMemo(() => JSON.stringify(stored), [stored]);
 
   const computedDefaults = useMemo<DirectorySettingsValues>(() => {
     const directoryMode = normalizeDirectoryMode(stored.directory_mode?.value);
@@ -369,7 +370,7 @@ function DirectoryApplicationSettingsTab() {
 
   useEffect(() => {
     setValues(computedDefaults);
-  }, [computedDefaults]);
+  }, [storedSnapshot]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -528,18 +529,36 @@ function DirectoryApplicationSettingsTab() {
         <CardContent>
           <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
             <div className="space-y-1">
-              <Label>{values.directory_requires_application_process ? "Application process enabled" : "Application process disabled"}</Label>
+              <Label htmlFor="directory_requires_application_process">
+                {values.directory_requires_application_process ? "Application process enabled" : "Application process disabled"}
+              </Label>
               <p className="text-sm text-muted-foreground">
                 {values.directory_requires_application_process
                   ? `New ${values.participant_label_plural.toLowerCase()} complete the existing application before they can move into approval and membership steps.`
                   : `New ${values.participant_label_plural.toLowerCase()} skip the application wizard and go directly to ${values.listing_label_singular.toLowerCase()} setup.`}
               </p>
             </div>
-            <Switch
-              checked={values.directory_requires_application_process}
-              onCheckedChange={(checked) => setValues((current) => ({ ...current, directory_requires_application_process: checked }))}
-              aria-label="Toggle application process"
-            />
+            <div className="flex shrink-0 items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setValues((current) => ({
+                  ...current,
+                  directory_requires_application_process: !current.directory_requires_application_process,
+                }))}
+                data-testid="button-toggle-application-process"
+              >
+                {values.directory_requires_application_process ? "Disable" : "Enable"}
+              </Button>
+              <Switch
+                id="directory_requires_application_process"
+                checked={values.directory_requires_application_process}
+                onCheckedChange={(checked) => setValues((current) => ({ ...current, directory_requires_application_process: checked }))}
+                aria-label="Toggle application process"
+                data-testid="switch-directory-requires-application-process"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -558,27 +577,45 @@ function DirectoryApplicationSettingsTab() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="directory_mode">Directory Type</Label>
-              <Select
-                value={values.directory_mode}
-                onValueChange={(mode) => {
-                  const nextMode = mode as DirectoryMode;
-                  setValues((current) => ({
-                    ...current,
-                    directory_mode: nextMode,
-                    ...(nextMode === "custom" ? {} : presetToStoredValues(nextMode)),
-                  }));
-                }}
-              >
-                <SelectTrigger id="directory_mode">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="therapists">Therapists</SelectItem>
-                  <SelectItem value="locations">Locations</SelectItem>
-                  <SelectItem value="service_providers">Service Providers</SelectItem>
-                  <SelectItem value="custom">Custom</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select
+                  value={values.directory_mode}
+                  onValueChange={(mode) => {
+                    const nextMode = mode as DirectoryMode;
+                    setValues((current) => ({
+                      ...current,
+                      directory_mode: nextMode,
+                      ...(nextMode === "custom" ? {} : presetToStoredValues(nextMode)),
+                    }));
+                  }}
+                >
+                  <SelectTrigger id="directory_mode" data-testid="select-directory-mode">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="therapists">Therapists</SelectItem>
+                    <SelectItem value="locations">Locations</SelectItem>
+                    <SelectItem value="service_providers">Service Providers</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+                {values.directory_mode !== "custom" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setValues((current) => ({
+                      ...current,
+                      ...presetToStoredValues(current.directory_mode),
+                    }))}
+                    data-testid="button-apply-directory-preset"
+                  >
+                    Apply Preset
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Choosing a preset updates the labels and profile field settings below. Save to publish the changes.
+              </p>
             </div>
           </div>
 
