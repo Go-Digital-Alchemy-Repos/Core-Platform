@@ -131,9 +131,15 @@ export function MiniCartDrawer({ open, onOpenChange, items }: MiniCartDrawerProp
             <span className="font-semibold">{formatMoney(subtotal)}</span>
           </div>
           <p className="text-xs text-muted-foreground">Taxes, shipping, and discounts are calculated at checkout.</p>
-          <Button asChild className="w-full" disabled={items.length === 0} onClick={() => onOpenChange(false)}>
-            <Link href="/checkout">Checkout</Link>
-          </Button>
+          {items.length > 0 ? (
+            <Button asChild className="w-full" onClick={() => onOpenChange(false)}>
+              <Link href="/checkout">Checkout</Link>
+            </Button>
+          ) : (
+            <Button className="w-full" disabled>
+              Checkout
+            </Button>
+          )}
           <Button asChild variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
             <Link href="/cart">View cart</Link>
           </Button>

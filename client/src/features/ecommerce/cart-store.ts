@@ -40,11 +40,15 @@ export function addCartItem(item: CartItem): void {
   if (existing) {
     existing.quantity += item.quantity;
     writeCart([...cart]);
-    window.dispatchEvent(new CustomEvent("ecommerce-cart-item-added", { detail: item }));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("ecommerce-cart-item-added", { detail: item }));
+    }
     return;
   }
   writeCart([...cart, item]);
-  window.dispatchEvent(new CustomEvent("ecommerce-cart-item-added", { detail: item }));
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("ecommerce-cart-item-added", { detail: item }));
+  }
 }
 
 export function formatMoney(cents: number): string {

@@ -28,4 +28,17 @@ describe("ecommerce cart store", () => {
     expect(listener).toHaveBeenCalledTimes(2);
     window.removeEventListener("ecommerce-cart-changed", listener);
   });
+
+  it("notifies the mini cart when a product is added", () => {
+    const listener = vi.fn();
+    window.addEventListener("ecommerce-cart-item-added", listener);
+
+    addCartItem({ productId: "prod-3", name: "Cards", slug: "cards", unitPrice: 2900, quantity: 1 });
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener.mock.calls[0][0]).toMatchObject({
+      detail: expect.objectContaining({ productId: "prod-3" }),
+    });
+    window.removeEventListener("ecommerce-cart-item-added", listener);
+  });
 });
