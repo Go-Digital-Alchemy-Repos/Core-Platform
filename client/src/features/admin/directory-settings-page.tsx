@@ -511,9 +511,38 @@ function DirectoryApplicationSettingsTab() {
       <div>
         <h2 className="text-xl font-heading font-semibold">Application Settings</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Control the application fee experience, approval gating, and renewal / delinquency rules for the directory app.
+          Control whether listings use the application workflow, then tune approval, billing, and fee rules.
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ClipboardList className="h-4 w-4 text-primary" />
+            Application Process
+          </CardTitle>
+          <CardDescription>
+            Keep the current application workflow available, but make it optional for directories that only need direct profile setup.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+            <div className="space-y-1">
+              <Label>{values.directory_requires_application_process ? "Application process enabled" : "Application process disabled"}</Label>
+              <p className="text-sm text-muted-foreground">
+                {values.directory_requires_application_process
+                  ? `New ${values.participant_label_plural.toLowerCase()} complete the existing application before they can move into approval and membership steps.`
+                  : `New ${values.participant_label_plural.toLowerCase()} skip the application wizard and go directly to ${values.listing_label_singular.toLowerCase()} setup.`}
+              </p>
+            </div>
+            <Switch
+              checked={values.directory_requires_application_process}
+              onCheckedChange={(checked) => setValues((current) => ({ ...current, directory_requires_application_process: checked }))}
+              aria-label="Toggle application process"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -550,18 +579,6 @@ function DirectoryApplicationSettingsTab() {
                   <SelectItem value="custom">Custom</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex items-start justify-between gap-4 rounded-xl border p-4">
-              <div className="space-y-1">
-                <Label>Require application process</Label>
-                <p className="text-xs text-muted-foreground">
-                  When disabled, participants go directly to profile setup instead of the application wizard.
-                </p>
-              </div>
-              <Switch
-                checked={values.directory_requires_application_process}
-                onCheckedChange={(checked) => setValues((current) => ({ ...current, directory_requires_application_process: checked }))}
-              />
             </div>
           </div>
 
@@ -737,22 +754,22 @@ function DirectoryApplicationSettingsTab() {
             Fee Policy
           </CardTitle>
           <CardDescription>
-            These settings shape the first two {values.participant_label_singular.toLowerCase()} application steps and determine how membership credits are handled.
+            These settings only apply when the application process is enabled.
           </CardDescription>
         </CardHeader>
-        <CardContent className={`space-y-4 ${values.directory_requires_application_process ? "" : "opacity-60"}`}>
-          {!values.directory_requires_application_process && (
+        <CardContent className="space-y-4">
+          {!values.directory_requires_application_process ? (
             <p className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
-              Application fees are not used while the application process is disabled.
+              Application fees and fee-step copy are hidden because applicants are sent directly to {values.listing_label_singular.toLowerCase()} setup.
             </p>
-          )}
+          ) : (
+            <>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="application_fee_amount_usd">Application Fee (USD)</Label>
               <Input
                 id="application_fee_amount_usd"
                 value={values.application_fee_amount_usd}
-                disabled={!values.directory_requires_application_process}
                 onChange={(event) => setValues((current) => ({ ...current, application_fee_amount_usd: event.target.value }))}
               />
             </div>
@@ -761,7 +778,6 @@ function DirectoryApplicationSettingsTab() {
               <Input
                 id="application_fee_credit_amount_usd"
                 value={values.application_fee_credit_amount_usd}
-                disabled={!values.directory_requires_application_process}
                 onChange={(event) => setValues((current) => ({ ...current, application_fee_credit_amount_usd: event.target.value }))}
               />
             </div>
@@ -772,7 +788,6 @@ function DirectoryApplicationSettingsTab() {
             <Input
               id="application_fee_notice_title"
               value={values.application_fee_notice_title}
-              disabled={!values.directory_requires_application_process}
               onChange={(event) => setValues((current) => ({ ...current, application_fee_notice_title: event.target.value }))}
             />
           </div>
@@ -783,7 +798,6 @@ function DirectoryApplicationSettingsTab() {
               id="application_fee_notice_body"
               rows={4}
               value={values.application_fee_notice_body}
-              disabled={!values.directory_requires_application_process}
               onChange={(event) => setValues((current) => ({ ...current, application_fee_notice_body: event.target.value }))}
             />
           </div>
@@ -794,7 +808,6 @@ function DirectoryApplicationSettingsTab() {
               id="application_fee_policy_summary"
               rows={3}
               value={values.application_fee_policy_summary}
-              disabled={!values.directory_requires_application_process}
               onChange={(event) => setValues((current) => ({ ...current, application_fee_policy_summary: event.target.value }))}
             />
           </div>
@@ -808,10 +821,11 @@ function DirectoryApplicationSettingsTab() {
             </div>
             <Switch
               checked={values.application_fee_credit_on_approval}
-              disabled={!values.directory_requires_application_process}
               onCheckedChange={(checked) => setValues((current) => ({ ...current, application_fee_credit_on_approval: checked }))}
             />
           </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
