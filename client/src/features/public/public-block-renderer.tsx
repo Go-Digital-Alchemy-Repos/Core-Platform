@@ -40,6 +40,7 @@ import type { BlockInstance, BuilderContent } from "@/features/admin/cms/builder
 import { mergeJoinHeroBlocks } from "@shared/cms-blocks";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import { FULL_WIDTH_BLOCK_TYPES } from "@/features/admin/cms/builder/page-builder-constants";
+import { stripHtml } from "@/lib/html";
 
 export type { BlockInstance, BuilderContent };
 
@@ -53,6 +54,10 @@ const LUCIDE_MAP: Record<string, React.ElementType> = {
 function LucideIcon({ name, className }: { name: string; className?: string }) {
   const Icon = LUCIDE_MAP[name] ?? Globe;
   return <Icon className={className} />;
+}
+
+function plainText(value: unknown): string {
+  return stripHtml(str(value));
 }
 
 const LazyTherapistMapBlock = lazy(() => import("./public-dynamic-blocks").then(m => ({ default: m.TherapistMapBlock })));
@@ -81,8 +86,8 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const opacity = num(props.overlayOpacity as number, 50);
   const overlayColor = normalizeHexColor(str(props.overlayColor)) || "#000000";
   const layout = str(props.layout) || "stacked";
-  const badge = str(props.badge);
-  const accentHeading = str(props.accentHeading);
+  const badge = plainText(props.badge);
+  const accentHeading = plainText(props.accentHeading);
   const minH = str(props.minHeight) || "420";
   const minHeightStyle = minH === "100vh" ? "100vh" : `${minH}px`;
   const bgPosX = Math.max(0, Math.min(100, num(props.backgroundPositionX as number, 50)));
@@ -121,7 +126,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
           </span>
         )}
         <h1 className="text-4xl md:text-5xl font-heading font-bold text-white mb-4 leading-tight" style={headingTextStyle}>
-          {str(props.heading) || "Hero Heading"}
+          {plainText(props.heading) || "Hero Heading"}
           {accentHeading && (
             <>
               {" "}
@@ -139,7 +144,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
         <div className={`flex flex-wrap gap-3 ${isSplit ? "justify-start" : "justify-center"}`}>
           {str(props.ctaText) && (
             <FormModalButton
-              label={str(props.ctaText)}
+              label={plainText(props.ctaText)}
               action={props.ctaAction}
               href={props.ctaLink}
               openInNewTab={props.ctaOpenInNewTab}
@@ -153,7 +158,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
           )}
           {str(props.ctaSecondaryText) && (
             <FormModalButton
-              label={str(props.ctaSecondaryText)}
+              label={plainText(props.ctaSecondaryText)}
               action={props.ctaSecondaryAction}
               href={props.ctaSecondaryLink}
               openInNewTab={props.ctaSecondaryOpenInNewTab}
@@ -182,12 +187,12 @@ function TwoColumnTextBlock({ props }: { props: Record<string, unknown> }) {
   const rightItems = arr<{ text: string }>(props.rightItems);
   const columns = [
     {
-      heading: str(props.leftHeading),
+      heading: plainText(props.leftHeading),
       body: str(props.leftBody),
       items: leftItems,
     },
     {
-      heading: str(props.rightHeading),
+      heading: plainText(props.rightHeading),
       body: str(props.rightBody),
       items: rightItems,
     },
@@ -209,7 +214,7 @@ function TwoColumnTextBlock({ props }: { props: Record<string, unknown> }) {
             {column.items.length > 0 && (
               <ul className="space-y-2 pl-5 list-disc text-sm text-muted-foreground">
                 {column.items.map((item, itemIndex) => (
-                  <li key={itemIndex}>{item.text}</li>
+                  <li key={itemIndex}>{plainText(item.text)}</li>
                 ))}
               </ul>
             )}
@@ -243,7 +248,7 @@ function CalloutBoxBlock({ props }: { props: Record<string, unknown> }) {
         {str(props.ctaText) && (
           <div className="mt-6">
             <FormModalButton
-              label={str(props.ctaText)}
+              label={plainText(props.ctaText)}
               action={props.ctaAction}
               href={props.ctaLink}
               openInNewTab={props.ctaOpenInNewTab}
@@ -279,8 +284,8 @@ function LinkListBlock({ props }: { props: Record<string, unknown> }) {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="font-semibold break-words transition-colors group-hover:text-accent">{link.label || "Untitled link"}</h3>
-                  {link.description && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{link.description}</p>}
+                  <h3 className="font-semibold break-words transition-colors group-hover:text-accent">{plainText(link.label) || "Untitled link"}</h3>
+                  {link.description && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{plainText(link.description)}</p>}
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors flex-shrink-0 mt-1" />
               </div>
@@ -341,12 +346,12 @@ function TextImageBlock({ props }: { props: Record<string, unknown> }) {
             <div className="relative min-h-72 md:h-full md:min-h-0 md:flex-1">
             <img
               src={str(props.imageUrl)}
-              alt={str(props.imageAlt)}
+              alt={plainText(props.imageAlt)}
               style={mobileImageStyles}
               className="w-full rounded-xl [height:var(--mobile-image-height)] [object-fit:var(--mobile-image-fit)] [object-position:var(--mobile-image-position)] md:absolute md:inset-0 md:h-full md:w-full md:object-cover md:object-center"
             />
             </div>
-            {str(props.imageCaption) && <p className="text-xs text-muted-foreground mt-2 text-center">{str(props.imageCaption)}</p>}
+            {str(props.imageCaption) && <p className="text-xs text-muted-foreground mt-2 text-center">{plainText(props.imageCaption)}</p>}
           </div>
         ) : (
           <div className="flex h-full min-h-48 items-center justify-center rounded-xl border border-dashed bg-muted/40">
@@ -367,7 +372,7 @@ function CtaBlock({ props }: { props: Record<string, unknown> }) {
     : "bg-muted/40 border";
   return (
     <div className={`px-4 py-10 text-center sm:px-8 sm:py-14 ${bgClass}`}>
-      <h2 className="mb-3 text-2xl font-heading font-bold leading-tight sm:text-3xl md:text-4xl">{str(props.heading) || "Ready to Get Started?"}</h2>
+      <h2 className="mb-3 text-2xl font-heading font-bold leading-tight sm:text-3xl md:text-4xl">{plainText(props.heading) || "Ready to Get Started?"}</h2>
       {str(props.subheading) && (
         <div
           className={`mb-8 mx-auto max-w-xl text-sm leading-relaxed sm:text-base [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:opacity-80 [&_p]:m-0 ${variant === "light" ? "text-muted-foreground [&_a]:text-primary" : "opacity-80 [&_a]:text-current"}`}
@@ -377,7 +382,7 @@ function CtaBlock({ props }: { props: Record<string, unknown> }) {
       <div className="flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap">
         {str(props.primaryText) && (
           <FormModalButton
-            label={str(props.primaryText)}
+            label={plainText(props.primaryText)}
             action={props.primaryAction}
             href={props.primaryLink}
             openInNewTab={props.primaryOpenInNewTab}
@@ -392,7 +397,7 @@ function CtaBlock({ props }: { props: Record<string, unknown> }) {
         )}
         {str(props.secondaryText) && (
           <FormModalButton
-            label={str(props.secondaryText)}
+            label={plainText(props.secondaryText)}
             action={props.secondaryAction}
             href={props.secondaryLink}
             openInNewTab={props.secondaryOpenInNewTab}
@@ -426,8 +431,8 @@ function CardsGridBlock({ props }: { props: Record<string, unknown> }) {
               <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
                 <LucideIcon name={card.icon || "Globe"} className="h-6 w-6 text-accent" />
               </div>
-              <h3 className="mb-2 text-base font-semibold leading-snug break-words">{card.title}</h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">{card.description}</p>
+              <h3 className="mb-2 text-base font-semibold leading-snug break-words">{plainText(card.title)}</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">{plainText(card.description)}</p>
             </CardContent>
           </Card>
         ))}
@@ -446,7 +451,7 @@ function FaqBlock({ props }: { props: Record<string, unknown> }) {
           <p className="text-muted-foreground">Add FAQ items to display here.</p>
         ) : items.map((item, i) => (
           <AccordionItem key={i} value={`faq-${i}`} className="border rounded-lg px-4">
-            <AccordionTrigger className="font-medium text-left">{item.question}</AccordionTrigger>
+            <AccordionTrigger className="font-medium text-left">{plainText(item.question)}</AccordionTrigger>
             <AccordionContent>
               <div
                 className="text-muted-foreground [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-primary/80 [&_p]:m-0"
@@ -468,14 +473,14 @@ function TestimonialsBlock({ props }: { props: Record<string, unknown> }) {
     <Card key={i} className="bg-muted/30 h-full">
       <CardContent className="pt-6">
         <Quote className="h-5 w-5 text-accent mb-3" />
-        <p className="text-sm leading-relaxed mb-4 italic">"{item.quote}"</p>
+        <p className="text-sm leading-relaxed mb-4 italic">"{plainText(item.quote)}"</p>
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
             <span className="text-xs font-semibold text-accent">{item.name?.[0] ?? "?"}</span>
           </div>
           <div>
-            <p className="text-sm font-semibold">{item.name}</p>
-            <p className="text-xs text-muted-foreground">{item.role}{item.location ? ` · ${item.location}` : ""}</p>
+            <p className="text-sm font-semibold">{plainText(item.name)}</p>
+            <p className="text-xs text-muted-foreground">{plainText(item.role)}{item.location ? ` · ${plainText(item.location)}` : ""}</p>
           </div>
         </div>
       </CardContent>
@@ -539,8 +544,8 @@ function FeaturedProfessionalsBlock({ props }: { props: Record<string, unknown> 
               <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-3">
                 <UserCheck className="h-6 w-6 text-accent" />
               </div>
-              <p className="font-semibold text-sm">{c.user?.firstName} {c.user?.lastName}</p>
-              <p className="text-xs public-meta-text">{c.title}</p>
+              <p className="font-semibold text-sm">{plainText(c.user?.firstName)} {plainText(c.user?.lastName)}</p>
+              <p className="text-xs public-meta-text">{plainText(c.title)}</p>
             </CardContent>
           </Card>
         ))}
@@ -564,12 +569,12 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
       <Card className="mx-auto h-full w-full max-w-[16.2rem] overflow-hidden transition-shadow hover:shadow-md cursor-pointer" data-testid={`event-preview-${e.id}`}>
         {e.imageUrl && (
           <div className="aspect-[16/10] overflow-hidden" data-testid={`img-event-preview-${e.id}`}>
-            <img src={e.imageUrl} alt={e.title} className="h-full w-full object-cover" style={getImageObjectPositionStyle(e.imagePositionX, e.imagePositionY)} />
+            <img src={e.imageUrl} alt={plainText(e.title)} className="h-full w-full object-cover" style={getImageObjectPositionStyle(e.imagePositionX, e.imagePositionY)} />
           </div>
         )}
         <CardContent className={e.imageUrl ? "p-4" : "pt-4"}>
           <p className="mb-1 text-xs font-medium text-accent">{new Date(e.date).toLocaleDateString()}</p>
-          <p className="line-clamp-2 text-sm font-semibold public-heading-3">{e.title}</p>
+          <p className="line-clamp-2 text-sm font-semibold public-heading-3">{plainText(e.title)}</p>
           <p className="mt-2 text-[11px] leading-relaxed public-meta-text">{e.isVirtual ? "Virtual" : "In Person"}</p>
         </CardContent>
       </Card>
@@ -614,7 +619,7 @@ function EventsPreviewBlock({ props }: { props: Record<string, unknown> }) {
       {ctaText && (
         <div className="mt-6 flex justify-center">
           <FormModalButton
-            label={ctaText}
+            label={plainText(ctaText)}
             action={props.ctaAction}
             href={ctaLink}
             openInNewTab={props.ctaOpenInNewTab}
@@ -642,12 +647,12 @@ function BlogPreviewBlock({ props }: { props: Record<string, unknown> }) {
       <Card className={`mx-auto h-full w-full max-w-[13.5rem] overflow-hidden cursor-pointer ${enableHoverMotion ? "blog-card-motion" : ""}`} data-testid={`blog-preview-${p.id}`}>
         {p.coverImageUrl && (
           <div className="aspect-[16/10] overflow-hidden">
-            <img src={p.coverImageUrl} alt={p.title} className="h-full w-full object-cover" style={getImageObjectPositionStyle(p.coverImagePositionX, p.coverImagePositionY)} data-blog-card-image data-testid={`img-blog-preview-${p.id}`} />
+            <img src={p.coverImageUrl} alt={plainText(p.title)} className="h-full w-full object-cover" style={getImageObjectPositionStyle(p.coverImagePositionX, p.coverImagePositionY)} data-blog-card-image data-testid={`img-blog-preview-${p.id}`} />
           </div>
         )}
         <CardContent className={p.coverImageUrl ? "p-3.5" : "pt-3.5"}>
-          <p className="mb-1 line-clamp-2 text-sm font-semibold public-heading-3">{p.title}</p>
-          <p className="line-clamp-3 text-[11px] leading-relaxed public-body-text">{p.excerpt}</p>
+          <p className="mb-1 line-clamp-2 text-sm font-semibold public-heading-3">{plainText(p.title)}</p>
+          <p className="line-clamp-3 text-[11px] leading-relaxed public-body-text">{plainText(p.excerpt)}</p>
         </CardContent>
       </Card>
     </Link>
@@ -714,7 +719,7 @@ function ButtonGroupBlock({ props }: { props: Record<string, unknown> }) {
         ) : buttons.map((btn, i) => (
           <FormModalButton
             key={i}
-            label={btn.text}
+            label={plainText(btn.text)}
             action={btn.action}
             href={btn.link}
             openInNewTab={btn.openInNewTab}
@@ -754,11 +759,11 @@ function ImageBlockRenderer({ props }: { props: Record<string, unknown> }) {
         <div>
           <img
             src={str(props.imageUrl)}
-            alt={str(props.alt)}
+            alt={plainText(props.alt)}
             style={mobileImageStyles}
             className="w-full rounded-xl [height:var(--mobile-image-height)] [object-fit:var(--mobile-image-fit)] [object-position:var(--mobile-image-position)] md:h-auto md:object-cover md:object-center"
           />
-          {str(props.caption) && <p className="text-xs text-muted-foreground text-center mt-2">{str(props.caption)}</p>}
+          {str(props.caption) && <p className="text-xs text-muted-foreground text-center mt-2">{plainText(props.caption)}</p>}
         </div>
       ) : (
         <div className="rounded-xl bg-muted/40 border border-dashed h-48 flex items-center justify-center">
@@ -831,8 +836,8 @@ function ContactInfoBlock({ props }: { props: Record<string, unknown> }) {
               <LucideIcon name={item.icon || "Globe"} className="h-4 w-4 text-accent" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">{item.label}</p>
-              <p className="break-words font-medium text-sm">{item.value}</p>
+              <p className="text-xs text-muted-foreground">{plainText(item.label)}</p>
+              <p className="break-words font-medium text-sm">{plainText(item.value)}</p>
             </div>
           </div>
         ))}
@@ -870,8 +875,8 @@ function FeatureListBlock({ props }: { props: Record<string, unknown> }) {
               <LucideIcon name={f.icon || "CheckCircle"} className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <h3 className="font-semibold text-sm mb-1">{f.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{f.description}</p>
+              <h3 className="font-semibold text-sm mb-1">{plainText(f.title)}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{plainText(f.description)}</p>
             </div>
           </div>
         ))}
@@ -890,11 +895,11 @@ function ObjectionBustersBlock({ props }: { props: Record<string, unknown> }) {
           <div key={i} className="rounded-xl border p-6" data-testid={`objection-item-${i}`}>
             <div className="flex items-start gap-3 mb-3">
               <XCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-              <p className="font-medium text-sm">{item.concern}</p>
+              <p className="font-medium text-sm">{plainText(item.concern)}</p>
             </div>
             <div className="flex items-start gap-3 pl-8">
               <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-muted-foreground leading-relaxed">{item.response}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{plainText(item.response)}</p>
             </div>
           </div>
         ))}
@@ -919,11 +924,11 @@ function BeforeAfterBlock({ props }: { props: Record<string, unknown> }) {
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="rounded-lg bg-destructive/5 border border-destructive/20 p-3">
                   <p className="text-xs font-medium text-destructive mb-1">Before</p>
-                  <p className="text-sm text-muted-foreground">{item.before}</p>
+                  <p className="text-sm text-muted-foreground">{plainText(item.before)}</p>
                 </div>
                 <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-3">
                   <p className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">After</p>
-                  <p className="text-sm text-muted-foreground">{item.after}</p>
+                  <p className="text-sm text-muted-foreground">{plainText(item.after)}</p>
                 </div>
               </div>
             </div>
@@ -943,7 +948,7 @@ function TrustBarBlock({ props }: { props: Record<string, unknown> }) {
         {items.map((item, i) => (
           <div key={i} className="flex items-center gap-2 text-muted-foreground" data-testid={`trust-signal-${i}`}>
             <LucideIcon name={item.icon || "CheckCircle"} className="h-4 w-4 text-accent" />
-            <span className="text-sm font-medium">{item.label}</span>
+            <span className="text-sm font-medium">{plainText(item.label)}</span>
           </div>
         ))}
       </div>
@@ -959,9 +964,9 @@ function PressMentionsBlock({ props }: { props: Record<string, unknown> }) {
       <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12">
         {items.map((item, i) => {
           const content = item.logoUrl ? (
-            <img src={item.logoUrl} alt={item.name} className="h-8 sm:h-10 object-contain opacity-60 hover:opacity-100 transition-opacity" />
+            <img src={item.logoUrl} alt={plainText(item.name)} className="h-8 sm:h-10 object-contain opacity-60 hover:opacity-100 transition-opacity" />
           ) : (
-            <span className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">{item.name}</span>
+            <span className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">{plainText(item.name)}</span>
           );
           return item.link ? (
             <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1" data-testid={`press-item-${i}`}>
@@ -985,13 +990,13 @@ function SocialProofStatsBlock({ props }: { props: Record<string, unknown> }) {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
         {stats.map((stat, i) => (
           <div key={i} className="text-center" data-testid={`stat-item-${i}`}>
-            <p className="text-3xl md:text-4xl font-bold text-accent">{stat.value}</p>
-            <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
+            <p className="text-3xl md:text-4xl font-bold text-accent">{plainText(stat.value)}</p>
+            <p className="text-sm text-muted-foreground mt-1">{plainText(stat.label)}</p>
           </div>
         ))}
       </div>
       {str(props.disclaimer) && (
-        <p className="text-xs text-muted-foreground text-center mt-6 italic">{str(props.disclaimer)}</p>
+        <p className="text-xs text-muted-foreground text-center mt-6 italic">{plainText(props.disclaimer)}</p>
       )}
     </div>
   );
@@ -1014,8 +1019,8 @@ function ImageGridBlock({ props }: { props: Record<string, unknown> }) {
         <div className={`grid grid-cols-1 ${colsClass} ${gapClass}`}>
           {images.map((img, i) => (
             <div key={i} data-testid={`grid-image-${i}`}>
-              <img src={img.url} alt={img.alt} className="w-full rounded-lg object-cover aspect-square" />
-              {img.caption && <p className="text-xs text-muted-foreground text-center mt-1">{img.caption}</p>}
+              <img src={img.url} alt={plainText(img.alt)} className="w-full rounded-lg object-cover aspect-square" />
+              {img.caption && <p className="text-xs text-muted-foreground text-center mt-1">{plainText(img.caption)}</p>}
             </div>
           ))}
         </div>
@@ -1042,11 +1047,11 @@ function SliderBlock({ props }: { props: Record<string, unknown> }) {
       <SectionHeading props={props} defaultAlignment="center" className="mb-6" />
       <div className="relative rounded-xl overflow-hidden bg-muted/20 border">
         {slide.imageUrl && (
-          <img src={slide.imageUrl} alt={slide.heading} className="w-full aspect-[16/9] object-cover" />
+          <img src={slide.imageUrl} alt={plainText(slide.heading)} className="w-full aspect-[16/9] object-cover" />
         )}
         <div className={`${slide.imageUrl ? "absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent" : ""} p-6 sm:p-8`}>
-          {slide.heading && <h3 className={`text-xl font-heading font-bold mb-2 ${slide.imageUrl ? "text-white" : ""}`}>{slide.heading}</h3>}
-          {slide.description && <p className={`text-sm ${slide.imageUrl ? "text-white/80" : "text-muted-foreground"}`}>{slide.description}</p>}
+          {slide.heading && <h3 className={`text-xl font-heading font-bold mb-2 ${slide.imageUrl ? "text-white" : ""}`}>{plainText(slide.heading)}</h3>}
+          {slide.description && <p className={`text-sm ${slide.imageUrl ? "text-white/80" : "text-muted-foreground"}`}>{plainText(slide.description)}</p>}
         </div>
       </div>
       {slides.length > 1 && (
@@ -1080,8 +1085,8 @@ function StatsBarBlock({ props }: { props: Record<string, unknown> }) {
               <LucideIcon name={item.icon || "Star"} className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <p className="text-lg font-bold">{item.value}</p>
-              <p className="text-xs text-muted-foreground">{item.label}</p>
+              <p className="text-lg font-bold">{plainText(item.value)}</p>
+              <p className="text-xs text-muted-foreground">{plainText(item.label)}</p>
             </div>
           </div>
         ))}
@@ -1110,7 +1115,7 @@ function IconGridBlock({ props }: { props: Record<string, unknown> }) {
             <div className="flex h-12 w-12 rounded-xl bg-accent/10 items-center justify-center">
               <LucideIcon name={item.icon || "Globe"} className="h-6 w-6 text-accent" />
             </div>
-            <p className="text-sm font-medium leading-snug break-words">{item.title}</p>
+            <p className="text-sm font-medium leading-snug break-words">{plainText(item.title)}</p>
           </div>
         ))}
       </div>
@@ -1135,8 +1140,8 @@ function BenefitStackBlock({ props }: { props: Record<string, unknown> }) {
                 <LucideIcon name={item.icon || "CheckCircle"} className="h-4 w-4 text-accent" />
               </div>
               <div>
-                <h3 className="font-semibold text-sm">{item.title}</h3>
-                <p className="text-sm text-muted-foreground mt-0.5">{item.description}</p>
+                <h3 className="font-semibold text-sm">{plainText(item.title)}</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">{plainText(item.description)}</p>
               </div>
             </div>
           ))}
@@ -1162,9 +1167,9 @@ function ScienceExplainerBlock({ props }: { props: Record<string, unknown> }) {
               <li key={i} className="text-xs text-muted-foreground" data-testid={`citation-${i}`}>
                 {c.url ? (
                   <a href={c.url} target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-2 hover:text-accent/80">
-                    {c.text}
+                    {plainText(c.text)}
                   </a>
-                ) : c.text}
+                ) : plainText(c.text)}
               </li>
             ))}
           </ol>
@@ -1184,14 +1189,14 @@ function SafetyChecklistBlock({ props }: { props: Record<string, unknown> }) {
           <div key={i} className="flex items-start gap-3" data-testid={`checklist-item-${i}`}>
             <CheckCircle className={`h-5 w-5 flex-shrink-0 mt-0.5 ${item.required ? "text-accent" : "text-muted-foreground/50"}`} />
             <div className="flex items-center gap-2">
-              <span className="text-sm">{item.text}</span>
+              <span className="text-sm">{plainText(item.text)}</span>
               {item.required && <span className="text-[10px] font-medium text-accent bg-accent/10 px-1.5 py-0.5 rounded">Required</span>}
             </div>
           </div>
         ))}
       </div>
       {str(props.disclaimer) && (
-        <p className="text-xs text-muted-foreground mt-6 italic border-t pt-4">{str(props.disclaimer)}</p>
+        <p className="text-xs text-muted-foreground mt-6 italic border-t pt-4">{plainText(props.disclaimer)}</p>
       )}
     </div>
   );
@@ -1210,14 +1215,14 @@ function GuaranteeWarrantyBlock({ props }: { props: Record<string, unknown> }) {
             return (
               <li key={i} className="flex items-start gap-2" data-testid={`guarantee-item-${i}`}>
                 <CheckCircle className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
-                <span className="text-sm">{text}</span>
+                <span className="text-sm">{plainText(text)}</span>
               </li>
             );
           })}
         </ul>
         {str(props.ctaText) && (
           <FormModalButton
-            label={str(props.ctaText)}
+            label={plainText(props.ctaText)}
             action={props.ctaAction}
             href={props.ctaLink}
             openInNewTab={props.ctaOpenInNewTab}
@@ -1247,12 +1252,12 @@ function DeliverySetupBlock({ props }: { props: Record<string, unknown> }) {
                   <div className="absolute left-1/2 top-12 h-[calc(100%+1.5rem)] w-0.5 -translate-x-1/2 bg-border hidden sm:block" />
                 ) : null}
                 <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground font-bold text-sm">
-                  {step.step}
+                  {plainText(step.step)}
                 </div>
               </div>
               <div className="pt-2">
-                <h3 className="font-semibold text-sm sm:text-base mb-1">{step.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                <h3 className="font-semibold text-sm sm:text-base mb-1">{plainText(step.title)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{plainText(step.description)}</p>
               </div>
             </div>
           ))}
@@ -1267,7 +1272,7 @@ function DeliverySetupBlock({ props }: { props: Record<string, unknown> }) {
               return (
                 <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="h-3.5 w-3.5 text-accent flex-shrink-0" />
-                  {text}
+                  {plainText(text)}
                 </li>
               );
             })}
@@ -1290,8 +1295,8 @@ function RecoveryUseCasesBlock({ props }: { props: Record<string, unknown> }) {
               <div className="h-14 w-14 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
                 <LucideIcon name={p.icon || "User"} className="h-7 w-7 text-accent" />
               </div>
-              <h3 className="font-semibold mb-2">{p.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{p.description}</p>
+              <h3 className="font-semibold mb-2">{plainText(p.title)}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{plainText(p.description)}</p>
             </CardContent>
           </Card>
         ))}
@@ -1313,7 +1318,7 @@ function ProtocolBuilderBlock({ props }: { props: Record<string, unknown> }) {
       <div className="flex flex-wrap items-start gap-3 mb-6">
         <SectionHeading props={props} defaultAlignment="left" className="flex-1 min-w-[220px]" />
         <span className={`text-xs font-semibold px-2 py-1 rounded-full capitalize ${levelColors[level] || levelColors.beginner}`}>
-          {level}
+          {plainText(level)}
         </span>
       </div>
       <div className="space-y-4">
@@ -1323,8 +1328,8 @@ function ProtocolBuilderBlock({ props }: { props: Record<string, unknown> }) {
               {i + 1}
             </div>
             <div className="flex-1 border rounded-lg p-4">
-              <h3 className="font-semibold text-sm mb-1">{step.title}</h3>
-              <p className="text-sm text-muted-foreground">{step.description}</p>
+              <h3 className="font-semibold text-sm mb-1">{plainText(step.title)}</h3>
+              <p className="text-sm text-muted-foreground">{plainText(step.description)}</p>
             </div>
           </div>
         ))}

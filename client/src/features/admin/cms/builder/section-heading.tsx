@@ -1,4 +1,5 @@
 import type { ElementType } from "react";
+import { stripHtml } from "@/lib/html";
 import { cn } from "@/lib/utils";
 
 type HeadingLevel = "h1" | "h2";
@@ -15,6 +16,10 @@ interface SectionHeadingProps {
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
+}
+
+function plainText(v: unknown): string {
+  return stripHtml(str(v));
 }
 
 function headingLevel(v: unknown): HeadingLevel {
@@ -34,8 +39,8 @@ export function SectionHeading({
   subtitleClassName,
   fallbackTitle,
 }: SectionHeadingProps) {
-  const eyebrow = str(props.sectionEyebrow) || str(props.eyebrow);
-  const title = str(props.title) || str(props.heading) || fallbackTitle || "";
+  const eyebrow = plainText(props.sectionEyebrow) || plainText(props.eyebrow);
+  const title = plainText(props.title) || plainText(props.heading) || fallbackTitle || "";
   const subtitle = str(props.subtitle) || str(props.subheading);
   const level = headingLevel(props.sectionHeadingLevel ?? props.headingLevel);
   const alignment = headingAlignment(props.sectionHeadingAlignment ?? props.alignment, defaultAlignment);

@@ -3,9 +3,10 @@ import { Link } from "wouter";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { PublicFormRenderer } from "./public-form-renderer";
+import { stripHtml } from "@/lib/html";
 
 function text(value: unknown) {
-  return typeof value === "string" ? value.trim() : "";
+  return typeof value === "string" ? stripHtml(value).trim() : "";
 }
 
 export interface FormModalButtonProps extends Omit<ButtonProps, "children"> {
@@ -32,6 +33,7 @@ export function FormModalButton({
 }: FormModalButtonProps) {
   const [open, setOpen] = useState(false);
   const closeTimeoutRef = useRef<number | null>(null);
+  const safeLabel = text(label);
   const rawAction = text(action);
   const normalizedHref = text(href) || "#";
   const normalizedAction =
@@ -42,7 +44,7 @@ export function FormModalButton({
         : "custom-link";
   const shouldOpenInNewTab = openInNewTab === true;
   const normalizedFormSlug = text(formSlug);
-  const resolvedModalTitle = text(modalTitle) || label;
+  const resolvedModalTitle = text(modalTitle) || safeLabel;
   const resolvedModalDescription = text(modalDescription);
 
   useEffect(() => {
@@ -67,7 +69,7 @@ export function FormModalButton({
       >
         <DialogTrigger asChild>
           <Button {...buttonProps} data-testid={testId}>
-            {label}
+            {safeLabel}
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -100,7 +102,7 @@ export function FormModalButton({
     return (
       <Link href={normalizedHref}>
         <Button {...buttonProps} data-testid={testId}>
-          {label}
+          {safeLabel}
         </Button>
       </Link>
     );
@@ -113,7 +115,7 @@ export function FormModalButton({
       rel={shouldOpenInNewTab ? "noopener noreferrer" : undefined}
     >
       <Button {...buttonProps} data-testid={testId}>
-        {label}
+        {safeLabel}
       </Button>
     </a>
   );

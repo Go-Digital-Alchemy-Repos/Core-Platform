@@ -13,9 +13,14 @@ import { getPostCategories, getPrimaryPostCategory, postMatchesCategory } from "
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
 import { CompanyInformationCard } from "@/components/shared/company-information-card";
+import { stripHtml } from "@/lib/html";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
+}
+
+function plainText(v: unknown): string {
+  return stripHtml(str(v));
 }
 
 function colorStyle(value: unknown, fallback?: string) {
@@ -124,17 +129,17 @@ export function ManagedFormEmbedBlock({ props }: { props: Record<string, unknown
 
 export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<string, unknown> }) {
   const [loginOpen, setLoginOpen] = useState(false);
-  const heading = str(props.heading);
-  const accentHeading = str(props.accentHeading);
+  const heading = plainText(props.heading);
+  const accentHeading = plainText(props.accentHeading);
   const subheading = str(props.subheading);
   const hasImageBackground = !!str(props.sectionBackgroundImageUrl);
   const headingTextStyle = colorStyle(props.headingColor, hasImageBackground ? "#ffffff" : undefined);
   const accentHeadingTextStyle = colorStyle(props.accentHeadingColor, hasImageBackground ? "#ffffff" : undefined);
   const subheadingTextStyle = colorStyle(props.subheadingColor, hasImageBackground ? "#ffffff" : undefined);
-  const applicationStatusText = str(props.applicationStatusText) || "Applications open in June.";
-  const loginPromptPrefix = str(props.loginPromptPrefix) || "If you're already a member click here to";
-  const loginLinkText = str(props.loginLinkText) || "Log in";
-  const loginPromptSuffix = str(props.loginPromptSuffix) || "to your profile!";
+  const applicationStatusText = plainText(props.applicationStatusText) || "Applications open in June.";
+  const loginPromptPrefix = plainText(props.loginPromptPrefix) || "If you're already a member click here to";
+  const loginLinkText = plainText(props.loginLinkText) || "Log in";
+  const loginPromptSuffix = plainText(props.loginPromptSuffix) || "to your profile!";
   const hasHeroCopy = !!(heading || accentHeading);
 
   return (
@@ -189,8 +194,8 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
 }
 
 export function JoinHeroBlock({ props = {} }: { props?: Record<string, unknown> }) {
-  const heading = str(props.heading) || "Are you a Core Platform-Informed Mental Health Professional?";
-  const accentHeading = str(props.accentHeading) || "Join the Network!";
+  const heading = plainText(props.heading) || "Are you a Core Platform-Informed Mental Health Professional?";
+  const accentHeading = plainText(props.accentHeading) || "Join the Network!";
   const subheading = str(props.subheading);
   const hasImageBackground = !!str(props.sectionBackgroundImageUrl);
   const headingTextStyle = colorStyle(props.headingColor, hasImageBackground ? "#ffffff" : undefined);
@@ -261,12 +266,12 @@ function FeaturedBlogCard({
       <div className={layout === "stacked" ? "grid grid-cols-1" : "grid grid-cols-1 md:grid-cols-2"}>
         {post.coverImageUrl && (
           <div className="aspect-[16/9] md:aspect-auto overflow-hidden">
-            <img src={post.coverImageUrl} alt={post.title} className="w-full h-full object-cover" style={getImageObjectPositionStyle(post.coverImagePositionX, post.coverImagePositionY)} data-blog-card-image />
+            <img src={post.coverImageUrl} alt={plainText(post.title)} className="w-full h-full object-cover" style={getImageObjectPositionStyle(post.coverImagePositionX, post.coverImagePositionY)} data-blog-card-image />
           </div>
         )}
         <CardContent className="p-6 flex flex-col justify-center">
-          <h3 className="text-xl font-heading font-bold mb-3 public-heading-3">{post.title}</h3>
-          <p className="text-sm public-body-text line-clamp-4 leading-relaxed">{post.excerpt}</p>
+          <h3 className="text-xl font-heading font-bold mb-3 public-heading-3">{plainText(post.title)}</h3>
+          <p className="text-sm public-body-text line-clamp-4 leading-relaxed">{plainText(post.excerpt)}</p>
           <div className="mt-4">
             <span className="text-sm public-link-text font-medium inline-flex items-center gap-1">
               {actionText} {isExternal ? <ExternalLink className="h-3.5 w-3.5" /> : <ArrowRight className="h-3.5 w-3.5" />}
@@ -409,13 +414,13 @@ function BlogFeedGrid({
             <Card className={`h-full cursor-pointer ${getBlogCardMotionClass(enableHoverMotion)}`} data-testid={`blog-feed-card-${p.id}`}>
               {p.coverImageUrl && (
                 <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
-                  <img src={p.coverImageUrl} alt={p.title} className="w-full h-full object-cover" style={getImageObjectPositionStyle(p.coverImagePositionX, p.coverImagePositionY)} data-blog-card-image />
+                  <img src={p.coverImageUrl} alt={plainText(p.title)} className="w-full h-full object-cover" style={getImageObjectPositionStyle(p.coverImagePositionX, p.coverImagePositionY)} data-blog-card-image />
                 </div>
               )}
               <CardContent className="p-4">
                 {getPrimaryPostCategory(p) && <span className="text-xs public-meta-text font-medium">{getPrimaryPostCategory(p)}</span>}
-                <p className="font-semibold text-sm mb-1 line-clamp-2 public-heading-3">{p.title}</p>
-                <p className="text-xs public-body-text line-clamp-3 leading-relaxed">{p.excerpt}</p>
+                <p className="font-semibold text-sm mb-1 line-clamp-2 public-heading-3">{plainText(p.title)}</p>
+                <p className="text-xs public-body-text line-clamp-3 leading-relaxed">{plainText(p.excerpt)}</p>
                 <span className="mt-3 text-xs public-link-text font-medium inline-flex items-center gap-1">
                   {actionText} {isExternal ? <ExternalLink className="h-3 w-3" /> : <ArrowRight className="h-3 w-3" />}
                 </span>

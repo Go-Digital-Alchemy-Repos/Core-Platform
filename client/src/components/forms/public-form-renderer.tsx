@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { stripHtml } from "@/lib/html";
 
 interface PublicFormRendererProps {
   slug: string;
@@ -34,6 +35,10 @@ type FormValues = Record<string, unknown>;
 
 function text(value: unknown) {
   return typeof value === "string" ? value : "";
+}
+
+function plainText(value: unknown) {
+  return stripHtml(text(value));
 }
 
 function objectValue(value: unknown) {
@@ -217,11 +222,11 @@ function ChoiceGroup({
               )}
             >
               {option.imageUrl ? (
-                <img src={option.imageUrl} alt={option.label} className="mb-3 h-32 w-full rounded-lg object-cover" />
+                <img src={option.imageUrl} alt={plainText(option.label)} className="mb-3 h-32 w-full rounded-lg object-cover" />
               ) : null}
               <div className="flex items-center gap-3">
                 <Checkbox checked={checked} className="pointer-events-none" />
-                <span className="text-sm font-medium">{option.label}</span>
+                <span className="text-sm font-medium">{plainText(option.label)}</span>
               </div>
             </div>
           );
@@ -231,7 +236,7 @@ function ChoiceGroup({
           return (
             <label key={option.value} className="flex items-start gap-3 rounded-lg border px-3 py-2">
               <Checkbox checked={checked} onCheckedChange={(next) => toggle(Boolean(next))} />
-              <span className="text-sm">{option.label}</span>
+              <span className="text-sm">{plainText(option.label)}</span>
             </label>
           );
         }
@@ -244,7 +249,7 @@ function ChoiceGroup({
               onChange={() => onChange(option.value)}
               className="mt-1 h-4 w-4"
             />
-            <span className="text-sm">{option.label}</span>
+            <span className="text-sm">{plainText(option.label)}</span>
           </label>
         );
       })}
@@ -291,7 +296,7 @@ function ListField({
           <div className="grid gap-3 md:grid-cols-2">
             {columns.map((column) => (
               <div key={column.id} className="space-y-1.5">
-                <Label>{column.label}</Label>
+                <Label>{plainText(column.label)}</Label>
                 <Input
                   value={text(row[column.id])}
                   onChange={(event) => updateRow(index, column.id, event.target.value)}
@@ -332,8 +337,8 @@ function renderFieldInput(
   if (field.type === "section") {
     return (
       <div className="space-y-3 rounded-xl border bg-muted/10 p-4">
-        {text(field.config?.sectionTitle) ? <h4 className="text-lg font-semibold">{text(field.config?.sectionTitle)}</h4> : null}
-        {text(field.config?.sectionSubtitle) ? <p className="text-sm text-muted-foreground">{text(field.config?.sectionSubtitle)}</p> : null}
+        {text(field.config?.sectionTitle) ? <h4 className="text-lg font-semibold">{plainText(field.config?.sectionTitle)}</h4> : null}
+        {text(field.config?.sectionSubtitle) ? <p className="text-sm text-muted-foreground">{plainText(field.config?.sectionSubtitle)}</p> : null}
         {field.config?.showDivider !== false ? (
           <div className="h-px w-full" style={{ backgroundColor: text(field.config?.dividerColor) || "#e2e8f0" }} />
         ) : null}
@@ -356,12 +361,12 @@ function renderFieldInput(
     return (
       <Select value={text(value)} onValueChange={setValue}>
         <SelectTrigger>
-          <SelectValue placeholder={field.placeholder || `Select ${field.label.toLowerCase()}`} />
+          <SelectValue placeholder={plainText(field.placeholder) || `Select ${plainText(field.label).toLowerCase()}`} />
         </SelectTrigger>
         <SelectContent>
           {(field.options ?? []).map((option) => (
             <SelectItem key={option.value} value={option.value}>
-              {option.label}
+              {plainText(option.label)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -382,7 +387,7 @@ function renderFieldInput(
       >
         {(field.options ?? []).map((option) => (
           <option key={option.value} value={option.value}>
-            {option.label}
+            {plainText(option.label)}
           </option>
         ))}
       </select>
@@ -399,11 +404,11 @@ function renderFieldInput(
         <label className="flex items-start gap-3">
           <Checkbox checked={value === true} onCheckedChange={(next) => setValue(Boolean(next))} />
           <span className="text-sm font-medium">
-            {text(field.config?.consentCheckboxLabel) || field.label}
+            {plainText(field.config?.consentCheckboxLabel) || plainText(field.label)}
           </span>
         </label>
         {text(field.config?.consentDescription) ? (
-          <p className="text-sm text-muted-foreground">{text(field.config?.consentDescription)}</p>
+          <p className="text-sm text-muted-foreground">{plainText(field.config?.consentDescription)}</p>
         ) : null}
       </div>
     );
@@ -521,8 +526,8 @@ export function PublicFormRenderer({
   }, [fields, slug]);
 
   const description =
-    descriptionOverride ??
-    (typeof effectiveForm?.description === "string" && effectiveForm.description.trim() ? effectiveForm.description : "");
+    plainText(descriptionOverride) ||
+    (typeof effectiveForm?.description === "string" && effectiveForm.description.trim() ? plainText(effectiveForm.description) : "");
   const submitLabel =
     buttonTextOverride ??
     (typeof effectiveForm?.settings === "object" &&
@@ -592,7 +597,7 @@ export function PublicFormRenderer({
     <div className={cn("space-y-4", className)} data-testid={`public-form-${slug}`}>
       {showHeader && (
         <div className="space-y-1">
-          <h3 className="font-semibold public-heading-3">{effectiveForm.name}</h3>
+          <h3 className="font-semibold public-heading-3">{plainText(effectiveForm.name)}</h3>
           {description ? <p className="text-sm public-supporting-copy">{description}</p> : null}
         </div>
       )}
@@ -632,7 +637,7 @@ export function PublicFormRenderer({
                 className={cn("space-y-1.5", fieldSpanClass(field, compact))}
               >
                 {!["html", "section"].includes(field.type) ? (
-                  <Label htmlFor={`${slug}-${field.key}`}>{field.label}</Label>
+                  <Label htmlFor={`${slug}-${field.key}`}>{plainText(field.label)}</Label>
                 ) : null}
                 {renderFieldInput(
                   field,
@@ -640,7 +645,7 @@ export function PublicFormRenderer({
                   (next) => setValues((current) => ({ ...current, [field.key]: next })),
                   compact
                 )}
-                {!structural && field.helpText ? <p className="text-xs public-helper-text">{field.helpText}</p> : null}
+                {!structural && field.helpText ? <p className="text-xs public-helper-text">{plainText(field.helpText)}</p> : null}
               </div>
             );
           })}

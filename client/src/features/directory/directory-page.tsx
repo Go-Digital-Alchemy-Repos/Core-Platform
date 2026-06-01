@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useSpecializations } from "@/hooks/use-specializations";
 import { useDirectorySettings } from "@/hooks/use-directory-settings";
+import { stripHtml } from "@/lib/html";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
 import type {
   PaginatedTherapists,
@@ -54,8 +55,15 @@ const categories = [
   { icon: Leaf, label: "Mindfulness", slug: "Mindfulness & Meditation" },
 ];
 
+const DEFAULT_DIRECTORY_SUBHEADING =
+  "Search for Core Platform-informed care by specialty, location, language, or session format, then explore results on the map.";
+
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
+}
+
+function plainText(v: unknown): string {
+  return stripHtml(str(v));
 }
 
 function bool(v: unknown, fallback = false): boolean {
@@ -141,7 +149,7 @@ function TherapistRow({
           </div>
           {profile.title && (
             <p className="text-xs text-muted-foreground truncate mt-0.5" data-testid={`text-title-${profile.id}`}>
-              {profile.title}
+              {plainText(profile.title)}
             </p>
           )}
           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -172,7 +180,7 @@ function TherapistRow({
           <div className="flex items-center gap-1 mt-1.5 flex-wrap">
             {displayedSpecs.map((spec) => (
               <Badge key={spec} variant="secondary" className="text-[10px] px-1.5 py-0 leading-4 whitespace-nowrap">
-                {spec}
+                {plainText(spec)}
               </Badge>
             ))}
             {remainingCount > 0 && (
@@ -232,8 +240,8 @@ export function DirectoryBrowserSection({
   const showAvailabilityStatus = directorySettings.showAvailabilityStatus;
   const showTravelOption = directorySettings.showTravelOption;
   const showLocationFields = directorySettings.showLocationFields;
-  const heading = str(props.heading) || `Find ${directorySettings.participantLabelPlural}`;
-  const subheading = str(props.subheading);
+  const heading = plainText(props.heading) || `Find ${directorySettings.participantLabelPlural}`;
+  const subheading = plainText(props.subheading) || DEFAULT_DIRECTORY_SUBHEADING;
   const showCategoryChips = bool(props.showCategoryChips, true);
   const showMap = bool(props.showMap, true);
   const initParams = useMemo(() => new URLSearchParams(syncUrl ? queryString : ""), [queryString, syncUrl]);
@@ -531,7 +539,7 @@ export function DirectoryBrowserSection({
                               className="h-3.5 w-3.5"
                               data-testid={`checkbox-spec-${s.name.toLowerCase().replace(/\s+/g, "-")}`}
                             />
-                            <span className="truncate">{s.name}</span>
+                            <span className="truncate">{plainText(s.name)}</span>
                           </label>
                         );
                       })}
