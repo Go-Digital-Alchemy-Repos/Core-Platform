@@ -12,6 +12,7 @@
     "db:push": "drizzle-kit push",
     "backup:run": "tsx server/scripts/run-system-backup.ts",
     "backup:restore": "tsx server/scripts/restore-system-backup.ts",
+    "seed:ecommerce-customer-orders": "tsx server/scripts/seed-ecommerce-customer-orders.ts",
     "lint": "eslint client/src server shared",
     "format": "prettier --check client/src server shared",
     "test": "vitest run"

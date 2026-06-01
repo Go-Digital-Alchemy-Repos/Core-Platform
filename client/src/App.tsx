@@ -157,6 +157,7 @@ function Router() {
     staleTime: 60_000,
   });
   const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
+  const customerAccountRoles = ["client", "admin", "editor"];
 
   return (
     <Suspense fallback={<PageLoader />}>
@@ -178,49 +179,49 @@ function Router() {
         <Route path="/orders/status" component={() => siteFeatures.ecommerceEnabled ? <OrderStatusPage /> : <NotFound />} />
         <Route path="/account">
           {siteFeatures.ecommerceEnabled ? (
-            <ProtectedRoute roles={["client"]}>
+            <ProtectedRoute roles={customerAccountRoles}>
               <CustomerAccountPage view="dashboard" />
             </ProtectedRoute>
           ) : <NotFound />}
         </Route>
         <Route path="/account/orders">
           {siteFeatures.ecommerceEnabled ? (
-            <ProtectedRoute roles={["client"]}>
+            <ProtectedRoute roles={customerAccountRoles}>
               <CustomerAccountPage view="orders" />
             </ProtectedRoute>
           ) : <NotFound />}
         </Route>
         <Route path="/account/orders/:id">
           {siteFeatures.ecommerceEnabled ? (
-            <ProtectedRoute roles={["client"]}>
+            <ProtectedRoute roles={customerAccountRoles}>
               <CustomerAccountPage view="order" />
             </ProtectedRoute>
           ) : <NotFound />}
         </Route>
         <Route path="/account/profile">
           {siteFeatures.ecommerceEnabled ? (
-            <ProtectedRoute roles={["client"]}>
+            <ProtectedRoute roles={customerAccountRoles}>
               <CustomerAccountPage view="profile" />
             </ProtectedRoute>
           ) : <NotFound />}
         </Route>
         <Route path="/account/addresses">
           {siteFeatures.ecommerceEnabled ? (
-            <ProtectedRoute roles={["client"]}>
+            <ProtectedRoute roles={customerAccountRoles}>
               <CustomerAccountPage view="addresses" />
             </ProtectedRoute>
           ) : <NotFound />}
         </Route>
         <Route path="/account/security">
           {siteFeatures.ecommerceEnabled ? (
-            <ProtectedRoute roles={["client"]}>
+            <ProtectedRoute roles={customerAccountRoles}>
               <CustomerAccountPage view="security" />
             </ProtectedRoute>
           ) : <NotFound />}
         </Route>
         <Route path="/account/preferences">
           {siteFeatures.ecommerceEnabled ? (
-            <ProtectedRoute roles={["client"]}>
+            <ProtectedRoute roles={customerAccountRoles}>
               <CustomerAccountPage view="preferences" />
             </ProtectedRoute>
           ) : <NotFound />}

@@ -224,7 +224,7 @@ router.post(
   }),
 );
 
-router.use("/account", authenticateToken, requireRole("client"), noStorePrivateResponse);
+router.use("/account", authenticateToken, requireRole("client", "admin", "editor"), noStorePrivateResponse);
 
 router.get(
   "/account",

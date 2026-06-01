@@ -256,6 +256,11 @@ export function Navbar() {
   }, [publicMenus]);
 
   const isClient = user && user.role === "client";
+  const hasCustomerAccountAccess = Boolean(
+    siteFeatures.ecommerceEnabled &&
+    user &&
+    (user.role === "client" || user.role === "admin" || user.role === "editor")
+  );
   const resourceLinks = allResourceLinks.filter(
     (link) => !(link.hideFromClients && isClient)
   );
@@ -369,7 +374,7 @@ export function Navbar() {
                       </Link>
                     </DropdownMenuItem>
                   )}
-                  {isClient && (
+                  {hasCustomerAccountAccess && (
                     <>
                       <DropdownMenuItem asChild>
                         <Link href="/account" data-testid="link-customer-account">
@@ -574,7 +579,7 @@ export function Navbar() {
                         </Button>
                       </Link>
                     )}
-                    {isClient && (
+                    {hasCustomerAccountAccess && (
                       <>
                         <Link href="/account" onClick={() => setMobileOpen(false)}>
                           <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-customer-account">
