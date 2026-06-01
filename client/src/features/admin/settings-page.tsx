@@ -3,6 +3,7 @@ import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { AdminSidebar } from "./admin-sidebar";
@@ -3639,6 +3640,7 @@ type Specialization = { id: number; name: string; sortOrder: number };
 
 export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean } = {}) {
   const { toast } = useToast();
+  const { settings: directorySettings } = useDirectorySettings();
   const [addName, setAddName] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Specialization | null>(null);
@@ -3648,6 +3650,9 @@ export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean
   const { data: specs, isLoading } = useQuery<Specialization[]>({
     queryKey: ["/api/specializations"],
   });
+  const specialtyLabelPlural = directorySettings.specialtyLabelPlural || "Specializations";
+  const specialtyLabelLower = specialtyLabelPlural.toLowerCase();
+  const participantLabelLower = directorySettings.participantLabelPlural.toLowerCase();
 
   const addMutation = useMutation({
     mutationFn: (name: string) => apiRequest("POST", "/api/specializations", { name }),
@@ -3655,7 +3660,7 @@ export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean
       queryClient.invalidateQueries({ queryKey: ["/api/specializations"] });
       setAddName("");
       setAddOpen(false);
-      toast({ title: "Specialization added" });
+      toast({ title: `${specialtyLabelPlural} updated` });
     },
     onError: (err: Error) =>
       toast({ title: "Error", description: err.message, variant: "destructive" }),
@@ -3667,7 +3672,7 @@ export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/specializations"] });
       setEditTarget(null);
-      toast({ title: "Specialization updated" });
+      toast({ title: `${specialtyLabelPlural} updated` });
     },
     onError: (err: Error) =>
       toast({ title: "Error", description: err.message, variant: "destructive" }),
@@ -3678,7 +3683,7 @@ export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/specializations"] });
       setDeleteTarget(null);
-      toast({ title: "Specialization deleted" });
+      toast({ title: `${specialtyLabelPlural} updated` });
     },
     onError: (err: Error) =>
       toast({ title: "Error", description: err.message, variant: "destructive" }),
@@ -3698,10 +3703,10 @@ export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Tag className="h-4 w-4" />
-                  Specialization Settings
+                  {specialtyLabelPlural} Settings
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Manage the list of specializations available in mental health professional
+                  Manage the list of {specialtyLabelLower} available in {participantLabelLower}
                   profiles and the directory filter.
                 </CardDescription>
               </div>
@@ -3736,7 +3741,7 @@ export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean
             </div>
           ) : !specs?.length ? (
             <div className="text-center py-10 text-muted-foreground text-sm">
-              No specializations yet.
+              No {specialtyLabelLower} yet.
             </div>
           ) : (
             <div className="divide-y rounded-md border">
@@ -3777,8 +3782,8 @@ export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean
       <Sheet open={addOpen} onOpenChange={setAddOpen}>
         <SheetContent side="right" className="sm:max-w-md z-[1300]">
           <SheetHeader>
-            <SheetTitle>Add Specialization</SheetTitle>
-            <SheetDescription>Enter a name for the new specialization.</SheetDescription>
+            <SheetTitle>Add {specialtyLabelPlural}</SheetTitle>
+            <SheetDescription>Enter a name for the new {specialtyLabelLower} item.</SheetDescription>
           </SheetHeader>
           <SheetBody>
             <div className="space-y-2">
@@ -3806,7 +3811,7 @@ export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean
               data-testid="button-save-add-specialization"
             >
               {addMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Add Specialization
+              Add {specialtyLabelPlural}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -3820,8 +3825,8 @@ export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean
       >
         <SheetContent side="right" className="sm:max-w-md z-[1300]">
           <SheetHeader>
-            <SheetTitle>Edit Specialization</SheetTitle>
-            <SheetDescription>Update the name of this specialization.</SheetDescription>
+            <SheetTitle>Edit {specialtyLabelPlural}</SheetTitle>
+            <SheetDescription>Update the name of this {specialtyLabelLower} item.</SheetDescription>
           </SheetHeader>
           <SheetBody>
             <div className="space-y-2">
@@ -3866,11 +3871,11 @@ export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean
       >
         <SheetContent side="right" className="sm:max-w-md z-[1300]">
           <SheetHeader>
-            <SheetTitle>Delete Specialization</SheetTitle>
+            <SheetTitle>Delete {specialtyLabelPlural}</SheetTitle>
             <SheetDescription>
               This will remove <strong>{deleteTarget?.name}</strong> from the directory filters and
-              mental health professional profile options. Existing profiles that already have this
-              specialization will retain it until they save changes.
+              {participantLabelLower} profile options. Existing profiles that already have this
+              {specialtyLabelLower} item will retain it until they save changes.
             </SheetDescription>
           </SheetHeader>
           <SheetFooter className="mt-6">
