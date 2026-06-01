@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Bell, Home, Lock, MapPin, Package, Settings, ShieldCheck, ShoppingBag, Truck, User } from "lucide-react";
+import { ArrowLeft, Bell, Home, Lock, MapPin, Package, Settings, ShieldCheck, ShoppingBag, Truck, User } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -153,9 +153,17 @@ function OrderDetail({ orderId }: { orderId: string }) {
   if (!order) return <Card><CardContent className="p-8 text-muted-foreground">Loading order...</CardContent></Card>;
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Order #{order.id.slice(0, 8)}</CardTitle>
-        <CardDescription>{order.createdAt ? `Placed ${new Date(order.createdAt).toLocaleDateString()}` : "Order details"}</CardDescription>
+      <CardHeader className="gap-4">
+        <Button asChild variant="ghost" className="w-fit px-0 text-muted-foreground hover:bg-transparent hover:text-foreground">
+          <Link href="/account/orders">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to orders
+          </Link>
+        </Button>
+        <div>
+          <CardTitle>Order #{order.id.slice(0, 8)}</CardTitle>
+          <CardDescription>{order.createdAt ? `Placed ${new Date(order.createdAt).toLocaleDateString()}` : "Order details"}</CardDescription>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <OrderBadges order={order} />
