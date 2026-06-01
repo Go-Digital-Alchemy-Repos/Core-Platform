@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Home, Lock, MapPin, Package, Pencil, Plus, ShieldCheck, ShoppingBag, Star, Trash2, Truck, User } from "lucide-react";
+import { ArrowLeft, Bell, Home, Lock, MapPin, Package, Pencil, Plus, Printer, ShieldCheck, ShoppingBag, Star, Trash2, Truck, User } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,7 +58,17 @@ interface AccountOrder {
   shippingAmount?: number;
   taxAmount?: number;
   createdAt?: string;
-  items: Array<{ id: string; productName: string; variantTitle?: string | null; quantity: number; lineTotal: number }>;
+  shippingAddress?: {
+    name?: string | null;
+    company?: string | null;
+    address?: string | null;
+    line2?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zip?: string | null;
+    country?: string | null;
+  } | null;
+  items: Array<{ id: string; productName: string; variantTitle?: string | null; quantity: number; unitPrice?: number; lineTotal: number }>;
   shipments: Array<{ id: string; carrier?: string | null; trackingNumber?: string | null; trackingUrl?: string | null; status: string; shippedAt?: string | null }>;
   refunds?: Array<{ id: string; amount: number; status: string; createdAt?: string }>;
 }
@@ -183,22 +193,64 @@ function OrderList({ orders }: { orders: AccountOrder[] }) {
 function OrderDetail({ orderId }: { orderId: string }) {
   const { data: order } = useQuery<AccountOrder>({ queryKey: ["/api/ecommerce/account/orders", orderId] });
   if (!order) return <Card><CardContent className="p-8 text-muted-foreground">Loading order...</CardContent></Card>;
+  const placedDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "";
+  const addressLines = [
+    order.shippingAddress?.name,
+    order.shippingAddress?.company,
+    order.shippingAddress?.address,
+    order.shippingAddress?.line2,
+    [order.shippingAddress?.city, order.shippingAddress?.state, order.shippingAddress?.zip].filter(Boolean).join(", "),
+    order.shippingAddress?.country,
+  ].filter(Boolean);
   return (
-    <Card>
+    <Card className="customer-invoice-print-area">
       <CardHeader className="gap-4">
-        <Button asChild variant="ghost" className="w-fit px-0 text-muted-foreground hover:bg-transparent hover:text-foreground">
-          <Link href="/account/orders">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to orders
-          </Link>
-        </Button>
-        <div>
-          <CardTitle>Order #{order.id.slice(0, 8)}</CardTitle>
-          <CardDescription>{order.createdAt ? `Placed ${new Date(order.createdAt).toLocaleDateString()}` : "Order details"}</CardDescription>
+        <div className="customer-invoice-no-print flex flex-wrap items-center justify-between gap-3">
+          <Button asChild variant="ghost" className="w-fit px-0 text-muted-foreground hover:bg-transparent hover:text-foreground">
+            <Link href="/account/orders">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to orders
+            </Link>
+          </Button>
+          <Button type="button" variant="outline" onClick={() => window.print()}>
+            <Printer className="mr-2 h-4 w-4" />
+            Print invoice
+          </Button>
+        </div>
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="hidden text-sm font-semibold uppercase tracking-wide text-muted-foreground customer-invoice-print-label">Paid invoice</p>
+            <CardTitle>Order #{order.id.slice(0, 8)}</CardTitle>
+            <CardDescription>{placedDate ? `Placed ${placedDate}` : "Order details"}</CardDescription>
+          </div>
+          <div className="hidden text-right text-sm customer-invoice-print-meta">
+            <p className="font-semibold">Core Platform</p>
+            <p>Invoice #{order.id.slice(0, 8)}</p>
+            {placedDate ? <p>Date {placedDate}</p> : null}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <OrderBadges order={order} />
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-lg border p-4">
+            <h3 className="flex items-center gap-2 font-semibold"><MapPin className="h-4 w-4" /> Ship to</h3>
+            {addressLines.length ? (
+              <div className="mt-3 space-y-1 text-sm text-muted-foreground">
+                {addressLines.map((line) => <p key={line}>{line}</p>)}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-muted-foreground">Shipping address was not captured for this order.</p>
+            )}
+          </div>
+          <div className="rounded-lg border p-4">
+            <h3 className="font-semibold">Payment summary</h3>
+            <div className="mt-3 space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">Payment status</span><span className="font-medium">{getEcommercePaymentStatusBadge(order.paymentStatus).label}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Order status</span><span className="font-medium">{getEcommerceOrderStatusBadge(order.status).label}</span></div>
+            </div>
+          </div>
+        </div>
         <div className="grid gap-3">
           {order.items.map((item) => (
             <div key={item.id} className="flex justify-between rounded-lg border p-3">

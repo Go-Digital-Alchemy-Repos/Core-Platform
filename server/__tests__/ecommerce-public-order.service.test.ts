@@ -111,6 +111,14 @@ describe("ecommerce public order status serializer", () => {
     expect(publicOrder).toMatchObject({
       id: "order-1",
       status: "paid",
+      shippingAddress: {
+        name: "Buyer",
+        address: "123 Main",
+        city: "Detroit",
+        state: "MI",
+        zip: "48201",
+        country: "US",
+      },
       items: [{ id: "item-1", productName: "Product", lineTotal: 10000 }],
     });
     expect(JSON.stringify(publicOrder)).not.toContain("hashed-password");

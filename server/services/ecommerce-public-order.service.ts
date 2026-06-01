@@ -11,6 +11,16 @@ export function toPublicEcommerceOrderStatus(order: EcommerceOrderWithDetails) {
     shippingAmount: order.shippingAmount,
     taxAmount: order.taxAmount,
     createdAt: order.createdAt,
+    shippingAddress: {
+      name: order.shippingName,
+      company: order.shippingCompany,
+      address: order.shippingAddress,
+      line2: order.shippingLine2,
+      city: order.shippingCity,
+      state: order.shippingState,
+      zip: order.shippingZip,
+      country: order.shippingCountry,
+    },
     items: order.items.map((item) => ({
       id: item.id,
       productName: item.productName,

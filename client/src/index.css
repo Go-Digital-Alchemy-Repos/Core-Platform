@@ -485,3 +485,45 @@
     }
   }
 }
+
+@media print {
+  body:has(.customer-invoice-print-area) * {
+    visibility: hidden;
+  }
+
+  body:has(.customer-invoice-print-area) {
+    background: #ffffff;
+  }
+
+  .customer-invoice-print-area,
+  .customer-invoice-print-area * {
+    visibility: visible;
+  }
+
+  .customer-invoice-print-area {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    border: 0 !important;
+    box-shadow: none !important;
+    color: #111827;
+  }
+
+  .customer-invoice-print-area [class*="shadow"],
+  .customer-invoice-print-area .rounded-lg {
+    box-shadow: none !important;
+  }
+
+  .customer-invoice-no-print {
+    display: none !important;
+  }
+
+  .customer-invoice-print-label,
+  .customer-invoice-print-meta {
+    display: block !important;
+  }
+
+  @page {
+    margin: 0.65in;
+  }
+}
