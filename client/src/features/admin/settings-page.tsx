@@ -133,7 +133,13 @@ type BrandingColorSettingKey =
   | "text_secondary_foreground_color"
   | "text_tertiary_foreground_color";
 
-type SystemConfigurationSettingKey = "enable_directory" | "enable_blog" | "enable_events" | "enable_crm" | "enable_ecommerce";
+type SystemConfigurationSettingKey =
+  | "enable_cms"
+  | "enable_directory"
+  | "enable_blog"
+  | "enable_events"
+  | "enable_crm"
+  | "enable_ecommerce";
 type SettingsTab = "integrations" | "head-tags" | "system" | "email-templates";
 
 const SETTINGS_TABS = new Set<SettingsTab>([
@@ -265,6 +271,12 @@ const SYSTEM_CONFIGURATION_FIELDS: Array<{
   label: string;
   description: string;
 }> = [
+  {
+    key: "enable_cms",
+    label: "Enable CMS",
+    description:
+      "Turns the CMS app on or off, including pages, media, sections, SEO tools, menus, sidebars, and widgets.",
+  },
   {
     key: "enable_directory",
     label: "Enable Directory",
@@ -1777,6 +1789,12 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
   const { toast } = useToast();
   const systemConfig = settings.system_configuration || {};
   const getStoredValue = (key: SystemConfigurationSettingKey) => {
+    if (key === "enable_cms") {
+      return normalizeBooleanSetting(
+        systemConfig.enable_cms?.value,
+        DEFAULT_SITE_FEATURES.cmsEnabled,
+      );
+    }
     if (key === "enable_directory") {
       return normalizeBooleanSetting(
         systemConfig.enable_directory?.value,
@@ -1807,6 +1825,7 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
     );
   };
   const [values, setValues] = useState<Record<SystemConfigurationSettingKey, boolean>>({
+    enable_cms: getStoredValue("enable_cms"),
     enable_directory: getStoredValue("enable_directory"),
     enable_blog: getStoredValue("enable_blog"),
     enable_events: getStoredValue("enable_events"),
@@ -1816,6 +1835,7 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
 
   useEffect(() => {
     setValues({
+      enable_cms: getStoredValue("enable_cms"),
       enable_directory: getStoredValue("enable_directory"),
       enable_blog: getStoredValue("enable_blog"),
       enable_events: getStoredValue("enable_events"),
@@ -1823,6 +1843,7 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
       enable_ecommerce: getStoredValue("enable_ecommerce"),
     });
   }, [
+    systemConfig.enable_cms?.value,
     systemConfig.enable_directory?.value,
     systemConfig.enable_blog?.value,
     systemConfig.enable_events?.value,

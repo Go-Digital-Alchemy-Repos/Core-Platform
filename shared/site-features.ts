@@ -1,4 +1,5 @@
 export interface SiteFeatures {
+  cmsEnabled: boolean;
   directoryEnabled: boolean;
   blogEnabled: boolean;
   eventsEnabled: boolean;
@@ -7,6 +8,7 @@ export interface SiteFeatures {
 }
 
 export const DEFAULT_SITE_FEATURES: SiteFeatures = {
+  cmsEnabled: true,
   directoryEnabled: true,
   blogEnabled: true,
   eventsEnabled: true,

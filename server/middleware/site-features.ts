@@ -18,3 +18,4 @@ export function requireSiteFeature(feature: keyof SiteFeatures, label: string): 
 }
 
 export const requireEcommerceEnabled = requireSiteFeature("ecommerceEnabled", "Ecommerce");
+export const requireCmsEnabled = requireSiteFeature("cmsEnabled", "CMS");

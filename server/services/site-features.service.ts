@@ -10,6 +10,7 @@ export async function getSiteFeatures(): Promise<SiteFeatures> {
   try {
     const settings = await storage.settings.getDecryptedCategory("system_configuration");
     return {
+      cmsEnabled: normalizeBooleanSetting(settings.enable_cms, DEFAULT_SITE_FEATURES.cmsEnabled),
       directoryEnabled: normalizeBooleanSetting(
         settings.enable_directory,
         DEFAULT_SITE_FEATURES.directoryEnabled,
