@@ -157,7 +157,7 @@ export default function TherapistProfilePage() {
   const showMap = directorySettings.showLocationFields && therapist.latitude != null && therapist.longitude != null;
   const directionsUrl =
     visibleAddressParts.length > 0
-      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(visibleAddressParts.join(", "))}`
+      ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(visibleAddressParts.join(", "))}`
       : null;
   const normalizedWebsite = therapist.website
     ? /^https?:\/\//i.test(therapist.website)
@@ -466,6 +466,52 @@ export default function TherapistProfilePage() {
               </Card>
             )}
 
+            {hasContact && (
+              <Card data-testid="card-contact">
+                <CardContent className="pt-6">
+                  <h3 className="font-semibold mb-4" data-testid="heading-contact">
+                    Contact Information
+                  </h3>
+                  <div className="flex flex-col gap-3 text-sm">
+                    {visibleAddressParts.length > 0 && (
+                      <div className="flex items-start gap-3" data-testid="text-address">
+                        <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+                        <a
+                          href={directionsUrl ?? undefined}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-primary hover:underline break-words min-w-0"
+                        >
+                          {visibleAddressParts.join(", ")}
+                        </a>
+                      </div>
+                    )}
+                    {directorySettings.showPhone && therapist.phone && (
+                      <div className="flex items-center gap-3" data-testid="text-phone">
+                        <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <a href={`tel:${therapist.phone}`} className="hover:underline break-all min-w-0">
+                          {therapist.phone}
+                        </a>
+                      </div>
+                    )}
+                    {directorySettings.showWebsite && normalizedWebsite && (
+                      <div className="flex items-center gap-3 min-w-0" data-testid="text-website">
+                        <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <a
+                          href={normalizedWebsite}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline break-all min-w-0"
+                        >
+                          {normalizedWebsite.replace(/^https?:\/\//, "")}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {showMap && (
               <Card className="overflow-hidden" data-testid="card-map">
                 <div className="aspect-video lg:aspect-square">
@@ -496,45 +542,6 @@ export default function TherapistProfilePage() {
                   <p className="text-xs text-muted-foreground mt-1">
                     This {directorySettings.participantLabelSingular.toLowerCase()} offers services online and is available worldwide.
                   </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {hasContact && (
-              <Card data-testid="card-contact">
-                <CardContent className="pt-6">
-                  <h3 className="font-semibold mb-4" data-testid="heading-contact">
-                    Contact Information
-                  </h3>
-                  <div className="flex flex-col gap-3 text-sm">
-                    {visibleAddressParts.length > 0 && (
-                      <div className="flex items-start gap-3" data-testid="text-address">
-                        <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
-                        <span className="text-muted-foreground break-words min-w-0">{visibleAddressParts.join(", ")}</span>
-                      </div>
-                    )}
-                    {directorySettings.showPhone && therapist.phone && (
-                      <div className="flex items-center gap-3" data-testid="text-phone">
-                        <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <a href={`tel:${therapist.phone}`} className="hover:underline break-all min-w-0">
-                          {therapist.phone}
-                        </a>
-                      </div>
-                    )}
-                    {directorySettings.showWebsite && normalizedWebsite && (
-                      <div className="flex items-center gap-3 min-w-0" data-testid="text-website">
-                        <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <a
-                          href={normalizedWebsite}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:underline break-all min-w-0"
-                        >
-                          {normalizedWebsite.replace(/^https?:\/\//, "")}
-                        </a>
-                      </div>
-                    )}
-                  </div>
                 </CardContent>
               </Card>
             )}
