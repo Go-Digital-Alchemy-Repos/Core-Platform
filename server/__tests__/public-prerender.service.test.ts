@@ -268,6 +268,7 @@ describe("public-prerender.service", () => {
 
     expect(html).toContain('meta name="robots" content="noindex,follow"');
     expect(html).toContain("Search Results for &quot;application process&quot;");
+    expect(html).not.toContain("seo-prerender");
   });
 
   it("retrieves and injects custom public head additions", async () => {

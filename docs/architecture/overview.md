@@ -12,11 +12,12 @@
 | ORM | Drizzle ORM | PostgreSQL driver via `@neondatabase/serverless` |
 | Database | PostgreSQL | Hosted on Neon (serverless), 45+ B-tree indexes |
 | Auth | JWT (HTTP-only cookies) | `bcryptjs` for password hashing, 7-day token expiry |
-| Payments | Stripe | Subscriptions, webhook handling, recording purchases |
+| Payments | Stripe | Subscriptions, ecommerce checkout, webhook handling, recording purchases |
 | File Storage | Cloudflare R2 | For media uploads (images, recordings) |
 | Email | Custom email service | Template-based with `email.service.ts` |
 | Logging | Pino | Structured logging with named sources and request IDs |
 | Security | Helmet, rate limiting, origin checking | CSP headers, per-endpoint rate limits |
+| Feature Apps | Settings-backed toggles | Directory, blog, events, CRM, and ecommerce availability |
 
 ## Folder Structure
 
@@ -31,9 +32,10 @@
 │       │   ├── shared/              # Shared components (editors, SEO, theme)
 │       │   └── ui/                  # shadcn/ui primitives
 │       ├── features/
-│       │   ├── admin/               # Admin dashboard, CMS, blog, applications
+│       │   ├── admin/               # Admin dashboard, CMS, blog, CRM, ecommerce, applications
 │       │   ├── auth/                # Auth pages (login, register, reset)
 │       │   ├── directory/           # Therapist directory and profile pages
+│       │   ├── ecommerce/           # Shop, product detail, cart, checkout, order status
 │       │   ├── public/              # Public pages (home, about, events, insights)
 │       │   └── therapist/           # Therapist dashboard, profile edit, subscription
 │       ├── hooks/                   # Custom React hooks
@@ -52,13 +54,18 @@
 │   │   ├── admin/                   # Admin-only routes (18 files)
 │   │   ├── directory.routes.ts      # Public therapist directory
 │   │   ├── auth.routes.ts           # Login, register, password reset
-│   │   ├── stripe.routes.ts         # Stripe checkout/portal/webhooks
+│   │   ├── stripe.routes.ts         # Subscription Stripe checkout/portal/webhooks
+│   │   ├── ecommerce.routes.ts      # Public ecommerce catalog, pricing, checkout, lookup
 │   │   ├── application.routes.ts    # Therapist application flow
 │   │   └── ...                      # Events, blog, CMS, contacts, etc.
 │   ├── services/
 │   │   ├── email.service.ts         # Email template rendering and sending
 │   │   ├── r2.service.ts            # Cloudflare R2 file operations
 │   │   ├── background-check.service.ts
+│   │   ├── crm.service.ts
+│   │   ├── ecommerce-order.service.ts
+│   │   ├── ecommerce-pricing.service.ts
+│   │   ├── ecommerce-stripe.service.ts
 │   │   └── scheduled-publish.service.ts
 │   ├── storage/                     # Data access layer (28 storage files)
 │   │   ├── index.ts                 # Storage facade aggregating all stores
@@ -70,7 +77,8 @@
 │   │   ├── metrics.ts               # In-memory request metrics
 │   │   └── params.ts                # Express param helpers
 │   └── webhooks/
-│       └── stripe.handler.ts        # Stripe webhook event processing
+│       ├── stripe.handler.ts        # Subscription Stripe webhook event processing
+│       └── ecommerce-stripe.handler.ts # Ecommerce Stripe webhook event processing
 ├── shared/
 │   ├── schema/                      # Drizzle table definitions (30 files)
 │   │   ├── index.ts                 # Re-exports all schemas
@@ -96,6 +104,8 @@
 
 5. **File Uploads**: Files are uploaded to Cloudflare R2 via `r2.service.ts`. The upload route handles multipart form data and returns the R2 URL.
 
-6. **Payments**: Stripe handles subscriptions and one-time purchases. Webhook events are processed by `stripe.handler.ts` to update local subscription records.
+6. **Payments**: Stripe handles subscriptions, one-time purchases, and ecommerce checkout. Subscription webhook events are processed by `stripe.handler.ts`; ecommerce webhook events are processed by `ecommerce-stripe.handler.ts`.
 
 7. **CMS**: A hybrid rendering system allows pages to be served from the CMS block builder or fall back to hardcoded React components. The `CmsHybridPage` component checks for CMS content first.
+
+8. **Feature Apps**: The frontend reads `/api/site-config` and the server reads `system_configuration` settings to decide which major apps are active. Feature gates hide or reject unavailable app surfaces without deleting data.

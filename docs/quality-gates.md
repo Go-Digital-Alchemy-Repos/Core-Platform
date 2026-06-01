@@ -78,6 +78,8 @@ npx vitest --watch
 
 When a budget fails, do not simply raise the number. First check whether a module-only dependency has drifted into a shared chunk, whether a page is importing a heavy editor/chart/map library eagerly, or whether a new feature should be lazy-loaded behind route or component boundaries.
 
+Current guardrails expect app-level routes such as CRM and ecommerce to stay lazy loaded instead of inflating the initial public bundle.
+
 ## CI Workflow
 
 The CI quality workflow should run automatically on every push to `main` and on every pull request targeting `main`. It should execute:

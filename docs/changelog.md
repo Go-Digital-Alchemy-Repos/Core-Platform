@@ -4,6 +4,38 @@ Summary of all completed work from the Core Platform stabilization sprint.
 
 ---
 
+## Recent Product App Additions
+
+- **Added CRM pipeline app**
+  - Lead stages: new, contacted, qualified, proposal, won, lost
+  - Drag-and-drop lead movement
+  - Lead notes and tasks
+  - Manual lead creation
+  - Inbound lead deduplication by email or phone
+  - Automatic client creation when a lead moves to won
+- **Expanded CRM client profiles**
+  - Individual/business client types
+  - Contact, company, billing, onboarding, account owner, service dates, renewal date, internal tags, notes, and tasks
+  - Client search and status filtering
+- **Added ecommerce module with Stripe checkout**
+  - Public shop, product detail, cart, checkout, order success, and order lookup pages
+  - Admin product, category, coupon, order, shipping, refund, and ecommerce Stripe settings areas
+  - Ecommerce-specific Stripe settings, payment intents, and webhook handler
+  - Orders, customers, line items, coupons, refunds, shipping zones/rates, shipments, and processed webhook event tables
+- **Seeded starter shop catalog and navigation**
+  - Starter categories and products are added during system bootstrap when missing
+  - CMS shop shell and main navigation shop item are added without overwriting existing content
+- **Added site feature app configuration**
+  - Directory, blog, events, CRM, and ecommerce can be toggled from system configuration
+  - Ecommerce public/admin APIs are feature-gated
+- **Added platform performance guardrails**
+  - Bundle budget script added as `npm run budget`
+  - Frontend code-splitting and module-boundary docs updated to protect public bundle size
+- **Improved public prerender fallback behavior**
+  - Static prerender fallback stays hidden after app boot to avoid duplicate content flashes
+
+---
+
 ## Build Stabilization (Phase A)
 
 - **Fixed all 62 TypeScript build errors** across 6 files

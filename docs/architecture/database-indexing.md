@@ -34,6 +34,11 @@ Defined in `shared/schema/therapist-profiles.ts`:
 | `notifications` | `userId`, `isRead` | User notification queries |
 | `provider_applications` | `userId`, `status` | Application lookup |
 | `events` | `status`, `startDate` | Event listing/filtering |
+| `crm_leads` | `stage`, `email`, `phone`, `source`, `ownerId`, `createdAt` | Pipeline, dedupe, ownership, and follow-up work |
+| `crm_clients` | `sourceLeadId`, `status`, `email`, `phone`, `clientType`, `companyName`, `accountOwnerId`, `ownerId`, `createdAt` | Client search, status views, source conversion, and ownership |
+| `ecommerce_products` | `urlSlug` (unique), `status, active` | Public catalog and product detail lookup |
+| `ecommerce_orders` | `customerId`, `status`, `paymentStatus`, `createdAt`, `lookupToken`, `stripePaymentIntentId` | Admin order lists, customer lookup, public status lookup, Stripe reconciliation |
+| `ecommerce_processed_webhook_events` | `provider, eventId` (unique) | Idempotent webhook processing |
 
 ## Foreign Key Relationships
 
@@ -73,3 +78,21 @@ provider_applications.id ←── provider_application_decisions.applicationId
 - Production migrations run automatically on startup via `server/migrate.ts`
 - Schema changes use `npm run db:push` for development
 - Migration files are numbered sequentially (0001, 0002, etc.)
+
+## Ecommerce Index Notes
+
+The ecommerce schema has a broad set of lookup indexes because ecommerce work has multiple hot paths: public catalog reads, admin order operations, checkout reconciliation, coupon validation, refund tracking, and shipping updates.
+
+Key ecommerce index groups:
+
+- Product/category slugs and active catalog filters.
+- Product-category association lookups.
+- Customer email/user lookups.
+- Order status, payment status, created date, lookup token, and Stripe payment-intent lookups.
+- Order item product/order lookups.
+- Coupon code, active status, and redemption history lookups.
+- Refund order/status/Stripe refund lookups.
+- Shipping zone/rate and shipment tracking lookups.
+- Processed webhook event uniqueness for idempotency.
+
+Use `migrations/0024_ecommerce.sql` for the base ecommerce schema and `migrations/0025_ecommerce_indexes.sql` for supplemental ecommerce indexes.

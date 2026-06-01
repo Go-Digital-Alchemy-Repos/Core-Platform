@@ -12,11 +12,14 @@ All API routes are registered in `server/routes/index.ts` via `registerApiRoutes
 | `/api/therapists` | `directory.routes.ts` | Public | Therapist directory listing, filters, featured, profile detail |
 | `/api/therapist` | `therapist.routes.ts` | Therapist | Therapist dashboard data |
 | `/api/therapist/application` | `application.routes.ts` | Therapist | Multi-step provider application workflow |
-| `/api/stripe` | `stripe.routes.ts` | Mixed | Checkout, portal, subscription management, webhook |
+| `/api/stripe` | `stripe.routes.ts` | Mixed | Subscription checkout, portal, subscription management, webhook |
 | `/api/admin/*` | `admin/index.ts` | Admin | All admin routes (see below) |
 | `/api/events` | `events.routes.ts` | Public | Event listing, detail |
 | `/api/events` | `registration.routes.ts` | Mixed | Event registration (RSVP, tickets) |
 | `/api/contact` | `contact.routes.ts` | Public | Contact form submissions |
+| `/api/forms` | `forms.routes.ts` | Public/Admin mixed | Public form definitions and submissions |
+| `/api/crm` | `crm.routes.ts` | API key | Inbound CRM lead intake |
+| `/api/ecommerce` | `ecommerce.routes.ts` | Public, feature-gated | Storefront catalog, cart pricing, checkout, order lookup |
 | `/api/contact-professional` | `contact-professional.routes.ts` | Public (rate-limited) | Guest message to a therapist |
 | `/api/admin/docs` | `docs.routes.ts` | Admin | Internal document management |
 | `/api/uploads` | `upload.routes.ts` | Auth | File upload to R2 |
@@ -46,8 +49,14 @@ All admin routes require `admin` role and are registered under `/api/admin/`:
 | `/cms/sections` | `cms-sections.routes.ts` | Reusable CMS sections |
 | `/cms/seo` | `cms-seo.routes.ts` | SEO settings |
 | `/cms/menus` | `cms-menus.routes.ts` | Navigation menus |
+| `/cms/sidebars` | `cms-sidebars.routes.ts` | Sidebar and widget management |
 | `/cms/redirects` | `cms-redirects.routes.ts` | URL redirect management |
 | `/cms/audit` | `cms-audit.routes.ts` | CMS audit log |
+| `/forms` | `forms.routes.ts` | Form builder and form submissions |
+| `/crm` | `crm.routes.ts` | Lead pipeline, lead detail, client profiles, notes, tasks |
+| `/ecommerce` | `ecommerce.routes.ts` | Products, categories, coupons, orders, refunds, shipping, ecommerce Stripe settings |
+| `/editor-locks` | `editor-locks.routes.ts` | Editor lock status and conflict handling |
+| `/system-backups` | `system-backups.routes.ts` | System backup creation, restore support, backup listings |
 
 ## Additional Endpoints (inline in index.ts / server/index.ts)
 
@@ -59,6 +68,8 @@ All admin routes require `admin` role and are registered under `/api/admin/`:
 | `/api/branding` | GET | Public branding settings for the frontend |
 | `/api/membership-tiers` | GET | Public tier listing |
 | `/api/seo/global` | GET | Global SEO settings |
+| `/api/site-config` | GET | Feature-app availability for directory, blog, events, CRM, ecommerce |
+| `/api/runtime-integrations` | GET | Runtime integration config such as GA4 measurement ID |
 | `/robots.txt` | GET | Dynamic robots.txt |
 | `/sitemap.xml` | GET | Dynamic XML sitemap |
 
