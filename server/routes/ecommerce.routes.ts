@@ -21,6 +21,7 @@ import { toPublicEcommerceOrderStatus } from "../services/ecommerce-public-order
 import { getEcommerceCustomerAccountSettings } from "../services/ecommerce-customer-account.service";
 import { getEcommerceStoreSettings } from "../services/ecommerce-store-settings.service";
 import { sendEcommerceOrderStatusLinkEmail } from "../services/ecommerce-email.service";
+import { renderEcommerceInvoicePdf } from "../services/ecommerce-invoice-pdf.service";
 import { getEcommerceStripePublishableKey, getEcommerceStripeMode } from "../services/ecommerce-stripe.service";
 import { requireEcommerceEnabled } from "../middleware/site-features";
 import { authenticateToken, generateToken, optionalAuth, requireRole, setTokenCookie } from "../middleware/auth";
@@ -274,6 +275,24 @@ router.get(
     const customer = await getOrCreateSignedInCustomer(req.user!);
     const orders = await storage.ecommerce.getOrdersForCustomer(customer.id);
     res.json(orders.map(toPublicEcommerceOrderStatus));
+  }),
+);
+
+router.get(
+  "/account/orders/:id/invoice.pdf",
+  asyncHandler(async (req, res) => {
+    const customer = await getOrCreateSignedInCustomer(req.user!);
+    const order = await storage.ecommerce.getOrderWithDetails(paramString(req.params.id));
+    if (!order || order.customerId !== customer.id) {
+      res.status(404).json({ message: "Order not found" });
+      return;
+    }
+    const pdf = await renderEcommerceInvoicePdf(order);
+    const invoiceNumber = order.id.slice(0, 8).toUpperCase();
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="invoice-${invoiceNumber}.pdf"`);
+    res.setHeader("Content-Length", String(pdf.length));
+    res.send(pdf);
   }),
 );
 

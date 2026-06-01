@@ -212,9 +212,11 @@ function OrderDetail({ orderId }: { orderId: string }) {
               Back to orders
             </Link>
           </Button>
-          <Button type="button" variant="outline" onClick={() => window.print()}>
-            <Printer className="mr-2 h-4 w-4" />
-            Print invoice
+          <Button asChild variant="outline">
+            <a href={`/api/ecommerce/account/orders/${order.id}/invoice.pdf`} target="_blank" rel="noreferrer">
+              <Printer className="mr-2 h-4 w-4" />
+              Print invoice
+            </a>
           </Button>
         </div>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
