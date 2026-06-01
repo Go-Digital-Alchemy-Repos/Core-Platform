@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ClipboardList,
   Copy,
+  DollarSign,
   FolderTree,
   Eye,
   Image,
@@ -1581,8 +1582,30 @@ function CouponCheckboxGroup({ title, items, selected, onToggle }: { title: stri
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">{label}</div><div className="text-lg font-semibold">{value}</div></div>;
+function Metric({
+  label,
+  value,
+  icon: Icon,
+  iconClassName,
+}: {
+  label: string;
+  value: string;
+  icon?: ElementType;
+  iconClassName?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border p-3">
+      {Icon ? (
+        <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground", iconClassName)}>
+          <Icon className="h-5 w-5" />
+        </div>
+      ) : null}
+      <div>
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="text-lg font-semibold">{value}</div>
+      </div>
+    </div>
+  );
 }
 
 function formatOrderNoteAuthor(note: NonNullable<Order["internalNotes"]>[number]) {
@@ -1806,10 +1829,10 @@ function OrdersTab() {
               </SheetHeader>
               <SheetBody className="space-y-5">
                 <div className="grid gap-3 md:grid-cols-4">
-                  <Metric label="Total" value={formatMoney(selectedOrder.totalAmount)} />
-                  <Metric label="Subtotal" value={formatMoney(selectedOrder.subtotalAmount ?? 0)} />
-                  <Metric label="Shipping" value={formatMoney(selectedOrder.shippingAmount ?? 0)} />
-                  <Metric label="Tax" value={formatMoney(selectedOrder.taxAmount ?? 0)} />
+                  <Metric label="Total" value={formatMoney(selectedOrder.totalAmount)} icon={DollarSign} iconClassName="bg-emerald-50 text-emerald-600" />
+                  <Metric label="Subtotal" value={formatMoney(selectedOrder.subtotalAmount ?? 0)} icon={ShoppingBag} iconClassName="bg-blue-50 text-blue-600" />
+                  <Metric label="Shipping" value={formatMoney(selectedOrder.shippingAmount ?? 0)} icon={Truck} iconClassName="bg-amber-50 text-amber-600" />
+                  <Metric label="Tax" value={formatMoney(selectedOrder.taxAmount ?? 0)} icon={Percent} iconClassName="bg-violet-50 text-violet-600" />
                 </div>
 
                 <div className="grid gap-5 xl:grid-cols-[1.25fr_0.9fr]">
