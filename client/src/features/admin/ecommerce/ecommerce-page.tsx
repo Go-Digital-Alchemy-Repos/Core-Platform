@@ -281,14 +281,44 @@ interface CustomerAccountSettingsStatus {
 
 type StoreOriginField = keyof EcommerceStoreSettings["storeOrigin"];
 
-function OrderTableRow({ order, selected, onSelect }: { order: Order; selected: boolean; onSelect: () => void }) {
+function getOrderDisplayNumber(orderId: string) {
+  return `#${orderId.split("-")[0]?.toUpperCase() || orderId.toUpperCase()}`;
+}
+
+function OrderTableRow({
+  order,
+  selected,
+  onSelect,
+  onCopy,
+}: {
+  order: Order;
+  selected: boolean;
+  onSelect: () => void;
+  onCopy: (order: Order) => void;
+}) {
   const orderStatus = getEcommerceOrderStatusBadge(order.status);
   const paymentStatus = getEcommercePaymentStatusBadge(order.paymentStatus);
+  const displayOrderNumber = getOrderDisplayNumber(order.id);
 
   return (
     <TableRow className={selected ? "bg-muted/50" : undefined}>
       <TableCell>
-        <div className="font-mono text-xs">{order.id}</div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">{displayOrderNumber}</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            aria-label={`Copy order number ${displayOrderNumber}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onCopy(order);
+            }}
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </Button>
+        </div>
         <div className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</div>
       </TableCell>
       <TableCell>{order.customer?.email || "-"}</TableCell>
@@ -1521,6 +1551,7 @@ function OrdersTab() {
     const query = orderSearch.trim().toLowerCase();
     const matchesSearch = !query || [
       order.id,
+      getOrderDisplayNumber(order.id),
       order.customer?.email,
       order.customer?.name,
       ...order.items.map((item) => item.productName),
@@ -1536,6 +1567,20 @@ function OrdersTab() {
     ?? null;
   const visibleRevenue = filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0);
   const unfulfilledCount = orders.filter((order) => !["shipped", "delivered", "cancelled"].includes(order.status)).length;
+
+  const copyOrderNumber = async (order: Order) => {
+    const displayOrderNumber = getOrderDisplayNumber(order.id);
+    try {
+      await navigator.clipboard.writeText(displayOrderNumber);
+      toast({ title: "Order number copied", description: displayOrderNumber });
+    } catch {
+      toast({
+        title: "Unable to copy order number",
+        description: "Please copy it manually.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     if ((!selectedOrderId || !filteredOrders.some((order) => order.id === selectedOrderId)) && filteredOrders[0]?.id) {
@@ -1670,6 +1715,7 @@ function OrdersTab() {
                   order={order}
                   selected={selectedOrder?.id === order.id}
                   onSelect={() => setSelectedOrderId(order.id)}
+                  onCopy={copyOrderNumber}
                 />
               ))}
               {filteredOrders.length === 0 ? (
@@ -1687,7 +1733,7 @@ function OrdersTab() {
       <Card className="h-fit">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><ClipboardList className="h-5 w-5" /> Order detail</CardTitle>
-          <CardDescription>{selectedOrder ? `Order ${selectedOrder.id}` : "Select an order to manage."}</CardDescription>
+          <CardDescription>{selectedOrder ? `Order ${getOrderDisplayNumber(selectedOrder.id)}` : "Select an order to manage."}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {selectedOrder ? (
