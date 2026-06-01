@@ -235,18 +235,22 @@ function buildNavGroups(
           {
             label: "Content",
             items: [
-              {
-                title: "CMS Overview",
-                href: "/admin/cms",
-                icon: Globe,
-                iconColor: "text-violet-600",
-              },
-              {
-                title: "Pages",
-                href: "/admin/cms/pages",
-                icon: FileCode,
-                iconColor: "text-violet-500",
-              },
+              ...(siteFeatures.cmsEnabled
+                ? [
+                    {
+                      title: "CMS Overview",
+                      href: "/admin/cms",
+                      icon: Globe,
+                      iconColor: "text-violet-600",
+                    } satisfies NavItem,
+                    {
+                      title: "Pages",
+                      href: "/admin/cms/pages",
+                      icon: FileCode,
+                      iconColor: "text-violet-500",
+                    } satisfies NavItem,
+                  ]
+                : []),
               {
                 title: "Forms",
                 href: "/admin/forms",
@@ -263,24 +267,40 @@ function buildNavGroups(
                     } satisfies NavItem,
                   ]
                 : []),
-              {
-                title: "Media",
-                href: "/admin/cms/media",
-                icon: Image,
-                iconColor: "text-violet-400",
-              },
-              {
-                title: "Sections",
-                href: "/admin/cms/sections",
-                icon: Blocks,
-                iconColor: "text-violet-400",
-              },
-              {
-                title: "SEO",
-                href: "/admin/cms/seo",
-                icon: SearchIcon,
-                iconColor: "text-violet-400",
-              },
+              ...(siteFeatures.cmsEnabled
+                ? [
+                    {
+                      title: "Media",
+                      href: "/admin/cms/media",
+                      icon: Image,
+                      iconColor: "text-violet-400",
+                    } satisfies NavItem,
+                    {
+                      title: "Sections",
+                      href: "/admin/cms/sections",
+                      icon: Blocks,
+                      iconColor: "text-violet-400",
+                    } satisfies NavItem,
+                    {
+                      title: "SEO",
+                      href: "/admin/cms/seo",
+                      icon: SearchIcon,
+                      iconColor: "text-violet-400",
+                    } satisfies NavItem,
+                    {
+                      title: "Menus",
+                      href: "/admin/cms/menus",
+                      icon: MenuIcon,
+                      iconColor: "text-violet-500",
+                    } satisfies NavItem,
+                    {
+                      title: "Sidebars & Widgets",
+                      href: "/admin/cms/sidebars",
+                      icon: PanelRight,
+                      iconColor: "text-emerald-500",
+                    } satisfies NavItem,
+                  ]
+                : []),
             ],
           },
         ] satisfies NavGroup[])
@@ -307,18 +327,6 @@ function buildNavGroups(
                 href: "/admin/design/typography",
                 icon: Type,
                 iconColor: "text-sky-600",
-              },
-              {
-                title: "Menus",
-                href: "/admin/cms/menus",
-                icon: MenuIcon,
-                iconColor: "text-violet-500",
-              },
-              {
-                title: "Sidebars & Widgets",
-                href: "/admin/cms/sidebars",
-                icon: PanelRight,
-                iconColor: "text-emerald-500",
               },
             ],
           },

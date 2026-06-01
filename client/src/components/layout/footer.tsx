@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { useBranding } from "@/components/shared/branding-provider";
+import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
 import type { CmsMenu, MenuItem, PublicMenuLocation } from "@shared/schema";
 
 const defaultPlatformLinks = [
@@ -150,6 +151,11 @@ function StandardFooterColumn({ menu }: { menu: CmsMenu }) {
 
 export function Footer() {
   const { frontendLogoUrl } = useBranding();
+  const { data: siteFeaturesData } = useQuery<SiteFeatures>({
+    queryKey: ["/api/site-config"],
+    staleTime: 60000,
+  });
+  const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
   const { data: publicMenus } = useQuery<Partial<Record<PublicMenuLocation, CmsMenu>>>({
     queryKey: ["/api/cms/menus"],
     queryFn: async () => {
@@ -157,6 +163,7 @@ export function Footer() {
       if (!res.ok) return null;
       return res.json();
     },
+    enabled: siteFeatures.cmsEnabled,
     staleTime: 60000,
   });
 

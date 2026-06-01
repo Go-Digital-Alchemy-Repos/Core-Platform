@@ -18,6 +18,7 @@ import {
 interface CmsHybridPageProps {
   slug: string;
   fallback: React.ReactNode;
+  enabled?: boolean;
 }
 
 interface CmsPageViewProps {
@@ -209,7 +210,7 @@ export function CmsPageView({ page, globalSeo, previewLabel }: CmsPageViewProps)
   );
 }
 
-export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
+export function CmsHybridPage({ slug, fallback, enabled = true }: CmsHybridPageProps) {
   const { data: page, isLoading, error } = useQuery<CmsPage>({
     queryKey: ["/api/cms/pages/by-slug", slug],
     queryFn: async () => {
@@ -233,6 +234,7 @@ export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
       if (err instanceof CmsNotFoundError) return false;
       return failureCount < 2;
     },
+    enabled,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -240,6 +242,10 @@ export function CmsHybridPage({ slug, fallback }: CmsHybridPageProps) {
     queryKey: ["/api/seo/global"],
     staleTime: 10 * 60 * 1000,
   });
+
+  if (!enabled) {
+    return <>{fallback}</>;
+  }
 
   if (isLoading) {
     return <CmsLoadingPage />;

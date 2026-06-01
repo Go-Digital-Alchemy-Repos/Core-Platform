@@ -7,6 +7,7 @@ import { Search, Tag, ArrowRight } from "lucide-react";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
 import type { BlogPost, CmsSidebar, SidebarWidget } from "@shared/schema";
 
 function text(value: unknown, fallback = "") {
@@ -257,7 +258,12 @@ export function PublicSidebar({
   sidebarId?: string | null;
   useDefault?: boolean;
 }) {
-  const shouldFetch = Boolean(sidebarId || useDefault);
+  const { data: siteFeaturesData } = useQuery<SiteFeatures>({
+    queryKey: ["/api/site-config"],
+    staleTime: 60000,
+  });
+  const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
+  const shouldFetch = siteFeatures.cmsEnabled && Boolean(sidebarId || useDefault);
   const endpoint = sidebarId ? `/api/cms/sidebars/${sidebarId}` : "/api/cms/sidebars/default";
   const { data: sidebar } = useQuery<CmsSidebar>({
     queryKey: ["/api/cms/sidebars", sidebarId || "default"],

@@ -95,6 +95,11 @@ function PageLoader() {
 
 function AdminIndexRoute() {
   const { user, hasAdminPermission } = useAuth();
+  const { data: siteFeaturesData } = useQuery<SiteFeatures>({
+    queryKey: ["/api/site-config"],
+    staleTime: 60_000,
+  });
+  const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
 
   if (!user) {
     return <Redirect to="/auth/login" replace />;
@@ -108,8 +113,17 @@ function AdminIndexRoute() {
     if (hasAdminPermission("directory")) {
       return <Redirect to="/admin/therapists" replace />;
     }
-    if (hasAdminPermission("content")) {
+    if (hasAdminPermission("content") && siteFeatures.cmsEnabled) {
       return <Redirect to="/admin/cms" replace />;
+    }
+    if (hasAdminPermission("content") && siteFeatures.eventsEnabled) {
+      return <Redirect to="/admin/events" replace />;
+    }
+    if (hasAdminPermission("content") && siteFeatures.blogEnabled) {
+      return <Redirect to="/admin/cms/blog" replace />;
+    }
+    if (hasAdminPermission("content")) {
+      return <Redirect to="/admin/forms" replace />;
     }
     if (hasAdminPermission("crm")) {
       return <Redirect to="/admin/crm" replace />;
@@ -146,14 +160,14 @@ function Router() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Switch>
-        <Route path="/" component={() => <CmsHybridPage slug="home" fallback={<HomePage />} />} />
-        <Route path="/about" component={() => <CmsHybridPage slug="about" fallback={<AboutPage />} />} />
-        <Route path="/contact" component={() => <CmsHybridPage slug="contact" fallback={<ContactPage />} />} />
-        <Route path="/preview/cms/:id" component={CmsPreviewPage} />
-        <Route path="/join" component={() => <CmsHybridPage slug="join" fallback={<JoinNetworkPage />} />} />
-        <Route path="/events" component={() => siteFeatures.eventsEnabled ? <CmsHybridPage slug="events" fallback={<EventsPage />} /> : <NotFound />} />
+        <Route path="/" component={() => <CmsHybridPage slug="home" fallback={<HomePage />} enabled={siteFeatures.cmsEnabled} />} />
+        <Route path="/about" component={() => <CmsHybridPage slug="about" fallback={<AboutPage />} enabled={siteFeatures.cmsEnabled} />} />
+        <Route path="/contact" component={() => <CmsHybridPage slug="contact" fallback={<ContactPage />} enabled={siteFeatures.cmsEnabled} />} />
+        <Route path="/preview/cms/:id" component={() => siteFeatures.cmsEnabled ? <CmsPreviewPage /> : <NotFound />} />
+        <Route path="/join" component={() => <CmsHybridPage slug="join" fallback={<JoinNetworkPage />} enabled={siteFeatures.cmsEnabled} />} />
+        <Route path="/events" component={() => siteFeatures.eventsEnabled ? <CmsHybridPage slug="events" fallback={<EventsPage />} enabled={siteFeatures.cmsEnabled} /> : <NotFound />} />
         <Route path="/events/:id" component={() => siteFeatures.eventsEnabled ? <EventDetailPage /> : <NotFound />} />
-        <Route path="/recordings" component={() => <CmsHybridPage slug="recordings" fallback={<RecordingArchivesPage />} />} />
+        <Route path="/recordings" component={() => <CmsHybridPage slug="recordings" fallback={<RecordingArchivesPage />} enabled={siteFeatures.cmsEnabled} />} />
         <Route path="/search" component={SearchResultsPage} />
         <Route path="/shop" component={() => siteFeatures.ecommerceEnabled ? <ShopPage /> : <NotFound />} />
         <Route path="/products/:slug" component={() => siteFeatures.ecommerceEnabled ? <ProductDetailPage /> : <NotFound />} />
@@ -161,12 +175,12 @@ function Router() {
         <Route path="/checkout" component={() => siteFeatures.ecommerceEnabled ? <CheckoutPage /> : <NotFound />} />
         <Route path="/order-success" component={() => siteFeatures.ecommerceEnabled ? <OrderSuccessPage /> : <NotFound />} />
         <Route path="/orders/status" component={() => siteFeatures.ecommerceEnabled ? <OrderStatusPage /> : <NotFound />} />
-        <Route path="/insights" component={() => siteFeatures.blogEnabled ? <CmsHybridPage slug="insights" fallback={<InsightsPage />} /> : <NotFound />} />
+        <Route path="/insights" component={() => siteFeatures.blogEnabled ? <CmsHybridPage slug="insights" fallback={<InsightsPage />} enabled={siteFeatures.cmsEnabled} /> : <NotFound />} />
         <Route path="/insights/:slug" component={() => siteFeatures.blogEnabled ? <InsightsPostPage /> : <NotFound />} />
-        <Route path="/directory" component={() => siteFeatures.directoryEnabled ? <CmsHybridPage slug="directory" fallback={<DirectoryPage />} /> : <NotFound />} />
-        <Route path="/privacy-policy" component={() => <CmsHybridPage slug="privacy-policy" fallback={<LegalFallbackPage title="Privacy Policy" subtitle="Review how Core Platform collects, uses, stores, and protects information across the website and related services." />} />} />
-        <Route path="/terms-of-service" component={() => <CmsHybridPage slug="terms-of-service" fallback={<LegalFallbackPage title="Terms of Service" subtitle="Review the terms governing use of the Core Platform website, directory, events, and related services." />} />} />
-        <Route path="/disclaimer" component={() => <CmsHybridPage slug="disclaimer" fallback={<LegalFallbackPage title="Disclaimer" subtitle="Review emergency guidance, directory vetting limitations, and important information about using the Core Platform directory and related services." />} />} />
+        <Route path="/directory" component={() => siteFeatures.directoryEnabled ? <CmsHybridPage slug="directory" fallback={<DirectoryPage />} enabled={siteFeatures.cmsEnabled} /> : <NotFound />} />
+        <Route path="/privacy-policy" component={() => <CmsHybridPage slug="privacy-policy" fallback={<LegalFallbackPage title="Privacy Policy" subtitle="Review how Core Platform collects, uses, stores, and protects information across the website and related services." />} enabled={siteFeatures.cmsEnabled} />} />
+        <Route path="/terms-of-service" component={() => <CmsHybridPage slug="terms-of-service" fallback={<LegalFallbackPage title="Terms of Service" subtitle="Review the terms governing use of the Core Platform website, directory, events, and related services." />} enabled={siteFeatures.cmsEnabled} />} />
+        <Route path="/disclaimer" component={() => <CmsHybridPage slug="disclaimer" fallback={<LegalFallbackPage title="Disclaimer" subtitle="Review emergency guidance, directory vetting limitations, and important information about using the Core Platform directory and related services." />} enabled={siteFeatures.cmsEnabled} />} />
         <Route path="/directory/:id" component={() => siteFeatures.directoryEnabled ? <TherapistProfilePage /> : <NotFound />} />
         <Route path="/reference/:token" component={ReferenceFormPage} />
         <Route path="/forms/:slug" component={StandaloneFormPage} />
@@ -324,27 +338,27 @@ function Router() {
         </Route>
         <Route path="/admin/cms">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
-            <CmsOverviewPage />
+            {siteFeatures.cmsEnabled ? <CmsOverviewPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/pages/new">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
-            <CmsPageEditorPage />
+            {siteFeatures.cmsEnabled ? <CmsPageEditorPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/pages/:id">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
-            <CmsPageEditorPage />
+            {siteFeatures.cmsEnabled ? <CmsPageEditorPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/pages">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
-            <CmsPagesPage />
+            {siteFeatures.cmsEnabled ? <CmsPagesPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/media">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
-            <CmsMediaPage />
+            {siteFeatures.cmsEnabled ? <CmsMediaPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/blog/new">
@@ -370,32 +384,32 @@ function Router() {
         </Route>
         <Route path="/admin/cms/sections/new">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content", "design"]}>
-            <CmsSectionEditorPage />
+            {siteFeatures.cmsEnabled ? <CmsSectionEditorPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/sections/:id">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content", "design"]}>
-            <CmsSectionEditorPage />
+            {siteFeatures.cmsEnabled ? <CmsSectionEditorPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/sections">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content", "design"]}>
-            <CmsSectionsPage />
+            {siteFeatures.cmsEnabled ? <CmsSectionsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/seo">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
-            <CmsSeoPage />
+            {siteFeatures.cmsEnabled ? <CmsSeoPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/menus">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
-            <CmsMenusPage />
+            {siteFeatures.cmsEnabled ? <CmsMenusPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms/sidebars">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
-            <CmsSidebarsPage />
+            {siteFeatures.cmsEnabled ? <CmsSidebarsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
 

@@ -175,6 +175,7 @@ export function Navbar() {
       if (!res.ok) return null;
       return res.json();
     },
+    enabled: siteFeatures.cmsEnabled,
     staleTime: 60000,
   });
 
