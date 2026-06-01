@@ -10,6 +10,7 @@ import {
   type EcommerceShippingZone,
 } from "@shared/schema";
 import { calculateEcommerceTax, type EcommerceTaxCalculation } from "./ecommerce-tax.service";
+import { assertEcommerceShippingDestinationAllowed } from "./ecommerce-store-settings.service";
 
 export const MAX_ECOMMERCE_CART_LINES = 50;
 export const MAX_ECOMMERCE_LOOKUP_ID_LENGTH = 128;
@@ -392,6 +393,7 @@ export async function getShippingRateOptions(input: {
   address?: z.infer<typeof shippingAddressQuoteSchema>;
 }): Promise<ShippingRateOption[]> {
   const address = shippingAddressQuoteSchema.parse(input.address ?? {});
+  await assertEcommerceShippingDestinationAllowed(address);
   const [zones, rates] = await Promise.all([
     storage.ecommerce.getShippingZones(),
     storage.ecommerce.getShippingRates(),

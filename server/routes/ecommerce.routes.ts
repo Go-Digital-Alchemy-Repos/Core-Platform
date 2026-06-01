@@ -19,6 +19,7 @@ import { ecommerceOrderStatusLookupSchema } from "../services/ecommerce-order-lo
 import { getPublicProductCategories, toPublicEcommerceProduct } from "../services/ecommerce-public-product.service";
 import { toPublicEcommerceOrderStatus } from "../services/ecommerce-public-order.service";
 import { getEcommerceCustomerAccountSettings } from "../services/ecommerce-customer-account.service";
+import { getEcommerceStoreSettings } from "../services/ecommerce-store-settings.service";
 import { sendEcommerceOrderStatusLinkEmail } from "../services/ecommerce-email.service";
 import { getEcommerceStripePublishableKey, getEcommerceStripeMode } from "../services/ecommerce-stripe.service";
 import { requireEcommerceEnabled } from "../middleware/site-features";
@@ -134,7 +135,11 @@ router.get(
   "/checkout/settings",
   noStorePrivateResponse,
   asyncHandler(async (_req, res) => {
-    res.json(await getEcommerceCustomerAccountSettings());
+    const [accountSettings, storeSettings] = await Promise.all([
+      getEcommerceCustomerAccountSettings(),
+      getEcommerceStoreSettings(),
+    ]);
+    res.json({ ...accountSettings, store: storeSettings });
   }),
 );
 

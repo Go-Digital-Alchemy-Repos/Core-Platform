@@ -52,6 +52,11 @@ import {
   getEcommerceCustomerAccountSettings,
   saveEcommerceCustomerAccountSettings,
 } from "../../services/ecommerce-customer-account.service";
+import {
+  getEcommerceStoreSettings,
+  saveEcommerceStoreSettings,
+} from "../../services/ecommerce-store-settings.service";
+import { ecommerceStoreSettingsSchema } from "@shared/ecommerce-shipping-settings";
 import { requireEcommerceEnabled } from "../../middleware/site-features";
 import { noStorePrivateResponse } from "../../middleware/security";
 
@@ -573,6 +578,14 @@ router.get("/settings/customer-accounts", asyncHandler(async (_req, res) => {
 
 router.put("/settings/customer-accounts", asyncHandler(async (req, res) => {
   res.json(await saveEcommerceCustomerAccountSettings(ecommerceCustomerAccountSettingsSchema.parse(req.body)));
+}));
+
+router.get("/settings/store", asyncHandler(async (_req, res) => {
+  res.json(await getEcommerceStoreSettings());
+}));
+
+router.put("/settings/store", asyncHandler(async (req, res) => {
+  res.json(await saveEcommerceStoreSettings(ecommerceStoreSettingsSchema.parse(req.body)));
 }));
 
 export default router;

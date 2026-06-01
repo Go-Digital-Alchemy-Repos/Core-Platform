@@ -10,9 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { getCountryLabel, getRegionOptions, type EcommerceStoreSettings } from "@shared/ecommerce-shipping-settings";
 import { CartItem, clearCart, formatMoney, readCart } from "./cart-store";
 
 type CheckoutAccountMode = "guest" | "create_account";
@@ -27,6 +29,7 @@ interface FormState {
   city: string;
   state: string;
   zip: string;
+  country: string;
   couponCode: string;
   shippingRateId: string;
   accountMode: CheckoutAccountMode;
@@ -43,6 +46,7 @@ const initialForm: FormState = {
   city: "",
   state: "",
   zip: "",
+  country: "US",
   couponCode: "",
   shippingRateId: "",
   accountMode: "create_account",
@@ -78,6 +82,7 @@ interface ShippingRateOption {
 
 interface CheckoutSettings {
   customerAccountMode: CustomerAccountMode;
+  store?: EcommerceStoreSettings;
 }
 
 export function getStripeCheckoutUnavailableMessage(error: unknown): string {
@@ -179,14 +184,21 @@ export default function CheckoutPage() {
   const canCreatePayment = hasStripeConfig && !isStripeConfigLoading;
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const selectedShippingRate = shippingRates.find((rate) => rate.id === form.shippingRateId);
+  const allowedCountries = checkoutSettings?.store?.allowedCountries?.length
+    ? checkoutSettings.store.allowedCountries
+    : ["US"];
+  const countryOptions = allowedCountries.map((code) => [code, getCountryLabel(code)] as const);
+  const regionOptions = getRegionOptions(form.country);
+  const regionLabel = form.country === "CA" ? "Province / territory" : form.country === "US" ? "State" : "Region";
   const shippingQuoteKey = useMemo(() => JSON.stringify({
+    country: form.country.trim().toUpperCase(),
     state: form.state.trim().toUpperCase(),
     items: items.map((item) => ({
       productId: item.productId,
       variantId: item.variantId ?? null,
       quantity: item.quantity,
     })),
-  }), [form.state, items]);
+  }), [form.country, form.state, items]);
   const elementsOptions = useMemo(
     () => intent?.clientSecret ? { clientSecret: intent.clientSecret, appearance: { theme: "stripe" as const } } : undefined,
     [intent?.clientSecret],
@@ -198,6 +210,15 @@ export default function CheckoutPage() {
     setIntent(null);
     setForm((current) => ({ ...current, shippingRateId: "" }));
   }, [shippingQuoteKey, shippingQuoted]);
+  useEffect(() => {
+    if (allowedCountries.includes(form.country)) return;
+    setForm((current) => ({
+      ...current,
+      country: allowedCountries[0] ?? "US",
+      state: "",
+      shippingRateId: "",
+    }));
+  }, [allowedCountries, form.country]);
   const mutation = useMutation({
     mutationFn: async () => {
       const normalizedAccountMode: CheckoutAccountMode = isGuestOnly
@@ -231,7 +252,7 @@ export default function CheckoutPage() {
           city: form.city,
           state: form.state,
           zip: form.zip,
-          country: "US",
+          country: form.country,
         },
         billingSameAsShipping: true,
       });
@@ -251,7 +272,7 @@ export default function CheckoutPage() {
       const res = await apiRequest("POST", "/api/ecommerce/shipping/rates", {
         items: items.map((item) => ({ productId: item.productId, variantId: item.variantId ?? undefined, quantity: item.quantity })),
         address: {
-          country: "US",
+          country: form.country,
           state: form.state,
         },
       });
@@ -358,31 +379,58 @@ export default function CheckoutPage() {
                   </div>
                 ) : null}
                 <form id="checkout-details-form" onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
-                  {([
-                    ["email", "Email"],
-                    ["name", "Full name"],
-                    ["phone", "Phone"],
-                    ["address", "Address"],
-                    ["line2", "Address line 2"],
-                    ["city", "City"],
-                    ["state", "State"],
-                    ["zip", "ZIP"],
-                    ["couponCode", "Coupon code"],
-                  ] as const).map(([key, label]) => (
-                    <div key={key} className={key === "address" || key === "couponCode" ? "space-y-2 sm:col-span-2" : "space-y-2"}>
-                      <Label htmlFor={key}>{label}</Label>
-                      <Input
-                        id={key}
-                        type={key === "email" ? "email" : "text"}
-                        required={!["phone", "line2", "couponCode"].includes(key)}
-                        value={form[key]}
+                  <CheckoutTextField id="email" label="Email" type="email" value={form.email} disabled={Boolean(intent)} onChange={(email) => setForm((current) => ({ ...current, email }))} />
+                  <CheckoutTextField id="name" label="Full name" value={form.name} disabled={Boolean(intent)} onChange={(name) => setForm((current) => ({ ...current, name }))} />
+                  <CheckoutTextField id="phone" label="Phone" value={form.phone} required={false} disabled={Boolean(intent)} onChange={(phone) => setForm((current) => ({ ...current, phone }))} />
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Select
+                      value={form.country}
+                      disabled={Boolean(intent)}
+                      onValueChange={(country) => setForm((current) => ({
+                        ...current,
+                        country,
+                        state: "",
+                        shippingRateId: "",
+                      }))}
+                    >
+                      <SelectTrigger id="country"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {countryOptions.map(([code, name]) => (
+                          <SelectItem key={code} value={code}>{name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <CheckoutTextField id="address" label="Address" value={form.address} disabled={Boolean(intent)} className="sm:col-span-2" onChange={(address) => setForm((current) => ({ ...current, address }))} />
+                  <CheckoutTextField id="line2" label="Address line 2" value={form.line2} required={false} disabled={Boolean(intent)} onChange={(line2) => setForm((current) => ({ ...current, line2 }))} />
+                  <CheckoutTextField id="city" label="City" value={form.city} disabled={Boolean(intent)} onChange={(city) => setForm((current) => ({ ...current, city }))} />
+                  <div className="space-y-2">
+                    <Label htmlFor="state">{regionLabel}</Label>
+                    {regionOptions.length ? (
+                      <Select
+                        value={form.state}
                         disabled={Boolean(intent)}
-                        onChange={(event) => {
-                          setForm((current) => ({ ...current, [key]: event.target.value }));
-                        }}
+                        onValueChange={(state) => setForm((current) => ({ ...current, state, shippingRateId: "" }))}
+                      >
+                        <SelectTrigger id="state"><SelectValue placeholder={`Select ${regionLabel.toLowerCase()}`} /></SelectTrigger>
+                        <SelectContent>
+                          {regionOptions.map(([code, name]) => (
+                            <SelectItem key={code} value={code}>{name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        id="state"
+                        value={form.state}
+                        disabled={Boolean(intent)}
+                        onChange={(event) => setForm((current) => ({ ...current, state: event.target.value }))}
                       />
-                    </div>
-                  ))}
+                    )}
+                  </div>
+                  <CheckoutTextField id="zip" label={form.country === "US" ? "ZIP" : "Postal code"} value={form.zip} disabled={Boolean(intent)} onChange={(zip) => setForm((current) => ({ ...current, zip }))} />
+                  <CheckoutTextField id="couponCode" label="Coupon code" value={form.couponCode} required={false} disabled={Boolean(intent)} className="sm:col-span-2" onChange={(couponCode) => setForm((current) => ({ ...current, couponCode }))} />
                   <div className="space-y-3 sm:col-span-2">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
@@ -392,7 +440,7 @@ export default function CheckoutPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        disabled={Boolean(intent) || shippingQuoteMutation.isPending || !form.state.trim()}
+                        disabled={Boolean(intent) || shippingQuoteMutation.isPending || !form.country.trim() || (regionOptions.length > 0 && !form.state.trim())}
                         onClick={() => shippingQuoteMutation.mutate()}
                       >
                         {shippingQuoteMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -423,7 +471,7 @@ export default function CheckoutPage() {
                         <p className="rounded-lg border p-3 text-sm text-muted-foreground">No paid shipping rates matched this address. Checkout will continue with no shipping charge.</p>
                       )
                     ) : (
-                      <p className="rounded-lg border p-3 text-sm text-muted-foreground">Enter the shipping state and update rates before payment.</p>
+                      <p className="rounded-lg border p-3 text-sm text-muted-foreground">Choose your shipping country and {regionLabel.toLowerCase()} to update rates before payment.</p>
                     )}
                   </div>
                 </form>
@@ -477,5 +525,30 @@ export default function CheckoutPage() {
         )}
       </div>
     </PageLayout>
+  );
+}
+
+function CheckoutTextField(props: {
+  id: keyof FormState;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+  disabled?: boolean;
+  required?: boolean;
+  type?: string;
+}) {
+  return (
+    <div className={props.className ? `space-y-2 ${props.className}` : "space-y-2"}>
+      <Label htmlFor={props.id}>{props.label}</Label>
+      <Input
+        id={props.id}
+        type={props.type ?? "text"}
+        required={props.required ?? true}
+        value={props.value}
+        disabled={props.disabled}
+        onChange={(event) => props.onChange(event.target.value)}
+      />
+    </div>
   );
 }

@@ -49,6 +49,13 @@ import {
   IntegrationCard,
   type SettingsData,
 } from "@/features/admin/settings-page";
+import {
+  COMMON_ECOMMERCE_COUNTRIES,
+  getCountriesForShippingMode,
+  getRegionOptions,
+  type EcommerceShippingDestinationMode,
+  type EcommerceStoreSettings,
+} from "@shared/ecommerce-shipping-settings";
 
 type View =
   | "products"
@@ -271,6 +278,8 @@ type CustomerAccountMode = "optional" | "required" | "guest_only";
 interface CustomerAccountSettingsStatus {
   customerAccountMode: CustomerAccountMode;
 }
+
+type StoreOriginField = keyof EcommerceStoreSettings["storeOrigin"];
 
 function OrderTableRow({ order, selected, onSelect }: { order: Order; selected: boolean; onSelect: () => void }) {
   const orderStatus = getEcommerceOrderStatusBadge(order.status);
@@ -2581,6 +2590,7 @@ function SettingsTab() {
   const { data } = useQuery<StripeSettingsStatus>({ queryKey: ["/api/admin/ecommerce/settings/stripe"] });
   const { data: taxData } = useQuery<TaxSettingsStatus>({ queryKey: ["/api/admin/ecommerce/settings/tax"] });
   const { data: customerAccountData } = useQuery<CustomerAccountSettingsStatus>({ queryKey: ["/api/admin/ecommerce/settings/customer-accounts"] });
+  const { data: storeData } = useQuery<EcommerceStoreSettings>({ queryKey: ["/api/admin/ecommerce/settings/store"] });
   const { toast } = useToast();
   const [activeMode, setActiveMode] = useState("test");
   const [testPublishableKey, setTestPublishableKey] = useState("");
@@ -2594,6 +2604,17 @@ function SettingsTab() {
   const [taxShipping, setTaxShipping] = useState(false);
   const [stripeTaxEnabled, setStripeTaxEnabled] = useState(false);
   const [customerAccountMode, setCustomerAccountMode] = useState<CustomerAccountMode>("optional");
+  const [storeOrigin, setStoreOrigin] = useState<EcommerceStoreSettings["storeOrigin"]>({
+    name: "",
+    address: "",
+    line2: "",
+    city: "",
+    state: "",
+    zip: "",
+    country: "US",
+  });
+  const [shippingDestinationMode, setShippingDestinationMode] = useState<EcommerceShippingDestinationMode>("us_only");
+  const [allowedCountries, setAllowedCountries] = useState("US");
   useEffect(() => {
     if (data) {
       setActiveMode(data.activeMode || "test");
@@ -2614,6 +2635,13 @@ function SettingsTab() {
       setCustomerAccountMode(customerAccountData.customerAccountMode);
     }
   }, [customerAccountData]);
+  useEffect(() => {
+    if (storeData) {
+      setStoreOrigin(storeData.storeOrigin);
+      setShippingDestinationMode(storeData.shippingDestinationMode);
+      setAllowedCountries(storeData.allowedCountries.join(", "));
+    }
+  }, [storeData]);
   const mutation = useMutation({
     mutationFn: async () => apiRequest("PUT", "/api/admin/ecommerce/settings/stripe", {
       activeMode,
@@ -2650,8 +2678,93 @@ function SettingsTab() {
       toast({ title: "Customer account settings saved" });
     },
   });
+  const storeMutation = useMutation({
+    mutationFn: async () => apiRequest("PUT", "/api/admin/ecommerce/settings/store", {
+      storeOrigin,
+      shippingDestinationMode,
+      allowedCountries: shippingDestinationMode === "custom"
+        ? csv(allowedCountries).map((country) => country.toUpperCase())
+        : getCountriesForShippingMode(shippingDestinationMode),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/settings/store"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ecommerce/checkout/settings"] });
+      toast({ title: "Store shipping settings saved" });
+    },
+  });
+  const originRegionOptions = getRegionOptions(storeOrigin.country);
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-sky-600" /> Store origin and shipping markets</CardTitle>
+          <CardDescription>Set the ship-from address and the countries this store can sell and ship to. Checkout enforces these choices server-side.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <StoreOriginInput label="Location name" field="name" value={storeOrigin.name} setStoreOrigin={setStoreOrigin} placeholder="Main warehouse" />
+            <div className="space-y-2">
+              <Label>Origin country</Label>
+              <Select
+                value={storeOrigin.country}
+                onValueChange={(country) => setStoreOrigin((current) => ({ ...current, country, state: "" }))}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {COMMON_ECOMMERCE_COUNTRIES.map(([code, name]) => (
+                    <SelectItem key={code} value={code}>{name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <StoreOriginInput label="Address" field="address" value={storeOrigin.address} setStoreOrigin={setStoreOrigin} placeholder="123 Fulfillment Ave" />
+            <StoreOriginInput label="Address line 2" field="line2" value={storeOrigin.line2} setStoreOrigin={setStoreOrigin} placeholder="Suite, unit, dock" />
+            <StoreOriginInput label="City" field="city" value={storeOrigin.city} setStoreOrigin={setStoreOrigin} />
+            <div className="space-y-2">
+              <Label>{storeOrigin.country === "CA" ? "Province / territory" : storeOrigin.country === "US" ? "State" : "Region"}</Label>
+              {originRegionOptions.length ? (
+                <Select value={storeOrigin.state} onValueChange={(state) => setStoreOrigin((current) => ({ ...current, state }))}>
+                  <SelectTrigger><SelectValue placeholder="Select region" /></SelectTrigger>
+                  <SelectContent>
+                    {originRegionOptions.map(([code, name]) => (
+                      <SelectItem key={code} value={code}>{name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input value={storeOrigin.state} onChange={(event) => setStoreOrigin((current) => ({ ...current, state: event.target.value }))} />
+              )}
+            </div>
+            <StoreOriginInput label="ZIP / postal code" field="zip" value={storeOrigin.zip} setStoreOrigin={setStoreOrigin} />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Shipping destinations</Label>
+              <Select value={shippingDestinationMode} onValueChange={(mode) => setShippingDestinationMode(mode as EcommerceShippingDestinationMode)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="us_only">United States only</SelectItem>
+                  <SelectItem value="us_canada">United States and Canada</SelectItem>
+                  <SelectItem value="worldwide">Worldwide / selected international markets</SelectItem>
+                  <SelectItem value="custom">Custom countries</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">This controls checkout country options and server-side payment creation.</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Allowed country codes</Label>
+              <Input
+                value={shippingDestinationMode === "custom" ? allowedCountries : getCountriesForShippingMode(shippingDestinationMode).join(", ")}
+                disabled={shippingDestinationMode !== "custom"}
+                onChange={(event) => setAllowedCountries(event.target.value)}
+                placeholder="US, CA, GB"
+              />
+              <p className="text-sm text-muted-foreground">Use ISO two-letter country codes for custom markets.</p>
+            </div>
+          </div>
+          <Button onClick={() => storeMutation.mutate()} disabled={storeMutation.isPending} className="w-fit"><Save className="mr-2 h-4 w-4" /> Save store shipping settings</Button>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-blue-600" /> Customer accounts</CardTitle>
@@ -2711,6 +2824,25 @@ function SettingsTab() {
           <Button onClick={() => taxMutation.mutate()} disabled={taxMutation.isPending} className="w-fit"><Save className="mr-2 h-4 w-4" /> Save tax settings</Button>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function StoreOriginInput(props: {
+  label: string;
+  field: StoreOriginField;
+  value: string;
+  setStoreOrigin: (update: (current: EcommerceStoreSettings["storeOrigin"]) => EcommerceStoreSettings["storeOrigin"]) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>{props.label}</Label>
+      <Input
+        value={props.value}
+        placeholder={props.placeholder}
+        onChange={(event) => props.setStoreOrigin((current) => ({ ...current, [props.field]: event.target.value }))}
+      />
     </div>
   );
 }

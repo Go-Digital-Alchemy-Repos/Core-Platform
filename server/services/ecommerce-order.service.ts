@@ -14,6 +14,7 @@ import {
   sendEcommerceOrderStatusEmail,
 } from "./ecommerce-email.service";
 import { getEcommerceCustomerAccountSettings } from "./ecommerce-customer-account.service";
+import { assertEcommerceShippingDestinationAllowed } from "./ecommerce-store-settings.service";
 import { logger } from "../utils/logger";
 import { hashPassword } from "../middleware/auth";
 import type { User } from "@shared/schema";
@@ -29,9 +30,9 @@ const addressSchema = z.object({
   address: z.string().trim().min(1).max(MAX_CHECKOUT_ADDRESS_LENGTH),
   line2: z.string().trim().max(MAX_CHECKOUT_ADDRESS_LENGTH).optional(),
   city: z.string().trim().min(1).max(MAX_CHECKOUT_TEXT_LENGTH),
-  state: z.string().trim().min(1).max(MAX_CHECKOUT_TEXT_LENGTH),
+  state: z.string().trim().max(MAX_CHECKOUT_TEXT_LENGTH).default(""),
   zip: z.string().trim().min(1).max(40),
-  country: z.string().trim().min(1).max(80).default("US"),
+  country: z.string().trim().length(2).default("US").transform((value) => value.toUpperCase()),
 });
 
 export const checkoutSchema = priceCartSchema.extend({
@@ -174,6 +175,7 @@ export async function createEcommercePaymentIntent(
     country: data.shippingAddress.country,
     state: data.shippingAddress.state,
   };
+  await assertEcommerceShippingDestinationAllowed(shippingAddress);
   const priced = await priceCart({
     items: data.items,
     couponCode: data.couponCode,
