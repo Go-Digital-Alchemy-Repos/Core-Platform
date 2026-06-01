@@ -747,7 +747,7 @@ export function DirectoryBrowserSection({
           <div
             className={`${
               mobileView === "map" ? "flex" : "hidden"
-            } md:flex flex-1 flex-col relative min-h-[60vh] md:min-h-0`}
+            } md:flex min-h-0 flex-1 flex-col relative`}
           >
             <div className="flex md:hidden items-center gap-2 p-2 border-b bg-background">
               <Button
@@ -764,7 +764,7 @@ export function DirectoryBrowserSection({
                 {total} result{total !== 1 ? "s" : ""}
               </span>
             </div>
-            <div className="flex-1 min-h-[55vh] md:min-h-0">
+            <div className="min-h-[55vh] flex-1 md:min-h-0">
               <MapView therapists={mapTherapists} height="100%" highlightedId={hoveredId} zoom={2} center={[20, 0]} />
             </div>
           </div>

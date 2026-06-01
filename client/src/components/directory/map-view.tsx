@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { Link } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getFirstSentence } from "@/lib/html";
@@ -108,7 +109,7 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
   return (
     <div
       style={{ height, minHeight: hasPercentHeight ? "420px" : height }}
-      className="rounded-md overflow-hidden border isolate"
+      className="h-full w-full overflow-hidden border isolate"
       data-testid="map-container"
     >
       <MapContainer
