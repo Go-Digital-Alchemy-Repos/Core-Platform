@@ -1582,6 +1582,7 @@ function OrdersTab() {
     queryKey: ["/api/admin/ecommerce/shipping/locations"],
   });
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
+  const [detailOpen, setDetailOpen] = useState(false);
   const [orderSearch, setOrderSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
@@ -1610,10 +1611,7 @@ function OrdersTab() {
     const matchesPayment = paymentFilter === "all" || order.paymentStatus === paymentFilter;
     return matchesSearch && matchesStatus && matchesPayment;
   });
-  const selectedOrder = filteredOrders.find((order) => order.id === selectedOrderId)
-    ?? orders.find((order) => order.id === selectedOrderId)
-    ?? filteredOrders[0]
-    ?? null;
+  const selectedOrder = orders.find((order) => order.id === selectedOrderId) ?? null;
   const visibleRevenue = filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0);
   const unfulfilledCount = orders.filter((order) => !["shipped", "delivered", "cancelled"].includes(order.status)).length;
 
@@ -1632,16 +1630,15 @@ function OrdersTab() {
   };
 
   useEffect(() => {
-    if ((!selectedOrderId || !filteredOrders.some((order) => order.id === selectedOrderId)) && filteredOrders[0]?.id) {
-      setSelectedOrderId(filteredOrders[0].id);
-    }
-  }, [filteredOrders, selectedOrderId]);
-
-  useEffect(() => {
     if (selectedOrder) {
       setStatusForm({ status: selectedOrder.status, notes: "" });
     }
   }, [selectedOrder?.id]);
+
+  const openOrderDetail = (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setDetailOpen(true);
+  };
 
   const statusMutation = useMutation({
     mutationFn: async () => {
@@ -1701,7 +1698,7 @@ function OrdersTab() {
   });
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_460px]">
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><ShoppingBag className="h-5 w-5" /> Orders</CardTitle>
@@ -1763,7 +1760,7 @@ function OrdersTab() {
                   key={order.id}
                   order={order}
                   selected={selectedOrder?.id === order.id}
-                  onSelect={() => setSelectedOrderId(order.id)}
+                  onSelect={() => openOrderDetail(order.id)}
                   onCopy={copyOrderNumber}
                 />
               ))}
@@ -1779,129 +1776,177 @@ function OrdersTab() {
         </CardContent>
       </Card>
 
-      <Card className="h-fit">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><ClipboardList className="h-5 w-5" /> Order detail</CardTitle>
-          <CardDescription>{selectedOrder ? `Order ${getOrderDisplayNumber(selectedOrder.id)}` : "Select an order to manage."}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
+        <SheetContent size="full" className="w-[92vw] sm:max-w-[92vw]">
           {selectedOrder ? (
             <>
-              <div className="space-y-3">
-                <div className="grid gap-2 rounded-lg border p-3">
-                  {selectedOrder.items.map((item) => (
-                    <div key={item.id} className="flex justify-between gap-4 text-sm">
-                      <span>{item.productName} x {item.quantity}</span>
-                      <span>{formatMoney(item.lineTotal)}</span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between border-t pt-2 font-semibold">
-                    <span>Total</span>
-                    <span>{formatMoney(selectedOrder.totalAmount)}</span>
-                  </div>
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2 text-2xl">
+                  <ClipboardList className="h-5 w-5" />
+                  Order detail
+                </SheetTitle>
+                <SheetDescription>
+                  {getOrderDisplayNumber(selectedOrder.id)} · {selectedOrder.customer?.email || "No customer email"} · {new Date(selectedOrder.createdAt).toLocaleDateString()}
+                </SheetDescription>
+              </SheetHeader>
+              <SheetBody className="space-y-5">
+                <div className="grid gap-3 md:grid-cols-4">
+                  <Metric label="Total" value={formatMoney(selectedOrder.totalAmount)} />
+                  <Metric label="Subtotal" value={formatMoney(selectedOrder.subtotalAmount ?? 0)} />
+                  <Metric label="Shipping" value={formatMoney(selectedOrder.shippingAmount ?? 0)} />
+                  <Metric label="Tax" value={formatMoney(selectedOrder.taxAmount ?? 0)} />
                 </div>
-                <div className="grid gap-2 rounded-lg border p-3 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatMoney(selectedOrder.subtotalAmount ?? 0)}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Discount</span><span>-{formatMoney(selectedOrder.discountAmount ?? 0)}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{formatMoney(selectedOrder.shippingAmount ?? 0)}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>{formatMoney(selectedOrder.taxAmount ?? 0)}</span></div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {(selectedOrder.shipments ?? []).map((shipment) => (
-                    <Badge key={shipment.id} variant="outline">
-                      {shipment.carrier || "Shipment"} {shipment.trackingNumber || shipment.status}
-                    </Badge>
-                  ))}
-                  {(selectedOrder.fulfillments ?? []).map((fulfillment) => (
-                    <Badge key={fulfillment.id} variant="secondary">{fulfillment.status}</Badge>
-                  ))}
-                </div>
-              </div>
 
-              <form
-                className="grid gap-4 rounded-lg border p-4"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  statusMutation.mutate();
-                }}
-              >
-                <div>
-                  <h3 className="text-sm font-semibold">Status</h3>
-                  <p className="text-xs text-muted-foreground">Changing status sends the customer an order status email.</p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Order status</Label>
-                  <Select value={statusForm.status || selectedOrder.status} onValueChange={(status) => setStatusForm((current) => ({ ...current, status }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="paid">Paid</SelectItem>
-                      <SelectItem value="shipped">Shipped</SelectItem>
-                      <SelectItem value="delivered">Delivered</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Internal note</Label>
-                  <Textarea value={statusForm.notes} onChange={(event) => setStatusForm((current) => ({ ...current, notes: event.target.value }))} rows={3} />
-                </div>
-                <Button type="submit" variant="outline" disabled={statusMutation.isPending || !statusForm.status}>
-                  <Save className="mr-2 h-4 w-4" />
-                  Update order
-                </Button>
-              </form>
+                <div className="grid gap-5 xl:grid-cols-[1.25fr_0.9fr]">
+                  <div className="space-y-5">
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base">Items</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {selectedOrder.items.map((item) => (
+                          <div key={item.id} className="flex items-start justify-between gap-4 rounded-lg border p-3 text-sm">
+                            <div>
+                              <div className="font-medium">{item.productName} x {item.quantity}</div>
+                              <div className="text-xs text-muted-foreground">Line item</div>
+                            </div>
+                            <span className="font-medium">{formatMoney(item.lineTotal)}</span>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
 
-              <form
-                className="grid gap-4 rounded-lg border p-4"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  shipmentMutation.mutate();
-                }}
-              >
-                <div>
-                  <h3 className="text-sm font-semibold">Fulfillment</h3>
-                  <p className="text-xs text-muted-foreground">Creates a shipment, fulfillment record, and customer shipping email.</p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Fulfillment location</Label>
-                  <Select value={shipmentForm.locationId || "__none"} onValueChange={(locationId) => setShipmentForm((current) => ({ ...current, locationId: locationId === "__none" ? "" : locationId }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none">No location</SelectItem>
-                      {locations.map((location) => <SelectItem key={location.id} value={location.id}>{location.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Carrier</Label>
-                    <Input value={shipmentForm.carrier} onChange={(event) => setShipmentForm((current) => ({ ...current, carrier: event.target.value }))} placeholder="UPS" />
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base">Payment summary</CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid gap-2 text-sm">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatMoney(selectedOrder.subtotalAmount ?? 0)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Discount</span><span>-{formatMoney(selectedOrder.discountAmount ?? 0)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{formatMoney(selectedOrder.shippingAmount ?? 0)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>{formatMoney(selectedOrder.taxAmount ?? 0)}</span></div>
+                        <div className="flex justify-between border-t pt-2 text-base font-semibold"><span>Total</span><span>{formatMoney(selectedOrder.totalAmount)}</span></div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base">Shipment history</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-2">
+                          {(selectedOrder.shipments ?? []).map((shipment) => (
+                            <Badge key={shipment.id} variant="outline">
+                              {shipment.carrier || "Shipment"} {shipment.trackingNumber || shipment.status}
+                            </Badge>
+                          ))}
+                          {(selectedOrder.fulfillments ?? []).map((fulfillment) => (
+                            <Badge key={fulfillment.id} variant="secondary">{fulfillment.status}</Badge>
+                          ))}
+                          {(selectedOrder.shipments ?? []).length === 0 && (selectedOrder.fulfillments ?? []).length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No shipments or fulfillment records yet.</p>
+                          ) : null}
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Service</Label>
-                    <Input value={shipmentForm.serviceLevel} onChange={(event) => setShipmentForm((current) => ({ ...current, serviceLevel: event.target.value }))} placeholder="Ground" />
+
+                  <div className="grid content-start gap-5 lg:grid-cols-2 xl:grid-cols-1">
+                    <form
+                      className="grid gap-4 rounded-lg border p-4"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        statusMutation.mutate();
+                      }}
+                    >
+                      <div>
+                        <h3 className="text-sm font-semibold">Status</h3>
+                        <p className="text-xs text-muted-foreground">Changing status sends the customer an order status email.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Order status</Label>
+                        <Select value={statusForm.status || selectedOrder.status} onValueChange={(status) => setStatusForm((current) => ({ ...current, status }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="paid">Paid</SelectItem>
+                            <SelectItem value="shipped">Shipped</SelectItem>
+                            <SelectItem value="delivered">Delivered</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Internal note</Label>
+                        <Textarea value={statusForm.notes} onChange={(event) => setStatusForm((current) => ({ ...current, notes: event.target.value }))} rows={3} />
+                      </div>
+                      <Button type="submit" variant="outline" disabled={statusMutation.isPending || !statusForm.status}>
+                        <Save className="mr-2 h-4 w-4" />
+                        Update order
+                      </Button>
+                    </form>
+
+                    <form
+                      className="grid gap-4 rounded-lg border p-4"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        shipmentMutation.mutate();
+                      }}
+                    >
+                      <div>
+                        <h3 className="text-sm font-semibold">Fulfillment</h3>
+                        <p className="text-xs text-muted-foreground">Creates a shipment, fulfillment record, and customer shipping email.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Fulfillment location</Label>
+                        <Select value={shipmentForm.locationId || "__none"} onValueChange={(locationId) => setShipmentForm((current) => ({ ...current, locationId: locationId === "__none" ? "" : locationId }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none">No location</SelectItem>
+                            {locations.map((location) => <SelectItem key={location.id} value={location.id}>{location.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Carrier</Label>
+                          <Input value={shipmentForm.carrier} onChange={(event) => setShipmentForm((current) => ({ ...current, carrier: event.target.value }))} placeholder="UPS" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Service</Label>
+                          <Input value={shipmentForm.serviceLevel} onChange={(event) => setShipmentForm((current) => ({ ...current, serviceLevel: event.target.value }))} placeholder="Ground" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Tracking number</Label>
+                        <Input value={shipmentForm.trackingNumber} onChange={(event) => setShipmentForm((current) => ({ ...current, trackingNumber: event.target.value }))} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Tracking URL</Label>
+                        <Input value={shipmentForm.trackingUrl} onChange={(event) => setShipmentForm((current) => ({ ...current, trackingUrl: event.target.value }))} placeholder="https://..." />
+                      </div>
+                      <Button type="submit" disabled={shipmentMutation.isPending || selectedOrder.items.length === 0}>
+                        <Save className="mr-2 h-4 w-4" />
+                        Mark shipped
+                      </Button>
+                    </form>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Tracking number</Label>
-                  <Input value={shipmentForm.trackingNumber} onChange={(event) => setShipmentForm((current) => ({ ...current, trackingNumber: event.target.value }))} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Tracking URL</Label>
-                  <Input value={shipmentForm.trackingUrl} onChange={(event) => setShipmentForm((current) => ({ ...current, trackingUrl: event.target.value }))} placeholder="https://..." />
-                </div>
-                <Button type="submit" disabled={shipmentMutation.isPending || selectedOrder.items.length === 0}>
-                  <Save className="mr-2 h-4 w-4" />
-                  Mark shipped
-                </Button>
-              </form>
+              </SheetBody>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">No orders are available yet.</p>
+            <>
+              <SheetHeader>
+                <SheetTitle>Order detail</SheetTitle>
+                <SheetDescription>Select an order to manage.</SheetDescription>
+              </SheetHeader>
+              <SheetBody>
+                <p className="text-sm text-muted-foreground">No order is selected.</p>
+              </SheetBody>
+            </>
           )}
-        </CardContent>
-      </Card>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
