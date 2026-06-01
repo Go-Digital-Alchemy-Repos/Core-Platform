@@ -18,7 +18,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { NavbarSearchPopover } from "@/components/layout/navbar-search-popover";
-import { getCartItemCount, readCart } from "@/features/ecommerce/cart-store";
+import { getCartItemCount, readCart, type CartItem } from "@/features/ecommerce/cart-store";
+import { MiniCartDrawer } from "@/features/ecommerce/mini-cart-drawer";
 import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
 import type { CmsMenu, MenuItem, PublicMenuLocation } from "@shared/schema";
 
@@ -97,21 +98,21 @@ function DynamicDropdown({ item, location: currentPath }: { item: MenuItem; loca
   );
 }
 
-function useCartItemCount() {
-  const [cartItemCount, setCartItemCount] = useState(0);
+function useCartItems() {
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   useEffect(() => {
-    const updateCartItemCount = () => setCartItemCount(getCartItemCount(readCart()));
-    updateCartItemCount();
-    window.addEventListener("ecommerce-cart-changed", updateCartItemCount);
-    window.addEventListener("storage", updateCartItemCount);
+    const updateCartItems = () => setCartItems(readCart());
+    updateCartItems();
+    window.addEventListener("ecommerce-cart-changed", updateCartItems);
+    window.addEventListener("storage", updateCartItems);
     return () => {
-      window.removeEventListener("ecommerce-cart-changed", updateCartItemCount);
-      window.removeEventListener("storage", updateCartItemCount);
+      window.removeEventListener("ecommerce-cart-changed", updateCartItems);
+      window.removeEventListener("storage", updateCartItems);
     };
   }, []);
 
-  return cartItemCount;
+  return cartItems;
 }
 
 function CartNavButton({
@@ -124,23 +125,23 @@ function CartNavButton({
   onClick?: () => void;
 }) {
   return (
-    <Link href="/cart" onClick={onClick}>
-      <Button
-        variant={compact ? "ghost" : "outline"}
-        size={compact ? "icon" : "sm"}
-        className="relative"
-        data-testid={compact ? "link-cart-mobile" : "link-cart"}
-        aria-label={`Cart${cartItemCount ? `, ${cartItemCount} item${cartItemCount === 1 ? "" : "s"}` : ""}`}
-      >
-        <ShoppingCart className={compact ? "h-5 w-5" : "mr-2 h-4 w-4"} />
-        {compact ? null : "Cart"}
-        {cartItemCount > 0 ? (
-          <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold leading-none text-primary-foreground">
-            {cartItemCount > 99 ? "99+" : cartItemCount}
-          </span>
-        ) : null}
-      </Button>
-    </Link>
+    <Button
+      type="button"
+      variant={compact ? "ghost" : "outline"}
+      size={compact ? "icon" : "sm"}
+      className="relative"
+      data-testid={compact ? "button-cart-mobile" : "button-cart"}
+      aria-label={`Cart${cartItemCount ? `, ${cartItemCount} item${cartItemCount === 1 ? "" : "s"}` : ""}`}
+      onClick={onClick}
+    >
+      <ShoppingCart className={compact ? "h-5 w-5" : "mr-2 h-4 w-4"} />
+      {compact ? null : "Cart"}
+      {cartItemCount > 0 ? (
+        <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold leading-none text-primary-foreground">
+          {cartItemCount > 99 ? "99+" : cartItemCount}
+        </span>
+      ) : null}
+    </Button>
   );
 }
 
@@ -151,7 +152,15 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const cartItemCount = useCartItemCount();
+  const [cartOpen, setCartOpen] = useState(false);
+  const cartItems = useCartItems();
+  const cartItemCount = getCartItemCount(cartItems);
+
+  useEffect(() => {
+    const openMiniCart = () => setCartOpen(true);
+    window.addEventListener("ecommerce-cart-item-added", openMiniCart);
+    return () => window.removeEventListener("ecommerce-cart-item-added", openMiniCart);
+  }, []);
 
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
@@ -269,7 +278,7 @@ export function Navbar() {
 
         <div className="hidden md:flex items-center gap-3 flex-wrap">
           <NavbarSearchPopover />
-          {siteFeatures.ecommerceEnabled ? <CartNavButton cartItemCount={cartItemCount} /> : null}
+          {siteFeatures.ecommerceEnabled ? <CartNavButton cartItemCount={cartItemCount} onClick={() => setCartOpen(true)} /> : null}
           {isLoading ? null : user ? (
             <>
               <DropdownMenu>
@@ -352,7 +361,7 @@ export function Navbar() {
         </div>
 
         <div className="flex md:hidden items-center gap-2">
-          {siteFeatures.ecommerceEnabled ? <CartNavButton cartItemCount={cartItemCount} compact /> : null}
+          {siteFeatures.ecommerceEnabled ? <CartNavButton cartItemCount={cartItemCount} compact onClick={() => setCartOpen(true)} /> : null}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button size="icon" variant="ghost" data-testid="button-mobile-menu">
@@ -445,22 +454,25 @@ export function Navbar() {
                 <div className="my-3 border-t" />
 
                 {siteFeatures.ecommerceEnabled ? (
-                  <Link href="/cart" onClick={() => setMobileOpen(false)}>
-                    <Button
-                      variant="ghost"
-                      className={`w-full justify-start ${location === "/cart" ? "toggle-elevate toggle-elevated" : ""}`}
-                      data-testid="link-mobile-cart"
-                      aria-current={location === "/cart" ? "page" : undefined}
-                    >
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      Cart
-                      {cartItemCount > 0 ? (
-                        <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
-                          {cartItemCount}
-                        </span>
-                      ) : null}
-                    </Button>
-                  </Link>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className={`w-full justify-start ${location === "/cart" ? "toggle-elevate toggle-elevated" : ""}`}
+                    data-testid="button-mobile-cart"
+                    aria-current={location === "/cart" ? "page" : undefined}
+                    onClick={() => {
+                      setCartOpen(true);
+                      setMobileOpen(false);
+                    }}
+                  >
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Cart
+                    {cartItemCount > 0 ? (
+                      <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+                        {cartItemCount}
+                      </span>
+                    ) : null}
+                  </Button>
                 ) : null}
 
                 {isLoading ? null : user ? (
@@ -544,6 +556,9 @@ export function Navbar() {
 
       {user && <NotificationBell open={notifOpen} onOpenChange={setNotifOpen} showTrigger={false} />}
       <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
+      {siteFeatures.ecommerceEnabled ? (
+        <MiniCartDrawer open={cartOpen} onOpenChange={setCartOpen} items={cartItems} />
+      ) : null}
     </nav>
   );
 }
