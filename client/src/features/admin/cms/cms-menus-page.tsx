@@ -75,6 +75,46 @@ function cmsPagePath(slug: string): string {
   return cleanSlug ? `/${cleanSlug}` : "/";
 }
 
+export function promoteMenuItemToRoot(items: MenuItem[], targetId: string): MenuItem[] {
+  let promotedItem: MenuItem | null = null;
+  let topAncestorId: string | null = null;
+
+  const removeFromChildren = (children: MenuItem[], ancestorId: string): MenuItem[] => {
+    const nextChildren: MenuItem[] = [];
+
+    for (const child of children) {
+      if (child.id === targetId) {
+        promotedItem = child;
+        topAncestorId = ancestorId;
+        continue;
+      }
+
+      nextChildren.push({
+        ...child,
+        children: removeFromChildren(child.children ?? [], ancestorId),
+      });
+    }
+
+    return nextChildren;
+  };
+
+  const nextItems = items.map((item) => ({
+    ...item,
+    children: removeFromChildren(item.children ?? [], item.id),
+  }));
+
+  if (!promotedItem || !topAncestorId) return items;
+
+  const topAncestorIndex = nextItems.findIndex((item) => item.id === topAncestorId);
+  if (topAncestorIndex < 0) return [...nextItems, promotedItem];
+
+  return [
+    ...nextItems.slice(0, topAncestorIndex + 1),
+    promotedItem,
+    ...nextItems.slice(topAncestorIndex + 1),
+  ];
+}
+
 function MenuItemEditor({
   item,
   pages,
@@ -87,6 +127,7 @@ function MenuItemEditor({
   onMoveDown,
   onIndent,
   onOutdent,
+  onPromoteToRoot,
 }: {
   item: MenuItem;
   pages: CmsPage[];
@@ -99,6 +140,7 @@ function MenuItemEditor({
   onMoveDown: (id: string) => void;
   onIndent: (id: string) => void;
   onOutdent: (id: string) => void;
+  onPromoteToRoot: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
   const hasChildren = item.children && item.children.length > 0;
@@ -338,6 +380,11 @@ function MenuItemEditor({
                 <CornerUpLeft className="mr-2 h-4 w-4" /> Outdent
               </DropdownMenuItem>
             )}
+            {depth > 1 && (
+              <DropdownMenuItem onClick={() => onPromoteToRoot(item.id)}>
+                <MenuIcon className="mr-2 h-4 w-4" /> Promote to main item
+              </DropdownMenuItem>
+            )}
             {depth < 3 && index > 0 && (
               <DropdownMenuItem onClick={() => onIndent(item.id)}>
                 <CornerDownRight className="mr-2 h-4 w-4" /> Indent
@@ -382,6 +429,7 @@ function MenuItemEditor({
                 onUpdate(item.id, { children: arr });
               }}
               onOutdent={onOutdent}
+              onPromoteToRoot={onPromoteToRoot}
             />
           ))}
         </div>
@@ -504,6 +552,10 @@ function MenuEditor({
       }
       return result;
     });
+  }, []);
+
+  const promoteItemToRoot = useCallback((id: string) => {
+    setItems((prev) => promoteMenuItemToRoot(prev, id));
   }, []);
 
   function outdentFromChildren(parent: MenuItem, targetId: string): { item: MenuItem; extracted?: MenuItem } {
@@ -641,6 +693,7 @@ function MenuEditor({
                 onMoveDown={moveItemDown}
                 onIndent={indentItem}
                 onOutdent={outdentItem}
+                onPromoteToRoot={promoteItemToRoot}
               />
             ))}
           </div>

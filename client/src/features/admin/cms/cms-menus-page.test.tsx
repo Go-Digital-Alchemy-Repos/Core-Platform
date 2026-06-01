@@ -3,7 +3,8 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import CmsMenusPage from "@/features/admin/cms/cms-menus-page";
+import CmsMenusPage, { promoteMenuItemToRoot } from "@/features/admin/cms/cms-menus-page";
+import type { MenuItem } from "@shared/schema";
 
 const useQueryMock = vi.fn();
 const useMutationMock = vi.fn();
@@ -245,5 +246,83 @@ describe("CmsMenusPage", () => {
     });
 
     expect(container.querySelector('[data-testid="text-menu-editor-title"]')?.textContent).toContain("Edit: Main Navigation");
+  });
+});
+
+describe("promoteMenuItemToRoot", () => {
+  it("promotes a child item to the main menu level after its parent", () => {
+    const items: MenuItem[] = [
+      {
+        id: "resources",
+        label: "Resources",
+        url: "#",
+        openInNewTab: false,
+        children: [
+          {
+            id: "insights",
+            label: "Insights",
+            url: "/insights",
+            openInNewTab: false,
+            children: [],
+          },
+        ],
+      },
+      {
+        id: "events",
+        label: "Events",
+        url: "/events",
+        openInNewTab: false,
+        children: [],
+      },
+    ];
+
+    const promoted = promoteMenuItemToRoot(items, "insights");
+
+    expect(promoted.map((item) => item.id)).toEqual(["resources", "insights", "events"]);
+    expect(promoted[0].children).toEqual([]);
+    expect(promoted[1]).toEqual(expect.objectContaining({ id: "insights", url: "/insights" }));
+  });
+
+  it("promotes a deeper nested item directly to the main menu level", () => {
+    const items: MenuItem[] = [
+      {
+        id: "resources",
+        label: "Resources",
+        url: "#",
+        openInNewTab: false,
+        children: [
+          {
+            id: "learn",
+            label: "Learn",
+            url: "#",
+            openInNewTab: false,
+            children: [
+              {
+                id: "insights",
+                label: "Insights",
+                url: "/insights",
+                openInNewTab: false,
+                children: [],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "events",
+        label: "Events",
+        url: "/events",
+        openInNewTab: false,
+        children: [],
+      },
+    ];
+
+    const promoted = promoteMenuItemToRoot(items, "insights");
+
+    expect(promoted.map((item) => item.id)).toEqual(["resources", "insights", "events"]);
+    expect(promoted[0].children[0]).toEqual(expect.objectContaining({
+      id: "learn",
+      children: [],
+    }));
   });
 });
