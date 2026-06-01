@@ -21,6 +21,7 @@ import formsRoutes from "./forms.routes";
 import editorLocksRoutes from "./editor-locks.routes";
 import crmRoutes from "./crm.routes";
 import ecommerceRoutes from "./ecommerce.routes";
+import { requireCmsEnabled } from "../../middleware/site-features";
 
 const router = Router();
 
@@ -33,14 +34,14 @@ router.use("/membership-tiers", requireAdminPermission("directory"), tiersRoutes
 router.use("/events", requireAdminPermission("content"), eventsRoutes);
 router.use("/blog", requireAdminPermission("content"), blogRoutes);
 router.use("/", requireAdminPermission("content"), registrationRoutes);
-router.use("/cms", requireAdminPermission("content"), cmsRoutes);
-router.use("/cms", requireAdminPermission("content"), cmsMediaRoutes);
-router.use("/cms", requireAdminPermission("content", "design"), cmsSectionsRoutes);
-router.use("/cms", requireAdminPermission("content"), cmsSeoRoutes);
-router.use("/cms", requireAdminPermission("content"), cmsRedirectsRoutes);
-router.use("/cms", requireAdminPermission("content"), cmsAuditRoutes);
-router.use("/cms", requireAdminPermission("design"), cmsMenusRoutes);
-router.use("/cms", requireAdminPermission("design"), cmsSidebarsRoutes);
+router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsRoutes);
+router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsMediaRoutes);
+router.use("/cms", requireCmsEnabled, requireAdminPermission("content", "design"), cmsSectionsRoutes);
+router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsSeoRoutes);
+router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsRedirectsRoutes);
+router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsAuditRoutes);
+router.use("/cms", requireCmsEnabled, requireAdminPermission("design"), cmsMenusRoutes);
+router.use("/cms", requireCmsEnabled, requireAdminPermission("design"), cmsSidebarsRoutes);
 router.use("/", requireAdminPermission("content"), formsRoutes);
 router.use("/crm", requireAdminPermission("crm"), crmRoutes);
 router.use("/ecommerce", requireRole("admin"), ecommerceRoutes);

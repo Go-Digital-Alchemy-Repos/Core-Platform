@@ -24,6 +24,7 @@ import referenceRoutes from "./reference.routes";
 import formsRoutes from "./forms.routes";
 import crmRoutes from "./crm.routes";
 import ecommerceRoutes from "./ecommerce.routes";
+import { requireCmsEnabled } from "../middleware/site-features";
 import { searchPublicSite } from "../services/public-search.service";
 import { buildRobotsTxtPayload } from "../services/robots-txt.service";
 import { storage } from "../storage/index";
@@ -67,7 +68,7 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/blog", blogRoutes);
   app.use("/api/events", guestRegistrationRoutes);
   app.use("/api/events", registrationRoutes);
-  app.use("/api/cms", cmsPublicRoutes);
+  app.use("/api/cms", requireCmsEnabled, cmsPublicRoutes);
   app.use("/api/contact-professional", contactProfessionalRoutes);
   app.use("/api/setup", setupRoutes);
   app.use("/api/therapist/application", applicationRoutes);
@@ -249,29 +250,31 @@ export function registerApiRoutes(app: Express) {
         urls.push({ loc: `${base}/shop`, changefreq: "daily", priority: "0.8" });
       }
 
-      for (const page of pages) {
-        if (page.status !== "published" || page.noindex) continue;
-        if (
-          [
-            "home",
-            "about",
-            "contact",
-            "join",
-            "insights",
-            "events",
-            "recordings",
-            "directory",
-          ].includes(page.slug)
-        )
-          continue;
-        urls.push({
-          loc: `${base}/${page.slug}`,
-          lastmod: page.updatedAt
-            ? new Date(page.updatedAt).toISOString().split("T")[0]
-            : undefined,
-          changefreq: "monthly",
-          priority: "0.6",
-        });
+      if (siteFeatures.cmsEnabled) {
+        for (const page of pages) {
+          if (page.status !== "published" || page.noindex) continue;
+          if (
+            [
+              "home",
+              "about",
+              "contact",
+              "join",
+              "insights",
+              "events",
+              "recordings",
+              "directory",
+            ].includes(page.slug)
+          )
+            continue;
+          urls.push({
+            loc: `${base}/${page.slug}`,
+            lastmod: page.updatedAt
+              ? new Date(page.updatedAt).toISOString().split("T")[0]
+              : undefined,
+            changefreq: "monthly",
+            priority: "0.6",
+          });
+        }
       }
 
       for (const post of posts) {
