@@ -467,7 +467,26 @@ export default function TherapistProfilePage() {
             )}
 
             {hasContact && (
-              <Card data-testid="card-contact">
+              <Card className="overflow-hidden" data-testid="card-contact">
+                {showMap && (
+                  <div className="aspect-square" data-testid="card-contact-map">
+                    <MapView
+                      therapists={[
+                        {
+                          profile: therapist,
+                          user: {
+                            firstName: therapist.user?.firstName ?? null,
+                            lastName: therapist.user?.lastName ?? null,
+                          },
+                        },
+                      ]}
+                      height="100%"
+                      minHeight="0"
+                      interactive={false}
+                      zoom={11}
+                    />
+                  </div>
+                )}
                 <CardContent className="pt-6">
                   <h3 className="font-semibold mb-4" data-testid="heading-contact">
                     Contact Information
@@ -509,26 +528,6 @@ export default function TherapistProfilePage() {
                     )}
                   </div>
                 </CardContent>
-              </Card>
-            )}
-
-            {showMap && (
-              <Card className="overflow-hidden" data-testid="card-map">
-                <div className="aspect-video lg:aspect-square">
-                  <MapView
-                    therapists={[
-                      {
-                        profile: therapist,
-                        user: {
-                          firstName: therapist.user?.firstName ?? null,
-                          lastName: therapist.user?.lastName ?? null,
-                        },
-                      },
-                    ]}
-                    height="100%"
-                    interactive={false}
-                  />
-                </div>
               </Card>
             )}
 

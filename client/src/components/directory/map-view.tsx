@@ -42,6 +42,7 @@ interface TherapistWithUser {
 interface MapViewProps {
   therapists: TherapistWithUser[];
   height?: string;
+  minHeight?: string;
   interactive?: boolean;
   zoom?: number;
   center?: [number, number];
@@ -74,7 +75,7 @@ function MapSizeInvalidator() {
   return null;
 }
 
-export function MapView({ therapists, height = "500px", interactive = true, zoom: zoomProp, center: centerProp, highlightedId }: MapViewProps) {
+export function MapView({ therapists, height = "500px", minHeight, interactive = true, zoom: zoomProp, center: centerProp, highlightedId }: MapViewProps) {
   const markered = useMemo(
     () =>
       therapists.filter(
@@ -108,7 +109,7 @@ export function MapView({ therapists, height = "500px", interactive = true, zoom
 
   return (
     <div
-      style={{ height, minHeight: hasPercentHeight ? "420px" : height }}
+      style={{ height, minHeight: minHeight ?? (hasPercentHeight ? "420px" : height) }}
       className="h-full w-full overflow-hidden border isolate"
       data-testid="map-container"
     >
