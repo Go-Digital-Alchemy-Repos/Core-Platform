@@ -125,16 +125,23 @@ function OrderList({ orders }: { orders: AccountOrder[] }) {
   return (
     <div className="space-y-3">
       {orders.map((order) => (
-        <Card key={order.id}>
-          <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="font-mono text-xs text-muted-foreground">#{order.id}</p>
-              <p className="font-semibold">{formatMoney(order.totalAmount)}</p>
-              {order.createdAt ? <p className="text-sm text-muted-foreground">Placed {new Date(order.createdAt).toLocaleDateString()}</p> : null}
-            </div>
-            <OrderBadges order={order} />
-            <Button asChild variant="outline"><Link href={`/account/orders/${order.id}`}>View order</Link></Button>
-          </CardContent>
+        <Card key={order.id} className="transition-colors hover:border-primary/40 hover:bg-muted/30">
+          <Link
+            href={`/account/orders/${order.id}`}
+            className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="font-mono text-xs text-muted-foreground">#{order.id}</p>
+                <p className="font-semibold">{formatMoney(order.totalAmount)}</p>
+                {order.createdAt ? <p className="text-sm text-muted-foreground">Placed {new Date(order.createdAt).toLocaleDateString()}</p> : null}
+              </div>
+              <OrderBadges order={order} />
+              <span className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors group-hover:bg-accent">
+                View order
+              </span>
+            </CardContent>
+          </Link>
         </Card>
       ))}
     </div>
