@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, ChevronDown, Bell } from "lucide-react";
+import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, ChevronDown, Bell, ShoppingCart } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
@@ -18,6 +18,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { NavbarSearchPopover } from "@/components/layout/navbar-search-popover";
+import { getCartItemCount, readCart } from "@/features/ecommerce/cart-store";
+import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
 import type { CmsMenu, MenuItem, PublicMenuLocation } from "@shared/schema";
 
 const defaultNavLinks = [
@@ -95,6 +97,53 @@ function DynamicDropdown({ item, location: currentPath }: { item: MenuItem; loca
   );
 }
 
+function useCartItemCount() {
+  const [cartItemCount, setCartItemCount] = useState(0);
+
+  useEffect(() => {
+    const updateCartItemCount = () => setCartItemCount(getCartItemCount(readCart()));
+    updateCartItemCount();
+    window.addEventListener("ecommerce-cart-changed", updateCartItemCount);
+    window.addEventListener("storage", updateCartItemCount);
+    return () => {
+      window.removeEventListener("ecommerce-cart-changed", updateCartItemCount);
+      window.removeEventListener("storage", updateCartItemCount);
+    };
+  }, []);
+
+  return cartItemCount;
+}
+
+function CartNavButton({
+  cartItemCount,
+  compact = false,
+  onClick,
+}: {
+  cartItemCount: number;
+  compact?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <Link href="/cart" onClick={onClick}>
+      <Button
+        variant={compact ? "ghost" : "outline"}
+        size={compact ? "icon" : "sm"}
+        className="relative"
+        data-testid={compact ? "link-cart-mobile" : "link-cart"}
+        aria-label={`Cart${cartItemCount ? `, ${cartItemCount} item${cartItemCount === 1 ? "" : "s"}` : ""}`}
+      >
+        <ShoppingCart className={compact ? "h-5 w-5" : "mr-2 h-4 w-4"} />
+        {compact ? null : "Cart"}
+        {cartItemCount > 0 ? (
+          <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold leading-none text-primary-foreground">
+            {cartItemCount > 99 ? "99+" : cartItemCount}
+          </span>
+        ) : null}
+      </Button>
+    </Link>
+  );
+}
+
 export function Navbar() {
   const [location] = useLocation();
   const { user, isLoading, logout, isAdmin, isTherapist } = useAuth();
@@ -102,6 +151,13 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const cartItemCount = useCartItemCount();
+
+  const { data: siteFeaturesData } = useQuery<SiteFeatures>({
+    queryKey: ["/api/site-config"],
+    staleTime: 60000,
+  });
+  const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
 
   const { data: publicMenus } = useQuery<Partial<Record<PublicMenuLocation, CmsMenu>>>({
     queryKey: ["/api/cms/menus"],
@@ -213,6 +269,7 @@ export function Navbar() {
 
         <div className="hidden md:flex items-center gap-3 flex-wrap">
           <NavbarSearchPopover />
+          {siteFeatures.ecommerceEnabled ? <CartNavButton cartItemCount={cartItemCount} /> : null}
           {isLoading ? null : user ? (
             <>
               <DropdownMenu>
@@ -295,6 +352,7 @@ export function Navbar() {
         </div>
 
         <div className="flex md:hidden items-center gap-2">
+          {siteFeatures.ecommerceEnabled ? <CartNavButton cartItemCount={cartItemCount} compact /> : null}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button size="icon" variant="ghost" data-testid="button-mobile-menu">
@@ -385,6 +443,25 @@ export function Navbar() {
                 )}
 
                 <div className="my-3 border-t" />
+
+                {siteFeatures.ecommerceEnabled ? (
+                  <Link href="/cart" onClick={() => setMobileOpen(false)}>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start ${location === "/cart" ? "toggle-elevate toggle-elevated" : ""}`}
+                      data-testid="link-mobile-cart"
+                      aria-current={location === "/cart" ? "page" : undefined}
+                    >
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      Cart
+                      {cartItemCount > 0 ? (
+                        <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+                          {cartItemCount}
+                        </span>
+                      ) : null}
+                    </Button>
+                  </Link>
+                ) : null}
 
                 {isLoading ? null : user ? (
                   <>

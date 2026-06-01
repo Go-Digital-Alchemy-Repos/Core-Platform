@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { useToast } from "@/hooks/use-toast";
 import { addCartItem, formatMoney } from "./cart-store";
 import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
@@ -193,7 +194,13 @@ function FilterButton({ active, label, onClick }: { active: boolean; label: stri
 }
 
 function FeaturedProduct({ product }: { product: Product }) {
+  const { toast } = useToast();
   const price = product.salePrice ?? product.price;
+  const addToCart = () => {
+    addCartItem({ productId: product.id, name: product.name, slug: product.urlSlug, unitPrice: price, quantity: 1, image: product.primaryImage });
+    toast({ title: "Added to cart", description: `${product.name} is ready for checkout.` });
+  };
+
   return (
     <Card className="overflow-hidden border-primary/20">
       <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
@@ -217,7 +224,7 @@ function FeaturedProduct({ product }: { product: Product }) {
               {formatMoney(price)}
               {product.salePrice != null ? <span className="ml-2 text-base text-muted-foreground line-through">{formatMoney(product.price)}</span> : null}
             </div>
-            <Button onClick={() => addCartItem({ productId: product.id, name: product.name, slug: product.urlSlug, unitPrice: price, quantity: 1, image: product.primaryImage })}>
+            <Button onClick={addToCart}>
               Add to cart
             </Button>
           </div>
@@ -228,7 +235,13 @@ function FeaturedProduct({ product }: { product: Product }) {
 }
 
 function ProductCard({ product }: { product: Product }) {
+  const { toast } = useToast();
   const price = product.salePrice ?? product.price;
+  const addToCart = () => {
+    addCartItem({ productId: product.id, name: product.name, slug: product.urlSlug, unitPrice: price, quantity: 1, image: product.primaryImage });
+    toast({ title: "Added to cart", description: `${product.name} is ready for checkout.` });
+  };
+
   return (
     <Card className="overflow-hidden">
       <Link href={`/products/${product.urlSlug}`}>
@@ -252,7 +265,7 @@ function ProductCard({ product }: { product: Product }) {
             <span className="font-semibold">{formatMoney(price)}</span>
             {product.salePrice != null ? <span className="ml-2 text-sm text-muted-foreground line-through">{formatMoney(product.price)}</span> : null}
           </div>
-          <Button size="sm" onClick={() => addCartItem({ productId: product.id, name: product.name, slug: product.urlSlug, unitPrice: price, quantity: 1, image: product.primaryImage })}>
+          <Button size="sm" onClick={addToCart}>
             Add
           </Button>
         </div>

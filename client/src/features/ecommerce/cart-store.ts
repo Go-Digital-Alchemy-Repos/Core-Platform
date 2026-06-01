@@ -30,6 +30,10 @@ export function clearCart(): void {
   writeCart([]);
 }
 
+export function getCartItemCount(items = readCart()): number {
+  return items.reduce((total, item) => total + item.quantity, 0);
+}
+
 export function addCartItem(item: CartItem): void {
   const cart = readCart();
   const existing = cart.find((line) => line.productId === item.productId && (line.variantId ?? null) === (item.variantId ?? null));

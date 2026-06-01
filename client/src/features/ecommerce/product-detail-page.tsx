@@ -6,6 +6,7 @@ import { PageLayout } from "@/components/layout/page-layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { useToast } from "@/hooks/use-toast";
 import { addCartItem, formatMoney } from "./cart-store";
 import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
@@ -46,6 +47,7 @@ export default function ProductDetailPage() {
   const slug = params?.slug || "";
   const [quantity, setQuantity] = useState(1);
   const [image, setImage] = useState<string | null>(null);
+  const { toast } = useToast();
   const { data: product, isLoading } = useQuery<Product>({ queryKey: ["/api/ecommerce/products", slug], enabled: !!slug });
   const { data: globalSeo } = useQuery<SeoSettings>({ queryKey: ["/api/seo/global"] });
 
@@ -56,6 +58,10 @@ export default function ProductDetailPage() {
   const selectedImage = image || product.primaryImage;
   const price = product.salePrice ?? product.price;
   const gallery = [product.primaryImage, ...product.secondaryImages].filter(Boolean) as string[];
+  const addToCart = () => {
+    addCartItem({ productId: product.id, name: product.name, slug: product.urlSlug, unitPrice: price, quantity, image: product.primaryImage });
+    toast({ title: "Added to cart", description: `${quantity} ${quantity === 1 ? "item" : "items"} added. Use the cart icon to checkout.` });
+  };
 
   return (
     <PageLayout>
@@ -96,7 +102,7 @@ export default function ProductDetailPage() {
                 <span className="w-10 text-center text-sm font-medium">{quantity}</span>
                 <Button type="button" variant="ghost" size="icon" onClick={() => setQuantity((value) => value + 1)}><Plus className="h-4 w-4" /></Button>
               </div>
-              <Button onClick={() => addCartItem({ productId: product.id, name: product.name, slug: product.urlSlug, unitPrice: price, quantity, image: product.primaryImage })}>
+              <Button onClick={addToCart}>
                 <ShoppingCart className="mr-2 h-4 w-4" /> Add to cart
               </Button>
             </div>
