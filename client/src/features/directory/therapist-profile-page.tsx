@@ -260,23 +260,19 @@ export default function TherapistProfilePage() {
                     </div>
                   </div>
                 </div>
+
+                {directorySettings.showProfileBio && therapist.bio && (
+                  <div className="mt-8 pt-8 border-t" data-testid="card-bio">
+                    <h2 className="text-lg font-semibold mb-4">{directorySettings.profileBioLabel}</h2>
+                    <div
+                      className="prose prose-sm max-w-none text-muted-foreground leading-relaxed"
+                      data-testid="text-bio"
+                      dangerouslySetInnerHTML={{ __html: therapist.bio }}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
-
-            {directorySettings.showProfileBio && therapist.bio && (
-              <Card data-testid="card-bio">
-                <CardHeader>
-                  <h2 className="text-lg font-semibold">{directorySettings.profileBioLabel}</h2>
-                </CardHeader>
-                <CardContent>
-                  <div
-                    className="prose prose-sm max-w-none text-muted-foreground leading-relaxed"
-                    data-testid="text-bio"
-                    dangerouslySetInnerHTML={{ __html: therapist.bio }}
-                  />
-                </CardContent>
-              </Card>
-            )}
 
             {directorySettings.showSpecialties && (therapist.specializations as string[] | null)?.length ? (
               <Card data-testid="card-specializations">
