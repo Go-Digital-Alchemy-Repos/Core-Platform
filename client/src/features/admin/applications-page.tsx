@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { STALE_TIMES } from "@/lib/queryClient";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { ClipboardList, Eye, Loader2, Search, Filter } from "lucide-react";
 import { AdminSidebar } from "./admin-sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +47,7 @@ const FILTER_OPTIONS = [
 ];
 
 export default function AdminApplicationsPage() {
+  const [, navigate] = useLocation();
   const [statusFilter, setStatusFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -181,7 +182,20 @@ export default function AdminApplicationsPage() {
                     {filtered.map((app: any) => {
                       const fd = (typeof app.formData === "object" && app.formData) || {};
                       return (
-                        <TableRow key={app.id} data-testid={`row-application-${app.id}`}>
+                        <TableRow
+                          key={app.id}
+                          role="button"
+                          tabIndex={0}
+                          className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          data-testid={`row-application-${app.id}`}
+                          onClick={() => navigate(`/admin/applications/${app.id}`)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              navigate(`/admin/applications/${app.id}`);
+                            }
+                          }}
+                        >
                           <TableCell>
                             <div>
                               <p className="font-medium text-sm">{app.userName}</p>
@@ -226,7 +240,12 @@ export default function AdminApplicationsPage() {
                           </TableCell>
                           <TableCell className="text-right">
                             <Link href={`/admin/applications/${app.id}`}>
-                              <Button variant="ghost" size="sm" data-testid={`button-view-${app.id}`}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                data-testid={`button-view-${app.id}`}
+                                onClick={(event) => event.stopPropagation()}
+                              >
                                 <Eye className="w-4 h-4 mr-1" />
                                 View
                               </Button>

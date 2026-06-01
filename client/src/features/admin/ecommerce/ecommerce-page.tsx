@@ -301,7 +301,21 @@ function OrderTableRow({
   const displayOrderNumber = getOrderDisplayNumber(order.id);
 
   return (
-    <TableRow className={selected ? "bg-muted/50" : undefined}>
+    <TableRow
+      role="button"
+      tabIndex={0}
+      className={cn(
+        "cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        selected ? "bg-muted/50" : undefined,
+      )}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+    >
       <TableCell>
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{displayOrderNumber}</span>
@@ -330,7 +344,15 @@ function OrderTableRow({
       </TableCell>
       <TableCell>{formatMoney(order.totalAmount)}</TableCell>
       <TableCell className="text-right">
-        <Button type="button" variant="outline" size="sm" onClick={onSelect}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelect();
+          }}
+        >
           <Eye className="mr-2 h-4 w-4" />
           View
         </Button>
@@ -720,7 +742,19 @@ export function ProductsTab() {
               const inventory = inventoryStatus(product);
               const defaultVariant = product.variants?.find((variant) => variant.isDefault) ?? product.variants?.[0];
               return (
-                <TableRow key={product.id}>
+                <TableRow
+                  key={product.id}
+                  role="button"
+                  tabIndex={0}
+                  className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  onClick={() => openEdit(product)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openEdit(product);
+                    }
+                  }}
+                >
                   <TableCell>
                     <div className="font-medium">{product.name}</div>
                     <div className="text-xs text-muted-foreground">{defaultVariant?.sku || product.sku || product.urlSlug}</div>
@@ -729,7 +763,7 @@ export function ProductsTab() {
                   <TableCell><Badge variant={inventory.variant}>{inventory.label}</Badge></TableCell>
                   <TableCell>{formatMoney(defaultVariant?.salePrice ?? product.salePrice ?? defaultVariant?.price ?? product.price)}</TableCell>
                   <TableCell>{product.vendor || "-"}</TableCell>
-                  <TableCell><div className="flex justify-end gap-2"><Button type="button" variant="outline" size="sm" asChild><Link href={`/products/${product.urlSlug}`}><Eye className="mr-2 h-4 w-4" />Preview</Link></Button><Button type="button" variant="outline" size="sm" onClick={() => openEdit(product)}><Pencil className="mr-2 h-4 w-4" />Edit</Button></div></TableCell>
+                  <TableCell><div className="flex justify-end gap-2"><Button type="button" variant="outline" size="sm" asChild onClick={(event) => event.stopPropagation()}><Link href={`/products/${product.urlSlug}`}><Eye className="mr-2 h-4 w-4" />Preview</Link></Button><Button type="button" variant="outline" size="sm" onClick={(event) => { event.stopPropagation(); openEdit(product); }}><Pencil className="mr-2 h-4 w-4" />Edit</Button></div></TableCell>
                 </TableRow>
               );
             })}
@@ -1205,7 +1239,19 @@ export function CategoriesTab() {
                   </TableCell>
                 </TableRow>
               ) : visibleCategories.map((category) => (
-                <TableRow key={category.id}>
+                <TableRow
+                  key={category.id}
+                  role="button"
+                  tabIndex={0}
+                  className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  onClick={() => openEdit(category)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openEdit(category);
+                    }
+                  }}
+                >
                   <TableCell className="font-medium">
                     <span style={{ paddingLeft: `${category.depth * 1.25}rem` }}>{category.name}</span>
                   </TableCell>
@@ -1218,11 +1264,11 @@ export function CategoriesTab() {
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => startSubcategory(category.id)}>
+                      <Button type="button" variant="outline" size="sm" onClick={(event) => { event.stopPropagation(); startSubcategory(category.id); }}>
                         <Plus className="mr-2 h-4 w-4" />
                         Sub
                       </Button>
-                      <Button type="button" variant="outline" size="sm" onClick={() => openEdit(category)}>
+                      <Button type="button" variant="outline" size="sm" onClick={(event) => { event.stopPropagation(); openEdit(category); }}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit
                       </Button>
@@ -1230,7 +1276,10 @@ export function CategoriesTab() {
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => deleteMutation.mutate(category.id)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          deleteMutation.mutate(category.id);
+                        }}
                         disabled={deleteMutation.isPending}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
@@ -1482,7 +1531,7 @@ function CouponsTab() {
             </div>
             <Table><TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Status</TableHead><TableHead>Discount</TableHead><TableHead>Used</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{filteredCoupons.map((coupon) => {
               const status = couponStatus(coupon);
-              return <TableRow key={coupon.id}><TableCell><div className="font-medium">{coupon.code}</div><div className="text-xs text-muted-foreground">{coupon.name || coupon.description || "-"}</div></TableCell><TableCell><Badge variant={status.variant}>{status.label}</Badge></TableCell><TableCell>{coupon.type === "percentage" ? `${coupon.value}%` : coupon.type === "freeShipping" ? "Free shipping" : formatMoney(coupon.value)}</TableCell><TableCell>{coupon.timesUsed}{coupon.maxRedemptions ? ` / ${coupon.maxRedemptions}` : ""}</TableCell><TableCell><div className="flex justify-end gap-2"><Button size="sm" variant="outline" onClick={() => setSelectedReportId(coupon.id)}><Eye className="mr-2 h-4 w-4" />Report</Button><Button size="sm" variant="outline" onClick={() => openEdit(coupon)}><Pencil className="mr-2 h-4 w-4" />Edit</Button><Button size="sm" variant="outline" onClick={() => duplicateMutation.mutate(coupon)}><Copy className="mr-2 h-4 w-4" />Copy</Button><Button size="sm" variant="outline" onClick={() => archiveMutation.mutate(coupon.id)}><Trash2 className="mr-2 h-4 w-4" />Archive</Button></div></TableCell></TableRow>;
+              return <TableRow key={coupon.id} role="button" tabIndex={0} className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" onClick={() => openEdit(coupon)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openEdit(coupon); } }}><TableCell><div className="font-medium">{coupon.code}</div><div className="text-xs text-muted-foreground">{coupon.name || coupon.description || "-"}</div></TableCell><TableCell><Badge variant={status.variant}>{status.label}</Badge></TableCell><TableCell>{coupon.type === "percentage" ? `${coupon.value}%` : coupon.type === "freeShipping" ? "Free shipping" : formatMoney(coupon.value)}</TableCell><TableCell>{coupon.timesUsed}{coupon.maxRedemptions ? ` / ${coupon.maxRedemptions}` : ""}</TableCell><TableCell><div className="flex justify-end gap-2"><Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); setSelectedReportId(coupon.id); }}><Eye className="mr-2 h-4 w-4" />Report</Button><Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); openEdit(coupon); }}><Pencil className="mr-2 h-4 w-4" />Edit</Button><Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); duplicateMutation.mutate(coupon); }}><Copy className="mr-2 h-4 w-4" />Copy</Button><Button size="sm" variant="outline" onClick={(event) => { event.stopPropagation(); archiveMutation.mutate(coupon.id); }}><Trash2 className="mr-2 h-4 w-4" />Archive</Button></div></TableCell></TableRow>;
             })}</TableBody></Table>
           </CardContent>
         </Card>
@@ -2149,7 +2198,31 @@ export function ShippingTab() {
                 </TableHeader>
                 <TableBody>
                   {zones.map((zone) => (
-                    <TableRow key={zone.id}>
+                    <TableRow
+                      key={zone.id}
+                      role="button"
+                      tabIndex={0}
+                      className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      onClick={() => setZoneForm({
+                        id: zone.id,
+                        name: zone.name,
+                        countries: zone.countries.join(", "),
+                        states: zone.states.join(", "),
+                        active: zone.active,
+                      })}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setZoneForm({
+                            id: zone.id,
+                            name: zone.name,
+                            countries: zone.countries.join(", "),
+                            states: zone.states.join(", "),
+                            active: zone.active,
+                          });
+                        }
+                      }}
+                    >
                       <TableCell className="font-medium">{zone.name}</TableCell>
                       <TableCell>{zone.countries.length ? zone.countries.join(", ") : "All"}</TableCell>
                       <TableCell>{zone.states.length ? zone.states.join(", ") : "All"}</TableCell>
@@ -2159,13 +2232,16 @@ export function ShippingTab() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => setZoneForm({
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setZoneForm({
                             id: zone.id,
                             name: zone.name,
                             countries: zone.countries.join(", "),
                             states: zone.states.join(", "),
                             active: zone.active,
-                          })}
+                          });
+                          }}
                         >
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit
@@ -2271,7 +2347,37 @@ export function ShippingTab() {
                 </TableHeader>
                 <TableBody>
                   {rates.map((rate) => (
-                    <TableRow key={rate.id}>
+                    <TableRow
+                      key={rate.id}
+                      role="button"
+                      tabIndex={0}
+                      className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      onClick={() => setRateForm({
+                        id: rate.id,
+                        zoneId: rate.zoneId,
+                        name: rate.name,
+                        description: rate.description ?? "",
+                        amount: String(rate.amount / 100),
+                        minOrderAmount: rate.minOrderAmount == null ? "" : String(rate.minOrderAmount / 100),
+                        maxOrderAmount: rate.maxOrderAmount == null ? "" : String(rate.maxOrderAmount / 100),
+                        active: rate.active,
+                      })}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setRateForm({
+                            id: rate.id,
+                            zoneId: rate.zoneId,
+                            name: rate.name,
+                            description: rate.description ?? "",
+                            amount: String(rate.amount / 100),
+                            minOrderAmount: rate.minOrderAmount == null ? "" : String(rate.minOrderAmount / 100),
+                            maxOrderAmount: rate.maxOrderAmount == null ? "" : String(rate.maxOrderAmount / 100),
+                            active: rate.active,
+                          });
+                        }
+                      }}
+                    >
                       <TableCell>
                         <div className="font-medium">{rate.name}</div>
                         {rate.description ? <div className="text-xs text-muted-foreground">{rate.description}</div> : null}
@@ -2289,7 +2395,9 @@ export function ShippingTab() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => setRateForm({
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setRateForm({
                             id: rate.id,
                             zoneId: rate.zoneId,
                             name: rate.name,
@@ -2298,7 +2406,8 @@ export function ShippingTab() {
                             minOrderAmount: rate.minOrderAmount == null ? "" : String(rate.minOrderAmount / 100),
                             maxOrderAmount: rate.maxOrderAmount == null ? "" : String(rate.maxOrderAmount / 100),
                             active: rate.active,
-                          })}
+                          });
+                          }}
                         >
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit
@@ -2413,7 +2522,37 @@ export function ShippingTab() {
                 </TableHeader>
                 <TableBody>
                   {locations.map((location) => (
-                    <TableRow key={location.id}>
+                    <TableRow
+                      key={location.id}
+                      role="button"
+                      tabIndex={0}
+                      className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      onClick={() => setLocationForm({
+                        id: location.id,
+                        name: location.name,
+                        type: location.type,
+                        city: location.city ?? "",
+                        state: location.state ?? "",
+                        country: location.country,
+                        isPrimary: location.isPrimary,
+                        active: location.active,
+                      })}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setLocationForm({
+                            id: location.id,
+                            name: location.name,
+                            type: location.type,
+                            city: location.city ?? "",
+                            state: location.state ?? "",
+                            country: location.country,
+                            isPrimary: location.isPrimary,
+                            active: location.active,
+                          });
+                        }
+                      }}
+                    >
                       <TableCell className="font-medium">{location.name}</TableCell>
                       <TableCell className="capitalize">{location.type.replace(/_/g, " ")}</TableCell>
                       <TableCell>{[location.city, location.state, location.country].filter(Boolean).join(", ")}</TableCell>
@@ -2427,7 +2566,9 @@ export function ShippingTab() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => setLocationForm({
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setLocationForm({
                             id: location.id,
                             name: location.name,
                             type: location.type,
@@ -2436,7 +2577,8 @@ export function ShippingTab() {
                             country: location.country,
                             isPrimary: location.isPrimary,
                             active: location.active,
-                          })}
+                          });
+                          }}
                         >
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit

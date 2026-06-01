@@ -279,7 +279,20 @@ function UsersContent() {
           </TableHeader>
           <TableBody>
             {filtered?.map((user) => (
-              <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
+              <TableRow
+                key={user.id}
+                role="button"
+                tabIndex={0}
+                className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                data-testid={`row-user-${user.id}`}
+                onClick={() => setDetailUser(user)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setDetailUser(user);
+                  }
+                }}
+              >
                 <TableCell data-testid={`text-user-name-${user.id}`}>
                   <div className="flex items-center gap-2">
                     <span className="font-medium">
@@ -308,7 +321,10 @@ function UsersContent() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setDetailUser(user)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setDetailUser(user);
+                    }}
                     data-testid={`button-actions-${user.id}`}
                   >
                     <MoreHorizontal className="h-4 w-4" />
