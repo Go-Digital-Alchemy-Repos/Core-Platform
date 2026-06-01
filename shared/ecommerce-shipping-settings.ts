@@ -9,6 +9,30 @@ export const ECOMMERCE_SHIPPING_DESTINATION_MODES = [
 
 export type EcommerceShippingDestinationMode = typeof ECOMMERCE_SHIPPING_DESTINATION_MODES[number];
 
+export const ECOMMERCE_TIMEZONES = [
+  ["America/New_York", "Eastern Time"],
+  ["America/Chicago", "Central Time"],
+  ["America/Denver", "Mountain Time"],
+  ["America/Phoenix", "Arizona Time"],
+  ["America/Los_Angeles", "Pacific Time"],
+  ["America/Anchorage", "Alaska Time"],
+  ["Pacific/Honolulu", "Hawaii Time"],
+  ["America/Toronto", "Toronto"],
+  ["America/Vancouver", "Vancouver"],
+  ["Europe/London", "London"],
+  ["Europe/Paris", "Central Europe"],
+  ["Australia/Sydney", "Sydney"],
+] as const;
+
+export function isValidTimeZone(timeZone: string) {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone }).format(new Date());
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const US_STATES = [
   ["AL", "Alabama"],
   ["AK", "Alaska"],
@@ -119,6 +143,9 @@ export const ecommerceStoreOriginSchema = z.object({
 
 export const ecommerceStoreSettingsSchema = z.object({
   storeOrigin: ecommerceStoreOriginSchema.default({}),
+  storeTimezone: z.string().trim().default("America/New_York").refine(isValidTimeZone, {
+    message: "Store timezone must be a valid IANA timezone, such as America/New_York",
+  }),
   shippingDestinationMode: z.enum(ECOMMERCE_SHIPPING_DESTINATION_MODES).default("us_only"),
   allowedCountries: z.array(z.string().trim().length(2).transform((value) => value.toUpperCase())).default(["US"]),
 });

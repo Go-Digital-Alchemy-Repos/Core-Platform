@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   CalendarDays,
+  Clock,
   ClipboardList,
   Copy,
   DollarSign,
@@ -62,6 +63,7 @@ import {
 } from "@/features/admin/settings-page";
 import {
   COMMON_ECOMMERCE_COUNTRIES,
+  ECOMMERCE_TIMEZONES,
   getCountriesForShippingMode,
   getRegionOptions,
   type EcommerceShippingDestinationMode,
@@ -1623,10 +1625,37 @@ function formatOrderNoteAuthor(note: NonNullable<Order["internalNotes"]>[number]
   return name || note.author?.email || "Unknown user";
 }
 
+function formatOrderPlacedDateTime(value: string | Date, timeZone = "America/New_York") {
+  const date = new Date(value);
+  const options = { timeZone };
+  try {
+    return {
+      date: new Intl.DateTimeFormat("en-US", {
+        ...options,
+        month: "numeric",
+        day: "numeric",
+        year: "numeric",
+      }).format(date),
+      time: new Intl.DateTimeFormat("en-US", {
+        ...options,
+        hour: "numeric",
+        minute: "2-digit",
+        timeZoneName: "short",
+      }).format(date),
+    };
+  } catch {
+    return {
+      date: date.toLocaleDateString(),
+      time: date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+    };
+  }
+}
+
 function OrdersTab() {
   const { toast } = useToast();
   const trackingNumberInputRef = useRef<HTMLInputElement>(null);
   const { data: orders = [] } = useQuery<Order[]>({ queryKey: ["/api/admin/ecommerce/orders"] });
+  const { data: storeSettings } = useQuery<EcommerceStoreSettings>({ queryKey: ["/api/admin/ecommerce/settings/store"] });
   const { data: locations = [] } = useQuery<FulfillmentLocation[]>({
     queryKey: ["/api/admin/ecommerce/shipping/locations"],
   });
@@ -1662,6 +1691,10 @@ function OrdersTab() {
     return matchesSearch && matchesStatus && matchesPayment;
   });
   const selectedOrder = orders.find((order) => order.id === selectedOrderId) ?? null;
+  const storeTimezone = storeSettings?.storeTimezone || "America/New_York";
+  const selectedOrderPlacedAt = selectedOrder
+    ? formatOrderPlacedDateTime(selectedOrder.createdAt, storeTimezone)
+    : null;
   const visibleRevenue = filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0);
   const unfulfilledCount = orders.filter((order) => !["shipped", "delivered", "cancelled"].includes(order.status)).length;
 
@@ -1878,7 +1911,7 @@ function OrdersTab() {
                   Order detail
                 </SheetTitle>
                 <SheetDescription>
-                  {getOrderDisplayNumber(selectedOrder.id)} · {selectedOrder.customer?.email || "No customer email"} · {new Date(selectedOrder.createdAt).toLocaleDateString()}
+                  {getOrderDisplayNumber(selectedOrder.id)} · {selectedOrder.customer?.email || "No customer email"} · {selectedOrderPlacedAt?.date} · {selectedOrderPlacedAt?.time}
                 </SheetDescription>
               </SheetHeader>
               <SheetBody className="space-y-5">
@@ -1989,7 +2022,7 @@ function OrdersTab() {
                             <div key={note.id} className="rounded-lg border p-3">
                               <p className="whitespace-pre-wrap text-sm">{note.body}</p>
                               <p className="mt-2 text-xs text-muted-foreground">
-                                {formatOrderNoteAuthor(note)} · {new Date(note.createdAt).toLocaleString()}
+                                {formatOrderNoteAuthor(note)} · {formatOrderPlacedDateTime(note.createdAt, storeTimezone).date} · {formatOrderPlacedDateTime(note.createdAt, storeTimezone).time}
                               </p>
                             </div>
                           ))
@@ -2973,6 +3006,7 @@ function SettingsTab() {
     zip: "",
     country: "US",
   });
+  const [storeTimezone, setStoreTimezone] = useState("America/New_York");
   const [shippingDestinationMode, setShippingDestinationMode] = useState<EcommerceShippingDestinationMode>("us_only");
   const [allowedCountries, setAllowedCountries] = useState("US");
   useEffect(() => {
@@ -2998,6 +3032,7 @@ function SettingsTab() {
   useEffect(() => {
     if (storeData) {
       setStoreOrigin(storeData.storeOrigin);
+      setStoreTimezone(storeData.storeTimezone);
       setShippingDestinationMode(storeData.shippingDestinationMode);
       setAllowedCountries(storeData.allowedCountries.join(", "));
     }
@@ -3041,6 +3076,7 @@ function SettingsTab() {
   const storeMutation = useMutation({
     mutationFn: async () => apiRequest("PUT", "/api/admin/ecommerce/settings/store", {
       storeOrigin,
+      storeTimezone,
       shippingDestinationMode,
       allowedCountries: shippingDestinationMode === "custom"
         ? csv(allowedCountries).map((country) => country.toUpperCase())
@@ -3058,11 +3094,23 @@ function SettingsTab() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-sky-600" /> Store origin and shipping markets</CardTitle>
-          <CardDescription>Set the ship-from address and the countries this store can sell and ship to. Checkout enforces these choices server-side.</CardDescription>
+          <CardDescription>Set the ship-from address, website timezone, and the countries this store can sell and ship to. Checkout enforces these choices server-side.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-5">
           <div className="grid gap-4 md:grid-cols-2">
             <StoreOriginInput label="Location name" field="name" value={storeOrigin.name} setStoreOrigin={setStoreOrigin} placeholder="Main warehouse" />
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2"><Clock className="h-4 w-4 text-sky-600" /> Website timezone</Label>
+              <Select value={storeTimezone} onValueChange={setStoreTimezone}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ECOMMERCE_TIMEZONES.map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label} ({value})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">Used for ecommerce timestamps, order received times, receipts, and future customer-facing order events.</p>
+            </div>
             <div className="space-y-2">
               <Label>Origin country</Label>
               <Select

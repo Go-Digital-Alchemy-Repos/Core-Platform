@@ -16,6 +16,7 @@ function httpError(message: string, statusCode: number) {
 export function getDefaultEcommerceStoreSettings(): EcommerceStoreSettings {
   return ecommerceStoreSettingsSchema.parse({
     storeOrigin: { country: "US" },
+    storeTimezone: "America/New_York",
     shippingDestinationMode: "us_only",
     allowedCountries: ["US"],
   });
