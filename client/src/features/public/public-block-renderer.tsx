@@ -71,6 +71,7 @@ const LazyStandardBlogPageBlock = lazy(() => import("./public-dynamic-blocks").t
 const LazyEventsArchiveSection = lazy(() => import("@/features/public/events-page").then(m => ({ default: m.EventsArchiveSection })));
 const LazyRecordingArchivesSection = lazy(() => import("@/features/public/recording-archives-page").then(m => ({ default: m.RecordingArchivesSection })));
 const LazyDirectoryBrowserSection = lazy(() => import("@/features/directory/directory-page").then(m => ({ default: m.DirectoryBrowserSection })));
+const LazyCareerListingsSection = lazy(() => import("@/features/public/careers-page").then(m => ({ default: m.CareerListingsSection })));
 
 function DynamicFallback() {
   return (
@@ -1391,6 +1392,7 @@ const DYNAMIC_BLOCK_TYPES = new Set([
   "events-archive",
   "video-archives",
   "directory-browser",
+  "career-listings",
 ]);
 
 export function PublicBlockRenderer({
@@ -1483,6 +1485,13 @@ export function PublicBlockRenderer({
       renderedBlock = (
         <Suspense fallback={<DynamicFallback />}>
           <LazyDirectoryBrowserSection props={block.props} />
+        </Suspense>
+      );
+    }
+    if (block.type === "career-listings") {
+      renderedBlock = (
+        <Suspense fallback={<DynamicFallback />}>
+          <LazyCareerListingsSection props={block.props} />
         </Suspense>
       );
     }

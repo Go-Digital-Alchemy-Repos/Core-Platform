@@ -5,6 +5,7 @@ export const FULL_WIDTH_BLOCK_TYPES = new Set([
   "events-archive",
   "video-archives",
   "directory-browser",
+  "career-listings",
   "cta",
   "trust-bar",
   "divider",

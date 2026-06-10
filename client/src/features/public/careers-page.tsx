@@ -81,18 +81,21 @@ function JobCard({ job }: { job: CareerJob }) {
   );
 }
 
-export default function CareersPage() {
+export function CareerListingsSection({ props = {} }: { props?: Record<string, unknown> }) {
   const [q, setQ] = useState("");
   const [department, setDepartment] = useState("all");
   const [employmentType, setEmploymentType] = useState("all");
   const [workMode, setWorkMode] = useState("all");
   const [location, setLocation] = useState("all");
-
-  useSeo({
-    title: "Careers | Core Platform",
-    description: "Explore current job openings and apply to join the team.",
-    canonical: typeof window !== "undefined" ? `${window.location.origin}/careers` : undefined,
-  });
+  const heading = typeof props.heading === "string" && props.heading.trim()
+    ? props.heading.trim()
+    : "Open Positions";
+  const subheading = typeof props.subheading === "string" && props.subheading.trim()
+    ? props.subheading.trim()
+    : "Browse current opportunities and apply directly through the Career Center.";
+  const eyebrow = typeof props.eyebrow === "string" && props.eyebrow.trim()
+    ? props.eyebrow.trim()
+    : "Career Center";
 
   const query = useMemo(() => {
     const params = new URLSearchParams();
@@ -117,16 +120,15 @@ export default function CareersPage() {
   };
 
   return (
-    <PageLayout>
-      <main className="container mx-auto px-4 py-10 space-y-8">
+    <section className="container mx-auto px-4 py-10 space-y-8" data-testid="section-career-listings">
         <section className="space-y-3">
           <Badge variant="outline" className="gap-1.5">
             <Briefcase className="h-3.5 w-3.5" />
-            Career Center
+            {eyebrow}
           </Badge>
-          <h1 className="text-3xl font-bold tracking-normal sm:text-4xl">Open Positions</h1>
+          <h1 className="text-3xl font-bold tracking-normal sm:text-4xl">{heading}</h1>
           <p className="max-w-2xl text-muted-foreground">
-            Browse current opportunities and apply directly through the Career Center.
+            {subheading}
           </p>
         </section>
 
@@ -185,7 +187,20 @@ export default function CareersPage() {
             </Card>
           )}
         </section>
-      </main>
+      </section>
+  );
+}
+
+export default function CareersPage() {
+  useSeo({
+    title: "Careers | Core Platform",
+    description: "Explore current job openings and apply to join the team.",
+    canonical: typeof window !== "undefined" ? `${window.location.origin}/careers` : undefined,
+  });
+
+  return (
+    <PageLayout>
+      <CareerListingsSection />
     </PageLayout>
   );
 }

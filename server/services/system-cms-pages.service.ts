@@ -63,6 +63,76 @@ function buildEventsContent() {
   };
 }
 
+function buildCareersContent() {
+  return {
+    blocks: [
+      {
+        id: id(),
+        type: "hero",
+        props: {
+          badge: "Career Center",
+          heading: "Build Belonging With Us",
+          subheading:
+            "Join a team creating practical tools, trusted community, and culturally informed care pathways for globally mobile people and families.",
+          primaryText: "View Open Roles",
+          primaryLink: "#open-roles",
+          primaryAction: "internal-link",
+          secondaryText: "",
+          secondaryLink: "",
+          layout: "stacked",
+          minHeight: "420",
+          overlayOpacity: 45,
+          backgroundImageUrl:
+            "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=1800&h=1000&fit=crop&crop=faces",
+          backgroundPositionX: 50,
+          backgroundPositionY: 50,
+        },
+      },
+      {
+        id: id(),
+        type: "cards-grid",
+        props: {
+          title: "How We Work",
+          subtitle:
+            "Core Platform is built by people who care about trust, nuance, and practical support across cultures.",
+          columns: "3",
+          cards: [
+            {
+              title: "Mission-led",
+              description:
+                "We build tools for communities that are often misunderstood by one-size-fits-all systems.",
+              icon: "Heart",
+            },
+            {
+              title: "Thoughtful craft",
+              description:
+                "Our product, content, and operations work should feel calm, useful, and carefully made.",
+              icon: "BadgeCheck",
+            },
+            {
+              title: "Remote-friendly",
+              description:
+                "Many roles are remote or hybrid, with rhythms designed for clear collaboration.",
+              icon: "Globe",
+            },
+          ],
+        },
+      },
+      {
+        id: id(),
+        type: "career-listings",
+        props: {
+          eyebrow: "Open Roles",
+          heading: "Current Job Listings",
+          subheading:
+            "Search open positions by department, location, work mode, and role type. Each listing includes direct application through the Career Center.",
+          htmlAnchor: "open-roles",
+        },
+      },
+    ],
+  };
+}
+
 function buildRecordingsContent() {
   return {
     blocks: [
@@ -523,6 +593,30 @@ export async function ensureSystemCmsPages() {
       seoTitle: "Upcoming Events | Core Platform",
       seoDescription: "Explore upcoming Core Platform trainings, workshops, and community events.",
       seoKeywords: "",
+      ogImageUrl: "",
+      canonicalUrl: "",
+      noindex: false,
+      publishedAt: new Date(),
+      scheduledAt: null,
+      createdBy: null,
+      updatedBy: null,
+      sidebarId: null,
+    });
+  }
+
+  const existingCareers = await storage.cmsPages.getPageBySlug("careers");
+  if (!existingCareers) {
+    await storage.cmsPages.createPage({
+      title: "Careers",
+      slug: "careers",
+      pageType: "custom",
+      template: "full-width",
+      status: "published",
+      content: buildCareersContent(),
+      seoTitle: "Careers | Core Platform",
+      seoDescription:
+        "Explore open roles and apply to join the Core Platform team.",
+      seoKeywords: "Core Platform careers, jobs, hiring, open roles",
       ogImageUrl: "",
       canonicalUrl: "",
       noindex: false,

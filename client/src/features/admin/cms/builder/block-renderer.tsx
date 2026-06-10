@@ -17,7 +17,7 @@ import {
   List, Shield, Newspaper, TrendingUp, Grid3X3, Rss,
   ListChecks, FlaskConical, BadgeCheck, Workflow, ListOrdered,
   ChevronLeft, ChevronRight, GalleryHorizontal, Grid2X2, Building2,
-  ExternalLink, XCircle,
+  ExternalLink, XCircle, BriefcaseBusiness,
 } from "lucide-react";
 import { LoginDialog } from "@/components/auth/login-dialog";
 import { MapView } from "@/components/directory/map-view";
@@ -62,7 +62,7 @@ const LUCIDE_MAP: Record<string, React.ElementType> = {
   List, Shield, Newspaper, TrendingUp, Grid3X3, Rss,
   ListChecks, FlaskConical, BadgeCheck, Workflow, ListOrdered,
   ChevronLeft, ChevronRight, GalleryHorizontal, Grid2X2, Building2,
-  ExternalLink, XCircle,
+  ExternalLink, XCircle, BriefcaseBusiness,
 };
 
 function LucideIcon({ name, className }: { name: string; className?: string }) {
@@ -91,6 +91,12 @@ const LazyRecordingArchivesSection = lazy(() =>
 const LazyDirectoryBrowserSection = lazy(() =>
   import("@/features/directory/directory-page").then((module) => ({
     default: module.DirectoryBrowserSection,
+  }))
+);
+
+const LazyCareerListingsSection = lazy(() =>
+  import("@/features/public/careers-page").then((module) => ({
+    default: module.CareerListingsSection,
   }))
 );
 
@@ -2048,7 +2054,7 @@ export function BlockRenderer({
   let renderedBlock: ReactElement | null = null;
 
   if (isDynamicBlock(block.type)) {
-    if (isAdminPreview && block.type !== "directory-browser") {
+    if (isAdminPreview && block.type !== "directory-browser" && block.type !== "career-listings") {
       renderedBlock = <DynamicPlaceholderAdmin block={block} />;
     }
     if (!renderedBlock && block.type === "therapist-map") renderedBlock = <TherapistMapBlock props={block.props} />;
@@ -2083,6 +2089,13 @@ export function BlockRenderer({
       renderedBlock = (
         <Suspense fallback={<DynamicPreviewFallback />}>
           <LazyDirectoryBrowserSection props={block.props} syncUrl={false} />
+        </Suspense>
+      );
+    }
+    if (!renderedBlock && block.type === "career-listings") {
+      renderedBlock = (
+        <Suspense fallback={<DynamicPreviewFallback />}>
+          <LazyCareerListingsSection props={block.props} />
         </Suspense>
       );
     }
@@ -2128,6 +2141,7 @@ const FULL_WIDTH_BLOCKS = new Set([
   "events-archive",
   "video-archives",
   "directory-browser",
+  "career-listings",
   "cta",
   "trust-bar",
   "divider",

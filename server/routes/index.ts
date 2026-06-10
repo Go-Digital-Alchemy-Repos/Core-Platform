@@ -267,6 +267,7 @@ export function registerApiRoutes(app: Express) {
               "join",
               "insights",
               "events",
+              "careers",
               "recordings",
               "directory",
             ].includes(page.slug)

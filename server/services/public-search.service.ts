@@ -193,6 +193,22 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
     excerptSource: "Search for Core Platform-informed care by specialty, location, language, or session format.",
   },
   {
+    slug: "careers",
+    type: "page",
+    title: "Careers",
+    url: "/careers",
+    metadata: "Page",
+    searchableText: [
+      "Careers",
+      "Career Center",
+      "Open Positions",
+      "Job Listings",
+      "Apply to join the Core Platform team",
+      "Remote hybrid full time part time roles",
+    ].join(" "),
+    excerptSource: "Explore current job openings and apply to join the Core Platform team.",
+  },
+  {
     slug: "privacy-policy",
     type: "page",
     title: "Privacy Policy",

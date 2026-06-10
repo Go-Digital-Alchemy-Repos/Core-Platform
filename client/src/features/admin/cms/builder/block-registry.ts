@@ -1691,6 +1691,24 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     ],
   },
   {
+    type: "career-listings",
+    label: "Career Listings (Live)",
+    iconName: "BriefcaseBusiness",
+    description: "Searchable Career Center job board powered by live job listings",
+    isDynamic: true,
+    category: "dynamic",
+    defaultProps: {
+      eyebrow: "Career Center",
+      heading: "Open Positions",
+      subheading: "Browse current opportunities and apply directly through the Career Center.",
+    },
+    propDefs: [
+      { key: "eyebrow", label: "Eyebrow", type: "text", placeholder: "Career Center" },
+      { key: "heading", label: "Heading", type: "text", placeholder: "Open Positions" },
+      { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Supporting text" },
+    ],
+  },
+  {
     type: "contact-form",
     label: "Contact Form (Live)",
     iconName: "Mail",
