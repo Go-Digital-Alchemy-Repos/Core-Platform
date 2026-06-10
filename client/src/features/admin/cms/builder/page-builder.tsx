@@ -53,6 +53,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
   const [draggedInsertPayload, setDraggedInsertPayload] = useState<InsertPayload | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: string; position: "before" | "after" } | null>(null);
+  const [canvasDropIndex, setCanvasDropIndex] = useState<number | null>(null);
   const [leftRailMode, setLeftRailMode] = useState<LeftRailMode>("structure");
   const [structurePanelOpen, setStructurePanelOpen] = useState(true);
   const [advancedInspectorOpen, setAdvancedInspectorOpen] = useState(true);
@@ -360,10 +361,22 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     setBlocks(nextBlocks);
   }, [blocks, setBlocks]);
 
+  const moveBlockToIndex = useCallback((sourceId: string, targetIndex: number) => {
+    const sourceIndex = blocks.findIndex((block) => block.id === sourceId);
+    if (sourceIndex < 0) return;
+
+    const nextBlocks = [...blocks];
+    const [movedBlock] = nextBlocks.splice(sourceIndex, 1);
+    const adjustedTargetIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
+    nextBlocks.splice(Math.max(0, Math.min(nextBlocks.length, adjustedTargetIndex)), 0, movedBlock);
+    setBlocks(nextBlocks);
+  }, [blocks, setBlocks]);
+
   const clearDragState = useCallback(() => {
     setDraggedBlockId(null);
     setDraggedInsertPayload(null);
     setDropTarget(null);
+    setCanvasDropIndex(null);
   }, []);
 
   const handleDragStart = useCallback((event: DragEvent, blockId: string) => {
@@ -382,12 +395,23 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     setDropTarget(null);
   }, []);
 
+  const parseInsertPayload = useCallback((event: DragEvent) => {
+    const rawInsertPayload = event.dataTransfer.getData("application/x-page-builder-insert");
+    if (!rawInsertPayload) return null;
+    try {
+      return JSON.parse(rawInsertPayload) as InsertPayload;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const handleDragOver = useCallback((event: DragEvent, targetId: string) => {
-    if (!draggedBlockId && !draggedInsertPayload) return;
+    const hasExternalInsertPayload = Array.from(event.dataTransfer.types).includes("application/x-page-builder-insert");
+    if (!draggedBlockId && !draggedInsertPayload && !hasExternalInsertPayload) return;
     if (draggedBlockId && draggedBlockId === targetId) return;
 
     event.preventDefault();
-    event.dataTransfer.dropEffect = draggedInsertPayload ? "copy" : "move";
+    event.dataTransfer.dropEffect = draggedInsertPayload || hasExternalInsertPayload ? "copy" : "move";
 
     const bounds = event.currentTarget.getBoundingClientRect();
     const offsetY = event.clientY - bounds.top;
@@ -430,6 +454,46 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
     clearDragState();
   }, [addBlockAtIndex, blocks, clearDragState, draggedBlockId, draggedInsertPayload, dropTarget, insertBlocksAtIndex, reorderBlocks]);
+
+  const handleCanvasDropZoneDragOver = useCallback((event: DragEvent, index: number) => {
+    const hasExternalInsertPayload = Array.from(event.dataTransfer.types).includes("application/x-page-builder-insert");
+    const hasPayload =
+      Boolean(draggedBlockId || draggedInsertPayload) ||
+      hasExternalInsertPayload;
+    if (!hasPayload) return;
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = draggedInsertPayload || hasExternalInsertPayload ? "copy" : "move";
+    setDropTarget(null);
+    setCanvasDropIndex((current) => (current === index ? current : index));
+  }, [draggedBlockId, draggedInsertPayload]);
+
+  const handleCanvasDropZoneDrop = useCallback((event: DragEvent, index: number) => {
+    event.preventDefault();
+
+    const insertPayload = draggedInsertPayload ?? parseInsertPayload(event);
+    const sourceId = draggedBlockId ?? event.dataTransfer.getData("text/plain");
+
+    if (insertPayload) {
+      if (insertPayload.kind === "block") {
+        addBlockAtIndex(insertPayload.type, index);
+      } else {
+        insertBlocksAtIndex(insertPayload.blocks, index);
+      }
+    } else if (sourceId) {
+      moveBlockToIndex(sourceId, index);
+    }
+
+    clearDragState();
+  }, [
+    addBlockAtIndex,
+    clearDragState,
+    draggedBlockId,
+    draggedInsertPayload,
+    insertBlocksAtIndex,
+    moveBlockToIndex,
+    parseInsertPayload,
+  ]);
 
   const savingBlock = savingSectionBlockId
     ? blocks.find((block) => block.id === savingSectionBlockId) ?? null
@@ -512,6 +576,9 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     onBlockDragOver: handleDragOver,
     onBlockDrop: handleDrop,
     onBlockDragEnd: clearDragState,
+    canvasDropIndex,
+    onCanvasDropZoneDragOver: handleCanvasDropZoneDragOver,
+    onCanvasDropZoneDrop: handleCanvasDropZoneDrop,
     desktopFrameClassName: desktopCanvasFrameClassName,
   };
 

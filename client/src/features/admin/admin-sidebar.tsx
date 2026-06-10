@@ -34,6 +34,7 @@ import {
   Package,
   Plug,
   TicketPercent,
+  BriefcaseBusiness,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -44,6 +45,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
+import { useBranding } from "@/components/shared/branding-provider";
 import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
 import type { AdminPermission } from "@shared/types";
 import type { User as AppUser } from "@shared/schema";
@@ -145,6 +147,21 @@ function buildNavGroups(
                     iconColor: "text-purple-500",
                   },
                 ],
+              },
+            ],
+          },
+        ] satisfies NavGroup[])
+      : []),
+    ...(siteFeatures.careersEnabled && hasAdminPermission("content")
+      ? ([
+          {
+            label: "Career Center",
+            items: [
+              {
+                title: "Careers",
+                href: "/admin/careers",
+                icon: BriefcaseBusiness,
+                iconColor: "text-cyan-600",
               },
             ],
           },
@@ -380,7 +397,8 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
-  const adminLogo = logoIcon;
+  const branding = useBranding();
+  const adminLogo = branding.faviconUrl || logoIcon;
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
     staleTime: 60_000,

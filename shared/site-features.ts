@@ -5,6 +5,7 @@ export interface SiteFeatures {
   eventsEnabled: boolean;
   crmEnabled: boolean;
   ecommerceEnabled: boolean;
+  careersEnabled: boolean;
 }
 
 export const DEFAULT_SITE_FEATURES: SiteFeatures = {
@@ -14,6 +15,7 @@ export const DEFAULT_SITE_FEATURES: SiteFeatures = {
   eventsEnabled: true,
   crmEnabled: true,
   ecommerceEnabled: true,
+  careersEnabled: true,
 };
 
 export function normalizeBooleanSetting(value: unknown, fallback = true): boolean {

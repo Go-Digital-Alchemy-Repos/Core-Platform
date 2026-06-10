@@ -41,7 +41,8 @@
 npm run dev
 ```
 
-Starts Express + Vite dev server on port 5000.
+Loads `.env` when present and starts Express + Vite dev server on port 5001 by default.
+Set `PORT=...` to override. `DATABASE_URL` must be set in `.env` or the shell.
 
 ### Production Build
 
@@ -60,7 +61,7 @@ npm start
 Runs the compiled server. On startup:
 1. `enforceRequiredSecrets()` checks for required environment variables
 2. Database migrations run automatically via `server/migrate.ts`
-3. Express server starts on port 5000 (or `PORT` env var)
+3. Express server starts on port 5000 in production unless `PORT` is set
 4. Scheduled publish service starts for CMS timed publishing
 
 ## Database Management

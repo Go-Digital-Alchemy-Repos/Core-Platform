@@ -1679,7 +1679,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     category: "dynamic",
     defaultProps: {
       heading: "Find a Mental Health Professional",
-      subheading: "",
+      subheading: "Search for Core Platform-informed care by specialty, location, language, or session format, then explore results on the map.",
       showCategoryChips: true,
       showMap: true,
     },

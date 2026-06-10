@@ -32,6 +32,7 @@ import { FormsStorage } from "./forms.storage";
 import { EditorLocksStorage } from "./editor-locks.storage";
 import { CrmStorage } from "./crm.storage";
 import { EcommerceStorage } from "./ecommerce.storage";
+import { CareerStorage } from "./career.storage";
 export const storage = {
   users: new UserStorage(),
   therapists: new TherapistStorage(),
@@ -68,6 +69,7 @@ export const storage = {
   editorLocks: new EditorLocksStorage(),
   crm: new CrmStorage(),
   ecommerce: new EcommerceStorage(),
+  careers: new CareerStorage(),
 };
 
 export type { TherapistWithUser, PaginatedTherapists, DirectoryFilterOptions, TherapistSearchParams } from "@shared/types/directory";

@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, FileText, Newspaper, CalendarDays, ArrowRight, AlertTriangle } from "lucide-react";
+import { Search, FileText, Newspaper, CalendarDays, ArrowRight, AlertTriangle, Briefcase } from "lucide-react";
 import type { PublicSearchResult } from "@shared/types/public-search";
 
 function getActiveQuery(searchString: string) {
@@ -83,6 +83,7 @@ export default function SearchResultsPage() {
       pages: results.filter((result) => result.type === "page"),
       posts: results.filter((result) => result.type === "post"),
       events: results.filter((result) => result.type === "event"),
+      jobs: results.filter((result) => result.type === "job"),
     }),
     [results],
   );
@@ -93,7 +94,7 @@ export default function SearchResultsPage() {
         <div className="space-y-4">
           <h1 className="font-heading text-3xl sm:text-4xl font-bold public-heading-1">Search the Site</h1>
           <p className="public-supporting-copy max-w-2xl">
-            Search published pages, insights, and events from one place.
+            Search published pages, insights, events, and jobs from one place.
           </p>
           <form
             className="flex flex-col sm:flex-row gap-3"
@@ -130,7 +131,7 @@ export default function SearchResultsPage() {
             <CardContent className="p-8 text-center space-y-2">
               <Search className="mx-auto h-10 w-10 text-muted-foreground" />
               <h2 className="font-semibold text-lg">Start a site search</h2>
-              <p className="public-helper-text">Try a page title, article topic, or event name.</p>
+              <p className="public-helper-text">Try a page title, article topic, event name, or job title.</p>
             </CardContent>
           </Card>
         ) : isLoading ? (
@@ -170,6 +171,7 @@ export default function SearchResultsPage() {
             <ResultSection title="Pages" items={groupedResults.pages} icon={<FileText className="h-5 w-5 text-muted-foreground" />} />
             <ResultSection title="Articles" items={groupedResults.posts} icon={<Newspaper className="h-5 w-5 text-muted-foreground" />} />
             <ResultSection title="Events" items={groupedResults.events} icon={<CalendarDays className="h-5 w-5 text-muted-foreground" />} />
+            <ResultSection title="Jobs" items={groupedResults.jobs} icon={<Briefcase className="h-5 w-5 text-muted-foreground" />} />
           </div>
         )}
       </section>

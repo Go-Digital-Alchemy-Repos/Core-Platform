@@ -140,7 +140,8 @@ type SystemConfigurationSettingKey =
   | "enable_blog"
   | "enable_events"
   | "enable_crm"
-  | "enable_ecommerce";
+  | "enable_ecommerce"
+  | "enable_careers";
 type SettingsTab = "integrations" | "head-tags" | "system" | "email-templates";
 
 const SETTINGS_TABS = new Set<SettingsTab>([
@@ -307,6 +308,12 @@ const SYSTEM_CONFIGURATION_FIELDS: Array<{
     label: "Enable Ecommerce",
     description:
       "Turns the ecommerce app on or off, including the storefront, checkout, and admin ecommerce routes.",
+  },
+  {
+    key: "enable_careers",
+    label: "Enable Career Center",
+    description:
+      "Turns the Career Center app on or off, including public job listings, applications, and admin hiring tools.",
   },
 ];
 
@@ -1820,6 +1827,12 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
         DEFAULT_SITE_FEATURES.ecommerceEnabled,
       );
     }
+    if (key === "enable_careers") {
+      return normalizeBooleanSetting(
+        systemConfig.enable_careers?.value,
+        DEFAULT_SITE_FEATURES.careersEnabled,
+      );
+    }
     return normalizeBooleanSetting(
       systemConfig.enable_events?.value,
       DEFAULT_SITE_FEATURES.eventsEnabled,
@@ -1832,6 +1845,7 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
     enable_events: getStoredValue("enable_events"),
     enable_crm: getStoredValue("enable_crm"),
     enable_ecommerce: getStoredValue("enable_ecommerce"),
+    enable_careers: getStoredValue("enable_careers"),
   });
 
   useEffect(() => {
@@ -1842,6 +1856,7 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
       enable_events: getStoredValue("enable_events"),
       enable_crm: getStoredValue("enable_crm"),
       enable_ecommerce: getStoredValue("enable_ecommerce"),
+      enable_careers: getStoredValue("enable_careers"),
     });
   }, [
     systemConfig.enable_cms?.value,
@@ -1850,6 +1865,7 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
     systemConfig.enable_events?.value,
     systemConfig.enable_crm?.value,
     systemConfig.enable_ecommerce?.value,
+    systemConfig.enable_careers?.value,
   ]);
 
   const saveMutation = useMutation({

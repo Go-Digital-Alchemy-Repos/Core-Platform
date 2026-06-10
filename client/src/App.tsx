@@ -21,6 +21,8 @@ const AboutPage = lazy(() => import("@/features/public/about-page"));
 const ContactPage = lazy(() => import("@/features/public/contact-page"));
 const EventsPage = lazy(() => import("@/features/public/events-page"));
 const EventDetailPage = lazy(() => import("@/features/public/event-detail-page"));
+const CareersPage = lazy(() => import("@/features/public/careers-page"));
+const CareerJobDetailPage = lazy(() => import("@/features/public/career-job-detail-page"));
 const JoinNetworkPage = lazy(() => import("@/features/public/join-network-page"));
 const CmsHybridPage = lazy(() =>
   import("@/features/public/cms-hybrid-page").then((module) => ({
@@ -52,6 +54,7 @@ const AdminFormsPage = lazy(() => import("@/features/admin/forms-page"));
 const AdminCrmPage = lazy(() => import("@/features/admin/crm-page"));
 const AdminCrmClientsPage = lazy(() => import("@/features/admin/crm-clients-page"));
 const AdminEventsPage = lazy(() => import("@/features/admin/events-page"));
+const AdminCareersPage = lazy(() => import("@/features/admin/careers-page"));
 const DocsPage = lazy(() => import("@/features/admin/docs-page"));
 const AdminSettingsPage = lazy(() => import("@/features/admin/settings-page"));
 const AdminDesignPage = lazy(() => import("@/features/admin/design-page"));
@@ -169,6 +172,8 @@ function Router() {
         <Route path="/join" component={() => <CmsHybridPage slug="join" fallback={<JoinNetworkPage />} enabled={siteFeatures.cmsEnabled} />} />
         <Route path="/events" component={() => siteFeatures.eventsEnabled ? <CmsHybridPage slug="events" fallback={<EventsPage />} enabled={siteFeatures.cmsEnabled} /> : <NotFound />} />
         <Route path="/events/:id" component={() => siteFeatures.eventsEnabled ? <EventDetailPage /> : <NotFound />} />
+        <Route path="/careers" component={() => siteFeatures.careersEnabled ? <CmsHybridPage slug="careers" fallback={<CareersPage />} enabled={siteFeatures.cmsEnabled} /> : <NotFound />} />
+        <Route path="/careers/:slug" component={() => siteFeatures.careersEnabled ? <CareerJobDetailPage /> : <NotFound />} />
         <Route path="/recordings" component={() => <CmsHybridPage slug="recordings" fallback={<RecordingArchivesPage />} enabled={siteFeatures.cmsEnabled} />} />
         <Route path="/search" component={SearchResultsPage} />
         <Route path="/shop" component={() => siteFeatures.ecommerceEnabled ? <ShopPage /> : <NotFound />} />
@@ -306,6 +311,11 @@ function Router() {
         <Route path="/admin/events">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             {siteFeatures.eventsEnabled ? <AdminEventsPage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/careers">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
+            {siteFeatures.careersEnabled ? <AdminCareersPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/forms">

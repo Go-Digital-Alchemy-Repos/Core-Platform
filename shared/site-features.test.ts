@@ -10,6 +10,10 @@ describe("site features", () => {
     expect(DEFAULT_SITE_FEATURES.ecommerceEnabled).toBe(true);
   });
 
+  it("enables careers by default", () => {
+    expect(DEFAULT_SITE_FEATURES.careersEnabled).toBe(true);
+  });
+
   it("normalizes disabled feature settings", () => {
     expect(normalizeBooleanSetting("off", true)).toBe(false);
     expect(normalizeBooleanSetting("enabled", false)).toBe(true);

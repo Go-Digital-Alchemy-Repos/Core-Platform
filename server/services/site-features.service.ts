@@ -25,6 +25,10 @@ export async function getSiteFeatures(): Promise<SiteFeatures> {
         settings.enable_ecommerce,
         DEFAULT_SITE_FEATURES.ecommerceEnabled,
       ),
+      careersEnabled: normalizeBooleanSetting(
+        settings.enable_careers,
+        DEFAULT_SITE_FEATURES.careersEnabled,
+      ),
     };
   } catch (err) {
     logger.app.warn("Failed to retrieve system configuration, returning defaults", {

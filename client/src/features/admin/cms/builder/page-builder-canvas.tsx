@@ -50,6 +50,37 @@ interface CanvasBlockFrameProps {
   onBlockDragEnd: () => void;
 }
 
+function CanvasDropZone({
+  index,
+  active,
+  onDragOver,
+  onDrop,
+}: {
+  index: number;
+  active: boolean;
+  onDragOver: (event: DragEvent, index: number) => void;
+  onDrop: (event: DragEvent, index: number) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative h-4 transition-all",
+        active && "h-10",
+      )}
+      onDragOver={(event) => onDragOver(event, index)}
+      onDrop={(event) => onDrop(event, index)}
+      data-testid={`canvas-drop-zone-${index}`}
+    >
+      <div
+        className={cn(
+          "absolute left-8 right-8 top-1/2 h-1 -translate-y-1/2 rounded-full border border-dashed border-transparent",
+          active && "border-violet-500 bg-violet-500 shadow-sm",
+        )}
+      />
+    </div>
+  );
+}
+
 function BlockPreviewFallback({
   blockType,
   summary,
@@ -326,6 +357,9 @@ export interface VisualCanvasProps {
   onBlockDragOver: (event: DragEvent, targetId: string) => void;
   onBlockDrop: (event: DragEvent, targetId: string) => void;
   onBlockDragEnd: () => void;
+  canvasDropIndex: number | null;
+  onCanvasDropZoneDragOver: (event: DragEvent, index: number) => void;
+  onCanvasDropZoneDrop: (event: DragEvent, index: number) => void;
   desktopFrameClassName?: string;
 }
 
@@ -347,6 +381,9 @@ export function VisualCanvas({
   onBlockDragOver,
   onBlockDrop,
   onBlockDragEnd,
+  canvasDropIndex,
+  onCanvasDropZoneDragOver,
+  onCanvasDropZoneDrop,
   desktopFrameClassName,
 }: VisualCanvasProps) {
   let nonFullWidthIndex = 0;
@@ -365,7 +402,12 @@ export function VisualCanvas({
 
         <ScrollArea className="min-h-0 flex-1">
           {blocks.length === 0 ? (
-            <div className="flex min-h-[640px] items-center justify-center p-10">
+            <div
+              className="flex min-h-[640px] items-center justify-center p-10"
+              onDragOver={(event) => onCanvasDropZoneDragOver(event, 0)}
+              onDrop={(event) => onCanvasDropZoneDrop(event, 0)}
+              data-testid="canvas-empty-drop-zone"
+            >
               <div className="max-w-md rounded-2xl border border-dashed border-border/80 bg-background/90 p-8 text-center shadow-sm">
                 <Layers className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
                 <p className="text-base font-semibold">Your page canvas is empty</p>
@@ -376,6 +418,12 @@ export function VisualCanvas({
             </div>
           ) : (
             <div className="space-y-0">
+              <CanvasDropZone
+                index={0}
+                active={canvasDropIndex === 0}
+                onDragOver={onCanvasDropZoneDragOver}
+                onDrop={onCanvasDropZoneDrop}
+              />
               {blocks.map((block, index) => {
                 const isFullWidth = FULL_WIDTH_BLOCK_TYPES.has(block.type);
                 const sectionStyleConfig = getSectionStyleConfig(block.props);
@@ -408,36 +456,60 @@ export function VisualCanvas({
 
                 if (hasCustomSectionStyle) {
                   return (
-                    <SectionStyleWrapper
-                      key={block.id}
-                      props={block.props}
-                      className="rounded-none"
-                      contentClassName={isFullWidth ? undefined : getSectionPaddingClasses(block.props)}
-                    >
-                      {isFullWidth ? (
-                        framedBlock
-                      ) : (
-                        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-                          {framedBlock}
-                        </div>
-                      )}
-                    </SectionStyleWrapper>
+                    <div key={block.id}>
+                      <SectionStyleWrapper
+                        props={block.props}
+                        className="rounded-none"
+                        contentClassName={isFullWidth ? undefined : getSectionPaddingClasses(block.props)}
+                      >
+                        {isFullWidth ? (
+                          framedBlock
+                        ) : (
+                          <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
+                            {framedBlock}
+                          </div>
+                        )}
+                      </SectionStyleWrapper>
+                      <CanvasDropZone
+                        index={index + 1}
+                        active={canvasDropIndex === index + 1}
+                        onDragOver={onCanvasDropZoneDragOver}
+                        onDrop={onCanvasDropZoneDrop}
+                      />
+                    </div>
                   );
                 }
 
                 if (isFullWidth) {
-                  return <div key={block.id}>{framedBlock}</div>;
+                  return (
+                    <div key={block.id}>
+                      {framedBlock}
+                      <CanvasDropZone
+                        index={index + 1}
+                        active={canvasDropIndex === index + 1}
+                        onDragOver={onCanvasDropZoneDragOver}
+                        onDrop={onCanvasDropZoneDrop}
+                      />
+                    </div>
+                  );
                 }
 
                 return (
-                  <section
-                    key={block.id}
-                    className={cn("relative", isAlternate && "bg-muted/30")}
-                  >
-                    <div className={cn("relative mx-auto max-w-7xl px-4 sm:px-6", getSectionPaddingClasses(block.props))}>
-                      {framedBlock}
-                    </div>
-                  </section>
+                  <div key={block.id}>
+                    <section
+                      className={cn("relative", isAlternate && "bg-muted/30")}
+                    >
+                      <div className={cn("relative mx-auto max-w-7xl px-4 sm:px-6", getSectionPaddingClasses(block.props))}>
+                        {framedBlock}
+                      </div>
+                    </section>
+                    <CanvasDropZone
+                      index={index + 1}
+                      active={canvasDropIndex === index + 1}
+                      onDragOver={onCanvasDropZoneDragOver}
+                      onDrop={onCanvasDropZoneDrop}
+                    />
+                  </div>
                 );
               })}
               <div aria-hidden className="h-28 sm:h-40 xl:h-56 2xl:h-72" />

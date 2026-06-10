@@ -87,6 +87,7 @@ export { docs, insertDocSchema, type InsertDoc, type Doc } from "./docs";
 export { passwordResetTokens, type PasswordResetToken } from "./password-reset-tokens";
 export { systemSettings, insertSystemSettingSchema, type InsertSystemSetting, type SystemSetting } from "./system-settings";
 export * from "./ecommerce";
+export * from "./careers";
 export { emailTemplates, insertEmailTemplateSchema, type InsertEmailTemplate, type EmailTemplate } from "./email-templates";
 export { conversations, directMessages, insertDirectMessageSchema, type InsertDirectMessage, type DirectMessage, type Conversation } from "./direct-messages";
 export { activityLogs, type ActivityLog } from "./activity-logs";

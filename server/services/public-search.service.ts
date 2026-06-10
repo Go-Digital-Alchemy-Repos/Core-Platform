@@ -1,4 +1,4 @@
-import type { BlogPost, CmsPage, Event } from "@shared/schema";
+import type { BlogPost, CareerJob, CmsPage, Event } from "@shared/schema";
 import type { PublicSearchResult } from "@shared/types/public-search";
 import { getEventPath } from "@shared/event-url";
 import { storage } from "../storage";
@@ -278,6 +278,20 @@ function buildEventText(event: Event) {
     .join(" ");
 }
 
+function buildJobText(job: CareerJob) {
+  return [
+    job.title,
+    job.department,
+    job.location,
+    job.summary,
+    job.description,
+    job.requirements,
+    job.benefits,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 function buildFallbackPageDocuments(publishedPageSlugs: Set<string>): SearchDocument[] {
   return FALLBACK_PAGE_DOCUMENTS
     .filter((doc) => !publishedPageSlugs.has(doc.slug))
@@ -296,10 +310,15 @@ export async function searchPublicSite(query: string): Promise<PublicSearchResul
   const normalized = normalizeQuery(query);
   if (!normalized.raw) return [];
 
-  const [pages, posts, events] = await Promise.all([
+  const careerStorage = (storage as typeof storage & {
+    careers?: { getJobs: (filters: { publicOnly: boolean }) => Promise<CareerJob[]> };
+  }).careers;
+
+  const [pages, posts, events, jobs] = await Promise.all([
     storage.cmsPages.getAllPages(),
     storage.blog.getPublishedPosts(),
     storage.events.getPublishedEvents(),
+    careerStorage?.getJobs({ publicOnly: true }) ?? Promise.resolve([]),
   ]);
 
   const publishedPages = pages.filter((page) => page.status === "published" && !page.noindex);
@@ -339,6 +358,15 @@ export async function searchPublicSite(query: string): Promise<PublicSearchResul
       metadata: event.locationName || event.location || "Event",
       searchableText: buildEventText(event),
       excerptSource: event.description || buildEventText(event),
+    })),
+    ...jobs.map((job) => ({
+      type: "job" as const,
+      id: job.id,
+      title: job.title,
+      url: `/careers/${job.slug}`,
+      metadata: [job.department, job.location].filter(Boolean).join(" · ") || "Job",
+      searchableText: buildJobText(job),
+      excerptSource: job.summary || job.description || buildJobText(job),
     })),
   ];
 

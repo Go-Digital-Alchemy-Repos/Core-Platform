@@ -28,6 +28,33 @@ describe("PageBuilder", () => {
   let container: HTMLDivElement;
   let root: Root | null = null;
 
+  function createDataTransfer() {
+    const values = new Map<string, string>();
+    return {
+      dropEffect: "none",
+      effectAllowed: "all",
+      get types() {
+        return Array.from(values.keys());
+      },
+      setData(type: string, value: string) {
+        values.set(type, value);
+      },
+      getData(type: string) {
+        return values.get(type) ?? "";
+      },
+    };
+  }
+
+  function dispatchDragEvent(
+    target: Element,
+    type: string,
+    dataTransfer: ReturnType<typeof createDataTransfer>,
+  ) {
+    const event = new Event(type, { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "dataTransfer", { value: dataTransfer });
+    target.dispatchEvent(event);
+  }
+
   beforeEach(() => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
@@ -107,5 +134,36 @@ describe("PageBuilder", () => {
     expect(container.textContent).toContain("Type: Blog Preview");
     expect(container.querySelector('[data-testid="mock-block-preview-hero-block"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="select-canvas-block-broken-preview-block"]')).not.toBeNull();
+  });
+
+  it("drops an existing canvas block into an exact canvas insertion zone", async () => {
+    const onChange = vi.fn();
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(
+        React.createElement(PageBuilder, {
+          content: mixedBuilderFixture,
+          onChange,
+        }),
+      );
+    });
+
+    const dragHandle = container.querySelector('[data-testid="canvas-drag-directory-block"]');
+    const firstDropZone = container.querySelector('[data-testid="canvas-drop-zone-0"]');
+    expect(dragHandle).not.toBeNull();
+    expect(firstDropZone).not.toBeNull();
+
+    const dataTransfer = createDataTransfer();
+
+    await act(async () => {
+      dispatchDragEvent(dragHandle!, "dragstart", dataTransfer);
+      dispatchDragEvent(firstDropZone!, "dragover", dataTransfer);
+      dispatchDragEvent(firstDropZone!, "drop", dataTransfer);
+    });
+
+    const updatedContent = onChange.mock.calls.at(-1)?.[0];
+    expect(updatedContent.blocks[0].id).toBe("directory-block");
+    expect(updatedContent.blocks.map((block: { id: string }) => block.id)).toHaveLength(mixedBuilderFixture.blocks.length);
   });
 });

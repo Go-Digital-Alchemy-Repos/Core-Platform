@@ -1,4 +1,4 @@
-import type { SeoSettings, BlogPost, CmsPage, Event } from "@shared/schema";
+import type { SeoSettings, BlogPost, Event, CareerJob } from "@shared/schema";
 import { stripHtml } from "@/lib/html";
 import { getEventPath } from "@shared/event-url";
 
@@ -327,6 +327,65 @@ export function buildVideoObjectLd(
     uploadDate: event.endDate
       ? new Date(event.endDate).toISOString()
       : new Date(event.date).toISOString(),
+  });
+}
+
+export function buildJobPostingLd(
+  job: CareerJob,
+  globalSeo?: SeoSettings | null,
+): JsonLdObject | null {
+  if (!job.title || !job.slug) return null;
+
+  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const jobUrl = `${siteUrl}/careers/${job.slug}`;
+  const orgName = globalSeo?.organizationName || globalSeo?.siteName || "Core Platform";
+  const isRemote = job.workMode === "remote";
+
+  const baseSalary = job.salaryVisible && (job.salaryMin || job.salaryMax)
+    ? compactObject({
+        "@type": "MonetaryAmount",
+        currency: job.salaryCurrency || "USD",
+        value: compactObject({
+          "@type": "QuantitativeValue",
+          minValue: job.salaryMin ?? undefined,
+          maxValue: job.salaryMax ?? undefined,
+          unitText: (job.salaryPeriod || "year").toUpperCase(),
+        }),
+      })
+    : undefined;
+
+  return compactObject({
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    title: job.title,
+    description: job.description || job.summary || undefined,
+    identifier: compactObject({
+      "@type": "PropertyValue",
+      name: orgName,
+      value: job.id,
+    }),
+    datePosted: job.publishedAt ? new Date(job.publishedAt).toISOString() : undefined,
+    validThrough: job.closesAt ? new Date(job.closesAt).toISOString() : undefined,
+    employmentType: job.employmentType?.toUpperCase(),
+    directApply: true,
+    hiringOrganization: compactObject({
+      "@type": "Organization",
+      name: orgName,
+      sameAs: siteUrl || undefined,
+      logo: globalSeo?.organizationLogoUrl ? absoluteUrl(globalSeo.organizationLogoUrl, siteUrl) : undefined,
+    }),
+    jobLocationType: isRemote ? "TELECOMMUTE" : undefined,
+    applicantLocationRequirements: isRemote
+      ? compactObject({ "@type": "Country", name: "United States" })
+      : undefined,
+    jobLocation: !isRemote && (job.location || job.locationAddress)
+      ? compactObject({
+          "@type": "Place",
+          address: job.locationAddress || job.location,
+        })
+      : undefined,
+    baseSalary,
+    url: jobUrl,
   });
 }
 

@@ -2048,7 +2048,7 @@ export function BlockRenderer({
   let renderedBlock: ReactElement | null = null;
 
   if (isDynamicBlock(block.type)) {
-    if (isAdminPreview) {
+    if (isAdminPreview && block.type !== "directory-browser") {
       renderedBlock = <DynamicPlaceholderAdmin block={block} />;
     }
     if (!renderedBlock && block.type === "therapist-map") renderedBlock = <TherapistMapBlock props={block.props} />;

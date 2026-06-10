@@ -24,6 +24,7 @@ import referenceRoutes from "./reference.routes";
 import formsRoutes from "./forms.routes";
 import crmRoutes from "./crm.routes";
 import ecommerceRoutes from "./ecommerce.routes";
+import careersRoutes from "./careers.routes";
 import { requireCmsEnabled } from "../middleware/site-features";
 import { searchPublicSite } from "../services/public-search.service";
 import { buildRobotsTxtPayload } from "../services/robots-txt.service";
@@ -61,6 +62,7 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/forms", formsRoutes);
   app.use("/api/crm", crmRoutes);
   app.use("/api/ecommerce", ecommerceRoutes);
+  app.use("/api/careers", careersRoutes);
   app.use("/api/admin/docs", docsRoutes);
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/notifications", notificationsRoutes);
@@ -218,13 +220,14 @@ export function registerApiRoutes(app: Express) {
 
   app.get("/sitemap.xml", async (_req, res) => {
     try {
-      const [seoSettings, pages, posts, events, siteFeatures, products] = await Promise.all([
+      const [seoSettings, pages, posts, events, siteFeatures, products, jobs] = await Promise.all([
         storage.seoSettings.get(),
         storage.cmsPages.getAllPages(),
         storage.blog.getAllPosts(),
         storage.events.getAllEvents(),
         getSiteFeatures(),
         storage.ecommerce.getProducts({ publicOnly: true }),
+        storage.careers.getJobs({ publicOnly: true }),
       ]);
 
       const base = seoSettings?.siteUrl?.replace(/\/$/, "") || "";
@@ -248,6 +251,9 @@ export function registerApiRoutes(app: Express) {
       }
       if (siteFeatures.ecommerceEnabled) {
         urls.push({ loc: `${base}/shop`, changefreq: "daily", priority: "0.8" });
+      }
+      if (siteFeatures.careersEnabled) {
+        urls.push({ loc: `${base}/careers`, changefreq: "daily", priority: "0.8" });
       }
 
       if (siteFeatures.cmsEnabled) {
@@ -308,6 +314,18 @@ export function registerApiRoutes(app: Express) {
               : undefined,
             changefreq: "weekly",
             priority: product.featured ? "0.8" : "0.7",
+          });
+        }
+      }
+
+      if (siteFeatures.careersEnabled) {
+        for (const job of jobs) {
+          if (job.noindex) continue;
+          urls.push({
+            loc: `${base}/careers/${job.slug}`,
+            lastmod: job.updatedAt ? new Date(job.updatedAt).toISOString().split("T")[0] : undefined,
+            changefreq: "daily",
+            priority: "0.7",
           });
         }
       }

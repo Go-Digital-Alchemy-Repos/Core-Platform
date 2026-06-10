@@ -21,6 +21,7 @@ import formsRoutes from "./forms.routes";
 import editorLocksRoutes from "./editor-locks.routes";
 import crmRoutes from "./crm.routes";
 import ecommerceRoutes from "./ecommerce.routes";
+import careersRoutes from "./careers.routes";
 import { requireCmsEnabled } from "../../middleware/site-features";
 
 const router = Router();
@@ -45,6 +46,7 @@ router.use("/cms", requireCmsEnabled, requireAdminPermission("design"), cmsSideb
 router.use("/", requireAdminPermission("content"), formsRoutes);
 router.use("/crm", requireAdminPermission("crm"), crmRoutes);
 router.use("/ecommerce", requireRole("admin"), ecommerceRoutes);
+router.use("/careers", requireAdminPermission("content"), careersRoutes);
 router.use("/editor-locks", requireRole("admin", "editor"), editorLocksRoutes);
 router.use("/", requireRole("admin"), systemBackupsRoutes);
 router.use("/applications", requireAdminPermission("directory"), applicationsRoutes);
