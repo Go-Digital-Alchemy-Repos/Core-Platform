@@ -7,6 +7,43 @@ import {
   injectPublicHtmlSnapshot,
   isPublicPrerenderPath,
 } from "./services/public-prerender.service";
+import { storage } from "./storage";
+
+function escapeHtmlAttribute(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function faviconMimeType(href: string) {
+  const pathOnly = href.split(/[?#]/)[0].toLowerCase();
+  if (pathOnly.endsWith(".svg")) return "image/svg+xml";
+  if (pathOnly.endsWith(".ico")) return "image/x-icon";
+  if (pathOnly.endsWith(".webp")) return "image/webp";
+  if (pathOnly.endsWith(".jpg") || pathOnly.endsWith(".jpeg")) return "image/jpeg";
+  return "image/png";
+}
+
+async function injectBrandingFavicon(template: string) {
+  try {
+    const branding = await storage.settings.getDecryptedCategory("branding");
+    const faviconUrl = branding.favicon_url;
+    if (!faviconUrl) return template;
+
+    const href = escapeHtmlAttribute(faviconUrl);
+    const type = faviconMimeType(faviconUrl);
+    const faviconLink = `<link rel="icon" type="${type}" href="${href}" />`;
+    const existingIconLink = /<link\s+rel=["']icon["'][^>]*>/i;
+
+    return existingIconLink.test(template)
+      ? template.replace(existingIconLink, faviconLink)
+      : template.replace("</head>", `    ${faviconLink}\n  </head>`);
+  } catch {
+    return template;
+  }
+}
 
 export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "public");
@@ -41,7 +78,7 @@ export function serveStatic(app: Express) {
 
   // fall through to index.html if the file doesn't exist
   app.use("/{*path}", async (req, res) => {
-    const template = await getIndexTemplate();
+    const template = await injectBrandingFavicon(await getIndexTemplate());
     const shouldInjectPublicPrerender = isPublicPrerenderPath(req.path);
     const snapshot = shouldInjectPublicPrerender
       ? await getPublicHtmlSnapshot(req.path, req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "")
