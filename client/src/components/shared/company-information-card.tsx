@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBranding } from "./branding-provider";
+import { SocialMediaLinks } from "./social-media-links";
 
 function normalizePhoneHref(value: string) {
   const normalized = value.replace(/[^\d+]/g, "");
@@ -25,8 +26,9 @@ export function CompanyInformationCard({
     .split("\n")
     .map((value) => value.trim())
     .filter(Boolean);
+  const socialLinks = branding.socialLinks;
 
-  const hasCompanyInfo = Boolean(companyName || companyAddress || phoneNumbers.length);
+  const hasCompanyInfo = Boolean(companyName || companyAddress || phoneNumbers.length || socialLinks.length);
 
   return (
     <Card data-testid="card-contact-location">
@@ -77,6 +79,12 @@ export function CompanyInformationCard({
                 })}
               </div>
             ) : null}
+            <SocialMediaLinks
+              links={socialLinks}
+              iconStyle={branding.socialIconStyle}
+              className={phoneNumbers.length > 0 ? "pt-1" : undefined}
+              size="sm"
+            />
           </div>
         </div>
       </CardContent>

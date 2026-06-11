@@ -372,6 +372,11 @@ function Router() {
             <AdminDesignPage initialSubview="colors" />
           </ProtectedRoute>
         </Route>
+        <Route path="/admin/design/social-media">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
+            <AdminDesignPage initialSubview="social-media" />
+          </ProtectedRoute>
+        </Route>
         <Route path="/admin/design/typography">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["design"]}>
             <AdminDesignPage initialSubview="typography" />

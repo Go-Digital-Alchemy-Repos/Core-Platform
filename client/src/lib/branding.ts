@@ -1,3 +1,5 @@
+import type { SocialIconStyle, SocialMediaLink } from "@shared/social-media";
+
 export interface BrandingSettings {
   frontendLogoUrl: string | null;
   faviconUrl: string | null;
@@ -5,6 +7,8 @@ export interface BrandingSettings {
   companyAddress: string | null;
   companyPhoneNumbers: string | null;
   companyGoogleBusinessUrl: string | null;
+  socialLinks: SocialMediaLink[];
+  socialIconStyle: SocialIconStyle;
   bodyFont: string | null;
   headingFont: string | null;
   primaryColor: string | null;
@@ -68,6 +72,8 @@ export const DEFAULT_BRANDING_SETTINGS: BrandingSettings = {
   companyAddress: null,
   companyPhoneNumbers: null,
   companyGoogleBusinessUrl: null,
+  socialLinks: [],
+  socialIconStyle: "brand",
   bodyFont: null,
   headingFont: null,
   primaryColor: null,

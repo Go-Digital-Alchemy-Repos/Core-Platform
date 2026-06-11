@@ -35,6 +35,7 @@ import {
   getDirectorySettings,
 } from "../services/directory-settings.service";
 import { getSiteFeatures } from "../services/site-features.service";
+import { getSocialMediaLinks, normalizeSocialIconStyle } from "@shared/social-media";
 import {
   buildCurrentProductFeedXml,
   isEcommerceProductFeedEnabled,
@@ -96,6 +97,8 @@ export function registerApiRoutes(app: Express) {
         companyAddress: branding.company_address || null,
         companyPhoneNumbers: branding.company_phone_numbers || null,
         companyGoogleBusinessUrl: branding.company_google_business_url || null,
+        socialLinks: getSocialMediaLinks(branding),
+        socialIconStyle: normalizeSocialIconStyle(branding.social_icon_style),
         bodyFont: branding.frontend_body_font || null,
         headingFont: branding.frontend_heading_font || null,
         primaryColor: branding.brand_primary_color || null,
@@ -130,6 +133,8 @@ export function registerApiRoutes(app: Express) {
         companyAddress: null,
         companyPhoneNumbers: null,
         companyGoogleBusinessUrl: null,
+        socialLinks: [],
+        socialIconStyle: "brand",
         bodyFont: null,
         headingFont: null,
         primaryColor: null,
