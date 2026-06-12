@@ -432,19 +432,26 @@ A therapist or coach familiar with global mobility can help you distinguish heal
   },
 ];
 
-export async function seedBlogPosts() {
+export async function seedBlogPosts(options: { refreshExisting?: boolean } = { refreshExisting: true }) {
   const updatedAt = new Date();
   for (const post of posts) {
-    await db
-      .insert(blogPosts)
-      .values(post)
-      .onConflictDoUpdate({
+    const insert = db.insert(blogPosts).values(post);
+
+    if (options.refreshExisting) {
+      await insert.onConflictDoUpdate({
         target: blogPosts.slug,
         set: {
           ...post,
           updatedAt,
         },
       });
+    } else {
+      await insert.onConflictDoNothing({ target: blogPosts.slug });
+    }
   }
-  console.log(`Seeded or updated ${posts.length} blog posts.`);
+  console.log(
+    options.refreshExisting
+      ? `Seeded or updated ${posts.length} blog posts.`
+      : `Ensured ${posts.length} blog posts.`,
+  );
 }
