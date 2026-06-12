@@ -1,10 +1,10 @@
-import { Router } from "express";
+import { Router, type NextFunction, type Request, type Response } from "express";
 import fs from "fs";
 import path from "path";
 import multer from "multer";
 import { z } from "zod";
 import { storage } from "../storage/index";
-import { authenticateToken, requireRole } from "../middleware/auth";
+import { authenticateToken, hasAdminPermission, requireRole } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
 import { paramString } from "../utils/params";
 import {
@@ -51,15 +51,40 @@ function buildSafeBrandingFilename(name: string) {
 }
 
 router.use(authenticateToken);
-router.use(requireRole("admin"));
+
+function canManageBranding(req: Request) {
+  return req.user?.role === "admin" || hasAdminPermission(req.user, "design");
+}
+
+function requireAdminOrDesignEditor(req: Request, res: Response, next: NextFunction) {
+  if (canManageBranding(req)) {
+    next();
+    return;
+  }
+  res.status(403).json({ message: "Forbidden" });
+}
+
+function requireSettingWritePermission(req: Request, res: Response, next: NextFunction) {
+  if (req.user?.role === "admin") {
+    next();
+    return;
+  }
+  if (req.body?.category === "branding" && hasAdminPermission(req.user, "design")) {
+    next();
+    return;
+  }
+  res.status(403).json({ message: "Forbidden" });
+}
 
 router.get(
   "/settings",
+  requireAdminOrDesignEditor,
   asyncHandler(async (_req, res) => {
     const settings = await storage.settings.getAllSettings();
     const grouped: Record<string, Record<string, { value: string; isSecret: boolean }>> = {};
 
     for (const s of settings) {
+      if (_req.user?.role !== "admin" && s.category !== "branding") continue;
       if (!grouped[s.category]) grouped[s.category] = {};
       grouped[s.category][s.key] = {
         value: s.isSecret ? "••••••••" : s.value,
@@ -84,6 +109,7 @@ const brandingUploadSchema = z.object({
 
 router.put(
   "/settings",
+  requireSettingWritePermission,
   asyncHandler(async (req, res) => {
     const data = upsertSettingSchema.parse(req.body);
     const setting = await storage.settings.upsertSetting(
@@ -122,6 +148,7 @@ router.put(
 
 router.post(
   "/branding/upload",
+  requireAdminOrDesignEditor,
   brandingUpload.single("file"),
   asyncHandler(async (req, res) => {
     if (!req.file) {
@@ -167,6 +194,7 @@ router.post(
 
 router.delete(
   "/settings/:key",
+  requireRole("admin"),
   asyncHandler(async (req, res) => {
     await storage.settings.deleteSetting(paramString(req.params.key));
     res.json({ message: "Setting deleted" });
@@ -179,6 +207,7 @@ const testConnectionSchema = z.object({
 
 router.post(
   "/settings/test-connection",
+  requireRole("admin"),
   asyncHandler(async (req, res) => {
     const { integration } = testConnectionSchema.parse(req.body);
 
@@ -218,6 +247,7 @@ router.post(
 
 router.get(
   "/email-templates",
+  requireRole("admin"),
   asyncHandler(async (_req, res) => {
     const templates = await storage.emailTemplates.getAllTemplates();
     res.json(templates);
@@ -226,6 +256,7 @@ router.get(
 
 router.post(
   "/email-templates/restore",
+  requireRole("admin"),
   asyncHandler(async (_req, res) => {
     const result = await ensureSystemEmailTemplates(true);
     const templates = await storage.emailTemplates.getAllTemplates();
@@ -244,6 +275,7 @@ const updateTemplateSchema = z.object({
 
 router.put(
   "/email-templates/:slug",
+  requireRole("admin"),
   asyncHandler(async (req, res) => {
     const data = updateTemplateSchema.parse(req.body);
     const template = await storage.emailTemplates.updateTemplate(
@@ -265,6 +297,7 @@ const previewTemplateSchema = z.object({
 
 router.post(
   "/email-templates/:slug/preview",
+  requireRole("admin"),
   asyncHandler(async (req, res) => {
     const { htmlBody: overrideBody, subject: overrideSubject } = previewTemplateSchema.parse(req.body);
     const template = await storage.emailTemplates.getTemplate(paramString(req.params.slug));
@@ -301,6 +334,7 @@ router.post(
 
 router.post(
   "/email-templates/:slug/test",
+  requireRole("admin"),
   asyncHandler(async (req, res) => {
     const template = await storage.emailTemplates.getTemplate(paramString(req.params.slug));
     if (!template) {

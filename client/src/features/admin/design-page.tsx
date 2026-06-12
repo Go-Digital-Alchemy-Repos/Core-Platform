@@ -13,6 +13,10 @@ const DESIGN_COPY: Record<BrandingSubview, { title: string; description: string 
     title: "Branding",
     description: "Manage public-facing identity assets for the website and keep brand controls grouped in one place.",
   },
+  "social-media": {
+    title: "Social Media",
+    description: "Add social profile links and choose how social icons appear across the public website.",
+  },
   colors: {
     title: "Color Palette",
     description: "Control the public site color system, including semantic typography colors and branded UI surfaces.",

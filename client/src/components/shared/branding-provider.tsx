@@ -7,6 +7,7 @@ import {
   hexToHslToken,
   type BrandingSettings,
 } from "@/lib/branding";
+import { normalizeSocialIconStyle } from "@shared/social-media";
 
 const BrandingContext = createContext<BrandingSettings>(DEFAULT_BRANDING_SETTINGS);
 
@@ -27,6 +28,8 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         companyAddress: payload?.companyAddress ?? null,
         companyPhoneNumbers: payload?.companyPhoneNumbers ?? null,
         companyGoogleBusinessUrl: payload?.companyGoogleBusinessUrl ?? null,
+        socialLinks: Array.isArray(payload?.socialLinks) ? payload.socialLinks : [],
+        socialIconStyle: normalizeSocialIconStyle(payload?.socialIconStyle),
         bodyFont: payload?.bodyFont ?? null,
         headingFont: payload?.headingFont ?? null,
         primaryColor: payload?.primaryColor ?? null,
@@ -248,6 +251,8 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     branding.companyGoogleBusinessUrl,
     branding.companyName,
     branding.companyPhoneNumbers,
+    branding.socialIconStyle,
+    branding.socialLinks,
     branding.bodyFont,
     branding.headingFont,
     branding.primaryColor,

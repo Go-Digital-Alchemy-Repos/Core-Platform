@@ -35,6 +35,7 @@ import {
   Plug,
   TicketPercent,
   BriefcaseBusiness,
+  Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -338,6 +339,12 @@ function buildNavGroups(
                 href: "/admin/design/colors",
                 icon: Palette,
                 iconColor: "text-rose-500",
+              },
+              {
+                title: "Social Media",
+                href: "/admin/design/social-media",
+                icon: Share2,
+                iconColor: "text-emerald-600",
               },
               {
                 title: "Typography",

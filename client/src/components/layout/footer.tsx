@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { useBranding } from "@/components/shared/branding-provider";
+import { SocialMediaLinks } from "@/components/shared/social-media-links";
 import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
 import type { CmsMenu, MenuItem, PublicMenuLocation } from "@shared/schema";
 
@@ -150,7 +151,7 @@ function StandardFooterColumn({ menu }: { menu: CmsMenu }) {
 }
 
 export function Footer() {
-  const { frontendLogoUrl } = useBranding();
+  const { frontendLogoUrl, socialIconStyle, socialLinks } = useBranding();
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
     staleTime: 60000,
@@ -215,6 +216,12 @@ export function Footer() {
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               Connecting Third Culture Kids with culturally informed mental health professionals worldwide. Find support that understands your unique journey.
             </p>
+            <SocialMediaLinks
+              links={socialLinks}
+              iconStyle={socialIconStyle}
+              className="mt-4"
+              size="sm"
+            />
           </div>
 
           {useStandardFooterMenus ? (

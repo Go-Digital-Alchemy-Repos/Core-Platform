@@ -80,9 +80,16 @@ import {
   normalizeHexColor,
   type BrandingFontOption,
 } from "@/lib/branding";
+import { SocialMediaLinks } from "@/components/shared/social-media-links";
 import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
+import {
+  getSocialMediaLinks,
+  normalizeSocialIconStyle,
+  SOCIAL_MEDIA_PLATFORMS,
+  type SocialIconStyle,
+} from "@shared/social-media";
 import type { IconType } from "react-icons";
 import {
   SiAdyen,
@@ -113,6 +120,7 @@ type BrandingCompanyInfoSettingKey =
   | "company_address"
   | "company_phone_numbers"
   | "company_google_business_url";
+type BrandingSocialSettingKey = (typeof SOCIAL_MEDIA_PLATFORMS)[number]["settingKey"];
 
 type BrandingColorSettingKey =
   | "brand_primary_color"
@@ -2174,7 +2182,7 @@ function BrandingImageCard({
   );
 }
 
-export type BrandingSubview = "branding" | "colors" | "typography";
+export type BrandingSubview = "branding" | "social-media" | "colors" | "typography";
 
 export function BrandingTab({
   settings,
@@ -2199,6 +2207,18 @@ export function BrandingTab({
     company_phone_numbers: brandingSettings.company_phone_numbers?.value || "",
     company_google_business_url: brandingSettings.company_google_business_url?.value || "",
   });
+  const [socialUrls, setSocialUrls] = useState<Record<BrandingSocialSettingKey, string>>(
+    () =>
+      Object.fromEntries(
+        SOCIAL_MEDIA_PLATFORMS.map((platform) => [
+          platform.settingKey,
+          brandingSettings[platform.settingKey]?.value || "",
+        ]),
+      ) as Record<BrandingSocialSettingKey, string>,
+  );
+  const [socialIconStyle, setSocialIconStyle] = useState<SocialIconStyle>(
+    normalizeSocialIconStyle(brandingSettings.social_icon_style?.value),
+  );
   const [colorValues, setColorValues] = useState<Record<BrandingColorSettingKey, string>>({
     brand_primary_color: brandingSettings.brand_primary_color?.value || "",
     brand_secondary_color: brandingSettings.brand_secondary_color?.value || "",
@@ -2238,6 +2258,15 @@ export function BrandingTab({
       company_phone_numbers: brandingSettings.company_phone_numbers?.value || "",
       company_google_business_url: brandingSettings.company_google_business_url?.value || "",
     });
+    setSocialUrls(
+      Object.fromEntries(
+        SOCIAL_MEDIA_PLATFORMS.map((platform) => [
+          platform.settingKey,
+          brandingSettings[platform.settingKey]?.value || "",
+        ]),
+      ) as Record<BrandingSocialSettingKey, string>,
+    );
+    setSocialIconStyle(normalizeSocialIconStyle(brandingSettings.social_icon_style?.value));
     setColorValues({
       brand_primary_color: brandingSettings.brand_primary_color?.value || "",
       brand_secondary_color: brandingSettings.brand_secondary_color?.value || "",
@@ -2275,6 +2304,8 @@ export function BrandingTab({
     brandingSettings.company_address?.value,
     brandingSettings.company_phone_numbers?.value,
     brandingSettings.company_google_business_url?.value,
+    brandingSettings.social_icon_style?.value,
+    ...SOCIAL_MEDIA_PLATFORMS.map((platform) => brandingSettings[platform.settingKey]?.value),
     brandingSettings.brand_primary_color?.value,
     brandingSettings.brand_secondary_color?.value,
     brandingSettings.brand_tertiary_color?.value,
@@ -2379,6 +2410,49 @@ export function BrandingTab({
       "company_google_business_url",
     ] as BrandingCompanyInfoSettingKey[]
   ).some((key) => companyInfo[key] !== (brandingSettings[key]?.value || ""));
+
+  const saveSocialMutation = useMutation({
+    mutationFn: async () => {
+      await Promise.all([
+        ...SOCIAL_MEDIA_PLATFORMS.map((platform) =>
+          apiRequest("PUT", "/api/admin/settings", {
+            key: platform.settingKey,
+            value: socialUrls[platform.settingKey].trim(),
+            category: "branding",
+            isSecret: false,
+          }),
+        ),
+        apiRequest("PUT", "/api/admin/settings", {
+          key: "social_icon_style",
+          value: socialIconStyle,
+          category: "branding",
+          isSecret: false,
+        }),
+      ]);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/branding"] }),
+      ]);
+      toast({ title: "Social media links updated" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Could not save social media links",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const hasSocialChanges =
+    socialIconStyle !== normalizeSocialIconStyle(brandingSettings.social_icon_style?.value) ||
+    SOCIAL_MEDIA_PLATFORMS.some(
+      (platform) => socialUrls[platform.settingKey] !== (brandingSettings[platform.settingKey]?.value || ""),
+    );
+
+  const socialPreviewLinks = getSocialMediaLinks(socialUrls);
 
   const saveColorsMutation = useMutation({
     mutationFn: async () => {
@@ -2500,10 +2574,14 @@ export function BrandingTab({
       )}
 
       <Tabs defaultValue={initialSubtab} className="space-y-6">
-        <TabsList className="grid w-full max-w-lg grid-cols-3" data-testid="tabs-branding-subtabs">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4" data-testid="tabs-branding-subtabs">
           <TabsTrigger value="branding" data-testid="tab-branding-subtab-branding">
             <ImageIcon className="mr-1.5 h-4 w-4 text-teal-600" />
             Branding
+          </TabsTrigger>
+          <TabsTrigger value="social-media" data-testid="tab-branding-subtab-social-media">
+            <Link2 className="mr-1.5 h-4 w-4 text-emerald-600" />
+            Social Media
           </TabsTrigger>
           <TabsTrigger value="colors" data-testid="tab-branding-subtab-colors">
             <Palette className="mr-1.5 h-4 w-4 text-violet-600" />
@@ -2619,6 +2697,96 @@ export function BrandingTab({
                     <Save className="mr-2 h-4 w-4" />
                   )}
                   Save Company Information
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="social-media" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Link2 className="h-4 w-4 text-primary" />
+                Social Media
+              </CardTitle>
+              <CardDescription>
+                Add social profile URLs for the public footer and the company contact information
+                card. Empty fields stay hidden on the website.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                {SOCIAL_MEDIA_PLATFORMS.map((platform) => (
+                  <div key={platform.key} className="space-y-1.5">
+                    <Label htmlFor={`social-${platform.key}`}>{platform.label}</Label>
+                    <Input
+                      id={`social-${platform.key}`}
+                      value={socialUrls[platform.settingKey]}
+                      onChange={(event) =>
+                        setSocialUrls((current) => ({
+                          ...current,
+                          [platform.settingKey]: event.target.value,
+                        }))
+                      }
+                      placeholder={`https://${platform.key === "x" ? "x.com" : `${platform.key}.com`}/your-profile`}
+                      autoPrependHttps
+                      data-testid={`input-social-${platform.key}`}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
+                <div className="space-y-1.5">
+                  <Label>Icon Style</Label>
+                  <Select
+                    value={socialIconStyle}
+                    onValueChange={(value) => setSocialIconStyle(normalizeSocialIconStyle(value))}
+                  >
+                    <SelectTrigger data-testid="select-social-icon-style">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="brand">Brand Color</SelectItem>
+                      <SelectItem value="outline">Outline</SelectItem>
+                      <SelectItem value="solid">Solid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Choose how icons should appear in the footer and contact card.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border bg-muted/10 p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Preview
+                  </p>
+                  <div className="mt-3">
+                    {socialPreviewLinks.length > 0 ? (
+                      <SocialMediaLinks links={socialPreviewLinks} iconStyle={socialIconStyle} />
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Add at least one social URL to preview the icon style.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  onClick={() => saveSocialMutation.mutate()}
+                  disabled={!hasSocialChanges || saveSocialMutation.isPending}
+                  data-testid="button-save-social-media"
+                >
+                  {saveSocialMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Save Social Media
                 </Button>
               </div>
             </CardContent>
