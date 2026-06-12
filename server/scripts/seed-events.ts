@@ -11,6 +11,11 @@ type SeedEvent = EventInsert & { title: string; slug: string; date: Date };
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const timezone = "America/New_York";
 const eventImageUrl = "/images/hero-therapy-session-1280w.webp";
+const corePlatformAddress = "120 Monroe Center St NW, Grand Rapids, MI 49503";
+const corePlatformCoordinates = {
+  latitude: "42.9657722",
+  longitude: "-85.6712830",
+};
 
 function atOffset(days: number, hour: number, minute = 0) {
   const base = new Date();
@@ -33,6 +38,8 @@ function event(data: {
   location: string;
   locationName?: string;
   locationAddress?: string;
+  latitude?: string;
+  longitude?: string;
   speakerName?: string;
   capacity?: number;
   registrationEnabled?: boolean;
@@ -45,6 +52,12 @@ function event(data: {
   const registrationOpensAt = new Date(date.getTime() - 21 * MS_PER_DAY);
   const registrationClosesAt = new Date(date.getTime() - 2 * 60 * 60 * 1000);
   const isVirtual = data.deliveryMode === "virtual";
+  const coordinates =
+    data.latitude && data.longitude
+      ? { latitude: data.latitude, longitude: data.longitude }
+      : data.locationAddress === corePlatformAddress
+        ? corePlatformCoordinates
+        : {};
 
   return {
     title: data.title,
@@ -55,6 +68,7 @@ function event(data: {
     location: data.location,
     locationName: data.locationName ?? data.location,
     locationAddress: data.locationAddress,
+    ...coordinates,
     isVirtual,
     imageUrl: eventImageUrl,
     zoomLink: isVirtual ? "https://zoom.us/j/calendar-seed-demo" : null,

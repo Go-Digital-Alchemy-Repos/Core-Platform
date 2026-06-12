@@ -16,23 +16,37 @@ const pinIcon = L.divIcon({
 });
 
 interface EventLocationMapProps {
-  latitude: string;
-  longitude: string;
+  latitude?: string | null;
+  longitude?: string | null;
   locationName?: string;
+  address?: string | null;
   className?: string;
 }
 
-export function EventLocationMap({ latitude, longitude, locationName, className }: EventLocationMapProps) {
-  const lat = parseFloat(latitude);
-  const lng = parseFloat(longitude);
+export function EventLocationMap({ latitude, longitude, locationName, address, className }: EventLocationMapProps) {
+  const lat = latitude ? parseFloat(latitude) : NaN;
+  const lng = longitude ? parseFloat(longitude) : NaN;
+  const mapClassName = className ?? "aspect-video max-h-[300px] rounded-xl overflow-hidden border";
 
-  if (isNaN(lat) || isNaN(lng)) return null;
+  if (isNaN(lat) || isNaN(lng)) {
+    const query = address || locationName;
+    if (!query) return null;
+
+    return (
+      <div className={mapClassName} data-testid="map-event-location">
+        <iframe
+          title={locationName ? `Map for ${locationName}` : "Event location map"}
+          src={`https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`}
+          className="h-full w-full border-0"
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
+      </div>
+    );
+  }
 
   return (
-    <div
-      className={className ?? "aspect-video max-h-[300px] rounded-xl overflow-hidden border"}
-      data-testid="map-event-location"
-    >
+    <div className={mapClassName} data-testid="map-event-location">
       <MapContainer
         center={[lat, lng]}
         zoom={14}

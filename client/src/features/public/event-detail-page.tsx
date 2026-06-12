@@ -848,10 +848,11 @@ function EventOverviewCard({
                       </p>
                     )}
                   </div>
-                  {showMap && event.latitude && event.longitude && (
+                  {showMap && (
                     <EventLocationMap
                       latitude={event.latitude}
                       longitude={event.longitude}
+                      address={event.locationAddress}
                       locationName={displayLocationName || event.location || undefined}
                       className="aspect-square overflow-hidden rounded-lg border"
                     />
@@ -1217,7 +1218,8 @@ export default function EventDetailPage() {
   const isHybrid = event?.isVirtual && (event?.latitude || event?.location || event?.locationName || event?.locationAddress);
   const isVirtualOnly = event?.isVirtual && !isHybrid;
   const hasGeo = event?.latitude && event?.longitude;
-  const showMap = hasGeo && !isVirtualOnly;
+  const hasAddressMapFallback = !!event?.locationAddress;
+  const showMap = (hasGeo || hasAddressMapFallback) && !isVirtualOnly;
 
   const registrationState = event ? getRegistrationState(event) : "none";
   const userHasAccess = event ? canUserAccessEvent(event, user?.role ?? null) : true;
