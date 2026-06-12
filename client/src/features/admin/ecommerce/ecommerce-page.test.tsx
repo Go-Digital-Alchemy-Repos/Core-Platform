@@ -3,7 +3,13 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { CategoriesTab, OrdersTab, ProductsTab, ShippingTab } from "@/features/admin/ecommerce/ecommerce-page";
+import {
+  CategoriesTab,
+  IntegrationsTab,
+  OrdersTab,
+  ProductsTab,
+  ShippingTab,
+} from "@/features/admin/ecommerce/ecommerce-page";
 
 const categories = [
   {
@@ -216,6 +222,87 @@ vi.mock("@/features/admin/cms/builder/cms-rich-text-editor", () => ({
       onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => onChange(event.target.value),
     }),
 }));
+
+describe("Ecommerce IntegrationsTab", () => {
+  let container: HTMLDivElement;
+  let root: Root | null = null;
+
+  beforeEach(() => {
+    useQueryMock.mockReturnValue({
+      data: {
+        stripe: {
+          stripe_publishable_key: { value: "pk_test_saved", isSecret: false },
+        },
+      },
+      isLoading: false,
+    });
+    useMutationMock.mockReturnValue({
+      mutate: vi.fn(),
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
+    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    container = document.createElement("div");
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    act(() => {
+      root?.unmount();
+    });
+    root = null;
+    vi.unstubAllGlobals();
+    useQueryMock.mockReset();
+    useMutationMock.mockReset();
+    container.remove();
+    document.body.innerHTML = "";
+  });
+
+  it("renders a searchable categorized integration library and opens setup details", () => {
+    act(() => {
+      root = createRoot(container);
+      root.render(React.createElement(IntegrationsTab));
+    });
+
+    expect(container.querySelector('[data-testid="ecommerce-integrations-library"]')).toBeTruthy();
+    expect(container.textContent).toContain("Payment Gateways");
+    expect(container.textContent).toContain("Shipping & Fulfillment");
+    expect(container.querySelector('[data-testid="button-ecommerce-integration-stripe"]')).toBeTruthy();
+    expect(container.querySelector('[data-testid="badge-ecommerce-integration-status-stripe"]')?.textContent).toContain("Configured");
+
+    const shippingFilter = container.querySelector(
+      '[data-testid="button-ecommerce-integration-category-shipping-fulfillment"]',
+    );
+    act(() => {
+      shippingFilter?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(container.querySelector('[data-testid="button-ecommerce-integration-shipstation"]')).toBeTruthy();
+    expect(container.querySelector('[data-testid="button-ecommerce-integration-stripe"]')).toBeFalsy();
+
+    const searchInput = container.querySelector(
+      '[data-testid="input-ecommerce-integration-search"]',
+    ) as HTMLInputElement | null;
+    act(() => {
+      if (searchInput) {
+        searchInput.value = "international";
+        searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    });
+
+    expect(container.querySelector('[data-testid="button-ecommerce-integration-easyship"]')).toBeTruthy();
+
+    const easyshipTile = container.querySelector('[data-testid="button-ecommerce-integration-easyship"]');
+    act(() => {
+      easyshipTile?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(document.body.textContent).toContain("Configure shipping & fulfillment settings");
+    expect(document.body.textContent).toContain("Open Easyship Account");
+    expect(document.body.textContent).toContain("Save");
+  });
+});
 
 describe("Ecommerce CategoriesTab", () => {
   let container: HTMLDivElement;

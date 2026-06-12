@@ -352,6 +352,16 @@ export type IntegrationGroupKey =
   | "communications"
   | "infrastructure";
 
+export type IntegrationLibraryCategory =
+  | "Payment Gateways"
+  | "POS & Merchant Services"
+  | "Shipping & Fulfillment"
+  | "Social Commerce"
+  | "Marketing & Analytics"
+  | "Product Feeds"
+  | "Inventory & Operations"
+  | "Other";
+
 export interface IntegrationConfig {
   category: string;
   title: string;
@@ -368,6 +378,8 @@ export interface IntegrationConfig {
   fields: IntegrationField[];
   replitConnected?: boolean;
   supportsConnectionTest?: boolean;
+  libraryCategory?: IntegrationLibraryCategory;
+  capabilities?: string[];
 }
 
 export const INTEGRATION_GROUPS: Array<{
@@ -424,6 +436,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: CreditCard,
     brandIcon: SiStripe,
     brandColor: "text-[#635BFF]",
+    libraryCategory: "Payment Gateways",
+    capabilities: ["Cards", "Wallets", "Subscriptions", "Payment Element", "Webhooks"],
     accountUrl: "https://dashboard.stripe.com/apikeys",
     docsUrl: "https://docs.stripe.com/keys",
     instructions: [
@@ -461,6 +475,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: CreditCard,
     brandIcon: SiPaypal,
     brandColor: "text-[#003087]",
+    libraryCategory: "Payment Gateways",
+    capabilities: ["PayPal Checkout", "Wallets", "Refunds", "Webhooks"],
     accountUrl: "https://developer.paypal.com/dashboard/applications/live",
     docsUrl: "https://developer.paypal.com/api/rest/",
     instructions: [
@@ -504,6 +520,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: CreditCard,
     brandIcon: SiSquare,
     brandColor: "text-[#3E4348]",
+    libraryCategory: "POS & Merchant Services",
+    capabilities: ["Payments", "POS", "Locations", "Webhooks"],
     accountUrl: "https://developer.squareup.com/apps",
     docsUrl: "https://developer.squareup.com/docs/payments-api/overview",
     instructions: [
@@ -553,6 +571,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: CreditCard,
     logoText: "Authorize.net",
     brandColor: "text-sky-700",
+    libraryCategory: "Payment Gateways",
+    capabilities: ["Cards", "Merchant gateway", "Fraud tools", "Webhooks"],
     accountUrl: "https://account.authorize.net/",
     docsUrl: "https://developer.authorize.net/api/reference/",
     instructions: [
@@ -602,6 +622,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: CreditCard,
     brandIcon: SiBraintree,
     brandColor: "text-[#000000]",
+    libraryCategory: "Payment Gateways",
+    capabilities: ["Cards", "PayPal", "Venmo", "Vaulting", "Wallets"],
     accountUrl: "https://www.braintreegateway.com/login",
     docsUrl: "https://developer.paypal.com/braintree/docs/",
     instructions: [
@@ -645,6 +667,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: CreditCard,
     brandIcon: SiAdyen,
     brandColor: "text-[#0ABF53]",
+    libraryCategory: "Payment Gateways",
+    capabilities: ["Cards", "Global payments", "Risk", "Webhooks"],
     accountUrl: "https://ca-live.adyen.com/",
     docsUrl: "https://docs.adyen.com/online-payments/",
     instructions: [
@@ -694,6 +718,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: CreditCard,
     brandIcon: SiAmazonpay,
     brandColor: "text-[#FF9900]",
+    libraryCategory: "Payment Gateways",
+    capabilities: ["Amazon wallet", "Checkout", "Signing keys"],
     accountUrl: "https://pay.amazon.com/",
     docsUrl: "https://developer.amazon.com/docs/amazon-pay/intro.html",
     instructions: [
@@ -743,6 +769,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: CreditCard,
     brandIcon: SiApplepay,
     brandColor: "text-black",
+    libraryCategory: "Payment Gateways",
+    capabilities: ["Apple wallet", "Domain verification", "Merchant identity"],
     accountUrl: "https://developer.apple.com/account/resources/identifiers/list/merchant",
     docsUrl: "https://developer.apple.com/documentation/apple_pay_on_the_web",
     instructions: [
@@ -786,6 +814,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: CreditCard,
     brandIcon: SiGooglepay,
     brandColor: "text-[#4285F4]",
+    libraryCategory: "Payment Gateways",
+    capabilities: ["Google wallet", "Gateway mapping", "Merchant profile"],
     accountUrl: "https://pay.google.com/business/console/",
     docsUrl: "https://developers.google.com/pay/api/web/overview",
     instructions: [
@@ -835,6 +865,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: CreditCard,
     brandIcon: SiKlarna,
     brandColor: "text-[#FFB3C7]",
+    libraryCategory: "Payment Gateways",
+    capabilities: ["Buy now pay later", "Order management", "Regional payments"],
     accountUrl: "https://portal.klarna.com/",
     docsUrl: "https://docs.klarna.com/",
     instructions: [
@@ -884,6 +916,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: CreditCard,
     brandIcon: SiAfterpay,
     brandColor: "text-[#00C9B7]",
+    libraryCategory: "Payment Gateways",
+    capabilities: ["Buy now pay later", "Clearpay", "Merchant checkout"],
     accountUrl: "https://portal.afterpay.com/",
     docsUrl: "https://developers.afterpay.com/",
     instructions: [
@@ -970,6 +1004,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: Tag,
     brandIcon: SiMailchimp,
     brandColor: "text-[#FFE01B]",
+    libraryCategory: "Marketing & Analytics",
+    capabilities: ["Audience sync", "Lifecycle tagging", "Email marketing"],
     accountUrl: "https://admin.mailchimp.com/account/api/",
     docsUrl: "https://mailchimp.com/help/about-api-keys/",
     instructions: [
@@ -1007,6 +1043,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: BarChart3,
     brandIcon: SiGoogleanalytics,
     brandColor: "text-[#E37400]",
+    libraryCategory: "Marketing & Analytics",
+    capabilities: ["GA4", "Reporting", "Measurement ID"],
     accountUrl: "https://analytics.google.com/analytics/web/",
     docsUrl: "https://support.google.com/analytics/answer/9539598",
     instructions: [
@@ -1051,6 +1089,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: Megaphone,
     brandIcon: SiMeta,
     brandColor: "text-[#0467DF]",
+    libraryCategory: "Social Commerce",
+    capabilities: ["Meta Pixel", "Conversions API", "Facebook", "Instagram"],
     accountUrl: "https://business.facebook.com/events_manager",
     docsUrl: "https://developers.facebook.com/docs/meta-pixel/",
     instructions: [
@@ -1089,6 +1129,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: Megaphone,
     brandIcon: SiTiktok,
     brandColor: "text-black",
+    libraryCategory: "Social Commerce",
+    capabilities: ["TikTok Pixel", "Events API", "Catalog events"],
     accountUrl: "https://ads.tiktok.com/i18n/events_manager",
     docsUrl: "https://business-api.tiktok.com/portal/docs?id=1739584855420929",
     instructions: [
@@ -1126,6 +1168,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: Megaphone,
     brandIcon: SiX,
     brandColor: "text-black",
+    libraryCategory: "Social Commerce",
+    capabilities: ["Website tag", "Remarketing", "Campaign measurement"],
     accountUrl: "https://ads.x.com/conversion_tracking",
     docsUrl: "https://business.x.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html",
     instructions: [
@@ -1151,6 +1195,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     icon: Store,
     brandIcon: SiGoogle,
     brandColor: "text-[#4285F4]",
+    libraryCategory: "Product Feeds",
+    capabilities: ["Shopping feed", "Merchant diagnostics", "Product publishing"],
     accountUrl: "https://merchants.google.com/",
     docsUrl: "https://support.google.com/merchants/answer/7052112",
     instructions: [
@@ -1209,6 +1255,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     logoText: "ShipStation",
     brandColor: "text-teal-700",
     badge: "Best workflow automation",
+    libraryCategory: "Shipping & Fulfillment",
+    capabilities: ["Labels", "Tracking", "Order sync", "Warehouse automation"],
     accountUrl: "https://shipstation.com/account/settings/api",
     docsUrl: "https://docs.shipstation.com/api-overview",
     instructions: [
@@ -1253,6 +1301,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     logoText: "Shippo",
     brandColor: "text-purple-700",
     badge: "Best API strategy",
+    libraryCategory: "Shipping & Fulfillment",
+    capabilities: ["Carrier rates", "Labels", "Tracking", "Address validation"],
     accountUrl: "https://apps.goshippo.com/settings/api",
     docsUrl: "https://docs.goshippo.com/docs/Guides_general/authentication/",
     instructions: [
@@ -1297,6 +1347,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     logoText: "Veeqo",
     brandColor: "text-emerald-700",
     badge: "Best inventory + shipping",
+    libraryCategory: "Inventory & Operations",
+    capabilities: ["Inventory", "Warehouses", "Shipping", "Marketplace operations"],
     accountUrl: "https://app.veeqo.com/",
     docsUrl: "https://developers.veeqo.com/getting-started/authentication",
     instructions: [
@@ -1341,6 +1393,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     logoText: "Easyship",
     brandColor: "text-sky-700",
     badge: "Best international features",
+    libraryCategory: "Shipping & Fulfillment",
+    capabilities: ["International rates", "Duties", "Taxes", "Courier options"],
     accountUrl: "https://www.easyship.com/developers",
     docsUrl: "https://www.easyship.com/developers",
     instructions: [
@@ -1385,6 +1439,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     logoText: "Pirate Ship",
     brandColor: "text-orange-700",
     badge: "Best simplicity",
+    libraryCategory: "Shipping & Fulfillment",
+    capabilities: ["Manual workflow", "CSV export", "Tracking import"],
     accountUrl: "https://www.pirateship.com/",
     docsUrl: "https://support.pirateship.com/en/articles/2309246-does-pirate-ship-have-an-api",
     instructions: [
