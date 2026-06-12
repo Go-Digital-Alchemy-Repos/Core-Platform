@@ -769,7 +769,7 @@ function EventOverviewCard({
       )}
       <CardContent className="p-5 sm:p-6">
         <div className="space-y-5">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
+          <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(220px,272px)] md:items-start">
             <div className="space-y-5">
               <div className="flex items-start gap-3">
                 <CalendarDays className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
@@ -826,8 +826,8 @@ function EventOverviewCard({
             </div>
 
             {(displayLocationName || event.locationAddress || event.location) && (
-              <div className="flex items-start gap-3 lg:block">
-                <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5 lg:mb-2 lg:mt-0" />
+              <div className="flex items-start gap-3 md:block">
+                <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5 md:mb-2 md:mt-0" />
                 <div className="min-w-0 space-y-3">
                   <div>
                     <h2 className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -854,7 +854,7 @@ function EventOverviewCard({
                       longitude={event.longitude}
                       address={event.locationAddress}
                       locationName={displayLocationName || event.location || undefined}
-                      className="aspect-square overflow-hidden rounded-lg border"
+                      className="aspect-square w-full max-w-[272px] overflow-hidden rounded-lg border"
                     />
                   )}
                   <EventDirectionsDropdown event={event} displayLocationName={displayLocationName} />
