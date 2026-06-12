@@ -4,6 +4,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { PublicBlockRenderer, PublicPageRenderer } from "@/features/public/public-block-renderer";
 import { PublicSidebar } from "@/features/public/public-sidebar";
+import { useFrontendEditTarget } from "@/features/frontend-edit/frontend-edit";
 import { Loader2 } from "lucide-react";
 import type { BlockInstance, BuilderContent } from "@/features/admin/cms/builder/block-registry";
 import type { CmsPage, SeoSettings } from "@shared/schema";
@@ -165,6 +166,12 @@ function CmsLoadingPage() {
 }
 
 export function CmsPageView({ page, globalSeo, previewLabel }: CmsPageViewProps) {
+  useFrontendEditTarget({
+    kind: "cms-page",
+    id: String(page.id),
+    label: `Edit ${page.title}`,
+  });
+
   const blocks = parseCmsContent(page.content);
   const showSidebar = page.template === "with-sidebar" && Boolean(page.sidebarId || page.slug === "insights");
   const useDefaultSidebar = !page.sidebarId && page.slug === "insights";

@@ -6,6 +6,7 @@ import { PageLayout } from "@/components/layout/page-layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { useFrontendEditTarget } from "@/features/frontend-edit/frontend-edit";
 import { useToast } from "@/hooks/use-toast";
 import { addCartItem, formatMoney } from "./cart-store";
 import { useSeo } from "@/hooks/use-seo";
@@ -51,6 +52,12 @@ export default function ProductDetailPage() {
   const { toast } = useToast();
   const { data: product, isLoading } = useQuery<Product>({ queryKey: ["/api/ecommerce/products", slug], enabled: !!slug });
   const { data: globalSeo } = useQuery<SeoSettings>({ queryKey: ["/api/seo/global"] });
+
+  useFrontendEditTarget(product ? {
+    kind: "product",
+    id: product.id,
+    label: `Edit ${product.name}`,
+  } : null);
 
   if (isLoading) return <PageLayout><div className="py-20"><LoadingSpinner /></div></PageLayout>;
   if (!product) {

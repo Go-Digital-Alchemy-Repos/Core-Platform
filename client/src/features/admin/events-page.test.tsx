@@ -249,6 +249,7 @@ describe("AdminEventsPage", () => {
     );
     (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
     (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    window.history.pushState({}, "", "/admin/events");
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -407,6 +408,21 @@ describe("AdminEventsPage", () => {
           location: "Zoom",
         }),
       })
+    );
+  });
+
+  it("opens an event editor from an edit query parameter", async () => {
+    editorLockState.isReadOnly = false;
+    window.history.pushState({}, "", "/admin/events?edit=event-2&returnTo=%2Fevents%2Fglobal-families-welcome-circle");
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(AdminEventsPage));
+    });
+
+    expect(document.body.querySelector('[data-testid="text-event-dialog-title"]')?.textContent).toBe("Edit Event");
+    expect((document.body.querySelector('[data-testid="input-event-title"]') as HTMLInputElement | null)?.value).toBe(
+      "Global Families Welcome Circle",
     );
   });
 

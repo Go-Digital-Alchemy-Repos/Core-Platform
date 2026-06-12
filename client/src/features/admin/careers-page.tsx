@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAdminEditDeepLink } from "@/features/frontend-edit/frontend-edit";
 import {
   CAREER_APPLICATION_STATUS_LABELS,
   CAREER_APPLICATION_STATUSES,
@@ -217,6 +218,12 @@ function JobsTab() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CareerJob | null>(null);
   const { data: jobs = [] } = useQuery<CareerJob[]>({ queryKey: ["/api/admin/careers/jobs"] });
+
+  useAdminEditDeepLink(jobs, (job) => job.id, (job) => {
+    setEditing(job);
+    setOpen(true);
+  });
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-4">
@@ -400,6 +407,14 @@ function SettingsTab() {
 
 export default function AdminCareersPage() {
   const [tab, setTab] = useState("jobs");
+
+  useEffect(() => {
+    const queryTab = new URLSearchParams(window.location.search).get("tab");
+    if (queryTab === "jobs" || queryTab === "applications" || queryTab === "settings") {
+      setTab(queryTab);
+    }
+  }, []);
+
   return (
     <AdminSidebar>
       <main className="flex-1 space-y-6 p-6">

@@ -4,6 +4,7 @@ import { Link, useParams } from "wouter";
 import { Briefcase, CheckCircle2, Copy, Facebook, Linkedin, Mail, MapPin, Share2, Twitter } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { JsonLd } from "@/components/shared/json-ld";
+import { useFrontendEditTarget } from "@/features/frontend-edit/frontend-edit";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -118,6 +119,12 @@ export default function CareerJobDetailPage() {
   const { data: settings } = useQuery<CareerSettings>({ queryKey: ["/api/careers/settings"] });
   const { data: globalSeo } = useQuery<SeoSettings>({ queryKey: ["/api/seo/global"] });
   const salary = job ? formatSalary(job) : null;
+
+  useFrontendEditTarget(job ? {
+    kind: "career-job",
+    id: job.id,
+    label: `Edit ${job.title}`,
+  } : null);
 
   useSeo({
     title: job ? `${job.metaTitle || job.title} | Careers` : "Careers",

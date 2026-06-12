@@ -11,6 +11,7 @@ import type { BlogPost, SeoSettings } from "@shared/schema";
 import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
 import { PublicSidebar } from "@/features/public/public-sidebar";
+import { useFrontendEditTarget } from "@/features/frontend-edit/frontend-edit";
 import { BlogComments } from "@/components/blog/blog-comments";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import {
@@ -119,6 +120,12 @@ export default function InsightsPostPage() {
     queryKey: ["/api/seo/global"],
     staleTime: 10 * 60 * 1000,
   });
+
+  useFrontendEditTarget(post ? {
+    kind: "blog-post",
+    id: post.id,
+    label: `Edit ${post.title}`,
+  } : null);
 
   if (isLoading) {
     return (

@@ -13,6 +13,7 @@ import { apiRequest, queryClient, STALE_TIMES } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { LANGUAGES, ALL_LANGUAGES, PracticeMode } from "@shared/types";
 import { useSpecializations } from "@/hooks/use-specializations";
+import { useAdminEditDeepLink } from "@/features/frontend-edit/frontend-edit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -191,6 +192,11 @@ function TherapistsContent() {
     queryKey: ["/api/admin/therapists"],
     staleTime: STALE_TIMES.OPERATIONAL,
     refetchOnWindowFocus: true,
+  });
+
+  useAdminEditDeepLink(therapists, (therapist) => therapist.id, (therapist) => {
+    setSelectedTherapist(therapist);
+    setEditSheetOpen(true);
   });
 
   const invalidateAll = () => {
@@ -1089,7 +1095,6 @@ function OverviewTab({
   therapist,
   form,
   onSubmit,
-  isPending,
   userForm,
   onUserSubmit,
   isUserPending,
@@ -1100,7 +1105,6 @@ function OverviewTab({
   therapist: TherapistWithUser;
   form: ReturnType<typeof useForm<EditProfileValues>>;
   onSubmit: (data: EditProfileValues) => void;
-  isPending: boolean;
   userForm: ReturnType<typeof useForm<UserEditValues>>;
   onUserSubmit: (data: UserEditValues) => void;
   isUserPending: boolean;
@@ -1778,7 +1782,6 @@ function EditTherapistSheet({
                 therapist={therapist}
                 form={form}
                 onSubmit={onSubmit}
-                isPending={isPending}
                 userForm={userForm}
                 onUserSubmit={(data) => updateUserMutation.mutate(data)}
                 isUserPending={updateUserMutation.isPending}

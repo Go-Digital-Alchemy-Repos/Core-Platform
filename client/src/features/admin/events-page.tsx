@@ -130,6 +130,7 @@ import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { useEditorSaveState } from "@/hooks/use-editor-save-state";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
+import { useAdminEditDeepLink } from "@/features/frontend-edit/frontend-edit";
 
 const eventFormSchema = z
   .object({
@@ -1030,6 +1031,8 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
     setActiveTab("details");
     setDialogOpen(true);
   }
+
+  useAdminEditDeepLink(eventList, (event) => event.id, openEdit);
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const isDirty = dialogOpen && form.formState.isDirty;

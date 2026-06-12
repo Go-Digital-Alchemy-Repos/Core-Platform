@@ -31,6 +31,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useDirectorySettings } from "@/hooks/use-directory-settings";
+import { useFrontendEditTarget } from "@/features/frontend-edit/frontend-edit";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
 import { SiInstagram, SiFacebook, SiX, SiLinkedin, SiYoutube, SiTiktok } from "react-icons/si";
 
@@ -117,6 +118,15 @@ export default function TherapistProfilePage() {
   };
 
   const isSelf = user && therapist?.userId === user.id;
+  const editLabel = therapist
+    ? [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") || directorySettings.participantLabelSingular
+    : "";
+
+  useFrontendEditTarget(therapist ? {
+    kind: "directory-listing",
+    id: therapist.id,
+    label: `Edit ${editLabel}`,
+  } : null);
 
   if (isLoading) {
     return (

@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrandingProvider } from "@/components/shared/branding-provider";
 import { CookieConsentBanner } from "@/components/shared/cookie-consent-banner";
+import { FrontendEditProvider } from "@/features/frontend-edit/frontend-edit";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import { useAuth } from "@/hooks/use-auth";
 import { useDirectorySettings } from "@/hooks/use-directory-settings";
@@ -607,7 +608,9 @@ function App() {
             <RouteAdminModeManager />
             <RouteScrollManager />
             <RuntimeIntegrationsManager />
-            <Router />
+            <FrontendEditProvider>
+              <Router />
+            </FrontendEditProvider>
             <CookieConsentBanner />
           </SetupGuard>
         </TooltipProvider>

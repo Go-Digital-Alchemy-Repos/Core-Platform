@@ -55,6 +55,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAdminEditDeepLink } from "@/features/frontend-edit/frontend-edit";
 import { formatMoney } from "@/features/ecommerce/cart-store";
 import { getEcommerceOrderStatusBadge, getEcommercePaymentStatusBadge } from "@/features/ecommerce/order-status-labels";
 import { cn } from "@/lib/utils";
@@ -643,6 +644,8 @@ export function ProductsTab() {
     setActiveProductEditorTab("content");
     setEditorOpen(true);
   };
+
+  useAdminEditDeepLink(products, (product) => product.id, openEdit);
 
   const productPayload = () => ({
       name: form.name.trim(),
@@ -1921,7 +1924,7 @@ function ManualOrderWizard({
 
   const paymentRequestMutation = useMutation({
     mutationFn: async () => {
-      let customerId = form.customerId;
+      const customerId = form.customerId;
       let customerPayload: { email: string; name: string } | undefined;
       if (form.customerMode === "new") {
         customerPayload = { email: form.customerEmail, name: form.customerName };
@@ -4068,18 +4071,6 @@ function StoreOriginInput(props: {
 
 function StripeModeFields(props: { title: string; publishable: string; setPublishable: (v: string) => void; secret: string; setSecret: (v: string) => void; webhook: string; setWebhook: (v: string) => void; hasSecret?: boolean; hasWebhook?: boolean }) {
   return <div className="space-y-3 rounded-lg border p-4"><h3 className="font-medium">{props.title}</h3><Input placeholder="Publishable key" value={props.publishable} onChange={(e) => props.setPublishable(e.target.value)} /><Input placeholder={props.hasSecret ? "Secret key saved" : "Secret key"} value={props.secret} onChange={(e) => props.setSecret(e.target.value)} /><Input placeholder={props.hasWebhook ? "Webhook secret saved" : "Webhook secret"} value={props.webhook} onChange={(e) => props.setWebhook(e.target.value)} /></div>;
-}
-
-function CrudList({ title, icon, value, setValue, onCreate, rows }: { title: string; icon: React.ReactNode; value: string; setValue: (value: string) => void; onCreate: () => void; rows: string[][] }) {
-  return (
-    <Card>
-      <CardHeader><CardTitle className="flex items-center gap-2">{icon}{title}</CardTitle></CardHeader>
-      <CardContent className="space-y-5">
-        <div className="flex gap-3"><Input value={value} onChange={(e) => setValue(e.target.value)} placeholder="Name" /><Button onClick={onCreate}>Create</Button></div>
-        <Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Slug / Region</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{rows.map((row) => <TableRow key={row.join(":")}><TableCell>{row[0]}</TableCell><TableCell>{row[1]}</TableCell><TableCell>{row[2]}</TableCell></TableRow>)}</TableBody></Table>
-      </CardContent>
-    </Card>
-  );
 }
 
 export default function AdminEcommercePage() {
