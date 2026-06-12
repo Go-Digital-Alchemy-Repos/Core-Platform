@@ -282,13 +282,176 @@ Start with just five minutes a day. The beauty of mindfulness is that it require
     isPublished: true,
     publishedAt: new Date("2026-01-30"),
   },
+  {
+    title: "How to Prepare a Child for an International School Transition",
+    slug: "prepare-child-international-school-transition",
+    excerpt: "International school changes can unsettle even confident children. Use these practical steps to prepare emotionally, socially, and academically before the first day.",
+    content: `Changing schools across countries asks a lot of a child. They may be learning a new curriculum, a new social code, and a new version of themselves all at once. The best preparation is not only logistical. It is emotional, relational, and practical.
+
+Start Before the Move
+
+Begin with honest, age-appropriate conversations. Children do better when they understand what is changing and what will remain steady. Share the name of the school, show photos if available, and talk through the first week in concrete terms.
+
+Name the Mixed Feelings
+
+Many globally mobile children feel excited and sad at the same time. Let both be true. A child who is allowed to miss their old school is often more able to engage with the new one.
+
+Create a Social Bridge
+
+Ask the new school about buddy programs, orientation days, parent groups, and clubs that match your child's interests. A familiar activity, such as football, choir, robotics, or art, can become a fast path into belonging.
+
+Protect Academic Confidence
+
+Curriculum gaps are common in international transitions. They are not a character flaw. Ask teachers which skills matter most for the first term and focus on those. Avoid trying to remediate everything at once.
+
+Keep Old Connections Alive
+
+Goodbyes are easier when children know connection is not over. Help them plan realistic ways to stay in touch with close friends, while also making space for new relationships.
+
+Watch the Adjustment Curve
+
+Some children seem fine for the first few weeks and struggle later, once the novelty fades. Others struggle immediately and settle gradually. Look for patterns over time rather than judging the transition by the first day.
+
+When Extra Support Helps
+
+If your child has persistent sleep changes, withdrawal, school refusal, or intense anxiety, a Core Platform-informed counselor can help them process loss and build confidence in the new environment.`,
+    coverImageUrl: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&h=450&fit=crop",
+    authorName: "Ana Silva",
+    category: "Parenting",
+    tags: ["International Schools", "Parenting", "Transitions", "Children"],
+    isPublished: true,
+    publishedAt: new Date("2026-01-24"),
+  },
+  {
+    title: "Finding a Therapist Who Understands Cross-Cultural Identity",
+    slug: "finding-therapist-cross-cultural-identity",
+    excerpt: "The right therapist will not make you explain your whole map before you can start healing. Here is what to look for when seeking culturally informed care.",
+    content: `Finding a therapist can be difficult for anyone. For Core Platforms, expats, immigrants, and globally mobile families, the search can feel even more specific. You may need someone who understands anxiety or grief, but also the emotional impact of leaving countries, languages, schools, and communities behind.
+
+Look for Cultural Humility
+
+A therapist does not need to have lived your exact life to help you well. They do need cultural humility: the willingness to learn, ask careful questions, and avoid assuming that one cultural framework explains your choices.
+
+Ask About Global Mobility
+
+In an initial consultation, consider asking whether the therapist has worked with Third Culture Kids, expats, international students, immigrants, military families, or cross-cultural couples. Listen for nuance. A strong answer will usually include both strengths and stressors.
+
+Notice How They Handle "Home"
+
+If a therapist treats "Where are you from?" as simple after you explain that it is not, that may be useful information. You deserve a space where complex belonging is understood as real, not evasive.
+
+Consider Language and Context
+
+If you switch languages with family, dream in one language, argue in another, or feel different parts of yourself emerge in different cultural settings, it can help to work with someone who respects that complexity.
+
+Clinical Fit Still Matters
+
+Cultural understanding should sit alongside clinical skill. Ask about experience with the concerns bringing you to therapy, such as anxiety, depression, trauma, family conflict, burnout, or relationship patterns.
+
+What Good Support Feels Like
+
+Good therapy helps you feel less fragmented. Over time, you should be able to bring more of your story into the room without translating every detail. You should feel challenged, supported, and seen as a whole person.`,
+    coverImageUrl: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&h=450&fit=crop",
+    authorName: "Dr. Amara Okafor",
+    category: "Counseling",
+    tags: ["Therapy", "Cultural Identity", "Counseling", "Belonging"],
+    isPublished: true,
+    publishedAt: new Date("2026-01-18"),
+  },
+  {
+    title: "Friendship After Frequent Moves: How to Build Connection Again",
+    slug: "friendship-after-frequent-moves",
+    excerpt: "Repeated goodbyes can make friendship feel risky. Learn how globally mobile people can rebuild trust, deepen connection, and stay open after loss.",
+    content: `After enough moves, friendship can start to feel temporary by default. You learn to connect quickly, read rooms carefully, and say goodbye before you are ready. Those skills can be strengths, but they can also make closeness feel dangerous.
+
+Why Friendship Gets Complicated
+
+Globally mobile people often know how to be socially fluent. They can make conversation, adapt to group norms, and find common ground. The harder part may be letting a relationship become durable enough to matter.
+
+The Protective Distance
+
+Some Core Platforms keep friendships slightly light because deep attachment has led to painful goodbyes before. This is understandable. It is also lonely. Healing often means learning that future loss does not erase present connection.
+
+Start With Repetition
+
+Friendship usually grows through repeated, low-pressure contact. Join something that meets regularly: a class, volunteering group, professional circle, faith community, sports team, or creative practice. Consistency does some of the emotional work for you.
+
+Practice Being Known
+
+You do not have to share your whole life story at once. Try offering one true detail at a time: a place you miss, a tradition you keep, a language you love, a transition that changed you. Small acts of honesty invite depth.
+
+Let Digital Friendship Count
+
+For globally mobile people, some of the most stable relationships are long-distance. Video calls, voice notes, shared playlists, and recurring check-ins are not lesser forms of friendship. They are part of a portable relational life.
+
+When Friendship Anxiety Persists
+
+If closeness triggers fear, withdrawal, or a sense that you should leave before others leave you, therapy can help. The goal is not to stop caring. It is to build enough security that caring feels survivable.`,
+    coverImageUrl: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&h=450&fit=crop",
+    authorName: "Min-Jun Park",
+    category: "Relationships",
+    tags: ["Friendship", "Relationships", "Transitions", "Connection"],
+    isPublished: true,
+    publishedAt: new Date("2026-01-12"),
+  },
+  {
+    title: "Burnout in Globally Mobile Professionals",
+    slug: "burnout-globally-mobile-professionals",
+    excerpt: "High adaptability can hide exhaustion. Explore why globally mobile professionals burn out and how to recover without losing the strengths that got you here.",
+    content: `Globally mobile professionals are often praised for being flexible, resilient, and easy to send anywhere. They can handle ambiguity, build relationships across cultures, and keep working through major transitions. Those strengths are real. They can also hide burnout.
+
+The Adaptability Trap
+
+When you are good at adapting, people may assume change costs you less than it does. You may assume that too. Over time, repeated relocation, cultural translation, travel, isolation, and professional pressure can accumulate.
+
+Signs Burnout May Be Building
+
+Burnout can look like irritability, cynicism, fatigue, poor sleep, reduced creativity, or a sense of detachment from work that once mattered. For globally mobile people, it can also look like losing the energy to make new friends, learn local norms, or answer one more question about your background.
+
+Why Rest Feels Complicated
+
+Many Core Platforms and expats learned to stay useful during transition. Competence became a way to belong. Rest can feel risky if your identity is tied to being capable anywhere.
+
+Recovering Without Shrinking Your Life
+
+Recovery starts with telling the truth about cost. Build recovery into transitions, not only after collapse. Protect sleep, simplify decisions, create routines that do not depend on location, and ask for support before you are depleted.
+
+Use Your Strengths Differently
+
+Adaptability does not have to mean endless availability. Cross-cultural skill does not require self-erasure. The same awareness that helps you read a room can also help you notice when your body and mind are asking for a different pace.
+
+Professional Support
+
+A therapist or coach familiar with global mobility can help you distinguish healthy ambition from survival-mode overfunctioning. Burnout recovery is not about becoming less capable. It is about becoming more honestly sustained.`,
+    coverImageUrl: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&h=450&fit=crop",
+    authorName: "Pierre Dubois",
+    category: "Career",
+    tags: ["Burnout", "Career", "Expat", "Self-Care"],
+    isPublished: true,
+    publishedAt: new Date("2026-01-06"),
+  },
 ];
 
-export async function seedBlogPosts() {
-  await db.delete(blogPosts);
-
+export async function seedBlogPosts(options: { refreshExisting?: boolean } = { refreshExisting: true }) {
+  const updatedAt = new Date();
   for (const post of posts) {
-    await db.insert(blogPosts).values(post);
+    const insert = db.insert(blogPosts).values(post);
+
+    if (options.refreshExisting) {
+      await insert.onConflictDoUpdate({
+        target: blogPosts.slug,
+        set: {
+          ...post,
+          updatedAt,
+        },
+      });
+    } else {
+      await insert.onConflictDoNothing({ target: blogPosts.slug });
+    }
   }
-  console.log(`Seeded ${posts.length} blog posts.`);
+  console.log(
+    options.refreshExisting
+      ? `Seeded or updated ${posts.length} blog posts.`
+      : `Ensured ${posts.length} blog posts.`,
+  );
 }

@@ -601,6 +601,142 @@ function RegistrationSection({
   );
 }
 
+function EventOverviewCard({
+  event,
+  displayLocationName,
+  showMap,
+}: {
+  event: Event;
+  displayLocationName?: string | null;
+  showMap: boolean;
+}) {
+  return (
+    <Card className={showMap ? "mb-8 overflow-hidden" : "mb-2 overflow-hidden"} data-testid="card-event-overview">
+      {event.imageUrl && (
+        <div className="aspect-[21/9] overflow-hidden bg-muted" data-testid="img-event-cover">
+          <img
+            src={event.imageUrl}
+            alt={event.title}
+            className="h-full w-full object-cover"
+            style={getImageObjectPositionStyle(event.imagePositionX, event.imagePositionY)}
+          />
+        </div>
+      )}
+      <CardContent className="p-5 sm:p-6">
+        <div className="space-y-5">
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <CalendarDays className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium" data-testid="text-event-detail-date">
+                  {formatEventDate(event.date, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                </p>
+                {event.endDate && new Date(event.endDate).toDateString() !== new Date(event.date).toDateString() && (
+                  <p className="text-sm text-muted-foreground">
+                    to {formatEventDate(event.endDate, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <Clock className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium" data-testid="text-event-detail-time">
+                  {formatEventTime(event.date, event.timezone, { timeZoneName: "short" })}
+                  {event.endDate && ` — ${formatEventTime(event.endDate, event.timezone, { timeZoneName: "short" })}`}
+                </p>
+                {event.timezone && (
+                  <p className="text-sm text-muted-foreground" data-testid="text-event-timezone">
+                    <Globe className="inline mr-1 h-3 w-3" />
+                    {event.timezone}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {(displayLocationName || event.locationAddress) && (
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                <div>
+                  {displayLocationName && (
+                    <p className="font-medium" data-testid="text-event-detail-location">
+                      {displayLocationName}
+                    </p>
+                  )}
+                  {event.locationAddress && (
+                    <p className="text-sm text-muted-foreground" data-testid="text-event-detail-address">
+                      {event.locationAddress}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!displayLocationName && !event.locationAddress && event.location && (
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                <p className="font-medium" data-testid="text-event-detail-location">
+                  {event.location}
+                </p>
+              </div>
+            )}
+
+            {event.capacity && (
+              <div className="flex items-start gap-3">
+                <Users className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                <p className="font-medium" data-testid="text-event-capacity">
+                  Capacity: {event.capacity}
+                  {event.waitlistEnabled && (
+                    <span className="text-sm text-muted-foreground ml-2">(waitlist available)</span>
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {event.description && (
+            <div className="border-t pt-5">
+              <h2 className="font-heading text-lg font-semibold mb-3">About This Event</h2>
+              <div
+                className="prose prose-sm sm:prose-base max-w-none text-muted-foreground"
+                data-testid="text-event-detail-description"
+                dangerouslySetInnerHTML={{ __html: event.description }}
+              />
+            </div>
+          )}
+
+          {event.speakerName && (
+            <div className="border-t pt-5" data-testid="section-speaker">
+              <h2 className="font-heading text-lg font-semibold mb-4">Speaker / Host</h2>
+              <div className="flex items-start gap-4">
+                <Avatar className="h-16 w-16 flex-shrink-0">
+                  {event.speakerImageUrl && (
+                    <AvatarImage src={event.speakerImageUrl} alt={event.speakerName} />
+                  )}
+                  <AvatarFallback>
+                    <User className="h-6 w-6" />
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-lg" data-testid="text-speaker-name">
+                    {event.speakerName}
+                  </p>
+                  {event.speakerBio && (
+                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap" data-testid="text-speaker-bio">
+                      {event.speakerBio}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function EventSeo({ event, globalSeo }: { event: Event; globalSeo?: SeoSettings }) {
   const titleSuffix = globalSeo?.titleSuffix ?? " | Core Platform";
   const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
@@ -738,18 +874,6 @@ export default function EventDetailPage() {
               </div>
             )}
 
-            {event.imageUrl && (
-              <div className="aspect-[21/9] overflow-hidden rounded-xl mb-8">
-                <img
-                  src={event.imageUrl}
-                  alt={event.title}
-                  className="w-full h-full object-cover"
-                  style={getImageObjectPositionStyle(event.imagePositionX, event.imagePositionY)}
-                  data-testid="img-event-cover"
-                />
-              </div>
-            )}
-
             <div className="flex flex-wrap items-center gap-2 mb-4">
               {event.status && event.status !== "published" && (
                 <Badge
@@ -841,78 +965,7 @@ export default function EventDetailPage() {
               {event.title}
             </h1>
 
-            <Card className={showMap ? "mb-8" : "mb-2"}>
-              <CardContent className="p-5 sm:p-6 space-y-4">
-                <div className="flex items-start gap-3">
-                  <CalendarDays className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium" data-testid="text-event-detail-date">
-                      {formatEventDate(event.date, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-                    </p>
-                    {event.endDate && new Date(event.endDate).toDateString() !== new Date(event.date).toDateString() && (
-                      <p className="text-sm text-muted-foreground">
-                        to {formatEventDate(event.endDate, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <Clock className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium" data-testid="text-event-detail-time">
-                      {formatEventTime(event.date, event.timezone, { timeZoneName: "short" })}
-                      {event.endDate && ` — ${formatEventTime(event.endDate, event.timezone, { timeZoneName: "short" })}`}
-                    </p>
-                    {event.timezone && (
-                      <p className="text-sm text-muted-foreground" data-testid="text-event-timezone">
-                        <Globe className="inline mr-1 h-3 w-3" />
-                        {event.timezone}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {(displayLocationName || event.locationAddress) && (
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <div>
-                      {displayLocationName && (
-                        <p className="font-medium" data-testid="text-event-detail-location">
-                          {displayLocationName}
-                        </p>
-                      )}
-                      {event.locationAddress && (
-                        <p className="text-sm text-muted-foreground" data-testid="text-event-detail-address">
-                          {event.locationAddress}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {!displayLocationName && !event.locationAddress && event.location && (
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <p className="font-medium" data-testid="text-event-detail-location">
-                      {event.location}
-                    </p>
-                  </div>
-                )}
-
-                {event.capacity && (
-                  <div className="flex items-start gap-3">
-                    <Users className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <p className="font-medium" data-testid="text-event-capacity">
-                      Capacity: {event.capacity}
-                      {event.waitlistEnabled && (
-                        <span className="text-sm text-muted-foreground ml-2">(waitlist available)</span>
-                      )}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <EventOverviewCard event={event} displayLocationName={displayLocationName} showMap={!!showMap} />
 
             {showMap && (
               <div className="mb-8">
@@ -927,51 +980,6 @@ export default function EventDetailPage() {
           </article>
         )}
       </div>
-
-      {event && (event.description || event.speakerName) && (
-        <section className="mx-auto max-w-3xl px-4 sm:px-6 pt-4 pb-10 sm:pt-5 sm:pb-14" data-testid="section-event-description">
-          <div>
-            {event.description && (
-              <>
-                <h2 className="font-heading text-xl font-semibold mb-3">About This Event</h2>
-                <div
-                  className="prose prose-sm sm:prose-base max-w-none text-muted-foreground"
-                  data-testid="text-event-detail-description"
-                  dangerouslySetInnerHTML={{ __html: event.description }}
-                />
-              </>
-            )}
-
-            {event.speakerName && (
-              <Card className={event.description ? "mt-8" : ""} data-testid="section-speaker">
-                <CardContent className="p-5 sm:p-6">
-                  <h2 className="font-heading text-lg font-semibold mb-4">Speaker / Host</h2>
-                  <div className="flex items-start gap-4">
-                    <Avatar className="h-16 w-16 flex-shrink-0">
-                      {event.speakerImageUrl && (
-                        <AvatarImage src={event.speakerImageUrl} alt={event.speakerName} />
-                      )}
-                      <AvatarFallback>
-                        <User className="h-6 w-6" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold text-lg" data-testid="text-speaker-name">
-                        {event.speakerName}
-                      </p>
-                      {event.speakerBio && (
-                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap" data-testid="text-speaker-bio">
-                          {event.speakerBio}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-                </Card>
-              )}
-          </div>
-        </section>
-      )}
 
       {event && (
         <section className="mx-auto max-w-3xl px-4 sm:px-6 pt-4 pb-10 sm:pt-5 sm:pb-14" data-testid="section-event-registration">
