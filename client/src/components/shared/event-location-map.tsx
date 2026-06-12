@@ -1,5 +1,9 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
+import {
+  LEAFLET_SIMPLIFIED_TILE_ATTRIBUTION,
+  LEAFLET_SIMPLIFIED_TILE_URL,
+} from "@/lib/leaflet-map-style";
 
 const pinSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40" fill="none">
   <path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.268 21.732 0 14 0z" fill="#1e3a5f"/>
@@ -56,8 +60,8 @@ export function EventLocationMap({ latitude, longitude, locationName, address, c
         style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution={LEAFLET_SIMPLIFIED_TILE_ATTRIBUTION}
+          url={LEAFLET_SIMPLIFIED_TILE_URL}
           referrerPolicy="strict-origin-when-cross-origin"
         />
         <Marker position={[lat, lng]} icon={pinIcon}>

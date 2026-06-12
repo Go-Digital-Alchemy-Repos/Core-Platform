@@ -45,6 +45,33 @@ describe("requireSiteFeature", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
+  it("returns app-specific 404 labels for optional modules", async () => {
+    mockIsSiteFeatureEnabled.mockResolvedValue(false);
+    const {
+      requireBlogEnabled,
+      requireCareersEnabled,
+      requireCrmEnabled,
+      requireDirectoryEnabled,
+      requireEventsEnabled,
+    } = await import("./site-features");
+
+    const checks = [
+      [requireDirectoryEnabled, "Directory"],
+      [requireBlogEnabled, "Blog"],
+      [requireEventsEnabled, "Events"],
+      [requireCrmEnabled, "CRM"],
+      [requireCareersEnabled, "Careers"],
+    ] as const;
+
+    for (const [middleware, label] of checks) {
+      const { req, res, next } = mockReqRes();
+      await middleware(req, res, next);
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ message: `${label} is not available` });
+      expect(next).not.toHaveBeenCalled();
+    }
+  });
+
   it("forwards feature lookup errors to the error handler", async () => {
     const error = new Error("settings unavailable");
     mockIsSiteFeatureEnabled.mockRejectedValue(error);

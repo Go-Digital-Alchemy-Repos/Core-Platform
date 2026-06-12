@@ -5,6 +5,10 @@ import "leaflet/dist/leaflet.css";
 import { Link } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getFirstSentence } from "@/lib/html";
+import {
+  LEAFLET_SIMPLIFIED_TILE_ATTRIBUTION,
+  LEAFLET_SIMPLIFIED_TILE_URL,
+} from "@/lib/leaflet-map-style";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
 import type { User } from "@shared/schema/users";
 
@@ -98,13 +102,6 @@ export function MapView({ therapists, height = "500px", minHeight, interactive =
 
   const zoom = zoomProp ?? (markered.length === 0 ? 2 : markered.length === 1 ? 6 : 3);
 
-  const tileUrl = interactive
-    ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-    : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
-  const tileAttribution = interactive
-    ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
-
   const hasPercentHeight = typeof height === "string" && height.includes("%");
 
   return (
@@ -123,8 +120,8 @@ export function MapView({ therapists, height = "500px", minHeight, interactive =
       >
         <MapSizeInvalidator />
         <TileLayer
-          attribution={tileAttribution}
-          url={tileUrl}
+          attribution={LEAFLET_SIMPLIFIED_TILE_ATTRIBUTION}
+          url={LEAFLET_SIMPLIFIED_TILE_URL}
           referrerPolicy="strict-origin-when-cross-origin"
         />
         {markered.map((t) => {

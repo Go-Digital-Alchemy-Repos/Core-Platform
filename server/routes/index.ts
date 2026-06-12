@@ -25,7 +25,14 @@ import formsRoutes from "./forms.routes";
 import crmRoutes from "./crm.routes";
 import ecommerceRoutes from "./ecommerce.routes";
 import careersRoutes from "./careers.routes";
-import { requireCmsEnabled } from "../middleware/site-features";
+import {
+  requireBlogEnabled,
+  requireCareersEnabled,
+  requireCmsEnabled,
+  requireCrmEnabled,
+  requireDirectoryEnabled,
+  requireEventsEnabled,
+} from "../middleware/site-features";
 import { searchPublicSite } from "../services/public-search.service";
 import { buildRobotsTxtPayload } from "../services/robots-txt.service";
 import { storage } from "../storage/index";
@@ -53,29 +60,29 @@ function escapeXml(str: string): string {
 export function registerApiRoutes(app: Express) {
   app.use("/r2", r2PublicRoutes);
   app.use("/api/auth", authRoutes);
-  app.use("/api/therapists", directoryRoutes);
-  app.use("/api/therapist", therapistRoutes);
+  app.use("/api/therapists", requireDirectoryEnabled, directoryRoutes);
+  app.use("/api/therapist", requireDirectoryEnabled, therapistRoutes);
   app.use("/api/stripe", stripeRoutes);
   app.use("/api/admin", adminRoutes);
   app.use("/api/admin", settingsRoutes);
-  app.use("/api/events", eventsRoutes);
+  app.use("/api/events", requireEventsEnabled, eventsRoutes);
   app.use("/api/contact", contactRoutes);
   app.use("/api/forms", formsRoutes);
-  app.use("/api/crm", crmRoutes);
+  app.use("/api/crm", requireCrmEnabled, crmRoutes);
   app.use("/api/ecommerce", ecommerceRoutes);
-  app.use("/api/careers", careersRoutes);
+  app.use("/api/careers", requireCareersEnabled, careersRoutes);
   app.use("/api/admin/docs", docsRoutes);
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/notifications", notificationsRoutes);
-  app.use("/api/specializations", specializationsRoutes);
-  app.use("/api/blog", blogRoutes);
-  app.use("/api/events", guestRegistrationRoutes);
-  app.use("/api/events", registrationRoutes);
+  app.use("/api/specializations", requireDirectoryEnabled, specializationsRoutes);
+  app.use("/api/blog", requireBlogEnabled, blogRoutes);
+  app.use("/api/events", requireEventsEnabled, guestRegistrationRoutes);
+  app.use("/api/events", requireEventsEnabled, registrationRoutes);
   app.use("/api/cms", requireCmsEnabled, cmsPublicRoutes);
-  app.use("/api/contact-professional", contactProfessionalRoutes);
+  app.use("/api/contact-professional", requireDirectoryEnabled, contactProfessionalRoutes);
   app.use("/api/setup", setupRoutes);
-  app.use("/api/therapist/application", applicationRoutes);
-  app.use("/api/reference", referenceRoutes);
+  app.use("/api/therapist/application", requireDirectoryEnabled, applicationRoutes);
+  app.use("/api/reference", requireDirectoryEnabled, referenceRoutes);
 
   app.get("/api/search", async (req, res) => {
     try {

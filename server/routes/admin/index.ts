@@ -22,18 +22,25 @@ import editorLocksRoutes from "./editor-locks.routes";
 import crmRoutes from "./crm.routes";
 import ecommerceRoutes from "./ecommerce.routes";
 import careersRoutes from "./careers.routes";
-import { requireCmsEnabled } from "../../middleware/site-features";
+import {
+  requireBlogEnabled,
+  requireCareersEnabled,
+  requireCmsEnabled,
+  requireCrmEnabled,
+  requireDirectoryEnabled,
+  requireEventsEnabled,
+} from "../../middleware/site-features";
 
 const router = Router();
 
 router.use(authenticateToken);
 
 router.use("/", requireRole("admin"), dashboardRoutes);
-router.use("/therapists", requireAdminPermission("directory"), therapistsRoutes);
+router.use("/therapists", requireDirectoryEnabled, requireAdminPermission("directory"), therapistsRoutes);
 router.use("/users", requireRole("admin"), usersRoutes);
-router.use("/membership-tiers", requireAdminPermission("directory"), tiersRoutes);
-router.use("/events", requireAdminPermission("content"), eventsRoutes);
-router.use("/blog", requireAdminPermission("content"), blogRoutes);
+router.use("/membership-tiers", requireDirectoryEnabled, requireAdminPermission("directory"), tiersRoutes);
+router.use("/events", requireEventsEnabled, requireAdminPermission("content"), eventsRoutes);
+router.use("/blog", requireBlogEnabled, requireAdminPermission("content"), blogRoutes);
 router.use("/", requireAdminPermission("content"), registrationRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsMediaRoutes);
@@ -44,11 +51,11 @@ router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsAudi
 router.use("/cms", requireCmsEnabled, requireAdminPermission("design"), cmsMenusRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("design"), cmsSidebarsRoutes);
 router.use("/", requireAdminPermission("content"), formsRoutes);
-router.use("/crm", requireAdminPermission("crm"), crmRoutes);
+router.use("/crm", requireCrmEnabled, requireAdminPermission("crm"), crmRoutes);
 router.use("/ecommerce", requireRole("admin"), ecommerceRoutes);
-router.use("/careers", requireAdminPermission("content"), careersRoutes);
+router.use("/careers", requireCareersEnabled, requireAdminPermission("content"), careersRoutes);
 router.use("/editor-locks", requireRole("admin", "editor"), editorLocksRoutes);
 router.use("/", requireRole("admin"), systemBackupsRoutes);
-router.use("/applications", requireAdminPermission("directory"), applicationsRoutes);
+router.use("/applications", requireDirectoryEnabled, requireAdminPermission("directory"), applicationsRoutes);
 
 export default router;
