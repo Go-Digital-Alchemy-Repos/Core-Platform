@@ -53,7 +53,7 @@ import type { User as AppUser } from "@shared/schema";
 import { useDirectorySettings } from "@/hooks/use-directory-settings";
 import type { PublicDirectorySettings } from "@shared/types/directory-settings";
 
-interface NavItem {
+export interface NavItem {
   title: string;
   href?: string;
   icon: React.ElementType;
@@ -62,12 +62,12 @@ interface NavItem {
   show?: boolean;
 }
 
-interface NavGroup {
+export interface NavGroup {
   label?: string;
   items: NavItem[];
 }
 
-function buildNavGroups(
+export function buildNavGroups(
   siteFeatures: SiteFeatures,
   user: AppUser | null,
   hasAdminPermission: (permission: AdminPermission) => boolean,
@@ -145,6 +145,12 @@ function buildNavGroups(
                     title: "Create Event",
                     href: "/admin/events/new",
                     icon: CalendarPlus,
+                    iconColor: "text-purple-500",
+                  },
+                  {
+                    title: "Settings",
+                    href: "/admin/events/settings",
+                    icon: Settings,
                     iconColor: "text-purple-500",
                   },
                 ],

@@ -55,6 +55,7 @@ const AdminFormsPage = lazy(() => import("@/features/admin/forms-page"));
 const AdminCrmPage = lazy(() => import("@/features/admin/crm-page"));
 const AdminCrmClientsPage = lazy(() => import("@/features/admin/crm-clients-page"));
 const AdminEventsPage = lazy(() => import("@/features/admin/events-page"));
+const AdminEventSettingsPage = lazy(() => import("@/features/admin/event-settings-page"));
 const AdminCareersPage = lazy(() => import("@/features/admin/careers-page"));
 const DocsPage = lazy(() => import("@/features/admin/docs-page"));
 const AdminSettingsPage = lazy(() => import("@/features/admin/settings-page"));
@@ -307,6 +308,11 @@ function Router() {
         <Route path="/admin/events/new">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             {siteFeatures.eventsEnabled ? <AdminEventsPage initialCreate /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/events/settings">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
+            {siteFeatures.eventsEnabled ? <AdminEventSettingsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/events">
