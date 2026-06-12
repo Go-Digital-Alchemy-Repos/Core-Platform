@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,6 +50,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -79,6 +87,8 @@ import {
   Video,
   Repeat,
   DollarSign,
+  Search,
+  X,
 } from "lucide-react";
 import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
 import { CmsRichTextEditor } from "@/features/admin/cms/builder/cms-rich-text-editor";
@@ -105,6 +115,7 @@ import {
   EVENT_PRESET_DEFAULTS,
   EVENT_REGISTRATION_APPROVAL_MODE_LABELS,
   EVENT_REGISTRATION_APPROVAL_MODES,
+  EVENT_STATUSES,
   EVENT_TYPE_LABELS,
   EVENT_TYPES,
   type CmsForm,
@@ -113,6 +124,7 @@ import {
   type EventRegistration,
   type EventType,
   type EventVenue,
+  type InsertEventVenue,
 } from "@shared/schema";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
@@ -206,6 +218,28 @@ const eventFormSchema = z
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
+const venueFormSchema = z.object({
+  name: z.string().min(1, "Venue name is required"),
+  description: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  region: z.string().optional(),
+  postalCode: z.string().optional(),
+  country: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email("Enter a valid email").optional().or(z.literal("")),
+  websiteUrl: z.string().optional(),
+  latitude: z.string().optional(),
+  longitude: z.string().optional(),
+  parkingInfo: z.string().optional(),
+  accessibilityInfo: z.string().optional(),
+  transitInfo: z.string().optional(),
+  arrivalNotes: z.string().optional(),
+  isVirtual: z.boolean().optional(),
+});
+
+type VenueFormValues = z.infer<typeof venueFormSchema>;
+
 const defaultFormValues: EventFormValues = {
   title: "",
   slug: "",
@@ -261,6 +295,26 @@ const defaultFormValues: EventFormValues = {
   recurrenceCount: undefined,
 };
 
+const defaultVenueFormValues: VenueFormValues = {
+  name: "",
+  description: "",
+  address: "",
+  city: "",
+  region: "",
+  postalCode: "",
+  country: "",
+  phone: "",
+  email: "",
+  websiteUrl: "",
+  latitude: "",
+  longitude: "",
+  parkingInfo: "",
+  accessibilityInfo: "",
+  transitInfo: "",
+  arrivalNotes: "",
+  isVirtual: false,
+};
+
 function statusVariant(
   status: string | null | undefined,
 ): "default" | "secondary" | "destructive" | "outline" {
@@ -290,6 +344,27 @@ function visibilityLabel(v: string | null | undefined): string {
     default:
       return "Public";
   }
+}
+
+function eventStatusLabel(status: string): string {
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function getAdminEventSearchText(event: Event): string {
+  const tags = Array.isArray(event.tags) ? event.tags.join(" ") : "";
+  return [
+    event.title,
+    event.slug,
+    stripHtml(event.description ?? ""),
+    event.location,
+    event.locationName,
+    event.locationAddress,
+    event.speakerName,
+    tags,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
 }
 
 function slugifyEventTitle(value: string): string {
@@ -465,6 +540,12 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Event | null>(null);
   const [activeTab, setActiveTab] = useState("details");
+  const [venueDialogOpen, setVenueDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [eventTypeFilter, setEventTypeFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [deliveryModeFilter, setDeliveryModeFilter] = useState("all");
   const initialCreateOpenedRef = useRef(false);
   const saveFeedbackRef = useRef({
     markSaved: () => {},
@@ -495,10 +576,62 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
     staleTime: STALE_TIMES.OPERATIONAL,
   });
   const activeForms = forms.filter((managedForm) => managedForm.isActive);
+  const eventList = events ?? [];
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+  const hasActiveEventFilters =
+    Boolean(normalizedSearchTerm) ||
+    eventTypeFilter !== "all" ||
+    categoryFilter !== "all" ||
+    statusFilter !== "all" ||
+    deliveryModeFilter !== "all";
+  const filteredEvents = useMemo(
+    () =>
+      eventList.filter((event) => {
+        if (normalizedSearchTerm && !getAdminEventSearchText(event).includes(normalizedSearchTerm)) {
+          return false;
+        }
+        if (eventTypeFilter !== "all" && event.eventType !== eventTypeFilter) {
+          return false;
+        }
+        if (categoryFilter !== "all" && event.category !== categoryFilter) {
+          return false;
+        }
+        if (statusFilter !== "all" && (event.status ?? "published") !== statusFilter) {
+          return false;
+        }
+        if (
+          deliveryModeFilter !== "all" &&
+          (event.deliveryMode ?? (event.isVirtual ? "virtual" : "in_person")) !== deliveryModeFilter
+        ) {
+          return false;
+        }
+        return true;
+      }),
+    [
+      categoryFilter,
+      deliveryModeFilter,
+      eventList,
+      eventTypeFilter,
+      normalizedSearchTerm,
+      statusFilter,
+    ],
+  );
+
+  function clearEventFilters() {
+    setSearchTerm("");
+    setEventTypeFilter("all");
+    setCategoryFilter("all");
+    setStatusFilter("all");
+    setDeliveryModeFilter("all");
+  }
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: defaultFormValues,
+  });
+  const venueForm = useForm<VenueFormValues>({
+    resolver: zodResolver(venueFormSchema),
+    defaultValues: defaultVenueFormValues,
   });
 
   const watchRegistrationEnabled = form.watch("registrationEnabled");
@@ -679,6 +812,24 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
     },
   });
 
+  const createVenueMutation = useMutation({
+    mutationFn: async (data: VenueFormValues) => {
+      const payload: Partial<InsertEventVenue> = {
+        ...data,
+        isVirtual: data.isVirtual ?? false,
+      };
+      const res = await apiRequest("POST", "/api/admin/events/venues", payload);
+      return res.json() as Promise<EventVenue>;
+    },
+    onError: (err: Error) => {
+      toast({
+        title: "Failed to create venue",
+        description: err.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   function buildPayload(data: EventFormValues) {
     const tags = (data.tags ?? "")
       .split(",")
@@ -752,18 +903,16 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
     form.setValue("registrationApprovalMode", defaults.registrationApprovalMode, { shouldDirty: true });
   }
 
-  function applyVenue(venueId: string) {
-    form.setValue("venueId", venueId, { shouldDirty: true });
-    if (venueId === "none") return;
-
-    const venue = venues.find((item) => item.id === venueId);
-    if (!venue) return;
-
-    const addressParts = [venue.address, venue.city, venue.region, venue.postalCode, venue.country]
+  function formatVenueAddress(venue: EventVenue): string {
+    return [venue.address, venue.city, venue.region, venue.postalCode, venue.country]
       .filter(Boolean)
       .join(", ");
+  }
+
+  function applyVenueRecord(venue: EventVenue) {
+    form.setValue("venueId", venue.id, { shouldDirty: true });
     form.setValue("locationName", venue.name, { shouldDirty: true });
-    form.setValue("locationAddress", addressParts, { shouldDirty: true });
+    form.setValue("locationAddress", formatVenueAddress(venue), { shouldDirty: true });
     form.setValue("location", venue.isVirtual ? "Virtual" : venue.name, { shouldDirty: true });
     form.setValue("latitude", venue.latitude ?? "", { shouldDirty: true });
     form.setValue("longitude", venue.longitude ?? "", { shouldDirty: true });
@@ -773,6 +922,33 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
     } else if (form.getValues("deliveryMode") === "virtual") {
       form.setValue("deliveryMode", "in_person", { shouldDirty: true });
     }
+  }
+
+  function applyVenue(venueId: string) {
+    form.setValue("venueId", venueId, { shouldDirty: true });
+    if (venueId === "none") return;
+
+    const venue = venues.find((item) => item.id === venueId);
+    if (!venue) return;
+
+    applyVenueRecord(venue);
+  }
+
+  function openVenueDialog() {
+    venueForm.reset(defaultVenueFormValues);
+    setVenueDialogOpen(true);
+  }
+
+  function onVenueSubmit(values: VenueFormValues) {
+    createVenueMutation.mutate(values, {
+      onSuccess: (venue) => {
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/events/venues"] });
+        applyVenueRecord(venue);
+        venueForm.reset(defaultVenueFormValues);
+        setVenueDialogOpen(false);
+        toast({ title: "Venue created" });
+      },
+    });
   }
 
   function applyOrganizer(organizerId: string) {
@@ -904,8 +1080,92 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
         </Button>
       </div>
 
+      <div
+        className="mb-4 rounded-lg border bg-card p-4 shadow-sm"
+        data-testid="admin-events-filter-toolbar"
+      >
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_repeat(4,minmax(140px,auto))_auto]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search events"
+              className="pl-9"
+              data-testid="input-admin-event-search"
+            />
+          </div>
+          <Select value={eventTypeFilter} onValueChange={setEventTypeFilter}>
+            <SelectTrigger data-testid="select-admin-event-type-filter">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              {EVENT_TYPES.map((eventType) => (
+                <SelectItem key={eventType} value={eventType}>
+                  {EVENT_TYPE_LABELS[eventType]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger data-testid="select-admin-event-category-filter">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {EVENT_CATEGORIES.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {EVENT_CATEGORY_LABELS[category]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger data-testid="select-admin-event-status-filter">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              {EVENT_STATUSES.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {eventStatusLabel(status)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={deliveryModeFilter} onValueChange={setDeliveryModeFilter}>
+            <SelectTrigger data-testid="select-admin-event-delivery-filter">
+              <SelectValue placeholder="Delivery" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Delivery Modes</SelectItem>
+              {EVENT_DELIVERY_MODES.map((deliveryMode) => (
+                <SelectItem key={deliveryMode} value={deliveryMode}>
+                  {EVENT_DELIVERY_MODE_LABELS[deliveryMode]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {hasActiveEventFilters && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={clearEventFilters}
+              data-testid="button-clear-admin-event-filters"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Clear
+            </Button>
+          )}
+        </div>
+        <p className="mt-3 text-sm text-muted-foreground" data-testid="text-admin-event-count">
+          Showing {filteredEvents.length} of {eventList.length} events
+        </p>
+      </div>
+
       <div className="space-y-4">
-        {events?.map((event) => (
+        {filteredEvents.map((event) => (
           <Card
             key={event.id}
             data-testid={`card-event-${event.id}`}
@@ -1093,8 +1353,13 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
             </div>
           </Card>
         ))}
-        {(!events || events.length === 0) && (
+        {eventList.length === 0 && (
           <p className="text-center text-muted-foreground py-8">No events found.</p>
+        )}
+        {eventList.length > 0 && filteredEvents.length === 0 && (
+          <p className="text-center text-muted-foreground py-8" data-testid="text-no-event-matches">
+            No events match your search or filters.
+          </p>
         )}
       </div>
 
@@ -1614,25 +1879,40 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                 name="venueId"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Saved Venue</FormLabel>
-                                    <Select
-                                      onValueChange={applyVenue}
-                                      value={field.value || "none"}
-                                    >
-                                      <FormControl>
-                                        <SelectTrigger data-testid="select-event-venue">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="none">No saved venue</SelectItem>
-                                        {venues.map((venue) => (
-                                          <SelectItem key={venue.id} value={venue.id}>
-                                            {venue.name}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
+                                    <div className="flex items-center justify-between gap-3">
+                                      <FormLabel>Saved Venue</FormLabel>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={openVenueDialog}
+                                        disabled={editorLock.isReadOnly}
+                                        data-testid="button-create-venue"
+                                      >
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        New venue
+                                      </Button>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Select
+                                        onValueChange={applyVenue}
+                                        value={field.value || "none"}
+                                      >
+                                        <FormControl>
+                                          <SelectTrigger data-testid="select-event-venue">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          <SelectItem value="none">No saved venue</SelectItem>
+                                          {venues.map((venue) => (
+                                            <SelectItem key={venue.id} value={venue.id}>
+                                              {venue.name}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
                                     <FormMessage />
                                   </FormItem>
                                 )}
@@ -2799,6 +3079,298 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
           </SheetFooter>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={venueDialogOpen} onOpenChange={setVenueDialogOpen}>
+        <DialogContent className="z-[1200] max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Create Saved Venue</DialogTitle>
+            <DialogDescription>
+              Save reusable venue details and attach the venue to this event.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...venueForm}>
+            <form
+              id="venue-form"
+              onSubmit={venueForm.handleSubmit(onVenueSubmit)}
+              className="space-y-5"
+            >
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold">Basics</h3>
+                <FormField
+                  control={venueForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Venue Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-venue-name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={venueForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          rows={3}
+                          data-testid="textarea-venue-description"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={venueForm.control}
+                  name="isVirtual"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2">
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="switch-venue-virtual"
+                        />
+                      </FormControl>
+                      <FormLabel className="!mt-0">Virtual venue</FormLabel>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold">Address</h3>
+                <FormField
+                  control={venueForm.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Street Address</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-venue-address" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid gap-3 md:grid-cols-2">
+                  <FormField
+                    control={venueForm.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>City</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-venue-city" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={venueForm.control}
+                    name="region"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>State / Region</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-venue-region" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={venueForm.control}
+                    name="postalCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Postal Code</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-venue-postal-code" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={venueForm.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Country</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-venue-country" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={venueForm.control}
+                    name="latitude"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Latitude</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-venue-latitude" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={venueForm.control}
+                    name="longitude"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Longitude</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-venue-longitude" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold">Contact</h3>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <FormField
+                    control={venueForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-venue-phone" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={venueForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="email" data-testid="input-venue-email" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={venueForm.control}
+                  name="websiteUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Website</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          autoPrependHttps
+                          data-testid="input-venue-website-url"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold">Visitor Info</h3>
+                <FormField
+                  control={venueForm.control}
+                  name="parkingInfo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Parking Options</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} rows={3} data-testid="textarea-venue-parking" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={venueForm.control}
+                  name="accessibilityInfo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Accessibility</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          rows={3}
+                          data-testid="textarea-venue-accessibility"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={venueForm.control}
+                  name="transitInfo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Transit / Rideshare</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} rows={3} data-testid="textarea-venue-transit" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={venueForm.control}
+                  name="arrivalNotes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Arrival Notes</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} rows={3} data-testid="textarea-venue-arrival" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </form>
+          </Form>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setVenueDialogOpen(false)}
+              data-testid="button-cancel-venue"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="venue-form"
+              disabled={createVenueMutation.isPending}
+              data-testid="button-submit-venue"
+            >
+              {createVenueMutation.isPending ? "Saving..." : "Save Venue"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

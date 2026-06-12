@@ -36,11 +36,23 @@ describe("event flexibility constants", () => {
       insertEventVenueSchema.parse({
         name: "Main Training Room",
         slug: "main-training-room",
+        address: "120 Monroe Center St NW",
+        city: "Grand Rapids",
+        region: "MI",
+        postalCode: "49503",
+        phone: "+1 (616) 555-0100",
+        email: "events@example.com",
+        parkingInfo: "Validated garage parking is available next door.",
+        accessibilityInfo: "Step-free entrance from Monroe Center.",
+        transitInfo: "One block from DASH bus service.",
+        arrivalNotes: "Check in at the front desk.",
         isVirtual: false,
       })
     ).toMatchObject({
       name: "Main Training Room",
       slug: "main-training-room",
+      parkingInfo: "Validated garage parking is available next door.",
+      accessibilityInfo: "Step-free entrance from Monroe Center.",
     });
 
     expect(

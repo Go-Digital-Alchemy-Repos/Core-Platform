@@ -30,15 +30,73 @@ const mockEvents = [
   {
     id: "event-1",
     title: "Counselor Training",
+    slug: "counselor-training",
     description: "Upcoming training event",
     date: "2026-05-01T14:00:00.000Z",
     endDate: "2026-05-01T15:00:00.000Z",
     timezone: "America/New_York",
     location: "Zoom",
+    locationName: "",
+    locationAddress: "",
     isVirtual: true,
     imageUrl: "",
     status: "published",
     visibility: "public",
+    eventType: "training",
+    category: "professional_development",
+    deliveryMode: "virtual",
+    speakerName: "Jamie Trainer",
+    tags: ["clinical", "training"],
+    memberOnly: false,
+    registrationEnabled: false,
+    showInArchives: false,
+    isRecurring: false,
+  },
+  {
+    id: "event-2",
+    title: "Global Families Welcome Circle",
+    slug: "global-families-welcome-circle",
+    description: "A community circle for globally mobile families.",
+    date: "2026-06-16T18:00:00.000Z",
+    endDate: "2026-06-16T19:30:00.000Z",
+    timezone: "America/New_York",
+    location: "Core Platform Community Room",
+    locationName: "Core Platform Studio",
+    locationAddress: "120 Monroe Center St NW, Grand Rapids, MI 49503",
+    isVirtual: false,
+    imageUrl: "",
+    status: "draft",
+    visibility: "public",
+    eventType: "community_event",
+    category: "support",
+    deliveryMode: "in_person",
+    speakerName: "Sarah Chen",
+    tags: ["families", "welcome"],
+    memberOnly: false,
+    registrationEnabled: false,
+    showInArchives: false,
+    isRecurring: false,
+  },
+  {
+    id: "event-3",
+    title: "Provider Office Hours",
+    slug: "provider-office-hours",
+    description: "Open office hours for clinicians and coaches.",
+    date: "2026-06-20T15:00:00.000Z",
+    endDate: "2026-06-20T16:00:00.000Z",
+    timezone: "America/New_York",
+    location: "Hybrid",
+    locationName: "Core Platform Studio",
+    locationAddress: "120 Monroe Center St NW, Grand Rapids, MI 49503",
+    isVirtual: true,
+    imageUrl: "",
+    status: "completed",
+    visibility: "public",
+    eventType: "consultation",
+    category: "education",
+    deliveryMode: "hybrid",
+    speakerName: "Morgan Lee",
+    tags: ["clinicians"],
     memberOnly: false,
     registrationEnabled: false,
     showInArchives: false,
@@ -55,6 +113,30 @@ const mockForms = [
     isActive: true,
     fields: [],
     settings: {},
+  },
+];
+
+const mockVenues = [
+  {
+    id: "venue-1",
+    name: "Existing Studio",
+    slug: "existing-studio",
+    description: "",
+    address: "10 Market Ave",
+    city: "Grand Rapids",
+    region: "MI",
+    postalCode: "49503",
+    country: "US",
+    phone: "",
+    email: "",
+    websiteUrl: "",
+    latitude: "42.9634",
+    longitude: "-85.6681",
+    parkingInfo: "",
+    accessibilityInfo: "",
+    transitInfo: "",
+    arrivalNotes: "",
+    isVirtual: false,
   },
 ];
 
@@ -138,6 +220,10 @@ describe("AdminEventsPage", () => {
         return { data: mockForms, isLoading: false };
       }
 
+      if (queryKey[0] === "/api/admin/events/venues") {
+        return { data: mockVenues, isLoading: false };
+      }
+
       if (queryKey[0] === "/api/admin/events" && queryKey[2] === "registrations") {
         return { data: [], isLoading: false };
       }
@@ -175,6 +261,87 @@ describe("AdminEventsPage", () => {
     vi.unstubAllGlobals();
     container.remove();
     document.body.innerHTML = "";
+  });
+
+  function setControlValue(input: HTMLInputElement | HTMLTextAreaElement, value: string) {
+    const valueSetter = Object.getOwnPropertyDescriptor(input.constructor.prototype, "value")?.set;
+    valueSetter?.call(input, value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  it("filters the admin events list by search text", async () => {
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(AdminEventsPage));
+    });
+
+    expect(document.body.querySelector('[data-testid="card-event-event-1"]')).not.toBeNull();
+    expect(document.body.querySelector('[data-testid="card-event-event-2"]')).not.toBeNull();
+    expect(document.body.querySelector('[data-testid="card-event-event-3"]')).not.toBeNull();
+
+    const searchInput = document.body.querySelector(
+      '[data-testid="input-admin-event-search"]',
+    ) as HTMLInputElement | null;
+    expect(searchInput).not.toBeNull();
+
+    await act(async () => {
+      setControlValue(searchInput!, "Sarah Chen");
+    });
+
+    expect(document.body.querySelector('[data-testid="card-event-event-1"]')).toBeNull();
+    expect(document.body.querySelector('[data-testid="card-event-event-2"]')).not.toBeNull();
+    expect(document.body.querySelector('[data-testid="card-event-event-3"]')).toBeNull();
+    expect(document.body.querySelector('[data-testid="text-admin-event-count"]')?.textContent).toBe(
+      "Showing 1 of 3 events",
+    );
+  });
+
+  it("shows a no-match state and clears active event filters", async () => {
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(AdminEventsPage));
+    });
+
+    const searchInput = document.body.querySelector(
+      '[data-testid="input-admin-event-search"]',
+    ) as HTMLInputElement | null;
+    expect(searchInput).not.toBeNull();
+
+    await act(async () => {
+      setControlValue(searchInput!, "no matching event");
+    });
+
+    expect(document.body.querySelector('[data-testid="text-no-event-matches"]')).not.toBeNull();
+    expect(document.body.querySelector('[data-testid="button-clear-admin-event-filters"]')).not.toBeNull();
+
+    const clearButton = document.body.querySelector(
+      '[data-testid="button-clear-admin-event-filters"]',
+    ) as HTMLButtonElement | null;
+
+    await act(async () => {
+      clearButton?.click();
+    });
+
+    expect(document.body.querySelector('[data-testid="text-no-event-matches"]')).toBeNull();
+    expect(document.body.querySelector('[data-testid="card-event-event-1"]')).not.toBeNull();
+    expect(document.body.querySelector('[data-testid="card-event-event-2"]')).not.toBeNull();
+    expect(document.body.querySelector('[data-testid="card-event-event-3"]')).not.toBeNull();
+    expect(searchInput?.value).toBe("");
+  });
+
+  it("renders event type, category, status, and delivery filters", async () => {
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(AdminEventsPage));
+    });
+
+    expect(document.body.querySelector('[data-testid="select-admin-event-type-filter"]')).not.toBeNull();
+    expect(document.body.querySelector('[data-testid="select-admin-event-category-filter"]')).not.toBeNull();
+    expect(document.body.querySelector('[data-testid="select-admin-event-status-filter"]')).not.toBeNull();
+    expect(document.body.querySelector('[data-testid="select-admin-event-delivery-filter"]')).not.toBeNull();
   });
 
   it("closes the event editor sheet when a lock conflict is detected", async () => {
@@ -261,5 +428,152 @@ describe("AdminEventsPage", () => {
     expect(document.body.querySelector('[data-testid="select-event-type"]')).not.toBeNull();
     expect(document.body.querySelector('[data-testid="select-event-category"]')).not.toBeNull();
     expect(document.body.querySelector('[data-testid="input-event-tags"]')).not.toBeNull();
+  });
+
+  it("opens the inline venue creation dialog and requires a venue name", async () => {
+    editorLockState.isReadOnly = false;
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(AdminEventsPage));
+    });
+
+    const createButton = document.body.querySelector('[data-testid="button-create-event"]') as HTMLButtonElement | null;
+    expect(createButton).not.toBeNull();
+
+    await act(async () => {
+      createButton?.click();
+    });
+
+    const createVenueButton = document.body.querySelector('[data-testid="button-create-venue"]') as HTMLButtonElement | null;
+    expect(createVenueButton).not.toBeNull();
+
+    await act(async () => {
+      createVenueButton?.click();
+    });
+
+    expect(document.body.querySelector('[data-testid="input-venue-name"]')).not.toBeNull();
+
+    const submitVenueButton = document.body.querySelector('[data-testid="button-submit-venue"]') as HTMLButtonElement | null;
+    await act(async () => {
+      submitVenueButton?.click();
+    });
+
+    expect(document.body.textContent).toContain("Venue name is required");
+    expect(mutationStates.at(-1)?.mutate).not.toHaveBeenCalled();
+  });
+
+  it("creates a saved venue and applies returned location data to the event", async () => {
+    editorLockState.isReadOnly = false;
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(AdminEventsPage));
+    });
+
+    const createButton = document.body.querySelector('[data-testid="button-create-event"]') as HTMLButtonElement | null;
+    expect(createButton).not.toBeNull();
+
+    await act(async () => {
+      createButton?.click();
+    });
+
+    const createVenueButton = document.body.querySelector('[data-testid="button-create-venue"]') as HTMLButtonElement | null;
+    await act(async () => {
+      createVenueButton?.click();
+    });
+
+    await act(async () => {
+      setControlValue(
+        document.body.querySelector('[data-testid="input-venue-name"]') as HTMLInputElement,
+        "Core Platform Studio",
+      );
+      setControlValue(
+        document.body.querySelector('[data-testid="input-venue-address"]') as HTMLInputElement,
+        "120 Monroe Center St NW",
+      );
+      setControlValue(
+        document.body.querySelector('[data-testid="input-venue-city"]') as HTMLInputElement,
+        "Grand Rapids",
+      );
+      setControlValue(
+        document.body.querySelector('[data-testid="input-venue-region"]') as HTMLInputElement,
+        "MI",
+      );
+      setControlValue(
+        document.body.querySelector('[data-testid="input-venue-postal-code"]') as HTMLInputElement,
+        "49503",
+      );
+      setControlValue(
+        document.body.querySelector('[data-testid="input-venue-phone"]') as HTMLInputElement,
+        "+1 (616) 555-0100",
+      );
+      setControlValue(
+        document.body.querySelector('[data-testid="input-venue-email"]') as HTMLInputElement,
+        "events@example.com",
+      );
+      setControlValue(
+        document.body.querySelector('[data-testid="textarea-venue-parking"]') as HTMLTextAreaElement,
+        "Validated garage parking is available next door.",
+      );
+    });
+
+    const submitVenueButton = document.body.querySelector('[data-testid="button-submit-venue"]') as HTMLButtonElement | null;
+    await act(async () => {
+      submitVenueButton?.click();
+    });
+
+    const createVenueCall = mutationStates
+      .flatMap((state) => state.mutate.mock.calls)
+      .find((call) => call[0]?.name === "Core Platform Studio");
+    expect(createVenueCall).toEqual([
+      expect.objectContaining({
+        name: "Core Platform Studio",
+        address: "120 Monroe Center St NW",
+        city: "Grand Rapids",
+        region: "MI",
+        postalCode: "49503",
+        phone: "+1 (616) 555-0100",
+        email: "events@example.com",
+        parkingInfo: "Validated garage parking is available next door.",
+      }),
+      expect.any(Object),
+    ]);
+
+    const onSuccess = createVenueCall?.[1]?.onSuccess as
+      | ((venue: typeof mockVenues[number]) => void)
+      | undefined;
+
+    await act(async () => {
+      onSuccess?.({
+        ...mockVenues[0],
+        id: "venue-2",
+        name: "Core Platform Studio",
+        slug: "core-platform-studio",
+        address: "120 Monroe Center St NW",
+        city: "Grand Rapids",
+        region: "MI",
+        postalCode: "49503",
+        latitude: "42.9634",
+        longitude: "-85.6681",
+      });
+    });
+
+    expect(
+      (document.body.querySelector('[data-testid="input-event-location"]') as HTMLInputElement | null)?.value,
+    ).toBe("Core Platform Studio");
+    expect(
+      (document.body.querySelector('[data-testid="input-event-location-name"]') as HTMLInputElement | null)?.value,
+    ).toBe("Core Platform Studio");
+    expect(
+      (document.body.querySelector('[data-testid="input-event-location-address"]') as HTMLInputElement | null)?.value,
+    ).toBe("120 Monroe Center St NW, Grand Rapids, MI, 49503, US");
+    expect(
+      (document.body.querySelector('[data-testid="input-event-latitude"]') as HTMLInputElement | null)?.value,
+    ).toBe("42.9634");
+    expect(
+      (document.body.querySelector('[data-testid="input-event-longitude"]') as HTMLInputElement | null)?.value,
+    ).toBe("-85.6681");
+    expect(document.body.querySelector('[data-testid="input-venue-name"]')).toBeNull();
   });
 });
