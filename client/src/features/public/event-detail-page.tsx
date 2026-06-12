@@ -827,11 +827,20 @@ function EventOverviewCard({
             </div>
 
             {(displayLocationName || event.locationAddress || event.location) && (
-              <div className="flex items-start gap-3 md:block">
-                <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5 md:mb-2 md:mt-0" />
-                <div className="min-w-0 space-y-3">
-                  <div>
-                    <h2 className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="min-w-0 space-y-3">
+                {showMap && (
+                  <EventLocationMap
+                    latitude={event.latitude}
+                    longitude={event.longitude}
+                    address={event.locationAddress}
+                    locationName={displayLocationName || event.location || undefined}
+                    className="aspect-[5/4] w-full max-w-[272px] overflow-hidden rounded-lg border"
+                  />
+                )}
+                <div className="space-y-3 rounded-lg border bg-muted/35 p-4">
+                  <div className="min-w-0">
+                    <h2 className="flex items-center gap-2 font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      <MapPin className="h-5 w-5 flex-shrink-0 text-accent" />
                       Venue
                     </h2>
                     {displayLocationName ? (
@@ -849,15 +858,6 @@ function EventOverviewCard({
                       </p>
                     )}
                   </div>
-                  {showMap && (
-                    <EventLocationMap
-                      latitude={event.latitude}
-                      longitude={event.longitude}
-                      address={event.locationAddress}
-                      locationName={displayLocationName || event.location || undefined}
-                      className="aspect-square w-full max-w-[272px] overflow-hidden rounded-lg border"
-                    />
-                  )}
                   <EventDirectionsDropdown event={event} displayLocationName={displayLocationName} />
                 </div>
               </div>
