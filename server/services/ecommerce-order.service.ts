@@ -63,8 +63,32 @@ export const manualOrderSchema = z.object({
     productId: z.string().min(1),
     variantId: z.string().min(1).optional(),
     quantity: z.number().int().min(1).max(99),
+    discountAmount: z.number().int().min(0).default(0),
   })).min(1),
   notes: z.string().optional(),
+  fulfillmentMode: z.enum(["shipping", "pickup", "digital", "custom"]).default("shipping"),
+  paymentAction: z.enum(["save_draft", "send_payment_link", "mark_paid"]).default("mark_paid"),
+  manualPaymentMethod: z.enum(["cash", "external_card", "check", "other"]).optional(),
+  manualPaymentReference: z.string().trim().max(200).optional(),
+  customReason: z.string().trim().max(500).optional(),
+});
+
+export const manualPaymentSchema = z.object({
+  method: z.enum(["cash", "external_card", "check", "other"]),
+  reference: z.string().trim().max(200).optional(),
+  notes: z.string().trim().max(2000).optional(),
+});
+
+export const standalonePaymentRequestSchema = z.object({
+  customerId: z.string().min(1).optional(),
+  customer: z.object({
+    email: z.string().trim().email().max(254),
+    name: z.string().trim().min(1).max(MAX_CHECKOUT_TEXT_LENGTH),
+  }).optional(),
+  title: z.string().trim().min(1).max(160),
+  description: z.string().trim().max(1000).optional(),
+  amount: z.number().int().min(50).max(99999999),
+  reason: z.string().trim().min(3).max(500),
 });
 
 export const adminOrderUpdateSchema = z.object({
@@ -115,7 +139,7 @@ function assertAdminOrderStatusTransition(
   }
 }
 
-function pricedLinesToOrderItems(lines: PricedCartLine[]) {
+function pricedLinesToOrderItems(lines: PricedCartLine[], manualDiscountsByLine = new Map<string, number>()) {
   return lines.map((line) => ({
     orderId: "",
     productId: line.productId,
@@ -134,8 +158,73 @@ function pricedLinesToOrderItems(lines: PricedCartLine[]) {
     fulfillmentType: line.fulfillmentType,
     quantity: line.quantity,
     unitPrice: line.unitPrice,
-    lineTotal: line.lineTotal,
+    lineTotal: Math.max(0, line.lineTotal - (manualDiscountsByLine.get(lineKey(line.productId, line.variantId)) ?? 0)),
   }));
+}
+
+function lineKey(productId: string, variantId?: string | null) {
+  return `${productId}:${variantId ?? ""}`;
+}
+
+function appUrl(path = "") {
+  const base = (process.env.APP_URL || "http://localhost:5000").replace(/\/$/, "");
+  return `${base}${path}`;
+}
+
+function getManualDiscounts(data: z.infer<typeof manualOrderSchema>, lines: PricedCartLine[]) {
+  const lineTotals = new Map(lines.map((line) => [lineKey(line.productId, line.variantId), line.lineTotal]));
+  const discounts = new Map<string, number>();
+  for (const item of data.items) {
+    const key = lineKey(item.productId, item.variantId);
+    const requestedDiscount = item.discountAmount ?? 0;
+    if (requestedDiscount <= 0) continue;
+    const lineTotal = lineTotals.get(key) ?? 0;
+    if (requestedDiscount > lineTotal) {
+      throw httpError("Manual discount cannot exceed the line total.", 400);
+    }
+    discounts.set(key, (discounts.get(key) ?? 0) + requestedDiscount);
+  }
+  return discounts;
+}
+
+async function createStripeCheckoutSessionForPaymentRequest(params: {
+  paymentRequestId: string;
+  orderId?: string | null;
+  customerEmail: string;
+  title: string;
+  description?: string | null;
+  amount: number;
+}) {
+  const stripe = await getEcommerceStripeClient();
+  return stripe.checkout.sessions.create({
+    mode: "payment",
+    customer_email: params.customerEmail,
+    success_url: appUrl(`/order-success?orderId=${encodeURIComponent(params.orderId ?? "")}&paymentRequestId=${encodeURIComponent(params.paymentRequestId)}`),
+    cancel_url: appUrl(params.orderId ? `/admin/ecommerce/orders` : `/admin/ecommerce/orders`),
+    line_items: [{
+      quantity: 1,
+      price_data: {
+        currency: "usd",
+        unit_amount: params.amount,
+        product_data: {
+          name: params.title,
+          description: params.description ?? undefined,
+        },
+      },
+    }],
+    metadata: {
+      paymentRequestId: params.paymentRequestId,
+      ...(params.orderId ? { orderId: params.orderId } : {}),
+    },
+    payment_intent_data: {
+      metadata: {
+        paymentRequestId: params.paymentRequestId,
+        ...(params.orderId ? { orderId: params.orderId } : {}),
+      },
+    },
+  }, {
+    idempotencyKey: `ecommerce_payment_request_${params.paymentRequestId}`,
+  });
 }
 
 export async function createEcommercePaymentIntent(
@@ -323,6 +412,11 @@ export async function createEcommercePaymentIntent(
 
 export async function createManualEcommerceOrder(input: unknown) {
   const data = manualOrderSchema.parse(input);
+  return createManualEcommerceOrderDraft({ ...data, paymentAction: "mark_paid" });
+}
+
+export async function createManualEcommerceOrderDraft(input: unknown, actor?: Pick<User, "id"> | null) {
+  const data = manualOrderSchema.parse(input);
   const customer = await storage.ecommerce.getCustomer(data.customerId);
   if (!customer) {
     throw Object.assign(new Error("Customer not found"), { statusCode: 404 });
@@ -333,26 +427,172 @@ export async function createManualEcommerceOrder(input: unknown) {
     customerId: customer.id,
     customerEmail: customer.email,
   });
+  const manualDiscounts = getManualDiscounts(data, priced.lines);
+  const manualDiscountAmount = Array.from(manualDiscounts.values()).reduce((sum, amount) => sum + amount, 0);
+  const totalAmount = Math.max(0, priced.totalAmount - manualDiscountAmount);
+  if (data.paymentAction !== "save_draft" && totalAmount <= 0) {
+    throw httpError("Manual order total must be greater than zero before requesting payment.", 400);
+  }
+  const isPaid = data.paymentAction === "mark_paid";
+  const isPaymentLink = data.paymentAction === "send_payment_link";
   const order = await storage.ecommerce.createOrder({
     customerId: customer.id,
-    status: "paid",
-    paymentStatus: "paid",
+    status: isPaid ? "paid" : "pending",
+    paymentStatus: isPaid ? "paid" : isPaymentLink ? "pending_payment" : "unpaid",
     subtotalAmount: priced.subtotalAmount,
-    totalAmount: priced.totalAmount,
+    totalAmount,
     taxAmount: priced.taxAmount,
     shippingAmount: 0,
-    discountAmount: priced.discountAmount,
+    discountAmount: priced.discountAmount + manualDiscountAmount,
     couponCode: priced.coupon?.code,
     couponSnapshot: buildCouponSnapshot(priced.coupon),
     isManualOrder: true,
+    fulfillmentMode: data.fulfillmentMode,
+    manualPaymentMethod: isPaid ? data.manualPaymentMethod ?? "other" : isPaymentLink ? "payment_link" : null,
+    manualPaymentReference: data.manualPaymentReference,
+    manualPaymentMarkedBy: isPaid ? actor?.id ?? null : null,
+    manualPaymentMarkedAt: isPaid ? new Date() : null,
     notes: data.notes,
-  }, pricedLinesToOrderItems(priced.lines));
+    shippingName: customer.name,
+    shippingAddress: customer.address,
+    shippingLine2: customer.line2,
+    shippingCity: customer.city,
+    shippingState: customer.state,
+    shippingZip: customer.zipCode,
+    shippingCountry: customer.country,
+    billingSameAsShipping: true,
+  }, pricedLinesToOrderItems(priced.lines, manualDiscounts));
 
-  await storage.ecommerce.recordCouponRedemptionForOrder(order.id);
-  await storage.ecommerce.deductInventoryForPaidOrder(order.id);
+  if (isPaid) {
+    await storage.ecommerce.recordCouponRedemptionForOrder(order.id);
+    await storage.ecommerce.deductInventoryForPaidOrder(order.id);
+  }
+
+  let paymentLink: Awaited<ReturnType<typeof createPaymentLinkForOrder>> | null = null;
+  if (isPaymentLink) {
+    paymentLink = await createPaymentLinkForOrder(order.id, {
+      reason: data.customReason || data.notes || "Manual order payment link",
+      createdBy: actor?.id,
+    });
+  }
 
   const details = await storage.ecommerce.getOrderWithDetails(order.id);
-  return details ?? order;
+  return { ...(details ?? order), paymentLink };
+}
+
+export async function createPaymentLinkForOrder(orderId: string, options: { reason?: string; createdBy?: string | null } = {}) {
+  const order = await storage.ecommerce.getOrderWithDetails(orderId);
+  if (!order) throw httpError("Order not found", 404);
+  if (order.totalAmount <= 0) throw httpError("Order total must be greater than zero before requesting payment.", 400);
+  if (order.paymentStatus === "paid") throw httpError("This order has already been paid.", 400);
+  const reason = options.reason?.trim() || "Manual order payment link";
+  const request = await storage.ecommerce.createPaymentRequest({
+    orderId: order.id,
+    customerId: order.customerId,
+    customerEmail: order.customer?.email ?? "",
+    customerName: order.customer?.name ?? order.shippingName,
+    title: `Order #${order.id.slice(0, 8).toUpperCase()}`,
+    description: order.items.map((item) => `${item.productName} x ${item.quantity}`).join(", "),
+    amount: order.totalAmount,
+    currency: "usd",
+    status: "draft",
+    reason,
+    createdBy: options.createdBy ?? null,
+  });
+  const session = await createStripeCheckoutSessionForPaymentRequest({
+    paymentRequestId: request.id,
+    orderId: order.id,
+    customerEmail: request.customerEmail,
+    title: request.title,
+    description: request.description,
+    amount: request.amount,
+  });
+  await storage.ecommerce.updatePaymentRequest(request.id, {
+    status: "open",
+    stripeSessionId: session.id,
+    paymentUrl: session.url ?? null,
+    expiresAt: session.expires_at ? new Date(session.expires_at * 1000) : null,
+  });
+  await storage.ecommerce.updateOrder(order.id, {
+    status: "pending",
+    paymentStatus: "pending_payment",
+    stripeSessionId: session.id,
+    manualPaymentMethod: "payment_link",
+  });
+  return {
+    paymentRequestId: request.id,
+    paymentUrl: session.url,
+    stripeSessionId: session.id,
+  };
+}
+
+export async function markManualEcommerceOrderPaid(orderId: string, input: unknown, actor?: Pick<User, "id"> | null) {
+  const data = manualPaymentSchema.parse(input);
+  const order = await storage.ecommerce.updateOrder(orderId, {
+    status: "paid",
+    paymentStatus: "paid",
+    manualPaymentMethod: data.method,
+    manualPaymentReference: data.reference,
+    manualPaymentMarkedBy: actor?.id ?? null,
+    manualPaymentMarkedAt: new Date(),
+    notes: data.notes || undefined,
+  });
+  if (!order) return undefined;
+  if (data.notes?.trim()) {
+    await storage.ecommerce.createOrderNote({ orderId, authorId: actor?.id ?? null, body: data.notes.trim() });
+  }
+  await storage.ecommerce.recordCouponRedemptionForOrder(orderId);
+  await storage.ecommerce.deductInventoryForPaidOrder(orderId);
+  return storage.ecommerce.getOrderWithDetails(orderId);
+}
+
+export async function createStandalonePaymentRequest(input: unknown, actor?: Pick<User, "id"> | null) {
+  const data = standalonePaymentRequestSchema.parse(input);
+  let customer = data.customerId ? await storage.ecommerce.getCustomer(data.customerId) : undefined;
+  if (!customer && data.customer) {
+    customer = await storage.ecommerce.findOrCreateCustomer({
+      email: data.customer.email,
+      name: data.customer.name,
+    });
+  }
+  if (!customer && !data.customer) throw httpError("Choose an existing customer or enter a new customer.", 400);
+  const customerEmail = customer?.email ?? data.customer!.email;
+  const customerName = customer?.name ?? data.customer!.name;
+  const request = await storage.ecommerce.createPaymentRequest({
+    customerId: customer?.id ?? null,
+    customerEmail,
+    customerName,
+    title: data.title,
+    description: data.description,
+    amount: data.amount,
+    currency: "usd",
+    status: "draft",
+    reason: data.reason,
+    createdBy: actor?.id ?? null,
+  });
+  const session = await createStripeCheckoutSessionForPaymentRequest({
+    paymentRequestId: request.id,
+    customerEmail,
+    title: data.title,
+    description: data.description,
+    amount: data.amount,
+  });
+  const updated = await storage.ecommerce.updatePaymentRequest(request.id, {
+    status: "open",
+    stripeSessionId: session.id,
+    paymentUrl: session.url ?? null,
+    expiresAt: session.expires_at ? new Date(session.expires_at * 1000) : null,
+  });
+  return updated ?? request;
+}
+
+export async function reconcileEcommercePaymentRequestSession(sessionId: string, paymentIntentId?: string | null) {
+  const request = await storage.ecommerce.markPaymentRequestPaidBySession(sessionId, paymentIntentId);
+  if (!request) return undefined;
+  if (request.orderId && paymentIntentId) {
+    await markEcommerceOrderPaid(request.orderId, paymentIntentId);
+  }
+  return request;
 }
 
 export async function updateAdminEcommerceOrder(orderId: string, input: unknown, actor?: Pick<User, "id"> | null) {

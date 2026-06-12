@@ -3,7 +3,7 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { CategoriesTab, ProductsTab, ShippingTab } from "@/features/admin/ecommerce/ecommerce-page";
+import { CategoriesTab, OrdersTab, ProductsTab, ShippingTab } from "@/features/admin/ecommerce/ecommerce-page";
 
 const categories = [
   {
@@ -151,6 +151,33 @@ const shippingProviders = [
   },
 ];
 
+const orders = [
+  {
+    id: "9fb5c5a2-79d0-447b-90cc-82c2f9f8395f",
+    status: "paid",
+    paymentStatus: "paid",
+    totalAmount: 3311,
+    subtotalAmount: 2900,
+    shippingAmount: 695,
+    taxAmount: 216,
+    discountAmount: 500,
+    createdAt: "2026-05-30T17:22:00.000Z",
+    customer: { name: "Mike Dickerman", email: "mike@godigitalalchemy.com", phone: "704-608-5783" },
+    shippingName: "Mike Dickerman",
+    shippingCompany: null,
+    shippingAddress: "3003 Trinity Church Rd",
+    shippingLine2: null,
+    shippingCity: "Monroe",
+    shippingState: "NC",
+    shippingZip: "28112",
+    shippingCountry: "US",
+    items: [{ id: "item-1", productName: "Family Transition Conversation Cards", quantity: 1, lineTotal: 2900 }],
+    shipments: [],
+    fulfillments: [],
+    internalNotes: [],
+  },
+];
+
 vi.mock("@tanstack/react-query", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-query")>();
   return {
@@ -164,6 +191,30 @@ vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({
     toast: vi.fn(),
   }),
+}));
+
+vi.mock("@/features/admin/cms/components/cms-image-upload", () => ({
+  CmsImageUpload: ({ label, value, onChange, "data-testid": testId }: { label?: string; value: string; onChange: (value: string) => void; "data-testid"?: string }) =>
+    React.createElement(
+      "div",
+      { "data-testid": testId || "cms-image-upload" },
+      React.createElement("span", null, label),
+      React.createElement("input", {
+        "aria-label": label,
+        value,
+        onChange: (event: React.ChangeEvent<HTMLInputElement>) => onChange(event.target.value),
+      }),
+      React.createElement("button", { type: "button" }, "Pick from library"),
+    ),
+}));
+
+vi.mock("@/features/admin/cms/builder/cms-rich-text-editor", () => ({
+  CmsRichTextEditor: ({ value, onChange, "data-testid": testId }: { value: string; onChange: (value: string) => void; "data-testid"?: string }) =>
+    React.createElement("textarea", {
+      "data-testid": testId || "cms-rich-text-editor",
+      value,
+      onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => onChange(event.target.value),
+    }),
 }));
 
 describe("Ecommerce CategoriesTab", () => {
@@ -257,6 +308,13 @@ describe("Ecommerce CategoriesTab", () => {
     expect(container.querySelector("textarea")?.value).toBe("Courses and workshops");
   });
 
+  it("uses the CMS media selector for category images", () => {
+    renderCategoriesTab();
+
+    expect(container.querySelector('[data-testid="ecommerce-category-image"]')).toBeTruthy();
+    expect(container.textContent).toContain("Pick from library");
+  });
+
   it("blocks shipping provider activation until required credentials are saved", () => {
     useQueryMock.mockImplementation(({ queryKey }: { queryKey: unknown[] }) => {
       if (queryKey[0] === "/api/admin/ecommerce/shipping/providers") {
@@ -345,5 +403,110 @@ describe("Ecommerce ProductsTab", () => {
     expect(document.body.textContent).toContain("Shipping");
     expect(document.body.textContent).toContain("Settings");
     expect(document.body.textContent).toContain("SEO");
+  });
+
+  it("uses CMS rich text and media controls in the product editor", () => {
+    act(() => {
+      root = createRoot(container);
+      root.render(React.createElement(ProductsTab));
+    });
+
+    const editButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("Edit"),
+    );
+
+    act(() => {
+      editButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(document.body.querySelector('[data-testid="ecommerce-product-description-editor"]')).toBeTruthy();
+
+    const mediaTab = Array.from(document.body.querySelectorAll('[role="tab"]')).find(
+      (button) => button.textContent?.includes("Media"),
+    );
+    act(() => {
+      mediaTab?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      mediaTab?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(document.body.querySelector('[data-testid="ecommerce-product-primary-image"]')).toBeTruthy();
+    expect(document.body.querySelector('[data-testid="ecommerce-product-gallery-image"]')).toBeTruthy();
+
+    const seoTab = Array.from(document.body.querySelectorAll('[role="tab"]')).find(
+      (button) => button.textContent?.includes("SEO"),
+    );
+    act(() => {
+      seoTab?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      seoTab?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(document.body.querySelector('[data-testid="ecommerce-product-og-image"]')).toBeTruthy();
+  });
+});
+
+describe("Ecommerce OrdersTab", () => {
+  let container: HTMLDivElement;
+  let root: Root | null = null;
+
+  beforeEach(() => {
+    useQueryMock.mockImplementation((options: { queryKey?: string[] }) => {
+      if (options.queryKey?.[0] === "/api/admin/ecommerce/orders") return { data: orders, isLoading: false };
+      if (options.queryKey?.[0] === "/api/admin/ecommerce/settings/store") {
+        return { data: { storeTimezone: "America/New_York" }, isLoading: false };
+      }
+      if (options.queryKey?.[0] === "/api/admin/ecommerce/shipping/locations") return { data: [], isLoading: false };
+      return { data: [], isLoading: false };
+    });
+    useMutationMock.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+    });
+    vi.stubGlobal(
+      "ResizeObserver",
+      class ResizeObserver {
+        observe() {}
+        disconnect() {}
+        unobserve() {}
+      },
+    );
+    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
+    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    container = document.createElement("div");
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    act(() => {
+      root?.unmount();
+    });
+    root = null;
+    vi.unstubAllGlobals();
+    useQueryMock.mockReset();
+    useMutationMock.mockReset();
+    container.remove();
+    document.body.innerHTML = "";
+  });
+
+  it("opens the order detail drawer from the row and shows customer and shipping data", () => {
+    act(() => {
+      root = createRoot(container);
+      root.render(React.createElement(OrdersTab));
+    });
+
+    const orderRow = Array.from(container.querySelectorAll("tbody tr")).find((row) =>
+      row.textContent?.includes("#9FB5C5A2"),
+    );
+
+    expect(orderRow).toBeTruthy();
+    act(() => {
+      orderRow?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(document.body.textContent).toContain("Order detail");
+    expect(document.body.textContent).toContain("Customer");
+    expect(document.body.textContent).toContain("Ship to");
+    expect(document.body.textContent).toContain("Mike Dickerman");
+    expect(document.body.textContent).toContain("3003 Trinity Church Rd");
+    expect(document.body.textContent).toContain("Family Transition Conversation Cards");
   });
 });

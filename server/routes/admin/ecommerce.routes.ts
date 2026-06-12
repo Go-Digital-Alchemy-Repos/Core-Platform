@@ -6,6 +6,7 @@ import { paramString } from "../../utils/params";
 import {
   insertEcommerceCategorySchema,
   insertEcommerceCouponSchema,
+  insertEcommerceCustomerSchema,
   insertEcommerceFulfillmentLocationSchema,
   insertEcommerceFulfillmentSchema,
   insertEcommerceProductMediaSchema,
@@ -29,8 +30,14 @@ import {
   assertEcommerceFulfillmentRequest,
   assertEcommerceOrderCanShip,
   createManualEcommerceOrder,
+  createManualEcommerceOrderDraft,
+  createPaymentLinkForOrder,
+  createStandalonePaymentRequest,
   fulfillmentItemsSchema,
+  markManualEcommerceOrderPaid,
   manualOrderSchema,
+  manualPaymentSchema,
+  standalonePaymentRequestSchema,
   updateAdminEcommerceOrder,
 } from "../../services/ecommerce-order.service";
 import { sendEcommerceShipmentEmail } from "../../services/ecommerce-email.service";
@@ -271,6 +278,15 @@ router.get("/orders", asyncHandler(async (_req, res) => {
   res.json(await storage.ecommerce.getOrders());
 }));
 
+router.get("/customers", asyncHandler(async (req, res) => {
+  res.json(await storage.ecommerce.searchCustomers(typeof req.query.search === "string" ? req.query.search : undefined));
+}));
+
+router.post("/customers", asyncHandler(async (req, res) => {
+  const customer = await storage.ecommerce.findOrCreateCustomer(insertEcommerceCustomerSchema.parse(req.body));
+  res.status(201).json(customer);
+}));
+
 router.get("/orders/:id", asyncHandler(async (req, res) => {
   const order = await storage.ecommerce.getOrderWithDetails(paramString(req.params.id));
   if (!order) {
@@ -295,6 +311,31 @@ router.put("/orders/:id", asyncHandler(async (req, res) => {
 
 router.post("/orders/manual", asyncHandler(async (req, res) => {
   res.status(201).json(await createManualEcommerceOrder(manualOrderSchema.parse(req.body)));
+}));
+
+router.post("/orders/manual-draft", asyncHandler(async (req, res) => {
+  res.status(201).json(await createManualEcommerceOrderDraft(manualOrderSchema.parse(req.body), req.user));
+}));
+
+router.post("/orders/:id/payment-link", asyncHandler(async (req, res) => {
+  const data = z.object({ reason: z.string().trim().min(1).max(500).optional() }).parse(req.body);
+  res.status(201).json(await createPaymentLinkForOrder(paramString(req.params.id), {
+    reason: data.reason,
+    createdBy: req.user?.id,
+  }));
+}));
+
+router.post("/orders/:id/mark-paid", asyncHandler(async (req, res) => {
+  const order = await markManualEcommerceOrderPaid(paramString(req.params.id), manualPaymentSchema.parse(req.body), req.user);
+  if (!order) {
+    res.status(404).json({ message: "Order not found" });
+    return;
+  }
+  res.json(order);
+}));
+
+router.post("/payment-requests", asyncHandler(async (req, res) => {
+  res.status(201).json(await createStandalonePaymentRequest(standalonePaymentRequestSchema.parse(req.body), req.user));
 }));
 
 router.post("/refunds", asyncHandler(async (req, res) => {

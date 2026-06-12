@@ -21,12 +21,14 @@ export const ECOMMERCE_INVENTORY_ADJUSTMENT_REASONS = ["manual", "order_paid", "
 export const ECOMMERCE_ORDER_STATUSES = ["pending", "paid", "shipped", "delivered", "cancelled"] as const;
 export const ECOMMERCE_PAYMENT_STATUSES = [
   "unpaid",
+  "pending_payment",
   "paid",
   "refund_pending",
   "partially_refunded",
   "refunded",
   "refund_failed",
 ] as const;
+export const ECOMMERCE_PAYMENT_REQUEST_STATUSES = ["draft", "open", "paid", "expired", "cancelled"] as const;
 export const ECOMMERCE_COUPON_TYPES = ["percentage", "fixed", "freeShipping"] as const;
 export const ECOMMERCE_COUPON_STATUSES = ["active", "inactive", "scheduled", "expired", "exhausted", "archived"] as const;
 export const ECOMMERCE_REFUND_STATUSES = ["pending", "processed", "rejected", "failed"] as const;
@@ -309,6 +311,11 @@ export const ecommerceOrders = pgTable("ecommerce_orders", {
   stripeSessionId: text("stripe_session_id"),
   couponCode: text("coupon_code"),
   isManualOrder: boolean("is_manual_order").notNull().default(false),
+  manualPaymentMethod: text("manual_payment_method"),
+  manualPaymentReference: text("manual_payment_reference"),
+  manualPaymentMarkedBy: varchar("manual_payment_marked_by").references(() => users.id, { onDelete: "set null" }),
+  manualPaymentMarkedAt: timestamp("manual_payment_marked_at"),
+  fulfillmentMode: text("fulfillment_mode").notNull().default("shipping"),
   notes: text("notes"),
   customerIp: text("customer_ip"),
   shippingName: text("shipping_name"),
@@ -382,6 +389,33 @@ export const ecommerceOrderNotes = pgTable("ecommerce_order_notes", {
 }, (table) => [
   index("idx_ecommerce_order_notes_order").on(table.orderId),
   index("idx_ecommerce_order_notes_created").on(table.createdAt),
+]);
+
+export const ecommercePaymentRequests = pgTable("ecommerce_payment_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").references(() => ecommerceOrders.id, { onDelete: "set null" }),
+  customerId: varchar("customer_id").references(() => ecommerceCustomers.id, { onDelete: "set null" }),
+  customerEmail: text("customer_email").notNull(),
+  customerName: text("customer_name"),
+  title: text("title").notNull(),
+  description: text("description"),
+  amount: integer("amount").notNull(),
+  currency: text("currency").notNull().default("usd"),
+  status: text("status").notNull().default("draft"),
+  reason: text("reason").notNull(),
+  stripeSessionId: text("stripe_session_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  paymentUrl: text("payment_url"),
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
+  paidAt: timestamp("paid_at"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ecommerce_payment_requests_order").on(table.orderId),
+  index("idx_ecommerce_payment_requests_customer").on(table.customerId),
+  index("idx_ecommerce_payment_requests_status").on(table.status),
+  uniqueIndex("idx_ecommerce_payment_requests_session").on(table.stripeSessionId),
 ]);
 
 export const ecommerceCoupons = pgTable("ecommerce_coupons", {
@@ -685,6 +719,7 @@ export const insertEcommerceCustomerAddressSchema = createInsertSchema(ecommerce
 export const insertEcommerceOrderSchema = createInsertSchema(ecommerceOrders).omit({ id: true, lookupToken: true, createdAt: true, updatedAt: true });
 export const insertEcommerceOrderItemSchema = createInsertSchema(ecommerceOrderItems).omit({ id: true });
 export const insertEcommerceOrderNoteSchema = createInsertSchema(ecommerceOrderNotes).omit({ id: true, createdAt: true });
+export const insertEcommercePaymentRequestSchema = createInsertSchema(ecommercePaymentRequests).omit({ id: true, paidAt: true, createdAt: true, updatedAt: true });
 export const insertEcommerceCouponSchema = createInsertSchema(ecommerceCoupons).omit({ id: true, timesUsed: true, createdAt: true, updatedAt: true });
 export const insertEcommerceRefundSchema = createInsertSchema(ecommerceRefunds).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertEcommerceShippingZoneSchema = createInsertSchema(ecommerceShippingZones).omit({ id: true, createdAt: true, updatedAt: true });
@@ -727,6 +762,8 @@ export type EcommerceOrderItem = typeof ecommerceOrderItems.$inferSelect;
 export type InsertEcommerceOrderItem = z.infer<typeof insertEcommerceOrderItemSchema>;
 export type EcommerceOrderNote = typeof ecommerceOrderNotes.$inferSelect;
 export type InsertEcommerceOrderNote = z.infer<typeof insertEcommerceOrderNoteSchema>;
+export type EcommercePaymentRequest = typeof ecommercePaymentRequests.$inferSelect;
+export type InsertEcommercePaymentRequest = z.infer<typeof insertEcommercePaymentRequestSchema>;
 export type EcommerceCoupon = typeof ecommerceCoupons.$inferSelect;
 export type InsertEcommerceCoupon = z.infer<typeof insertEcommerceCouponSchema>;
 export type EcommerceRefund = typeof ecommerceRefunds.$inferSelect;

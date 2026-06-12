@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   CalendarDays,
+  CheckCircle2,
   Clock,
   ClipboardList,
   Copy,
@@ -28,6 +29,8 @@ import {
   UserPlus,
 } from "lucide-react";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
+import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
+import { CmsRichTextEditor } from "@/features/admin/cms/builder/cms-rich-text-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -48,6 +51,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -164,6 +168,19 @@ interface Category {
   active: boolean;
 }
 
+interface Customer {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string | null;
+  address?: string | null;
+  line2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zipCode?: string | null;
+  country?: string | null;
+}
+
 interface FulfillmentLocation {
   id: string;
   name: string;
@@ -263,10 +280,18 @@ interface Order {
   taxAmount?: number;
   discountAmount?: number;
   createdAt: string;
-  customer?: { name: string; email: string } | null;
+  customer?: { name?: string | null; email?: string | null; phone?: string | null } | null;
+  shippingName?: string | null;
+  shippingCompany?: string | null;
+  shippingAddress?: string | null;
+  shippingLine2?: string | null;
+  shippingCity?: string | null;
+  shippingState?: string | null;
+  shippingZip?: string | null;
+  shippingCountry?: string | null;
   items: Array<{ id: string; productName: string; quantity: number; lineTotal: number }>;
-  shipments?: Array<{ id: string; carrier?: string | null; trackingNumber?: string | null; trackingUrl?: string | null; status: string; shippedAt: string }>;
-  fulfillments?: Array<{ id: string; status: string; carrier?: string | null; trackingNumber?: string | null; fulfilledAt?: string | null }>;
+  shipments?: Array<{ id: string; carrier?: string | null; trackingNumber?: string | null; trackingUrl?: string | null; status: string; shippedAt?: string | null; emailSentAt?: string | null }>;
+  fulfillments?: Array<{ id: string; status: string; carrier?: string | null; trackingNumber?: string | null; fulfilledAt?: string | null; serviceLevel?: string | null }>;
   internalNotes?: Array<{
     id: string;
     body: string;
@@ -277,6 +302,17 @@ interface Order {
       lastName?: string | null;
     } | null;
   }>;
+  isManualOrder?: boolean;
+  manualPaymentMethod?: string | null;
+  manualPaymentReference?: string | null;
+  manualPaymentMarkedAt?: string | null;
+  fulfillmentMode?: string | null;
+}
+
+interface PaymentRequest {
+  id: string;
+  paymentUrl?: string | null;
+  status: string;
 }
 
 interface StripeSettingsStatus {
@@ -824,7 +860,15 @@ export function ProductsTab() {
                         <div className="space-y-2"><Label>Subtitle</Label><Input value={form.tagline} onChange={(e) => setForm((current) => ({ ...current, tagline: e.target.value }))} /></div>
                       </div>
                       <div className="space-y-2"><Label>Short description</Label><Textarea value={form.shortDescription} onChange={(e) => setForm((current) => ({ ...current, shortDescription: e.target.value }))} rows={3} /></div>
-                      <div className="space-y-2"><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))} rows={7} /></div>
+                      <div className="space-y-2">
+                        <Label>Description</Label>
+                        <CmsRichTextEditor
+                          value={form.description}
+                          onChange={(description) => setForm((current) => ({ ...current, description }))}
+                          placeholder="Write the complete product description customers should see on the product detail page..."
+                          data-testid="ecommerce-product-description-editor"
+                        />
+                      </div>
                       <div className="grid gap-4 lg:grid-cols-2">
                         <div className="space-y-2"><Label>Product type</Label><Input value={form.productType} onChange={(e) => setForm((current) => ({ ...current, productType: e.target.value }))} /></div>
                         <div className="space-y-2"><Label>Vendor / brand</Label><Input value={form.vendor} onChange={(e) => setForm((current) => ({ ...current, vendor: e.target.value }))} /></div>
@@ -838,9 +882,21 @@ export function ProductsTab() {
                   </TabsContent>
                   <TabsContent value="media" className="mt-0">
                     <ProductEditorSection title="Media">
-                      <div className="space-y-2"><Label>Primary image URL</Label><Input value={form.primaryImage} onChange={(e) => setForm((current) => ({ ...current, primaryImage: e.target.value }))} /></div>
+                      <CmsImageUpload
+                        label="Primary image"
+                        value={form.primaryImage}
+                        onChange={(primaryImage) => setForm((current) => ({ ...current, primaryImage }))}
+                        helpText="Upload, drop, or choose the main storefront image from the CMS media library."
+                        data-testid="ecommerce-product-primary-image"
+                      />
                       <div className="grid gap-4 lg:grid-cols-2">
-                        <div className="space-y-2"><Label>Add gallery image URL</Label><Input value={form.mediaUrl} onChange={(e) => setForm((current) => ({ ...current, mediaUrl: e.target.value }))} /></div>
+                        <CmsImageUpload
+                          label="Add gallery image"
+                          value={form.mediaUrl}
+                          onChange={(mediaUrl) => setForm((current) => ({ ...current, mediaUrl }))}
+                          helpText="Adds a product gallery image when the product is saved."
+                          data-testid="ecommerce-product-gallery-image"
+                        />
                         <div className="space-y-2"><Label>Gallery image alt text</Label><Input value={form.mediaAltText} onChange={(e) => setForm((current) => ({ ...current, mediaAltText: e.target.value }))} /></div>
                       </div>
                     </ProductEditorSection>
@@ -918,7 +974,13 @@ export function ProductsTab() {
                       <div className="space-y-2"><Label>URL slug</Label><Input value={form.urlSlug} onChange={(e) => setForm((current) => ({ ...current, urlSlug: e.target.value }))} /></div>
                       <div className="space-y-2"><Label>Meta title</Label><Input value={form.metaTitle} onChange={(e) => setForm((current) => ({ ...current, metaTitle: e.target.value }))} /></div>
                       <div className="space-y-2"><Label>Meta description</Label><Textarea value={form.metaDescription} onChange={(e) => setForm((current) => ({ ...current, metaDescription: e.target.value }))} rows={4} /></div>
-                      <div className="space-y-2"><Label>OpenGraph image</Label><Input value={form.ogImage} onChange={(e) => setForm((current) => ({ ...current, ogImage: e.target.value }))} /></div>
+                      <CmsImageUpload
+                        label="OpenGraph image"
+                        value={form.ogImage}
+                        onChange={(ogImage) => setForm((current) => ({ ...current, ogImage }))}
+                        helpText="Used when product links are shared on social platforms."
+                        data-testid="ecommerce-product-og-image"
+                      />
                     </ProductEditorSection>
                   </TabsContent>
                 </div>
@@ -1161,14 +1223,13 @@ export function CategoriesTab() {
                 rows={3}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Image URL</Label>
-              <Input
-                value={form.image}
-                onChange={(event) => setForm((current) => ({ ...current, image: event.target.value }))}
-                placeholder="https://..."
-              />
-            </div>
+            <CmsImageUpload
+              label="Category image"
+              value={form.image}
+              onChange={(image) => setForm((current) => ({ ...current, image }))}
+              helpText="Upload, drop, or choose a category image from the CMS media library."
+              data-testid="ecommerce-category-image"
+            />
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Sort order</Label>
@@ -1651,10 +1712,474 @@ function formatOrderPlacedDateTime(value: string | Date, timeZone = "America/New
   }
 }
 
-function OrdersTab() {
+function formatOptionalDateTime(value: string | Date | null | undefined, timeZone = "America/New_York") {
+  if (!value) return "Not recorded";
+  const formatted = formatOrderPlacedDateTime(value, timeZone);
+  return `${formatted.date} · ${formatted.time}`;
+}
+
+function formatShippingAddress(order: Order) {
+  const cityRegion = [
+    order.shippingCity,
+    [order.shippingState, order.shippingZip].filter(Boolean).join(" "),
+  ].filter(Boolean).join(", ");
+  return [
+    order.shippingName,
+    order.shippingCompany,
+    order.shippingAddress,
+    order.shippingLine2,
+    cityRegion,
+    order.shippingCountry,
+  ].filter(Boolean);
+}
+
+function DetailLine({ label, value }: { label: string; value?: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <div className="text-sm text-foreground">{value || <span className="text-muted-foreground">Not provided</span>}</div>
+    </div>
+  );
+}
+
+type ManualOrderMode = "order" | "payment_request";
+type ManualCustomerMode = "existing" | "new";
+type ManualPaymentAction = "save_draft" | "send_payment_link" | "mark_paid";
+
+interface ManualOrderWizardForm {
+  mode: ManualOrderMode;
+  customerMode: ManualCustomerMode;
+  customerId: string;
+  customerSearch: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  address: string;
+  line2: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  productId: string;
+  variantId: string;
+  quantity: string;
+  discountAmount: string;
+  fulfillmentMode: "shipping" | "pickup" | "digital" | "custom";
+  notes: string;
+  customReason: string;
+  paymentAction: ManualPaymentAction;
+  manualPaymentMethod: "cash" | "external_card" | "check" | "other";
+  manualPaymentReference: string;
+  paymentTitle: string;
+  paymentDescription: string;
+  paymentAmount: string;
+}
+
+const defaultManualOrderWizardForm: ManualOrderWizardForm = {
+  mode: "order",
+  customerMode: "existing",
+  customerId: "",
+  customerSearch: "",
+  customerName: "",
+  customerEmail: "",
+  customerPhone: "",
+  address: "",
+  line2: "",
+  city: "",
+  state: "",
+  zipCode: "",
+  country: "US",
+  productId: "",
+  variantId: "",
+  quantity: "1",
+  discountAmount: "0",
+  fulfillmentMode: "shipping",
+  notes: "",
+  customReason: "",
+  paymentAction: "send_payment_link",
+  manualPaymentMethod: "external_card",
+  manualPaymentReference: "",
+  paymentTitle: "",
+  paymentDescription: "",
+  paymentAmount: "",
+};
+
+function dollarsToCents(value: string) {
+  const normalized = value.trim().replace(/[$,]/g, "");
+  if (!normalized) return 0;
+  const parsed = Number.parseFloat(normalized);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.round(parsed * 100);
+}
+
+function getProductEffectivePrice(product?: Product, variantId?: string) {
+  if (!product) return 0;
+  const variant = product.variants?.find((candidate) => candidate.id === variantId)
+    ?? product.variants?.find((candidate) => candidate.isDefault)
+    ?? product.variants?.[0];
+  return variant?.salePrice ?? variant?.price ?? product.salePrice ?? product.price;
+}
+
+function ManualOrderWizard({
+  open,
+  onOpenChange,
+  products,
+  customers,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  products: Product[];
+  customers: Customer[];
+}) {
+  const { toast } = useToast();
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState<ManualOrderWizardForm>(defaultManualOrderWizardForm);
+  const selectedProduct = products.find((product) => product.id === form.productId);
+  const selectedCustomer = customers.find((customer) => customer.id === form.customerId);
+  const selectedVariantId = form.variantId || selectedProduct?.variants?.find((variant) => variant.isDefault)?.id || selectedProduct?.variants?.[0]?.id || "";
+  const quantity = Math.max(1, Number.parseInt(form.quantity, 10) || 1);
+  const productSubtotal = form.mode === "order" ? getProductEffectivePrice(selectedProduct, selectedVariantId) * quantity : 0;
+  const discountAmount = Math.min(productSubtotal, dollarsToCents(form.discountAmount));
+  const orderTotal = Math.max(0, productSubtotal - discountAmount);
+  const paymentRequestAmount = dollarsToCents(form.paymentAmount);
+  const canCreateNewCustomer = form.customerName.trim() && form.customerEmail.trim();
+  const hasCustomer = form.customerMode === "existing" ? Boolean(form.customerId) : Boolean(canCreateNewCustomer);
+  const hasOrderLine = form.mode === "payment_request" || Boolean(form.productId);
+  const reasonRequired = form.mode === "payment_request" || discountAmount > 0 || form.fulfillmentMode === "custom";
+  const hasReason = !reasonRequired || Boolean(form.customReason.trim() || form.notes.trim());
+  const canSubmit = hasCustomer
+    && hasOrderLine
+    && hasReason
+    && (form.mode === "order" ? orderTotal > 0 || form.paymentAction === "save_draft" : paymentRequestAmount > 0 && form.paymentTitle.trim());
+
+  const reset = () => {
+    setStep(1);
+    setForm(defaultManualOrderWizardForm);
+  };
+
+  const createCustomerMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/admin/ecommerce/customers", {
+        email: form.customerEmail,
+        name: form.customerName,
+        phone: form.customerPhone || undefined,
+        address: form.address || undefined,
+        line2: form.line2 || undefined,
+        city: form.city || undefined,
+        state: form.state || undefined,
+        zipCode: form.zipCode || undefined,
+        country: form.country || "US",
+      });
+      return response.json() as Promise<Customer>;
+    },
+  });
+
+  const manualOrderMutation = useMutation({
+    mutationFn: async () => {
+      let customerId = form.customerId;
+      if (form.customerMode === "new") {
+        const customer = await createCustomerMutation.mutateAsync();
+        customerId = customer.id;
+      }
+      const response = await apiRequest("POST", "/api/admin/ecommerce/orders/manual-draft", {
+        customerId,
+        items: [{
+          productId: form.productId,
+          variantId: selectedVariantId || undefined,
+          quantity,
+          discountAmount,
+        }],
+        fulfillmentMode: form.fulfillmentMode,
+        notes: form.notes || undefined,
+        customReason: form.customReason || undefined,
+        paymentAction: form.paymentAction,
+        manualPaymentMethod: form.paymentAction === "mark_paid" ? form.manualPaymentMethod : undefined,
+        manualPaymentReference: form.paymentAction === "mark_paid" ? form.manualPaymentReference : undefined,
+      });
+      return response.json() as Promise<Order & { paymentLink?: { paymentUrl?: string | null } | null }>;
+    },
+    onSuccess: async (order) => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/orders"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/customers"] });
+      if (order.paymentLink?.paymentUrl) {
+        await navigator.clipboard?.writeText(order.paymentLink.paymentUrl).catch(() => undefined);
+      }
+      toast({
+        title: "Manual order created",
+        description: order.paymentLink?.paymentUrl ? "The secure payment link was copied to your clipboard." : undefined,
+      });
+      onOpenChange(false);
+      reset();
+    },
+    onError: (error) => toast({
+      title: "Manual order could not be created",
+      description: error instanceof Error ? error.message : "Please review the order details.",
+      variant: "destructive",
+    }),
+  });
+
+  const paymentRequestMutation = useMutation({
+    mutationFn: async () => {
+      let customerId = form.customerId;
+      let customerPayload: { email: string; name: string } | undefined;
+      if (form.customerMode === "new") {
+        customerPayload = { email: form.customerEmail, name: form.customerName };
+      }
+      const response = await apiRequest("POST", "/api/admin/ecommerce/payment-requests", {
+        customerId: customerId || undefined,
+        customer: customerPayload,
+        title: form.paymentTitle,
+        description: form.paymentDescription || undefined,
+        amount: paymentRequestAmount,
+        reason: form.customReason,
+      });
+      return response.json() as Promise<PaymentRequest>;
+    },
+    onSuccess: async (request) => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/customers"] });
+      if (request.paymentUrl) {
+        await navigator.clipboard?.writeText(request.paymentUrl).catch(() => undefined);
+      }
+      toast({ title: "Payment request created", description: request.paymentUrl ? "The secure payment link was copied to your clipboard." : "The payment request is ready." });
+      onOpenChange(false);
+      reset();
+    },
+    onError: (error) => toast({
+      title: "Payment request could not be created",
+      description: error instanceof Error ? error.message : "Please review the payment request.",
+      variant: "destructive",
+    }),
+  });
+
+  const submit = () => {
+    if (!canSubmit) {
+      toast({ title: "Finish required details", description: "Customer, line items, totals, and reason fields are required.", variant: "destructive" });
+      return;
+    }
+    if (form.mode === "payment_request") {
+      paymentRequestMutation.mutate();
+      return;
+    }
+    manualOrderMutation.mutate();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => { onOpenChange(nextOpen); if (!nextOpen) reset(); }}>
+      <DialogContent className="max-h-[92vh] max-w-5xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Create order</DialogTitle>
+          <DialogDescription>Create a manual order, send a payment link, or collect a standalone custom payment request.</DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+          <div className="space-y-2">
+            {["Customer", "Items", "Fulfillment", "Review", "Payment"].map((label, index) => (
+              <button
+                key={label}
+                type="button"
+                className={cn("flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm", step === index + 1 ? "bg-primary text-primary-foreground" : "hover:bg-muted")}
+                onClick={() => setStep(index + 1)}
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full border text-xs">{index + 1}</span>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-5">
+            {step === 1 ? (
+              <div className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Button type="button" variant={form.customerMode === "existing" ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, customerMode: "existing" }))}>Select existing customer</Button>
+                  <Button type="button" variant={form.customerMode === "new" ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, customerMode: "new" }))}>Create new customer</Button>
+                </div>
+                {form.customerMode === "existing" ? (
+                  <div className="space-y-3">
+                    <Input value={form.customerSearch} onChange={(event) => setForm((current) => ({ ...current, customerSearch: event.target.value }))} placeholder="Search customers by name, email, or phone" />
+                    <div className="grid max-h-72 gap-2 overflow-y-auto">
+                      {customers
+                        .filter((customer) => {
+                          const query = form.customerSearch.trim().toLowerCase();
+                          return !query || [customer.name, customer.email, customer.phone ?? ""].some((value) => value.toLowerCase().includes(query));
+                        })
+                        .map((customer) => (
+                          <button
+                            key={customer.id}
+                            type="button"
+                            className={cn("rounded-lg border p-3 text-left transition-colors hover:bg-muted/50", form.customerId === customer.id ? "border-primary bg-primary/5" : "")}
+                            onClick={() => setForm((current) => ({ ...current, customerId: customer.id }))}
+                          >
+                            <div className="font-medium">{customer.name}</div>
+                            <div className="text-sm text-muted-foreground">{customer.email}</div>
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2"><Label>Name</Label><Input value={form.customerName} onChange={(event) => setForm((current) => ({ ...current, customerName: event.target.value }))} /></div>
+                    <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.customerEmail} onChange={(event) => setForm((current) => ({ ...current, customerEmail: event.target.value }))} /></div>
+                    <div className="space-y-2"><Label>Phone</Label><Input value={form.customerPhone} onChange={(event) => setForm((current) => ({ ...current, customerPhone: event.target.value }))} /></div>
+                    <div className="space-y-2 sm:col-span-2"><Label>Address</Label><Input value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} /></div>
+                    <div className="space-y-2"><Label>Address line 2</Label><Input value={form.line2} onChange={(event) => setForm((current) => ({ ...current, line2: event.target.value }))} /></div>
+                    <div className="space-y-2"><Label>City</Label><Input value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))} /></div>
+                    <div className="space-y-2"><Label>State / region</Label><Input value={form.state} onChange={(event) => setForm((current) => ({ ...current, state: event.target.value }))} /></div>
+                    <div className="space-y-2"><Label>Postal code</Label><Input value={form.zipCode} onChange={(event) => setForm((current) => ({ ...current, zipCode: event.target.value }))} /></div>
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            {step === 2 ? (
+              <div className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Button type="button" variant={form.mode === "order" ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, mode: "order" }))}>Manual order</Button>
+                  <Button type="button" variant={form.mode === "payment_request" ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, mode: "payment_request" }))}>Custom payment request</Button>
+                </div>
+                {form.mode === "order" ? (
+                  <div className="grid gap-3 sm:grid-cols-[1fr_150px_150px]">
+                    <div className="space-y-2">
+                      <Label>Product</Label>
+                      <Select value={form.productId || "__none"} onValueChange={(productId) => setForm((current) => ({ ...current, productId: productId === "__none" ? "" : productId, variantId: "" }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none">Choose product</SelectItem>
+                          {products.map((product) => <SelectItem key={product.id} value={product.id}>{product.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2"><Label>Quantity</Label><Input type="number" min={1} value={form.quantity} onChange={(event) => setForm((current) => ({ ...current, quantity: event.target.value }))} /></div>
+                    <div className="space-y-2"><Label>Line discount</Label><Input value={form.discountAmount} onChange={(event) => setForm((current) => ({ ...current, discountAmount: event.target.value }))} placeholder="0.00" /></div>
+                    {selectedProduct && (selectedProduct.variants?.length ?? 0) > 1 ? (
+                      <div className="space-y-2 sm:col-span-3">
+                        <Label>Variant</Label>
+                        <Select value={selectedVariantId} onValueChange={(variantId) => setForm((current) => ({ ...current, variantId }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>{selectedProduct.variants?.map((variant) => <SelectItem key={variant.id} value={variant.id}>{variant.title}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2"><Label>Payment title</Label><Input value={form.paymentTitle} onChange={(event) => setForm((current) => ({ ...current, paymentTitle: event.target.value }))} placeholder="Special in-person sale" /></div>
+                    <div className="space-y-2"><Label>Amount</Label><Input value={form.paymentAmount} onChange={(event) => setForm((current) => ({ ...current, paymentAmount: event.target.value }))} placeholder="125.00" /></div>
+                    <div className="space-y-2 sm:col-span-2"><Label>Description</Label><Textarea value={form.paymentDescription} onChange={(event) => setForm((current) => ({ ...current, paymentDescription: event.target.value }))} rows={3} /></div>
+                    <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 sm:col-span-2">
+                      Custom payment requests do not create fulfillment, shipment, inventory, or order records.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            {step === 3 ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  ["shipping", "Requires shipping"],
+                  ["pickup", "Pickup / in-person"],
+                  ["digital", "Digital or no fulfillment"],
+                  ["custom", "Custom no-shipment case"],
+                ].map(([value, label]) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant={form.fulfillmentMode === value ? "default" : "outline"}
+                    onClick={() => setForm((current) => ({ ...current, fulfillmentMode: value as ManualOrderWizardForm["fulfillmentMode"] }))}
+                    disabled={form.mode === "payment_request"}
+                  >
+                    {label}
+                  </Button>
+                ))}
+                {form.mode === "payment_request" ? <p className="text-sm text-muted-foreground sm:col-span-2">Standalone payment requests skip fulfillment by design.</p> : null}
+              </div>
+            ) : null}
+
+            {step === 4 ? (
+              <div className="grid gap-4">
+                <div className="rounded-lg border p-4">
+                  <div className="font-medium">{form.customerMode === "existing" ? selectedCustomer?.name : form.customerName}</div>
+                  <div className="text-sm text-muted-foreground">{form.customerMode === "existing" ? selectedCustomer?.email : form.customerEmail}</div>
+                </div>
+                <div className="rounded-lg border p-4 text-sm">
+                  {form.mode === "order" ? (
+                    <>
+                      <div className="flex justify-between"><span>{selectedProduct?.name || "No product selected"} x {quantity}</span><span>{formatMoney(productSubtotal)}</span></div>
+                      <div className="flex justify-between text-muted-foreground"><span>Manual discount</span><span>-{formatMoney(discountAmount)}</span></div>
+                      <div className="mt-3 flex justify-between border-t pt-3 text-base font-semibold"><span>Total</span><span>{formatMoney(orderTotal)}</span></div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between"><span>{form.paymentTitle || "Custom payment request"}</span><span>{formatMoney(paymentRequestAmount)}</span></div>
+                      <p className="mt-2 text-muted-foreground">No fulfillment or shipment will be created.</p>
+                    </>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>{reasonRequired ? "Reason / internal note" : "Internal note"}</Label>
+                  <Textarea value={form.customReason} onChange={(event) => setForm((current) => ({ ...current, customReason: event.target.value }))} rows={3} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Order notes</Label>
+                  <Textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} rows={3} />
+                </div>
+              </div>
+            ) : null}
+
+            {step === 5 ? (
+              <div className="space-y-4">
+                {form.mode === "order" ? (
+                  <>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <Button type="button" variant={form.paymentAction === "send_payment_link" ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, paymentAction: "send_payment_link" }))}>Send payment link</Button>
+                      <Button type="button" variant={form.paymentAction === "mark_paid" ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, paymentAction: "mark_paid" }))}>Mark paid externally</Button>
+                      <Button type="button" variant={form.paymentAction === "save_draft" ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, paymentAction: "save_draft" }))}>Save draft</Button>
+                    </div>
+                    {form.paymentAction === "mark_paid" ? (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Payment method</Label>
+                          <Select value={form.manualPaymentMethod} onValueChange={(manualPaymentMethod) => setForm((current) => ({ ...current, manualPaymentMethod: manualPaymentMethod as ManualOrderWizardForm["manualPaymentMethod"] }))}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="cash">Cash</SelectItem>
+                              <SelectItem value="external_card">External card terminal</SelectItem>
+                              <SelectItem value="check">Check</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2"><Label>Reference</Label><Input value={form.manualPaymentReference} onChange={(event) => setForm((current) => ({ ...current, manualPaymentReference: event.target.value }))} placeholder="Receipt or terminal reference" /></div>
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="rounded-lg border p-3 text-sm text-muted-foreground">A secure Stripe-hosted payment link will be generated and copied when possible.</p>
+                )}
+                <Button type="button" className="w-full" disabled={!canSubmit || manualOrderMutation.isPending || paymentRequestMutation.isPending || createCustomerMutation.isPending} onClick={submit}>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  {manualOrderMutation.isPending || paymentRequestMutation.isPending ? "Creating..." : "Create"}
+                </Button>
+              </div>
+            ) : null}
+
+            <div className="flex items-center justify-between border-t pt-4">
+              <Button type="button" variant="outline" disabled={step === 1} onClick={() => setStep((current) => Math.max(1, current - 1))}>Back</Button>
+              <Button type="button" disabled={step === 5} onClick={() => setStep((current) => Math.min(5, current + 1))}>Next</Button>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function OrdersTab() {
   const { toast } = useToast();
   const trackingNumberInputRef = useRef<HTMLInputElement>(null);
   const { data: orders = [] } = useQuery<Order[]>({ queryKey: ["/api/admin/ecommerce/orders"] });
+  const { data: products = [] } = useQuery<Product[]>({ queryKey: ["/api/admin/ecommerce/products"] });
+  const { data: customers = [] } = useQuery<Customer[]>({ queryKey: ["/api/admin/ecommerce/customers"] });
   const { data: storeSettings } = useQuery<EcommerceStoreSettings>({ queryKey: ["/api/admin/ecommerce/settings/store"] });
   const { data: locations = [] } = useQuery<FulfillmentLocation[]>({
     queryKey: ["/api/admin/ecommerce/shipping/locations"],
@@ -1664,6 +2189,7 @@ function OrdersTab() {
   const [orderSearch, setOrderSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
+  const [manualOrderOpen, setManualOrderOpen] = useState(false);
   const [shipmentForm, setShipmentForm] = useState({
     carrier: "",
     trackingNumber: "",
@@ -1695,6 +2221,7 @@ function OrdersTab() {
   const selectedOrderPlacedAt = selectedOrder
     ? formatOrderPlacedDateTime(selectedOrder.createdAt, storeTimezone)
     : null;
+  const selectedOrderShippingAddress = selectedOrder ? formatShippingAddress(selectedOrder) : [];
   const visibleRevenue = filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0);
   const unfulfilledCount = orders.filter((order) => !["shipped", "delivered", "cancelled"].includes(order.status)).length;
 
@@ -1825,9 +2352,15 @@ function OrdersTab() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><ShoppingBag className="h-5 w-5" /> Orders</CardTitle>
-          <CardDescription>Select an order to review items and create a shipment.</CardDescription>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2"><ShoppingBag className="h-5 w-5" /> Orders</CardTitle>
+            <CardDescription>Select an order to review items and create a shipment.</CardDescription>
+          </div>
+          <Button type="button" onClick={() => setManualOrderOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create order
+          </Button>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-3">
@@ -1861,6 +2394,7 @@ function OrdersTab() {
               <SelectContent>
                 <SelectItem value="all">All payments</SelectItem>
                 <SelectItem value="unpaid">Unpaid</SelectItem>
+                <SelectItem value="pending_payment">Pending payment</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="refund_pending">Refund pending</SelectItem>
                 <SelectItem value="partially_refunded">Partially refunded</SelectItem>
@@ -1901,6 +2435,13 @@ function OrdersTab() {
         </CardContent>
       </Card>
 
+      <ManualOrderWizard
+        open={manualOrderOpen}
+        onOpenChange={setManualOrderOpen}
+        products={products}
+        customers={customers}
+      />
+
       <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
         <SheetContent size="full" className="w-[92vw] sm:max-w-[92vw]">
           {selectedOrder ? (
@@ -1920,6 +2461,46 @@ function OrdersTab() {
                   <Metric label="Subtotal" value={formatMoney(selectedOrder.subtotalAmount ?? 0)} icon={ShoppingBag} iconClassName="bg-blue-50 text-blue-600" />
                   <Metric label="Shipping" value={formatMoney(selectedOrder.shippingAmount ?? 0)} icon={Truck} iconClassName="bg-amber-50 text-amber-600" />
                   <Metric label="Tax" value={formatMoney(selectedOrder.taxAmount ?? 0)} icon={Percent} iconClassName="bg-violet-50 text-violet-600" />
+                </div>
+
+                <div className="grid gap-5 lg:grid-cols-3">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Customer</CardTitle>
+                      <CardDescription>Contact information attached to this order.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-3">
+                      <DetailLine label="Name" value={selectedOrder.customer?.name || selectedOrder.shippingName} />
+                      <DetailLine label="Email" value={selectedOrder.customer?.email} />
+                      <DetailLine label="Phone" value={selectedOrder.customer?.phone} />
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Ship to</CardTitle>
+                      <CardDescription>Destination used for fulfillment and labels.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {selectedOrderShippingAddress.length ? (
+                        <div className="space-y-1 text-sm leading-6">
+                          {selectedOrderShippingAddress.map((line) => <p key={line}>{line}</p>)}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No shipping address was captured for this order.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Order timing</CardTitle>
+                      <CardDescription>Shown in the store timezone.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-3">
+                      <DetailLine label="Received" value={selectedOrderPlacedAt ? `${selectedOrderPlacedAt.date} · ${selectedOrderPlacedAt.time}` : undefined} />
+                      <DetailLine label="Timezone" value={storeTimezone} />
+                      {selectedOrder.isManualOrder ? <DetailLine label="Order source" value="Manual order" /> : null}
+                    </CardContent>
+                  </Card>
                 </div>
 
                 <div className="grid gap-5 xl:grid-cols-[1.25fr_0.9fr]">
@@ -1951,27 +2532,62 @@ function OrdersTab() {
                         <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{formatMoney(selectedOrder.shippingAmount ?? 0)}</span></div>
                         <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>{formatMoney(selectedOrder.taxAmount ?? 0)}</span></div>
                         <div className="flex justify-between border-t pt-2 text-base font-semibold"><span>Total</span><span>{formatMoney(selectedOrder.totalAmount)}</span></div>
+                        {selectedOrder.manualPaymentMethod ? (
+                          <div className="mt-3 grid gap-1 rounded-lg bg-muted/40 p-3 text-xs">
+                            <div className="font-medium text-foreground">Manual payment</div>
+                            <div className="text-muted-foreground">Method: {selectedOrder.manualPaymentMethod.replace(/_/g, " ")}</div>
+                            {selectedOrder.manualPaymentReference ? <div className="text-muted-foreground">Reference: {selectedOrder.manualPaymentReference}</div> : null}
+                            {selectedOrder.manualPaymentMarkedAt ? <div className="text-muted-foreground">Marked paid: {formatOptionalDateTime(selectedOrder.manualPaymentMarkedAt, storeTimezone)}</div> : null}
+                          </div>
+                        ) : null}
                       </CardContent>
                     </Card>
 
                     <Card>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base">Shipment history</CardTitle>
+                        <CardDescription>Carrier, tracking, fulfillment, and notification activity.</CardDescription>
                       </CardHeader>
-                      <CardContent>
-                        <div className="flex flex-wrap gap-2">
+                      <CardContent className="space-y-3">
+                        {(selectedOrder.shipments ?? []).length || (selectedOrder.fulfillments ?? []).length ? (
+                          <>
                           {(selectedOrder.shipments ?? []).map((shipment) => (
-                            <Badge key={shipment.id} variant="outline">
-                              {shipment.carrier || "Shipment"} {shipment.trackingNumber || shipment.status}
-                            </Badge>
+                            <div key={shipment.id} className="rounded-lg border p-3 text-sm">
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                  <p className="font-medium">{shipment.carrier || "Shipment"} · {shipment.status}</p>
+                                  <p className="text-xs text-muted-foreground">Shipped {formatOptionalDateTime(shipment.shippedAt, storeTimezone)}</p>
+                                </div>
+                                {shipment.trackingNumber ? (
+                                  shipment.trackingUrl ? (
+                                    <Button asChild size="sm" variant="outline">
+                                      <a href={shipment.trackingUrl} target="_blank" rel="noreferrer">{shipment.trackingNumber}</a>
+                                    </Button>
+                                  ) : (
+                                    <Badge variant="outline">{shipment.trackingNumber}</Badge>
+                                  )
+                                ) : (
+                                  <Badge variant="secondary">No tracking</Badge>
+                                )}
+                              </div>
+                              <p className="mt-2 text-xs text-muted-foreground">
+                                Notification: {shipment.emailSentAt ? formatOptionalDateTime(shipment.emailSentAt, storeTimezone) : "Not sent"}
+                              </p>
+                            </div>
                           ))}
                           {(selectedOrder.fulfillments ?? []).map((fulfillment) => (
-                            <Badge key={fulfillment.id} variant="secondary">{fulfillment.status}</Badge>
+                            <div key={fulfillment.id} className="rounded-lg border bg-muted/20 p-3 text-sm">
+                              <p className="font-medium">Fulfillment · {fulfillment.status}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {fulfillment.carrier || "Manual"}{fulfillment.serviceLevel ? ` · ${fulfillment.serviceLevel}` : ""} · {formatOptionalDateTime(fulfillment.fulfilledAt, storeTimezone)}
+                              </p>
+                              {fulfillment.trackingNumber ? <p className="mt-1 text-xs text-muted-foreground">Tracking: {fulfillment.trackingNumber}</p> : null}
+                            </div>
                           ))}
-                          {(selectedOrder.shipments ?? []).length === 0 && (selectedOrder.fulfillments ?? []).length === 0 ? (
-                            <p className="text-sm text-muted-foreground">No shipments or fulfillment records yet.</p>
-                          ) : null}
-                        </div>
+                          </>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No shipments or fulfillment records yet.</p>
+                        )}
                       </CardContent>
                     </Card>
                   </div>

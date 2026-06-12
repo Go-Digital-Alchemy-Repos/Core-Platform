@@ -31,6 +31,7 @@ export function getEcommerceOrderStatusBadge(status: string): EcommerceStatusBad
 export function getEcommercePaymentStatusBadge(status: string): EcommerceStatusBadge {
   const badges: Record<string, EcommerceStatusBadge> = {
     unpaid: { label: "Unpaid", variant: "secondary" },
+    pending_payment: { label: "Pending payment", variant: "outline", className: "border-amber-200 bg-amber-50 text-amber-700" },
     paid: { label: "Paid", variant: "default" },
     failed: { label: "Failed", variant: "destructive" },
     refund_pending: { label: "Refund pending", variant: "outline", className: "border-amber-200 bg-amber-50 text-amber-700" },

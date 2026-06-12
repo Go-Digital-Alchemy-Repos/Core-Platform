@@ -14,6 +14,7 @@ import {
   ecommerceOrderItems,
   ecommerceOrderNotes,
   ecommerceOrders,
+  ecommercePaymentRequests,
   ecommerceProcessedWebhookEvents,
   ecommerceProductCategories,
   ecommerceInventoryAdjustments,
@@ -36,6 +37,7 @@ import {
   type EcommerceOrder,
   type EcommerceOrderItem,
   type EcommerceOrderNote,
+  type EcommercePaymentRequest,
   type EcommerceProduct,
   type EcommerceProductMedia,
   type EcommerceProductVariant,
@@ -54,6 +56,7 @@ import {
   type InsertEcommerceOrder,
   type InsertEcommerceOrderItem,
   type InsertEcommerceOrderNote,
+  type InsertEcommercePaymentRequest,
   type InsertEcommerceProduct,
   type InsertEcommerceProductMedia,
   type InsertEcommerceProductVariant,
@@ -77,6 +80,10 @@ export interface EcommerceOrderWithDetails extends EcommerceOrder {
   shipments: EcommerceShipment[];
   fulfillments: EcommerceFulfillment[];
   internalNotes: EcommerceOrderNoteWithAuthor[];
+}
+
+export interface EcommercePaymentRequestWithCustomer extends EcommercePaymentRequest {
+  customer: EcommerceCustomer | null;
 }
 
 export interface EcommerceOrderNoteWithAuthor extends EcommerceOrderNote {
@@ -359,6 +366,23 @@ export class EcommerceStorage {
   async getCustomer(id: string): Promise<EcommerceCustomer | undefined> {
     const [customer] = await db.select().from(ecommerceCustomers).where(eq(ecommerceCustomers.id, id));
     return customer;
+  }
+
+  async searchCustomers(search?: string): Promise<EcommerceCustomer[]> {
+    const term = search?.trim();
+    const clauses = term
+      ? or(
+          ilike(ecommerceCustomers.email, `%${term}%`),
+          ilike(ecommerceCustomers.name, `%${term}%`),
+          ilike(ecommerceCustomers.phone, `%${term}%`),
+        )
+      : undefined;
+    return db
+      .select()
+      .from(ecommerceCustomers)
+      .where(clauses)
+      .orderBy(desc(ecommerceCustomers.updatedAt))
+      .limit(25);
   }
 
   async updateCustomer(id: string, data: Partial<InsertEcommerceCustomer>): Promise<EcommerceCustomer | undefined> {
@@ -855,6 +879,47 @@ export class EcommerceStorage {
       ))
       .returning();
     return order;
+  }
+
+  async createPaymentRequest(data: InsertEcommercePaymentRequest): Promise<EcommercePaymentRequest> {
+    const [request] = await db.insert(ecommercePaymentRequests).values(data).returning();
+    return request;
+  }
+
+  async getPaymentRequest(id: string): Promise<EcommercePaymentRequest | undefined> {
+    const [request] = await db.select().from(ecommercePaymentRequests).where(eq(ecommercePaymentRequests.id, id));
+    return request;
+  }
+
+  async getPaymentRequestBySessionId(sessionId: string): Promise<EcommercePaymentRequest | undefined> {
+    const [request] = await db
+      .select()
+      .from(ecommercePaymentRequests)
+      .where(eq(ecommercePaymentRequests.stripeSessionId, sessionId));
+    return request;
+  }
+
+  async updatePaymentRequest(id: string, data: Partial<InsertEcommercePaymentRequest> & { paidAt?: Date | null }): Promise<EcommercePaymentRequest | undefined> {
+    const [request] = await db
+      .update(ecommercePaymentRequests)
+      .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommercePaymentRequests.$inferInsert>)
+      .where(eq(ecommercePaymentRequests.id, id))
+      .returning();
+    return request;
+  }
+
+  async markPaymentRequestPaidBySession(sessionId: string, paymentIntentId?: string | null): Promise<EcommercePaymentRequest | undefined> {
+    const [request] = await db
+      .update(ecommercePaymentRequests)
+      .set({
+        status: "paid",
+        stripePaymentIntentId: paymentIntentId ?? null,
+        paidAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(ecommercePaymentRequests.stripeSessionId, sessionId))
+      .returning();
+    return request;
   }
 
   async getProductsByIds(ids: string[]): Promise<EcommerceProduct[]> {

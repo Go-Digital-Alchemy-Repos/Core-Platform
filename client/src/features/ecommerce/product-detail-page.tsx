@@ -11,6 +11,7 @@ import { addCartItem, formatMoney } from "./cart-store";
 import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
 import { buildBreadcrumbLd, buildProductLd } from "@/lib/structured-data";
+import { stripHtml } from "@/lib/html";
 import type { SeoSettings } from "@shared/schema";
 
 interface Product {
@@ -95,7 +96,12 @@ export default function ProductDetailPage() {
               {formatMoney(price)}
               {product.salePrice != null ? <span className="ml-3 text-base text-muted-foreground line-through">{formatMoney(product.price)}</span> : null}
             </div>
-            {product.description ? <p className="leading-7 text-muted-foreground">{product.description}</p> : null}
+            {product.description ? (
+              <div
+                className="prose prose-slate max-w-none leading-7 text-muted-foreground"
+                dangerouslySetInnerHTML={{ __html: product.description }}
+              />
+            ) : null}
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex h-10 items-center rounded-md border">
                 <Button type="button" variant="ghost" size="icon" onClick={() => setQuantity((value) => Math.max(1, value - 1))}><Minus className="h-4 w-4" /></Button>
@@ -127,7 +133,7 @@ function ProductSeo({
   const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
   const canonical = product.canonicalUrl || `${siteUrl}/products/${product.urlSlug}`;
   const seoTitle = product.metaTitle || product.ogTitle || product.name;
-  const seoDescription = product.metaDescription || product.ogDescription || product.tagline || product.description || undefined;
+  const seoDescription = product.metaDescription || product.ogDescription || product.tagline || (product.description ? stripHtml(product.description) : undefined);
   const seoImage = absoluteStoreUrl(product.ogImage || product.primaryImage, siteUrl);
 
   useSeo({

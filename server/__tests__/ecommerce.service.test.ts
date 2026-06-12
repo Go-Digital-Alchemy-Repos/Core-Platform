@@ -21,6 +21,9 @@ const mockGetCustomer = vi.fn();
 const mockFindOrCreateCustomer = vi.fn();
 const mockCreateOrder = vi.fn();
 const mockCreateOrderNote = vi.fn();
+const mockCreatePaymentRequest = vi.fn();
+const mockUpdatePaymentRequest = vi.fn();
+const mockMarkPaymentRequestPaidBySession = vi.fn();
 const mockGetFulfillmentsForOrder = vi.fn();
 const mockGetRefundByStripeRefundId = vi.fn();
 const mockUpdateRefund = vi.fn();
@@ -39,6 +42,35 @@ const mockInvalidateCategory = vi.fn();
 const mockGetEcommerceStripeClient = vi.fn();
 const mockStripePaymentIntentCreate = vi.fn();
 const mockStripePaymentIntentCancel = vi.fn();
+const mockStripeCheckoutSessionCreate = vi.fn();
+
+function seedManualOrderProduct() {
+  mockProducts.push({
+    id: "p-manual",
+    name: "Manual Product",
+    price: 2500,
+    active: true,
+    status: "published",
+    urlSlug: "manual-product",
+    taxable: true,
+    requiresShipping: true,
+    fulfillmentType: "merchant",
+  } as EcommerceProduct);
+  mockVariants.push({
+    id: "v-manual",
+    productId: "p-manual",
+    title: "Default",
+    price: 2500,
+    inventoryQuantity: 10,
+    trackInventory: true,
+    allowBackorder: false,
+    status: "active",
+    active: true,
+    isDefault: true,
+    optionSignature: "default",
+    optionValues: {},
+  } as EcommerceProductVariant);
+}
 
 vi.mock("../storage/index", () => ({
   storage: {
@@ -65,6 +97,9 @@ vi.mock("../storage/index", () => ({
       findOrCreateCustomer: mockFindOrCreateCustomer,
       createOrder: mockCreateOrder,
       createOrderNote: mockCreateOrderNote,
+      createPaymentRequest: mockCreatePaymentRequest,
+      updatePaymentRequest: mockUpdatePaymentRequest,
+      markPaymentRequestPaidBySession: mockMarkPaymentRequestPaidBySession,
       getFulfillmentsForOrder: mockGetFulfillmentsForOrder,
       recordCouponRedemptionForOrder: mockRecordCouponRedemptionForOrder,
       deductInventoryForPaidOrder: mockDeductInventoryForPaidOrder,
@@ -130,6 +165,11 @@ describe("ecommerce services", () => {
         create: mockStripePaymentIntentCreate,
         cancel: mockStripePaymentIntentCancel,
       },
+      checkout: {
+        sessions: {
+          create: mockStripeCheckoutSessionCreate,
+        },
+      },
     });
     mockStripePaymentIntentCreate.mockReset();
     mockStripePaymentIntentCreate.mockResolvedValue({
@@ -138,6 +178,17 @@ describe("ecommerce services", () => {
     });
     mockStripePaymentIntentCancel.mockReset();
     mockStripePaymentIntentCancel.mockResolvedValue({ id: "pi_test", status: "canceled" });
+    mockStripeCheckoutSessionCreate.mockReset();
+    mockStripeCheckoutSessionCreate.mockResolvedValue({
+      id: "cs_test",
+      url: "https://checkout.stripe.test/pay/cs_test",
+      expires_at: 1_800_000_000,
+    });
+    mockCreatePaymentRequest.mockReset();
+    mockCreatePaymentRequest.mockImplementation(async (data) => ({ id: "payreq-1", ...data }));
+    mockUpdatePaymentRequest.mockReset();
+    mockUpdatePaymentRequest.mockImplementation(async (id, data) => ({ id, ...data }));
+    mockMarkPaymentRequestPaidBySession.mockReset();
   });
 
   it("calculates effective sale pricing without trusting client prices", async () => {
@@ -2432,6 +2483,119 @@ describe("ecommerce services", () => {
 
     expect(mockCreateOrder).not.toHaveBeenCalled();
     expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+  });
+
+  it("creates draft manual orders without deducting inventory", async () => {
+    const { createManualEcommerceOrderDraft } = await import("../services/ecommerce-order.service");
+    const customer = { id: "customer-1", email: "buyer@example.com", name: "Buyer" };
+    const createdOrder = {
+      id: "order-draft-1",
+      customerId: customer.id,
+      status: "pending",
+      paymentStatus: "unpaid",
+      totalAmount: 2500,
+      lookupToken: "lookup-token",
+    } as EcommerceOrder;
+    seedManualOrderProduct();
+    mockGetCustomer.mockResolvedValue(customer);
+    mockCreateOrder.mockResolvedValue({ ...createdOrder, customer, items: [], refunds: [], shipments: [], fulfillments: [] });
+    mockGetOrderWithDetails.mockResolvedValue({ ...createdOrder, customer, items: [], refunds: [], shipments: [], fulfillments: [] });
+
+    await createManualEcommerceOrderDraft({
+      customerId: customer.id,
+      items: [{ productId: "p-manual", quantity: 1 }],
+      paymentAction: "save_draft",
+    });
+
+    expect(mockCreateOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "pending",
+        paymentStatus: "unpaid",
+        isManualOrder: true,
+      }),
+      expect.any(Array),
+    );
+    expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+  });
+
+  it("creates manual order payment links without deducting inventory before payment", async () => {
+    const { createManualEcommerceOrderDraft } = await import("../services/ecommerce-order.service");
+    const customer = { id: "customer-1", email: "buyer@example.com", name: "Buyer" };
+    const createdOrder = {
+      id: "order-link-1",
+      customerId: customer.id,
+      status: "pending",
+      paymentStatus: "pending_payment",
+      totalAmount: 2500,
+      lookupToken: "lookup-token",
+      items: [{ productName: "Manual Product", quantity: 1 }],
+    } as unknown as EcommerceOrder;
+    seedManualOrderProduct();
+    mockGetCustomer.mockResolvedValue(customer);
+    mockCreateOrder.mockResolvedValue({ ...createdOrder, customer, items: [{ productName: "Manual Product", quantity: 1 }], refunds: [], shipments: [], fulfillments: [] });
+    mockGetOrderWithDetails.mockResolvedValue({ ...createdOrder, customer, items: [{ productName: "Manual Product", quantity: 1 }], refunds: [], shipments: [], fulfillments: [] });
+
+    await createManualEcommerceOrderDraft({
+      customerId: customer.id,
+      items: [{ productId: "p-manual", quantity: 1 }],
+      paymentAction: "send_payment_link",
+      customReason: "Phone order",
+    });
+
+    expect(mockCreatePaymentRequest).toHaveBeenCalledWith(expect.objectContaining({
+      orderId: "order-link-1",
+      customerEmail: "buyer@example.com",
+      amount: 2500,
+      reason: "Phone order",
+    }));
+    expect(mockStripeCheckoutSessionCreate).toHaveBeenCalled();
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-link-1", expect.objectContaining({
+      paymentStatus: "pending_payment",
+      stripeSessionId: "cs_test",
+      manualPaymentMethod: "payment_link",
+    }));
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+  });
+
+  it("marks manual orders paid and deducts inventory after external payment", async () => {
+    const { markManualEcommerceOrderPaid } = await import("../services/ecommerce-order.service");
+    const paidOrder = {
+      id: "order-manual-paid",
+      status: "paid",
+      paymentStatus: "paid",
+    } as EcommerceOrder;
+    mockUpdateOrder.mockResolvedValue(paidOrder);
+    mockGetOrderWithDetails.mockResolvedValue({ ...paidOrder, customer: null, items: [], refunds: [], shipments: [], fulfillments: [] });
+
+    await markManualEcommerceOrderPaid("order-manual-paid", {
+      method: "cash",
+      reference: "receipt-12",
+      notes: "Paid at counter",
+    }, { id: "admin-1" });
+
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-manual-paid", expect.objectContaining({
+      status: "paid",
+      paymentStatus: "paid",
+      manualPaymentMethod: "cash",
+      manualPaymentReference: "receipt-12",
+      manualPaymentMarkedBy: "admin-1",
+    }));
+    expect(mockCreateOrderNote).toHaveBeenCalledWith(expect.objectContaining({ body: "Paid at counter" }));
+    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledWith("order-manual-paid");
+  });
+
+  it("requires a reason for standalone custom payment requests", async () => {
+    const { createStandalonePaymentRequest } = await import("../services/ecommerce-order.service");
+
+    await expect(createStandalonePaymentRequest({
+      customer: { email: "buyer@example.com", name: "Buyer" },
+      title: "Custom charge",
+      amount: 5000,
+      reason: "",
+    })).rejects.toThrow();
+
+    expect(mockCreatePaymentRequest).not.toHaveBeenCalled();
   });
 
   it("rejects a paid webhook when the PaymentIntent does not match the order", async () => {
