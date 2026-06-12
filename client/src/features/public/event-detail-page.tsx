@@ -769,79 +769,95 @@ function EventOverviewCard({
       )}
       <CardContent className="p-5 sm:p-6">
         <div className="space-y-5">
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <CalendarDays className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium" data-testid="text-event-detail-date">
-                  {formatEventDate(event.date, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-                </p>
-                {event.endDate && new Date(event.endDate).toDateString() !== new Date(event.date).toDateString() && (
-                  <p className="text-sm text-muted-foreground">
-                    to {formatEventDate(event.endDate, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Clock className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium" data-testid="text-event-detail-time">
-                  {formatEventTime(event.date, event.timezone, { timeZoneName: "short" })}
-                  {event.endDate && ` — ${formatEventTime(event.endDate, event.timezone, { timeZoneName: "short" })}`}
-                </p>
-                {event.timezone && (
-                  <p className="text-sm text-muted-foreground" data-testid="text-event-timezone">
-                    <Globe className="inline mr-1 h-3 w-3" />
-                    {event.timezone}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {(displayLocationName || event.locationAddress) && (
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
+            <div className="space-y-5">
               <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    {displayLocationName && (
+                <CalendarDays className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                <div>
+                  <h2 className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Date
+                  </h2>
+                  <p className="font-medium" data-testid="text-event-detail-date">
+                    {formatEventDate(event.date, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                  </p>
+                  {event.endDate && new Date(event.endDate).toDateString() !== new Date(event.date).toDateString() && (
+                    <p className="text-sm text-muted-foreground">
+                      to {formatEventDate(event.endDate, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Clock className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                <div>
+                  <h2 className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Time
+                  </h2>
+                  <p className="font-medium" data-testid="text-event-detail-time">
+                    {formatEventTime(event.date, event.timezone, { timeZoneName: "short" })}
+                    {event.endDate && ` — ${formatEventTime(event.endDate, event.timezone, { timeZoneName: "short" })}`}
+                  </p>
+                  {event.timezone && (
+                    <p className="text-sm text-muted-foreground" data-testid="text-event-timezone">
+                      <Globe className="inline mr-1 h-3 w-3" />
+                      {event.timezone}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {event.capacity && (
+                <div className="flex items-start gap-3">
+                  <Users className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h2 className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      Capacity
+                    </h2>
+                    <p className="font-medium" data-testid="text-event-capacity">
+                      {event.capacity}
+                      {event.waitlistEnabled && (
+                        <span className="text-sm text-muted-foreground ml-2">(waitlist available)</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {(displayLocationName || event.locationAddress || event.location) && (
+              <div className="flex items-start gap-3 lg:block">
+                <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5 lg:mb-2 lg:mt-0" />
+                <div className="min-w-0 space-y-3">
+                  <div>
+                    <h2 className="font-heading text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      Venue
+                    </h2>
+                    {displayLocationName ? (
                       <p className="font-medium" data-testid="text-event-detail-location">
                         {displayLocationName}
                       </p>
-                    )}
+                    ) : event.location ? (
+                      <p className="font-medium" data-testid="text-event-detail-location">
+                        {event.location}
+                      </p>
+                    ) : null}
                     {event.locationAddress && (
                       <p className="text-sm text-muted-foreground" data-testid="text-event-detail-address">
                         {event.locationAddress}
                       </p>
                     )}
                   </div>
-                  <EventDirectionsDropdown event={event} displayLocationName={displayLocationName} />
-                </div>
-              </div>
-            )}
-
-            {!displayLocationName && !event.locationAddress && event.location && (
-              <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="font-medium" data-testid="text-event-detail-location">
-                    {event.location}
-                  </p>
-                  <EventDirectionsDropdown event={event} displayLocationName={displayLocationName} />
-                </div>
-              </div>
-            )}
-
-            {event.capacity && (
-              <div className="flex items-start gap-3">
-                <Users className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                <p className="font-medium" data-testid="text-event-capacity">
-                  Capacity: {event.capacity}
-                  {event.waitlistEnabled && (
-                    <span className="text-sm text-muted-foreground ml-2">(waitlist available)</span>
+                  {showMap && event.latitude && event.longitude && (
+                    <EventLocationMap
+                      latitude={event.latitude}
+                      longitude={event.longitude}
+                      locationName={displayLocationName || event.location || undefined}
+                      className="aspect-square overflow-hidden rounded-lg border"
+                    />
                   )}
-                </p>
+                  <EventDirectionsDropdown event={event} displayLocationName={displayLocationName} />
+                </div>
               </div>
             )}
           </div>
@@ -1339,16 +1355,6 @@ export default function EventDetailPage() {
             </h1>
 
             <EventOverviewCard event={event} displayLocationName={displayLocationName} showMap={!!showMap} />
-
-            {showMap && (
-              <div className="mb-8">
-                <EventLocationMap
-                  latitude={event.latitude!}
-                  longitude={event.longitude!}
-                  locationName={displayLocationName || undefined}
-                />
-              </div>
-            )}
 
           </article>
         )}

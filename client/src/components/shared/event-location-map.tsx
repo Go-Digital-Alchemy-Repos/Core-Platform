@@ -19,16 +19,20 @@ interface EventLocationMapProps {
   latitude: string;
   longitude: string;
   locationName?: string;
+  className?: string;
 }
 
-export function EventLocationMap({ latitude, longitude, locationName }: EventLocationMapProps) {
+export function EventLocationMap({ latitude, longitude, locationName, className }: EventLocationMapProps) {
   const lat = parseFloat(latitude);
   const lng = parseFloat(longitude);
 
   if (isNaN(lat) || isNaN(lng)) return null;
 
   return (
-    <div className="aspect-video max-h-[300px] rounded-xl overflow-hidden border" data-testid="map-event-location">
+    <div
+      className={className ?? "aspect-video max-h-[300px] rounded-xl overflow-hidden border"}
+      data-testid="map-event-location"
+    >
       <MapContainer
         center={[lat, lng]}
         zoom={14}
