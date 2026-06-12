@@ -9,6 +9,12 @@ import { PageLayout } from "@/components/layout/page-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,6 +58,9 @@ import {
   ClockIcon,
   Loader2,
   LogIn,
+  ChevronDown,
+  Map,
+  Navigation,
 } from "lucide-react";
 
 function formatCurrency(amountCents: number, currency: string) {
@@ -77,6 +86,121 @@ function canUserAccessEvent(event: Event, userRole: string | null): boolean {
   if (event.visibility === "counselors_only") return userRole === "therapist";
   if (event.visibility === "admins_only") return false;
   return true;
+}
+
+type DirectionLink = {
+  label: string;
+  href: string;
+};
+
+function getCoordinatePair(event: Event): { lat: number; lng: number } | null {
+  if (!event.latitude || !event.longitude) return null;
+  const lat = Number.parseFloat(event.latitude);
+  const lng = Number.parseFloat(event.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}
+
+function getDirectionsQuery(event: Event, displayLocationName?: string | null): string | null {
+  const address = event.locationAddress?.trim();
+  if (address) return address;
+
+  const namedLocation = (displayLocationName || event.location)?.trim();
+  if (namedLocation) return namedLocation;
+
+  const coords = getCoordinatePair(event);
+  return coords ? `${coords.lat},${coords.lng}` : null;
+}
+
+function getDirectionsLinks(event: Event, displayLocationName?: string | null): DirectionLink[] {
+  const query = getDirectionsQuery(event, displayLocationName);
+  const coords = getCoordinatePair(event);
+  if (!query && !coords) return [];
+
+  const encodedQuery = encodeURIComponent(query ?? `${coords!.lat},${coords!.lng}`);
+  const encodedBingQuery = encodeURIComponent(query ?? `${coords!.lat}, ${coords!.lng}`);
+  const coordinateQuery = coords ? `${coords.lat},${coords.lng}` : null;
+
+  return [
+    {
+      label: "Google Maps",
+      href: `https://www.google.com/maps/dir/?api=1&destination=${encodedQuery}`,
+    },
+    {
+      label: "Apple Maps",
+      href: `https://maps.apple.com/?daddr=${encodedQuery}`,
+    },
+    {
+      label: "Waze",
+      href: coordinateQuery
+        ? `https://www.waze.com/ul?ll=${encodeURIComponent(coordinateQuery)}&navigate=yes`
+        : `https://www.waze.com/ul?q=${encodedQuery}&navigate=yes`,
+    },
+    {
+      label: "Bing Maps",
+      href: `https://www.bing.com/maps?where1=${encodedBingQuery}`,
+    },
+    {
+      label: "OpenStreetMap",
+      href: coordinateQuery
+        ? `https://www.openstreetmap.org/directions?to=${encodeURIComponent(coordinateQuery)}`
+        : `https://www.openstreetmap.org/search?query=${encodedQuery}`,
+    },
+  ];
+}
+
+function EventDirectionsDropdown({
+  event,
+  displayLocationName,
+}: {
+  event: Event;
+  displayLocationName?: string | null;
+}) {
+  const coords = getCoordinatePair(event);
+  const hasPhysicalLocation = Boolean(
+    event.deliveryMode === "in_person" ||
+    event.deliveryMode === "hybrid" ||
+    event.locationAddress ||
+    coords ||
+    (!event.isVirtual && (displayLocationName || event.location))
+  );
+  const links = hasPhysicalLocation ? getDirectionsLinks(event, displayLocationName) : [];
+
+  if (links.length === 0) return null;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="mt-2 h-8 gap-1.5 px-2.5 text-xs sm:mt-0"
+          data-testid="button-event-directions"
+        >
+          <Navigation className="h-3.5 w-3.5" />
+          Get Directions
+          <ChevronDown className="h-3.5 w-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-48">
+        {links.map((link) => (
+          <DropdownMenuItem key={link.label} asChild>
+            <a
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Get directions with ${link.label}`}
+              data-testid={`link-event-directions-${link.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+            >
+              <Map className="h-4 w-4" />
+              {link.label}
+            </a>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 function EventDetailSkeleton() {
@@ -662,17 +786,20 @@ function EventOverviewCard({
             {(displayLocationName || event.locationAddress) && (
               <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                <div>
-                  {displayLocationName && (
-                    <p className="font-medium" data-testid="text-event-detail-location">
-                      {displayLocationName}
-                    </p>
-                  )}
-                  {event.locationAddress && (
-                    <p className="text-sm text-muted-foreground" data-testid="text-event-detail-address">
-                      {event.locationAddress}
-                    </p>
-                  )}
+                <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    {displayLocationName && (
+                      <p className="font-medium" data-testid="text-event-detail-location">
+                        {displayLocationName}
+                      </p>
+                    )}
+                    {event.locationAddress && (
+                      <p className="text-sm text-muted-foreground" data-testid="text-event-detail-address">
+                        {event.locationAddress}
+                      </p>
+                    )}
+                  </div>
+                  <EventDirectionsDropdown event={event} displayLocationName={displayLocationName} />
                 </div>
               </div>
             )}
@@ -680,9 +807,12 @@ function EventOverviewCard({
             {!displayLocationName && !event.locationAddress && event.location && (
               <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                <p className="font-medium" data-testid="text-event-detail-location">
-                  {event.location}
-                </p>
+                <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="font-medium" data-testid="text-event-detail-location">
+                    {event.location}
+                  </p>
+                  <EventDirectionsDropdown event={event} displayLocationName={displayLocationName} />
+                </div>
               </div>
             )}
 
