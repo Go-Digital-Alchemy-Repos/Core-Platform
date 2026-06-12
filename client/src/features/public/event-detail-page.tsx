@@ -33,6 +33,7 @@ import { JsonLd } from "@/components/shared/json-ld";
 import { formatEventDate, formatEventTime } from "@/lib/event-datetime";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import { stripHtml } from "@/lib/html";
+import { useFrontendEditTarget } from "@/features/frontend-edit/frontend-edit";
 import {
   buildOrganizationLd,
   buildBreadcrumbLd,
@@ -1178,6 +1179,12 @@ export default function EventDetailPage() {
     queryKey: ["/api/seo/global"],
     staleTime: 10 * 60 * 1000,
   });
+
+  useFrontendEditTarget(event ? {
+    kind: "event",
+    id: event.id,
+    label: `Edit ${event.title}`,
+  } : null);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
