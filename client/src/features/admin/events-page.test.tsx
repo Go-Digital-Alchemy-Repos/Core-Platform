@@ -3,7 +3,7 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import AdminEventsPage from "@/features/admin/events-page";
+import AdminEventsPage, { centsToDollarInput, dollarInputToCents } from "@/features/admin/events-page";
 
 const useQueryMock = vi.fn();
 const useMutationMock = vi.fn();
@@ -48,7 +48,10 @@ const mockEvents = [
     speakerName: "Jamie Trainer",
     tags: ["clinical", "training"],
     memberOnly: false,
-    registrationEnabled: false,
+    registrationEnabled: true,
+    registrationType: "paid",
+    registrationFee: 40000,
+    registrationCurrency: "usd",
     showInArchives: false,
     isRecurring: false,
   },
@@ -424,6 +427,14 @@ describe("AdminEventsPage", () => {
     expect((document.body.querySelector('[data-testid="input-event-title"]') as HTMLInputElement | null)?.value).toBe(
       "Global Families Welcome Circle",
     );
+  });
+
+  it("converts paid event fees between stored cents and admin-entered dollars", () => {
+    expect(centsToDollarInput(40000)).toBe("400.00");
+    expect(centsToDollarInput(undefined)).toBe("");
+    expect(dollarInputToCents("400")).toBe(40000);
+    expect(dollarInputToCents("125.50")).toBe(12550);
+    expect(dollarInputToCents("")).toBeUndefined();
   });
 
   it("shows guided event preset and custom intake form controls", async () => {

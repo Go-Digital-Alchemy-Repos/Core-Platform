@@ -219,6 +219,17 @@ const eventFormSchema = z
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
+export function centsToDollarInput(cents: number | null | undefined): string {
+  return cents ? (cents / 100).toFixed(2) : "";
+}
+
+export function dollarInputToCents(value: string): number | undefined {
+  if (!value.trim()) return undefined;
+  const dollars = Number.parseFloat(value);
+  if (!Number.isFinite(dollars)) return undefined;
+  return Math.round(dollars * 100);
+}
+
 const venueFormSchema = z.object({
   name: z.string().min(1, "Venue name is required"),
   description: z.string().optional(),
@@ -855,7 +866,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
       endDate: fromDateTimeLocalValue(data.endDate, data.timezone),
       registrationOpensAt: fromDateTimeLocalValue(data.registrationOpensAt, data.timezone),
       registrationClosesAt: fromDateTimeLocalValue(data.registrationClosesAt, data.timezone),
-      registrationFee: data.registrationFee || null,
+      registrationFee: data.registrationType === "paid" ? data.registrationFee || null : null,
       capacity: data.capacity || null,
       recurrenceEndDate: fromDateTimeLocalValue(data.recurrenceEndDate, data.timezone),
       recurrenceCount: data.recurrenceCount || null,
@@ -2210,15 +2221,29 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                       name="registrationFee"
                                       render={({ field }) => (
                                         <FormItem>
-                                          <FormLabel>Fee (cents)</FormLabel>
+                                          <FormLabel>Fee (USD)</FormLabel>
                                           <FormControl>
-                                            <Input
-                                              type="number"
-                                              {...field}
-                                              value={field.value ?? ""}
-                                              data-testid="input-event-registration-fee"
-                                            />
+                                            <div className="relative">
+                                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                                $
+                                              </span>
+                                              <Input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                className="pl-7"
+                                                placeholder="400.00"
+                                                value={centsToDollarInput(field.value)}
+                                                onChange={(event) => {
+                                                  field.onChange(dollarInputToCents(event.target.value));
+                                                }}
+                                                data-testid="input-event-registration-fee"
+                                              />
+                                            </div>
                                           </FormControl>
+                                          <p className="text-xs text-muted-foreground">
+                                            Enter the amount in dollars. Payments are processed in cents behind the scenes.
+                                          </p>
                                           <FormMessage />
                                         </FormItem>
                                       )}
