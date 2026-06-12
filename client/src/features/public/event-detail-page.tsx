@@ -1209,7 +1209,7 @@ export default function EventDetailPage() {
   return (
     <PageLayout>
       <section className="relative" data-testid="section-event-detail-hero">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-10 pb-6 sm:pt-14 sm:pb-8">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 pb-3 sm:pt-8 sm:pb-4">
           <Link href="/events">
             <Button variant="ghost" className="mb-4 -ml-2" data-testid="button-back-events">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -1219,7 +1219,7 @@ export default function EventDetailPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-8 pb-2 sm:pt-12 sm:pb-3" data-testid="section-event-info">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-3 pb-2 sm:pt-4 sm:pb-3" data-testid="section-event-info">
         {isLoading && <EventDetailSkeleton />}
 
         {error && (
