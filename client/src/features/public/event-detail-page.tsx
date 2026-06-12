@@ -25,6 +25,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { useState, useEffect, type ReactNode } from "react";
+import type { IconType } from "react-icons";
+import { SiApple, SiGooglemaps, SiOpenstreetmap, SiWaze } from "react-icons/si";
+import { TbBrandBing } from "react-icons/tb";
 import { useSeo } from "@/hooks/use-seo";
 import { JsonLd } from "@/components/shared/json-ld";
 import { formatEventDate, formatEventTime } from "@/lib/event-datetime";
@@ -59,7 +62,6 @@ import {
   Loader2,
   LogIn,
   ChevronDown,
-  Map,
   Navigation,
 } from "lucide-react";
 
@@ -91,6 +93,8 @@ function canUserAccessEvent(event: Event, userRole: string | null): boolean {
 type DirectionLink = {
   label: string;
   href: string;
+  icon: IconType;
+  color: string;
 };
 
 function getCoordinatePair(event: Event): { lat: number; lng: number } | null {
@@ -125,26 +129,36 @@ function getDirectionsLinks(event: Event, displayLocationName?: string | null): 
     {
       label: "Google Maps",
       href: `https://www.google.com/maps/dir/?api=1&destination=${encodedQuery}`,
+      icon: SiGooglemaps,
+      color: "#4285F4",
     },
     {
       label: "Apple Maps",
       href: `https://maps.apple.com/?daddr=${encodedQuery}`,
+      icon: SiApple,
+      color: "#111827",
     },
     {
       label: "Waze",
       href: coordinateQuery
         ? `https://www.waze.com/ul?ll=${encodeURIComponent(coordinateQuery)}&navigate=yes`
         : `https://www.waze.com/ul?q=${encodedQuery}&navigate=yes`,
+      icon: SiWaze,
+      color: "#33CCFF",
     },
     {
       label: "Bing Maps",
       href: `https://www.bing.com/maps?where1=${encodedBingQuery}`,
+      icon: TbBrandBing,
+      color: "#008373",
     },
     {
       label: "OpenStreetMap",
       href: coordinateQuery
         ? `https://www.openstreetmap.org/directions?to=${encodeURIComponent(coordinateQuery)}`
         : `https://www.openstreetmap.org/search?query=${encodedQuery}`,
+      icon: SiOpenstreetmap,
+      color: "#7EBC6F",
     },
   ];
 }
@@ -184,20 +198,23 @@ function EventDirectionsDropdown({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48">
-        {links.map((link) => (
-          <DropdownMenuItem key={link.label} asChild>
-            <a
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Get directions with ${link.label}`}
-              data-testid={`link-event-directions-${link.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
-            >
-              <Map className="h-4 w-4" />
-              {link.label}
-            </a>
-          </DropdownMenuItem>
-        ))}
+        {links.map((link) => {
+          const DirectionIcon = link.icon;
+          return (
+            <DropdownMenuItem key={link.label} asChild>
+              <a
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Get directions with ${link.label}`}
+                data-testid={`link-event-directions-${link.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+              >
+                <DirectionIcon className="h-4 w-4" style={{ color: link.color }} />
+                {link.label}
+              </a>
+            </DropdownMenuItem>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
