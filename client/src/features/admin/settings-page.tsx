@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -53,6 +53,7 @@ import {
   Link2,
   ExternalLink,
   RefreshCw,
+  Search,
   ImageIcon,
   Type,
   Check,
@@ -84,7 +85,11 @@ import {
 import { SocialMediaLinks } from "@/components/shared/social-media-links";
 import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
-import { DEFAULT_SITE_FEATURES, normalizeBooleanSetting } from "@shared/site-features";
+import {
+  DEFAULT_SITE_FEATURES,
+  normalizeBooleanSetting,
+  type SiteFeatures,
+} from "@shared/site-features";
 import {
   getSocialMediaLinks,
   normalizeSocialIconStyle,
@@ -330,12 +335,141 @@ interface EmailTemplate {
   id: string;
   slug: string;
   name: string;
+  module: EmailTemplateModule;
   subject: string;
   htmlBody: string;
   description: string;
   variables: string[];
   isActive: boolean;
   updatedAt: string;
+}
+
+type EmailTemplateModule =
+  | "events"
+  | "ecommerce"
+  | "membership"
+  | "forms"
+  | "users"
+  | "directory"
+  | "crm"
+  | "system";
+
+type EmailTemplateStatusFilter = "all" | "active" | "inactive";
+
+const EMAIL_TEMPLATE_MODULE_OPTIONS: Array<{
+  value: EmailTemplateModule;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "events",
+    label: "Events",
+    description: "Registration, reminders, payments, and recordings.",
+  },
+  { value: "ecommerce", label: "Ecommerce", description: "Order and store notifications." },
+  {
+    value: "membership",
+    label: "Membership",
+    description: "Renewals, failed payments, and access changes.",
+  },
+  { value: "forms", label: "Forms", description: "Contact and managed form notifications." },
+  { value: "users", label: "Users", description: "Account, welcome, and password emails." },
+  {
+    value: "directory",
+    label: "Directory",
+    description: "Provider and directory workflow emails.",
+  },
+  { value: "crm", label: "CRM", description: "Lead and client workflow notifications." },
+  { value: "system", label: "System", description: "Fallback and platform-level emails." },
+];
+
+const EMAIL_TEMPLATE_MODULE_FEATURES: Partial<Record<EmailTemplateModule, keyof SiteFeatures>> = {
+  events: "eventsEnabled",
+  ecommerce: "ecommerceEnabled",
+  membership: "membershipEnabled",
+  directory: "directoryEnabled",
+  crm: "crmEnabled",
+};
+
+const EMAIL_TEMPLATE_MODULE_LABELS = EMAIL_TEMPLATE_MODULE_OPTIONS.reduce(
+  (labels, option) => {
+    labels[option.value] = option.label;
+    return labels;
+  },
+  {} as Record<EmailTemplateModule, string>,
+);
+
+function getTemplateModuleLabel(module: string | null | undefined) {
+  return EMAIL_TEMPLATE_MODULE_LABELS[(module || "system") as EmailTemplateModule] || "System";
+}
+
+export function isEmailTemplateModuleEnabled(
+  module: EmailTemplateModule | undefined,
+  siteFeatures: SiteFeatures,
+) {
+  const featureKey = EMAIL_TEMPLATE_MODULE_FEATURES[module || "system"];
+  return featureKey ? siteFeatures[featureKey] : true;
+}
+
+type EmailTemplateSearchable = Pick<
+  EmailTemplate,
+  "name" | "slug" | "subject" | "description" | "variables" | "isActive"
+> & {
+  module?: EmailTemplateModule;
+};
+
+export function getEmailTemplateModuleCounts<T extends EmailTemplateSearchable>(templates: T[]) {
+  const counts = EMAIL_TEMPLATE_MODULE_OPTIONS.reduce(
+    (acc, option) => {
+      acc[option.value] = 0;
+      return acc;
+    },
+    {} as Record<EmailTemplateModule, number>,
+  );
+
+  for (const template of templates) {
+    const module = template.module || "system";
+    counts[module] = (counts[module] || 0) + 1;
+  }
+
+  return counts;
+}
+
+export function filterEmailTemplates<T extends EmailTemplateSearchable>(
+  templates: T[],
+  filters: {
+    searchQuery?: string;
+    moduleFilter?: EmailTemplateModule | "all";
+    statusFilter?: EmailTemplateStatusFilter;
+    siteFeatures?: SiteFeatures;
+  },
+): T[] {
+  const query = (filters.searchQuery || "").trim().toLowerCase();
+  const moduleFilter = filters.moduleFilter || "all";
+  const statusFilter = filters.statusFilter || "all";
+
+  return templates.filter((template) => {
+    const module = template.module || "system";
+    const matchesEnabledModule =
+      !filters.siteFeatures || isEmailTemplateModuleEnabled(module, filters.siteFeatures);
+    const matchesModule = moduleFilter === "all" || module === moduleFilter;
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "active" && template.isActive) ||
+      (statusFilter === "inactive" && !template.isActive);
+    const searchable = [
+      template.name,
+      template.slug,
+      template.subject,
+      template.description,
+      ...template.variables,
+    ]
+      .join(" ")
+      .toLowerCase();
+    const matchesSearch = !query || searchable.includes(query);
+
+    return matchesEnabledModule && matchesModule && matchesStatus && matchesSearch;
+  });
 }
 
 interface IntegrationField {
@@ -3404,7 +3538,12 @@ function TemplateEditor({
                 "pointer-events-none select-none opacity-70",
             )}
           >
-            <p className="text-sm text-muted-foreground">{template.description}</p>
+            <div className="flex flex-wrap items-start gap-2">
+              <Badge variant="outline" className="text-xs">
+                {getTemplateModuleLabel(template.module)}
+              </Badge>
+              <p className="min-w-0 flex-1 text-sm text-muted-foreground">{template.description}</p>
+            </div>
 
             <div className="flex flex-wrap gap-1.5 mt-2">
               <span className="text-xs text-muted-foreground mr-1">Variables:</span>
@@ -3707,10 +3846,50 @@ function TemplateEditor({
 function EmailTemplatesTab() {
   const { toast } = useToast();
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [moduleFilter, setModuleFilter] = useState<EmailTemplateModule | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<EmailTemplateStatusFilter>("all");
 
   const { data: templates, isLoading } = useQuery<EmailTemplate[]>({
     queryKey: ["/api/admin/email-templates"],
   });
+  const { data: siteFeaturesData, isLoading: isSiteFeaturesLoading } = useQuery<SiteFeatures>({
+    queryKey: ["/api/site-config"],
+    staleTime: 60_000,
+  });
+  const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
+  const enabledModuleOptions = useMemo(
+    () =>
+      EMAIL_TEMPLATE_MODULE_OPTIONS.filter((module) =>
+        isEmailTemplateModuleEnabled(module.value, siteFeatures),
+      ),
+    [siteFeatures],
+  );
+
+  const templateList = templates || [];
+  const visibleTemplateList = useMemo(() => {
+    return filterEmailTemplates(templateList, {
+      siteFeatures,
+    });
+  }, [siteFeatures, templateList]);
+
+  const moduleCounts = useMemo(() => {
+    return getEmailTemplateModuleCounts(visibleTemplateList);
+  }, [visibleTemplateList]);
+
+  const filteredTemplates = useMemo(() => {
+    return filterEmailTemplates(visibleTemplateList, {
+      searchQuery,
+      moduleFilter,
+      statusFilter,
+    });
+  }, [moduleFilter, searchQuery, statusFilter, visibleTemplateList]);
+
+  useEffect(() => {
+    if (moduleFilter !== "all" && !isEmailTemplateModuleEnabled(moduleFilter, siteFeatures)) {
+      setModuleFilter("all");
+    }
+  }, [moduleFilter, siteFeatures]);
 
   const toggleMutation = useMutation({
     mutationFn: async ({ slug, isActive }: { slug: string; isActive: boolean }) => {
@@ -3746,7 +3925,7 @@ function EmailTemplatesTab() {
     },
   });
 
-  if (isLoading) {
+  if (isLoading || isSiteFeaturesLoading) {
     return (
       <div className="flex items-center justify-center p-12">
         <Loader2 className="h-6 w-6 animate-spin" />
@@ -3766,7 +3945,69 @@ function EmailTemplatesTab() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {enabledModuleOptions.map((module) => (
+          <button
+            key={module.value}
+            type="button"
+            onClick={() => setModuleFilter(module.value)}
+            className={cn(
+              "rounded-lg border bg-background p-3 text-left shadow-sm transition-colors hover:bg-muted/40",
+              moduleFilter === module.value && "border-primary bg-primary/5",
+            )}
+            data-testid={`button-template-module-${module.value}`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium">{module.label}</span>
+              <Badge variant="secondary" className="text-xs">
+                {moduleCounts[module.value]}
+              </Badge>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">{module.description}</p>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/20 p-3">
+        <div className="relative min-w-[240px] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search templates, subjects, slugs, variables..."
+            className="pl-9"
+            data-testid="input-search-email-templates"
+          />
+        </div>
+        <Select
+          value={moduleFilter}
+          onValueChange={(value) => setModuleFilter(value as EmailTemplateModule | "all")}
+        >
+          <SelectTrigger className="w-[180px]" data-testid="select-template-module-filter">
+            <SelectValue placeholder="Module" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Modules</SelectItem>
+            {enabledModuleOptions.map((module) => (
+              <SelectItem key={module.value} value={module.value}>
+                {module.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as EmailTemplateStatusFilter)}
+        >
+          <SelectTrigger className="w-[160px]" data-testid="select-template-status-filter">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
         <Button
           variant="outline"
           onClick={() => restoreMutation.mutate()}
@@ -3782,7 +4023,29 @@ function EmailTemplatesTab() {
         </Button>
       </div>
 
-      {!templates?.length && (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground" data-testid="text-template-result-count">
+          Showing {filteredTemplates.length} of{" "}
+          {visibleTemplateList.length} templates
+        </p>
+        {(searchQuery || moduleFilter !== "all" || statusFilter !== "all") && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearchQuery("");
+              setModuleFilter("all");
+              setStatusFilter("all");
+            }}
+            data-testid="button-clear-template-filters"
+          >
+            Clear Filters
+          </Button>
+        )}
+      </div>
+
+      {!templateList.length && (
         <Card>
           <CardContent className="flex items-center gap-3 py-8 justify-center text-muted-foreground">
             <AlertCircle className="h-5 w-5" />
@@ -3794,13 +4057,25 @@ function EmailTemplatesTab() {
       )}
 
       <div className="space-y-3">
-        {templates?.map((t) => (
+        {templateList.length > 0 && filteredTemplates.length === 0 ? (
+          <Card>
+            <CardContent className="flex items-center gap-3 py-8 justify-center text-muted-foreground">
+              <AlertCircle className="h-5 w-5" />
+              <span>No email templates match the current filters.</span>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {filteredTemplates.map((t) => (
           <Card key={t.slug} data-testid={`card-template-${t.slug}`}>
             <CardContent className="py-4 px-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="mb-1 flex flex-wrap items-center gap-2">
                     <h4 className="font-medium text-sm">{t.name}</h4>
+                    <Badge variant="outline" className="text-xs">
+                      {getTemplateModuleLabel(t.module)}
+                    </Badge>
                     <Badge
                       variant={t.isActive ? "default" : "outline"}
                       className="text-xs"

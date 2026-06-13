@@ -1,7 +1,30 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { emailTemplates, type InsertEmailTemplate } from "@shared/schema";
+import type { EmailTemplateModule } from "@shared/schema/email-templates";
 import { logger } from "../utils/logger";
+
+const TEMPLATE_MODULES: Record<string, EmailTemplateModule> = {
+  "therapist-approval": "directory",
+  "therapist-rejection": "directory",
+  "new-therapist-registration": "directory",
+  "membership-renewal-reminder": "membership",
+  "membership-payment-failed": "membership",
+  "membership-suspended": "membership",
+  "membership-reactivated": "membership",
+  "password-reset": "users",
+  "welcome-new-user": "users",
+  "new-client-registration": "users",
+  "contact-form-submission": "forms",
+  "managed-form-submission": "forms",
+  "event-registration-confirmation": "events",
+  "event-registration-waitlisted": "events",
+  "event-registration-canceled": "events",
+  "event-payment-confirmation": "events",
+  "event-reminder": "events",
+  "event-recording-available": "events",
+  "event-canceled": "events",
+};
 
 function baseWrap(title: string, body: string): string {
   return `<h2 style="margin:0 0 16px;color:#1e3a5f;font-size:20px;">${title}</h2>
@@ -15,7 +38,7 @@ function removeLegacyAdminCta(htmlBody: string) {
   );
 }
 
-export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS: InsertEmailTemplate[] = [
+const SYSTEM_EMAIL_TEMPLATE_BASE_DEFAULTS: Omit<InsertEmailTemplate, "module">[] = [
   {
     slug: "therapist-approval",
     name: "Therapist Application Approved",
@@ -345,6 +368,12 @@ export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS: InsertEmailTemplate[] = [
   },
 ];
 
+export const SYSTEM_EMAIL_TEMPLATE_DEFAULTS: InsertEmailTemplate[] =
+  SYSTEM_EMAIL_TEMPLATE_BASE_DEFAULTS.map((template) => ({
+    ...template,
+    module: TEMPLATE_MODULES[template.slug] ?? "system",
+  }));
+
 export async function ensureSystemEmailTemplates(refreshExisting = false) {
   let created = 0;
   let updated = 0;
@@ -368,6 +397,7 @@ export async function ensureSystemEmailTemplates(refreshExisting = false) {
             .update(emailTemplates)
             .set({
               htmlBody: nextHtmlBody,
+              module: template.module,
               variables: nextVariables,
               updatedAt: new Date(),
             })
@@ -385,6 +415,7 @@ export async function ensureSystemEmailTemplates(refreshExisting = false) {
           target: emailTemplates.slug,
           set: {
             name: template.name,
+            module: template.module,
             subject: template.subject,
             htmlBody: template.htmlBody,
             description: template.description,

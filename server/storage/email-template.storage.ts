@@ -30,6 +30,7 @@ export class EmailTemplateStorage {
   async upsertTemplate(data: {
     slug: string;
     name: string;
+    module?: string;
     subject: string;
     htmlBody: string;
     description: string;
