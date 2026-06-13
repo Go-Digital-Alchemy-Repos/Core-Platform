@@ -189,7 +189,7 @@ function FrontendEditButton({ targets }: { targets: RegisteredFrontendEditTarget
 
   const returnTo = getReturnTo();
   const buttonClassName =
-    "fixed bottom-24 right-5 z-[900] h-11 w-11 rounded-full border border-border/80 bg-background/95 text-foreground shadow-lg backdrop-blur transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:bottom-8 sm:right-8";
+    "fixed bottom-24 right-5 z-[1200] h-11 rounded-full border border-primary/70 bg-primary px-4 text-primary-foreground shadow-xl shadow-black/20 backdrop-blur transition hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:bottom-8 sm:right-8";
 
   if (visibleTargets.length === 1) {
     const target = visibleTargets[0];
@@ -200,12 +200,12 @@ function FrontendEditButton({ targets }: { targets: RegisteredFrontendEditTarget
             <Button
               type="button"
               variant="outline"
-              size="icon"
               className={buttonClassName}
               aria-label="Edit this page"
               data-testid="button-frontend-edit"
             >
               <Pencil className="h-4 w-4" />
+              <span className="ml-2 hidden text-sm font-medium sm:inline">Edit</span>
             </Button>
           </Link>
         </TooltipTrigger>
@@ -222,12 +222,12 @@ function FrontendEditButton({ targets }: { targets: RegisteredFrontendEditTarget
             <Button
               type="button"
               variant="outline"
-              size="icon"
               className={buttonClassName}
               aria-label="Edit this page"
               data-testid="button-frontend-edit"
             >
               <Pencil className="h-4 w-4" />
+              <span className="ml-2 hidden text-sm font-medium sm:inline">Edit</span>
             </Button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
