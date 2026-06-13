@@ -359,6 +359,12 @@ async function ensureEventFlexibilityTables(migrationsFolder: string) {
     logger.app.info("Applying event venues and organizers migration for legacy database without Drizzle journal");
     await runSqlMigrationFile(migrationsFolder, "0028_event_venues_organizers.sql");
   }
+
+  const hasEventVenueDetails = await columnExists("event_venues", "email");
+  if ((hasEventVenues || (await tableExists("event_venues"))) && !hasEventVenueDetails) {
+    logger.app.info("Applying event venue details migration for legacy database without Drizzle journal");
+    await runSqlMigrationFile(migrationsFolder, "0035_event_venue_details.sql");
+  }
 }
 
 export async function runMigrations() {
