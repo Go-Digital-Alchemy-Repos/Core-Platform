@@ -65,7 +65,7 @@ export function TherapistMapBlock({ props }: { props: Record<string, unknown> })
           <div className={`flex ${buttonJustifyClass}`}>
             <Link href="/directory">
               <Button variant="outline" data-testid="button-view-all-therapists">
-                Find a Mental Health Professional <ArrowRight className="ml-2 h-4 w-4" />
+                Find a Verified Provider <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -194,7 +194,7 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
 }
 
 export function JoinHeroBlock({ props = {} }: { props?: Record<string, unknown> }) {
-  const heading = plainText(props.heading) || "Are you a Core Platform-Informed Mental Health Professional?";
+  const heading = plainText(props.heading) || "Are you a Platform-Approved Verified Provider?";
   const accentHeading = plainText(props.accentHeading) || "Join the Network!";
   const subheading = str(props.subheading);
   const hasImageBackground = !!str(props.sectionBackgroundImageUrl);

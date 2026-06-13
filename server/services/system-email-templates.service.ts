@@ -41,13 +41,13 @@ function removeLegacyAdminCta(htmlBody: string) {
 const SYSTEM_EMAIL_TEMPLATE_BASE_DEFAULTS: Omit<InsertEmailTemplate, "module">[] = [
   {
     slug: "therapist-approval",
-    name: "Therapist Application Approved",
+    name: "Provider Application Approved",
     subject: "Your Core Platform Application Has Been Approved!",
     description: "Sent when an admin approves a therapist's application to join the directory.",
     variables: ["firstName", "loginUrl"],
     htmlBody: baseWrap("Application Approved", `
     <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
-    <p style="color:#374151;font-size:15px;line-height:1.6;">Great news! Your application to join the Core Platform therapist directory has been <strong style="color:#059669;">approved</strong>.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Great news! Your application to join the Core Platform provider directory has been <strong style="color:#059669;">approved</strong>.</p>
     <p style="color:#374151;font-size:15px;line-height:1.6;">You can now log in to complete your profile and set up your subscription to appear in the public directory.</p>
     <table cellpadding="0" cellspacing="0" style="margin:24px 0;">
       <tr><td style="background:#2d8a7e;border-radius:6px;padding:12px 28px;">
@@ -64,13 +64,13 @@ const SYSTEM_EMAIL_TEMPLATE_BASE_DEFAULTS: Omit<InsertEmailTemplate, "module">[]
   },
   {
     slug: "therapist-rejection",
-    name: "Therapist Application Rejected",
+    name: "Provider Application Rejected",
     subject: "Update on Your Core Platform Application",
     description: "Sent when an admin rejects a therapist's application.",
     variables: ["firstName", "reason"],
     htmlBody: baseWrap("Application Update", `
     <p style="color:#374151;font-size:15px;line-height:1.6;">Hi {{firstName}},</p>
-    <p style="color:#374151;font-size:15px;line-height:1.6;">Thank you for your interest in joining the Core Platform therapist directory. After reviewing your application, we are unable to approve it at this time.</p>
+    <p style="color:#374151;font-size:15px;line-height:1.6;">Thank you for your interest in joining the Core Platform provider directory. After reviewing your application, we are unable to approve it at this time.</p>
     {{#reason}}<div style="background:#fef2f2;border-left:4px solid #ef4444;padding:12px 16px;margin:16px 0;border-radius:0 4px 4px 0;">
       <p style="margin:0;color:#991b1b;font-size:14px;"><strong>Reason:</strong> {{reason}}</p>
     </div>{{/reason}}
@@ -183,12 +183,12 @@ const SYSTEM_EMAIL_TEMPLATE_BASE_DEFAULTS: Omit<InsertEmailTemplate, "module">[]
   },
   {
     slug: "new-therapist-registration",
-    name: "New Therapist Registration (Admin)",
-    subject: "New Therapist Registration: {{therapistName}}",
-    description: "Sent to admin(s) when a therapist self-registers on the platform.",
+    name: "New Provider Registration (Admin)",
+    subject: "New Provider Registration: {{therapistName}}",
+    description: "Sent to admin(s) when a provider self-registers on the platform.",
     variables: ["therapistName", "therapistEmail", "dashboardUrl"],
-    htmlBody: baseWrap("New Therapist Registration", `
-    <p style="color:#374151;font-size:15px;line-height:1.6;">A new therapist has registered on Core Platform and is awaiting review.</p>
+    htmlBody: baseWrap("New Provider Registration", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">A new provider has registered on Core Platform and is awaiting review.</p>
     <div style="background:#f3f4f6;border-radius:6px;padding:16px;margin:16px 0;">
       <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Name:</strong> {{therapistName}}</p>
       <p style="margin:0;color:#374151;font-size:14px;"><strong>Email:</strong> {{therapistEmail}}</p>
@@ -201,12 +201,12 @@ const SYSTEM_EMAIL_TEMPLATE_BASE_DEFAULTS: Omit<InsertEmailTemplate, "module">[]
   },
   {
     slug: "new-client-registration",
-    name: "New Client Registration (Admin)",
-    subject: "New Client Registration: {{clientName}}",
-    description: "Sent to admin(s) when a client self-registers on the platform.",
+    name: "New Member Registration (Admin)",
+    subject: "New Member Registration: {{clientName}}",
+    description: "Sent to admin(s) when a member self-registers on the platform.",
     variables: ["clientName", "clientEmail", "dashboardUrl"],
-    htmlBody: baseWrap("New Client Registration", `
-    <p style="color:#374151;font-size:15px;line-height:1.6;">A new client has registered on Core Platform.</p>
+    htmlBody: baseWrap("New Member Registration", `
+    <p style="color:#374151;font-size:15px;line-height:1.6;">A new member has registered on Core Platform.</p>
     <div style="background:#f3f4f6;border-radius:6px;padding:16px;margin:16px 0;">
       <p style="margin:0 0 8px;color:#374151;font-size:14px;"><strong>Name:</strong> {{clientName}}</p>
       <p style="margin:0;color:#374151;font-size:14px;"><strong>Email:</strong> {{clientEmail}}</p>

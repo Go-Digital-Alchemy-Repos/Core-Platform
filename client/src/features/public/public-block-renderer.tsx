@@ -538,7 +538,7 @@ function FeaturedProfessionalsBlock({ props }: { props: Record<string, unknown> 
         {visible.length === 0 ? (
           <div className="col-span-3 text-center py-8 text-muted-foreground">
             <UserCheck className="h-8 w-8 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Featured mental health professionals will appear here</p>
+            <p className="text-sm">Featured verified providers will appear here</p>
           </div>
         ) : visible.map((c) => (
           <Card key={c.id} className="text-center hover:shadow-md transition-shadow">

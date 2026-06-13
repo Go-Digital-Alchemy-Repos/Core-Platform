@@ -88,7 +88,7 @@ const defaultMenus: Array<InsertCmsMenu & { location: StandardMenuLocation }> = 
     location: "main_navigation",
     items: [
       item("About", "/about"),
-      item("Find a Mental Health Professional", "/directory"),
+      item("Find a Verified Provider", "/directory"),
       item("Join the Network", "/join"),
       item("Resources", "#", [
         item("Events", "/events"),
@@ -102,17 +102,17 @@ const defaultMenus: Array<InsertCmsMenu & { location: StandardMenuLocation }> = 
     name: "Platform",
     location: "footer_platform",
     items: [
-      item("Find a Mental Health Professional", "/directory"),
+      item("Find a Verified Provider", "/directory"),
       item("Events & Workshops", "/events"),
       item("How It Works", "/about"),
     ],
   },
   {
-    name: "For Mental Health Professionals",
+    name: "For Verified Providers",
     location: "footer_professionals",
     items: [
       item("Applications open in June", "/join"),
-      item("Mental Health Professional Login", "/auth/login"),
+      item("Verified Provider Login", "/auth/login"),
       item("Membership Plans", "/therapist/subscription"),
     ],
   },
@@ -120,7 +120,7 @@ const defaultMenus: Array<InsertCmsMenu & { location: StandardMenuLocation }> = 
     name: "Resources",
     location: "footer_resources",
     items: [
-      item("About Core Platforms", "/about"),
+      item("About the Community", "/about"),
       item("Upcoming Events", "/events"),
       item("Browse Specializations", "/directory"),
     ],

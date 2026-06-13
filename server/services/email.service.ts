@@ -393,8 +393,8 @@ export async function sendNewTherapistRegistrationEmail(
   const { subject, html, isActive } = await getTemplateHtml(
     "new-therapist-registration",
     vars,
-    `New Therapist Registration: ${therapistName}`,
-    `<p>A new therapist (${therapistName}, ${therapistEmail}) has registered.</p>`
+    `New Provider Registration: ${therapistName}`,
+    `<p>A new provider (${therapistName}, ${therapistEmail}) has registered.</p>`
   );
   if (!isActive) return;
   for (const email of adminEmails) {
@@ -414,8 +414,8 @@ export async function sendNewClientRegistrationEmail(
   const { subject, html, isActive } = await getTemplateHtml(
     "new-client-registration",
     vars,
-    `New Client Registration: ${clientName}`,
-    `<p>A new client (${clientName}, ${clientEmail}) has registered.</p>`
+    `New Member Registration: ${clientName}`,
+    `<p>A new member (${clientName}, ${clientEmail}) has registered.</p>`
   );
   if (!isActive) return;
   for (const email of adminEmails) {
@@ -727,8 +727,8 @@ export async function sendReferenceRequestEmail(
   const vars = { refereeName, applicantName, referenceUrl };
   const fallbackBody = `
     <p>Dear ${refereeName},</p>
-    <p><strong>${applicantName}</strong> has applied to join the <strong>Core Platform Counselor Network</strong> and has listed you as a professional reference.</p>
-    <p>Core Platform connects Third Culture Kids (Core Platforms) with specialized mental health professionals who understand the unique experiences of growing up across cultures. As part of our vetting process, we ask references to complete a brief, confidential questionnaire.</p>
+    <p><strong>${applicantName}</strong> has applied to join the <strong>Core Platform Provider Network</strong> and has listed you as a professional reference.</p>
+    <p>Core Platform connects members of globally mobile communities with verified providers who understand the unique experiences of growing up across cultures. As part of our vetting process, we ask references to complete a brief, confidential questionnaire.</p>
     <p><strong>Your responses will remain confidential</strong> and will not be shared with the applicant.</p>
     <p style="margin:24px 0;">
       <a href="${referenceUrl}" style="display:inline-block;padding:12px 28px;background:#1e3a5f;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">Complete Reference Form</a>

@@ -5,29 +5,27 @@ Date: 2026-06-12
 ## Active Branch
 
 - `codex/event-participation-main`
-- Working tree had uncommitted stabilization/frontend-edit changes during this audit and was not deleted.
+- Tip at release reconciliation start: `ffa2623` (`Polish developer nav and portfolio cards`)
+- `origin/main`, `origin/codex/event-participation-main`, and local `main` were aligned before the content cleanup commit.
 
 ## Safe Local Cleanup
 
-- Ran `git fetch --prune`; Git removed stale remote-tracking ref `origin/codex/social-media-branding`.
-- `git branch --merged origin/main` showed the local Codex feature branches, `main`, and `main-merge-lookup-input-limits` are already merged into `origin/main`.
-- Safe deletion rule: delete only local branches proven merged into `origin/main`, excluding `main` and the active branch.
-- Deleted merged local branches that were not checked out by another worktree: `codex/ecommerce-category-editor`, `codex/ecommerce-delete-safety`, and `codex/ecommerce-module-stripe-checkout`.
-- Git refused deletion for merged branches currently used by separate worktrees under `/private/tmp/core-platform-*`; those branches were left intact.
+- Ran `git fetch --prune`.
+- Local branches before cleanup: 95.
+- Local branches after cleanup: 4.
+- Deleted only local branches already merged into `origin/main` and not checked out by a worktree.
+- No worktree-bound local branches refused deletion during this cleanup.
 
-## Duplicate-Commit Branches
+## Remaining Local Branches
 
-- `codex/fulfillment-quantity-guards` and `codex/shipment-route-preflight`
-- `codex/admin-order-transition-guards` and `codex/payment-lifecycle-scan`
-- `codex/ecommerce-category-editor` and `codex/ecommerce-next-slice`
-- `codex/ecommerce-next-hardening-scan` and `codex/public-product-active-categories`
+- `codex/event-participation-main` — active stabilization/release branch.
+- `main` — fast-forwarded to `origin/main`.
+- `codex/collapsible-admin-nav` — unmerged; needs human review.
+- `codex/live-sync-main` — unmerged; needs human review.
 
-## Needs Human Review
+## Worktrees
 
-- `codex/collapsible-admin-nav` is not merged into `origin/main`.
-- `codex/live-sync-main` is not merged into `origin/main`.
-- `codex/main-production-rollout` has no upstream, though its tip is merged into `origin/main`.
-- `main-merge-lookup-input-limits` has no upstream, though its tip is merged into `origin/main`.
+Detached deployment worktrees remain under `/private/tmp/core-platform-*`. They are detached at historical deployment commits and do not hold local branch refs.
 
 ## Organization Guardrails
 

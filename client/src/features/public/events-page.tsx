@@ -458,7 +458,7 @@ export function EventsArchiveSection({
   const heading = str(props.heading) || "Upcoming Events";
   const subheading =
     str(props.subheading) ||
-    "We offer quarterly Core Platform-informed trainings for professional providers! All of our members get free registration to the events below.";
+    "We offer quarterly platform-approved trainings for professional providers. All of our members get free registration to the events below.";
   const showViewToggle = bool(props.showViewToggle, true);
   const { data: events, isLoading, error } = useQuery<Event[]>({
     queryKey: ["/api/events/all"],

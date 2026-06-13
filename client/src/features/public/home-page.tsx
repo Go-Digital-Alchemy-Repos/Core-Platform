@@ -29,42 +29,42 @@ import Autoplay from "embla-carousel-autoplay";
 
 const testimonials = [
   {
-    quote: "For the first time, I didn't have to explain what it means to grow up between cultures. My mental health professional just understood.",
+    quote: "For the first time, I didn't have to explain what it means to grow up between cultures. My verified provider just understood.",
     name: "Sarah M.",
-    role: "Adult Core Platform",
+    role: "Adult Community Member",
     location: "Singapore",
     avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "Core Platform connected me with a mental health professional who speaks my language — literally and figuratively. It's been life-changing.",
+    quote: "Core Platform connected me with a verified provider who speaks my language — literally and figuratively. It's been life-changing.",
     name: "James K.",
     role: "Expat Parent",
     location: "Dubai",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "As a mental health professional, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
+    quote: "As a verified provider, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
     name: "Dr. Amara O.",
-    role: "Licensed Mental Health Professional",
+    role: "Verified Provider",
     location: "Nairobi",
     avatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&h=100&fit=crop&crop=faces",
   },
   {
     quote: "I struggled for years to find someone who understood repatriation grief. Core Platform made it possible in minutes.",
     name: "Lena T.",
-    role: "Core Platform & College Student",
+    role: "College Student",
     location: "Germany",
     avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "The specialization filters helped me find a mental health professional experienced with military kid transitions. Highly recommend.",
+    quote: "The specialization filters helped me find a verified provider experienced with military kid transitions. Highly recommend.",
     name: "Marcus W.",
-    role: "Military Core Platform",
+    role: "Military Family Member",
     location: "Virginia, USA",
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "Finally, a platform that recognizes our unique needs. I feel seen and supported for the first time in therapy.",
+    quote: "Finally, a platform that recognizes our unique needs. I feel seen and supported for the first time here.",
     name: "Priya D.",
     role: "Cross-Cultural Professional",
     location: "London",
@@ -76,7 +76,7 @@ const benefits = [
   {
     icon: Globe,
     title: "Culturally Informed Care",
-    description: "Every mental health professional in our directory understands the unique challenges of growing up across cultures.",
+    description: "Every verified provider in our directory understands the unique challenges of growing up across cultures.",
   },
   {
     icon: Heart,
@@ -115,7 +115,7 @@ function TestimonialsCarousel() {
           What People Are Saying
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mx-auto mb-10 sm:mb-14">
-          Hear from Core Platforms, expat families, and mental health professionals who have found their match.
+          Hear from members, expat families, and verified providers who have found their match.
         </p>
         <div className="relative">
           <div className="overflow-hidden" ref={emblaRef}>
@@ -215,7 +215,7 @@ function FeaturedArticlesCarousel({ articles }: { articles: any[] }) {
               Featured Articles
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Latest insights on Core Platform mental health and cross-cultural wellness.
+              Latest insights on platform operations, community support, and cross-cultural wellness.
             </p>
           </div>
           <Link href="/insights">
@@ -356,19 +356,19 @@ export default function HomePage() {
         <div className="relative mx-auto max-w-7xl px-4 pb-18 pt-14 sm:px-6 sm:pb-24 sm:pt-20 md:pb-32 md:pt-28">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="mb-8 font-heading text-3xl font-bold tracking-tight sm:mb-12 sm:text-4xl md:text-5xl lg:text-6xl" data-testid="text-hero-heading">
-              Care that understands where Core Platforms <span className="text-accent">"come from".</span>
+              Care that understands where members <span className="text-accent">"come from".</span>
             </h1>
             <div className="flex flex-col justify-center gap-6 sm:flex-row sm:gap-10 lg:gap-16">
               <div className="text-center">
-                <p className="text-base sm:text-lg font-medium mb-4" data-testid="text-hero-support-label">Are you looking for Core Platform support?</p>
+                <p className="text-base sm:text-lg font-medium mb-4" data-testid="text-hero-support-label">Are you looking for specialized support?</p>
                 <Link href="/directory">
                   <Button size="lg" className="w-full bg-accent text-accent-foreground border-accent-border sm:w-auto" data-testid="button-browse-directory">
-                    Find a Mental Health Professional!
+                    Find a Verified Provider!
                   </Button>
                 </Link>
               </div>
               <div className="text-center">
-                <p className="text-base sm:text-lg font-medium mb-4" data-testid="text-hero-professional-label">Are you a mental health professional?</p>
+                <p className="text-base sm:text-lg font-medium mb-4" data-testid="text-hero-professional-label">Are you a verified provider?</p>
                 <Button size="lg" className="w-full bg-accent text-accent-foreground border-accent-border opacity-60 cursor-not-allowed sm:w-auto" disabled data-testid="button-join-therapist">
                   Applications open in June.
                 </Button>
@@ -380,9 +380,9 @@ export default function HomePage() {
       <section className="relative bg-muted/30 overflow-hidden" data-testid="section-benefits">
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
-          <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-benefits-heading">Why Core Platform Informed?</h2>
+          <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-benefits-heading">Why Platform Approved?</h2>
           <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mx-auto mb-10 sm:mb-14">
-            We bridge the gap between Third Culture Kids and culturally competent mental health professionals.
+            We bridge the gap between members of globally mobile communities and culturally competent verified providers.
           </p>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3 lg:gap-10 xl:gap-12">
             {benefits.map((item) => (
@@ -399,9 +399,9 @@ export default function HomePage() {
       </section>
       <section className="bg-muted/20 dark:bg-muted/10" data-testid="section-counseling-needed">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
-          <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-counseling-needed-heading">Is Counseling What's Needed?</h2>
+          <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-counseling-needed-heading">What Kind of Support Is Needed?</h2>
           <p className="text-sm sm:text-base text-muted-foreground text-center max-w-3xl mx-auto leading-relaxed">
-            Not every challenge requires a clinical diagnosis or therapy. Sometimes what Core Platforms need most is validation, community, or practical guidance for navigating transitions. Our directory includes a range of professionals — from licensed therapists to certified coaches and peer support specialists — so you can find the right kind of support for wherever you are in your journey.
+            Not every challenge requires a formal service plan. Sometimes what members need most is validation, community, or practical guidance for navigating transitions. Our directory includes a range of professionals — from licensed professionals to certified coaches and peer support specialists — so you can find the right kind of support for wherever you are in your journey.
           </p>
         </div>
       </section>
@@ -412,13 +412,13 @@ export default function HomePage() {
           <div className="mb-8 flex flex-col items-start gap-4 sm:mb-12 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div className="min-w-0">
               <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold" data-testid="text-map-heading">
-                Our Mental Health Professionals Around the World
+                Our Verified Providers Around the World
               </h2>
-              <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Click a pin to learn more about a Core Platform-informed professional near you</p>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Click a pin to learn more about a platform-approved professional near you</p>
             </div>
             <Link href="/directory">
               <Button variant="outline" className="w-full sm:w-auto" data-testid="button-view-all-therapists">
-                Find a Mental Health Professional <ArrowRight className="ml-2 h-4 w-4" />
+                Find a Verified Provider <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -443,7 +443,7 @@ export default function HomePage() {
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold mb-3 sm:mb-4" data-testid="text-events-heading">
             Upcoming Events
           </h2>
-          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto mb-6">Join our community events for Core Platforms and mental health professionals.</p>
+          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto mb-6">Join our community events for members and verified providers.</p>
           <Link href="/events">
             <Button variant="outline" data-testid="button-view-all-events">
               View All <ArrowRight className="ml-2 h-4 w-4" />
@@ -490,10 +490,10 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="section-cta">
         <div className="max-w-2xl mx-auto">
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold mb-3 sm:mb-4" data-testid="text-cta-heading">
-            Are You a Core Platform-Informed Mental Health Professional?
+            Are You a Platform-Approved Verified Provider?
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto mb-8 sm:mb-10 leading-relaxed">
-            Join our growing directory and connect with clients who need your unique expertise. List your practice and reach the global Core Platform community.
+            Join our growing directory and connect with members who need your unique expertise. List your practice and reach the global member community.
           </p>
           <Button size="lg" className="bg-accent text-accent-foreground border-accent-border opacity-60 cursor-not-allowed" disabled data-testid="button-cta-join">
             Applications open in June.

@@ -11,7 +11,7 @@ Items that should be addressed in the next development cycle.
 ### TD-001: Eliminate `any` Types
 
 - **Impact**: Type safety, maintainability
-- **Scope**: ~120 ESLint warnings for `@typescript-eslint/no-explicit-any`
+- **Scope**: Full-lint warning backlog, primarily `@typescript-eslint/no-explicit-any`
 - **Files**: Across client components, server routes, storage classes, webhook handler
 - **Effort**: Medium (systematic but straightforward replacement with proper types)
 - **Recommendation**: Replace `any` with proper types, starting with server-side code where type safety matters most
@@ -19,7 +19,7 @@ Items that should be addressed in the next development cycle.
 ### TD-002: Clean Up Unused Imports and Variables
 
 - **Impact**: Code cleanliness
-- **Scope**: ~30 ESLint warnings for `@typescript-eslint/no-unused-vars`
+- **Scope**: Remaining unused import and variable warnings in full lint output
 - **Files**: Various client and server files
 - **Effort**: Small (can be auto-fixed with `eslint --fix` for some cases)
 
@@ -76,8 +76,8 @@ Items that should be scheduled but are not urgent.
 ### TD-010: Test Coverage Expansion
 
 - **Impact**: Reliability
-- **Current**: 65 tests covering auth, directory, validation, logging, route helpers
-- **Gaps**: No tests for CMS routes, Stripe integration, email service, admin routes, storage classes
+- **Current**: 346 tests across server and client stabilization coverage
+- **Gaps**: More coverage still needed for CMS routes, Stripe integration, email service, admin routes, and storage classes
 - **Recommendation**: Add integration tests for critical paths (application workflow, subscription management, CMS page publishing)
 
 ---

@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { apiRequest } from "@/lib/queryClient";
 
-const CORE_PLATFORM_DEFINITION = `A "Core Platform-informed" provider is a mental health professional who demonstrates meaningful understanding of the unique developmental, emotional, and cultural experiences of Third Culture Kids (Core Platforms) — individuals who spent a significant part of their formative years in a culture other than their parents' home culture. Core Platform-informed providers recognize themes such as high mobility, repeated loss and grief, cultural identity complexity, "hidden diversity," rootlessness, restlessness, and the challenge of repatriation. They approach their work with cultural humility and an awareness of how cross-cultural upbringing shapes mental health, attachment, and belonging.`;
+const CORE_PLATFORM_DEFINITION = `A "platform-approved" provider is a verified provider who demonstrates meaningful understanding of the developmental, emotional, and cultural experiences common in globally mobile communities. Platform-approved providers recognize themes such as high mobility, repeated loss and grief, cultural identity complexity, hidden diversity, rootlessness, restlessness, and the challenge of repatriation. They approach their work with cultural humility and an awareness of how cross-cultural upbringing shapes identity, attachment, and belonging.`;
 
 interface ReferenceData {
   alreadyCompleted: boolean;
@@ -207,7 +207,7 @@ export default function ReferenceFormPage() {
             <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
             <h2 className="text-xl font-semibold mb-2">Invalid Reference Link</h2>
             <p className="text-muted-foreground">
-              This reference link is invalid, has expired, or the application is no longer active. If you believe this is an error, please contact the applicant or Core Platform support.
+              This reference link is invalid, has expired, or the application is no longer active. If you believe this is an error, please contact the applicant or specialized support.
             </p>
           </CardContent>
         </Card>
@@ -226,7 +226,7 @@ export default function ReferenceFormPage() {
             </h2>
             <p className="text-muted-foreground">
               {submitted
-                ? `Your reference for ${data.applicantName} has been submitted successfully. Your feedback is confidential and will not be shared with the applicant. Thank you for helping support the Core Platform counselor network.`
+                ? `Your reference for ${data.applicantName} has been submitted successfully. Your feedback is confidential and will not be shared with the applicant. Thank you for helping support the Core Platform provider network.`
                 : `A reference for ${data.applicantName} has already been submitted from this link. Thank you for your support.`}
             </p>
           </CardContent>
@@ -252,7 +252,7 @@ export default function ReferenceFormPage() {
               <div>
                 <p className="font-medium">Confidential Reference for {data.applicantName}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  <strong>{data.applicantName}</strong> has applied to join the Core Platform counselor network and has listed you as a professional reference.
+                  <strong>{data.applicantName}</strong> has applied to join the Core Platform provider network and has listed you as a professional reference.
                   Your responses are <strong>strictly confidential</strong> and will not be shared with the applicant. This form takes approximately 5–10 minutes to complete.
                 </p>
               </div>
@@ -262,7 +262,7 @@ export default function ReferenceFormPage() {
 
         <Card className="mb-6 bg-muted/30">
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">What does "Core Platform-informed" mean?</p>
+            <p className="text-xs text-muted-foreground font-medium mb-1">What does "platform-approved" mean?</p>
             <p className="text-xs text-muted-foreground leading-relaxed">{CORE_PLATFORM_DEFINITION}</p>
           </CardContent>
         </Card>
@@ -322,7 +322,7 @@ export default function ReferenceFormPage() {
               </div>
 
               <div>
-                <Label htmlFor="corePlatformObservation">In what contexts have you had the opportunity to observe the applicant interacting with Core Platforms? *</Label>
+                <Label htmlFor="corePlatformObservation">In what contexts have you had the opportunity to observe the applicant interacting with members? *</Label>
                 <Textarea
                   id="corePlatformObservation"
                   value={form.corePlatformObservation}
@@ -335,7 +335,7 @@ export default function ReferenceFormPage() {
               </div>
 
               <div>
-                <Label htmlFor="corePlatformUnderstanding">In your experience, how well does the applicant understand the unique experiences and challenges faced by Core Platforms? *</Label>
+                <Label htmlFor="corePlatformUnderstanding">In your experience, how well does the applicant understand the unique experiences and challenges faced by members? *</Label>
                 <Textarea
                   id="corePlatformUnderstanding"
                   value={form.corePlatformUnderstanding}
@@ -381,7 +381,7 @@ export default function ReferenceFormPage() {
 
               <YesNoField
                 name="professionalConcern"
-                label="Are you aware of any situations in which the applicant's behavior toward colleagues, clients, or others may have been unprofessional, unethical, or otherwise concerning? *"
+                label="Are you aware of any situations in which the applicant's behavior toward colleagues, members, or others may have been unprofessional, unethical, or otherwise concerning? *"
                 value={form.professionalConcern}
                 onChange={(val) => updateField("professionalConcern", val)}
                 detailsValue={form.professionalConcernDetails}
@@ -397,7 +397,7 @@ export default function ReferenceFormPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Would you recommend the applicant as a Core Platform-informed provider? *</Label>
+                <Label>Would you recommend the applicant as a platform-approved provider? *</Label>
                 <div className="flex gap-4 mt-2">
                   {["yes", "no"].map((opt) => (
                     <label key={opt} className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${

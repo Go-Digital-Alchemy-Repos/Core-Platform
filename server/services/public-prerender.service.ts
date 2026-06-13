@@ -40,14 +40,14 @@ const FALLBACK_STATIC_PAGES: Record<
   "/": {
     title: "Home",
     description:
-      "Explore Core Platform-informed mental health support, featured articles, and upcoming events from Core Platform.",
+      "Explore specialized platform support, featured articles, and upcoming events from Core Platform.",
     body: "Core Platform connects people with culturally informed care, featured articles, and upcoming events.",
   },
   "/about": {
     title: "About",
     description:
-      "Learn what it means for a provider to be vetted and how Core Platform supports cross-cultural mental health care.",
-    body: "Learn what it means for a provider to be vetted and how Core Platform supports cross-cultural mental health care.",
+      "Learn what it means for a provider to be vetted and how Core Platform supports cross-cultural community support.",
+    body: "Learn what it means for a provider to be vetted and how Core Platform supports cross-cultural community support.",
   },
   "/contact": {
     title: "Contact Us",
@@ -58,19 +58,19 @@ const FALLBACK_STATIC_PAGES: Record<
   "/join": {
     title: "Join the Network",
     description:
-      "Learn about membership, the application process, and how Core Platform-informed mental health professionals can join the network.",
+      "Learn about membership, the application process, and how verified providers can join the network.",
     body: "Join the network to learn about membership benefits and the application process, including submitting your application, credential verification, Core Platform competency review, profile setup, and going live in the directory.",
   },
   "/directory": {
-    title: "Find a Mental Health Professional",
+    title: "Find a Verified Provider",
     description:
-      "Search for Core Platform-informed mental health professionals by specialty, location, language, or session format.",
-    body: "Find a mental health professional by searching specialties, locations, languages, and session formats in the Core Platform directory.",
+      "Search for verified providers by specialty, location, language, or session format.",
+    body: "Find a verified provider by searching specialties, locations, languages, and session formats in the Core Platform directory.",
   },
   "/insights": {
     title: "Insights & Articles",
     description: "Browse articles, guidance, and insights focused on culturally informed care.",
-    body: "Browse insights and articles focused on culturally informed care and mental health support.",
+    body: "Browse insights and articles focused on culturally informed care and community support.",
   },
   "/events": {
     title: "Events",
@@ -421,17 +421,17 @@ async function buildTherapistSnapshot(
 
   const displayName =
     [profile.user?.firstName, profile.user?.lastName].filter(Boolean).join(" ") ||
-    "Mental Health Professional";
+    "Verified Provider";
   const canonicalUrl = `${siteUrl}/directory/${profile.id}`;
   const description =
     truncate(
       stripHtml(
         profile.bio ||
           profile.title ||
-          "View this Core Platform-informed mental health professional profile.",
+          "View this platform-approved verified provider profile.",
       ),
       180,
-    ) || "View this Core Platform-informed mental health professional profile.";
+    ) || "View this platform-approved verified provider profile.";
 
   return {
     title: buildHeadTitle(displayName, seo),

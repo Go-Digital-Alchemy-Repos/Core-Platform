@@ -1,7 +1,7 @@
 # Validation Report
 
-**Date**: 2026-04-03
-**Scope**: Final validation sweep for Core Platform stabilization sprint
+**Date**: 2026-06-12
+**Scope**: Production reconciliation and stabilization cleanup
 
 ---
 
@@ -16,57 +16,35 @@
 
 Zero errors. All 62 original TypeScript errors from the initial audit have been resolved.
 
-## 2. ESLint (`npm run lint`)
+## 2. ESLint (`npm run lint -- --quiet`)
 
-**Result**: PASS (warnings only)
+**Result**: PASS
 
 ```
 > core-platform@1.0.0 lint
-> eslint client/src server shared
-
-✖ 207 problems (0 errors, 207 warnings)
+> eslint client/src server shared --quiet
 ```
 
-All 207 findings are **warnings**, not errors. Breakdown:
-- `@typescript-eslint/no-explicit-any` — ~120 warnings (use of `any` type)
-- `@typescript-eslint/no-unused-vars` — ~30 warnings (unused imports/variables)
-- `no-empty` — ~5 warnings (empty catch blocks)
-- `no-constant-condition` — 1 warning
-- `no-extra-boolean-cast` — 1 warning
-- Various other minor warnings
-
-No warnings are blocking. The `any` type warnings are the largest category and represent a cleanup opportunity for type safety improvements.
+Quiet lint is the release gate for this pass and passed with zero errors. The full warning backlog remains tracked in the technical debt catalog, primarily explicit `any` usage and unused imports/variables.
 
 ## 3. Test Suite (`npm test` / vitest)
 
 **Result**: PASS
 
 ```
- ✓ server/utils/route-helpers.test.ts (2 tests)
- ✓ server/middleware/validation.test.ts (3 tests)
- ✓ server/tests/directory.test.ts (44 tests)
- ✓ server/utils/logger.test.ts (9 tests)
- ✓ server/middleware/auth.test.ts (7 tests)
-
- Test Files  5 passed (5)
-      Tests  65 passed (65)
-   Duration  3.44s
+ Test Files  70 passed (70)
+      Tests  346 passed (346)
 ```
 
-All 65 tests across 5 test files pass. Key coverage areas:
-- Directory search/filtering logic (44 tests)
-- Auth middleware (password hashing, token generation — 7 tests)
-- Request validation middleware (3 tests)
-- Logger utility (9 tests)
-- Route helpers (2 tests)
+All 346 tests pass. Coverage now includes directory, auth, validation, logging, route helpers, ecommerce, feature gates, events, public/admin workflows, and stabilization smoke coverage.
 
 ## 4. Functional Flow Verification
 
-### Therapist Directory Flow
+### Provider Directory Flow
 
 - **Directory listing**: `GET /api/therapists` endpoint accepts validated query parameters (search, specialization, practiceMode, language, country, acceptingClients, willingToTravel, page, pageSize, sort, latitude, longitude)
 - **Filter options**: `GET /api/therapists/filters` returns available filter values
-- **Featured therapists**: `GET /api/therapists/featured` returns featured profiles
+- **Featured providers**: `GET /api/therapists/featured` returns featured profiles
 - **Profile detail**: `GET /api/therapists/:id` returns full profile with user data
 - **Client-side**: Directory page has debounced search, filter sidebar, pagination, and map toggle
 - **Status**: Routes are registered and request validation via Zod schema is in place
@@ -101,8 +79,8 @@ All 65 tests across 5 test files pass. Key coverage areas:
 | Check | Status | Details |
 |-------|--------|---------|
 | TypeScript (`tsc`) | PASS | 0 errors |
-| ESLint | PASS | 0 errors, 207 warnings |
-| Tests (vitest) | PASS | 65/65 tests pass |
+| ESLint quiet mode | PASS | 0 errors |
+| Tests (vitest) | PASS | 346 tests pass |
 | Directory flows | VERIFIED | Search, filters, pagination, profiles functional |
 | Admin flows | VERIFIED | CMS, applications, user management properly guarded |
 | Auth flows | VERIFIED | JWT cookies, role checks, rate limiting in place |

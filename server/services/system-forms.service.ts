@@ -96,7 +96,7 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
       field("intro", "intro", "Introduction", "html", {
         config: {
           htmlContent:
-            "<p><strong>We're so excited for the launch of Core Platform coming late 2026!</strong></p><p>We envision a world where Third Culture Kids (Core Platforms) no longer face misunderstanding or misdiagnosis due to the nuances of a globally-mobile upbringing, but have access to professionals providing Core Platform-informed care.</p><p>Our goal is to do this by developing a database of Core Platform-informed providers who receive ongoing training after thorough vetting.</p><p>If you'd like to be updated on the launch, please give us your information below.</p>",
+            "<p><strong>We're so excited for the launch of Core Platform coming late 2026!</strong></p><p>We envision a world where globally mobile members no longer face misunderstanding or misdiagnosis due to the nuances of a globally-mobile upbringing, but have access to professionals providing platform-approved care.</p><p>Our goal is to do this by developing a database of platform-approved providers who receive ongoing training after thorough vetting.</p><p>If you'd like to be updated on the launch, please give us your information below.</p>",
         },
       }),
       field("name", "name", "Name", "name", {
@@ -111,20 +111,20 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
         required: true,
         options: [
           { label: "Core Platform", value: "corePlatform" },
-          { label: "Counselor", value: "counselor" },
+          { label: "Provider", value: "provider" },
           { label: "Core Platform Parent", value: "corePlatform-parent" },
           { label: "Core Platform Caregiver", value: "corePlatform-caregiver" },
           { label: "Adult Core Platform", value: "adult-corePlatform" },
           { label: "Other", value: "other" },
         ],
       }),
-      field("website", "website", "If you are a counselor and would like to give us your website link please do so below.", "website", {
+      field("website", "website", "If you are a provider and would like to give us your website link please do so below.", "website", {
         placeholder: "https://yourwebsite.com",
       }),
       field(
-        "counselor_info",
-        "counselorInfo",
-        "If you're a counselor and you're interested in getting vetted in the future, what would you need to know in order to apply?",
+        "provider_info",
+        "providerInfo",
+        "If you're a provider and you're interested in getting vetted in the future, what would you need to know in order to apply?",
         "textarea",
         {
           placeholder: "Share what information would help you evaluate applying in the future.",

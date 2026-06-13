@@ -16,12 +16,12 @@ const membershipBenefits = [
   {
     icon: ClipboardCheck,
     title: "Directory Listing",
-    description: "Get a professional profile in our searchable directory, visible to Core Platforms and cross-cultural families seeking specialized support worldwide.",
+    description: "Get a professional profile in our searchable directory, visible to members and cross-cultural families seeking specialized support worldwide.",
   },
   {
     icon: Users,
-    title: "Client Connections",
-    description: "Receive referrals from individuals actively searching for Core Platform-informed mental health professionals who understand their experience.",
+    title: "Member Connections",
+    description: "Receive referrals from individuals actively searching for verified providers who understand their experience.",
   },
   {
     icon: BarChart3,
@@ -31,7 +31,7 @@ const membershipBenefits = [
   {
     icon: Star,
     title: "Community Access",
-    description: "Join a network of Core Platform-informed professionals for peer consultation, shared resources, and community events.",
+    description: "Join a network of platform-approved professionals for peer consultation, shared resources, and community events.",
   },
 ];
 
@@ -49,17 +49,17 @@ const applicationSteps = [
   {
     step: 3,
     title: "Core Platform Competency Review",
-    description: "We assess your training and lived experience with Core Platform, expat, and cross-cultural clients to confirm a strong fit for our directory.",
+    description: "We assess your training and lived experience with Core Platform, expat, and cross-cultural members to confirm a strong fit for our directory.",
   },
   {
     step: 4,
     title: "Profile Setup",
-    description: "Build your professional profile with your bio, specializations, languages, session formats, and availability for prospective clients.",
+    description: "Build your professional profile with your bio, specializations, languages, session formats, and availability for prospective members.",
   },
   {
     step: 5,
     title: "Go Live in the Directory",
-    description: "Once approved, your profile goes live and you begin receiving visibility from Core Platforms and families searching for support.",
+    description: "Once approved, your profile goes live and you begin receiving visibility from members and families searching for support.",
   },
 ];
 
@@ -149,7 +149,7 @@ export default function JoinNetworkPage() {
             Interested in Training but Not a Member?
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-8">
-            We offer Core Platform-informed training programs for mental health professionals who want to deepen their cross-cultural competency. Whether you're just beginning to explore the Core Platform space or want to sharpen your skills, our training equips you with the frameworks and lived-experience insights to better serve globally-mobile clients.
+            We offer platform-approved training programs for verified providers who want to deepen their cross-cultural competency. Whether you're just beginning to explore the Core Platform space or want to sharpen your skills, our training equips you with the frameworks and lived-experience insights to better serve globally-mobile members.
           </p>
           <Button size="lg" className="w-full bg-accent text-accent-foreground border-accent-border sm:w-auto" data-testid="button-learn-more-training">
             Learn More

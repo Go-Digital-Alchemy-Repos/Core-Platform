@@ -21,9 +21,9 @@ const seededCategories = [
     sortOrder: 1,
   },
   {
-    name: "Professional Training",
+    name: "Provider Training",
     slug: "professional-training",
-    description: "Learning materials for Core Platform-informed providers and teams.",
+    description: "Learning materials for platform-approved providers and teams.",
     sortOrder: 2,
   },
   {
@@ -53,8 +53,8 @@ const seededProducts = [
     metaDescription: "A guided workbook for Core Platform identity, belonging, and transition support.",
   },
   {
-    name: "Provider Mini-Course: Core Platform-Informed Care",
-    tagline: "A compact training for clinicians supporting cross-cultural clients.",
+    name: "Provider Mini-Course: Platform-Approved Care",
+    tagline: "A compact training for clinicians supporting cross-cultural members.",
     description:
       "A self-paced professional learning module introducing Core Platform terminology, clinical themes, assessment considerations, and culturally responsive support practices.",
     price: 12900,
@@ -65,8 +65,8 @@ const seededProducts = [
     features: ["Video lessons", "Clinical reflection prompts", "Practice integration guide"],
     included: ["Course access", "Downloadable notes", "Completion checklist"],
     categories: ["professional-training"],
-    metaTitle: "Provider Mini-Course for Core Platform-Informed Care",
-    metaDescription: "Self-paced training for clinicians working with Core Platforms and global nomads.",
+    metaTitle: "Provider Mini-Course for Platform-Approved Care",
+    metaDescription: "Self-paced training for clinicians working with members and global nomads.",
   },
   {
     name: "Family Transition Conversation Cards",
@@ -85,20 +85,20 @@ const seededProducts = [
     metaDescription: "Printable conversation cards for internationally mobile families navigating transition.",
   },
   {
-    name: "School Counselor Toolkit",
+    name: "Organization Support Toolkit",
     tagline: "Support international and cross-cultural students with ready-to-use activities.",
     description:
       "A school-facing toolkit with group activities, intake prompts, staff discussion guides, and transition support templates.",
     price: 8900,
     primaryImage: productImages.toolkit,
-    urlSlug: "school-counselor-toolkit",
+    urlSlug: "school-provider-toolkit",
     sku: "CP-TOOLKIT-EDU",
-    tags: ["Schools", "Toolkit", "Counselors"],
+    tags: ["Schools", "Toolkit", "Teams"],
     features: ["Group activity plans", "Student transition worksheet", "Staff discussion guide"],
     included: ["Toolkit PDF", "Editable templates", "Implementation guide"],
     categories: ["professional-training", "family-resources"],
-    metaTitle: "School Counselor Core Platform Toolkit",
-    metaDescription: "A toolkit for school counselors supporting international and cross-cultural students.",
+    metaTitle: "Organization Support Core Platform Toolkit",
+    metaDescription: "A toolkit for organization teams supporting international and cross-cultural students.",
   },
   {
     name: "Belonging Reflection Journal",

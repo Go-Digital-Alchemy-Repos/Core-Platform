@@ -192,7 +192,7 @@ export async function createPaymentSession(userId: string, userEmail: string, ho
         price_data: {
           currency: "usd",
           product_data: {
-            name: "Core Platform — Counselor Application Fee",
+            name: "Core Platform — Provider Application Fee",
             description: directorySettings.applicationFeePolicySummary,
           },
           unit_amount: directorySettings.applicationFeeAmountCents,
