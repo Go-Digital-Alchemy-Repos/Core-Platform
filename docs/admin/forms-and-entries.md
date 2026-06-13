@@ -35,7 +35,7 @@ Every active form can expose a shareable public link.
 
 Forms can notify more than one system user.
 
-- Notification recipients are managed in `Admin > System Users`.
+- Notification recipients are managed in `Admin > User Manager`.
 - Users can be assigned to one form, many forms, or all active forms.
 - Email delivery is a notification channel, not the system of record. Entries still remain stored in the CMS.
 

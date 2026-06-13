@@ -380,7 +380,7 @@ export function buildNavGroups(
                 iconColor: "text-cyan-600",
               },
               {
-                title: "System Users",
+                title: "User Manager",
                 href: "/admin/users",
                 icon: Users,
                 iconColor: "text-blue-600",

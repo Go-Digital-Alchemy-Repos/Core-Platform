@@ -242,7 +242,7 @@ function UsersContent() {
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-heading font-semibold" data-testid="text-admin-users-title">
-            System Users
+            User Manager
           </h1>
           <p className="text-sm text-muted-foreground">
             Manage admin and editor accounts used to operate the platform. Directory members are managed separately in the Directory app.
@@ -250,7 +250,7 @@ function UsersContent() {
         </div>
         <Button onClick={() => setCreateOpen(true)} data-testid="button-create-user">
           <Plus className="mr-2 h-4 w-4" />
-          Add System User
+          Add User
         </Button>
       </div>
 
@@ -335,7 +335,7 @@ function UsersContent() {
             {(!filtered || filtered.length === 0) && (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  {search ? "No system users match your search." : "No system users found."}
+                  {search ? "No users match your search." : "No users found."}
                 </TableCell>
               </TableRow>
             )}
