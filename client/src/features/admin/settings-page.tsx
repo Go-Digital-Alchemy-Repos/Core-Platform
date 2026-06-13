@@ -101,10 +101,13 @@ import {
   SiAdyen,
   SiAfterpay,
   SiAmazonpay,
+  SiAmazon,
   SiApplepay,
   SiBraintree,
   SiCloudflare,
+  SiDhl,
   SiGoogle,
+  SiGoogleads,
   SiGoogleanalytics,
   SiGooglepay,
   SiKlarna,
@@ -112,9 +115,11 @@ import {
   SiMailgun,
   SiMeta,
   SiPaypal,
+  SiPinterest,
   SiSquare,
   SiStripe,
   SiTiktok,
+  SiWalmart,
   SiX,
 } from "react-icons/si";
 
@@ -509,6 +514,8 @@ export type IntegrationLibraryCategory =
   | "Marketing & Analytics"
   | "Product Feeds"
   | "Inventory & Operations"
+  | "Tax & Compliance"
+  | "Marketplaces"
   | "Other";
 
 export interface IntegrationConfig {
@@ -529,6 +536,11 @@ export interface IntegrationConfig {
   supportsConnectionTest?: boolean;
   libraryCategory?: IntegrationLibraryCategory;
   capabilities?: string[];
+  configurable?: boolean;
+  operational?: boolean;
+  requiresAdapter?: boolean;
+  supportedCapabilities?: string[];
+  supportedEvents?: string[];
 }
 
 export const INTEGRATION_GROUPS: Array<{
@@ -566,14 +578,29 @@ export const INTEGRATION_GROUPS: Array<{
 
 export const ECOMMERCE_INTEGRATION_CATEGORIES = new Set([
   "google_merchant_center",
+  "google_ads_tag_manager",
+  "microsoft_ads_merchant_center",
   "meta_ads",
   "tiktok_ads",
+  "pinterest_ads",
   "x_ads",
+  "klaviyo",
+  "omnisend",
+  "avalara_avatax",
+  "taxjar",
+  "shipbob",
+  "amazon_marketplace",
+  "walmart_marketplace",
+  "easypost",
   "shipstation",
   "shippo",
   "veeqo",
   "easyship",
   "pirate_ship",
+  "ups",
+  "usps",
+  "fedex",
+  "dhl_express",
 ]);
 
 type IntegrationStatusFilter = "all" | "configured" | "not_configured";
@@ -639,6 +666,9 @@ export function filterIntegrations(
       config.libraryCategory || "",
       getIntegrationGroupLabel(config.group),
       ...(config.capabilities || []),
+      ...(config.supportedCapabilities || []),
+      ...(config.supportedEvents || []),
+      config.operational ? "operational" : "setup ready requires adapter",
       ...config.fields.map((field) => field.label),
     ]
       .join(" ")
@@ -1360,6 +1390,210 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     ],
   },
   {
+    category: "klaviyo",
+    title: "Klaviyo",
+    description: "Email and SMS lifecycle automation for ecommerce events and customer profiles",
+    group: "marketing",
+    icon: Send,
+    logoText: "Klaviyo",
+    brandColor: "text-[#111827]",
+    libraryCategory: "Marketing & Analytics",
+    capabilities: ["Email", "SMS", "Profiles", "Abandoned cart", "Order events"],
+    supportedEvents: ["checkout_started", "order_placed", "order_fulfilled", "order_refunded"],
+    supportedCapabilities: ["marketing_event_dispatch", "customer_profile_sync"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://www.klaviyo.com/account#api-keys-tab",
+    docsUrl: "https://developers.klaviyo.com/en/reference/events_api_overview",
+    instructions: [
+      "Create a private API key with event and profile access in Klaviyo.",
+      "Copy the public site ID for browser-side identification when tracking is enabled.",
+      "Keep event dispatch disabled until consent rules, event mapping, and test profiles are verified.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "klaviyo_private_api_key", label: "Private API Key", isSecret: true, placeholder: "pk_..." },
+      { key: "klaviyo_public_site_id", label: "Public Site ID", isSecret: false, placeholder: "ABC123" },
+      { key: "klaviyo_event_sync_enabled", label: "Event Sync Enabled", isSecret: false, placeholder: "false", type: "boolean" },
+    ],
+  },
+  {
+    category: "omnisend",
+    title: "Omnisend",
+    description: "Email and SMS automation for ecommerce newsletters, carts, and order lifecycle",
+    group: "marketing",
+    icon: Send,
+    logoText: "Omnisend",
+    brandColor: "text-emerald-700",
+    libraryCategory: "Marketing & Analytics",
+    capabilities: ["Email", "SMS", "Automation", "Contacts", "Order events"],
+    supportedEvents: ["checkout_started", "order_placed", "order_fulfilled"],
+    supportedCapabilities: ["marketing_event_dispatch", "customer_profile_sync"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://app.omnisend.com/",
+    docsUrl: "https://api-docs.omnisend.com/",
+    instructions: [
+      "Create an API key in Omnisend with contact and event permissions.",
+      "Map ecommerce events before enabling automation triggers.",
+      "Verify consent handling for email and SMS before syncing customers.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "omnisend_api_key", label: "API Key", isSecret: true, placeholder: "Omnisend API key" },
+      { key: "omnisend_brand_id", label: "Brand ID", isSecret: false, placeholder: "Optional brand ID" },
+      { key: "omnisend_event_sync_enabled", label: "Event Sync Enabled", isSecret: false, placeholder: "false", type: "boolean" },
+    ],
+  },
+  {
+    category: "google_ads_tag_manager",
+    title: "Google Ads & Tag Manager",
+    description: "Google Ads conversion tracking, GTM container settings, and remarketing readiness",
+    group: "marketing",
+    icon: Megaphone,
+    brandIcon: SiGoogleads,
+    brandColor: "text-[#4285F4]",
+    libraryCategory: "Marketing & Analytics",
+    capabilities: ["Google Ads", "Tag Manager", "Conversions", "Remarketing"],
+    supportedEvents: ["page_view", "view_item", "add_to_cart", "begin_checkout", "purchase"],
+    supportedCapabilities: ["marketing_event_dispatch", "tag_container_injection"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://ads.google.com/",
+    docsUrl: "https://support.google.com/google-ads/answer/1722054",
+    instructions: [
+      "Copy the Google Ads conversion ID and purchase conversion label.",
+      "Copy the Google Tag Manager container ID when GTM should manage store tags.",
+      "Enable dispatch only after cookie consent and duplicate purchase tracking are verified.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "google_ads_conversion_id", label: "Conversion ID", isSecret: false, placeholder: "AW-123456789" },
+      { key: "google_ads_purchase_label", label: "Purchase Conversion Label", isSecret: false, placeholder: "AbCdEfGh..." },
+      { key: "google_tag_manager_container_id", label: "GTM Container ID", isSecret: false, placeholder: "GTM-XXXXXXX" },
+      { key: "google_ads_enhanced_conversions", label: "Enhanced Conversions Enabled", isSecret: false, placeholder: "false", type: "boolean" },
+    ],
+  },
+  {
+    category: "pinterest_ads",
+    title: "Pinterest Tag & Conversions API",
+    description: "Pinterest product discovery, catalog, tag, and server-side conversion settings",
+    group: "marketing",
+    icon: Megaphone,
+    brandIcon: SiPinterest,
+    brandColor: "text-[#E60023]",
+    libraryCategory: "Social Commerce",
+    capabilities: ["Pinterest Tag", "Conversions API", "Catalog events"],
+    supportedEvents: ["page_visit", "view_category", "add_to_cart", "checkout", "purchase"],
+    supportedCapabilities: ["marketing_event_dispatch", "product_catalog_events"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://ads.pinterest.com/",
+    docsUrl: "https://help.pinterest.com/en/business/article/the-pinterest-api-for-conversions",
+    instructions: [
+      "Copy the Pinterest Tag ID from Ads Manager.",
+      "Create a Conversions API access token only after server-side event mapping is ready.",
+      "Verify consent and catalog event names before enabling purchase dispatch.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "pinterest_tag_id", label: "Tag ID", isSecret: false, placeholder: "2612345678901" },
+      { key: "pinterest_access_token", label: "Conversions API Access Token", isSecret: true, placeholder: "pina_..." },
+      { key: "pinterest_ad_account_id", label: "Ad Account ID", isSecret: false, placeholder: "1234567890" },
+    ],
+  },
+  {
+    category: "microsoft_ads_merchant_center",
+    title: "Microsoft Ads & Merchant Center",
+    description: "Bing/Microsoft shopping feed, UET tag, and purchase conversion readiness",
+    group: "marketing",
+    icon: Store,
+    logoText: "Microsoft",
+    brandColor: "text-[#0078D4]",
+    libraryCategory: "Product Feeds",
+    capabilities: ["Microsoft Ads", "Bing Shopping", "UET Tag", "Product feed"],
+    supportedEvents: ["page_load", "product_view", "add_to_cart", "purchase"],
+    supportedCapabilities: ["product_feed_publishing", "marketing_event_dispatch"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://ads.microsoft.com/",
+    docsUrl: "https://learn.microsoft.com/en-us/advertising/guides/get-started",
+    instructions: [
+      "Copy the Microsoft Ads account and customer IDs used for this store.",
+      "Copy the UET tag ID for future conversion tracking.",
+      "Keep feed publishing disabled until the product feed and tax/shipping settings are validated.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "microsoft_ads_customer_id", label: "Customer ID", isSecret: false, placeholder: "123456789" },
+      { key: "microsoft_ads_account_id", label: "Account ID", isSecret: false, placeholder: "987654321" },
+      { key: "microsoft_uet_tag_id", label: "UET Tag ID", isSecret: false, placeholder: "12345678" },
+      { key: "microsoft_feed_enabled", label: "Product Feed Enabled", isSecret: false, placeholder: "false", type: "boolean" },
+    ],
+  },
+  {
+    category: "avalara_avatax",
+    title: "Avalara AvaTax",
+    description: "Enterprise tax calculation, exemption, and transaction commit readiness",
+    group: "commerce",
+    icon: CreditCard,
+    logoText: "Avalara",
+    brandColor: "text-orange-700",
+    libraryCategory: "Tax & Compliance",
+    capabilities: ["Tax quotes", "Transaction commits", "Exemptions", "Address validation"],
+    supportedCapabilities: ["tax_quote", "tax_transaction_commit", "tax_refund_adjustment"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://admin.avalara.com/",
+    docsUrl: "https://developer.avalara.com/products/avatax/",
+    instructions: [
+      "Create or identify the AvaTax company code used for this store.",
+      "Copy the account ID and license key for the correct sandbox or production environment.",
+      "Do not enable transaction commits until checkout tax quotes and refund flows are tested.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "avalara_environment", label: "Environment", isSecret: false, placeholder: "sandbox" },
+      { key: "avalara_account_id", label: "Account ID", isSecret: false, placeholder: "123456789" },
+      { key: "avalara_license_key", label: "License Key", isSecret: true, placeholder: "Avalara license key" },
+      { key: "avalara_company_code", label: "Company Code", isSecret: false, placeholder: "DEFAULT" },
+    ],
+  },
+  {
+    category: "taxjar",
+    title: "TaxJar",
+    description: "Sales tax calculation and transaction reporting for small and midmarket stores",
+    group: "commerce",
+    icon: CreditCard,
+    logoText: "TaxJar",
+    brandColor: "text-blue-700",
+    libraryCategory: "Tax & Compliance",
+    capabilities: ["Tax quotes", "Nexus", "Transactions", "Refund adjustments"],
+    supportedCapabilities: ["tax_quote", "tax_transaction_commit", "tax_refund_adjustment"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://app.taxjar.com/account#api-access",
+    docsUrl: "https://developers.taxjar.com/api/reference/",
+    instructions: [
+      "Copy the TaxJar API token from account API access.",
+      "Confirm nexus states and product tax categories before enabling checkout quotes.",
+      "Keep transaction sync disabled until paid order and refund mappings are verified.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "taxjar_api_token", label: "API Token", isSecret: true, placeholder: "TaxJar API token" },
+      { key: "taxjar_environment", label: "Environment", isSecret: false, placeholder: "production" },
+      { key: "taxjar_transaction_sync_enabled", label: "Transaction Sync Enabled", isSecret: false, placeholder: "false", type: "boolean" },
+    ],
+  },
+  {
     category: "meta_ads",
     title: "Meta Pixel & Conversions API",
     description:
@@ -1501,6 +1735,65 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     ],
   },
   {
+    category: "amazon_marketplace",
+    title: "Amazon Marketplace + MCF",
+    description: "Amazon marketplace order sync and future Multi-Channel Fulfillment readiness",
+    group: "commerce",
+    icon: Store,
+    brandIcon: SiAmazon,
+    brandColor: "text-[#FF9900]",
+    libraryCategory: "Marketplaces",
+    capabilities: ["Marketplace orders", "Inventory sync", "Amazon MCF", "Listings"],
+    supportedCapabilities: ["marketplace_order_sync", "inventory_sync", "fulfillment_sync"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://sellercentral.amazon.com/",
+    docsUrl: "https://developer-docs.amazon.com/sp-api",
+    instructions: [
+      "Create or authorize an Amazon Selling Partner API application for this seller account.",
+      "Copy marketplace, seller, and app identifiers for future order and inventory sync.",
+      "Keep order import and MCF fulfillment disabled until sandbox authorization and webhook polling are tested.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "amazon_spapi_marketplace_id", label: "Marketplace ID", isSecret: false, placeholder: "ATVPDKIKX0DER" },
+      { key: "amazon_spapi_seller_id", label: "Seller ID", isSecret: false, placeholder: "A1SELLERID" },
+      { key: "amazon_spapi_client_id", label: "Client ID", isSecret: true, placeholder: "SP-API client ID" },
+      { key: "amazon_spapi_client_secret", label: "Client Secret", isSecret: true, placeholder: "SP-API client secret" },
+      { key: "amazon_spapi_refresh_token", label: "Refresh Token", isSecret: true, placeholder: "Refresh token" },
+    ],
+  },
+  {
+    category: "walmart_marketplace",
+    title: "Walmart Marketplace",
+    description: "Walmart Marketplace item, inventory, order, and fulfillment sync readiness",
+    group: "commerce",
+    icon: Store,
+    brandIcon: SiWalmart,
+    brandColor: "text-[#0071CE]",
+    libraryCategory: "Marketplaces",
+    capabilities: ["Marketplace orders", "Item sync", "Inventory sync", "Fulfillment"],
+    supportedCapabilities: ["marketplace_order_sync", "inventory_sync", "product_feed_publishing"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://seller.walmart.com/",
+    docsUrl: "https://developer.walmart.com/us-marketplace/docs/introduction-to-marketplace-apis",
+    instructions: [
+      "Create Walmart Marketplace API credentials for the seller account.",
+      "Copy the client ID and client secret used for marketplace API access.",
+      "Keep order and inventory sync disabled until item mapping and fulfillment settings are verified.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "walmart_marketplace_client_id", label: "Client ID", isSecret: true, placeholder: "Walmart client ID" },
+      { key: "walmart_marketplace_client_secret", label: "Client Secret", isSecret: true, placeholder: "Walmart client secret" },
+      { key: "walmart_marketplace_channel_type", label: "Channel Type", isSecret: false, placeholder: "Marketplace" },
+      { key: "walmart_marketplace_sync_enabled", label: "Marketplace Sync Enabled", isSecret: false, placeholder: "false", type: "boolean" },
+    ],
+  },
+  {
     category: "crm",
     title: "CRM Inbound API",
     description: "API key used by external lead sources like social ads, Zapier, and landing-page tools",
@@ -1523,6 +1816,176 @@ export const INTEGRATIONS: IntegrationConfig[] = [
         isSecret: true,
         placeholder: "Generate a long random secret",
       },
+    ],
+  },
+  {
+    category: "shipbob",
+    title: "ShipBob",
+    description: "3PL fulfillment, distributed inventory, warehouse, and order sync readiness",
+    group: "shipping",
+    icon: Truck,
+    logoText: "ShipBob",
+    brandColor: "text-blue-700",
+    libraryCategory: "Shipping & Fulfillment",
+    capabilities: ["3PL", "Fulfillment", "Inventory", "Warehouses", "Order sync"],
+    supportedCapabilities: ["fulfillment_sync", "inventory_sync", "shipment_tracking"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://web.shipbob.com/",
+    docsUrl: "https://developer.shipbob.com/introduction",
+    instructions: [
+      "Create a ShipBob API token with order, inventory, and fulfillment permissions.",
+      "Copy the default fulfillment center or channel identifier for this store.",
+      "Keep fulfillment sync disabled until SKUs and package workflows are mapped.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "shipbob_api_token", label: "API Token", isSecret: true, placeholder: "ShipBob API token" },
+      { key: "shipbob_channel_id", label: "Channel ID", isSecret: false, placeholder: "Channel identifier" },
+      { key: "shipbob_default_fulfillment_center_id", label: "Default Fulfillment Center ID", isSecret: false, placeholder: "Optional center ID" },
+      { key: "shipbob_sync_enabled", label: "Fulfillment Sync Enabled", isSecret: false, placeholder: "false", type: "boolean" },
+    ],
+  },
+  {
+    category: "easypost",
+    title: "EasyPost",
+    description: "Aggregator-first live rates, labels, tracking, and address validation across major carriers",
+    group: "shipping",
+    icon: Truck,
+    logoText: "EasyPost",
+    brandColor: "text-indigo-700",
+    badge: "First operational live-rates path",
+    libraryCategory: "Shipping & Fulfillment",
+    capabilities: ["Live rates", "Labels", "Tracking", "Address validation", "Carrier aggregation"],
+    supportedCapabilities: ["shipping_rates", "label_purchase", "shipment_tracking", "address_validation"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://www.easypost.com/account/api-keys",
+    docsUrl: "https://docs.easypost.com/docs",
+    instructions: [
+      "Copy the EasyPost test and production API keys.",
+      "Use test mode until package dimensions, shipping zones, rates, labels, and tracking are verified.",
+      "This is the preferred first adapter for live USPS/UPS/FedEx/DHL-style rate shopping.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "easypost_active_mode", label: "Active Mode", isSecret: false, placeholder: "test" },
+      { key: "easypost_test_api_key", label: "Test API Key", isSecret: true, placeholder: "EZTK..." },
+      { key: "easypost_live_api_key", label: "Live API Key", isSecret: true, placeholder: "EZAK..." },
+      { key: "easypost_webhook_secret", label: "Webhook Secret", isSecret: true, placeholder: "Optional webhook secret" },
+    ],
+  },
+  {
+    category: "ups",
+    title: "UPS",
+    description: "Direct UPS merchant account credentials for future live rates, labels, and tracking",
+    group: "shipping",
+    icon: Truck,
+    logoText: "UPS",
+    brandColor: "text-amber-900",
+    libraryCategory: "Shipping & Fulfillment",
+    capabilities: ["Direct carrier", "Live rates", "Labels", "Tracking", "International"],
+    supportedCapabilities: ["shipping_rates", "label_purchase", "shipment_tracking", "address_validation"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://www.ups.com/upsdeveloperkit",
+    docsUrl: "https://developer.ups.com/",
+    instructions: [
+      "Create UPS API credentials for the merchant account.",
+      "Copy the client ID, client secret, and account number.",
+      "Keep direct UPS live rates disabled until OAuth, rating, label, and tracking adapters are tested.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "ups_client_id", label: "Client ID", isSecret: true, placeholder: "UPS client ID" },
+      { key: "ups_client_secret", label: "Client Secret", isSecret: true, placeholder: "UPS client secret" },
+      { key: "ups_account_number", label: "Account Number", isSecret: true, placeholder: "UPS account number" },
+    ],
+  },
+  {
+    category: "usps",
+    title: "USPS",
+    description: "Direct USPS domestic shipping credentials for future live rates, labels, and tracking",
+    group: "shipping",
+    icon: Truck,
+    logoText: "USPS",
+    brandColor: "text-blue-700",
+    libraryCategory: "Shipping & Fulfillment",
+    capabilities: ["Direct carrier", "Domestic rates", "Labels", "Tracking"],
+    supportedCapabilities: ["shipping_rates", "label_purchase", "shipment_tracking"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://developer.usps.com/",
+    docsUrl: "https://developer.usps.com/",
+    instructions: [
+      "Create USPS developer credentials for the merchant account.",
+      "Copy the API key and account identifiers required by USPS APIs.",
+      "Keep direct USPS live rates disabled until rating, label, and tracking adapters are tested.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "usps_api_key", label: "API Key", isSecret: true, placeholder: "USPS API key" },
+      { key: "usps_account_number", label: "Account Number", isSecret: true, placeholder: "Optional account number" },
+    ],
+  },
+  {
+    category: "fedex",
+    title: "FedEx",
+    description: "Direct FedEx merchant account credentials for future live rates, labels, and tracking",
+    group: "shipping",
+    icon: Truck,
+    logoText: "FedEx",
+    brandColor: "text-purple-700",
+    libraryCategory: "Shipping & Fulfillment",
+    capabilities: ["Direct carrier", "Live rates", "Labels", "Tracking", "International"],
+    supportedCapabilities: ["shipping_rates", "label_purchase", "shipment_tracking", "address_validation"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://developer.fedex.com/",
+    docsUrl: "https://developer.fedex.com/api/en-us/home.html",
+    instructions: [
+      "Create FedEx API credentials for the merchant account.",
+      "Copy the API key, secret key, and account number.",
+      "Keep direct FedEx live rates disabled until rating, label, and tracking adapters are tested.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "fedex_client_id", label: "API Key", isSecret: true, placeholder: "FedEx API key" },
+      { key: "fedex_client_secret", label: "Secret Key", isSecret: true, placeholder: "FedEx secret key" },
+      { key: "fedex_account_number", label: "Account Number", isSecret: true, placeholder: "FedEx account number" },
+    ],
+  },
+  {
+    category: "dhl_express",
+    title: "DHL Express",
+    description: "Direct DHL Express credentials for future international rates, labels, and tracking",
+    group: "shipping",
+    icon: Truck,
+    brandIcon: SiDhl,
+    brandColor: "text-[#D40511]",
+    libraryCategory: "Shipping & Fulfillment",
+    capabilities: ["Direct carrier", "International rates", "Labels", "Tracking"],
+    supportedCapabilities: ["shipping_rates", "label_purchase", "shipment_tracking", "international"],
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    accountUrl: "https://developer.dhl.com/",
+    docsUrl: "https://developer.dhl.com/api-reference/mydhl-api-dhl-express",
+    instructions: [
+      "Create DHL Express API credentials for the merchant account.",
+      "Copy the API key, API secret, and account number.",
+      "Keep direct DHL live rates disabled until MyDHL rating, label, and tracking adapters are tested.",
+    ],
+    supportsConnectionTest: false,
+    fields: [
+      { key: "dhl_express_api_key", label: "API Key", isSecret: true, placeholder: "DHL API key" },
+      { key: "dhl_express_api_secret", label: "API Secret", isSecret: true, placeholder: "DHL API secret" },
+      { key: "dhl_express_account_number", label: "Account Number", isSecret: true, placeholder: "DHL account number" },
     ],
   },
   {
@@ -1920,6 +2383,23 @@ export function IntegrationCard({
                 </span>
               </Badge>
             )}
+            {config.requiresAdapter ? (
+              <Badge
+                variant="outline"
+                className="border-amber-200 bg-amber-50 text-amber-800"
+                data-testid={`badge-readiness-${config.category}`}
+              >
+                Setup ready
+              </Badge>
+            ) : config.operational ? (
+              <Badge
+                variant="secondary"
+                className="bg-emerald-100 text-emerald-700"
+                data-testid={`badge-readiness-${config.category}`}
+              >
+                Operational
+              </Badge>
+            ) : null}
             <Badge
               variant={hasAnyValue ? "default" : "outline"}
               data-testid={`badge-status-${config.category}`}
@@ -1950,6 +2430,19 @@ export function IntegrationCard({
             </span>
           </div>
         )}
+        {config.requiresAdapter ? (
+          <div
+            className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+            data-testid={`notice-readiness-${config.category}`}
+          >
+            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+            <span>
+              Credentials can be saved now. This integration will not affect checkout, fulfillment,
+              feeds, tax, or marketing events until its operational adapter is implemented and
+              tested.
+            </span>
+          </div>
+        ) : null}
         <div className="rounded-md border bg-muted/30 px-3 py-3 text-sm">
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">

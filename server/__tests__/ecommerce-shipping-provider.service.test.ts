@@ -28,6 +28,7 @@ describe("ecommerce shipping provider registry", () => {
       "ups",
       "usps",
       "fedex",
+      "dhl_express",
     ]));
   });
 

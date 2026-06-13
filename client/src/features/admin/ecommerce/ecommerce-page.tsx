@@ -3549,6 +3549,8 @@ const ECOMMERCE_LIBRARY_CATEGORIES: Array<"All" | IntegrationLibraryCategory> = 
   "Marketing & Analytics",
   "Product Feeds",
   "Inventory & Operations",
+  "Tax & Compliance",
+  "Marketplaces",
 ];
 
 const ECOMMERCE_LIBRARY_CATEGORY_DETAILS: Record<IntegrationLibraryCategory, string> = {
@@ -3559,6 +3561,8 @@ const ECOMMERCE_LIBRARY_CATEGORY_DETAILS: Record<IntegrationLibraryCategory, str
   "Marketing & Analytics": "Measurement, audiences, attribution, and lifecycle tools.",
   "Product Feeds": "Catalog publishing and merchant feed readiness.",
   "Inventory & Operations": "Inventory, warehouse, and order operations tools.",
+  "Tax & Compliance": "Tax calculation, nexus, exemption, and compliance workflows.",
+  Marketplaces: "Marketplace listings, orders, catalog sync, and channel operations.",
   Other: "Additional ecommerce extension points.",
 };
 
@@ -3609,6 +3613,9 @@ export function IntegrationsTab() {
       config.group,
       config.badge ?? "",
       ...(config.capabilities ?? []),
+      ...(config.supportedCapabilities ?? []),
+      ...(config.supportedEvents ?? []),
+      config.requiresAdapter ? "setup ready requires adapter" : "",
     ]
       .join(" ")
       .toLowerCase();
@@ -3729,6 +3736,15 @@ export function IntegrationsTab() {
               <div className="mt-4 flex flex-wrap gap-2">
                 <Badge variant="secondary">{libraryCategory}</Badge>
                 {config.badge ? <Badge variant="outline">{config.badge}</Badge> : null}
+                {config.requiresAdapter ? (
+                  <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-800">
+                    Setup ready
+                  </Badge>
+                ) : config.operational ? (
+                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                    Operational
+                  </Badge>
+                ) : null}
               </div>
               {config.capabilities?.length ? (
                 <div className="mt-4 flex flex-wrap gap-1.5">

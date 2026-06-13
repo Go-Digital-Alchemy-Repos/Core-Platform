@@ -123,6 +123,18 @@ export const ECOMMERCE_SHIPPING_PROVIDER_REGISTRY: EcommerceShippingProviderDefi
       { key: "accountNumber", label: "Account number", secret: true },
     ],
   },
+  {
+    provider: "dhl_express",
+    displayName: "DHL Express",
+    type: "direct_carrier",
+    recommendedFor: "Direct DHL Express international rates, labels, tracking, and cross-border shipping workflows.",
+    capabilities: ["rates", "labels", "tracking", "international"],
+    setupFields: [
+      { key: "apiKey", label: "API key", secret: true },
+      { key: "apiSecret", label: "API secret", secret: true },
+      { key: "accountNumber", label: "Account number", secret: true },
+    ],
+  },
 ];
 
 export function mergeShippingProviderStatuses(

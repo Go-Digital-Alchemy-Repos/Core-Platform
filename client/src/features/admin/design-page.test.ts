@@ -119,6 +119,40 @@ describe("integration library helpers", () => {
     expect(systemIntegrationCategories).toContain("afterpay");
     expect(systemIntegrationCategories).toContain("paypal");
   });
+
+  it("adds must-have ecommerce integrations as setup-ready ecommerce-only providers", () => {
+    const ecommerceIntegrationCategories = INTEGRATIONS.filter((config) =>
+      ECOMMERCE_INTEGRATION_CATEGORIES.has(config.category),
+    ).map((config) => config.category);
+
+    expect(ecommerceIntegrationCategories).toEqual(expect.arrayContaining([
+      "klaviyo",
+      "omnisend",
+      "google_ads_tag_manager",
+      "pinterest_ads",
+      "microsoft_ads_merchant_center",
+      "avalara_avatax",
+      "taxjar",
+      "shipbob",
+      "amazon_marketplace",
+      "walmart_marketplace",
+      "dhl_express",
+    ]));
+
+    const avalara = INTEGRATIONS.find((config) => config.category === "avalara_avatax");
+    expect(avalara).toMatchObject({
+      libraryCategory: "Tax & Compliance",
+      configurable: true,
+      operational: false,
+      requiresAdapter: true,
+    });
+
+    expect(
+      filterIntegrations(INTEGRATIONS, {}, { searchQuery: "inventory sync" }).map(
+        (config) => config.category,
+      ),
+    ).toEqual(expect.arrayContaining(["amazon_marketplace", "walmart_marketplace"]));
+  });
 });
 
 describe("email template library helpers", () => {
