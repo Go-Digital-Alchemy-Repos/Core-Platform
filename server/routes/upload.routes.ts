@@ -7,6 +7,7 @@ import { asyncHandler } from "../middleware/error-handler";
 import { storage } from "../storage/index";
 import * as r2Service from "../services/r2.service";
 import { optimizeImage, isImageMime, AVATAR_OPTIONS, ATTACHMENT_OPTIONS } from "../services/image-optimizer";
+import { createCmsMediaAssetFromUpload } from "../services/cms-media-upload.service";
 
 const router = Router();
 const upload = multer({
@@ -22,14 +23,6 @@ const upload = multer({
   },
 });
 
-const LOCAL_UPLOAD_DIR = path.resolve(process.cwd(), "uploads", "avatars");
-
-function ensureUploadDir() {
-  if (!fs.existsSync(LOCAL_UPLOAD_DIR)) {
-    fs.mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true });
-  }
-}
-
 router.use(authenticateToken);
 
 router.post(
@@ -43,28 +36,21 @@ router.post(
 
     const targetUserId = (req.user!.role === "admin" && req.body.userId) ? req.body.userId : req.user!.id;
 
-    const optimized = await optimizeImage(req.file.buffer, req.file.mimetype, AVATAR_OPTIONS);
-    const filename = `${targetUserId}-${Date.now()}${optimized.extension}`;
+    const asset = await createCmsMediaAssetFromUpload({
+      buffer: req.file.buffer,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      fileSize: req.file.size,
+      uploadedBy: req.user!.id,
+      directory: "avatars",
+      title: "Directory profile photo",
+      alt: "Directory profile photo",
+      optimize: AVATAR_OPTIONS,
+    });
 
-    const r2Configured = await r2Service.isConfigured();
+    await storage.users.updateUser(targetUserId, { profileImageUrl: asset.url });
 
-    let publicUrl: string | null = null;
-
-    if (r2Configured) {
-      const key = `avatars/${filename}`;
-      publicUrl = await r2Service.uploadFile(key, optimized.buffer, optimized.mimeType);
-    }
-
-    if (!publicUrl) {
-      ensureUploadDir();
-      const localPath = path.join(LOCAL_UPLOAD_DIR, filename);
-      fs.writeFileSync(localPath, optimized.buffer);
-      publicUrl = `/uploads/avatars/${filename}`;
-    }
-
-    await storage.users.updateUser(targetUserId, { profileImageUrl: publicUrl });
-
-    res.json({ url: publicUrl });
+    res.json({ url: asset.url, mediaId: asset.id });
   })
 );
 

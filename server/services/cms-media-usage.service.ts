@@ -5,8 +5,14 @@ import type {
   CmsMediaLibraryAsset,
   CmsMediaUsageReference,
   CmsPage,
+  EcommerceCategory,
+  EcommerceProduct,
+  EcommerceProductMedia,
   Event,
+  EventOrganizer,
   SeoSettings,
+  SystemSetting,
+  User,
 } from "@shared/schema";
 
 function isImageMimeType(mimeType: string) {
@@ -66,6 +72,30 @@ function addUsageReference(
   const existing = usageMap.get(assetId) ?? [];
   existing.push(reference);
   usageMap.set(assetId, existing);
+}
+
+function addAssetIdUsage<T extends { id: string }>(
+  usageMap: Map<string, CmsMediaUsageReference[]>,
+  dedupe: Set<string>,
+  entity: T,
+  entityType: CmsMediaUsageReference["entityType"],
+  entityName: string,
+  path: string | undefined,
+  field: string,
+  mediaId: string | null | undefined,
+  isLive: boolean,
+  statusLabel: string
+) {
+  if (!mediaId) return;
+  addUsageReference(usageMap, dedupe, mediaId, {
+    entityType,
+    entityId: entity.id,
+    entityName,
+    field,
+    path,
+    isLive,
+    statusLabel,
+  });
 }
 
 function addDirectFieldUsage<T extends { id: string }>(
@@ -138,14 +168,43 @@ function eventStatusLabel(event: Event) {
   return `${event.status ?? "Draft"} event${visibility}`;
 }
 
+function organizerStatusLabel() {
+  return "Event organizer";
+}
+
+function directoryProfileStatusLabel(user: User) {
+  return user.isSuspended ? "Suspended directory account" : "Directory profile";
+}
+
+function brandingStatusLabel(setting: SystemSetting) {
+  return setting.key === "frontend_logo_url" ? "Site logo" : setting.key === "favicon_url" ? "Site favicon" : "Branding setting";
+}
+
+function ecommerceProductStatusLabel(product: EcommerceProduct) {
+  return product.active && product.status === "published" ? "Published product" : `${product.status ?? "Draft"} product`;
+}
+
+function ecommerceCategoryStatusLabel(category: EcommerceCategory) {
+  return category.active ? "Active category" : "Inactive category";
+}
+
+function mediaLinkStatusLabel(media: EcommerceProductMedia) {
+  return media.primary ? "Primary product media" : "Product media";
+}
+
 export async function buildCmsMediaLibraryAssets(
   assets: CmsMediaAsset[]
 ): Promise<CmsMediaLibraryAsset[]> {
-  const [pages, posts, events, seoSettings] = await Promise.all([
+  const [pages, posts, events, organizers, seoSettings, users, settings, products, categories] = await Promise.all([
     storage.cmsPages.getAllPages(),
     storage.blog.getAllPosts(),
     storage.events.getAllEvents(),
+    storage.eventOrganizers.getAllOrganizers(),
     storage.seoSettings.get(),
+    storage.users.getAllUsers(),
+    storage.settings.getAllSettings(),
+    storage.ecommerce.getProducts({ includeArchived: true }),
+    storage.ecommerce.getCategories(false),
   ]);
 
   const usageMap = new Map<string, CmsMediaUsageReference[]>();
@@ -172,6 +231,77 @@ export async function buildCmsMediaLibraryAssets(
     addDirectFieldUsage(assets, usageMap, dedupe, event, "event", event.title, path, "imageUrl", event.imageUrl, isLive, eventStatusLabel(event));
     addDirectFieldUsage(assets, usageMap, dedupe, event, "event", event.title, path, "speakerImageUrl", event.speakerImageUrl, isLive, eventStatusLabel(event));
     addContentUsage(assets, usageMap, dedupe, event, "event", event.title, path, event.description, isLive, eventStatusLabel(event));
+  }
+
+  for (const organizer of organizers) {
+    const path = "/events";
+    addDirectFieldUsage(
+      assets,
+      usageMap,
+      dedupe,
+      organizer,
+      "event",
+      organizer.name,
+      path,
+      "imageUrl",
+      organizer.imageUrl,
+      true,
+      organizerStatusLabel()
+    );
+  }
+
+  for (const user of users) {
+    const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || user.email;
+    addDirectFieldUsage(
+      assets,
+      usageMap,
+      dedupe,
+      user,
+      "directory_profile",
+      displayName,
+      "/directory",
+      "profileImageUrl",
+      user.profileImageUrl,
+      !user.isSuspended,
+      directoryProfileStatusLabel(user)
+    );
+  }
+
+  for (const setting of settings.filter((item) => item.category === "branding")) {
+    addDirectFieldUsage(
+      assets,
+      usageMap,
+      dedupe,
+      setting,
+      "branding",
+      brandingStatusLabel(setting),
+      undefined,
+      setting.key,
+      setting.value,
+      true,
+      brandingStatusLabel(setting)
+    );
+  }
+
+  for (const product of products) {
+    const isLive = product.active && product.status === "published" && product.visibility === "online" && !product.archivedAt;
+    const path = product.urlSlug ? `/products/${product.urlSlug}` : undefined;
+    addAssetIdUsage(usageMap, dedupe, product, "ecommerce_product", product.name, path, "mediaId", product.mediaId, isLive, ecommerceProductStatusLabel(product));
+    addDirectFieldUsage(assets, usageMap, dedupe, product, "ecommerce_product", product.name, path, "primaryImage", product.primaryImage, isLive, ecommerceProductStatusLabel(product));
+    addDirectFieldUsage(assets, usageMap, dedupe, product, "ecommerce_product", product.name, path, "ogImage", product.ogImage, isLive, ecommerceProductStatusLabel(product));
+    addContentUsage(assets, usageMap, dedupe, product, "ecommerce_product", product.name, path, product.secondaryImages, isLive, ecommerceProductStatusLabel(product));
+
+    const productMedia = await storage.ecommerce.getProductMedia(product.id);
+    for (const media of productMedia) {
+      addAssetIdUsage(usageMap, dedupe, media, "ecommerce_product", product.name, path, "productMedia.mediaId", media.mediaId, isLive, mediaLinkStatusLabel(media));
+      addDirectFieldUsage(assets, usageMap, dedupe, media, "ecommerce_product", product.name, path, "productMedia.url", media.url, isLive, mediaLinkStatusLabel(media));
+    }
+  }
+
+  for (const category of categories) {
+    const isLive = Boolean(category.active);
+    const path = category.slug ? `/shop?category=${category.slug}` : "/shop";
+    addDirectFieldUsage(assets, usageMap, dedupe, category, "ecommerce_category", category.name, path, "image", category.image, isLive, ecommerceCategoryStatusLabel(category));
   }
 
   if (seoSettings) {

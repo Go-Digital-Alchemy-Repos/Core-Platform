@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useDirectorySettings } from "@/hooks/use-directory-settings";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
+import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
 import { AdminSidebar } from "./admin-sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -2145,46 +2146,39 @@ function BrandingImageCard({
   currentUrl: string;
 }) {
   const { toast } = useToast();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [displayUrl, setDisplayUrl] = useState(currentUrl);
 
-  const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("settingKey", settingKey);
+  useEffect(() => {
+    setDisplayUrl(currentUrl);
+  }, [currentUrl]);
 
-      const response = await fetch("/api/admin/branding/upload", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
+  const saveMutation = useMutation({
+    mutationFn: async (url: string) => {
+      const response = await apiRequest("PUT", "/api/admin/settings", {
+        key: settingKey,
+        value: url,
+        category: "branding",
+        isSecret: false,
       });
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.error || payload.message || "Upload failed");
-      }
-
-      return response.json() as Promise<{ key: BrandingSettingKey; url: string }>;
+      return response.json();
     },
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/branding"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/media"] }),
       ]);
       toast({ title: `${title} updated` });
-      if (inputRef.current) {
-        inputRef.current.value = "";
-      }
     },
     onError: (error: Error) => {
-      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+      setDisplayUrl(currentUrl);
+      toast({ title: "Branding update failed", description: error.message, variant: "destructive" });
     },
   });
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    uploadMutation.mutate(file);
+  const handleBrandingImageChange = (url: string) => {
+    setDisplayUrl(url);
+    saveMutation.mutate(url);
   };
 
   return (
@@ -2198,41 +2192,21 @@ function BrandingImageCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex min-h-[120px] items-center justify-center rounded-xl border border-dashed bg-muted/20 p-4">
-          {currentUrl ? (
-            <img src={currentUrl} alt={title} className="max-h-16 w-auto object-contain" />
+          {displayUrl ? (
+            <img src={displayUrl} alt={title} className="max-h-16 w-auto object-contain" />
           ) : (
             <div className="text-center text-sm text-muted-foreground">
               <p>No image uploaded yet.</p>
-              <p className="mt-1 text-xs">
-                Images uploaded here are stored in R2 under the `branding/` directory.
-              </p>
             </div>
           )}
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploadMutation.isPending}
-            data-testid={`button-upload-${settingKey}`}
-          >
-            {uploadMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <ImageIcon className="mr-2 h-4 w-4" />
-            )}
-            Upload Image
-          </Button>
-        </div>
+        <CmsImageUpload
+          value={displayUrl}
+          onChange={handleBrandingImageChange}
+          helpText="Upload or choose an existing image from the shared Media Library."
+          data-testid={`branding-media-${settingKey}`}
+        />
       </CardContent>
     </Card>
   );

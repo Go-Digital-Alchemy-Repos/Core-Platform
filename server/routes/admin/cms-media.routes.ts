@@ -9,6 +9,7 @@ import * as r2Service from "../../services/r2.service";
 import { paramString } from "../../utils/params";
 import { optimizeImage, CMS_OPTIONS, isImageMime } from "../../services/image-optimizer";
 import { buildCmsMediaLibraryAssets } from "../../services/cms-media-usage.service";
+import { createCmsMediaAssetFromUpload } from "../../services/cms-media-upload.service";
 
 const router = Router();
 
@@ -64,12 +65,8 @@ const cmsUpload = multer({
   },
 });
 
-const LOCAL_CMS_DIR = path.resolve(process.cwd(), "uploads", "cms");
-
-function ensureCmsDir() {
-  if (!fs.existsSync(LOCAL_CMS_DIR)) {
-    fs.mkdirSync(LOCAL_CMS_DIR, { recursive: true });
-  }
+function stripExtension(filename: string) {
+  return filename.replace(/\.[^.]+$/, "");
 }
 
 function ensureParentDir(filePath: string) {
@@ -77,10 +74,6 @@ function ensureParentDir(filePath: string) {
   if (!fs.existsSync(directory)) {
     fs.mkdirSync(directory, { recursive: true });
   }
-}
-
-function stripExtension(filename: string) {
-  return filename.replace(/\.[^.]+$/, "");
 }
 
 function coerceEmptyToNull(value: string | undefined) {
@@ -121,52 +114,14 @@ router.post(
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const safeName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
     const adminId = (req as any).user?.id;
-    const baseName = safeName.replace(/\.[^.]+$/, "");
-    const extension = path.extname(safeName) || ".bin";
-    const isImage = isImageMime(req.file.mimetype);
-    const optimized = isImage
-      ? await optimizeImage(req.file.buffer, req.file.mimetype, CMS_OPTIONS)
-      : null;
-    const fileBuffer = optimized?.buffer ?? req.file.buffer;
-    const fileMimeType = optimized?.mimeType ?? req.file.mimetype;
-    const fileExtension = optimized?.extension ?? extension;
-    const fileSize = optimized?.optimizedSize ?? req.file.size;
-
-    const existingAssets = await storage.cmsMedia.getAllMedia();
-    const originalName = buildUniqueDisplayName(
-      baseName,
-      fileExtension,
-      existingAssets.map((asset) => asset.originalName)
-    );
-    const filename = `${Date.now()}-${stripExtension(originalName)}${fileExtension}`;
-    const r2Key = `cms/media/${filename}`;
-
-    const r2Configured = await r2Service.isConfigured();
-    let publicUrl: string | null = null;
-
-    if (r2Configured) {
-      publicUrl = await r2Service.uploadFile(r2Key, fileBuffer, fileMimeType);
-    }
-
-    if (!publicUrl) {
-      ensureCmsDir();
-      const localPath = path.join(LOCAL_CMS_DIR, filename);
-      fs.writeFileSync(localPath, fileBuffer);
-      publicUrl = `/uploads/cms/${filename}`;
-    }
-
-    const asset = await storage.cmsMedia.createMedia({
-      filename,
-      originalName,
-      title: stripExtension(originalName),
-      url: publicUrl,
-      mimeType: fileMimeType,
-      fileSize,
-      r2Key: r2Configured ? r2Key : null,
-      alt: "",
+    const asset = await createCmsMediaAssetFromUpload({
+      buffer: req.file.buffer,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      fileSize: req.file.size,
       uploadedBy: adminId,
+      directory: "media",
     });
 
     res.status(201).json(asset);

@@ -43,7 +43,7 @@ router.use("/events", requireEventsEnabled, requireAdminPermission("content"), e
 router.use("/blog", requireBlogEnabled, requireAdminPermission("content"), blogRoutes);
 router.use("/", requireAdminPermission("content"), registrationRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsRoutes);
-router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsMediaRoutes);
+router.use("/cms", requireCmsEnabled, requireAdminPermission("content", "design", "directory", "crm"), cmsMediaRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("content", "design"), cmsSectionsRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsSeoRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsRedirectsRoutes);

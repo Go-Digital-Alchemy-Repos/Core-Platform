@@ -1,6 +1,4 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
-import fs from "fs";
-import path from "path";
 import multer from "multer";
 import { z } from "zod";
 import { storage } from "../storage/index";
@@ -17,11 +15,11 @@ import {
 import * as r2Service from "../services/r2.service";
 import { ensureSystemEmailTemplates } from "../services/system-email-templates.service";
 import { testMailchimpConnection } from "../services/mailchimp.service";
-import { BRANDING_OPTIONS, isImageMime, optimizeImage } from "../services/image-optimizer";
+import { BRANDING_OPTIONS, isImageMime } from "../services/image-optimizer";
+import { createCmsMediaAssetFromUpload } from "../services/cms-media-upload.service";
 
 const router = Router();
 
-const LOCAL_BRANDING_DIR = path.resolve(process.cwd(), "uploads", "branding");
 const MAX_BRANDING_IMAGE_SIZE = 10 * 1024 * 1024;
 
 const brandingUpload = multer({
@@ -35,20 +33,6 @@ const brandingUpload = multer({
     cb(new Error("Accepted file types: PNG, JPEG, WebP, and GIF"));
   },
 });
-
-function ensureBrandingDir() {
-  if (!fs.existsSync(LOCAL_BRANDING_DIR)) {
-    fs.mkdirSync(LOCAL_BRANDING_DIR, { recursive: true });
-  }
-}
-
-function stripExtension(filename: string) {
-  return filename.replace(/\.[^.]+$/, "");
-}
-
-function buildSafeBrandingFilename(name: string) {
-  return name.replace(/[^a-zA-Z0-9._-]/g, "_");
-}
 
 router.use(authenticateToken);
 
@@ -160,34 +144,27 @@ router.post(
       return res.status(400).json({ error: "Invalid branding upload request" });
     }
 
-    const safeName = buildSafeBrandingFilename(req.file.originalname);
-    const baseName = stripExtension(safeName) || "branding-image";
-    const optimized = await optimizeImage(req.file.buffer, req.file.mimetype, BRANDING_OPTIONS);
-    const filename = `${Date.now()}-${baseName}${optimized.extension}`;
-    const r2Key = `branding/${filename}`;
+    const asset = await createCmsMediaAssetFromUpload({
+      buffer: req.file.buffer,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      fileSize: req.file.size,
+      uploadedBy: req.user?.id,
+      directory: "branding",
+      title: parsed.data.settingKey === "frontend_logo_url" ? "Site logo" : "Site favicon",
+      alt: parsed.data.settingKey === "frontend_logo_url" ? "Site logo" : "Site favicon",
+      optimize: BRANDING_OPTIONS,
+    });
 
-    const r2Configured = await r2Service.isConfigured();
-    let publicUrl: string | null = null;
-
-    if (r2Configured) {
-      publicUrl = await r2Service.uploadFile(r2Key, optimized.buffer, optimized.mimeType);
-    }
-
-    if (!publicUrl) {
-      ensureBrandingDir();
-      const localPath = path.join(LOCAL_BRANDING_DIR, filename);
-      fs.writeFileSync(localPath, optimized.buffer);
-      publicUrl = `/uploads/branding/${filename}`;
-    }
-
-    await storage.settings.upsertSetting(parsed.data.settingKey, publicUrl, "branding", false);
+    await storage.settings.upsertSetting(parsed.data.settingKey, asset.url, "branding", false);
     storage.settings.invalidateCategory("branding");
     resetEmailBrandingCache();
     r2Service.resetClient();
 
     res.status(201).json({
       key: parsed.data.settingKey,
-      url: publicUrl,
+      url: asset.url,
+      mediaId: asset.id,
     });
   })
 );
