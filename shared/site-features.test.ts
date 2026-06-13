@@ -14,6 +14,10 @@ describe("site features", () => {
     expect(DEFAULT_SITE_FEATURES.careersEnabled).toBe(true);
   });
 
+  it("enables portfolio by default", () => {
+    expect(DEFAULT_SITE_FEATURES.portfolioEnabled).toBe(true);
+  });
+
   it("normalizes disabled feature settings", () => {
     expect(normalizeBooleanSetting("off", true)).toBe(false);
     expect(normalizeBooleanSetting("enabled", false)).toBe(true);

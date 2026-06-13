@@ -33,6 +33,10 @@ export async function getSiteFeatures(): Promise<SiteFeatures> {
         settings.enable_careers,
         DEFAULT_SITE_FEATURES.careersEnabled,
       ),
+      portfolioEnabled: normalizeBooleanSetting(
+        settings.enable_portfolio,
+        DEFAULT_SITE_FEATURES.portfolioEnabled,
+      ),
     };
   } catch (err) {
     logger.app.warn("Failed to retrieve system configuration, returning defaults", {

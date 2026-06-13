@@ -214,10 +214,17 @@ function JobEditor({ job, onClose }: { job?: CareerJob | null; onClose: () => vo
   );
 }
 
-function JobsTab() {
+function JobsTab({ initialCreate = false }: { initialCreate?: boolean }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CareerJob | null>(null);
   const { data: jobs = [] } = useQuery<CareerJob[]>({ queryKey: ["/api/admin/careers/jobs"] });
+
+  useEffect(() => {
+    if (initialCreate) {
+      setEditing(null);
+      setOpen(true);
+    }
+  }, [initialCreate]);
 
   useAdminEditDeepLink(jobs, (job) => job.id, (job) => {
     setEditing(job);
@@ -405,15 +412,25 @@ function SettingsTab() {
   );
 }
 
-export default function AdminCareersPage() {
-  const [tab, setTab] = useState("jobs");
+type CareerAdminTab = "jobs" | "applications" | "settings";
+const CAREER_ADMIN_TABS = new Set<string>(["jobs", "applications", "settings"]);
+
+function normalizeCareerAdminTab(value: string | null | undefined, fallback: CareerAdminTab): CareerAdminTab {
+  return CAREER_ADMIN_TABS.has(value || "") ? (value as CareerAdminTab) : fallback;
+}
+
+interface AdminCareersPageProps {
+  initialCreate?: boolean;
+  initialTab?: CareerAdminTab;
+}
+
+export default function AdminCareersPage({ initialCreate = false, initialTab = "jobs" }: AdminCareersPageProps) {
+  const [tab, setTab] = useState<CareerAdminTab>(initialTab);
 
   useEffect(() => {
     const queryTab = new URLSearchParams(window.location.search).get("tab");
-    if (queryTab === "jobs" || queryTab === "applications" || queryTab === "settings") {
-      setTab(queryTab);
-    }
-  }, []);
+    setTab(normalizeCareerAdminTab(queryTab, initialTab));
+  }, [initialTab]);
 
   return (
     <AdminSidebar>
@@ -425,13 +442,13 @@ export default function AdminCareersPage() {
           </div>
           <Badge variant="outline">Production V1</Badge>
         </div>
-        <Tabs value={tab} onValueChange={setTab}>
+        <Tabs value={tab} onValueChange={(value) => setTab(normalizeCareerAdminTab(value, "jobs"))}>
           <TabsList>
             <TabsTrigger value="jobs"><Briefcase className="mr-2 h-4 w-4" />Jobs</TabsTrigger>
             <TabsTrigger value="applications"><Users className="mr-2 h-4 w-4" />Applications</TabsTrigger>
             <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" />Settings</TabsTrigger>
           </TabsList>
-          <TabsContent value="jobs"><JobsTab /></TabsContent>
+          <TabsContent value="jobs"><JobsTab initialCreate={initialCreate} /></TabsContent>
           <TabsContent value="applications"><ApplicationsTab /></TabsContent>
           <TabsContent value="settings"><SettingsTab /></TabsContent>
         </Tabs>

@@ -4,6 +4,7 @@ import type { BlogPost, CmsPage, Event } from "@shared/schema";
 const mockGetAllPages = vi.fn();
 const mockGetPublishedPosts = vi.fn();
 const mockGetPublishedEvents = vi.fn();
+const mockGetPortfolioProjects = vi.fn();
 
 vi.mock("../storage", () => ({
   storage: {
@@ -15,6 +16,9 @@ vi.mock("../storage", () => ({
     },
     events: {
       getPublishedEvents: mockGetPublishedEvents,
+    },
+    portfolio: {
+      getProjects: mockGetPortfolioProjects,
     },
   },
 }));
@@ -141,6 +145,7 @@ describe("public-search.service", () => {
     mockGetAllPages.mockResolvedValue([samplePage, draftPage]);
     mockGetPublishedPosts.mockResolvedValue([samplePost]);
     mockGetPublishedEvents.mockResolvedValue([sampleEvent]);
+    mockGetPortfolioProjects.mockResolvedValue([]);
   });
 
   it("returns mixed public results for matching content", async () => {

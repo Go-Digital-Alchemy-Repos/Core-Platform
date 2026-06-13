@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation, useRoute } from "wouter";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { AdminSidebar } from "./admin-sidebar";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   Sheet,
@@ -30,13 +37,21 @@ import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
 import { useEditorSaveState } from "@/hooks/use-editor-save-state";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
-import { markdownToExcerpt } from "@/lib/markdown";
+import {
+  docSlugFromMarkdownPath,
+  extractMarkdownHeadings,
+  markdownToExcerpt,
+  type MarkdownLinkResolution,
+} from "@/lib/markdown";
 import {
   BookOpenText,
   Edit,
   Eye,
   EyeOff,
   FileText,
+  Hash,
+  Layers3,
+  ListTree,
   Plus,
   RefreshCw,
   Search,
@@ -81,6 +96,8 @@ function sortCategories(categories: string[]) {
 
 export default function DocsPage() {
   const { toast } = useToast();
+  const [, routeParams] = useRoute("/admin/docs/:slug");
+  const [, navigate] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedDoc, setSelectedDoc] = useState<Doc | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -116,12 +133,19 @@ export default function DocsPage() {
     queryKey: ["/api/admin/docs"],
   });
 
+  const docBySlug = useMemo(() => new Map(allDocs.map((doc) => [doc.slug, doc])), [allDocs]);
+
   const syncMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/admin/docs/sync");
       return res.json();
     },
-    onSuccess: async (payload: { total: number; created: number; updated: number; docs: Doc[] }) => {
+    onSuccess: async (payload: {
+      total: number;
+      created: number;
+      updated: number;
+      docs: Doc[];
+    }) => {
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/docs"] });
       const firstDoc = payload.docs?.[0] ?? null;
       setSelectedDoc(firstDoc);
@@ -147,7 +171,11 @@ export default function DocsPage() {
     },
     onError: (error: Error) => {
       saveFeedbackRef.current.markError();
-      toast({ title: "Failed to create document", description: error.message, variant: "destructive" });
+      toast({
+        title: "Failed to create document",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -169,7 +197,11 @@ export default function DocsPage() {
     },
     onError: (error: Error) => {
       saveFeedbackRef.current.markError();
-      toast({ title: "Failed to update document", description: error.message, variant: "destructive" });
+      toast({
+        title: "Failed to update document",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -208,7 +240,64 @@ export default function DocsPage() {
     [categories],
   );
 
+  const selectedDocHeadings = useMemo(
+    () =>
+      selectedDoc
+        ? extractMarkdownHeadings(selectedDoc.content).filter((heading) => heading.level <= 3)
+        : [],
+    [selectedDoc],
+  );
+
+  const selectDoc = useCallback(
+    (doc: Doc) => {
+      setSelectedDoc(doc);
+      navigate(`/admin/docs/${doc.slug}`);
+    },
+    [navigate],
+  );
+
+  const resolveDocLink = useCallback(
+    (href: string): MarkdownLinkResolution | null => {
+      const trimmed = href.trim();
+
+      if (trimmed.startsWith("#")) {
+        return { href: trimmed };
+      }
+
+      const adminDocMatch = trimmed.match(/^\/admin\/docs\/([^#/?]+)/);
+      if (adminDocMatch && docBySlug.has(adminDocMatch[1])) {
+        return { href: `/admin/docs/${adminDocMatch[1]}`, docSlug: adminDocMatch[1] };
+      }
+
+      const relativeSlug = docSlugFromMarkdownPath(trimmed);
+      if (relativeSlug && docBySlug.has(relativeSlug)) {
+        return { href: `/admin/docs/${relativeSlug}`, docSlug: relativeSlug };
+      }
+
+      return null;
+    },
+    [docBySlug],
+  );
+
+  const handleDocLinkClick = useCallback(
+    (slug: string) => {
+      const doc = docBySlug.get(slug);
+      if (doc) {
+        selectDoc(doc);
+      }
+    },
+    [docBySlug, selectDoc],
+  );
+
   useEffect(() => {
+    const routedDoc = routeParams?.slug ? docBySlug.get(routeParams.slug) : null;
+    if (routedDoc) {
+      if (selectedDoc?.id !== routedDoc.id) {
+        setSelectedDoc(routedDoc);
+      }
+      return;
+    }
+
     if (!selectedDoc && filteredDocs.length > 0) {
       setSelectedDoc(filteredDocs[0]);
       return;
@@ -219,10 +308,14 @@ export default function DocsPage() {
       return;
     }
 
-    if (selectedDoc && filteredDocs.length > 0 && !filteredDocs.some((doc) => doc.id === selectedDoc.id)) {
+    if (
+      selectedDoc &&
+      filteredDocs.length > 0 &&
+      !filteredDocs.some((doc) => doc.id === selectedDoc.id)
+    ) {
       setSelectedDoc(filteredDocs[0] ?? null);
     }
-  }, [allDocs, filteredDocs, selectedDoc]);
+  }, [allDocs, docBySlug, filteredDocs, routeParams?.slug, selectedDoc]);
 
   useEffect(() => {
     if (selectedCategory && !categories.includes(selectedCategory)) {
@@ -305,10 +398,11 @@ export default function DocsPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <h1 className="text-2xl font-heading font-bold" data-testid="text-page-title">
-              Documentation Library
+              Developer Resource Center
             </h1>
             <p className="max-w-3xl text-sm text-muted-foreground">
-              Internal operating documentation for the CMS, content workflows, infrastructure, deployment, and system architecture.
+              Browse system documentation, generated architecture indexes, route maps, schemas,
+              services, and long-form technical specs.
             </p>
           </div>
 
@@ -319,11 +413,7 @@ export default function DocsPage() {
               disabled={syncMutation.isPending}
               data-testid="button-sync-system-docs"
             >
-              {syncMutation.isPending ? (
-                <LoadingSpinner />
-              ) : (
-                <RefreshCw className="mr-2 h-4 w-4" />
-              )}
+              {syncMutation.isPending ? <LoadingSpinner /> : <RefreshCw className="mr-2 h-4 w-4" />}
               Sync System Docs
             </Button>
             <Button onClick={openCreate} data-testid="button-create-doc">
@@ -336,28 +426,39 @@ export default function DocsPage() {
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardContent className="py-4">
-              <div className="text-sm text-muted-foreground">Published library</div>
-              <div className="mt-1 text-2xl font-semibold" data-testid="text-doc-count">{allDocs.length}</div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <BookOpenText className="h-4 w-4" />
+                Documents
+              </div>
+              <div className="mt-1 text-2xl font-semibold" data-testid="text-doc-count">
+                {allDocs.length}
+              </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="py-4">
-              <div className="text-sm text-muted-foreground">Categories</div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Layers3 className="h-4 w-4" />
+                Systems
+              </div>
               <div className="mt-1 text-2xl font-semibold">{categories.length}</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="py-4">
-              <div className="text-sm text-muted-foreground">Visible results</div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <ListTree className="h-4 w-4" />
+                Visible results
+              </div>
               <div className="mt-1 text-2xl font-semibold">{filteredDocs.length}</div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid min-h-0 flex-1 gap-6 overflow-hidden xl:grid-cols-[260px_340px_minmax(0,1fr)]">
+        <div className="grid min-h-0 flex-1 gap-6 overflow-hidden xl:grid-cols-[280px_360px_minmax(0,1fr)]">
           <Card className="flex min-h-0 flex-col overflow-hidden">
             <CardHeader className="space-y-3">
-              <CardTitle className="text-base">Browse</CardTitle>
+              <CardTitle className="text-base">System Index</CardTitle>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -371,13 +472,14 @@ export default function DocsPage() {
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden pb-4">
               <ScrollArea className="min-h-0 flex-1 pr-3">
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <button
                     onClick={() => setSelectedCategory(null)}
-                    className={`w-full rounded-md px-3 py-2 text-left text-sm ${!selectedCategory ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                    className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm ${!selectedCategory ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                     data-testid="button-category-all"
                   >
-                    All Documents
+                    <span>All Systems</span>
+                    <span className="text-xs opacity-80">{allDocs.length}</span>
                   </button>
                   {categories.map((category) => {
                     const count = allDocs.filter((doc) => doc.category === category).length;
@@ -388,7 +490,7 @@ export default function DocsPage() {
                         className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm ${selectedCategory === category ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                         data-testid={`button-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
                       >
-                        <span>{category}</span>
+                        <span className="min-w-0 truncate">{category}</span>
                         <span className="text-xs opacity-80">{count}</span>
                       </button>
                     );
@@ -400,7 +502,7 @@ export default function DocsPage() {
 
           <Card className="flex min-h-0 flex-col overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-base">Library</CardTitle>
+              <CardTitle className="text-base">Documents & Indexes</CardTitle>
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden pb-4">
               <ScrollArea className="min-h-0 flex-1 pr-3">
@@ -409,15 +511,18 @@ export default function DocsPage() {
                     <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
                       <BookOpenText className="mx-auto mb-3 h-10 w-10 opacity-50" />
                       <p>No documentation found yet.</p>
-                      <p className="mt-1">Use “Sync System Docs” to import the repo documentation into the admin library.</p>
+                      <p className="mt-1">
+                        Use “Sync System Docs” to import the repo documentation into the admin
+                        library.
+                      </p>
                     </div>
                   ) : (
                     filteredDocs.map((doc) => (
                       <button
                         key={doc.id}
                         type="button"
-                        className={`w-full rounded-xl border p-4 text-left transition-colors ${selectedDoc?.id === doc.id ? "border-primary bg-primary/5" : "hover:border-primary/40 hover:bg-muted/50"}`}
-                        onClick={() => setSelectedDoc(doc)}
+                        className={`w-full rounded-md border p-4 text-left transition-colors ${selectedDoc?.id === doc.id ? "border-primary bg-primary/5" : "hover:border-primary/40 hover:bg-muted/50"}`}
+                        onClick={() => selectDoc(doc)}
                         data-testid={`card-doc-${doc.id}`}
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -427,6 +532,11 @@ export default function DocsPage() {
                               <Badge variant="outline" className="text-xs">
                                 {doc.category}
                               </Badge>
+                              {doc.slug.startsWith("system-") && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Generated
+                                </Badge>
+                              )}
                               {!doc.isPublished && (
                                 <Badge variant="secondary" className="text-xs">
                                   Draft
@@ -458,11 +568,15 @@ export default function DocsPage() {
                           {selectedDoc.title}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          System and editorial documentation for the Core Platform platform.
+                          Technical documentation for Core Platform systems, architecture, modules,
+                          and operating workflows.
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <Badge variant="outline">{selectedDoc.category}</Badge>
+                        {selectedDoc.slug.startsWith("system-") && (
+                          <Badge variant="secondary">Generated Index</Badge>
+                        )}
                         {selectedDoc.isPublished ? (
                           <Badge data-testid="badge-published">Published</Badge>
                         ) : (
@@ -474,7 +588,12 @@ export default function DocsPage() {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm" onClick={() => openEdit(selectedDoc)} data-testid="button-edit-doc">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEdit(selectedDoc)}
+                        data-testid="button-edit-doc"
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
@@ -488,10 +607,41 @@ export default function DocsPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden pb-4 pt-6">
-                  <ScrollArea className="min-h-0 flex-1 pr-4">
-                    <MarkdownDocument content={selectedDoc.content} data-testid="text-doc-content" />
+                <CardContent className="grid min-h-0 flex-1 gap-6 overflow-hidden pb-4 pt-6 lg:grid-cols-[minmax(0,1fr)_220px]">
+                  <ScrollArea className="min-h-0 pr-4">
+                    <MarkdownDocument
+                      content={selectedDoc.content}
+                      resolveLink={resolveDocLink}
+                      onDocLinkClick={handleDocLinkClick}
+                      data-testid="text-doc-content"
+                    />
                   </ScrollArea>
+                  <aside className="hidden min-h-0 border-l pl-4 lg:block">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-medium">
+                      <Hash className="h-4 w-4" />
+                      On this page
+                    </div>
+                    <ScrollArea className="h-full pr-2">
+                      {selectedDocHeadings.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No headings found.</p>
+                      ) : (
+                        <nav className="space-y-1" data-testid="doc-table-of-contents">
+                          {selectedDocHeadings.map((heading) => (
+                            <a
+                              key={heading.id}
+                              href={`#${heading.id}`}
+                              className={cn(
+                                "block rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground",
+                                heading.level === 3 && "pl-5 text-xs",
+                              )}
+                            >
+                              {heading.text}
+                            </a>
+                          ))}
+                        </nav>
+                      )}
+                    </ScrollArea>
+                  </aside>
                 </CardContent>
               </>
             ) : (
@@ -528,7 +678,14 @@ export default function DocsPage() {
             ) : null}
 
             {editingDoc && (
-              <div className={cn("space-y-4", editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
+              <div
+                className={cn(
+                  "space-y-4",
+                  editorLock.hasLocking &&
+                    editorLock.isReadOnly &&
+                    "pointer-events-none select-none opacity-70",
+                )}
+              >
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Title</Label>
@@ -570,7 +727,9 @@ export default function DocsPage() {
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={editingDoc.isPublished ?? true}
-                        onCheckedChange={(value) => setEditingDoc({ ...editingDoc, isPublished: value })}
+                        onCheckedChange={(value) =>
+                          setEditingDoc({ ...editingDoc, isPublished: value })
+                        }
                         data-testid="switch-doc-published"
                       />
                       <Label>{editingDoc.isPublished ? "Published" : "Draft"}</Label>
@@ -632,7 +791,9 @@ export default function DocsPage() {
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => unsavedChangesGuard.confirmDiscardChanges(() => setSheetOpen(false))}
+                  onClick={() =>
+                    unsavedChangesGuard.confirmDiscardChanges(() => setSheetOpen(false))
+                  }
                 >
                   Cancel
                 </Button>

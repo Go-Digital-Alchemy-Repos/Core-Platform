@@ -624,6 +624,47 @@ const recordingsContent = {
   ],
 };
 
+const portfolioContent = {
+  blocks: [
+    {
+      id: uid(),
+      type: "portfolio-grid",
+      props: {
+        eyebrow: "Featured Case Study",
+        heading: "Featured Portfolio Project",
+        subheading:
+          "A closer look at selected work, project context, and measurable outcomes.",
+        layout: "list",
+        featuredOnly: true,
+        excludeFeatured: false,
+        showSearch: false,
+        showIndustryFilter: false,
+        showCategoryFilter: false,
+        showLocationFilter: false,
+        limit: 1,
+      },
+    },
+    {
+      id: uid(),
+      type: "portfolio-grid",
+      props: {
+        eyebrow: "Portfolio",
+        heading: "Explore More Work",
+        subheading:
+          "Browse additional seeded case studies across real estate, web development, creative portfolios, and service launches.",
+        layout: "grid",
+        featuredOnly: false,
+        excludeFeatured: true,
+        showSearch: true,
+        showIndustryFilter: true,
+        showCategoryFilter: true,
+        showLocationFilter: true,
+        limit: 0,
+      },
+    },
+  ],
+};
+
 const directoryContent = {
   blocks: [
     {
@@ -738,6 +779,16 @@ const pages = [
     seoTitle: "Video Archives | Core Platform",
     seoDescription:
       "Watch past Core Platform trainings and webinars from the video archives.",
+  },
+  {
+    slug: "portfolio",
+    title: "Portfolio",
+    pageType: "custom" as const,
+    status: "published" as const,
+    content: portfolioContent,
+    seoTitle: "Portfolio | Core Platform",
+    seoDescription:
+      "Explore selected portfolio projects, case studies, and project outcomes.",
   },
   {
     slug: "directory",

@@ -7,6 +7,7 @@ import { ensureSystemEmailTemplates } from "./system-email-templates.service";
 import { ensureSystemForms } from "./system-forms.service";
 import { ensureSystemEcommerce } from "./system-ecommerce.service";
 import { ensureSystemCareers } from "./system-careers.service";
+import { ensureSystemPortfolio } from "./system-portfolio.service";
 import { seedBlogPosts } from "../scripts/seed-blog";
 
 export async function runSystemBootstrap() {
@@ -18,6 +19,7 @@ export async function runSystemBootstrap() {
   await ensureSystemForms();
   await ensureSystemEcommerce();
   await ensureSystemCareers();
+  await ensureSystemPortfolio();
   await seedBlogPosts({ refreshExisting: false });
   await ensureSystemDocs({ refreshExisting: false });
   await ensureSystemEmailTemplates(false);

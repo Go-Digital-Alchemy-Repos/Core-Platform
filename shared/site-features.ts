@@ -7,6 +7,7 @@ export interface SiteFeatures {
   ecommerceEnabled: boolean;
   membershipEnabled: boolean;
   careersEnabled: boolean;
+  portfolioEnabled: boolean;
 }
 
 export const DEFAULT_SITE_FEATURES: SiteFeatures = {
@@ -18,6 +19,7 @@ export const DEFAULT_SITE_FEATURES: SiteFeatures = {
   ecommerceEnabled: true,
   membershipEnabled: true,
   careersEnabled: true,
+  portfolioEnabled: true,
 };
 
 export function normalizeBooleanSetting(value: unknown, fallback = true): boolean {

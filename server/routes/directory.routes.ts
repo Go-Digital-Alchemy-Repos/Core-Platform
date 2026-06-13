@@ -5,6 +5,7 @@ import { paramString } from "../utils/params";
 import { therapistSearchSchema } from "@shared/types/directory";
 import * as r2Service from "../services/r2.service";
 import { getDirectorySettings } from "../services/directory-settings.service";
+import { getDirectoryExperienceMode } from "@shared/types/directory-settings";
 
 const router = Router();
 
@@ -47,6 +48,7 @@ router.get(
     const specArray = specialization ? specialization.split(",").filter(Boolean) : undefined;
 
     const directorySettings = await getDirectorySettings();
+    const directoryMode = getDirectoryExperienceMode(directorySettings);
 
     const result = await storage.therapists.listProfilesPaginated({
       search: search || undefined,
@@ -62,6 +64,7 @@ router.get(
       latitude,
       longitude,
       requireApprovedApplication: directorySettings.directoryRequiresApprovedApplication,
+      directoryMode,
     });
 
     res.json({
@@ -75,7 +78,11 @@ router.get(
   "/filters",
   asyncHandler(async (_req, res) => {
     const directorySettings = await getDirectorySettings();
-    const options = await storage.therapists.getFilterOptions(directorySettings.directoryRequiresApprovedApplication);
+    const directoryMode = getDirectoryExperienceMode(directorySettings);
+    const options = await storage.therapists.getFilterOptions(
+      directorySettings.directoryRequiresApprovedApplication,
+      directoryMode,
+    );
     res.json(options);
   })
 );
@@ -84,7 +91,11 @@ router.get(
   "/featured",
   asyncHandler(async (_req, res) => {
     const directorySettings = await getDirectorySettings();
-    const featured = await storage.therapists.listFeatured(directorySettings.directoryRequiresApprovedApplication);
+    const directoryMode = getDirectoryExperienceMode(directorySettings);
+    const featured = await storage.therapists.listFeatured(
+      directorySettings.directoryRequiresApprovedApplication,
+      directoryMode,
+    );
     res.json(await Promise.all(featured.map(normalizeTherapistResult)));
   })
 );
@@ -93,10 +104,12 @@ router.get(
   "/:id",
   asyncHandler(async (req, res) => {
     const directorySettings = await getDirectorySettings();
+    const directoryMode = getDirectoryExperienceMode(directorySettings);
     const profile = await storage.therapists.getProfileWithUser(paramString(req.params.id));
     if (
       !profile ||
       !profile.isActive ||
+      profile.directoryMode !== directoryMode ||
       (directorySettings.directoryRequiresApprovedApplication && !profile.isApproved)
     ) {
       res.status(404).json({ message: "Therapist not found" });

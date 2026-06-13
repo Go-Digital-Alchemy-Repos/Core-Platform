@@ -155,7 +155,9 @@ type SystemConfigurationSettingKey =
   | "enable_events"
   | "enable_crm"
   | "enable_ecommerce"
-  | "enable_careers";
+  | "enable_membership"
+  | "enable_careers"
+  | "enable_portfolio";
 type SettingsTab = "integrations" | "head-tags" | "system" | "email-templates";
 
 const SETTINGS_TABS = new Set<SettingsTab>([
@@ -324,10 +326,22 @@ const SYSTEM_CONFIGURATION_FIELDS: Array<{
       "Turns the ecommerce app on or off, including the storefront, checkout, and admin ecommerce routes.",
   },
   {
+    key: "enable_membership",
+    label: "Enable Membership",
+    description:
+      "Turns the membership app on or off, including plans, member billing, entitlement rules, and restricted content access.",
+  },
+  {
     key: "enable_careers",
     label: "Enable Career Center",
     description:
       "Turns the Career Center app on or off, including public job listings, applications, and admin hiring tools.",
+  },
+  {
+    key: "enable_portfolio",
+    label: "Enable Portfolio",
+    description:
+      "Turns the Portfolio app on or off, including public case studies, project archives, and admin portfolio tools.",
   },
 ];
 
@@ -2316,10 +2330,22 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
         DEFAULT_SITE_FEATURES.ecommerceEnabled,
       );
     }
+    if (key === "enable_membership") {
+      return normalizeBooleanSetting(
+        systemConfig.enable_membership?.value,
+        DEFAULT_SITE_FEATURES.membershipEnabled,
+      );
+    }
     if (key === "enable_careers") {
       return normalizeBooleanSetting(
         systemConfig.enable_careers?.value,
         DEFAULT_SITE_FEATURES.careersEnabled,
+      );
+    }
+    if (key === "enable_portfolio") {
+      return normalizeBooleanSetting(
+        systemConfig.enable_portfolio?.value,
+        DEFAULT_SITE_FEATURES.portfolioEnabled,
       );
     }
     return normalizeBooleanSetting(
@@ -2334,7 +2360,9 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
     enable_events: getStoredValue("enable_events"),
     enable_crm: getStoredValue("enable_crm"),
     enable_ecommerce: getStoredValue("enable_ecommerce"),
+    enable_membership: getStoredValue("enable_membership"),
     enable_careers: getStoredValue("enable_careers"),
+    enable_portfolio: getStoredValue("enable_portfolio"),
   });
 
   useEffect(() => {
@@ -2345,7 +2373,9 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
       enable_events: getStoredValue("enable_events"),
       enable_crm: getStoredValue("enable_crm"),
       enable_ecommerce: getStoredValue("enable_ecommerce"),
+      enable_membership: getStoredValue("enable_membership"),
       enable_careers: getStoredValue("enable_careers"),
+      enable_portfolio: getStoredValue("enable_portfolio"),
     });
   }, [
     systemConfig.enable_cms?.value,
@@ -2354,7 +2384,9 @@ function SystemConfigurationTab({ settings }: { settings: SettingsData }) {
     systemConfig.enable_events?.value,
     systemConfig.enable_crm?.value,
     systemConfig.enable_ecommerce?.value,
+    systemConfig.enable_membership?.value,
     systemConfig.enable_careers?.value,
+    systemConfig.enable_portfolio?.value,
   ]);
 
   const saveMutation = useMutation({

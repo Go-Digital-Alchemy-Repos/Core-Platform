@@ -367,6 +367,46 @@ async function ensureEventFlexibilityTables(migrationsFolder: string) {
   }
 }
 
+async function ensureMembershipTables(migrationsFolder: string) {
+  const hasMembershipTables = await tableExists("membership_plans");
+  if (!hasMembershipTables) {
+    logger.app.info("Applying membership migration for database without membership tables");
+    await runSqlMigrationFile(migrationsFolder, "0036_membership.sql");
+  }
+}
+
+async function ensureEmailTemplateModules(migrationsFolder: string) {
+  const hasEmailTemplateModule = await columnExists("email_templates", "module");
+  if (!hasEmailTemplateModule) {
+    logger.app.info("Applying email template module migration for legacy database");
+    await runSqlMigrationFile(migrationsFolder, "0037_email_template_modules.sql");
+  }
+}
+
+async function ensurePortfolioTables(migrationsFolder: string) {
+  const hasPortfolioProjects = await tableExists("portfolio_projects");
+  if (!hasPortfolioProjects) {
+    logger.app.info("Applying portfolio migration for database without portfolio tables");
+    await runSqlMigrationFile(migrationsFolder, "0038_portfolio.sql");
+  }
+}
+
+async function ensureDirectoryProfileMediaTable(migrationsFolder: string) {
+  const hasDirectoryProfileMedia = await tableExists("directory_profile_media");
+  if (!hasDirectoryProfileMedia) {
+    logger.app.info("Applying directory profile media migration for database without gallery media tables");
+    await runSqlMigrationFile(migrationsFolder, "0039_directory_profile_media.sql");
+  }
+}
+
+async function ensureDirectoryProfileModes(migrationsFolder: string) {
+  const hasDirectoryMode = await columnExists("therapist_profiles", "directory_mode");
+  if (!hasDirectoryMode) {
+    logger.app.info("Applying directory profile mode migration for preset-specific demo listings");
+    await runSqlMigrationFile(migrationsFolder, "0040_directory_profile_modes.sql");
+  }
+}
+
 export async function runMigrations() {
   const migrationsFolder = path.resolve(
     process.env.NODE_ENV === "production" ? __dirname : process.cwd(),
@@ -379,6 +419,11 @@ export async function runMigrations() {
     await ensureCrmTables();
     await ensureEcommerceTables(migrationsFolder);
     await ensureEventFlexibilityTables(migrationsFolder);
+    await ensureMembershipTables(migrationsFolder);
+    await ensureEmailTemplateModules(migrationsFolder);
+    await ensurePortfolioTables(migrationsFolder);
+    await ensureDirectoryProfileMediaTable(migrationsFolder);
+    await ensureDirectoryProfileModes(migrationsFolder);
   }
 
   if (!bootstrapState.hasJournal && bootstrapState.publicTableCount > 0) {
@@ -393,6 +438,11 @@ export async function runMigrations() {
     await migrate(db, { migrationsFolder });
     await ensureEventSlugs();
     await ensureCrmTables();
+    await ensureMembershipTables(migrationsFolder);
+    await ensureEmailTemplateModules(migrationsFolder);
+    await ensurePortfolioTables(migrationsFolder);
+    await ensureDirectoryProfileMediaTable(migrationsFolder);
+    await ensureDirectoryProfileModes(migrationsFolder);
     logger.app.info("Database migrations completed successfully");
   } catch (err) {
     logger.app.error("Database migration failed", err);

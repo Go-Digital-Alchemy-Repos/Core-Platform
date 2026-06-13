@@ -162,6 +162,13 @@
       "when": 1776079800000,
       "tag": "0020_event_slugs",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1776083400000,
+      "tag": "0039_directory_profile_media",
+      "breakpoints": true
     }
   ]
 }

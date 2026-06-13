@@ -53,6 +53,8 @@ describe("requireSiteFeature", () => {
       requireCrmEnabled,
       requireDirectoryEnabled,
       requireEventsEnabled,
+      requireMembershipEnabled,
+      requirePortfolioEnabled,
     } = await import("./site-features");
 
     const checks = [
@@ -61,6 +63,8 @@ describe("requireSiteFeature", () => {
       [requireEventsEnabled, "Events"],
       [requireCrmEnabled, "CRM"],
       [requireCareersEnabled, "Careers"],
+      [requireMembershipEnabled, "Membership"],
+      [requirePortfolioEnabled, "Portfolio"],
     ] as const;
 
     for (const [middleware, label] of checks) {

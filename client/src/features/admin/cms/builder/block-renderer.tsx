@@ -17,7 +17,7 @@ import {
   List, Shield, Newspaper, TrendingUp, Grid3X3, Rss,
   ListChecks, FlaskConical, BadgeCheck, Workflow, ListOrdered,
   ChevronLeft, ChevronRight, GalleryHorizontal, Grid2X2, Building2,
-  ExternalLink, XCircle, BriefcaseBusiness,
+  ExternalLink, XCircle, BriefcaseBusiness, FolderKanban,
 } from "lucide-react";
 import { LoginDialog } from "@/components/auth/login-dialog";
 import { MapView } from "@/components/directory/map-view";
@@ -62,7 +62,7 @@ const LUCIDE_MAP: Record<string, React.ElementType> = {
   List, Shield, Newspaper, TrendingUp, Grid3X3, Rss,
   ListChecks, FlaskConical, BadgeCheck, Workflow, ListOrdered,
   ChevronLeft, ChevronRight, GalleryHorizontal, Grid2X2, Building2,
-  ExternalLink, XCircle, BriefcaseBusiness,
+  ExternalLink, XCircle, BriefcaseBusiness, FolderKanban,
 };
 
 function LucideIcon({ name, className }: { name: string; className?: string }) {
@@ -97,6 +97,12 @@ const LazyDirectoryBrowserSection = lazy(() =>
 const LazyCareerListingsSection = lazy(() =>
   import("@/features/public/careers-page").then((module) => ({
     default: module.CareerListingsSection,
+  }))
+);
+
+const LazyPortfolioGridSection = lazy(() =>
+  import("@/features/public/portfolio-page").then((module) => ({
+    default: module.PortfolioGridSection,
   }))
 );
 
@@ -2054,7 +2060,7 @@ export function BlockRenderer({
   let renderedBlock: ReactElement | null = null;
 
   if (isDynamicBlock(block.type)) {
-    if (isAdminPreview && block.type !== "directory-browser" && block.type !== "career-listings") {
+    if (isAdminPreview && block.type !== "directory-browser" && block.type !== "career-listings" && block.type !== "portfolio-grid") {
       renderedBlock = <DynamicPlaceholderAdmin block={block} />;
     }
     if (!renderedBlock && block.type === "therapist-map") renderedBlock = <TherapistMapBlock props={block.props} />;
@@ -2096,6 +2102,13 @@ export function BlockRenderer({
       renderedBlock = (
         <Suspense fallback={<DynamicPreviewFallback />}>
           <LazyCareerListingsSection props={block.props} />
+        </Suspense>
+      );
+    }
+    if (!renderedBlock && block.type === "portfolio-grid") {
+      renderedBlock = (
+        <Suspense fallback={<DynamicPreviewFallback />}>
+          <LazyPortfolioGridSection props={block.props} />
         </Suspense>
       );
     }
@@ -2142,6 +2155,7 @@ const FULL_WIDTH_BLOCKS = new Set([
   "video-archives",
   "directory-browser",
   "career-listings",
+  "portfolio-grid",
   "cta",
   "trust-bar",
   "divider",

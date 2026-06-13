@@ -8,6 +8,7 @@ import DocsPage from "@/features/admin/docs-page";
 const useQueryMock = vi.fn();
 const useMutationMock = vi.fn();
 const lockGuardMock = vi.fn();
+const navigateMock = vi.fn();
 const editorLockState = {
   hasLocking: true,
   hasLoaded: true,
@@ -32,9 +33,18 @@ const mockDocs = [
     title: "Editor Workflow",
     slug: "editor-workflow",
     category: "Getting Started",
-    content: "# Editor Workflow",
+    content: "# Editor Workflow\n\n## Steps\n\n[API Reference](/admin/docs/api-reference)",
     isPublished: true,
     sortOrder: 1,
+  },
+  {
+    id: "doc-2",
+    title: "API Reference",
+    slug: "api-reference",
+    category: "API Reference",
+    content: "# API Reference",
+    isPublished: true,
+    sortOrder: 2,
   },
 ];
 
@@ -46,6 +56,11 @@ vi.mock("@tanstack/react-query", async (importOriginal) => {
     useMutation: (options: unknown) => useMutationMock(options),
   };
 });
+
+vi.mock("wouter", () => ({
+  useLocation: () => ["/admin/docs", navigateMock],
+  useRoute: () => [false, null],
+}));
 
 vi.mock("@/features/admin/admin-sidebar", () => ({
   AdminSidebar: ({ children }: { children: React.ReactNode }) =>
@@ -59,11 +74,6 @@ vi.mock("@/components/shared/editor-lock-banner", () => ({
 
 vi.mock("@/components/shared/loading-spinner", () => ({
   LoadingSpinner: () => React.createElement("div", { "data-testid": "loading-spinner" }, "Loading"),
-}));
-
-vi.mock("@/components/shared/markdown-document", () => ({
-  MarkdownDocument: ({ content }: { content: string }) =>
-    React.createElement("div", { "data-testid": "markdown-document" }, content),
 }));
 
 vi.mock("@/hooks/use-toast", () => ({
@@ -85,6 +95,7 @@ describe("DocsPage", () => {
   let root: Root | null = null;
 
   beforeEach(() => {
+    navigateMock.mockReset();
     lockGuardMock.mockReset();
     editorLockState.isReadOnly = true;
     mutationStates = [];
@@ -112,10 +123,71 @@ describe("DocsPage", () => {
         unobserve() {}
       },
     );
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
+  });
+
+  it("renders the developer resource center title and table of contents", async () => {
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(DocsPage));
+    });
+
+    expect(document.body.querySelector('[data-testid="text-page-title"]')?.textContent).toBe(
+      "Developer Resource Center",
+    );
+    expect(
+      document.body.querySelector('[data-testid="doc-table-of-contents"]')?.textContent,
+    ).toContain("Steps");
+  });
+
+  it("searches document titles and content", async () => {
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(DocsPage));
+    });
+
+    const searchInput = document.body.querySelector(
+      '[data-testid="input-search-docs"]',
+    ) as HTMLInputElement | null;
+    expect(searchInput).not.toBeNull();
+
+    await act(async () => {
+      searchInput!.value = "API";
+      searchInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+    expect(document.body.textContent).toContain("API Reference");
+  });
+
+  it("navigates internal document links", async () => {
+    root = createRoot(container);
+
+    await act(async () => {
+      root!.render(React.createElement(DocsPage));
+    });
+
+    const link = document.body.querySelector(
+      '[data-doc-slug="api-reference"]',
+    ) as HTMLAnchorElement | null;
+    expect(link).not.toBeNull();
+
+    await act(async () => {
+      link!.click();
+    });
+
+    expect(navigateMock).toHaveBeenCalledWith("/admin/docs/api-reference");
+    expect(document.body.querySelector('[data-testid="text-doc-title"]')?.textContent).toContain(
+      "API Reference",
+    );
   });
 
   afterEach(() => {
@@ -135,7 +207,9 @@ describe("DocsPage", () => {
       root!.render(React.createElement(DocsPage));
     });
 
-    const editButton = document.body.querySelector('[data-testid="button-edit-doc"]') as HTMLButtonElement | null;
+    const editButton = document.body.querySelector(
+      '[data-testid="button-edit-doc"]',
+    ) as HTMLButtonElement | null;
     expect(editButton).not.toBeNull();
 
     await act(async () => {
@@ -168,14 +242,18 @@ describe("DocsPage", () => {
       root!.render(React.createElement(DocsPage));
     });
 
-    const editButton = document.body.querySelector('[data-testid="button-edit-doc"]') as HTMLButtonElement | null;
+    const editButton = document.body.querySelector(
+      '[data-testid="button-edit-doc"]',
+    ) as HTMLButtonElement | null;
     expect(editButton).not.toBeNull();
 
     await act(async () => {
       editButton?.click();
     });
 
-    const saveButton = document.body.querySelector('[data-testid="button-save-doc"]') as HTMLButtonElement | null;
+    const saveButton = document.body.querySelector(
+      '[data-testid="button-save-doc"]',
+    ) as HTMLButtonElement | null;
     expect(saveButton).not.toBeNull();
 
     await act(async () => {
@@ -188,7 +266,7 @@ describe("DocsPage", () => {
         id: "doc-1",
         title: "Editor Workflow",
         slug: "editor-workflow",
-      })
+      }),
     );
   });
 });

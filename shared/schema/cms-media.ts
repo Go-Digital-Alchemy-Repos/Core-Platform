@@ -42,7 +42,8 @@ export type CmsMediaUsageEntityType =
   | "directory_profile"
   | "branding"
   | "ecommerce_product"
-  | "ecommerce_category";
+  | "ecommerce_category"
+  | "portfolio_project";
 export type CmsMediaAssetKind = "image" | "document";
 
 export interface CmsMediaUsageReference {

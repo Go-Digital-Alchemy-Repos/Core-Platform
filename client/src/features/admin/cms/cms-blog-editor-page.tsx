@@ -62,6 +62,7 @@ import { CmsImageUpload } from "./components/cms-image-upload";
 import { SeoPreview } from "@/components/shared/seo-preview";
 import { StructuredDataStatus } from "@/components/shared/structured-data-status";
 import { ImagePositionPicker } from "./components/image-position-picker";
+import { MembershipAccessRuleCard } from "./components/membership-access-rule-card";
 import type { BlogPost, BlogTaxonomy, CmsSidebar } from "@shared/schema";
 import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
@@ -1059,6 +1060,11 @@ export default function CmsBlogEditorPage() {
                     )}
                   </CardContent>
                 </Card>
+                <MembershipAccessRuleCard
+                  resourceType="blog_post"
+                  resourceId={isNew ? undefined : id}
+                  disabled={editorLock.isReadOnly}
+                />
               </TabsContent>
 
               <TabsContent value="layout" className="mt-0 space-y-4">

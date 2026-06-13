@@ -24,6 +24,8 @@ const EventsPage = lazy(() => import("@/features/public/events-page"));
 const EventDetailPage = lazy(() => import("@/features/public/event-detail-page"));
 const CareersPage = lazy(() => import("@/features/public/careers-page"));
 const CareerJobDetailPage = lazy(() => import("@/features/public/career-job-detail-page"));
+const PortfolioPage = lazy(() => import("@/features/public/portfolio-page"));
+const PortfolioDetailPage = lazy(() => import("@/features/public/portfolio-detail-page"));
 const JoinNetworkPage = lazy(() => import("@/features/public/join-network-page"));
 const CmsHybridPage = lazy(() =>
   import("@/features/public/cms-hybrid-page").then((module) => ({
@@ -57,6 +59,9 @@ const AdminCrmClientsPage = lazy(() => import("@/features/admin/crm-clients-page
 const AdminEventsPage = lazy(() => import("@/features/admin/events-page"));
 const AdminEventSettingsPage = lazy(() => import("@/features/admin/event-settings-page"));
 const AdminCareersPage = lazy(() => import("@/features/admin/careers-page"));
+const AdminPortfolioPage = lazy(() => import("@/features/admin/portfolio-page"));
+const AdminPortfolioEditorPage = lazy(() => import("@/features/admin/portfolio-editor-page"));
+const AdminPortfolioSettingsPage = lazy(() => import("@/features/admin/portfolio-settings-page"));
 const DocsPage = lazy(() => import("@/features/admin/docs-page"));
 const AdminSettingsPage = lazy(() => import("@/features/admin/settings-page"));
 const AdminDesignPage = lazy(() => import("@/features/admin/design-page"));
@@ -90,6 +95,8 @@ const OrderSuccessPage = lazy(() => import("@/features/ecommerce/order-success-p
 const OrderStatusPage = lazy(() => import("@/features/ecommerce/order-status-page"));
 const CustomerAccountPage = lazy(() => import("@/features/ecommerce/customer-account-page"));
 const AdminEcommercePage = lazy(() => import("@/features/admin/ecommerce/ecommerce-page"));
+const MembershipPage = lazy(() => import("@/features/public/membership-page"));
+const AdminMembershipPage = lazy(() => import("@/features/admin/membership-page"));
 
 function PageLoader() {
   return (
@@ -176,9 +183,12 @@ function Router() {
         <Route path="/events/:id" component={() => siteFeatures.eventsEnabled ? <EventDetailPage /> : <NotFound />} />
         <Route path="/careers" component={() => siteFeatures.careersEnabled ? <CmsHybridPage slug="careers" fallback={<CareersPage />} enabled={siteFeatures.cmsEnabled} /> : <NotFound />} />
         <Route path="/careers/:slug" component={() => siteFeatures.careersEnabled ? <CareerJobDetailPage /> : <NotFound />} />
+        <Route path="/portfolio" component={() => siteFeatures.portfolioEnabled ? <CmsHybridPage slug="portfolio" fallback={<PortfolioPage />} enabled={siteFeatures.cmsEnabled} /> : <NotFound />} />
+        <Route path="/portfolio/:slug" component={() => siteFeatures.portfolioEnabled ? <PortfolioDetailPage /> : <NotFound />} />
         <Route path="/recordings" component={() => <CmsHybridPage slug="recordings" fallback={<RecordingArchivesPage />} enabled={siteFeatures.cmsEnabled} />} />
         <Route path="/search" component={SearchResultsPage} />
         <Route path="/shop" component={() => siteFeatures.ecommerceEnabled ? <ShopPage /> : <NotFound />} />
+        <Route path="/membership" component={() => siteFeatures.membershipEnabled ? <MembershipPage /> : <NotFound />} />
         <Route path="/products/:slug" component={() => siteFeatures.ecommerceEnabled ? <ProductDetailPage /> : <NotFound />} />
         <Route path="/cart" component={() => siteFeatures.ecommerceEnabled ? <CartPage /> : <NotFound />} />
         <Route path="/checkout" component={() => siteFeatures.ecommerceEnabled ? <CheckoutPage /> : <NotFound />} />
@@ -320,9 +330,39 @@ function Router() {
             {siteFeatures.eventsEnabled ? <AdminEventsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
+        <Route path="/admin/careers/new">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
+            {siteFeatures.careersEnabled ? <AdminCareersPage initialCreate /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/careers/settings">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
+            {siteFeatures.careersEnabled ? <AdminCareersPage initialTab="settings" /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
         <Route path="/admin/careers">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
             {siteFeatures.careersEnabled ? <AdminCareersPage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/portfolio/new">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
+            {siteFeatures.portfolioEnabled ? <AdminPortfolioEditorPage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/portfolio/settings">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
+            {siteFeatures.portfolioEnabled ? <AdminPortfolioSettingsPage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/portfolio/:id">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
+            {siteFeatures.portfolioEnabled ? <AdminPortfolioEditorPage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/portfolio">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
+            {siteFeatures.portfolioEnabled ? <AdminPortfolioPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/forms">
@@ -350,8 +390,23 @@ function Router() {
             {siteFeatures.ecommerceEnabled ? <AdminEcommercePage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
+        <Route path="/admin/membership/:view">
+          <ProtectedRoute roles={["admin"]}>
+            {siteFeatures.membershipEnabled ? <AdminMembershipPage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/membership">
+          <ProtectedRoute roles={["admin"]}>
+            {siteFeatures.membershipEnabled ? <AdminMembershipPage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
         <Route path="/admin/blog">
           <Redirect to="/admin/cms/blog" />
+        </Route>
+        <Route path="/admin/docs/:slug">
+          <ProtectedRoute roles={["admin"]}>
+            <DocsPage />
+          </ProtectedRoute>
         </Route>
         <Route path="/admin/docs">
           <ProtectedRoute roles={["admin"]}>

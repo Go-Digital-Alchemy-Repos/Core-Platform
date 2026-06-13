@@ -20,6 +20,18 @@ import {
   buildArticleLd,
 } from "@/lib/structured-data";
 
+class BlogMembershipAccessError extends Error {
+  status: number;
+  teaser: string | null;
+
+  constructor(status: number, teaser: string | null) {
+    super("Membership access required");
+    this.name = "BlogMembershipAccessError";
+    this.status = status;
+    this.teaser = teaser;
+  }
+}
+
 function PodcastPlayer({ podcastUrl }: { podcastUrl: string }) {
   const { toast } = useToast();
 
@@ -114,6 +126,15 @@ export default function InsightsPostPage() {
 
   const { data: post, isLoading, error } = useQuery<BlogPost>({
     queryKey: ["/api/blog", params.slug],
+    queryFn: async () => {
+      const res = await fetch(`/api/blog/${params.slug}`, { credentials: "include" });
+      if (res.status === 401 || res.status === 403) {
+        const payload = await res.json().catch(() => ({}));
+        throw new BlogMembershipAccessError(res.status, typeof payload.teaser === "string" ? payload.teaser : null);
+      }
+      if (!res.ok) throw new Error("Article not found");
+      return res.json();
+    },
   });
 
   const { data: globalSeo } = useQuery<SeoSettings>({
@@ -138,6 +159,28 @@ export default function InsightsPostPage() {
   }
 
   if (!post || error) {
+    if (error instanceof BlogMembershipAccessError) {
+      return (
+        <PageLayout>
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-24 text-center">
+            <h1 className="text-2xl font-semibold mb-4 public-heading-1">
+              {error.status === 401 ? "Sign in to continue" : "Membership required"}
+            </h1>
+            <p className="public-helper-text mb-6">
+              {error.teaser || "This article is available to members with the right access level."}
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link href="/auth/login">
+                <Button>Sign In</Button>
+              </Link>
+              <Link href="/membership">
+                <Button variant="outline">View Memberships</Button>
+              </Link>
+            </div>
+          </div>
+        </PageLayout>
+      );
+    }
     return (
       <PageLayout>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-24 text-center">

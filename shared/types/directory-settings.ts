@@ -1,12 +1,26 @@
-export const DIRECTORY_MODES = ["therapists", "locations", "service_providers", "custom"] as const;
+export const DIRECTORY_MODES = [
+  "therapists",
+  "locations",
+  "service_providers",
+  "real_estate",
+  "custom",
+] as const;
 
 export type DirectoryMode = (typeof DIRECTORY_MODES)[number];
 
-export const DIRECTORY_PRIMARY_CTA_TYPES = ["contact_form", "website", "phone", "directions", "none"] as const;
+export const DIRECTORY_PRIMARY_CTA_TYPES = [
+  "contact_form",
+  "website",
+  "phone",
+  "directions",
+  "none",
+] as const;
 
 export type DirectoryPrimaryCtaType = (typeof DIRECTORY_PRIMARY_CTA_TYPES)[number];
 
 export type DirectoryLabelPreset = {
+  templateLabel: string;
+  templateDescription: string;
   directoryLabelSingular: string;
   directoryLabelPlural: string;
   listingLabelSingular: string;
@@ -54,10 +68,28 @@ export type DirectoryLabelPreset = {
   showWebsite: boolean;
   requireWebsite: boolean;
   showSocialLinks: boolean;
+  showGallery: boolean;
+  requireGallery: boolean;
+  galleryLabel: string;
+  galleryHelpText: string;
+  galleryMinImages: number;
+  galleryMaxImages: number;
+  structuredDataType:
+    | "Person"
+    | "LocalBusiness"
+    | "ProfessionalService"
+    | "RealEstateListing"
+    | "Thing";
+  recommendedLayouts: string[];
+  recommendedFilters: string[];
+  trustSignals: string[];
 };
 
 export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset> = {
   therapists: {
+    templateLabel: "Professional / Practitioner",
+    templateDescription:
+      "For credentialed people such as therapists, coaches, consultants, clinicians, instructors, or advisors.",
     directoryLabelSingular: "Directory",
     directoryLabelPlural: "Directory",
     listingLabelSingular: "Profile",
@@ -105,8 +137,34 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     showWebsite: true,
     requireWebsite: false,
     showSocialLinks: true,
+    showGallery: false,
+    requireGallery: false,
+    galleryLabel: "Photo Gallery",
+    galleryHelpText:
+      "Add optional photos that help visitors understand your practice, service, or professional presence.",
+    galleryMinImages: 0,
+    galleryMaxImages: 8,
+    structuredDataType: "Person",
+    recommendedLayouts: ["Compact list", "Profile cards", "Map/list split", "Detail profile"],
+    recommendedFilters: [
+      "Search",
+      "Specializations",
+      "Languages",
+      "Location",
+      "Session format",
+      "Availability",
+    ],
+    trustSignals: [
+      "Verified credentials",
+      "Approved listing",
+      "Accepting new clients",
+      "Featured profile",
+    ],
   },
   locations: {
+    templateLabel: "Location / Branch",
+    templateDescription:
+      "For physical places such as clinics, stores, venues, offices, campuses, chapters, or service branches.",
     directoryLabelSingular: "Location Directory",
     directoryLabelPlural: "Locations",
     listingLabelSingular: "Location",
@@ -117,7 +175,8 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     profileTitleLabel: "Location Name",
     profileTitlePlaceholder: "e.g. Downtown Flagship Store",
     profileBioLabel: "Location Description",
-    profileBioPlaceholder: "Describe this location, services, amenities, and what visitors can expect...",
+    profileBioPlaceholder:
+      "Describe this location, services, amenities, and what visitors can expect...",
     credentialsLabel: "Location Features",
     credentialsPlaceholder: "e.g. Curbside pickup, showroom, repairs",
     licenseNumberLabel: "Store or Location ID",
@@ -125,7 +184,8 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     practiceDetailsLabel: "Service Details",
     practiceModeLabel: "Service Format",
     acceptingClientsLabel: "Accepting Visitors",
-    acceptingClientsHelpText: "Toggle whether this location is currently open to new visitors or customers",
+    acceptingClientsHelpText:
+      "Toggle whether this location is currently open to new visitors or customers",
     willingToTravelLabel: "Mobile Service Available",
     willingToTravelHelpText: "Toggle whether this location or team can travel to customers",
     locationContactLabel: "Address & Contact",
@@ -154,8 +214,33 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     showWebsite: true,
     requireWebsite: false,
     showSocialLinks: true,
+    showGallery: true,
+    requireGallery: false,
+    galleryLabel: "Location Photos",
+    galleryHelpText:
+      "Show storefront, interior, amenities, exterior, and arrival photos so visitors know what to expect.",
+    galleryMinImages: 0,
+    galleryMaxImages: 16,
+    structuredDataType: "LocalBusiness",
+    recommendedLayouts: ["Map/list split", "Card grid", "Detail profile"],
+    recommendedFilters: [
+      "Search",
+      "Services",
+      "Location",
+      "Service format",
+      "Open/accepting visitors",
+    ],
+    trustSignals: [
+      "Verified location",
+      "Active listing",
+      "Accepting visitors",
+      "Featured location",
+    ],
   },
   service_providers: {
+    templateLabel: "Service Provider / Vendor",
+    templateDescription:
+      "For vendors, partners, agencies, contractors, consultants, and service marketplaces.",
     directoryLabelSingular: "Provider Directory",
     directoryLabelPlural: "Service Providers",
     listingLabelSingular: "Provider Profile",
@@ -203,8 +288,116 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     showWebsite: true,
     requireWebsite: false,
     showSocialLinks: true,
+    showGallery: false,
+    requireGallery: false,
+    galleryLabel: "Project Gallery",
+    galleryHelpText: "Add optional work samples, team photos, facilities, or service examples.",
+    galleryMinImages: 0,
+    galleryMaxImages: 12,
+    structuredDataType: "ProfessionalService",
+    recommendedLayouts: ["Profile cards", "Comparison grid", "Detail profile"],
+    recommendedFilters: [
+      "Search",
+      "Services",
+      "Industries",
+      "Service area",
+      "Delivery format",
+      "Availability",
+    ],
+    trustSignals: [
+      "Verified provider",
+      "Approved partner",
+      "Taking new projects",
+      "Featured provider",
+    ],
+  },
+  real_estate: {
+    templateLabel: "Real Estate Listing",
+    templateDescription:
+      "For residential, commercial, rental, or portfolio property listings aligned with common MLS/RESO-style fields.",
+    directoryLabelSingular: "Property Directory",
+    directoryLabelPlural: "Properties",
+    listingLabelSingular: "Property Listing",
+    listingLabelPlural: "Property Listings",
+    participantLabelSingular: "Listing Agent",
+    participantLabelPlural: "Listing Agents",
+    specialtyLabelPlural: "Property Features",
+    profileTitleLabel: "Property Title",
+    profileTitlePlaceholder: "e.g. Modern 3-bedroom home near downtown",
+    profileBioLabel: "Property Description",
+    profileBioPlaceholder:
+      "Describe the property, neighborhood, layout, amenities, and what makes it stand out...",
+    credentialsLabel: "Amenities & Features",
+    credentialsPlaceholder: "e.g. Pool, garage, renovated kitchen, mountain view",
+    licenseNumberLabel: "MLS or Listing ID",
+    licenseNumberPlaceholder: "e.g. MLS-2048127",
+    practiceDetailsLabel: "Property Details",
+    practiceModeLabel: "Listing Type",
+    acceptingClientsLabel: "Available for Showings",
+    acceptingClientsHelpText:
+      "Toggle whether this property is currently available for showings or inquiries",
+    willingToTravelLabel: "Open House Available",
+    willingToTravelHelpText: "Toggle whether this property has open house or tour availability",
+    locationContactLabel: "Property Location & Agent Contact",
+    primaryCtaType: "contact_form",
+    primaryCtaLabel: "Schedule Showing",
+    showProfileTitle: true,
+    requireProfileTitle: true,
+    showProfileBio: true,
+    requireProfileBio: true,
+    showSpecialties: true,
+    requireSpecialties: false,
+    showLanguages: false,
+    requireLanguages: false,
+    showCredentials: true,
+    requireCredentials: false,
+    showLicenseNumber: true,
+    requireLicenseNumber: false,
+    showPracticeMode: true,
+    requirePracticeMode: true,
+    showAvailabilityStatus: true,
+    showTravelOption: true,
+    showLocationFields: true,
+    requireLocationFields: true,
+    showPhone: true,
+    requirePhone: false,
+    showWebsite: true,
+    requireWebsite: false,
+    showSocialLinks: false,
+    showGallery: true,
+    requireGallery: true,
+    galleryLabel: "Property Photos",
+    galleryHelpText:
+      "Add exterior, interior, room, view, amenity, floor plan, and neighborhood photos. The primary image appears on cards.",
+    galleryMinImages: 3,
+    galleryMaxImages: 40,
+    structuredDataType: "RealEstateListing",
+    recommendedLayouts: [
+      "Photo-forward card grid",
+      "Map/list split",
+      "Detail profile with gallery",
+    ],
+    recommendedFilters: [
+      "Search",
+      "Price range",
+      "Property type",
+      "Beds",
+      "Baths",
+      "Location",
+      "Listing status",
+      "Square footage",
+    ],
+    trustSignals: [
+      "Verified listing",
+      "MLS/reference ID",
+      "Available for showings",
+      "Featured property",
+    ],
   },
   custom: {
+    templateLabel: "Custom / General Listing",
+    templateDescription:
+      "For neutral directories where the team defines labels, fields, filters, CTAs, and trust signals.",
     directoryLabelSingular: "Directory",
     directoryLabelPlural: "Directory",
     listingLabelSingular: "Listing",
@@ -252,6 +445,16 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     showWebsite: true,
     requireWebsite: false,
     showSocialLinks: true,
+    showGallery: false,
+    requireGallery: false,
+    galleryLabel: "Gallery",
+    galleryHelpText: "Add optional images that help visitors evaluate this listing.",
+    galleryMinImages: 0,
+    galleryMaxImages: 12,
+    structuredDataType: "Thing",
+    recommendedLayouts: ["Compact list", "Card grid", "Detail profile"],
+    recommendedFilters: ["Search", "Categories", "Location", "Availability"],
+    trustSignals: ["Approved listing", "Active listing", "Featured listing"],
   },
 };
 
@@ -270,3 +473,49 @@ export type PublicDirectorySettings = DirectoryLabelPreset & {
   directoryRequiresApprovedApplication: boolean;
   directoryRequiresActiveSubscription: boolean;
 };
+
+function normalizedLabel(value: string | null | undefined): string {
+  return (value || "").trim().toLowerCase();
+}
+
+export function getDirectoryExperienceMode(settings: Pick<
+  PublicDirectorySettings,
+  | "directoryMode"
+  | "directoryLabelPlural"
+  | "listingLabelPlural"
+  | "participantLabelPlural"
+  | "specialtyLabelPlural"
+>): DirectoryMode {
+  const directoryPlural = normalizedLabel(settings.directoryLabelPlural);
+  const listingPlural = normalizedLabel(settings.listingLabelPlural);
+  const participantPlural = normalizedLabel(settings.participantLabelPlural);
+  const specialtyPlural = normalizedLabel(settings.specialtyLabelPlural);
+
+  if (
+    settings.directoryMode === "real_estate" ||
+    participantPlural.includes("listing agent") ||
+    listingPlural.includes("property") ||
+    specialtyPlural.includes("property")
+  ) {
+    return "real_estate";
+  }
+
+  if (
+    settings.directoryMode === "locations" ||
+    directoryPlural.includes("location") ||
+    listingPlural.includes("location")
+  ) {
+    return "locations";
+  }
+
+  if (
+    settings.directoryMode === "service_providers" ||
+    participantPlural.includes("service provider") ||
+    listingPlural.includes("provider")
+  ) {
+    return "service_providers";
+  }
+
+  if (settings.directoryMode === "custom") return "custom";
+  return "therapists";
+}

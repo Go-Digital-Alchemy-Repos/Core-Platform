@@ -8,6 +8,7 @@ const mockStorage = vi.hoisted(() => ({
   eventOrganizers: { getAllOrganizers: vi.fn() },
   seoSettings: { get: vi.fn() },
   users: { getAllUsers: vi.fn() },
+  therapists: { getProfileMediaUsage: vi.fn() },
   settings: { getAllSettings: vi.fn() },
   ecommerce: {
     getProducts: vi.fn(),
@@ -54,6 +55,7 @@ describe("cms media usage service", () => {
     mockStorage.eventOrganizers.getAllOrganizers.mockResolvedValue([]);
     mockStorage.seoSettings.get.mockResolvedValue(null);
     mockStorage.users.getAllUsers.mockResolvedValue([]);
+    mockStorage.therapists.getProfileMediaUsage.mockResolvedValue([]);
     mockStorage.settings.getAllSettings.mockResolvedValue([]);
     mockStorage.ecommerce.getProducts.mockResolvedValue([]);
     mockStorage.ecommerce.getCategories.mockResolvedValue([]);
@@ -119,6 +121,36 @@ describe("cms media usage service", () => {
         updatedAt: new Date(),
       },
     ]);
+    mockStorage.therapists.getProfileMediaUsage.mockResolvedValue([
+      {
+        media: {
+          id: "directory-media-1",
+          profileId: "profile-1",
+          mediaId: media.id,
+          url: media.url,
+          type: "image",
+          altText: "Professional office",
+          caption: "Office photo",
+          sortOrder: 0,
+          primary: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        profile: {
+          id: "profile-1",
+          userId: "user-1",
+          isActive: true,
+          isApproved: true,
+        },
+        user: {
+          id: "user-1",
+          email: "pro@example.com",
+          firstName: "Avery",
+          lastName: "Stone",
+          isSuspended: false,
+        },
+      },
+    ]);
 
     const [result] = await buildCmsMediaLibraryAssets([media]);
 
@@ -126,11 +158,32 @@ describe("cms media usage service", () => {
     expect(result.isInUse).toBe(true);
     expect(result.usageRefs).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ entityType: "directory_profile", entityId: "user-1", field: "profileImageUrl" }),
-        expect.objectContaining({ entityType: "branding", entityId: "setting-1", field: "frontend_logo_url" }),
-        expect.objectContaining({ entityType: "ecommerce_product", entityId: "product-1", field: "mediaId" }),
-        expect.objectContaining({ entityType: "ecommerce_product", entityId: "product-media-1", field: "productMedia.mediaId" }),
-      ])
+        expect.objectContaining({
+          entityType: "directory_profile",
+          entityId: "user-1",
+          field: "profileImageUrl",
+        }),
+        expect.objectContaining({
+          entityType: "directory_profile",
+          entityId: "directory-media-1",
+          field: "gallery.mediaId",
+        }),
+        expect.objectContaining({
+          entityType: "branding",
+          entityId: "setting-1",
+          field: "frontend_logo_url",
+        }),
+        expect.objectContaining({
+          entityType: "ecommerce_product",
+          entityId: "product-1",
+          field: "mediaId",
+        }),
+        expect.objectContaining({
+          entityType: "ecommerce_product",
+          entityId: "product-media-1",
+          field: "productMedia.mediaId",
+        }),
+      ]),
     );
   });
 });

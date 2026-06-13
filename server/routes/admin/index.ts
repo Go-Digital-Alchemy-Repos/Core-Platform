@@ -22,6 +22,8 @@ import editorLocksRoutes from "./editor-locks.routes";
 import crmRoutes from "./crm.routes";
 import ecommerceRoutes from "./ecommerce.routes";
 import careersRoutes from "./careers.routes";
+import portfolioRoutes from "./portfolio.routes";
+import membershipRoutes from "./membership.routes";
 import {
   requireBlogEnabled,
   requireCareersEnabled,
@@ -29,6 +31,8 @@ import {
   requireCrmEnabled,
   requireDirectoryEnabled,
   requireEventsEnabled,
+  requireMembershipEnabled,
+  requirePortfolioEnabled,
 } from "../../middleware/site-features";
 
 const router = Router();
@@ -53,7 +57,9 @@ router.use("/cms", requireCmsEnabled, requireAdminPermission("design"), cmsSideb
 router.use("/", requireAdminPermission("content"), formsRoutes);
 router.use("/crm", requireCrmEnabled, requireAdminPermission("crm"), crmRoutes);
 router.use("/ecommerce", requireRole("admin"), ecommerceRoutes);
+router.use("/membership", requireMembershipEnabled, requireRole("admin"), membershipRoutes);
 router.use("/careers", requireCareersEnabled, requireAdminPermission("content"), careersRoutes);
+router.use("/portfolio", requirePortfolioEnabled, requireAdminPermission("content"), portfolioRoutes);
 router.use("/editor-locks", requireRole("admin", "editor"), editorLocksRoutes);
 router.use("/", requireRole("admin"), systemBackupsRoutes);
 router.use("/applications", requireDirectoryEnabled, requireAdminPermission("directory"), applicationsRoutes);

@@ -34,7 +34,7 @@ import {
   Quote, UserCheck, CalendarDays, BookOpen, Image, Play, Minus,
   ChevronLeft, ChevronRight, ExternalLink, XCircle, BadgeCheck,
   ArrowRight, Search, User, ShieldCheck, Lock, Building2,
-  Loader2,
+  Loader2, FolderKanban,
 } from "lucide-react";
 import type { BlockInstance, BuilderContent } from "@/features/admin/cms/builder/block-registry";
 import { mergeJoinHeroBlocks } from "@shared/cms-blocks";
@@ -48,7 +48,7 @@ const LUCIDE_MAP: Record<string, React.ElementType> = {
   Globe, Heart, Users, MapPin, Mail, Phone, Star, CheckCircle,
   Quote, UserCheck, CalendarDays, BookOpen, Image, Play, Minus,
   ChevronLeft, ChevronRight, ExternalLink, XCircle, BadgeCheck,
-  ArrowRight, Search, User, ShieldCheck, Lock, Building2,
+  ArrowRight, Search, User, ShieldCheck, Lock, Building2, FolderKanban,
 };
 
 function LucideIcon({ name, className }: { name: string; className?: string }) {
@@ -72,6 +72,7 @@ const LazyEventsArchiveSection = lazy(() => import("@/features/public/events-pag
 const LazyRecordingArchivesSection = lazy(() => import("@/features/public/recording-archives-page").then(m => ({ default: m.RecordingArchivesSection })));
 const LazyDirectoryBrowserSection = lazy(() => import("@/features/directory/directory-page").then(m => ({ default: m.DirectoryBrowserSection })));
 const LazyCareerListingsSection = lazy(() => import("@/features/public/careers-page").then(m => ({ default: m.CareerListingsSection })));
+const LazyPortfolioGridSection = lazy(() => import("@/features/public/portfolio-page").then(m => ({ default: m.PortfolioGridSection })));
 
 function DynamicFallback() {
   return (
@@ -1393,6 +1394,7 @@ const DYNAMIC_BLOCK_TYPES = new Set([
   "video-archives",
   "directory-browser",
   "career-listings",
+  "portfolio-grid",
 ]);
 
 export function PublicBlockRenderer({
@@ -1492,6 +1494,13 @@ export function PublicBlockRenderer({
       renderedBlock = (
         <Suspense fallback={<DynamicFallback />}>
           <LazyCareerListingsSection props={block.props} />
+        </Suspense>
+      );
+    }
+    if (block.type === "portfolio-grid") {
+      renderedBlock = (
+        <Suspense fallback={<DynamicFallback />}>
+          <LazyPortfolioGridSection props={block.props} />
         </Suspense>
       );
     }

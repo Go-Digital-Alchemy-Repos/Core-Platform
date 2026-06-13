@@ -27,6 +27,10 @@ import type {
   PaginatedTherapists,
   DirectoryFilterOptions,
 } from "@shared/types/directory";
+import {
+  getDirectoryExperienceMode,
+  type PublicDirectorySettings,
+} from "@shared/types/directory-settings";
 
 const vettedMeans = [
   "Every mental health professional completes a detailed application process",
@@ -42,21 +46,64 @@ const vettedDoesNotMean = [
   "We do not guarantee a therapeutic match — but we make finding one easier",
 ];
 
-const categories = [
-  { icon: Brain, label: "Anxiety", slug: "Anxiety" },
-  { icon: Fingerprint, label: "Identity & Belonging", slug: "Identity & Belonging" },
-  { icon: Globe, label: "Core Platform Support", slug: "Third Culture Kids (Core Platform)" },
-  { icon: UserCheck, label: "Expatriate Adjustment", slug: "Expatriate Adjustment" },
-  { icon: Puzzle, label: "Cross-Cultural", slug: "Cross-Cultural Transitions" },
-  { icon: Heart, label: "Grief & Loss", slug: "Grief & Loss" },
-  { icon: Users, label: "Family Therapy", slug: "Family Therapy" },
-  { icon: Sparkles, label: "Trauma & PTSD", slug: "Trauma & PTSD" },
-  { icon: BookOpen, label: "CBT", slug: "CBT" },
-  { icon: Leaf, label: "Mindfulness", slug: "Mindfulness & Meditation" },
+const categoryIcons = [
+  Brain,
+  Fingerprint,
+  Globe,
+  UserCheck,
+  Puzzle,
+  Heart,
+  Users,
+  Sparkles,
+  BookOpen,
+  Leaf,
 ];
 
-const DEFAULT_DIRECTORY_SUBHEADING =
-  "Search for Core Platform-informed care by specialty, location, language, or session format, then explore results on the map.";
+const fallbackCategoryLabels = {
+  therapists: [
+    "Anxiety",
+    "Identity & Belonging",
+    "Core Platform Support",
+    "Expatriate Adjustment",
+    "Cross-Cultural",
+    "Grief & Loss",
+    "Family Therapy",
+    "Trauma & PTSD",
+    "CBT",
+    "Mindfulness",
+  ],
+  locations: [
+    "Retail Pickup",
+    "Showroom",
+    "Repair Services",
+    "Personal Shopping",
+    "Curbside Pickup",
+    "Consultations",
+    "Group Visits",
+    "Private Rooms",
+  ],
+  service_providers: [
+    "Consulting",
+    "Coaching",
+    "Implementation",
+    "Training",
+    "Managed Services",
+    "On-Site Support",
+    "Virtual Services",
+    "Workshops",
+  ],
+  real_estate: [
+    "Residential Sales",
+    "Buyer Representation",
+    "Luxury Leasing",
+    "Relocation Planning",
+    "Commercial Leasing",
+    "Site Selection",
+    "Investment Properties",
+    "Open Houses",
+  ],
+  custom: ["Featured", "Available", "Verified", "Local", "Virtual", "Premium"],
+} as const;
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -68,6 +115,64 @@ function plainText(v: unknown): string {
 
 function bool(v: unknown, fallback = false): boolean {
   return typeof v === "boolean" ? v : fallback;
+}
+
+function lower(value: string | null | undefined): string {
+  return (value || "").trim().toLowerCase();
+}
+
+function getDirectoryHeading(settings: PublicDirectorySettings): string {
+  const experience = getDirectoryExperienceMode(settings);
+
+  if (experience === "locations") {
+    return `Find ${settings.directoryLabelPlural || settings.listingLabelPlural}`;
+  }
+
+  if (experience === "therapists" && lower(settings.participantLabelPlural) === "therapists") {
+    return "Find a Mental Health Professional";
+  }
+
+  return `Find ${settings.participantLabelPlural || settings.listingLabelPlural}`;
+}
+
+function getDirectorySubheading(settings: PublicDirectorySettings): string {
+  const experience = getDirectoryExperienceMode(settings);
+  const specialty = lower(settings.specialtyLabelPlural) || "categories";
+
+  if (experience === "real_estate") {
+    return `Search by name, ${specialty}, location, or listing type, then explore properties on the map.`;
+  }
+
+  if (experience === "locations") {
+    return `Search by name, ${specialty}, address, or service format, then explore locations on the map.`;
+  }
+
+  if (experience === "service_providers") {
+    return `Search by name, ${specialty}, location, language, or delivery format, then explore results on the map.`;
+  }
+
+  if (experience === "custom") {
+    return `Search by name, ${specialty}, location, or format, then explore matching ${lower(settings.listingLabelPlural) || "listings"} on the map.`;
+  }
+
+  return "Search for Core Platform-informed care by specialty, location, language, or session format, then explore results on the map.";
+}
+
+function getSearchPlaceholder(settings: PublicDirectorySettings): string {
+  const experience = getDirectoryExperienceMode(settings);
+  const specialty = lower(settings.specialtyLabelPlural);
+
+  if (experience === "real_estate") {
+    return `Search name${specialty ? `, ${specialty}` : ""}, city...`;
+  }
+
+  if (experience === "locations") {
+    return `Search name${specialty ? `, ${specialty}` : ""}, address...`;
+  }
+
+  return `Search name${specialty ? `, ${specialty}` : ""}${
+    settings.showLanguages ? ", language" : ""
+  }...`;
 }
 
 function getSessionFormatLabel(mode: string | null) {
@@ -240,8 +345,9 @@ export function DirectoryBrowserSection({
   const showAvailabilityStatus = directorySettings.showAvailabilityStatus;
   const showTravelOption = directorySettings.showTravelOption;
   const showLocationFields = directorySettings.showLocationFields;
-  const heading = plainText(props.heading) || `Find ${directorySettings.participantLabelPlural}`;
-  const subheading = plainText(props.subheading) || DEFAULT_DIRECTORY_SUBHEADING;
+  const heading = getDirectoryHeading(directorySettings);
+  const subheading = getDirectorySubheading(directorySettings);
+  const searchPlaceholder = getSearchPlaceholder(directorySettings);
   const showCategoryChips = bool(props.showCategoryChips, true);
   const showMap = bool(props.showMap, true);
   const initParams = useMemo(() => new URLSearchParams(syncUrl ? queryString : ""), [queryString, syncUrl]);
@@ -354,6 +460,34 @@ export function DirectoryBrowserSection({
   const currentPageSize = data?.pageSize ?? 20;
   const hasMore = data?.hasMore ?? false;
   const totalPages = Math.ceil(total / currentPageSize);
+  const availableSpecializations = useMemo(() => {
+    const seen = new Set<string>();
+    const values: Array<{ name: string }> = [];
+    const add = (value: string | null | undefined) => {
+      const clean = plainText(value).trim();
+      if (!clean || seen.has(clean.toLowerCase())) return;
+      seen.add(clean.toLowerCase());
+      values.push({ name: clean });
+    };
+
+    specList.forEach((spec) => add(spec.name));
+    therapists.forEach((profile) => profile.specializations?.forEach(add));
+
+    return values;
+  }, [specList, therapists]);
+  const categoryChips = useMemo(() => {
+    const experience = getDirectoryExperienceMode(directorySettings);
+    const labels =
+      availableSpecializations.length > 0
+        ? availableSpecializations.slice(0, 10).map((spec) => spec.name)
+        : [...fallbackCategoryLabels[experience]];
+
+    return labels.map((label, index) => ({
+      icon: categoryIcons[index % categoryIcons.length],
+      label,
+      slug: label,
+    }));
+  }, [availableSpecializations, directorySettings]);
 
   const mapTherapists = useMemo(
     () =>
@@ -402,7 +536,7 @@ export function DirectoryBrowserSection({
         <div className="flex-none border-b bg-muted/30 overflow-x-auto" data-testid="section-categories">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2">
             <div className="flex items-center gap-1 min-w-max">
-              {categories.map((cat) => {
+              {categoryChips.map((cat) => {
                 const isActive = specializations.includes(cat.slug);
                 return (
                   <button
@@ -499,7 +633,7 @@ export function DirectoryBrowserSection({
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder={`Search name${showSpecialties ? `, ${directorySettings.specialtyLabelPlural.toLowerCase()}` : ""}${showLanguages ? ", language" : ""}...`}
+                placeholder={searchPlaceholder}
                 className="pl-9 h-9 text-sm"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -520,7 +654,7 @@ export function DirectoryBrowserSection({
                       className="border rounded-md max-h-[180px] overflow-y-auto p-1.5 space-y-0.5"
                       data-testid="multi-select-specialization"
                     >
-                      {specList.map((s) => {
+                      {availableSpecializations.map((s) => {
                         const checked = specializations.includes(s.name);
                         return (
                           <label

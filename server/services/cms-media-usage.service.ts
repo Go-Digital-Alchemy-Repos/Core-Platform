@@ -4,12 +4,12 @@ import type {
   CmsMediaAsset,
   CmsMediaLibraryAsset,
   CmsMediaUsageReference,
+  DirectoryProfileMedia,
   CmsPage,
   EcommerceCategory,
   EcommerceProduct,
   EcommerceProductMedia,
   Event,
-  EventOrganizer,
   SeoSettings,
   SystemSetting,
   User,
@@ -53,7 +53,9 @@ function valueReferencesAsset(value: unknown, asset: CmsMediaAsset): boolean {
     return value.some((entry) => valueReferencesAsset(entry, asset));
   }
   if (typeof value === "object") {
-    return Object.values(value as Record<string, unknown>).some((entry) => valueReferencesAsset(entry, asset));
+    return Object.values(value as Record<string, unknown>).some((entry) =>
+      valueReferencesAsset(entry, asset),
+    );
   }
   return false;
 }
@@ -62,7 +64,7 @@ function addUsageReference(
   usageMap: Map<string, CmsMediaUsageReference[]>,
   dedupe: Set<string>,
   assetId: string,
-  reference: CmsMediaUsageReference
+  reference: CmsMediaUsageReference,
 ) {
   const dedupeKey = `${assetId}:${reference.entityType}:${reference.entityId}:${reference.field}`;
   if (dedupe.has(dedupeKey)) {
@@ -84,7 +86,7 @@ function addAssetIdUsage<T extends { id: string }>(
   field: string,
   mediaId: string | null | undefined,
   isLive: boolean,
-  statusLabel: string
+  statusLabel: string,
 ) {
   if (!mediaId) return;
   addUsageReference(usageMap, dedupe, mediaId, {
@@ -109,7 +111,7 @@ function addDirectFieldUsage<T extends { id: string }>(
   field: string,
   fieldValue: string | null | undefined,
   isLive: boolean,
-  statusLabel: string
+  statusLabel: string,
 ) {
   if (!fieldValue) return;
   for (const asset of assets) {
@@ -136,7 +138,7 @@ function addContentUsage<T extends { id: string }>(
   path: string | undefined,
   content: unknown,
   isLive: boolean,
-  statusLabel: string
+  statusLabel: string,
 ) {
   for (const asset of assets) {
     if (!valueReferencesAsset(content, asset)) continue;
@@ -153,7 +155,9 @@ function addContentUsage<T extends { id: string }>(
 }
 
 function pageStatusLabel(page: CmsPage) {
-  return page.status === "published" ? "Published page" : `${page.status[0].toUpperCase()}${page.status.slice(1)} page`;
+  return page.status === "published"
+    ? "Published page"
+    : `${page.status[0].toUpperCase()}${page.status.slice(1)} page`;
 }
 
 function postStatusLabel(post: BlogPost) {
@@ -177,11 +181,17 @@ function directoryProfileStatusLabel(user: User) {
 }
 
 function brandingStatusLabel(setting: SystemSetting) {
-  return setting.key === "frontend_logo_url" ? "Site logo" : setting.key === "favicon_url" ? "Site favicon" : "Branding setting";
+  return setting.key === "frontend_logo_url"
+    ? "Site logo"
+    : setting.key === "favicon_url"
+      ? "Site favicon"
+      : "Branding setting";
 }
 
 function ecommerceProductStatusLabel(product: EcommerceProduct) {
-  return product.active && product.status === "published" ? "Published product" : `${product.status ?? "Draft"} product`;
+  return product.active && product.status === "published"
+    ? "Published product"
+    : `${product.status ?? "Draft"} product`;
 }
 
 function ecommerceCategoryStatusLabel(category: EcommerceCategory) {
@@ -192,10 +202,25 @@ function mediaLinkStatusLabel(media: EcommerceProductMedia) {
   return media.primary ? "Primary product media" : "Product media";
 }
 
+function directoryGalleryStatusLabel(media: DirectoryProfileMedia) {
+  return media.primary ? "Primary directory gallery image" : "Directory gallery image";
+}
+
 export async function buildCmsMediaLibraryAssets(
-  assets: CmsMediaAsset[]
+  assets: CmsMediaAsset[],
 ): Promise<CmsMediaLibraryAsset[]> {
-  const [pages, posts, events, organizers, seoSettings, users, settings, products, categories] = await Promise.all([
+  const [
+    pages,
+    posts,
+    events,
+    organizers,
+    seoSettings,
+    appUsers,
+    settings,
+    products,
+    categories,
+    directoryGalleryMedia,
+  ] = await Promise.all([
     storage.cmsPages.getAllPages(),
     storage.blog.getAllPosts(),
     storage.events.getAllEvents(),
@@ -205,6 +230,7 @@ export async function buildCmsMediaLibraryAssets(
     storage.settings.getAllSettings(),
     storage.ecommerce.getProducts({ includeArchived: true }),
     storage.ecommerce.getCategories(false),
+    storage.therapists?.getProfileMediaUsage?.() ?? Promise.resolve([]),
   ]);
 
   const usageMap = new Map<string, CmsMediaUsageReference[]>();
@@ -213,24 +239,117 @@ export async function buildCmsMediaLibraryAssets(
   for (const page of pages) {
     const isLive = page.status === "published";
     const path = page.slug ? `/${page.slug}` : undefined;
-    addDirectFieldUsage(assets, usageMap, dedupe, page, "page", page.title, path, "ogImageUrl", page.ogImageUrl, isLive, pageStatusLabel(page));
-    addContentUsage(assets, usageMap, dedupe, page, "page", page.title, path, page.content, isLive, pageStatusLabel(page));
+    addDirectFieldUsage(
+      assets,
+      usageMap,
+      dedupe,
+      page,
+      "page",
+      page.title,
+      path,
+      "ogImageUrl",
+      page.ogImageUrl,
+      isLive,
+      pageStatusLabel(page),
+    );
+    addContentUsage(
+      assets,
+      usageMap,
+      dedupe,
+      page,
+      "page",
+      page.title,
+      path,
+      page.content,
+      isLive,
+      pageStatusLabel(page),
+    );
   }
 
   for (const post of posts) {
     const isLive = Boolean(post.isPublished);
     const path = post.slug ? `/insights/${post.slug}` : undefined;
-    addDirectFieldUsage(assets, usageMap, dedupe, post, "blog_post", post.title, path, "coverImageUrl", post.coverImageUrl, isLive, postStatusLabel(post));
-    addDirectFieldUsage(assets, usageMap, dedupe, post, "blog_post", post.title, path, "ogImageUrl", post.ogImageUrl, isLive, postStatusLabel(post));
-    addContentUsage(assets, usageMap, dedupe, post, "blog_post", post.title, path, post.content, isLive, postStatusLabel(post));
+    addDirectFieldUsage(
+      assets,
+      usageMap,
+      dedupe,
+      post,
+      "blog_post",
+      post.title,
+      path,
+      "coverImageUrl",
+      post.coverImageUrl,
+      isLive,
+      postStatusLabel(post),
+    );
+    addDirectFieldUsage(
+      assets,
+      usageMap,
+      dedupe,
+      post,
+      "blog_post",
+      post.title,
+      path,
+      "ogImageUrl",
+      post.ogImageUrl,
+      isLive,
+      postStatusLabel(post),
+    );
+    addContentUsage(
+      assets,
+      usageMap,
+      dedupe,
+      post,
+      "blog_post",
+      post.title,
+      path,
+      post.content,
+      isLive,
+      postStatusLabel(post),
+    );
   }
 
   for (const event of events) {
     const isLive = event.status === "published" && event.visibility === "public";
     const path = `/events`;
-    addDirectFieldUsage(assets, usageMap, dedupe, event, "event", event.title, path, "imageUrl", event.imageUrl, isLive, eventStatusLabel(event));
-    addDirectFieldUsage(assets, usageMap, dedupe, event, "event", event.title, path, "speakerImageUrl", event.speakerImageUrl, isLive, eventStatusLabel(event));
-    addContentUsage(assets, usageMap, dedupe, event, "event", event.title, path, event.description, isLive, eventStatusLabel(event));
+    addDirectFieldUsage(
+      assets,
+      usageMap,
+      dedupe,
+      event,
+      "event",
+      event.title,
+      path,
+      "imageUrl",
+      event.imageUrl,
+      isLive,
+      eventStatusLabel(event),
+    );
+    addDirectFieldUsage(
+      assets,
+      usageMap,
+      dedupe,
+      event,
+      "event",
+      event.title,
+      path,
+      "speakerImageUrl",
+      event.speakerImageUrl,
+      isLive,
+      eventStatusLabel(event),
+    );
+    addContentUsage(
+      assets,
+      usageMap,
+      dedupe,
+      event,
+      "event",
+      event.title,
+      path,
+      event.description,
+      isLive,
+      eventStatusLabel(event),
+    );
   }
 
   for (const organizer of organizers) {
@@ -246,12 +365,13 @@ export async function buildCmsMediaLibraryAssets(
       "imageUrl",
       organizer.imageUrl,
       true,
-      organizerStatusLabel()
+      organizerStatusLabel(),
     );
   }
 
-  for (const user of users) {
-    const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || user.email;
+  for (const user of appUsers) {
+    const displayName =
+      [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || user.email;
     addDirectFieldUsage(
       assets,
       usageMap,
@@ -263,7 +383,41 @@ export async function buildCmsMediaLibraryAssets(
       "profileImageUrl",
       user.profileImageUrl,
       !user.isSuspended,
-      directoryProfileStatusLabel(user)
+      directoryProfileStatusLabel(user),
+    );
+  }
+
+  for (const item of directoryGalleryMedia) {
+    const displayName =
+      [item.user.firstName, item.user.lastName].filter(Boolean).join(" ").trim() || item.user.email;
+    const isLive = Boolean(
+      item.profile.isActive && item.profile.isApproved && !item.user.isSuspended,
+    );
+    const path = `/directory/${item.profile.id}`;
+    addAssetIdUsage(
+      usageMap,
+      dedupe,
+      item.media,
+      "directory_profile",
+      displayName,
+      path,
+      "gallery.mediaId",
+      item.media.mediaId,
+      isLive,
+      directoryGalleryStatusLabel(item.media),
+    );
+    addDirectFieldUsage(
+      assets,
+      usageMap,
+      dedupe,
+      item.media,
+      "directory_profile",
+      displayName,
+      path,
+      "gallery.url",
+      item.media.url,
+      isLive,
+      directoryGalleryStatusLabel(item.media),
     );
   }
 
@@ -279,29 +433,114 @@ export async function buildCmsMediaLibraryAssets(
       setting.key,
       setting.value,
       true,
-      brandingStatusLabel(setting)
+      brandingStatusLabel(setting),
     );
   }
 
   for (const product of products) {
-    const isLive = product.active && product.status === "published" && product.visibility === "online" && !product.archivedAt;
+    const isLive =
+      product.active &&
+      product.status === "published" &&
+      product.visibility === "online" &&
+      !product.archivedAt;
     const path = product.urlSlug ? `/products/${product.urlSlug}` : undefined;
-    addAssetIdUsage(usageMap, dedupe, product, "ecommerce_product", product.name, path, "mediaId", product.mediaId, isLive, ecommerceProductStatusLabel(product));
-    addDirectFieldUsage(assets, usageMap, dedupe, product, "ecommerce_product", product.name, path, "primaryImage", product.primaryImage, isLive, ecommerceProductStatusLabel(product));
-    addDirectFieldUsage(assets, usageMap, dedupe, product, "ecommerce_product", product.name, path, "ogImage", product.ogImage, isLive, ecommerceProductStatusLabel(product));
-    addContentUsage(assets, usageMap, dedupe, product, "ecommerce_product", product.name, path, product.secondaryImages, isLive, ecommerceProductStatusLabel(product));
+    addAssetIdUsage(
+      usageMap,
+      dedupe,
+      product,
+      "ecommerce_product",
+      product.name,
+      path,
+      "mediaId",
+      product.mediaId,
+      isLive,
+      ecommerceProductStatusLabel(product),
+    );
+    addDirectFieldUsage(
+      assets,
+      usageMap,
+      dedupe,
+      product,
+      "ecommerce_product",
+      product.name,
+      path,
+      "primaryImage",
+      product.primaryImage,
+      isLive,
+      ecommerceProductStatusLabel(product),
+    );
+    addDirectFieldUsage(
+      assets,
+      usageMap,
+      dedupe,
+      product,
+      "ecommerce_product",
+      product.name,
+      path,
+      "ogImage",
+      product.ogImage,
+      isLive,
+      ecommerceProductStatusLabel(product),
+    );
+    addContentUsage(
+      assets,
+      usageMap,
+      dedupe,
+      product,
+      "ecommerce_product",
+      product.name,
+      path,
+      product.secondaryImages,
+      isLive,
+      ecommerceProductStatusLabel(product),
+    );
 
     const productMedia = await storage.ecommerce.getProductMedia(product.id);
     for (const media of productMedia) {
-      addAssetIdUsage(usageMap, dedupe, media, "ecommerce_product", product.name, path, "productMedia.mediaId", media.mediaId, isLive, mediaLinkStatusLabel(media));
-      addDirectFieldUsage(assets, usageMap, dedupe, media, "ecommerce_product", product.name, path, "productMedia.url", media.url, isLive, mediaLinkStatusLabel(media));
+      addAssetIdUsage(
+        usageMap,
+        dedupe,
+        media,
+        "ecommerce_product",
+        product.name,
+        path,
+        "productMedia.mediaId",
+        media.mediaId,
+        isLive,
+        mediaLinkStatusLabel(media),
+      );
+      addDirectFieldUsage(
+        assets,
+        usageMap,
+        dedupe,
+        media,
+        "ecommerce_product",
+        product.name,
+        path,
+        "productMedia.url",
+        media.url,
+        isLive,
+        mediaLinkStatusLabel(media),
+      );
     }
   }
 
   for (const category of categories) {
     const isLive = Boolean(category.active);
     const path = category.slug ? `/shop?category=${category.slug}` : "/shop";
-    addDirectFieldUsage(assets, usageMap, dedupe, category, "ecommerce_category", category.name, path, "image", category.image, isLive, ecommerceCategoryStatusLabel(category));
+    addDirectFieldUsage(
+      assets,
+      usageMap,
+      dedupe,
+      category,
+      "ecommerce_category",
+      category.name,
+      path,
+      "image",
+      category.image,
+      isLive,
+      ecommerceCategoryStatusLabel(category),
+    );
   }
 
   if (seoSettings) {
@@ -318,7 +557,7 @@ export async function buildCmsMediaLibraryAssets(
       "defaultOgImageUrl",
       globalSeo.defaultOgImageUrl,
       true,
-      "Global setting"
+      "Global setting",
     );
     addDirectFieldUsage(
       assets,
@@ -331,7 +570,7 @@ export async function buildCmsMediaLibraryAssets(
       "organizationLogoUrl",
       globalSeo.organizationLogoUrl,
       true,
-      "Global setting"
+      "Global setting",
     );
   }
 

@@ -1,7 +1,26 @@
 export { users, insertUserSchema, type InsertUser, type User } from "./users";
-export { therapistProfiles, insertTherapistProfileSchema, type InsertTherapistProfile, type TherapistProfile } from "./therapist-profiles";
-export { membershipTiers, insertMembershipTierSchema, type InsertMembershipTier, type MembershipTier } from "./membership-tiers";
-export { therapistSubscriptions, insertSubscriptionSchema, type InsertSubscription, type TherapistSubscription } from "./subscriptions";
+export {
+  therapistProfiles,
+  directoryProfileMedia,
+  insertTherapistProfileSchema,
+  insertDirectoryProfileMediaSchema,
+  type InsertTherapistProfile,
+  type TherapistProfile,
+  type InsertDirectoryProfileMedia,
+  type DirectoryProfileMedia,
+} from "./therapist-profiles";
+export {
+  membershipTiers,
+  insertMembershipTierSchema,
+  type InsertMembershipTier,
+  type MembershipTier,
+} from "./membership-tiers";
+export {
+  therapistSubscriptions,
+  insertSubscriptionSchema,
+  type InsertSubscription,
+  type TherapistSubscription,
+} from "./subscriptions";
 export {
   events,
   eventOrganizers,
@@ -37,7 +56,12 @@ export {
   type InsertEventOrganizer,
   type InsertEventVenue,
 } from "./events";
-export { contactMessages, insertContactMessageSchema, type InsertContactMessage, type ContactMessage } from "./contact-messages";
+export {
+  contactMessages,
+  insertContactMessageSchema,
+  type InsertContactMessage,
+  type ContactMessage,
+} from "./contact-messages";
 export {
   CRM_CLIENT_STATUS_LABELS,
   CRM_CLIENT_STATUSES,
@@ -85,16 +109,57 @@ export {
 } from "./crm";
 export { docs, insertDocSchema, type InsertDoc, type Doc } from "./docs";
 export { passwordResetTokens, type PasswordResetToken } from "./password-reset-tokens";
-export { systemSettings, insertSystemSettingSchema, type InsertSystemSetting, type SystemSetting } from "./system-settings";
+export {
+  systemSettings,
+  insertSystemSettingSchema,
+  type InsertSystemSetting,
+  type SystemSetting,
+} from "./system-settings";
 export * from "./ecommerce";
+export * from "./membership";
 export * from "./careers";
-export { emailTemplates, insertEmailTemplateSchema, type InsertEmailTemplate, type EmailTemplate } from "./email-templates";
-export { conversations, directMessages, insertDirectMessageSchema, type InsertDirectMessage, type DirectMessage, type Conversation } from "./direct-messages";
+export * from "./portfolio";
+export {
+  emailTemplates,
+  insertEmailTemplateSchema,
+  type InsertEmailTemplate,
+  type EmailTemplate,
+} from "./email-templates";
+export {
+  conversations,
+  directMessages,
+  insertDirectMessageSchema,
+  type InsertDirectMessage,
+  type DirectMessage,
+  type Conversation,
+} from "./direct-messages";
 export { activityLogs, type ActivityLog } from "./activity-logs";
-export { notifications, notificationPreferences, insertNotificationSchema, type InsertNotification, type Notification, type NotificationPreferences } from "./notifications";
-export { specializations, insertSpecializationSchema, type InsertSpecialization, type Specialization } from "./specializations";
-export { profileViews, insertProfileViewSchema, type InsertProfileView, type ProfileView } from "./profile-views";
-export { savedProfessionals, insertSavedProfessionalSchema, type InsertSavedProfessional, type SavedProfessional } from "./saved-professionals";
+export {
+  notifications,
+  notificationPreferences,
+  insertNotificationSchema,
+  type InsertNotification,
+  type Notification,
+  type NotificationPreferences,
+} from "./notifications";
+export {
+  specializations,
+  insertSpecializationSchema,
+  type InsertSpecialization,
+  type Specialization,
+} from "./specializations";
+export {
+  profileViews,
+  insertProfileViewSchema,
+  type InsertProfileView,
+  type ProfileView,
+} from "./profile-views";
+export {
+  savedProfessionals,
+  insertSavedProfessionalSchema,
+  type InsertSavedProfessional,
+  type SavedProfessional,
+} from "./saved-professionals";
 export { blogPosts, insertBlogPostSchema, type InsertBlogPost, type BlogPost } from "./blog-posts";
 export {
   blogComments,
@@ -108,10 +173,26 @@ export {
   type InsertBlogComment,
   type PublicBlogCommentSubmission,
 } from "./blog-comments";
-export { blogTaxonomies, BLOG_TAXONOMY_TYPES, insertBlogTaxonomySchema, type InsertBlogTaxonomy, type BlogTaxonomy } from "./blog-taxonomies";
-export { eventRegistrations, insertEventRegistrationSchema, type InsertEventRegistration, type EventRegistration } from "./event-registrations";
+export {
+  blogTaxonomies,
+  BLOG_TAXONOMY_TYPES,
+  insertBlogTaxonomySchema,
+  type InsertBlogTaxonomy,
+  type BlogTaxonomy,
+} from "./blog-taxonomies";
+export {
+  eventRegistrations,
+  insertEventRegistrationSchema,
+  type InsertEventRegistration,
+  type EventRegistration,
+} from "./event-registrations";
 export { cmsPages, insertCmsPageSchema, type InsertCmsPage, type CmsPage } from "./cms-pages";
-export { cmsPageRevisions, insertCmsPageRevisionSchema, type InsertCmsPageRevision, type CmsPageRevision } from "./cms-page-revisions";
+export {
+  cmsPageRevisions,
+  insertCmsPageRevisionSchema,
+  type InsertCmsPageRevision,
+  type CmsPageRevision,
+} from "./cms-page-revisions";
 export {
   cmsMedia,
   insertCmsMediaSchema,
@@ -122,7 +203,12 @@ export {
   type CmsMediaUsageReference,
   type CmsMediaLibraryAsset,
 } from "./cms-media";
-export { cmsSections, insertCmsSectionSchema, type InsertCmsSection, type CmsSection } from "./cms-sections";
+export {
+  cmsSections,
+  insertCmsSectionSchema,
+  type InsertCmsSection,
+  type CmsSection,
+} from "./cms-sections";
 export {
   editorLocks,
   EDITOR_LOCK_RESOURCE_TYPES,
@@ -138,10 +224,25 @@ export {
   type InsertEditorLock,
   type EditorLockResponse,
 } from "./editor-locks";
-export { seoSettings, insertSeoSettingsSchema, type InsertSeoSettings, type SeoSettings } from "./seo-settings";
+export {
+  seoSettings,
+  insertSeoSettingsSchema,
+  type InsertSeoSettings,
+  type SeoSettings,
+} from "./seo-settings";
 export { redirects, insertRedirectSchema, type InsertRedirect, type Redirect } from "./redirects";
-export { recordingPurchases, insertRecordingPurchaseSchema, type InsertRecordingPurchase, type RecordingPurchase } from "./recording-purchases";
-export { guestMessages, insertGuestMessageSchema, type InsertGuestMessage, type GuestMessage } from "./guest-messages";
+export {
+  recordingPurchases,
+  insertRecordingPurchaseSchema,
+  type InsertRecordingPurchase,
+  type RecordingPurchase,
+} from "./recording-purchases";
+export {
+  guestMessages,
+  insertGuestMessageSchema,
+  type InsertGuestMessage,
+  type GuestMessage,
+} from "./guest-messages";
 export {
   cmsMenus,
   insertCmsMenuSchema,
@@ -159,7 +260,16 @@ export {
   type LegacyMenuLocation,
   type PublicMenuLocation,
 } from "./cms-menus";
-export { cmsSidebars, insertCmsSidebarSchema, sidebarWidgetSchema, SIDEBAR_WIDGET_TYPES, type InsertCmsSidebar, type CmsSidebar, type SidebarWidget, type SidebarWidgetType } from "./cms-sidebars";
+export {
+  cmsSidebars,
+  insertCmsSidebarSchema,
+  sidebarWidgetSchema,
+  SIDEBAR_WIDGET_TYPES,
+  type InsertCmsSidebar,
+  type CmsSidebar,
+  type SidebarWidget,
+  type SidebarWidgetType,
+} from "./cms-sidebars";
 export {
   cmsForms,
   cmsFormSubmissions,

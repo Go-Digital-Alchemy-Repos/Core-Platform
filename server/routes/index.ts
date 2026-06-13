@@ -25,6 +25,8 @@ import formsRoutes from "./forms.routes";
 import crmRoutes from "./crm.routes";
 import ecommerceRoutes from "./ecommerce.routes";
 import careersRoutes from "./careers.routes";
+import portfolioRoutes from "./portfolio.routes";
+import membershipRoutes from "./membership.routes";
 import {
   requireBlogEnabled,
   requireCareersEnabled,
@@ -32,6 +34,8 @@ import {
   requireCrmEnabled,
   requireDirectoryEnabled,
   requireEventsEnabled,
+  requireMembershipEnabled,
+  requirePortfolioEnabled,
 } from "../middleware/site-features";
 import { searchPublicSite } from "../services/public-search.service";
 import { buildRobotsTxtPayload } from "../services/robots-txt.service";
@@ -70,7 +74,9 @@ export function registerApiRoutes(app: Express) {
   app.use("/api/forms", formsRoutes);
   app.use("/api/crm", requireCrmEnabled, crmRoutes);
   app.use("/api/ecommerce", ecommerceRoutes);
+  app.use("/api/membership", requireMembershipEnabled, membershipRoutes);
   app.use("/api/careers", requireCareersEnabled, careersRoutes);
+  app.use("/api/portfolio", requirePortfolioEnabled, portfolioRoutes);
   app.use("/api/admin/docs", docsRoutes);
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/notifications", notificationsRoutes);
@@ -232,7 +238,7 @@ export function registerApiRoutes(app: Express) {
 
   app.get("/sitemap.xml", async (_req, res) => {
     try {
-      const [seoSettings, pages, posts, events, siteFeatures, products, jobs] = await Promise.all([
+      const [seoSettings, pages, posts, events, siteFeatures, products, jobs, portfolioProjects] = await Promise.all([
         storage.seoSettings.get(),
         storage.cmsPages.getAllPages(),
         storage.blog.getAllPosts(),
@@ -240,6 +246,7 @@ export function registerApiRoutes(app: Express) {
         getSiteFeatures(),
         storage.ecommerce.getProducts({ publicOnly: true }),
         storage.careers.getJobs({ publicOnly: true }),
+        storage.portfolio.getProjects({ publicOnly: true }),
       ]);
 
       const base = seoSettings?.siteUrl?.replace(/\/$/, "") || "";
@@ -267,6 +274,9 @@ export function registerApiRoutes(app: Express) {
       if (siteFeatures.careersEnabled) {
         urls.push({ loc: `${base}/careers`, changefreq: "daily", priority: "0.8" });
       }
+      if (siteFeatures.portfolioEnabled) {
+        urls.push({ loc: `${base}/portfolio`, changefreq: "weekly", priority: "0.8" });
+      }
 
       if (siteFeatures.cmsEnabled) {
         for (const page of pages) {
@@ -280,6 +290,7 @@ export function registerApiRoutes(app: Express) {
               "insights",
               "events",
               "careers",
+              "portfolio",
               "recordings",
               "directory",
             ].includes(page.slug)
@@ -339,6 +350,18 @@ export function registerApiRoutes(app: Express) {
             lastmod: job.updatedAt ? new Date(job.updatedAt).toISOString().split("T")[0] : undefined,
             changefreq: "daily",
             priority: "0.7",
+          });
+        }
+      }
+
+      if (siteFeatures.portfolioEnabled) {
+        for (const project of portfolioProjects) {
+          if (project.noindex) continue;
+          urls.push({
+            loc: `${base}/portfolio/${project.slug}`,
+            lastmod: project.updatedAt ? new Date(project.updatedAt).toISOString().split("T")[0] : undefined,
+            changefreq: "monthly",
+            priority: project.featured ? "0.8" : "0.7",
           });
         }
       }

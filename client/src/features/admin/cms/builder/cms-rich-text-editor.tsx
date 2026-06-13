@@ -1,10 +1,16 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
+import { Extension, mergeAttributes } from "@tiptap/core";
+import TiptapImage from "@tiptap/extension-image";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
   Bold,
   Code,
+  Image as ImageIcon,
   Italic,
   Link as LinkIcon,
   List,
@@ -24,6 +30,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { createCmsLinkExtension, createStarterKit } from "@/lib/tiptap";
+import { MediaPickerDialog } from "../components/media-picker-dialog";
+import type { CmsMediaLibraryAsset } from "@shared/schema";
 
 interface CmsRichTextEditorProps {
   value: string;
@@ -35,6 +43,60 @@ interface CmsRichTextEditorProps {
 function ToolbarSep() {
   return <div className="mx-0.5 h-5 w-px shrink-0 bg-border" />;
 }
+
+type RichTextAlign = "left" | "center" | "right";
+
+const TEXT_ALIGN_EXTENSION = Extension.create({
+  name: "cmsTextAlign",
+  addGlobalAttributes() {
+    return [
+      {
+        types: ["heading", "paragraph"],
+        attributes: {
+          textAlign: {
+            default: null,
+            parseHTML: (element) => element.style.textAlign || null,
+            renderHTML: (attributes) => {
+              if (!attributes.textAlign) return {};
+              return { style: `text-align: ${attributes.textAlign}` };
+            },
+          },
+        },
+      },
+    ];
+  },
+});
+
+const IMAGE_ALIGN_CLASS: Record<RichTextAlign, string> = {
+  left: "cms-richtext-media cms-richtext-media-left",
+  center: "cms-richtext-media cms-richtext-media-center",
+  right: "cms-richtext-media cms-richtext-media-right",
+};
+
+const CmsImage = TiptapImage.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      align: {
+        default: "center",
+        parseHTML: (element) => {
+          const align = element.getAttribute("data-align");
+          return align === "left" || align === "right" || align === "center" ? align : "center";
+        },
+        renderHTML: (attributes) => {
+          const align = attributes.align === "left" || attributes.align === "right" ? attributes.align : "center";
+          return {
+            "data-align": align,
+            class: IMAGE_ALIGN_CLASS[align as RichTextAlign],
+          };
+        },
+      },
+    };
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ["img", mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)];
+  },
+});
 
 function ToolbarButton({
   active,
@@ -75,16 +137,26 @@ export function CmsRichTextEditor({
 }: CmsRichTextEditorProps) {
   const [activeTab, setActiveTab] = useState<"visual" | "html">("visual");
   const [showLinkPanel, setShowLinkPanel] = useState(false);
+  const [showImagePanel, setShowImagePanel] = useState(false);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkText, setLinkText] = useState("");
   const [linkOpenInNewTab, setLinkOpenInNewTab] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageAlt, setImageAlt] = useState("");
+  const [imageAlign, setImageAlign] = useState<RichTextAlign>("center");
 
   const editor = useEditor({
     extensions: [
       createStarterKit({
         heading: { levels: [2, 3] },
       }),
+      TEXT_ALIGN_EXTENSION,
       Underline,
+      CmsImage.configure({
+        inline: false,
+        allowBase64: false,
+      }),
       createCmsLinkExtension(),
       Placeholder.configure({
         placeholder: placeholder ?? "Write and format your content here...",
@@ -152,6 +224,44 @@ export function CmsRichTextEditor({
     setShowLinkPanel(false);
   };
 
+  const setTextAlign = (align: RichTextAlign) => {
+    if (!editor) return;
+    if (editor.isActive("heading")) {
+      editor.chain().focus().updateAttributes("heading", { textAlign: align }).run();
+      return;
+    }
+    editor.chain().focus().updateAttributes("paragraph", { textAlign: align }).run();
+  };
+
+  const syncImagePanelFromSelection = () => {
+    if (!editor) return;
+    const attrs = editor.getAttributes("image") as { src?: string; alt?: string; align?: RichTextAlign };
+    setImageUrl(attrs.src ?? "");
+    setImageAlt(attrs.alt ?? "");
+    setImageAlign(attrs.align === "left" || attrs.align === "right" ? attrs.align : "center");
+  };
+
+  const insertOrUpdateImage = () => {
+    if (!editor || !imageUrl.trim()) return;
+    const attrs = {
+      src: imageUrl.trim(),
+      alt: imageAlt.trim() || undefined,
+      align: imageAlign,
+    };
+
+    if (editor.isActive("image")) {
+      editor.chain().focus().updateAttributes("image", attrs).run();
+    } else {
+      editor.chain().focus().setImage(attrs).run();
+    }
+    setShowImagePanel(false);
+  };
+
+  const handleMediaSelect = (url: string, asset: CmsMediaLibraryAsset) => {
+    setImageUrl(url);
+    setImageAlt(asset.alt || asset.title || asset.originalName || "");
+  };
+
   if (!editor) return null;
 
   return (
@@ -214,6 +324,16 @@ export function CmsRichTextEditor({
               <Quote className="h-3.5 w-3.5" />
             </ToolbarButton>
             <ToolbarSep />
+            <ToolbarButton onClick={() => setTextAlign("left")} title="Align text left">
+              <AlignLeft className="h-3.5 w-3.5" />
+            </ToolbarButton>
+            <ToolbarButton onClick={() => setTextAlign("center")} title="Align text center">
+              <AlignCenter className="h-3.5 w-3.5" />
+            </ToolbarButton>
+            <ToolbarButton onClick={() => setTextAlign("right")} title="Align text right">
+              <AlignRight className="h-3.5 w-3.5" />
+            </ToolbarButton>
+            <ToolbarSep />
             <ToolbarButton
               active={showLinkPanel || editor.isActive("link")}
               onClick={() => {
@@ -226,6 +346,22 @@ export function CmsRichTextEditor({
               title="Insert or edit link"
             >
               <LinkIcon className="h-3.5 w-3.5" />
+            </ToolbarButton>
+            <ToolbarButton
+              active={showImagePanel || editor.isActive("image")}
+              onClick={() => {
+                if (editor.isActive("image")) {
+                  syncImagePanelFromSelection();
+                } else {
+                  setImageUrl("");
+                  setImageAlt("");
+                  setImageAlign("center");
+                }
+                setShowImagePanel((open) => !open);
+              }}
+              title="Insert or edit image"
+            >
+              <ImageIcon className="h-3.5 w-3.5" />
             </ToolbarButton>
             <ToolbarButton
               onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
@@ -322,6 +458,93 @@ export function CmsRichTextEditor({
             </div>
           )}
 
+          {showImagePanel && (
+            <div className="space-y-3 border-b bg-muted/20 px-3 py-3">
+              <div className="grid gap-2 md:grid-cols-[1fr_1fr_auto] md:items-end">
+                <div className="space-y-1 md:col-span-2">
+                  <Label className="text-xs">Image URL</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      placeholder="/r2/example.jpg or https://..."
+                      className="h-8 text-xs"
+                      data-testid={`${testId}-image-url`}
+                    />
+                    <Button type="button" variant="outline" size="sm" className="h-8 shrink-0 text-xs" onClick={() => setMediaPickerOpen(true)}>
+                      Media Library
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Alt text</Label>
+                  <Input
+                    value={imageAlt}
+                    onChange={(e) => setImageAlt(e.target.value)}
+                    placeholder="Describe the image"
+                    className="h-8 text-xs"
+                    data-testid={`${testId}-image-alt`}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Image alignment</Label>
+                  <div className="flex rounded-md border bg-background p-0.5">
+                    {([
+                      ["left", AlignLeft],
+                      ["center", AlignCenter],
+                      ["right", AlignRight],
+                    ] as const).map(([align, Icon]) => (
+                      <Button
+                        key={align}
+                        type="button"
+                        variant={imageAlign === align ? "secondary" : "ghost"}
+                        size="sm"
+                        className="h-7 w-8 p-0"
+                        onClick={() => {
+                          setImageAlign(align);
+                          if (editor.isActive("image")) {
+                            editor.chain().focus().updateAttributes("image", { align }).run();
+                          }
+                        }}
+                        title={`Align image ${align}`}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button type="button" size="sm" className="h-8 text-xs" onClick={insertOrUpdateImage} disabled={!imageUrl.trim()}>
+                    {editor.isActive("image") ? "Update" : "Insert"}
+                  </Button>
+                  {editor.isActive("image") && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => {
+                        editor.chain().focus().deleteSelection().run();
+                        setShowImagePanel(false);
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setShowImagePanel(false)}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <EditorContent editor={editor} data-testid={testId ? `${testId}-content` : "cms-richtext-content"} />
         </div>
       </TabsContent>
@@ -336,6 +559,12 @@ export function CmsRichTextEditor({
           data-testid={testId ? `${testId}-html` : "cms-richtext-html"}
         />
       </TabsContent>
+      <MediaPickerDialog
+        open={mediaPickerOpen}
+        onOpenChange={setMediaPickerOpen}
+        onSelect={handleMediaSelect}
+        typeFilter="images"
+      />
     </Tabs>
   );
 }

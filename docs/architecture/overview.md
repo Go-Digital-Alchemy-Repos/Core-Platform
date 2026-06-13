@@ -2,22 +2,22 @@
 
 ## Tech Stack
 
-| Layer | Technology | Notes |
-|-------|-----------|-------|
-| Frontend | React 18 + TypeScript | Vite bundler, SPA with route-level code splitting via `React.lazy()` |
-| Routing (client) | wouter | Lightweight alternative to React Router |
-| State / Data | TanStack Query v5 | Global defaults: `staleTime: 5min`, `gcTime: 10min` |
-| UI Framework | shadcn/ui + Tailwind CSS | Dark mode via class strategy, theme presets system |
-| Backend | Express 5 (TypeScript) | Runs on Node.js with HTTP server |
-| ORM | Drizzle ORM | PostgreSQL driver via `@neondatabase/serverless` |
-| Database | PostgreSQL | Hosted on Neon (serverless), 45+ B-tree indexes |
-| Auth | JWT (HTTP-only cookies) | `bcryptjs` for password hashing, 7-day token expiry |
-| Payments | Stripe | Subscriptions, ecommerce checkout, webhook handling, recording purchases |
-| File Storage | Cloudflare R2 | For media uploads (images, recordings) |
-| Email | Custom email service | Template-based with `email.service.ts` |
-| Logging | Pino | Structured logging with named sources and request IDs |
-| Security | Helmet, rate limiting, origin checking | CSP headers, per-endpoint rate limits |
-| Feature Apps | Settings-backed toggles | Directory, blog, events, CRM, and ecommerce availability |
+| Layer            | Technology                             | Notes                                                                                          |
+| ---------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Frontend         | React 18 + TypeScript                  | Vite bundler, SPA with route-level code splitting via `React.lazy()`                           |
+| Routing (client) | wouter                                 | Lightweight alternative to React Router                                                        |
+| State / Data     | TanStack Query v5                      | Global defaults: `staleTime: 5min`, `gcTime: 10min`                                            |
+| UI Framework     | shadcn/ui + Tailwind CSS               | Dark mode via class strategy, theme presets system                                             |
+| Backend          | Express 5 (TypeScript)                 | Runs on Node.js with HTTP server                                                               |
+| ORM              | Drizzle ORM                            | PostgreSQL driver via `@neondatabase/serverless`                                               |
+| Database         | PostgreSQL                             | Hosted on Neon (serverless), 45+ B-tree indexes                                                |
+| Auth             | JWT (HTTP-only cookies)                | `bcryptjs` for password hashing, 7-day token expiry                                            |
+| Payments         | Stripe                                 | Directory application fees, membership subscriptions, ecommerce checkout, and webhook handling |
+| File Storage     | Cloudflare R2                          | For media uploads, career resumes, images, recordings, and public asset delivery               |
+| Email            | Custom email service                   | Template-based with `email.service.ts`                                                         |
+| Logging          | Pino                                   | Structured logging with named sources and request IDs                                          |
+| Security         | Helmet, rate limiting, origin checking | CSP headers, per-endpoint rate limits                                                          |
+| Feature Apps     | Settings-backed toggles                | Directory, blog, events, CRM, ecommerce, membership, careers, and portfolio availability       |
 
 ## Folder Structure
 
@@ -32,11 +32,11 @@
 │       │   ├── shared/              # Shared components (editors, SEO, theme)
 │       │   └── ui/                  # shadcn/ui primitives
 │       ├── features/
-│       │   ├── admin/               # Admin dashboard, CMS, blog, CRM, ecommerce, applications
+│       │   ├── admin/               # Admin dashboard, CMS, blog, CRM, ecommerce, membership, portfolio, careers, applications
 │       │   ├── auth/                # Auth pages (login, register, reset)
 │       │   ├── directory/           # Therapist directory and profile pages
 │       │   ├── ecommerce/           # Shop, product detail, cart, checkout, order status
-│       │   ├── public/              # Public pages (home, about, events, insights)
+│       │   ├── public/              # Public pages (home, about, events, insights, careers, portfolio, membership)
 │       │   └── therapist/           # Therapist dashboard, profile edit, subscription
 │       ├── hooks/                   # Custom React hooks
 │       └── lib/                     # Utilities, query client, theme presets
@@ -51,11 +51,14 @@
 │   │   └── validation.ts            # Request body validation middleware
 │   ├── routes/
 │   │   ├── index.ts                 # Route registration hub
-│   │   ├── admin/                   # Admin-only routes (18 files)
+│   │   ├── admin/                   # Admin-only routes for CMS, directory, CRM, ecommerce, membership, careers, portfolio, etc.
 │   │   ├── directory.routes.ts      # Public therapist directory
 │   │   ├── auth.routes.ts           # Login, register, password reset
-│   │   ├── stripe.routes.ts         # Subscription Stripe checkout/portal/webhooks
+│   │   ├── stripe.routes.ts         # Directory subscription Stripe checkout/portal/webhooks
 │   │   ├── ecommerce.routes.ts      # Public ecommerce catalog, pricing, checkout, lookup
+│   │   ├── membership.routes.ts     # Public membership plans, checkout, portal, entitlements
+│   │   ├── careers.routes.ts        # Public jobs, applications, feeds, integration endpoints
+│   │   ├── portfolio.routes.ts      # Public portfolio archive/detail/settings
 │   │   ├── application.routes.ts    # Therapist application flow
 │   │   └── ...                      # Events, blog, CMS, contacts, etc.
 │   ├── services/
@@ -66,8 +69,13 @@
 │   │   ├── ecommerce-order.service.ts
 │   │   ├── ecommerce-pricing.service.ts
 │   │   ├── ecommerce-stripe.service.ts
+│   │   ├── membership-access.service.ts
+│   │   ├── careers.service.ts
+│   │   ├── portfolio.service.ts
+│   │   ├── public-search.service.ts
+│   │   ├── editor-locks.service.ts
 │   │   └── scheduled-publish.service.ts
-│   ├── storage/                     # Data access layer (28 storage files)
+│   ├── storage/                     # Data access layer, grouped by platform domain
 │   │   ├── index.ts                 # Storage facade aggregating all stores
 │   │   ├── therapist.storage.ts     # Therapist profiles with pagination/filtering
 │   │   ├── application.storage.ts   # Provider application workflow
@@ -80,7 +88,7 @@
 │       ├── stripe.handler.ts        # Subscription Stripe webhook event processing
 │       └── ecommerce-stripe.handler.ts # Ecommerce Stripe webhook event processing
 ├── shared/
-│   ├── schema/                      # Drizzle table definitions (30 files)
+│   ├── schema/                      # Drizzle table definitions grouped by platform domain
 │   │   ├── index.ts                 # Re-exports all schemas
 │   │   ├── users.ts
 │   │   ├── therapist-profiles.ts
@@ -104,8 +112,12 @@
 
 5. **File Uploads**: Files are uploaded to Cloudflare R2 via `r2.service.ts`. The upload route handles multipart form data and returns the R2 URL.
 
-6. **Payments**: Stripe handles subscriptions, one-time purchases, and ecommerce checkout. Subscription webhook events are processed by `stripe.handler.ts`; ecommerce webhook events are processed by `ecommerce-stripe.handler.ts`.
+6. **Payments**: Stripe handles directory application/subscription flows, membership checkout/portal sessions, and ecommerce checkout. Keep those integrations separate unless a service explicitly shares configuration.
 
 7. **CMS**: A hybrid rendering system allows pages to be served from the CMS block builder or fall back to hardcoded React components. The `CmsHybridPage` component checks for CMS content first.
 
 8. **Feature Apps**: The frontend reads `/api/site-config` and the server reads `system_configuration` settings to decide which major apps are active. Feature gates hide or reject unavailable app surfaces without deleting data.
+
+9. **Search & Discovery**: Public search aggregates fallback pages and enabled content modules through `public-search.service.ts`.
+
+10. **Collaboration**: Admin/editor workflows use editor locks for long-lived edits and notifications for user-facing activity.

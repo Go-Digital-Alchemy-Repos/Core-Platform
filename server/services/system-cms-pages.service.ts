@@ -133,6 +133,49 @@ function buildCareersContent() {
   };
 }
 
+function buildPortfolioContent() {
+  return {
+    blocks: [
+      {
+        id: id(),
+        type: "portfolio-grid",
+        props: {
+          eyebrow: "Featured Case Study",
+          heading: "Featured Portfolio Project",
+          subheading:
+            "A closer look at selected work, project context, and measurable outcomes.",
+          layout: "list",
+          featuredOnly: true,
+          excludeFeatured: false,
+          showSearch: false,
+          showIndustryFilter: false,
+          showCategoryFilter: false,
+          showLocationFilter: false,
+          limit: 1,
+        },
+      },
+      {
+        id: id(),
+        type: "portfolio-grid",
+        props: {
+          eyebrow: "Portfolio",
+          heading: "Explore More Work",
+          subheading:
+            "Browse additional seeded case studies across real estate, web development, creative portfolios, and service launches.",
+          layout: "grid",
+          featuredOnly: false,
+          excludeFeatured: true,
+          showSearch: true,
+          showIndustryFilter: true,
+          showCategoryFilter: true,
+          showLocationFilter: true,
+          limit: 0,
+        },
+      },
+    ],
+  };
+}
+
 function buildRecordingsContent() {
   return {
     blocks: [
@@ -542,6 +585,16 @@ function contentWithMergedJoinHero(rawContent: unknown): Record<string, unknown>
   };
 }
 
+function isLegacyPortfolioContent(rawContent: unknown) {
+  if (!rawContent || typeof rawContent !== "object") return false;
+
+  const content = rawContent as Record<string, unknown>;
+  if (!Array.isArray(content.blocks)) return false;
+
+  const blocks = content.blocks as Array<{ type?: string; props?: Record<string, unknown> }>;
+  return blocks.length === 1 && blocks[0]?.type === "portfolio-grid";
+}
+
 export async function ensureSystemCmsPages() {
   const defaultBlogSidebar = await storage.cmsSidebars.getDefault();
   if (!defaultBlogSidebar) {
@@ -625,6 +678,36 @@ export async function ensureSystemCmsPages() {
       createdBy: null,
       updatedBy: null,
       sidebarId: null,
+    });
+  }
+
+  const existingPortfolio = await storage.cmsPages.getPageBySlug("portfolio");
+  if (!existingPortfolio) {
+    await storage.cmsPages.createPage({
+      title: "Portfolio",
+      slug: "portfolio",
+      pageType: "custom",
+      template: "full-width",
+      status: "published",
+      content: buildPortfolioContent(),
+      seoTitle: "Portfolio | Core Platform",
+      seoDescription:
+        "Explore selected portfolio projects, case studies, and project outcomes.",
+      seoKeywords: "portfolio, case studies, project outcomes, selected work",
+      ogImageUrl: "",
+      canonicalUrl: "",
+      noindex: false,
+      publishedAt: new Date(),
+      scheduledAt: null,
+      createdBy: null,
+      updatedBy: null,
+      sidebarId: null,
+    });
+  } else if (isLegacyPortfolioContent(existingPortfolio.content)) {
+    await storage.cmsPages.updatePage(existingPortfolio.id, {
+      content: buildPortfolioContent(),
+      template: "full-width",
+      updatedBy: existingPortfolio.updatedBy,
     });
   }
 

@@ -1,6 +1,13 @@
 import { eq, and, ilike, or, sql, type SQL, desc } from "drizzle-orm";
 import { db } from "../db";
-import { therapistProfiles, type TherapistProfile, type InsertTherapistProfile } from "@shared/schema";
+import {
+  directoryProfileMedia,
+  therapistProfiles,
+  type DirectoryProfileMedia,
+  type TherapistProfile,
+  type InsertTherapistProfile,
+  type User,
+} from "@shared/schema";
 import { users } from "@shared/schema";
 import { savedProfessionals } from "@shared/schema/saved-professionals";
 import { profileViews } from "@shared/schema/profile-views";
@@ -27,6 +34,7 @@ interface InternalSearchParams {
   latitude?: number;
   longitude?: number;
   requireApprovedApplication?: boolean;
+  directoryMode?: string;
 }
 
 const FILTER_CACHE_TTL = parseInt(process.env.FILTER_OPTIONS_CACHE_TTL || "300", 10);
@@ -34,13 +42,14 @@ const filterOptionsCache = new MemoryCache<DirectoryFilterOptions>(FILTER_CACHE_
 const FILTER_OPTIONS_KEY = "filter_options";
 
 function buildFilterConditions(params: InternalSearchParams): SQL[] {
-  const conditions: SQL[] = [
-    eq(therapistProfiles.isActive, true),
-    eq(users.isSuspended, false),
-  ];
+  const conditions: SQL[] = [eq(therapistProfiles.isActive, true), eq(users.isSuspended, false)];
 
   if (params.requireApprovedApplication !== false) {
     conditions.push(eq(therapistProfiles.isApproved, true));
+  }
+
+  if (params.directoryMode) {
+    conditions.push(eq(therapistProfiles.directoryMode, params.directoryMode));
   }
 
   if (params.practiceMode) {
@@ -57,16 +66,12 @@ function buildFilterConditions(params: InternalSearchParams): SQL[] {
 
   if (params.specializations && params.specializations.length > 0) {
     for (const spec of params.specializations) {
-      conditions.push(
-        sql`${therapistProfiles.specializations} @> ARRAY[${spec}]::text[]`
-      );
+      conditions.push(sql`${therapistProfiles.specializations} @> ARRAY[${spec}]::text[]`);
     }
   }
 
   if (params.language) {
-    conditions.push(
-      sql`${therapistProfiles.languages} @> ARRAY[${params.language}]::text[]`
-    );
+    conditions.push(sql`${therapistProfiles.languages} @> ARRAY[${params.language}]::text[]`);
   }
 
   if (params.country) {
@@ -76,7 +81,10 @@ function buildFilterConditions(params: InternalSearchParams): SQL[] {
   if (params.search) {
     const trimmed = params.search.trim();
     if (trimmed.length > 0) {
-      const sanitized = trimmed.replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
+      const sanitized = trimmed
+        .replace(/[^\w\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
       if (sanitized.length > 0) {
         if (isSearchIndexReady()) {
           const searchTerms = sanitized.split(" ");
@@ -85,7 +93,7 @@ function buildFilterConditions(params: InternalSearchParams): SQL[] {
             sql`${therapistProfiles.id} IN (
               SELECT id FROM therapist_profiles
               WHERE search_vector @@ to_tsquery('simple', ${tsQuery})
-            )`
+            )`,
           );
         } else {
           const term = `%${sanitized}%`;
@@ -97,7 +105,7 @@ function buildFilterConditions(params: InternalSearchParams): SQL[] {
               ilike(therapistProfiles.country, term),
               sql`EXISTS (SELECT 1 FROM unnest(${therapistProfiles.specializations}) s WHERE s ILIKE ${term})`,
               sql`EXISTS (SELECT 1 FROM unnest(${therapistProfiles.languages}) l WHERE l ILIKE ${term})`,
-            )!
+            )!,
           );
         }
       }
@@ -124,7 +132,10 @@ export class TherapistStorage {
   }
 
   async getProfileByUserId(userId: string): Promise<TherapistProfile | undefined> {
-    const [profile] = await db.select().from(therapistProfiles).where(eq(therapistProfiles.userId, userId));
+    const [profile] = await db
+      .select()
+      .from(therapistProfiles)
+      .where(eq(therapistProfiles.userId, userId));
     return profile;
   }
 
@@ -134,7 +145,10 @@ export class TherapistStorage {
     return profile;
   }
 
-  async updateProfile(id: string, data: Partial<InsertTherapistProfile>): Promise<TherapistProfile | undefined> {
+  async updateProfile(
+    id: string,
+    data: Partial<InsertTherapistProfile>,
+  ): Promise<TherapistProfile | undefined> {
     const [profile] = await db
       .update(therapistProfiles)
       .set({ ...data, updatedAt: new Date() })
@@ -156,6 +170,20 @@ export class TherapistStorage {
     });
     filterOptionsCache.invalidate();
     return deleted;
+  }
+
+  async getProfileMediaUsage(): Promise<
+    Array<{ media: DirectoryProfileMedia; profile: TherapistProfile; user: User }>
+  > {
+    return db
+      .select({
+        media: directoryProfileMedia,
+        profile: therapistProfiles,
+        user: users,
+      })
+      .from(directoryProfileMedia)
+      .innerJoin(therapistProfiles, eq(directoryProfileMedia.profileId, therapistProfiles.id))
+      .innerJoin(users, eq(therapistProfiles.userId, users.id));
   }
 
   async listProfilesPaginated(params: InternalSearchParams = {}): Promise<PaginatedTherapists> {
@@ -201,12 +229,19 @@ export class TherapistStorage {
     };
   }
 
-  async getFilterOptions(requireApprovedApplication = true): Promise<DirectoryFilterOptions> {
-    const cached = filterOptionsCache.get(FILTER_OPTIONS_KEY);
+  async getFilterOptions(
+    requireApprovedApplication = true,
+    directoryMode?: string,
+  ): Promise<DirectoryFilterOptions> {
+    const cacheKey = directoryMode ? `${FILTER_OPTIONS_KEY}:${directoryMode}` : FILTER_OPTIONS_KEY;
+    const cached = filterOptionsCache.get(cacheKey);
     if (cached && requireApprovedApplication) return cached;
 
     const approvalSql = requireApprovedApplication
       ? sql`AND ${therapistProfiles.isApproved} = true`
+      : sql``;
+    const directoryModeSql = directoryMode
+      ? sql`AND ${therapistProfiles.directoryMode} = ${directoryMode}`
       : sql``;
 
     const langResult = await db.execute(
@@ -216,7 +251,8 @@ export class TherapistStorage {
           WHERE ${therapistProfiles.isActive} = true
             AND ${users.isSuspended} = false
             ${approvalSql}
-          ORDER BY lang`
+            ${directoryModeSql}
+          ORDER BY lang`,
     );
 
     const countryResult = await db.execute(
@@ -226,8 +262,9 @@ export class TherapistStorage {
           WHERE ${therapistProfiles.isActive} = true
             AND ${users.isSuspended} = false
             ${approvalSql}
+            ${directoryModeSql}
             AND ${therapistProfiles.country} IS NOT NULL
-          ORDER BY country`
+          ORDER BY country`,
     );
 
     const result: DirectoryFilterOptions = {
@@ -235,7 +272,7 @@ export class TherapistStorage {
       countries: (countryResult.rows as Array<{ country: string }>).map((r) => r.country),
     };
 
-    if (requireApprovedApplication) filterOptionsCache.set(FILTER_OPTIONS_KEY, result);
+    if (requireApprovedApplication) filterOptionsCache.set(cacheKey, result);
     return result;
   }
 
@@ -288,7 +325,10 @@ export class TherapistStorage {
     return Number(result[0].count);
   }
 
-  async listFeatured(requireApprovedApplication = true): Promise<TherapistWithUser[]> {
+  async listFeatured(
+    requireApprovedApplication = true,
+    directoryMode?: string,
+  ): Promise<TherapistWithUser[]> {
     const conditions: SQL[] = [
       eq(therapistProfiles.isFeatured, true),
       eq(therapistProfiles.isActive, true),
@@ -297,6 +337,10 @@ export class TherapistStorage {
 
     if (requireApprovedApplication) {
       conditions.push(eq(therapistProfiles.isApproved, true));
+    }
+
+    if (directoryMode) {
+      conditions.push(eq(therapistProfiles.directoryMode, directoryMode));
     }
 
     const results = await db
@@ -325,8 +369,8 @@ export class TherapistStorage {
         and(
           eq(therapistProfiles.isApproved, false),
           eq(therapistProfiles.isActive, true),
-          sql`${therapistProfiles.rejectionReason} IS NULL`
-        )
+          sql`${therapistProfiles.rejectionReason} IS NULL`,
+        ),
       );
     return Number(result[0].count);
   }

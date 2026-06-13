@@ -1,4 +1,4 @@
-export type PublicSearchResultType = "page" | "post" | "event" | "job";
+export type PublicSearchResultType = "page" | "post" | "event" | "job" | "portfolio";
 
 export interface PublicSearchResult {
   type: PublicSearchResultType;

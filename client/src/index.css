@@ -50,6 +50,34 @@
   cursor: pointer;
 }
 
+.tiptap .cms-richtext-media,
+.prose .cms-richtext-media {
+  display: block;
+  max-width: min(100%, 34rem);
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+.tiptap .cms-richtext-media-left,
+.prose .cms-richtext-media-left {
+  margin: 0.5rem auto 1rem 0;
+}
+
+.tiptap .cms-richtext-media-center,
+.prose .cms-richtext-media-center {
+  margin: 1rem auto;
+}
+
+.tiptap .cms-richtext-media-right,
+.prose .cms-richtext-media-right {
+  margin: 0.5rem 0 1rem auto;
+}
+
+.tiptap .ProseMirror-selectednode {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);

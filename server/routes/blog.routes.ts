@@ -7,6 +7,7 @@ import { publicBlogCommentSubmissionSchema, type BlogPost } from "@shared/schema
 import * as r2Service from "../services/r2.service";
 import { optionalAuth } from "../middleware/auth";
 import { countLinksInText, getBlogCommentSettings, textContainsLinks } from "../services/blog-comments.service";
+import { canAccessResource } from "../services/membership-access.service";
 
 const router = Router();
 
@@ -177,11 +178,20 @@ router.post(
 
 router.get(
   "/:slug",
+  optionalAuth,
   asyncHandler(async (req, res) => {
     const slug = req.params.slug as string;
     const post = await storage.blog.getPostBySlug(slug);
     if (!post || !post.isPublished) {
       return res.status(404).json({ message: "Post not found" });
+    }
+    const access = await canAccessResource(req.user, "blog_post", post.id);
+    if (!access.allowed) {
+      return res.status(access.reason === "login_required" ? 401 : 403).json({
+        message: "Membership access required",
+        reason: access.reason,
+        teaser: access.teaser ?? post.excerpt ?? null,
+      });
     }
     res.json(await normalizePostImages(post));
   })

@@ -31,6 +31,8 @@ describe("directory-settings.service", () => {
     expect(settings.primaryCtaType).toBe("contact_form");
     expect(settings.primaryCtaLabel).toBe("Contact Provider");
     expect(settings.showLanguages).toBe(true);
+    expect(settings.showGallery).toBe(false);
+    expect(settings.requireGallery).toBe(false);
     expect(settings.requireProfileBio).toBe(false);
     expect(settings.directoryRequiresApplicationProcess).toBe(true);
     expect(settings.directoryRequiresApprovedApplication).toBe(true);
@@ -60,6 +62,8 @@ describe("directory-settings.service", () => {
     expect(settings.primaryCtaLabel).toBe("Get Directions");
     expect(settings.showLanguages).toBe(false);
     expect(settings.showLocationFields).toBe(true);
+    expect(settings.showGallery).toBe(true);
+    expect(settings.requireGallery).toBe(false);
     expect(settings.directoryRequiresApplicationProcess).toBe(false);
     expect(settings.directoryRequiresApprovedApplication).toBe(false);
     expect(settings.directoryRequiresActiveSubscription).toBe(true);
@@ -94,5 +98,49 @@ describe("directory-settings.service", () => {
     expect(settings.primaryCtaLabel).toBe("Visit Partner");
     expect(settings.showLicenseNumber).toBe(false);
     expect(settings.requirePhone).toBe(true);
+  });
+
+  it("applies real estate defaults with required galleries", async () => {
+    mockGetDecryptedCategory.mockResolvedValue({
+      directory_mode: "real_estate",
+    });
+    const { getDirectorySettings } = await import("../services/directory-settings.service");
+
+    const settings = await getDirectorySettings();
+
+    expect(settings.directoryMode).toBe("real_estate");
+    expect(settings.directoryLabelPlural).toBe("Properties");
+    expect(settings.listingLabelSingular).toBe("Property Listing");
+    expect(settings.participantLabelSingular).toBe("Listing Agent");
+    expect(settings.profileTitleLabel).toBe("Property Title");
+    expect(settings.acceptingClientsLabel).toBe("Available for Showings");
+    expect(settings.primaryCtaLabel).toBe("Schedule Showing");
+    expect(settings.structuredDataType).toBe("RealEstateListing");
+    expect(settings.showGallery).toBe(true);
+    expect(settings.requireGallery).toBe(true);
+    expect(settings.galleryMinImages).toBe(3);
+    expect(settings.galleryMaxImages).toBe(40);
+  });
+
+  it("uses custom gallery settings over preset defaults", async () => {
+    mockGetDecryptedCategory.mockResolvedValue({
+      directory_mode: "real_estate",
+      show_gallery: "false",
+      require_gallery: "false",
+      gallery_label: "Listing Media",
+      gallery_help_text: "Upload approved listing photos.",
+      gallery_min_images: "1",
+      gallery_max_images: "12",
+    });
+    const { getDirectorySettings } = await import("../services/directory-settings.service");
+
+    const settings = await getDirectorySettings();
+
+    expect(settings.showGallery).toBe(false);
+    expect(settings.requireGallery).toBe(false);
+    expect(settings.galleryLabel).toBe("Listing Media");
+    expect(settings.galleryHelpText).toBe("Upload approved listing photos.");
+    expect(settings.galleryMinImages).toBe(1);
+    expect(settings.galleryMaxImages).toBe(12);
   });
 });

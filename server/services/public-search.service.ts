@@ -1,4 +1,4 @@
-import type { BlogPost, CareerJob, CmsPage, Event } from "@shared/schema";
+import type { BlogPost, CareerJob, CmsPage, Event, PortfolioProject } from "@shared/schema";
 import type { PublicSearchResult } from "@shared/types/public-search";
 import { getEventPath } from "@shared/event-url";
 import { storage } from "../storage";
@@ -103,6 +103,22 @@ function joinFragments(values: Array<string | null | undefined>) {
 }
 
 const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
+  {
+    slug: "portfolio",
+    type: "page",
+    title: "Portfolio",
+    url: "/portfolio",
+    metadata: "Page",
+    searchableText: [
+      "Portfolio",
+      "Selected Work",
+      "Case Studies",
+      "Projects",
+      "Gallery",
+      "Outcomes",
+    ].join(" "),
+    excerptSource: "Explore selected portfolio projects, case studies, and project outcomes.",
+  },
   {
     slug: "home",
     type: "page",
@@ -308,6 +324,29 @@ function buildJobText(job: CareerJob) {
     .join(" ");
 }
 
+function buildPortfolioText(project: PortfolioProject) {
+  return [
+    project.title,
+    project.subtitle,
+    project.location,
+    project.projectType,
+    project.clientName,
+    project.summary,
+    project.description,
+    project.challenge,
+    project.solution,
+    project.results,
+    ...(project.services ?? []),
+    ...(project.technologies ?? []),
+    ...(project.categories ?? []),
+    ...(project.tags ?? []),
+    ...(project.sections ?? []).flatMap((section) => [section.title, section.body]),
+    ...(project.metrics ?? []).flatMap((metric) => [metric.value, metric.label, metric.description]),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 function buildFallbackPageDocuments(publishedPageSlugs: Set<string>): SearchDocument[] {
   return FALLBACK_PAGE_DOCUMENTS
     .filter((doc) => !publishedPageSlugs.has(doc.slug))
@@ -330,11 +369,12 @@ export async function searchPublicSite(query: string): Promise<PublicSearchResul
     careers?: { getJobs: (filters: { publicOnly: boolean }) => Promise<CareerJob[]> };
   }).careers;
 
-  const [pages, posts, events, jobs] = await Promise.all([
+  const [pages, posts, events, jobs, portfolioProjects] = await Promise.all([
     storage.cmsPages.getAllPages(),
     storage.blog.getPublishedPosts(),
     storage.events.getPublishedEvents(),
     careerStorage?.getJobs({ publicOnly: true }) ?? Promise.resolve([]),
+    storage.portfolio.getProjects({ publicOnly: true }),
   ]);
 
   const publishedPages = pages.filter((page) => page.status === "published" && !page.noindex);
@@ -383,6 +423,15 @@ export async function searchPublicSite(query: string): Promise<PublicSearchResul
       metadata: [job.department, job.location].filter(Boolean).join(" · ") || "Job",
       searchableText: buildJobText(job),
       excerptSource: job.summary || job.description || buildJobText(job),
+    })),
+    ...portfolioProjects.map((project) => ({
+      type: "portfolio" as const,
+      id: project.id,
+      title: project.title,
+      url: `/portfolio/${project.slug}`,
+      metadata: [project.projectType, project.location].filter(Boolean).join(" · ") || "Portfolio",
+      searchableText: buildPortfolioText(project),
+      excerptSource: project.summary || project.description || buildPortfolioText(project),
     })),
   ];
 

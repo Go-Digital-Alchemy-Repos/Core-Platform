@@ -36,6 +36,9 @@ import {
   TicketPercent,
   BriefcaseBusiness,
   Share2,
+  FolderKanban,
+  Plus,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -169,6 +172,49 @@ export function buildNavGroups(
                 href: "/admin/careers",
                 icon: BriefcaseBusiness,
                 iconColor: "text-cyan-600",
+                children: [
+                  {
+                    title: "Add New",
+                    href: "/admin/careers/new",
+                    icon: Plus,
+                    iconColor: "text-cyan-500",
+                  },
+                  {
+                    title: "Settings",
+                    href: "/admin/careers/settings",
+                    icon: Settings,
+                    iconColor: "text-slate-500",
+                  },
+                ],
+              },
+            ],
+          },
+        ] satisfies NavGroup[])
+      : []),
+    ...(siteFeatures.portfolioEnabled && hasAdminPermission("content")
+      ? ([
+          {
+            label: "Portfolio",
+            items: [
+              {
+                title: "Portfolio",
+                href: "/admin/portfolio",
+                icon: FolderKanban,
+                iconColor: "text-indigo-600",
+                children: [
+                  {
+                    title: "Add New",
+                    href: "/admin/portfolio/new",
+                    icon: Plus,
+                    iconColor: "text-indigo-500",
+                  },
+                  {
+                    title: "Settings",
+                    href: "/admin/portfolio/settings",
+                    icon: Settings,
+                    iconColor: "text-slate-500",
+                  },
+                ],
               },
             ],
           },
@@ -245,6 +291,41 @@ export function buildNavGroups(
                   {
                     title: "Settings",
                     href: "/admin/ecommerce/settings",
+                    icon: Settings,
+                    iconColor: "text-slate-500",
+                  },
+                ],
+              },
+            ],
+          },
+        ] satisfies NavGroup[])
+      : []),
+    ...(siteFeatures.membershipEnabled && user?.role === "admin"
+      ? ([
+          {
+            label: "Membership",
+            items: [
+              {
+                title: "Membership",
+                href: "/admin/membership",
+                icon: ShieldCheck,
+                iconColor: "text-indigo-600",
+                children: [
+                  {
+                    title: "Plans",
+                    href: "/admin/membership",
+                    icon: CreditCard,
+                    iconColor: "text-indigo-500",
+                  },
+                  {
+                    title: "Members",
+                    href: "/admin/membership/members",
+                    icon: Users,
+                    iconColor: "text-blue-600",
+                  },
+                  {
+                    title: "Settings",
+                    href: "/admin/membership/settings",
                     icon: Settings,
                     iconColor: "text-slate-500",
                   },
@@ -432,7 +513,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
   const toggleGroup = (label: string, open: boolean) => {
     setOpenGroup(open ? label : null);
   };
-  const exactOnlyRoutes = ["/admin", "/admin/cms", "/admin/crm"];
+  const exactOnlyRoutes = ["/admin", "/admin/cms", "/admin/crm", "/admin/membership"];
   const isRouteActive = (href?: string) => Boolean(
     href &&
       (location === href ||

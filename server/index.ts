@@ -59,6 +59,18 @@ app.post("/api/ecommerce/webhook/stripe", express.raw({ type: "application/json"
   }
 });
 
+app.post("/api/membership/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  try {
+    const signature = req.headers["stripe-signature"] as string | undefined;
+    const { handleMembershipStripeWebhook } = await import("./services/membership-webhook.service");
+    await handleMembershipStripeWebhook(req.body, signature);
+    res.json({ received: true });
+  } catch (err) {
+    logger.stripe.error("Membership webhook endpoint error", err, { requestId: req.requestId });
+    res.status(400).json({ error: "Webhook processing failed" });
+  }
+});
+
 app.use(
   express.json({
     limit: "1mb",

@@ -4,16 +4,27 @@ import { storage } from "../storage";
 import { paramString } from "../utils/params";
 import { PUBLIC_MENU_LOCATIONS, type CmsMenu, type PublicMenuLocation } from "@shared/schema";
 import { verifyCmsPreviewToken } from "../utils/cms-preview-token";
+import { optionalAuth } from "../middleware/auth";
+import { canAccessResource } from "../services/membership-access.service";
 
 const router = Router();
 
 router.get(
   "/pages/by-slug/:slug",
+  optionalAuth,
   asyncHandler(async (req, res) => {
     const slug = paramString(req.params.slug);
     const page = await storage.cmsPages.getPageBySlug(slug);
     if (!page || page.status !== "published") {
       return res.status(404).json({ error: "Page not found" });
+    }
+    const access = await canAccessResource(req.user, "cms_page", page.id);
+    if (!access.allowed) {
+      return res.status(access.reason === "login_required" ? 401 : 403).json({
+        error: "Membership access required",
+        reason: access.reason,
+        teaser: access.teaser ?? null,
+      });
     }
     res.json(page);
   })
