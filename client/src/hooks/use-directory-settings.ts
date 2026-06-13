@@ -1,3 +1,4 @@
+import { STALE_TIMES } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import {
   DIRECTORY_LABEL_PRESETS,
@@ -5,8 +6,8 @@ import {
 } from "@shared/types/directory-settings";
 
 export const DEFAULT_PUBLIC_DIRECTORY_SETTINGS: PublicDirectorySettings = {
-  directoryMode: "therapists",
-  ...DIRECTORY_LABEL_PRESETS.therapists,
+  directoryMode: "service_providers",
+  ...DIRECTORY_LABEL_PRESETS.service_providers,
   applicationFeeAmountCents: 15000,
   applicationFeeNoticeTitle: "Application Fee",
   applicationFeeNoticeBody:
@@ -26,7 +27,7 @@ export const DEFAULT_PUBLIC_DIRECTORY_SETTINGS: PublicDirectorySettings = {
 export function useDirectorySettings() {
   const query = useQuery<PublicDirectorySettings>({
     queryKey: ["/api/directory-settings"],
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
   });
 
   return {

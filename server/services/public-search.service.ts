@@ -128,7 +128,7 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
     searchableText: [
       "Core Platform",
       "Find a Verified Provider",
-      "Applications open in June",
+      "Apply to Join",
       "Why Platform Approved",
       "Culturally Informed Care",
       "Specialized Support",
@@ -146,13 +146,13 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
     metadata: "Page",
     searchableText: [
       "About Core Platform",
-      "What is a globally mobile community member",
+      "What is a member community member",
       "What does it mean to be vetted",
       "Every verified provider completes a detailed application process",
       "Credentials and licensure are verified",
-      "Training or lived experience with globally mobile and cross-cultural populations is required",
+      "Training or lived experience with member and relevant communities is required",
     ].join(" "),
-    excerptSource: "Learn what it means for a provider to be vetted and how Core Platform supports cross-cultural community support.",
+    excerptSource: "Learn what it means for a provider to be vetted and how Core Platform supports member community support.",
   },
   {
     slug: "contact",
@@ -188,7 +188,7 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
       "Profile Setup",
       "Go Live in the Directory",
       "Interested in Training but Not a Member",
-      "Applications open in June",
+      "Apply to Join",
     ].join(" "),
     excerptSource:
       "The Application Process includes Submit Your Application, Credential Verification, Core Platform Competency Review, Profile Setup, and Go Live in the Directory.",
@@ -206,7 +206,7 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
       "What does it mean to be vetted",
       "Every verified provider completes a detailed application process",
     ].join(" "),
-    excerptSource: "Search for platform-approved care by specialty, location, language, or session format.",
+    excerptSource: "Search for platform-approved workflows by specialty, location, language, or session format.",
   },
   {
     slug: "careers",

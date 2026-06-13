@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { STALE_TIMES } from "@/lib/queryClient";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import {
@@ -50,6 +51,12 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { useBranding } from "@/components/shared/branding-provider";
+import { ThemeModeToggle } from "@/components/shared/theme-mode-toggle";
+import { AdminBreadcrumbs } from "@/features/admin/admin-breadcrumbs";
+import {
+  AdminCommandPalette,
+  buildAdminCommandItems,
+} from "@/features/admin/admin-command-palette";
 import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
 import type { AdminPermission } from "@shared/types";
 import type { User as AppUser } from "@shared/schema";
@@ -490,12 +497,13 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
   const { user, logout, hasAdminPermission } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const branding = useBranding();
   const adminLogo = branding.faviconUrl || logoIcon;
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
   });
   const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
   const { settings: directorySettings } = useDirectorySettings();
@@ -535,6 +543,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
   const activeGroupLabel = navGroups.find((group) =>
     group.label && group.items.some(isNavItemActive)
   )?.label ?? null;
+  const commandItems = useMemo(() => buildAdminCommandItems(navGroups), [navGroups]);
 
   useEffect(() => {
     setOpenGroup(activeGroupLabel);
@@ -648,6 +657,24 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                   Admin Dashboard
                 </h2>
               </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={cn("mt-4 w-full justify-start text-muted-foreground", collapsed && "justify-center px-0")}
+                onClick={() => setCommandOpen(true)}
+                data-testid="button-admin-command-search"
+              >
+                <SearchIcon className={cn("h-4 w-4", collapsed ? "" : "mr-2")} />
+                {!collapsed && (
+                  <>
+                    <span className="flex-1 text-left">Search</span>
+                    <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      Cmd K
+                    </kbd>
+                  </>
+                )}
+              </Button>
             </div>
 
             <nav
@@ -737,6 +764,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                 <div className="flex flex-col gap-1">
                   {collapsed ? (
                     <>
+                      <ThemeModeToggle collapsed />
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
@@ -779,6 +807,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                     </>
                   ) : (
                     <>
+                      <ThemeModeToggle />
                       <button
                         type="button"
                         className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -824,9 +853,17 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
           </button>
         </div>
 
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto">
+          <AdminBreadcrumbs items={commandItems} />
+          {children}
+        </main>
 
         <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
+        <AdminCommandPalette
+          items={commandItems}
+          open={commandOpen}
+          onOpenChange={setCommandOpen}
+        />
       </div>
     </TooltipProvider>
   );

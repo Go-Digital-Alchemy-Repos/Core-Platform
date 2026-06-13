@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
-import { EditorSaveIndicator } from "@/components/shared/editor-save-indicator";
+import { AdminSaveBar } from "@/components/shared/admin-save-bar";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, Layers } from "lucide-react";
+import { ArrowLeft, Layers } from "lucide-react";
 import { apiRequest, queryClient as qc } from "@/lib/queryClient";
 import type { CmsSection } from "@shared/schema";
 import { PageBuilder } from "./builder/page-builder";
@@ -241,15 +241,15 @@ export default function CmsSectionEditorPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <EditorSaveIndicator state={saveState.state} />
-            <Button
-              onClick={onSave}
+            <AdminSaveBar
+              state={saveState.state}
+              type="button"
+              onSave={onSave}
+              primaryLabel="Save Section"
               disabled={isSaving || editorLock.isReadOnly}
-              data-testid="button-save-section"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {isSaving ? "Saving…" : "Save Section"}
-            </Button>
+              className="w-auto"
+              buttonTestId="button-save-section"
+            />
           </div>
         </div>
 
@@ -339,14 +339,15 @@ export default function CmsSectionEditorPage() {
         </div>
 
         <div className="flex justify-end">
-          <Button
-            onClick={onSave}
+          <AdminSaveBar
+            state={saveState.state}
+            type="button"
+            onSave={onSave}
+            primaryLabel="Save Section"
             disabled={isSaving || editorLock.isReadOnly}
-            data-testid="button-save-section-bottom"
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {isSaving ? "Saving…" : "Save Section"}
-          </Button>
+            className="w-auto"
+            buttonTestId="button-save-section-bottom"
+          />
         </div>
       </div>
       {unsavedChangesGuard.dialog}

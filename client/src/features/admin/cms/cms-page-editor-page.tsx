@@ -35,12 +35,11 @@ import { Switch } from "@/components/ui/switch";
 import { SeoPreview } from "@/components/shared/seo-preview";
 import { StructuredDataStatus } from "@/components/shared/structured-data-status";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
-import { EditorSaveIndicator } from "@/components/shared/editor-save-indicator";
+import { AdminSaveBar } from "@/components/shared/admin-save-bar";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
-  Save,
   Globe,
   Clock,
   CalendarClock,
@@ -646,7 +645,6 @@ export default function CmsPageEditorPage() {
                 Ready to publish
               </Badge>
             )}
-            <EditorSaveIndicator state={saveState.state} />
             {isNew && (
               <Button
                 variant="outline"
@@ -768,23 +766,15 @@ export default function CmsPageEditorPage() {
                 </Popover>
               </>
             )}
-            <Button
-              onClick={onSave}
+            <AdminSaveBar
+              state={saveState.state}
+              type="button"
+              onSave={onSave}
+              primaryLabel="Save Page"
               disabled={isPending || editorLock.isReadOnly}
-              data-testid="button-save"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving…
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Page
-                </>
-              )}
-            </Button>
+              className="w-auto"
+              buttonTestId="button-save"
+            />
           </div>
         </div>
 

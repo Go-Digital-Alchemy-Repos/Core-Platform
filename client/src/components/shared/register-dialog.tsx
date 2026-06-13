@@ -94,7 +94,7 @@ export function RegisterDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Create an Account</DialogTitle>
-          <DialogDescription>Join Core Platform to find your mental health professional</DialogDescription>
+          <DialogDescription>Join Core Platform to manage your account</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

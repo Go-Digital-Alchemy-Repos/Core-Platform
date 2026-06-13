@@ -96,7 +96,7 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
       field("intro", "intro", "Introduction", "html", {
         config: {
           htmlContent:
-            "<p><strong>We're so excited for the launch of Core Platform coming late 2026!</strong></p><p>We envision a world where globally mobile members no longer face misunderstanding or misdiagnosis due to the nuances of a globally-mobile upbringing, but have access to professionals providing platform-approved care.</p><p>Our goal is to do this by developing a database of platform-approved providers who receive ongoing training after thorough vetting.</p><p>If you'd like to be updated on the launch, please give us your information below.</p>",
+            "<p><strong>We're so excited for the launch of Core Platform coming late 2026!</strong></p><p>We envision a world where members no longer face misunderstanding or misdiagnosis due to the nuances of a globally-mobile upbringing, but have access to professionals providing platform-approved workflows.</p><p>Our goal is to do this by developing a database of platform-approved providers who receive ongoing training after thorough vetting.</p><p>If you'd like to be updated on the launch, please give us your information below.</p>",
         },
       }),
       field("name", "name", "Name", "name", {

@@ -15,21 +15,21 @@ describe("directory-settings.service", () => {
     vi.clearAllMocks();
   });
 
-  it("returns therapist defaults when no directory settings are stored", async () => {
+  it("returns generic service-provider defaults when no directory settings are stored", async () => {
     mockGetDecryptedCategory.mockResolvedValue({});
     const { getDirectorySettings } = await import("../services/directory-settings.service");
 
     const settings = await getDirectorySettings();
 
-    expect(settings.directoryMode).toBe("therapists");
-    expect(settings.directoryLabelSingular).toBe("Directory");
-    expect(settings.listingLabelPlural).toBe("Profiles");
-    expect(settings.participantLabelSingular).toBe("Therapist");
-    expect(settings.specialtyLabelPlural).toBe("Specializations");
-    expect(settings.profileTitleLabel).toBe("Professional Title");
-    expect(settings.acceptingClientsLabel).toBe("Accepting New Clients");
+    expect(settings.directoryMode).toBe("service_providers");
+    expect(settings.directoryLabelSingular).toBe("Provider Directory");
+    expect(settings.listingLabelPlural).toBe("Provider Profiles");
+    expect(settings.participantLabelSingular).toBe("Service Provider");
+    expect(settings.specialtyLabelPlural).toBe("Services");
+    expect(settings.profileTitleLabel).toBe("Provider Title");
+    expect(settings.acceptingClientsLabel).toBe("Accepting New Customers");
     expect(settings.primaryCtaType).toBe("contact_form");
-    expect(settings.primaryCtaLabel).toBe("Contact Provider");
+    expect(settings.primaryCtaLabel).toBe("Request Information");
     expect(settings.showLanguages).toBe(true);
     expect(settings.showGallery).toBe(false);
     expect(settings.requireGallery).toBe(false);

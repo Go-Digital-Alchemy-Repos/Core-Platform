@@ -549,7 +549,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       headingColor: "",
       accentHeadingColor: "",
       subheading:
-        "Connecting Third Culture Kids with verified providers who understand your world.",
+        "Connecting members with verified providers, practical resources, and configurable community tools.",
       subheadingColor: "",
       ctaText: "Find a Verified Provider",
       ctaLink: "/directory",
@@ -702,8 +702,8 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     category: "layout",
     defaultProps: {
       eyebrow: "Our Approach",
-      title: "Why Core Platform-Informed Care Matters",
-      subtitle: "We match you with verified providers who understand the Core Platform experience.",
+      title: "Why Platform-Approved Providers Matter",
+      subtitle: "We match members with verified providers who understand their needs and context.",
       alignment: "center",
       headingLevel: "h2",
     },
@@ -993,7 +993,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     category: "conversion",
     defaultProps: {
       heading: "Ready to Get Started?",
-      subheading: "Find a Core Platform-informed verified provider and begin your journey today.",
+      subheading: "Find a platform-approved provider and begin your next step today.",
       primaryText: "Browse the Directory",
       primaryLink: "/directory",
       primaryAction: "internal-link",
@@ -1078,7 +1078,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       cards: [
         {
           title: "Culturally Informed",
-          description: "Mental health professionals who understand the Core Platform experience.",
+          description: "Verified providers who serve this community.",
           icon: "Globe",
         },
         {
@@ -1134,9 +1134,9 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       title: "Frequently Asked Questions",
       items: [
         {
-          question: "What is a Third Culture Kid?",
+          question: "Who is this platform for?",
           answer:
-            "A Core Platform is someone who spent a significant part of their developmental years in a culture different from their parents'.",
+            "Core Platform can support configurable directories, member communities, education, events, and resource libraries.",
         },
         {
           question: "How are verified providers vetted?",
@@ -1438,7 +1438,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       title: "Get in Touch",
       items: [
-        { icon: "MapPin", label: "Location", value: "Global — serving Core Platforms worldwide" },
+        { icon: "MapPin", label: "Location", value: "Global - serving members worldwide" },
         { icon: "Globe", label: "Website", value: "www.coreplatform.com" },
       ],
     },
@@ -1551,9 +1551,9 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
             "Every professional in our directory has specific training or lived experience with cross-cultural populations.",
         },
         {
-          concern: "Is online therapy effective?",
+          concern: "Can services be delivered online?",
           response:
-            "Research consistently shows that online therapy can be as effective as in-person sessions for many conditions.",
+            "Many providers offer virtual options. Each listing can explain service format, availability, and fit.",
         },
       ],
     },
@@ -1634,7 +1634,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         { icon: "ShieldCheck", label: "Verified Professionals" },
         { icon: "Lock", label: "Secure & Confidential" },
         { icon: "Globe", label: "Global Network" },
-        { icon: "Heart", label: "Core Platform-Informed Care" },
+        { icon: "Heart", label: "Platform-Approved Support" },
       ],
     },
     propDefs: [
@@ -1694,7 +1694,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       stats: [
         { value: "500+", label: "Professionals in Network" },
         { value: "40+", label: "Countries Represented" },
-        { value: "10,000+", label: "Core Platforms Connected" },
+        { value: "10,000+", label: "Members Connected" },
       ],
       disclaimer: "",
     },
@@ -2066,15 +2066,15 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       subtitle: "",
       personas: [
         {
-          title: "Adult Core Platforms",
+          title: "Members",
           description:
-            "Adults who grew up across cultures and need support navigating identity, belonging, and transitions.",
+            "People looking for trusted providers, resources, events, and next steps.",
           icon: "User",
         },
         {
-          title: "Expat Families",
+          title: "Families",
           description:
-            "Parents raising children between cultures who want proactive mental health support.",
+            "Households looking for practical resources, trusted services, and community support.",
           icon: "Users",
         },
         {
@@ -2098,7 +2098,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
             key: "title",
             label: "Persona Title",
             type: "text",
-            placeholder: "e.g. Adult Core Platforms",
+            placeholder: "e.g. Members",
           },
           {
             key: "description",
@@ -2197,7 +2197,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     category: "dynamic",
     defaultProps: {
       title: "Our Verified Providers Around the World",
-      subtitle: "Click a pin to learn more about a Core Platform-informed professional near you",
+      subtitle: "Click a pin to learn more about a verified provider near you",
     },
     propDefs: [
       { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
@@ -2318,7 +2318,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     defaultProps: {
       heading: "Upcoming Events",
       subheading:
-        "We offer quarterly Core Platform-informed trainings for professional providers. All of our members get free registration to the events below.",
+        "Share trainings, workshops, and community events with members and providers.",
       defaultView: "list",
       showViewToggle: true,
     },
@@ -2371,7 +2371,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     defaultProps: {
       heading: "Find a Verified Provider",
       subheading:
-        "Search for Core Platform-informed care by specialty, location, language, or session format, then explore results on the map.",
+        "Search verified providers by specialty, location, language, or service format, then explore results on the map.",
       showCategoryChips: true,
       showMap: true,
     },
@@ -2477,7 +2477,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     isDynamic: true,
     category: "hero",
     defaultProps: {
-      heading: "Are you a Core Platform-informed verified provider?",
+      heading: "Are you a verified provider?",
       accentHeading: "Join the Network!",
       headingColor: "",
       accentHeadingColor: "",
@@ -2517,13 +2517,13 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     isDynamic: true,
     category: "dynamic",
     defaultProps: {
-      heading: "Are you a Core Platform-informed verified provider?",
+      heading: "Are you a verified provider?",
       accentHeading: "Join the Network!",
       headingColor: "",
       accentHeadingColor: "",
       subheading: "",
       subheadingColor: "",
-      applicationStatusText: "Applications open in June.",
+      applicationStatusText: "Applications are currently open.",
       loginPromptPrefix: "If you're already a member click here to",
       loginLinkText: "Log in",
       loginPromptSuffix: "to your profile!",
@@ -2554,7 +2554,7 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
         key: "applicationStatusText",
         label: "Button Status Text",
         type: "text",
-        placeholder: "Applications open in June.",
+        placeholder: "Applications are currently open.",
       },
       {
         key: "loginPromptPrefix",

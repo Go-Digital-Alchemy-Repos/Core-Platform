@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, STALE_TIMES } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useDirectorySettings } from "@/hooks/use-directory-settings";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
@@ -4727,7 +4727,7 @@ function EmailTemplatesTab() {
   });
   const { data: siteFeaturesData, isLoading: isSiteFeaturesLoading } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
   });
   const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
   const enabledModuleOptions = useMemo(

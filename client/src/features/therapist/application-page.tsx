@@ -66,15 +66,15 @@ const WIZARD_STEPS = [
 const CORE_PLATFORM_QUESTIONS = [
   {
     id: "corePlatform_experience",
-    label: "Describe your experience working with Third Culture Kids (Core Platforms) or cross-cultural populations.",
+    label: "Describe your experience working with the populations or communities this directory serves.",
   },
   {
     id: "corePlatform_approach",
-    label: "What therapeutic approaches or frameworks do you use when working with Core Platforms or individuals navigating cultural transitions?",
+    label: "What approaches, frameworks, or service models guide your work with members?",
   },
   {
     id: "corePlatform_understanding",
-    label: "How would you define or describe the unique challenges faced by Core Platforms, and how does your practice address them?",
+    label: "How would you describe the needs of the members you serve, and how does your practice address them?",
   },
   {
     id: "corePlatform_continuing_ed",
@@ -460,7 +460,7 @@ function ProfessionalInfoStep({
   });
 
   const roleOptions = [
-    { value: "mental_health_professional", label: "Mental Health Professional" },
+    { value: "provider", label: "Provider" },
     { value: "debriefer", label: "Debriefer" },
     { value: "coach", label: "Coach" },
   ];
@@ -474,7 +474,7 @@ function ProfessionalInfoStep({
 
       <div className="space-y-4">
         <div>
-          <Label>I am applying as a Core Platform-informed: *</Label>
+          <Label>I am applying as a verified provider: *</Label>
           <div className="grid gap-2 mt-2">
             {roleOptions.map((opt) => (
               <label
@@ -645,7 +645,7 @@ function ProfessionalInfoStep({
   );
 }
 
-function TckQuestionsStep({ formData, onChange }: { formData: FormData; onChange: (data: Partial<FormData>) => void }) {
+function ProviderPracticeQuestionsStep({ formData, onChange }: { formData: FormData; onChange: (data: Partial<FormData>) => void }) {
   const questions = formData.corePlatformQuestions || {};
   const updateQuestion = (id: string, value: string) => {
     onChange({ corePlatformQuestions: { ...questions, [id]: value } });
@@ -654,9 +654,9 @@ function TckQuestionsStep({ formData, onChange }: { formData: FormData; onChange
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold" data-testid="text-step-title">Core Platform-Informed Practice</h3>
+        <h3 className="text-lg font-semibold" data-testid="text-step-title">Provider Practice</h3>
         <p className="text-muted-foreground mt-1">
-          Help us understand your experience and approach to working with Third Culture Kids and cross-cultural populations.
+          Help us understand your experience, approach, and fit for this provider network.
         </p>
       </div>
 
@@ -838,7 +838,7 @@ function AccessibilityStep({ formData, onChange }: { formData: FormData; onChang
         </div>
 
         <div>
-          <Label>Do you offer sliding-scale or reduced-fee sessions for Core Platforms? *</Label>
+          <Label>Do you offer sliding-scale or reduced-fee sessions for members? *</Label>
           <div className="grid grid-cols-2 gap-3 mt-2">
             {[
               { value: "yes", label: "Yes" },
@@ -1279,7 +1279,7 @@ export default function ApplicationPage() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-heading">Apply for Membership</CardTitle>
             <CardDescription className="max-w-md mx-auto">
-              Join the Core Platform counselor network and connect with Third Culture Kids who need your expertise.
+              Join the Core Platform provider network and connect with members who need your expertise.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
@@ -1350,7 +1350,7 @@ export default function ApplicationPage() {
           {currentStep === 2 && <BeforeYouBeginStep formData={formData} onChange={handleFormChange} />}
           {currentStep === 3 && <ContactInfoStep formData={formData} onChange={handleFormChange} />}
           {currentStep === 4 && <ProfessionalInfoStep formData={formData} onChange={handleFormChange} application={application} />}
-          {currentStep === 5 && <TckQuestionsStep formData={formData} onChange={handleFormChange} />}
+          {currentStep === 5 && <ProviderPracticeQuestionsStep formData={formData} onChange={handleFormChange} />}
           {currentStep === 6 && <ReferencesStep application={application} />}
           {currentStep === 7 && <AccessibilityStep formData={formData} onChange={handleFormChange} />}
           {currentStep === 8 && <TermsStep formData={formData} onChange={handleFormChange} />}

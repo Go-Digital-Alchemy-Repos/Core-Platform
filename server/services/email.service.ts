@@ -728,7 +728,7 @@ export async function sendReferenceRequestEmail(
   const fallbackBody = `
     <p>Dear ${refereeName},</p>
     <p><strong>${applicantName}</strong> has applied to join the <strong>Core Platform Provider Network</strong> and has listed you as a professional reference.</p>
-    <p>Core Platform connects members of globally mobile communities with verified providers who understand the unique experiences of growing up across cultures. As part of our vetting process, we ask references to complete a brief, confidential questionnaire.</p>
+    <p>Core Platform connects members of member communities with verified providers who understand the unique experiences of growing up across cultures. As part of our vetting process, we ask references to complete a brief, confidential questionnaire.</p>
     <p><strong>Your responses will remain confidential</strong> and will not be shared with the applicant.</p>
     <p style="margin:24px 0;">
       <a href="${referenceUrl}" style="display:inline-block;padding:12px 28px;background:#1e3a5f;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">Complete Reference Form</a>

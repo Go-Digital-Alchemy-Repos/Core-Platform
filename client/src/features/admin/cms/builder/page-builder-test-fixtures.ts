@@ -6,7 +6,7 @@ export const mixedBuilderFixture: BuilderContent = {
       id: "hero-block",
       type: "hero",
       props: {
-        heading: "Support Third Culture Kids",
+        heading: "Support Your Community",
         subheading: "<p>Helping families find the right care and community.</p>",
         layout: "stacked",
       },
@@ -16,7 +16,7 @@ export const mixedBuilderFixture: BuilderContent = {
       type: "call-to-action",
       props: {
         heading: "Join the Network",
-        body: "<p>Apply to be part of the Core Platform-informed network.</p>",
+        body: "<p>Apply to be part of the verified provider network.</p>",
         ctaText: "Apply Now",
       },
     },

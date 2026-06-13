@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { JsonLd } from "@/components/shared/json-ld";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -31,18 +32,16 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useDirectorySettings } from "@/hooks/use-directory-settings";
+import { useGlobalSeo } from "@/hooks/use-global-seo";
+import { useSeo } from "@/hooks/use-seo";
 import { useFrontendEditTarget } from "@/features/frontend-edit/frontend-edit";
-import type { TherapistProfile } from "@shared/schema/therapist-profiles";
+import { stripHtml } from "@/lib/html";
+import {
+  buildBreadcrumbLd,
+  buildProviderProfileLd,
+} from "@/lib/structured-data";
+import type { TherapistWithUser } from "@shared/types/directory";
 import { SiInstagram, SiFacebook, SiX, SiLinkedin, SiYoutube, SiTiktok } from "react-icons/si";
-
-type TherapistWithUser = TherapistProfile & {
-  user?: {
-    firstName: string | null;
-    lastName: string | null;
-    email: string;
-    profileImageUrl: string | null;
-  };
-};
 
 function getSessionFormatLabel(mode: string | null) {
   switch (mode) {
@@ -64,6 +63,7 @@ export default function TherapistProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { settings: directorySettings } = useDirectorySettings();
+  const { data: globalSeo } = useGlobalSeo();
 
   const [contactForm, setContactForm] = useState({ name: "", email: "", message: "", preferredContact: "email" as "email" | "phone" | "text", phone: "" });
   const [showContactForm, setShowContactForm] = useState(false);
@@ -127,6 +127,32 @@ export default function TherapistProfilePage() {
     id: therapist.id,
     label: `Edit ${editLabel}`,
   } : null);
+
+  const baseUrl =
+    globalSeo?.siteUrl?.replace(/\/$/, "") ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+  const canonicalUrl = therapist && baseUrl ? `${baseUrl}/directory/${therapist.id}` : undefined;
+  const seoDisplayName = therapist
+    ? [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") ||
+      directorySettings.participantLabelSingular
+    : undefined;
+  const seoDescription = therapist
+    ? stripHtml(
+        therapist.bio ||
+          therapist.title ||
+          `View this ${directorySettings.participantLabelSingular.toLowerCase()} profile.`,
+      ).slice(0, 180)
+    : undefined;
+
+  useSeo({
+    title: seoDisplayName
+      ? `${seoDisplayName} | ${directorySettings.directoryLabelSingular || "Directory"}`
+      : undefined,
+    description: seoDescription,
+    canonical: canonicalUrl,
+    ogImage: therapist?.user?.profileImageUrl ?? undefined,
+    ogType: "profile",
+  });
 
   if (isLoading) {
     return (
@@ -218,9 +244,16 @@ export default function TherapistProfilePage() {
         return { type: "contact_form" as const, icon: Mail, label };
     }
   })();
+  const profileSchema = buildProviderProfileLd(therapist, globalSeo);
+  const breadcrumbSchema = buildBreadcrumbLd([
+    { name: "Home", url: baseUrl || "/" },
+    { name: directorySettings.directoryLabelSingular || "Directory", url: baseUrl ? `${baseUrl}/directory` : "/directory" },
+    { name: displayName, url: canonicalUrl || `/directory/${therapist.id}` },
+  ]);
 
   return (
     <PageLayout>
+      <JsonLd schemas={[breadcrumbSchema, profileSchema]} />
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <Link href="/directory">
           <Button variant="ghost" className="mb-6 -ml-2" data-testid="link-back-directory-top">

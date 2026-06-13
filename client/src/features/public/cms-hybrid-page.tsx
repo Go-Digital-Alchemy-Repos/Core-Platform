@@ -1,3 +1,4 @@
+import { STALE_TIMES } from "@/lib/queryClient";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
@@ -287,12 +288,12 @@ export function CmsHybridPage({ slug, fallback, enabled = true }: CmsHybridPageP
       return failureCount < 2;
     },
     enabled,
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIMES.SESSION,
   });
 
   const { data: globalSeo } = useQuery<SeoSettings>({
     queryKey: ["/api/seo/global"],
-    staleTime: 10 * 60 * 1000,
+    staleTime: STALE_TIMES.CONTENT,
   });
 
   if (!enabled) {

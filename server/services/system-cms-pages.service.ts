@@ -16,7 +16,7 @@ function buildInsightsContent() {
         props: {
           eyebrow: "Core Platform Blog",
           title: "Insights & Articles",
-          subtitle: "Explore articles, research, and insights for globally mobile communities.",
+          subtitle: "Explore articles, research, and insights for member communities.",
           alignment: "center",
         },
       },
@@ -73,7 +73,7 @@ function buildCareersContent() {
           badge: "Career Center",
           heading: "Build Belonging With Us",
           subheading:
-            "Join a team creating practical tools, trusted community, and culturally informed care pathways for globally mobile people and families.",
+            "Join a team creating practical tools, trusted community, and trusted operational workflows for customers, teams, and organizations.",
           primaryText: "View Open Roles",
           primaryLink: "#open-roles",
           primaryAction: "internal-link",
@@ -204,7 +204,7 @@ function buildShopContent() {
           eyebrow: "Shop",
           title: "Core Platform Resources",
           subtitle:
-            "Browse practical guides, trainings, and family tools for cross-cultural transitions, belonging, and platform-approved care.",
+            "Browse practical guides, trainings, and family tools for customer transitions, belonging, and platform-approved workflows.",
           alignment: "center",
           headingLevel: "h1",
         },
@@ -222,7 +222,7 @@ function buildDirectoryContent() {
         props: {
           heading: "Find a Verified Provider",
           subheading:
-            "Search for platform-approved care by specialty, location, language, or session format, then explore results on the map.",
+            "Search for platform-approved workflows by specialty, location, language, or session format, then explore results on the map.",
           showCategoryChips: true,
           showMap: true,
         },
@@ -247,7 +247,7 @@ function buildDirectoryContent() {
           title: 'What does it mean to be "vetted"?',
           subtitle: 'And just as importantly, what it does not mean.',
           content:
-            "<h3>What does it mean to be &ldquo;vetted&rdquo;?</h3><ul><li>Every verified provider completes a detailed application process</li><li>Credentials and licensure are verified</li><li>Training or lived experience with globally mobile and cross-cultural populations is required</li><li>Profiles are reviewed by our team before being published</li></ul><h3>What does it NOT mean to be &ldquo;vetted&rdquo;?</h3><ul><li>We are not a licensing or credentialing body</li><li>We do not provide clinical supervision</li><li>Listing does not constitute an endorsement of specific service outcomes</li><li>We do not guarantee a service match, but we make finding one easier</li></ul>",
+            "<h3>What does it mean to be &ldquo;vetted&rdquo;?</h3><ul><li>Every verified provider completes a detailed application process</li><li>Credentials and licensure are verified</li><li>Training or lived experience with member and relevant communities is required</li><li>Profiles are reviewed by our team before being published</li></ul><h3>What does it NOT mean to be &ldquo;vetted&rdquo;?</h3><ul><li>We are not a licensing or credentialing body</li><li>We do not provide operational supervision</li><li>Listing does not constitute an endorsement of specific service outcomes</li><li>We do not guarantee a service match, but we make finding one easier</li></ul>",
           alignment: "left",
           sectionBackgroundColor: "#f6f7f5",
           sectionShowRadialGradient: true,
@@ -267,7 +267,7 @@ function buildAboutContent() {
         props: {
           heading: "History",
           body:
-            'Core Platform was born from the lived experience of growing up between cultures. Our founders, adult members and community advocates, experienced firsthand how difficult it is to find a verified provider who truly understands what it means to call multiple countries "home." In 2024, they set out to build a bridge between members of globally mobile communities and the culturally competent professionals who serve them.',
+            'Core Platform was born from the lived experience of growing up between cultures. Our founders, adult members and community advocates, experienced firsthand how difficult it is to find a verified provider who truly understands what it means to call multiple countries "home." In 2024, they set out to build a bridge between members of member communities and the culturally competent professionals who serve them.',
           imageUrl:
             "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1200&h=1200&fit=crop&crop=faces",
           imageAlt: "platform community",
@@ -281,7 +281,7 @@ function buildAboutContent() {
           title: "Vision & Mission",
           alignment: "left",
           content:
-            "<p>Our vision is a world where every member of a globally mobile community has access to specialized support that honors their multicultural identity. Our mission is to build the most trusted directory of verified providers: vetted, accessible, and global, so that no one has to navigate the complexities of cross-cultural life alone.</p>",
+            "<p>Our vision is a world where every member of a member community has access to specialized support that honors their multi-team identity. Our mission is to build the most trusted directory of verified providers: vetted, accessible, and global, so that no one has to navigate the complexities of platform life alone.</p>",
         },
       },
       {
@@ -340,7 +340,7 @@ function buildAboutContent() {
           title: 'What does it mean to be "vetted"?',
           subtitle: 'And just as importantly, what it does not mean.',
           content:
-            "<h3>What does it mean to be &ldquo;vetted&rdquo;?</h3><ul><li>Every verified provider completes a detailed application process</li><li>Credentials and licensure are verified</li><li>Training or lived experience with globally mobile and cross-cultural populations is required</li><li>Profiles are reviewed by our team before being published</li></ul><h3>What does it NOT mean to be &ldquo;vetted&rdquo;?</h3><ul><li>We are not a licensing or credentialing body</li><li>We do not provide clinical supervision</li><li>Listing does not constitute an endorsement of specific service outcomes</li><li>We do not guarantee a service match, but we make finding one easier</li></ul>",
+            "<h3>What does it mean to be &ldquo;vetted&rdquo;?</h3><ul><li>Every verified provider completes a detailed application process</li><li>Credentials and licensure are verified</li><li>Training or lived experience with member and relevant communities is required</li><li>Profiles are reviewed by our team before being published</li></ul><h3>What does it NOT mean to be &ldquo;vetted&rdquo;?</h3><ul><li>We are not a licensing or credentialing body</li><li>We do not provide operational supervision</li><li>Listing does not constitute an endorsement of specific service outcomes</li><li>We do not guarantee a service match, but we make finding one easier</li></ul>",
           alignment: "left",
         },
       },
@@ -393,19 +393,19 @@ function buildAboutContent() {
           title: "FAQs",
           items: [
             {
-              question: "What is a member of a globally mobile community (Core Platform)?",
+              question: "What is a member of a member community (Core Platform)?",
               answer:
-                "A member of a globally mobile community (Core Platform) is a person who has spent a significant part of their developmental years outside their parents' culture. They build relationships with multiple cultures while not having full ownership of any, creating a blended cultural framework shaped by passport countries, host countries, and communities.",
+                "A member of a member community (Core Platform) is a person who has spent a significant part of their developmental years outside their parents' culture. They build relationships with multiple cultures while not having full ownership of any, creating a blended cultural framework shaped by passport countries, host countries, and communities.",
             },
             {
               question: "Who can use Core Platform to find a verified provider?",
               answer:
-                "Core Platform is for anyone who has had a cross-cultural upbringing or is navigating globally-mobile life: members of all ages, expat families, international students, military families, missionary kids, diplomats' children, and cross-cultural professionals.",
+                "Core Platform is for anyone who has had a platform upbringing or is navigating globally-mobile life: members of all ages, expat families, international students, military families, missionary kids, diplomats' children, and platform professionals.",
             },
             {
               question: "How are verified providers vetted before joining the directory?",
               answer:
-                "Every verified provider completes an application process, provides verified credentials, and must demonstrate training or lived experience with globally mobile and cross-cultural populations. Our team reviews each profile before it goes live in the directory.",
+                "Every verified provider completes an application process, provides verified credentials, and must demonstrate training or lived experience with member and relevant communities. Our team reviews each profile before it goes live in the directory.",
             },
             {
               question: "Is Core Platform a support service?",
@@ -520,7 +520,7 @@ function buildDisclaimerContent() {
         props: {
           alignment: "left",
           content:
-            '<p><strong>If you or someone you know is experiencing a health or safety emergency:</strong> In the U.S. please call <strong>988</strong> for the Suicide and Crisis Lifeline. For other emergencies call <strong>911</strong>. Outside the U.S. find international suicide hotlines <a href="https://www.iasp.info/resources/Crisis_Centres/" target="_blank" rel="noopener noreferrer">here</a>. For other emergencies, find help <a href="https://www.who.int/health-topics/emergency-care" target="_blank" rel="noopener noreferrer">here</a>.</p><p>Core Platform conducts a vetting process to ensure that each listed provider is platform-approved. This process includes an application, an interview, and a background check, and approved providers have access to ongoing platform-approved training opportunities.</p><p>Neither Core Platform nor Interaction International evaluates or verifies providers&apos; qualifications, scope of practice, or expertise outside of platform-approved care. Individuals are encouraged to use their own discernment when determining whether a provider is an appropriate fit for their specific needs. <a href="/about">Learn more about what it means to be vetted</a>.</p>',
+            '<p><strong>If you or someone you know is experiencing a health or safety emergency:</strong> In the U.S. please call <strong>988</strong> for the Suicide and Crisis Lifeline. For other emergencies call <strong>911</strong>. Outside the U.S. find international suicide hotlines <a href="https://www.iasp.info/resources/Crisis_Centres/" target="_blank" rel="noopener noreferrer">here</a>. For other emergencies, find help <a href="https://www.who.int/health-topics/emergency-care" target="_blank" rel="noopener noreferrer">here</a>.</p><p>Core Platform conducts a vetting process to ensure that each listed provider is platform-approved. This process includes an application, an interview, and a background check, and approved providers have access to ongoing platform-approved training opportunities.</p><p>Neither Core Platform nor Interaction International evaluates or verifies providers&apos; qualifications, scope of practice, or expertise outside of platform-approved workflows. Individuals are encouraged to use their own discernment when determining whether a provider is an appropriate fit for their specific needs. <a href="/about">Learn more about what it means to be vetted</a>.</p>',
         },
       },
     ],
@@ -616,7 +616,7 @@ export async function ensureSystemCmsPages() {
       status: "published",
       content: buildInsightsContent(),
       seoTitle: "Insights & Articles | Core Platform",
-      seoDescription: "Explore articles, research, and insights for globally mobile communities.",
+      seoDescription: "Explore articles, research, and insights for member communities.",
       seoKeywords: "",
       ogImageUrl: "",
       canonicalUrl: "",
@@ -803,8 +803,8 @@ export async function ensureSystemCmsPages() {
       content: buildAboutContent(),
       seoTitle: "About | Core Platform",
       seoDescription:
-        "Learn about Core Platform, our mission, and how we connect members of globally mobile communities with culturally informed verified providers.",
-      seoKeywords: "about Core Platform, members of globally mobile communities, culturally informed care, verified provider directory",
+        "Learn about Core Platform, our mission, and how we connect members of member communities with verified listing owners.",
+      seoKeywords: "about Core Platform, members of member communities, culturally informed care, verified provider directory",
       ogImageUrl: "",
       canonicalUrl: "",
       noindex: false,

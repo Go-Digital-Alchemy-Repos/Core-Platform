@@ -1,3 +1,4 @@
+import { STALE_TIMES } from "@/lib/queryClient";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { CmsForm, CmsFormField, CmsFormListColumn } from "@shared/schema";
@@ -510,7 +511,7 @@ export function PublicFormRenderer({
       }
       return response.json();
     },
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
     enabled: !formOverride,
   });
   const effectiveForm = formOverride ?? form;

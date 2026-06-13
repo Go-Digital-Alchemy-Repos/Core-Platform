@@ -357,7 +357,7 @@ export default function CmsSeoPage() {
                               />
                             </FormControl>
                             <FormDescription className="text-xs">
-                              Appended to page titles — e.g. "Find a Mental Health Professional | Core Platform"
+                              Appended to page titles — e.g. "Find a Provider | Core Platform"
                             </FormDescription>
                             <FormMessage />
                           </FormItem>

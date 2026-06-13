@@ -76,7 +76,7 @@ export function LoginDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Member Login</DialogTitle>
-          <DialogDescription>Sign in to your mental health professional account</DialogDescription>
+          <DialogDescription>Sign in to your provider account</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

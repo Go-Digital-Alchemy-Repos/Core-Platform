@@ -1,3 +1,4 @@
+import { STALE_TIMES } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -8,7 +9,7 @@ import type { SeoSettings } from "@shared/schema";
 function SiteOrganizationJsonLd() {
   const { data: globalSeo } = useQuery<SeoSettings>({
     queryKey: ["/api/seo/global"],
-    staleTime: 10 * 60 * 1000,
+    staleTime: STALE_TIMES.CONTENT,
   });
 
   if (!globalSeo) return null;

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, STALE_TIMES } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { MessageSquare, Send } from "lucide-react";
 
@@ -97,7 +97,7 @@ export function BlogComments({ slug }: { slug: string }) {
       }
       return response.json();
     },
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
   });
 
   const settings = data?.settings;

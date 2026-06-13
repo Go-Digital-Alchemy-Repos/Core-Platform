@@ -23,7 +23,7 @@ import { EventLocationMap } from "@/components/shared/event-location-map";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
+import { apiRequest, queryClient, getQueryFn, STALE_TIMES } from "@/lib/queryClient";
 import { useState, useEffect, type ReactNode } from "react";
 import type { IconType } from "react-icons";
 import { SiApple, SiGooglemaps, SiOpenstreetmap, SiWaze } from "react-icons/si";
@@ -1177,7 +1177,7 @@ export default function EventDetailPage() {
 
   const { data: globalSeo } = useQuery<SeoSettings>({
     queryKey: ["/api/seo/global"],
-    staleTime: 10 * 60 * 1000,
+    staleTime: STALE_TIMES.CONTENT,
   });
 
   useFrontendEditTarget(event ? {

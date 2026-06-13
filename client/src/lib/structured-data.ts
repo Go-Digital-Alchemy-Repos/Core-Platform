@@ -1,4 +1,5 @@
 import type { SeoSettings, BlogPost, Event, CareerJob } from "@shared/schema";
+import type { TherapistWithUser } from "@shared/types/directory";
 import { stripHtml } from "@/lib/html";
 import { getEventPath } from "@shared/event-url";
 
@@ -154,6 +155,111 @@ export function buildItemListLd(
       image: item.image || undefined,
     })),
   };
+}
+
+function getProviderDisplayName(profile: TherapistWithUser): string {
+  return (
+    [profile.user?.firstName, profile.user?.lastName].filter(Boolean).join(" ") ||
+    profile.title ||
+    "Verified Provider"
+  );
+}
+
+function buildProviderUrl(profile: TherapistWithUser, globalSeo?: SeoSettings | null): string {
+  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  return `${siteUrl}/directory/${profile.id}`;
+}
+
+export function buildDirectoryItemListLd(
+  profiles: TherapistWithUser[],
+  globalSeo?: SeoSettings | null,
+): JsonLdObject | null {
+  return buildItemListLd(
+    profiles.map((profile) => ({
+      name: getProviderDisplayName(profile),
+      url: buildProviderUrl(profile, globalSeo),
+      image: profile.user?.profileImageUrl,
+    })),
+  );
+}
+
+export function buildProviderProfileLd(
+  profile: TherapistWithUser,
+  globalSeo?: SeoSettings | null,
+): JsonLdObject | null {
+  const name = getProviderDisplayName(profile);
+  if (!profile.id || !name) return null;
+
+  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const url = buildProviderUrl(profile, globalSeo);
+  const addressParts = [
+    profile.addressLine1,
+    profile.addressLine2,
+    profile.city,
+    profile.state,
+    profile.zipCode,
+    profile.country,
+  ].filter(Boolean);
+  const sameAs = [
+    profile.website,
+    profile.instagramHandle
+      ? profile.instagramHandle.startsWith("http")
+        ? profile.instagramHandle
+        : `https://instagram.com/${profile.instagramHandle.replace(/^@/, "")}`
+      : null,
+    profile.facebookHandle
+      ? profile.facebookHandle.startsWith("http")
+        ? profile.facebookHandle
+        : `https://facebook.com/${profile.facebookHandle.replace(/^@/, "")}`
+      : null,
+    profile.twitterHandle
+      ? profile.twitterHandle.startsWith("http")
+        ? profile.twitterHandle
+        : `https://x.com/${profile.twitterHandle.replace(/^@/, "")}`
+      : null,
+    profile.linkedinHandle
+      ? profile.linkedinHandle.startsWith("http")
+        ? profile.linkedinHandle
+        : `https://linkedin.com/in/${profile.linkedinHandle.replace(/^@/, "")}`
+      : null,
+    profile.youtubeHandle
+      ? profile.youtubeHandle.startsWith("http")
+        ? profile.youtubeHandle
+        : `https://youtube.com/@${profile.youtubeHandle.replace(/^@/, "")}`
+      : null,
+    profile.tiktokHandle
+      ? profile.tiktokHandle.startsWith("http")
+        ? profile.tiktokHandle
+        : `https://tiktok.com/@${profile.tiktokHandle.replace(/^@/, "")}`
+      : null,
+  ].filter((value): value is string => Boolean(value));
+
+  return compactObject({
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "@id": `${url}#provider`,
+    name,
+    url,
+    image: profile.user?.profileImageUrl
+      ? absoluteUrl(profile.user.profileImageUrl, siteUrl)
+      : undefined,
+    jobTitle: profile.title || "Verified Provider",
+    description: profile.bio ? stripHtml(profile.bio) : profile.title || undefined,
+    knowsAbout: profile.specializations?.length ? profile.specializations : undefined,
+    knowsLanguage: profile.languages?.length ? profile.languages : undefined,
+    telephone: profile.phone || undefined,
+    sameAs: sameAs.length > 0 ? sameAs.map((link) => absoluteUrl(link, siteUrl)) : undefined,
+    address: addressParts.length
+      ? compactObject({
+          "@type": "PostalAddress",
+          streetAddress: [profile.addressLine1, profile.addressLine2].filter(Boolean).join(", ") || undefined,
+          addressLocality: profile.city || undefined,
+          addressRegion: profile.state || undefined,
+          postalCode: profile.zipCode || undefined,
+          addressCountry: profile.country || undefined,
+        })
+      : undefined,
+  });
 }
 
 export function buildArticleLd(

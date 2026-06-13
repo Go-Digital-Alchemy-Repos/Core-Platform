@@ -1,3 +1,4 @@
+import { STALE_TIMES } from "@/lib/queryClient";
 import { createContext, useContext, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -52,7 +53,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         tertiaryTextColor: payload?.tertiaryTextColor ?? null,
       } satisfies BrandingSettings;
     },
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
   });
 
   const branding = useMemo(

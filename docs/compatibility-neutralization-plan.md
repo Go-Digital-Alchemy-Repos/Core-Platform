@@ -11,6 +11,23 @@ User-facing product language should use neutral platform terminology:
 - `platform-approved` or `verified` instead of legacy domain-specific approval language.
 - `members`, `participants`, `communities`, and `organizations` for generic examples.
 
+## June 2026 Stabilization Status
+
+The stabilization pass neutralized high-visibility default copy in:
+
+- Static HTML title and Open Graph defaults.
+- Public footer fallback copy and system CMS footer menu labels.
+- Public search fallback text.
+- CMS builder block defaults and page template starter copy.
+- Directory page fallback explanatory copy.
+- Provider application labels and helper text.
+
+Remaining `therapist`, `counselor`, and `Core Platform` hits should be classified before editing:
+
+- Compatibility identifiers are intentionally preserved.
+- Historical docs should be rewritten only when the doc is still reader-facing and current.
+- Demo seed data should be replaced in a dedicated seed-content cleanup so tests and demos can be reviewed together.
+
 ## Preserved Identifiers
 
 Do not rename these directly in a stabilization pass:

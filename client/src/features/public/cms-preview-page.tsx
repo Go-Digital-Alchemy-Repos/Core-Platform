@@ -1,3 +1,4 @@
+import { STALE_TIMES } from "@/lib/queryClient";
 import { useMemo } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -45,7 +46,7 @@ export default function CmsPreviewPage() {
 
   const { data: globalSeo } = useQuery<SeoSettings>({
     queryKey: ["/api/seo/global"],
-    staleTime: 10 * 60 * 1000,
+    staleTime: STALE_TIMES.CONTENT,
   });
 
   if (!params?.id || !token) return <CmsPreviewError />;

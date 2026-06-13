@@ -15,7 +15,7 @@ import { ProtectedRoute } from "@/components/shared/protected-route";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { EditorSaveIndicator } from "@/components/shared/editor-save-indicator";
 import { AdminSidebar } from "./admin-sidebar";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, STALE_TIMES } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -571,7 +571,7 @@ function FormsPageContent() {
 
   const { data: forms = [], isLoading } = useQuery<CmsForm[]>({
     queryKey: ["/api/admin/forms"],
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
   });
 
   const activeForms = useMemo(

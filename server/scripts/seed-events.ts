@@ -10,7 +10,7 @@ type SeedEvent = EventInsert & { title: string; slug: string; date: Date };
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const timezone = "America/New_York";
-const eventImageUrl = "/images/hero-therapy-session-1280w.webp";
+const eventImageUrl = "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1280&h=720&fit=crop";
 const corePlatformAddress = "120 Monroe Center St NW, Grand Rapids, MI 49503";
 const corePlatformCoordinates = {
   latitude: "42.9657722",
@@ -92,7 +92,7 @@ function event(data: {
     tags: ["calendar-seed", ...(data.tags ?? [])],
     speakerName: data.speakerName,
     speakerBio: data.speakerName
-      ? `${data.speakerName} facilitates practical conversations for globally mobile clients, families, and providers.`
+      ? `${data.speakerName} facilitates practical conversations for customers, teams, and providers.`
       : null,
     imagePositionX: 50,
     imagePositionY: 50,
@@ -120,7 +120,7 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Provider Office Hours",
     slug: "calendar-seed-provider-office-hours",
-    description: "Open office hours for clinicians and coaches supporting cross-cultural clients.",
+    description: "Open office hours for providers and coaches supporting complex customer needs.",
     days: 4,
     startHour: 11,
     durationMinutes: 60,
@@ -137,7 +137,7 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Global Families Welcome Circle",
     slug: "calendar-seed-global-families-welcome-circle",
-    description: "A warm community gathering for globally mobile families looking for connection and resources.",
+    description: "A warm community gathering for customers and teams looking for connection and resources.",
     days: 6,
     startHour: 18,
     durationMinutes: 75,
@@ -172,7 +172,7 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Member Case Consultation Lab",
     slug: "calendar-seed-member-case-consultation-lab",
-    description: "A structured consultation session for member providers working with globally mobile clients.",
+    description: "A structured consultation session for member providers working with complex customer needs.",
     days: 10,
     startHour: 12,
     durationMinutes: 90,
@@ -186,7 +186,7 @@ const seedEvents: SeedEvent[] = [
     capacity: 20,
     memberOnly: true,
     visibility: "members_only",
-    tags: ["members", "clinical"],
+    tags: ["members", "service"],
   }),
   event({
     title: "Teen Belonging Skills Class",
@@ -208,7 +208,7 @@ const seedEvents: SeedEvent[] = [
   }),
   event({
     title: "Cross-Cultural Parenting Roundtable",
-    slug: "calendar-seed-cross-cultural-parenting-roundtable",
+    slug: "calendar-seed-customer-programs-roundtable",
     description: "A facilitated conversation on parenting across languages, schools, countries, and traditions.",
     days: 14,
     startHour: 19,
@@ -262,8 +262,8 @@ const seedEvents: SeedEvent[] = [
     tags: ["orientation"],
   }),
   event({
-    title: "Adult Third Culture Stories Night",
-    slug: "calendar-seed-adult-third-culture-stories-night",
+    title: "Community Stories Night",
+    slug: "calendar-seed-community-stories-night",
     description: "An evening of short stories and facilitated reflection for adults shaped by global mobility.",
     days: 20,
     startHour: 18,
@@ -297,8 +297,8 @@ const seedEvents: SeedEvent[] = [
     tags: ["school", "families"],
   }),
   event({
-    title: "Clinical Documentation for Events",
-    slug: "calendar-seed-clinical-documentation-for-events",
+    title: "Service Documentation for Events",
+    slug: "calendar-seed-service-documentation-for-events",
     description: "A provider training on documenting group events, registrations, and follow-up workflows.",
     days: 24,
     startHour: 13,
@@ -335,7 +335,7 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Global Mobility Burnout Webinar",
     slug: "calendar-seed-global-mobility-burnout-webinar",
-    description: "A focused webinar on burnout signals, prevention, and support for globally mobile professionals.",
+    description: "A focused webinar on burnout signals, prevention, and support for busy professionals.",
     days: 28,
     startHour: 12,
     durationMinutes: 60,
@@ -352,7 +352,7 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Provider Peer Learning Circle",
     slug: "calendar-seed-provider-peer-learning-circle",
-    description: "A peer learning circle for therapists, coaches, and support professionals in the network.",
+    description: "A peer learning circle for providers, coaches, and support professionals in the network.",
     days: 30,
     startHour: 11,
     durationMinutes: 90,
@@ -369,7 +369,7 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "College Launch Across Cultures",
     slug: "calendar-seed-college-launch-across-cultures",
-    description: "A session for students and families navigating college launch after globally mobile childhoods.",
+    description: "A session for students and families navigating college launch, transitions, and support planning.",
     days: 32,
     startHour: 19,
     durationMinutes: 75,
@@ -420,9 +420,9 @@ const seedEvents: SeedEvent[] = [
     tags: ["support", "grief"],
   }),
   event({
-    title: "International School Counselor Roundtable",
-    slug: "calendar-seed-international-school-counselor-roundtable",
-    description: "A roundtable for counselors supporting students through transitions and identity stress.",
+    title: "School Transition Provider Roundtable",
+    slug: "calendar-seed-school-transition-provider-roundtable",
+    description: "A roundtable for providers supporting students through transitions and planning stress.",
     days: 38,
     startHour: 10,
     durationMinutes: 75,
@@ -434,7 +434,7 @@ const seedEvents: SeedEvent[] = [
     location: "Online via Zoom",
     speakerName: "Erik Lindqvist",
     capacity: 50,
-    tags: ["schools", "counselors"],
+    tags: ["schools", "providers"],
   }),
   event({
     title: "Family Systems Across Borders",

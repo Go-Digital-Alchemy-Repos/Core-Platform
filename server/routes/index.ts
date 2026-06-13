@@ -257,15 +257,16 @@ export function registerApiRoutes(app: Express) {
       urls.push({ loc: base || "/", changefreq: "weekly", priority: "1.0" });
 
       const staticRoutes = [
-        { path: "/about", changefreq: "monthly", priority: "0.7" },
-        { path: "/insights", changefreq: "weekly", priority: "0.8" },
-        { path: "/events", changefreq: "daily", priority: "0.8" },
-        { path: "/recordings", changefreq: "weekly", priority: "0.7" },
-        { path: "/directory", changefreq: "daily", priority: "0.9" },
-        { path: "/join", changefreq: "monthly", priority: "0.6" },
-        { path: "/contact", changefreq: "monthly", priority: "0.5" },
+        { path: "/about", changefreq: "monthly", priority: "0.7", enabled: true },
+        { path: "/insights", changefreq: "weekly", priority: "0.8", enabled: siteFeatures.blogEnabled },
+        { path: "/events", changefreq: "daily", priority: "0.8", enabled: siteFeatures.eventsEnabled },
+        { path: "/recordings", changefreq: "weekly", priority: "0.7", enabled: siteFeatures.eventsEnabled },
+        { path: "/directory", changefreq: "daily", priority: "0.9", enabled: siteFeatures.directoryEnabled },
+        { path: "/join", changefreq: "monthly", priority: "0.6", enabled: siteFeatures.directoryEnabled },
+        { path: "/contact", changefreq: "monthly", priority: "0.5", enabled: true },
       ];
       for (const r of staticRoutes) {
+        if (!r.enabled) continue;
         urls.push({ loc: `${base}${r.path}`, changefreq: r.changefreq, priority: r.priority });
       }
       if (siteFeatures.ecommerceEnabled) {
@@ -307,25 +308,49 @@ export function registerApiRoutes(app: Express) {
         }
       }
 
-      for (const post of posts) {
-        if (!post.isPublished || post.noindex) continue;
-        urls.push({
-          loc: `${base}/insights/${post.slug}`,
-          lastmod: post.updatedAt
-            ? new Date(post.updatedAt).toISOString().split("T")[0]
-            : undefined,
-          changefreq: "monthly",
-          priority: "0.7",
+      if (siteFeatures.directoryEnabled) {
+        const directorySettings = await getDirectorySettings();
+        const directoryProfiles = await storage.therapists.listProfilesPaginated({
+          page: 1,
+          pageSize: 500,
+          requireApprovedApplication: directorySettings.directoryRequiresApprovedApplication,
+          directoryMode: directorySettings.directoryMode,
         });
+        for (const profile of directoryProfiles.items) {
+          urls.push({
+            loc: `${base}/directory/${profile.id}`,
+            lastmod: profile.updatedAt
+              ? new Date(profile.updatedAt).toISOString().split("T")[0]
+              : undefined,
+            changefreq: "weekly",
+            priority: profile.isFeatured ? "0.8" : "0.6",
+          });
+        }
       }
 
-      for (const event of events) {
-        if (event.status === "draft" || event.visibility !== "public") continue;
-        urls.push({
-          loc: `${base}${getEventPath(event)}`,
-          changefreq: "weekly",
-          priority: "0.7",
-        });
+      if (siteFeatures.blogEnabled) {
+        for (const post of posts) {
+          if (!post.isPublished || post.noindex) continue;
+          urls.push({
+            loc: `${base}/insights/${post.slug}`,
+            lastmod: post.updatedAt
+              ? new Date(post.updatedAt).toISOString().split("T")[0]
+              : undefined,
+            changefreq: "monthly",
+            priority: "0.7",
+          });
+        }
+      }
+
+      if (siteFeatures.eventsEnabled) {
+        for (const event of events) {
+          if (event.status === "draft" || event.visibility !== "public") continue;
+          urls.push({
+            loc: `${base}${getEventPath(event)}`,
+            changefreq: "weekly",
+            priority: "0.7",
+          });
+        }
       }
 
       if (siteFeatures.ecommerceEnabled) {

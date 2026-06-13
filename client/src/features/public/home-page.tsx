@@ -29,44 +29,44 @@ import Autoplay from "embla-carousel-autoplay";
 
 const testimonials = [
   {
-    quote: "For the first time, I didn't have to explain what it means to grow up between cultures. My verified provider just understood.",
+    quote: "We launched a polished directory, events hub, and content site without stitching together separate tools.",
     name: "Sarah M.",
-    role: "Adult Community Member",
+    role: "Operations Lead",
     location: "Singapore",
     avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "Core Platform connected me with a verified provider who speaks my language — literally and figuratively. It's been life-changing.",
+    quote: "Core Platform gave our team one place to manage pages, listings, registrations, and member workflows.",
     name: "James K.",
-    role: "Expat Parent",
+    role: "Program Director",
     location: "Dubai",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "As a verified provider, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
-    name: "Dr. Amara O.",
-    role: "Verified Provider",
+    quote: "As a listing owner, I can keep my profile current and respond to inquiries without depending on an admin.",
+    name: "Amara O.",
+    role: "Listing Owner",
     location: "Nairobi",
     avatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "I struggled for years to find someone who understood repatriation grief. Core Platform made it possible in minutes.",
+    quote: "The admin experience is clear enough for daily updates and flexible enough for our future modules.",
     name: "Lena T.",
-    role: "College Student",
+    role: "Site Editor",
     location: "Germany",
     avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "The specialization filters helped me find a verified provider experienced with military kid transitions. Highly recommend.",
+    quote: "The filters helped visitors compare providers quickly, and the map view made regional discovery much easier.",
     name: "Marcus W.",
-    role: "Military Family Member",
+    role: "Directory Visitor",
     location: "Virginia, USA",
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "Finally, a platform that recognizes our unique needs. I feel seen and supported for the first time here.",
+    quote: "Finally, a site platform that feels built for real operations, not just a landing page.",
     name: "Priya D.",
-    role: "Cross-Cultural Professional",
+    role: "Executive Sponsor",
     location: "London",
     avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=faces",
   },
@@ -75,18 +75,18 @@ const testimonials = [
 const benefits = [
   {
     icon: Globe,
-    title: "Culturally Informed Care",
-    description: "Every verified provider in our directory understands the unique challenges of growing up across cultures.",
+    title: "Modular Site Apps",
+    description: "Enable directory, events, ecommerce, careers, portfolio, CRM, and content modules as each install needs them.",
   },
   {
     icon: Heart,
-    title: "Specialized Support",
-    description: "Find professionals trained in identity, belonging, grief of place, and cross-cultural transitions.",
+    title: "Verified Workflows",
+    description: "Review applications, manage listings, publish content, and keep operational settings consistent from one admin shell.",
   },
   {
     icon: Users,
-    title: "Global Community",
-    description: "Join a community that celebrates the richness of a multicultural upbringing.",
+    title: "Public Experiences",
+    description: "Give visitors fast pages, searchable listings, event registration, storefronts, and clear paths to action.",
   },
 ];
 
@@ -115,7 +115,7 @@ function TestimonialsCarousel() {
           What People Are Saying
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mx-auto mb-10 sm:mb-14">
-          Hear from members, expat families, and verified providers who have found their match.
+          Hear from teams using Core Platform to manage public sites, directories, events, and member workflows.
         </p>
         <div className="relative">
           <div className="overflow-hidden" ref={emblaRef}>
@@ -215,7 +215,7 @@ function FeaturedArticlesCarousel({ articles }: { articles: any[] }) {
               Featured Articles
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Latest insights on platform operations, community support, and cross-cultural wellness.
+              Latest insights on platform operations, content workflows, admin UX, and launch readiness.
             </p>
           </div>
           <Link href="/insights">
@@ -314,7 +314,7 @@ export default function HomePage() {
     queryKey: ["/api/therapists", "pageSize=500"],
     queryFn: async () => {
       const res = await fetch("/api/therapists?pageSize=500");
-      if (!res.ok) throw new Error("Failed to fetch therapists");
+      if (!res.ok) throw new Error("Failed to fetch providers");
       return res.json();
     },
   });
@@ -356,21 +356,21 @@ export default function HomePage() {
         <div className="relative mx-auto max-w-7xl px-4 pb-18 pt-14 sm:px-6 sm:pb-24 sm:pt-20 md:pb-32 md:pt-28">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="mb-8 font-heading text-3xl font-bold tracking-tight sm:mb-12 sm:text-4xl md:text-5xl lg:text-6xl" data-testid="text-hero-heading">
-              Care that understands where members <span className="text-accent">"come from".</span>
+              A modular website platform built to <span className="text-accent">grow with you.</span>
             </h1>
             <div className="flex flex-col justify-center gap-6 sm:flex-row sm:gap-10 lg:gap-16">
               <div className="text-center">
-                <p className="text-base sm:text-lg font-medium mb-4" data-testid="text-hero-support-label">Are you looking for specialized support?</p>
+                <p className="text-base sm:text-lg font-medium mb-4" data-testid="text-hero-support-label">Explore the public experience</p>
                 <Link href="/directory">
                   <Button size="lg" className="w-full bg-accent text-accent-foreground border-accent-border sm:w-auto" data-testid="button-browse-directory">
-                    Find a Verified Provider!
+                    Find a Listing Owner!
                   </Button>
                 </Link>
               </div>
               <div className="text-center">
-                <p className="text-base sm:text-lg font-medium mb-4" data-testid="text-hero-professional-label">Are you a verified provider?</p>
+                <p className="text-base sm:text-lg font-medium mb-4" data-testid="text-hero-professional-label">Ready to add your organization?</p>
                 <Button size="lg" className="w-full bg-accent text-accent-foreground border-accent-border opacity-60 cursor-not-allowed sm:w-auto" disabled data-testid="button-join-therapist">
-                  Applications open in June.
+                  Setup starts in admin
                 </Button>
               </div>
             </div>
@@ -380,9 +380,9 @@ export default function HomePage() {
       <section className="relative bg-muted/30 overflow-hidden" data-testid="section-benefits">
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
-          <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-benefits-heading">Why Platform Approved?</h2>
+          <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-benefits-heading">Why Core Platform?</h2>
           <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mx-auto mb-10 sm:mb-14">
-            We bridge the gap between members of globally mobile communities and culturally competent verified providers.
+            Build public pages, directories, events, storefronts, and member workflows on one configurable platform.
           </p>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3 lg:gap-10 xl:gap-12">
             {benefits.map((item) => (
@@ -399,9 +399,9 @@ export default function HomePage() {
       </section>
       <section className="bg-muted/20 dark:bg-muted/10" data-testid="section-counseling-needed">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
-          <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-counseling-needed-heading">What Kind of Support Is Needed?</h2>
+          <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold text-center mb-3 sm:mb-4" data-testid="text-counseling-needed-heading">What Can Each Install Become?</h2>
           <p className="text-sm sm:text-base text-muted-foreground text-center max-w-3xl mx-auto leading-relaxed">
-            Not every challenge requires a formal service plan. Sometimes what members need most is validation, community, or practical guidance for navigating transitions. Our directory includes a range of professionals — from licensed professionals to certified coaches and peer support specialists — so you can find the right kind of support for wherever you are in your journey.
+            Each install can be shaped around the apps it needs. Start with content and a directory, add events or ecommerce when ready, and keep the admin workflow consistent as the site grows.
           </p>
         </div>
       </section>
@@ -412,13 +412,13 @@ export default function HomePage() {
           <div className="mb-8 flex flex-col items-start gap-4 sm:mb-12 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div className="min-w-0">
               <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold" data-testid="text-map-heading">
-                Our Verified Providers Around the World
+                Our Listing Owners Around the World
               </h2>
-              <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Click a pin to learn more about a platform-approved professional near you</p>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Use map and list views to help visitors discover relevant listings quickly</p>
             </div>
             <Link href="/directory">
               <Button variant="outline" className="w-full sm:w-auto" data-testid="button-view-all-therapists">
-                Find a Verified Provider <ArrowRight className="ml-2 h-4 w-4" />
+                Find a Listing Owner <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -443,7 +443,7 @@ export default function HomePage() {
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold mb-3 sm:mb-4" data-testid="text-events-heading">
             Upcoming Events
           </h2>
-          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto mb-6">Join our community events for members and verified providers.</p>
+          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto mb-6">Publish events, registrations, reminders, and member-only programming from the same platform.</p>
           <Link href="/events">
             <Button variant="outline" data-testid="button-view-all-events">
               View All <ArrowRight className="ml-2 h-4 w-4" />
@@ -490,13 +490,13 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="section-cta">
         <div className="max-w-2xl mx-auto">
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-semibold mb-3 sm:mb-4" data-testid="text-cta-heading">
-            Are You a Platform-Approved Verified Provider?
+            Are You a Platform-Approved Listing Owner?
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto mb-8 sm:mb-10 leading-relaxed">
-            Join our growing directory and connect with members who need your unique expertise. List your practice and reach the global member community.
+            Use one admin workspace to manage content, listings, events, storefronts, integrations, and the operational details that keep a modern site moving.
           </p>
           <Button size="lg" className="bg-accent text-accent-foreground border-accent-border opacity-60 cursor-not-allowed" disabled data-testid="button-cta-join">
-            Applications open in June.
+            Setup starts in admin
           </Button>
         </div>
       </section>

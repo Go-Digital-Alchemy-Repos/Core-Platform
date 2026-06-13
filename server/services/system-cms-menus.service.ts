@@ -82,6 +82,35 @@ function patchShopItem(items: MenuItem[]): { items: MenuItem[]; changed: boolean
   return { items: nextItems, changed: true };
 }
 
+const NEUTRAL_MENU_LABELS: Record<string, string> = {
+  "Applications open in June": "Apply to Join",
+  "About the Community": "About the Platform",
+  "Browse Specializations": "Browse the Directory",
+};
+
+function patchNeutralMenuLabels(items: MenuItem[]): { items: MenuItem[]; changed: boolean } {
+  let changed = false;
+
+  const nextItems = items.map((entry) => {
+    const nextChildren = entry.children?.length
+      ? patchNeutralMenuLabels(entry.children)
+      : { items: entry.children ?? [], changed: false };
+    const nextLabel = NEUTRAL_MENU_LABELS[entry.label] ?? entry.label;
+
+    if (nextLabel !== entry.label || nextChildren.changed) {
+      changed = true;
+    }
+
+    return {
+      ...entry,
+      label: nextLabel,
+      children: nextChildren.items,
+    };
+  });
+
+  return { items: nextItems, changed };
+}
+
 const defaultMenus: Array<InsertCmsMenu & { location: StandardMenuLocation }> = [
   {
     name: "Main Navigation",
@@ -111,7 +140,7 @@ const defaultMenus: Array<InsertCmsMenu & { location: StandardMenuLocation }> = 
     name: "For Verified Providers",
     location: "footer_professionals",
     items: [
-      item("Applications open in June", "/join"),
+      item("Apply to Join", "/join"),
       item("Verified Provider Login", "/auth/login"),
       item("Membership Plans", "/therapist/subscription"),
     ],
@@ -120,9 +149,9 @@ const defaultMenus: Array<InsertCmsMenu & { location: StandardMenuLocation }> = 
     name: "Resources",
     location: "footer_resources",
     items: [
-      item("About the Community", "/about"),
+      item("About the Platform", "/about"),
       item("Upcoming Events", "/events"),
-      item("Browse Specializations", "/directory"),
+      item("Browse the Directory", "/directory"),
     ],
   },
   {
@@ -182,9 +211,22 @@ export async function ensureSystemCmsMenus() {
 
   const mainMenu = await storage.cmsMenus.getByLocation("main_navigation");
   if (mainMenu?.items) {
-    const patched = patchShopItem((mainMenu.items as MenuItem[]) || []);
-    if (patched.changed) {
+    const withShop = patchShopItem((mainMenu.items as MenuItem[]) || []);
+    const patched = patchNeutralMenuLabels(withShop.items);
+    if (withShop.changed || patched.changed) {
       await storage.cmsMenus.update(mainMenu.id, {
+        items: patched.items,
+      });
+    }
+  }
+
+  for (const location of ["footer_professionals", "footer_resources", "footer"] as const) {
+    const menu = await storage.cmsMenus.getByLocation(location);
+    if (!menu?.items) continue;
+
+    const patched = patchNeutralMenuLabels((menu.items as MenuItem[]) || []);
+    if (patched.changed) {
+      await storage.cmsMenus.update(menu.id, {
         items: patched.items,
       });
     }

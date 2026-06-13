@@ -43,7 +43,7 @@ export default function InsightsPage() {
               Insights & Articles
             </h1>
             <p className="text-base sm:text-lg public-supporting-copy max-w-2xl mx-auto leading-relaxed">
-              Explore articles, research, and insights for globally mobile communities.
+              Explore articles, research, and insights for platform operations.
             </p>
             {(searchQuery || categoryFilter || tagFilter) && (
               <p className="text-sm public-meta-text mt-4" data-testid="text-insights-filters">
@@ -197,7 +197,7 @@ export default function InsightsPage() {
                 <p className="text-sm public-helper-text">
                   {posts && posts.length > 0
                     ? "Try a different search, category, or tag."
-                    : "Check back soon for insights on platform operations, community support, and cross-cultural wellness."}
+                    : "Check back soon for insights on platform operations, content workflows, admin UX, and launch readiness."}
                 </p>
               </div>
             )}

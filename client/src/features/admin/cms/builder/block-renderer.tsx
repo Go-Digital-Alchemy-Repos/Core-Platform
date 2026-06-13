@@ -2287,7 +2287,7 @@ function TherapistMapBlock({ props }: { props: Record<string, unknown> }) {
     queryKey: ["/api/therapists", "pageSize=500"],
     queryFn: async () => {
       const res = await fetch("/api/therapists?pageSize=500");
-      if (!res.ok) throw new Error("Failed to fetch therapists");
+      if (!res.ok) throw new Error("Failed to fetch providers");
       return res.json();
     },
   });
@@ -2389,7 +2389,7 @@ function JoinRegistrationFormBlock({ props }: { props: Record<string, unknown> }
     props.subheadingColor,
     hasImageBackground ? "#ffffff" : undefined,
   );
-  const applicationStatusText = str(props.applicationStatusText) || "Applications open in June.";
+  const applicationStatusText = str(props.applicationStatusText) || "Apply to join.";
   const loginPromptPrefix =
     str(props.loginPromptPrefix) || "If you're already a member click here to";
   const loginLinkText = str(props.loginLinkText) || "Log in";
@@ -2458,7 +2458,7 @@ function JoinRegistrationFormBlock({ props }: { props: Record<string, unknown> }
 }
 
 function JoinHeroBlock({ props }: { props: Record<string, unknown> }) {
-  const heading = str(props.heading) || "Are you a Core Platform-informed verified provider?";
+  const heading = str(props.heading) || "Are you a verified provider?";
   const accentHeading = str(props.accentHeading) || "Join the Network!";
   const subheading = str(props.subheading);
   const hasImageBackground = !!str(props.sectionBackgroundImageUrl);

@@ -1,11 +1,12 @@
 import { Suspense, lazy, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { Switch, Route, useLocation, Redirect } from "wouter";
-import { queryClient } from "./lib/queryClient";
+import { queryClient, STALE_TIMES } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrandingProvider } from "@/components/shared/branding-provider";
+import { ThemeModeProvider } from "@/components/shared/theme-mode-provider";
 import { CookieConsentBanner } from "@/components/shared/cookie-consent-banner";
 import { FrontendEditProvider } from "@/features/frontend-edit/frontend-edit";
 import { ProtectedRoute } from "@/components/shared/protected-route";
@@ -110,7 +111,7 @@ function AdminIndexRoute() {
   const { user, hasAdminPermission } = useAuth();
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
   });
   const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
 
@@ -166,7 +167,7 @@ function DirectoryApplicationRoute({ children }: { children: ReactNode }) {
 function Router() {
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
   });
   const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
   const customerAccountRoles = ["client", "admin", "editor"];
@@ -551,7 +552,7 @@ function SetupGuard({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const { data: setupStatus, isLoading } = useQuery<{ needsSetup: boolean }>({
     queryKey: ["/api/setup/status"],
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
     retry: 2,
   });
 
@@ -663,18 +664,20 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrandingProvider>
-        <TooltipProvider>
-          <Toaster />
-          <SetupGuard>
-            <RouteAdminModeManager />
-            <RouteScrollManager />
-            <RuntimeIntegrationsManager />
-            <FrontendEditProvider>
-              <Router />
-            </FrontendEditProvider>
-            <CookieConsentBanner />
-          </SetupGuard>
-        </TooltipProvider>
+        <ThemeModeProvider>
+          <TooltipProvider>
+            <Toaster />
+            <SetupGuard>
+              <RouteAdminModeManager />
+              <RouteScrollManager />
+              <RuntimeIntegrationsManager />
+              <FrontendEditProvider>
+                <Router />
+              </FrontendEditProvider>
+              <CookieConsentBanner />
+            </SetupGuard>
+          </TooltipProvider>
+        </ThemeModeProvider>
       </BrandingProvider>
     </QueryClientProvider>
   );

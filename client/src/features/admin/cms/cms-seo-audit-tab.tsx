@@ -1,3 +1,4 @@
+import { STALE_TIMES } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -177,7 +178,7 @@ function SummaryCard({
 export function CmsSeoAuditTab() {
   const { data, isLoading, error } = useQuery<AuditData>({
     queryKey: ["/api/admin/cms/seo-audit"],
-    staleTime: 2 * 60 * 1000,
+    staleTime: STALE_TIMES.OPERATIONAL,
   });
 
   if (isLoading) {

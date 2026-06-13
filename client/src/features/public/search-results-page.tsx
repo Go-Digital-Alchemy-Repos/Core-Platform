@@ -1,3 +1,4 @@
+import { STALE_TIMES } from "@/lib/queryClient";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useSearch } from "wouter";
@@ -75,7 +76,7 @@ export default function SearchResultsPage() {
       return response.json();
     },
     enabled: activeQuery.length > 0,
-    staleTime: 30_000,
+    staleTime: STALE_TIMES.SEARCH,
   });
 
   const groupedResults = useMemo(

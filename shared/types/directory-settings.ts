@@ -98,7 +98,7 @@ export const DIRECTORY_LABEL_PRESETS: Record<DirectoryMode, DirectoryLabelPreset
     participantLabelPlural: "Therapists",
     specialtyLabelPlural: "Specializations",
     profileTitleLabel: "Professional Title",
-    profileTitlePlaceholder: "e.g. Licensed Clinical Psychologist",
+    profileTitlePlaceholder: "e.g. Certified Strategy Consultant",
     profileBioLabel: "Bio",
     profileBioPlaceholder: "Tell clients about your practice and approach...",
     credentialsLabel: "Credentials",

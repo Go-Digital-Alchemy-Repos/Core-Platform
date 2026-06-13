@@ -29,7 +29,9 @@ function parseMoneyToCents(value: string | undefined, fallbackCents: number): nu
 }
 
 function parseDirectoryMode(value: string | undefined): DirectoryMode {
-  return DIRECTORY_MODES.includes(value as DirectoryMode) ? (value as DirectoryMode) : "therapists";
+  return DIRECTORY_MODES.includes(value as DirectoryMode)
+    ? (value as DirectoryMode)
+    : "service_providers";
 }
 
 function parsePrimaryCtaType(
@@ -47,8 +49,8 @@ function parseLabel(value: string | undefined, fallback: string): string {
 }
 
 export const DEFAULT_DIRECTORY_SETTINGS: PublicDirectorySettings = {
-  directoryMode: "therapists",
-  ...DIRECTORY_LABEL_PRESETS.therapists,
+  directoryMode: "service_providers",
+  ...DIRECTORY_LABEL_PRESETS.service_providers,
   applicationFeeAmountCents: 15000,
   applicationFeeNoticeTitle: "Application Fee",
   applicationFeeNoticeBody:

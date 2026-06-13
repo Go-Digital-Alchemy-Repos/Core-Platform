@@ -127,7 +127,7 @@ export function MapView({ therapists, height = "500px", minHeight, interactive =
         {markered.map((t) => {
           const fullName =
             [t.user.firstName, t.user.lastName].filter(Boolean).join(" ") ||
-            "Mental Health Professional";
+            "Verified Provider";
           const isHighlighted = highlightedId === t.profile.id;
           return (
             <Marker

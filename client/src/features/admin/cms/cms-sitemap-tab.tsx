@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, STALE_TIMES } from "@/lib/queryClient";
 import { ExternalLink, FileCode2, Globe, BookOpen, CalendarDays, FileText, CheckCircle2, EyeOff, ShieldOff, Save, RotateCcw } from "lucide-react";
 import type { SeoSettings, CmsPage, BlogPost, Event } from "@shared/schema";
 import { getEventPath } from "@shared/event-url";
@@ -71,12 +71,12 @@ export function CmsSitemapTab() {
 
   const { data: globalSeo } = useQuery<SeoSettings>({
     queryKey: ["/api/admin/cms/seo"],
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIMES.SESSION,
   });
 
   const { data: robotsTxt, isLoading: robotsLoading } = useQuery<RobotsTxtPayload>({
     queryKey: ["/api/admin/cms/seo/robots-txt"],
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
   });
 
   useEffect(() => {

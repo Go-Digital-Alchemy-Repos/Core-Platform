@@ -234,7 +234,7 @@ router.delete(
     }
 
     if (profile.isApproved && profile.isActive) {
-      res.status(400).json({ message: "Only rejected or inactive mental health professional profiles can be permanently deleted." });
+      res.status(400).json({ message: "Only rejected or inactive provider profiles can be permanently deleted." });
       return;
     }
 
@@ -244,7 +244,7 @@ router.delete(
       return;
     }
 
-    res.json({ message: "Mental health professional deleted" });
+    res.json({ message: "Provider deleted" });
   })
 );
 

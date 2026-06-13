@@ -5,8 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ProtectedRoute } from "@/components/shared/protected-route";
 import { AdminSidebar } from "./admin-sidebar";
+import { AdminSaveBar } from "@/components/shared/admin-save-bar";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
-import { EditorSaveIndicator } from "@/components/shared/editor-save-indicator";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { apiRequest, queryClient, STALE_TIMES } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -350,7 +350,7 @@ function visibilityLabel(v: string | null | undefined): string {
     case "members_only":
       return "Members Only";
     case "counselors_only":
-      return "Mental Health Professionals Only";
+      return "Verified Providers Only";
     case "admins_only":
       return "Admins Only";
     default:
@@ -546,12 +546,19 @@ const DAYS_OF_WEEK = [
   { value: "SU", label: "Sun" },
 ];
 
+const EVENT_EDITOR_TABS = ["details", "registrations", "video-archive", "recurring"] as const;
+type EventEditorTab = (typeof EVENT_EDITOR_TABS)[number];
+
+function normalizeEventEditorTab(tab: string | null): EventEditorTab {
+  return EVENT_EDITOR_TABS.includes(tab as EventEditorTab) ? (tab as EventEditorTab) : "details";
+}
+
 function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Event | null>(null);
-  const [activeTab, setActiveTab] = useState("details");
+  const [activeTab, setActiveTab] = useState<EventEditorTab>("details");
   const [venueDialogOpen, setVenueDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [eventTypeFilter, setEventTypeFilter] = useState("all");
@@ -883,12 +890,12 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
     }
     if (/registration close date must not precede registration open date/i.test(message)) {
       form.setError("registrationClosesAt", { type: "server", message });
-      setActiveTab("registration");
+      setActiveTab("registrations");
       return;
     }
     if (/recurrence end date must not precede/i.test(message)) {
       form.setError("recurrenceEndDate", { type: "server", message });
-      setActiveTab("recurrence");
+      setActiveTab("recurring");
     }
   }
 
@@ -1039,7 +1046,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
       recurrenceCount: event.recurrenceCount ?? undefined,
     });
     saveFeedbackRef.current.clearFeedback();
-    setActiveTab("details");
+    setActiveTab(normalizeEventEditorTab(new URLSearchParams(window.location.search).get("tab")));
     setDialogOpen(true);
   }
 
@@ -1064,6 +1071,16 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
     }
 
     unsavedChangesGuard.confirmDiscardChanges(() => setDialogOpen(false));
+  };
+
+  const handleEditorTabChange = (value: string) => {
+    const tab = normalizeEventEditorTab(value);
+    setActiveTab(tab);
+
+    if (!editingEvent) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
   };
 
   function onSubmit(values: EventFormValues) {
@@ -1433,7 +1450,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
             >
               <Form {...form}>
                 <form id="event-form" onSubmit={form.handleSubmit(onSubmit)}>
-                  <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <Tabs value={activeTab} onValueChange={handleEditorTabChange}>
                     <TabsList
                       className="w-full grid grid-cols-4 mb-6"
                       data-testid="tabs-event-editor"
@@ -1771,7 +1788,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                           <SelectItem value="public">Public</SelectItem>
                                           <SelectItem value="members_only">Members Only</SelectItem>
                                           <SelectItem value="counselors_only">
-                                            Mental Health Professionals Only
+                                            Verified Providers Only
                                           </SelectItem>
                                           <SelectItem value="admins_only">Admins Only</SelectItem>
                                         </SelectContent>
@@ -2761,7 +2778,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                       </FormControl>
                                       <SelectContent>
                                         <SelectItem value="free">
-                                          Free — Open to all mental health professionals
+                                          Free - Open to all verified providers
                                         </SelectItem>
                                         <SelectItem value="paid">
                                           Paid — One-time purchase via Stripe
@@ -2805,7 +2822,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                         </div>
                                       </FormControl>
                                       <p className="text-xs text-muted-foreground">
-                                        One-time purchase price. Mental health professionals will
+                                        One-time purchase price. Verified providers will
                                         pay via Stripe and have permanent access after purchase.
                                       </p>
                                       <FormMessage />
@@ -2819,7 +2836,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                 {watchRecordingAccess === "paid" ? (
                                   <ul className="text-xs text-muted-foreground space-y-1.5 list-disc pl-4">
                                     <li>
-                                      Mental health professionals see a "Purchase" button on the
+                                      Verified providers see a "Purchase" button on the
                                       Video Archives page
                                     </li>
                                     <li>
@@ -2835,7 +2852,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                 ) : (
                                   <ul className="text-xs text-muted-foreground space-y-1.5 list-disc pl-4">
                                     <li>
-                                      All mental health professionals can view this recording for
+                                      All verified providers can view this recording for
                                       free
                                     </li>
                                     <li>
@@ -3092,18 +3109,13 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
             </div>
           </SheetBody>
           <SheetFooter>
-            <div className="flex w-full items-center justify-between gap-3">
-              <EditorSaveIndicator state={saveState.state} />
-              <Button
-                type="submit"
-                form="event-form"
-                className="min-w-[160px]"
-                disabled={isSaving || editorLock.isReadOnly}
-                data-testid="button-submit-event"
-              >
-                {isSaving ? "Saving..." : editingEvent ? "Save Event" : "Create Event"}
-              </Button>
-            </div>
+            <AdminSaveBar
+              state={saveState.state}
+              form="event-form"
+              primaryLabel={editingEvent ? "Save Event" : "Create Event"}
+              disabled={isSaving || editorLock.isReadOnly}
+              buttonTestId="button-submit-event"
+            />
           </SheetFooter>
         </SheetContent>
       </Sheet>

@@ -37,10 +37,10 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     blockCount: 8,
     blocks: () => [
       block("hero", {
-        heading: "Find a Counselor Who Understands Your World",
+        heading: "Find a Verified Provider",
         subheading:
-          "Connect with verified providers who specialize in the Third Culture Kid experience.",
-        ctaText: "Browse Counselors",
+          "Connect with verified providers who match your needs, location, language, and service preferences.",
+        ctaText: "Browse Providers",
         ctaLink: "/directory",
         ctaSecondaryText: "Learn More",
         ctaSecondaryLink: "#how-it-works",
@@ -49,9 +49,9 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       block("trust-bar"),
       block("social-proof-stats", {
         stats: [
-          { value: "500+", label: "Verified Counselors" },
+          { value: "500+", label: "Verified Providers" },
           { value: "40+", label: "Countries Represented" },
-          { value: "10,000+", label: "Core Platforms Connected" },
+          { value: "10,000+", label: "Members Connected" },
           { value: "4.9/5", label: "Average Rating" },
         ],
       }),
@@ -67,7 +67,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
             step: "1",
             title: "Browse the Directory",
             description:
-              "Search by specialty, language, location, or therapy style to find your ideal match.",
+              "Search by specialty, language, location, or service format to find your ideal match.",
           },
           {
             step: "2",
@@ -84,13 +84,13 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       }),
       block("feature-list", {
         title: "Why Core Platform?",
-        subtitle: "We built this platform specifically for the Core Platform community.",
+        subtitle: "We built this platform for configurable communities, directories, and member experiences.",
         columns: "3",
         features: [
           {
             icon: "Globe",
-            title: "Culturally Informed Care",
-            description: "Every counselor understands the nuances of growing up between cultures.",
+            title: "Context-Aware Support",
+            description: "Directory settings help each site describe the provider expertise that matters.",
           },
           {
             icon: "ShieldCheck",
@@ -99,9 +99,9 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
           },
           {
             icon: "Heart",
-            title: "Core Platform-Specific Training",
+            title: "Platform-Approved Providers",
             description:
-              "Counselors with specialized training in cross-cultural identity and transition.",
+              "Provider requirements can reflect the trust standards for each site install.",
           },
         ],
       }),
@@ -110,9 +110,9 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
         items: [
           {
             quote:
-              "Finding a counselor who truly understood my Core Platform experience was life-changing.",
+              "Finding the right provider through one focused directory made the next step feel simple.",
             name: "Sarah M.",
-            role: "Adult Core Platform",
+            role: "Community Member",
             location: "Singapore",
           },
           {
@@ -132,10 +132,10 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       block("cta", {
         heading: "Ready to Find Your Match?",
         subheading:
-          "Browse our network of Core Platform-informed counselors and take the first step today.",
-        primaryText: "Browse Counselors",
+          "Browse a verified provider network and take the first step today.",
+        primaryText: "Browse Providers",
         primaryLink: "/directory",
-        secondaryText: "Join as a Counselor",
+        secondaryText: "Join as a Provider",
         secondaryLink: "/join",
         variant: "dark",
       }),
@@ -153,23 +153,23 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
         eyebrow: "Our Story",
         title: "The Core Platform Mission",
         subtitle:
-          "How we're building a bridge between Third Culture Kids and the mental health support they deserve.",
+          "How we're helping teams launch trusted digital experiences for their communities.",
         alignment: "center",
       }),
       block("text-image", {
         heading: "A Community Built on Understanding",
-        body: "Core Platform was born from a simple realization: Third Culture Kids face unique mental health challenges that most professionals aren't equipped to handle. Growing up between cultures creates a rich but complex inner world that requires specialized understanding.",
+        body: "Core Platform was built from a simple realization: teams need a flexible foundation for directories, content, events, commerce, memberships, and community workflows without rebuilding the same plumbing every time.",
         imageAlt: "Core Platform community",
         imagePosition: "right",
       }),
       block("rich-text", {
         content:
-          "<h2>Why Cross-Cultural Competence Matters</h2><p>Traditional therapy approaches often miss the nuances of the Core Platform experience. Issues like rootlessness, cultural identity confusion, and hidden grief require professionals who have either lived the experience themselves or received specific training.</p><p>Our platform bridges this gap by connecting Core Platforms with counselors who truly understand their world.</p>",
+          "<h2>Why Configurable Platforms Matter</h2><p>Organizations need digital experiences that reflect their language, trust model, and operating workflows.</p><p>Core Platform bridges this gap with installable apps, CMS-driven content, provider directories, ecommerce, events, and member experiences.</p>",
         alignment: "left",
       }),
       block("text-image", {
         heading: "Our Impact So Far",
-        body: "Since our founding, we've connected thousands of Core Platforms with culturally informed counselors across more than 40 countries. Every match represents a step toward better mental health support for the global community.",
+        body: "Core Platform helps teams connect audiences with resources, listings, products, events, and services through one configurable website platform.",
         imageAlt: "Global impact",
         imagePosition: "left",
       }),
@@ -180,7 +180,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
           {
             icon: "Globe",
             title: "Global Network",
-            description: "Counselors across 40+ countries speaking dozens of languages.",
+            description: "Providers and resources can be organized across regions, languages, and audiences.",
           },
           {
             icon: "ShieldCheck",
@@ -192,13 +192,13 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
             icon: "Heart",
             title: "Cultural Sensitivity",
             description:
-              "Training requirements ensure counselors understand cross-cultural challenges.",
+              "Each site can define the trust criteria and approval process that fits its community.",
           },
           {
             icon: "Users",
             title: "Community Focus",
             description:
-              "Built by Core Platforms, for Core Platforms — we understand because we've lived it.",
+              "Built for teams that need practical, member-friendly digital infrastructure.",
           },
         ],
       }),
@@ -206,9 +206,9 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
         heading: "Join Our Mission",
         subheading:
           "Whether you're seeking support or want to help others, there's a place for you here.",
-        primaryText: "Find a Counselor",
+        primaryText: "Browse Providers",
         primaryLink: "/directory",
-        secondaryText: "Join as a Counselor",
+        secondaryText: "Join as a Provider",
         secondaryLink: "/join",
         variant: "accent",
       }),
@@ -223,34 +223,34 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     blockCount: 7,
     blocks: () => [
       block("hero", {
-        heading: "Stop Explaining Your Background — Start Being Understood",
+        heading: "Find the Right Provider Faster",
         subheading:
-          "Connect with a counselor who gets the Core Platform experience without needing a cultural crash course.",
-        ctaText: "Find Your Counselor",
+          "Use a focused directory to compare verified providers, service formats, and areas of expertise.",
+        ctaText: "Find Your Provider",
         ctaLink: "/directory",
         ctaSecondaryText: "",
         ctaSecondaryLink: "",
         minHeight: "420",
-        badge: "For Third Culture Kids",
+        badge: "Verified Directory",
       }),
       block("recovery-use-cases", {
         title: "Is Core Platform Right for You?",
         subtitle: "Our platform serves a diverse range of cross-cultural individuals and families.",
         personas: [
           {
-            title: "Adult Core Platforms",
+            title: "Community Members",
             description:
-              "You grew up across cultures and struggle with identity, belonging, or unresolved grief from constant transitions.",
+              "You want a clear way to find services, resources, or providers that fit your needs.",
             icon: "User",
           },
           {
-            title: "Expat Families",
+            title: "Families",
             description:
-              "You're raising children between cultures and want proactive mental health support for your family.",
+              "You want practical resources, events, and trusted providers for your household.",
             icon: "Users",
           },
           {
-            title: "Cross-Cultural Couples",
+            title: "Multi-Audience Groups",
             description:
               "You and your partner navigate different cultural backgrounds and need help bridging the gap.",
             icon: "Heart",
@@ -262,24 +262,24 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
         items: [
           {
             before: "Feeling isolated and misunderstood",
-            after: "Connected with a counselor who gets it",
+            after: "Connected with a provider who fits",
             milestone: "Week 1",
           },
           {
-            before: "Struggling to articulate cross-cultural grief",
-            after: "Learning frameworks to process your experience",
+            before: "Struggling to compare options",
+            after: "Using clear profile details to choose confidently",
             milestone: "Month 1",
           },
           {
-            before: "Navigating identity confusion alone",
-            after: "Building confidence in your multicultural identity",
+            before: "Navigating decisions alone",
+            after: "Finding resources and next steps in one place",
             milestone: "Month 3",
           },
         ],
       }),
       block("social-proof-stats", {
         stats: [
-          { value: "500+", label: "Verified Counselors" },
+          { value: "500+", label: "Verified Providers" },
           { value: "40+", label: "Countries" },
           { value: "98%", label: "Satisfaction Rate" },
         ],
@@ -288,14 +288,14 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
         title: "Common Questions & Concerns",
         items: [
           {
-            concern: "Will the counselor understand my background?",
+            concern: "How do I know a provider is a fit?",
             response:
-              "Every counselor in our directory has specific training or lived experience with cross-cultural populations. We don't just list anyone.",
+              "Profiles can show qualifications, specialties, service formats, and the approval criteria behind each listing.",
           },
           {
-            concern: "Is online therapy really effective?",
+            concern: "Can services be delivered online?",
             response:
-              "Research consistently shows online therapy is as effective as in-person for many conditions — and it's especially valuable for globally mobile individuals.",
+              "Listings can show whether services are virtual, in-person, or hybrid so members can choose what works.",
           },
           {
             concern: "What if I don't find the right fit?",
@@ -307,7 +307,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       block("guarantee-warranty", {
         title: "Our Commitment to You",
         items: [
-          { text: "Every counselor is individually vetted and verified" },
+          { text: "Every provider can be individually vetted and verified" },
           { text: "Your privacy and confidentiality are always protected" },
           { text: "Support team available to help you find the right match" },
           { text: "No hidden fees — browse the directory completely free" },
@@ -318,8 +318,8 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       block("cta", {
         heading: "Take the First Step Today",
         subheading:
-          "Join thousands of Core Platforms who've found the support they deserve. Browse our directory — it's completely free.",
-        primaryText: "Browse Counselors Now",
+          "Browse the directory, compare verified providers, and choose a next step.",
+        primaryText: "Browse Providers Now",
         primaryLink: "/directory",
         secondaryText: "",
         secondaryLink: "",
@@ -337,10 +337,10 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     blockCount: 3,
     blocks: () => [
       block("section-header", {
-        eyebrow: "Core Platform Blog",
+        eyebrow: "Resource Library",
         title: "Insights & Articles",
         subtitle:
-          "Explore articles, research, and insights on Third Culture Kid mental health and cross-cultural counseling.",
+          "Explore articles, resources, and insights for your community.",
         alignment: "center",
       }),
       block("blog-featured-post", {
@@ -366,9 +366,9 @@ export interface LandingPageGoal {
 
 export const LANDING_PAGE_GOALS: LandingPageGoal[] = [
   {
-    id: "find-counselor",
-    label: "Help users find a counselor",
-    description: "Drive visitors to browse and connect with counselors",
+    id: "find-provider",
+    label: "Help users find a provider",
+    description: "Drive visitors to browse and connect with providers",
   },
   {
     id: "join-network",
@@ -398,11 +398,11 @@ export interface AudienceOption {
 }
 
 export const AUDIENCE_OPTIONS: AudienceOption[] = [
-  { id: "adult-corePlatforms", label: "Adult Core Platforms" },
-  { id: "expat-families", label: "Expat Families" },
-  { id: "cross-cultural-couples", label: "Cross-Cultural Couples" },
+  { id: "members", label: "Community Members" },
+  { id: "expat-families", label: "Families" },
+  { id: "cross-cultural-couples", label: "Multi-Audience Groups" },
   { id: "organizations", label: "Organizations & Schools" },
-  { id: "counselors", label: "Verified Providers" },
+  { id: "providers", label: "Verified Providers" },
   { id: "general", label: "General Audience" },
 ];
 
@@ -508,16 +508,16 @@ export function getRecommendedBlocks(goalId: string): WizardBlockOption[] {
       recommended: false,
     },
     {
-      id: "counselors",
+      id: "providers",
       type: "featured-professionals",
-      label: "Featured Counselors",
-      description: "Live counselor cards from directory",
+      label: "Featured Providers",
+      description: "Live provider cards from directory",
       recommended: false,
     },
   ];
 
   const goalRecommendations: Record<string, string[]> = {
-    "find-counselor": ["hero", "trust-bar", "stats", "how-it-works", "testimonials", "cta"],
+    "find-provider": ["hero", "trust-bar", "stats", "how-it-works", "testimonials", "cta"],
     "join-network": ["hero", "stats", "features", "testimonials", "guarantee", "cta"],
     "build-awareness": ["hero", "features", "use-cases", "before-after", "faq", "cta"],
     "promote-event": ["hero", "stats", "features", "events", "testimonials", "cta"],
@@ -529,11 +529,11 @@ export function getRecommendedBlocks(goalId: string): WizardBlockOption[] {
 }
 
 const AUDIENCE_LABELS: Record<string, string> = {
-  "adult-corePlatforms": "Adult Core Platforms",
-  "expat-families": "Expat Families",
-  "cross-cultural-couples": "Cross-Cultural Couples",
+  "members": "Community Members",
+  "expat-families": "Families",
+  "cross-cultural-couples": "Multi-Audience Groups",
   organizations: "Organizations & Schools",
-  counselors: "Verified Providers",
+  providers: "Verified Providers",
   general: "Everyone",
 };
 
@@ -547,22 +547,22 @@ function buildAudienceSubheading(audiences: string[], fallback: string): string 
 
 function buildUseCasesForAudiences(audiences: string[]) {
   const personas: Record<string, { title: string; description: string; icon: string }> = {
-    "adult-corePlatforms": {
-      title: "Adult Core Platforms",
+    "members": {
+      title: "Community Members",
       description:
         "Adults who grew up across cultures and need support navigating identity, belonging, and transitions.",
       icon: "User",
     },
     "expat-families": {
-      title: "Expat Families",
+      title: "Families",
       description:
-        "Parents raising children between cultures who want proactive mental health support.",
+        "Households looking for trusted services, events, and resources.",
       icon: "Users",
     },
     "cross-cultural-couples": {
-      title: "Cross-Cultural Couples",
+      title: "Multi-Audience Groups",
       description:
-        "Partners navigating different cultural backgrounds who need help bridging the gap.",
+        "Groups with different needs who need clear ways to find shared resources and services.",
       icon: "Heart",
     },
     organizations: {
@@ -571,15 +571,15 @@ function buildUseCasesForAudiences(audiences: string[]) {
         "Companies and schools supporting internationally mobile employees and students.",
       icon: "Building2",
     },
-    counselors: {
+    providers: {
       title: "Verified Providers",
       description:
-        "Qualified providers seeking to join a network of Core Platform-informed practitioners.",
+        "Qualified providers seeking to join a platform-approved network.",
       icon: "UserCheck",
     },
     general: {
       title: "The Global Community",
-      description: "Anyone seeking culturally informed mental health support.",
+      description: "Anyone seeking trusted resources, services, and community support.",
       icon: "Globe",
     },
   };
@@ -610,7 +610,7 @@ export function generateLandingPageBlocks(
           subheading:
             subheadline ||
             audienceDesc ||
-            "Connecting Third Culture Kids with verified providers who understand your world.",
+            "Connecting members with verified providers, resources, and community tools.",
           ctaText: ctaText || "Get Started",
           ctaLink: ctaLink || "/directory",
           ctaSecondaryText: "",
@@ -625,7 +625,7 @@ export function generateLandingPageBlocks(
           subheading:
             subheadline ||
             audienceDesc ||
-            "Take the first step toward culturally informed mental health support.",
+            "Take the first step toward trusted support and practical resources.",
           primaryText: ctaText || "Get Started",
           primaryLink: ctaLink || "/directory",
           variant: "dark",

@@ -50,7 +50,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const REGISTRATION_OPEN = false;
     if (!REGISTRATION_OPEN) {
-      res.status(403).json({ message: "Applications open in June. Registration is currently closed." });
+      res.status(403).json({ message: "Applications are currently closed." });
       return;
     }
     const { email, password, firstName, lastName, role, specializations } = req.body;

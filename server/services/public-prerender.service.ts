@@ -46,8 +46,8 @@ const FALLBACK_STATIC_PAGES: Record<
   "/about": {
     title: "About",
     description:
-      "Learn what it means for a provider to be vetted and how Core Platform supports cross-cultural community support.",
-    body: "Learn what it means for a provider to be vetted and how Core Platform supports cross-cultural community support.",
+      "Learn what it means for a provider to be vetted and how Core Platform supports member community support.",
+    body: "Learn what it means for a provider to be vetted and how Core Platform supports member community support.",
   },
   "/contact": {
     title: "Contact Us",
@@ -432,6 +432,14 @@ async function buildTherapistSnapshot(
       ),
       180,
     ) || "View this platform-approved verified provider profile.";
+  const addressParts = [
+    profile.addressLine1,
+    profile.addressLine2,
+    profile.city,
+    profile.state,
+    profile.zipCode,
+    profile.country,
+  ].filter(Boolean);
 
   return {
     title: buildHeadTitle(displayName, seo),
@@ -456,9 +464,25 @@ async function buildTherapistSnapshot(
       {
         "@context": "https://schema.org",
         "@type": "Person",
+        "@id": `${canonicalUrl}#provider`,
         name: displayName,
         description,
         url: canonicalUrl,
+        image: profile.user?.profileImageUrl ? absoluteUrl(profile.user.profileImageUrl, siteUrl) : undefined,
+        jobTitle: profile.title || "Verified Provider",
+        knowsAbout: profile.specializations?.length ? profile.specializations : undefined,
+        knowsLanguage: profile.languages?.length ? profile.languages : undefined,
+        telephone: profile.phone || undefined,
+        address: addressParts.length
+          ? {
+              "@type": "PostalAddress",
+              streetAddress: [profile.addressLine1, profile.addressLine2].filter(Boolean).join(", ") || undefined,
+              addressLocality: profile.city || undefined,
+              addressRegion: profile.state || undefined,
+              postalCode: profile.zipCode || undefined,
+              addressCountry: profile.country || undefined,
+            }
+          : undefined,
       },
     ].filter(Boolean) as Array<Record<string, unknown>>,
   };

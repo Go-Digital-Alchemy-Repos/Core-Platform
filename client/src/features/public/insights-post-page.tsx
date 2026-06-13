@@ -1,3 +1,4 @@
+import { STALE_TIMES } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { PageLayout } from "@/components/layout/page-layout";
@@ -139,7 +140,7 @@ export default function InsightsPostPage() {
 
   const { data: globalSeo } = useQuery<SeoSettings>({
     queryKey: ["/api/seo/global"],
-    staleTime: 10 * 60 * 1000,
+    staleTime: STALE_TIMES.CONTENT,
   });
 
   useFrontendEditTarget(post ? {

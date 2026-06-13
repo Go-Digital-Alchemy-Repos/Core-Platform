@@ -1,6 +1,6 @@
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, STALE_TIMES } from "@/lib/queryClient";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,7 +63,7 @@ export default function CmsPagesPage() {
       return response.json();
     },
     refetchInterval: 15000,
-    staleTime: 5000,
+    staleTime: STALE_TIMES.PREVIEW,
   });
 
   const pageLocksById = new Map(pageLocks.map((entry) => [entry.resourceId, entry.lock] as const));

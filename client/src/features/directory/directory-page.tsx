@@ -5,6 +5,7 @@ import { Search, MapPin, Monitor, Map, List, Users, ChevronRight, X, SlidersHori
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { MapView } from "@/components/directory/map-view";
+import { JsonLd } from "@/components/shared/json-ld";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,10 @@ import {
 } from "@/components/ui/select";
 import { useSpecializations } from "@/hooks/use-specializations";
 import { useDirectorySettings } from "@/hooks/use-directory-settings";
+import { useGlobalSeo } from "@/hooks/use-global-seo";
+import { useSeo } from "@/hooks/use-seo";
 import { stripHtml } from "@/lib/html";
+import { buildBreadcrumbLd, buildDirectoryItemListLd } from "@/lib/structured-data";
 import type { TherapistProfile } from "@shared/schema/therapist-profiles";
 import type {
   PaginatedTherapists,
@@ -33,17 +37,17 @@ import {
 } from "@shared/types/directory-settings";
 
 const vettedMeans = [
-  "Every mental health professional completes a detailed application process",
+  "Every listed provider completes a detailed application process",
   "Credentials and licensure are verified",
-  "Training or lived experience with Core Platform/cross-cultural populations is required",
+  "Relevant qualifications, experience, or training are reviewed",
   "Profiles are reviewed by our team before being published",
 ];
 
 const vettedDoesNotMean = [
   "We are not a licensing or credentialing body",
-  "We do not provide clinical supervision",
-  "Listing does not constitute an endorsement of specific therapeutic outcomes",
-  "We do not guarantee a therapeutic match — but we make finding one easier",
+  "We do not provide supervision or direct professional services",
+  "Listing does not constitute an endorsement of specific outcomes",
+  "We do not guarantee a match, but we make finding one easier",
 ];
 
 const categoryIcons = [
@@ -129,7 +133,7 @@ function getDirectoryHeading(settings: PublicDirectorySettings): string {
   }
 
   if (experience === "therapists" && lower(settings.participantLabelPlural) === "therapists") {
-    return "Find a Mental Health Professional";
+    return "Find a Provider";
   }
 
   return `Find ${settings.participantLabelPlural || settings.listingLabelPlural}`;
@@ -155,7 +159,7 @@ function getDirectorySubheading(settings: PublicDirectorySettings): string {
     return `Search by name, ${specialty}, location, or format, then explore matching ${lower(settings.listingLabelPlural) || "listings"} on the map.`;
   }
 
-  return "Search for Core Platform-informed care by specialty, location, language, or session format, then explore results on the map.";
+  return "Search verified providers by specialty, location, language, or service format, then explore results on the map.";
 }
 
 function getSearchPlaceholder(settings: PublicDirectorySettings): string {
@@ -215,7 +219,7 @@ function TherapistRow({
   onHover: (id: string | null) => void;
 }) {
   const initials = `${(user.firstName || "")[0] || ""}${(user.lastName || "")[0] || ""}`.toUpperCase();
-  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Mental Health Professional";
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Verified Provider";
   const specializations = profile.specializations || [];
   const displayedSpecs = specializations.slice(0, 2);
   const remainingCount = specializations.length - 2;
@@ -339,6 +343,7 @@ export function DirectoryBrowserSection({
   const queryString = useSearch();
   const [, navigate] = useLocation();
   const { settings: directorySettings } = useDirectorySettings();
+  const { data: globalSeo } = useGlobalSeo();
   const showSpecialties = directorySettings.showSpecialties;
   const showLanguages = directorySettings.showLanguages;
   const showPracticeMode = directorySettings.showPracticeMode;
@@ -525,13 +530,20 @@ export function DirectoryBrowserSection({
     setSearch("");
   };
 
+  const itemListSchema = useMemo(
+    () => buildDirectoryItemListLd(therapists, globalSeo),
+    [globalSeo, therapists],
+  );
+
   return (
-    <div
-      ref={sectionRef}
-      className="flex min-h-0 flex-col"
-      style={sectionHeight ? { height: `${sectionHeight}px` } : undefined}
-      data-testid="directory-browser-section"
-    >
+    <>
+      <JsonLd schemas={[itemListSchema]} />
+      <div
+        ref={sectionRef}
+        className="flex min-h-0 flex-col"
+        style={sectionHeight ? { height: `${sectionHeight}px` } : undefined}
+        data-testid="directory-browser-section"
+      >
       {showCategoryChips && showSpecialties && (
         <div className="flex-none border-b bg-muted/30 overflow-x-auto" data-testid="section-categories">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2">
@@ -931,34 +943,57 @@ export function DirectoryBrowserSection({
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
 export default function DirectoryPage() {
+  const { settings: directorySettings } = useDirectorySettings();
+  const { data: globalSeo } = useGlobalSeo();
+  const heading = getDirectoryHeading(directorySettings);
+  const subheading = getDirectorySubheading(directorySettings);
+  const baseUrl =
+    globalSeo?.siteUrl?.replace(/\/$/, "") ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+  const canonicalUrl = baseUrl ? `${baseUrl}/directory` : "/directory";
+
+  useSeo({
+    title: `${heading} | ${globalSeo?.siteName || "Core Platform"}`,
+    description: subheading,
+    canonical: canonicalUrl,
+    ogType: "website",
+  });
+
+  const breadcrumbSchema = buildBreadcrumbLd([
+    { name: "Home", url: baseUrl || "/" },
+    { name: directorySettings.directoryLabelSingular || "Directory", url: canonicalUrl },
+  ]);
+
   return (
     <div className="flex flex-col min-h-[100dvh]">
+      <JsonLd schemas={[breadcrumbSchema]} />
       <Navbar />
       <DirectoryBrowserSection />
 
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-directory-why-corePlatform-informed">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24" data-testid="section-directory-why-platform-approved">
         <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 md:gap-12 items-center">
           <div className="flex justify-center">
             <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
               <img
                 src="https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=300&h=300&fit=crop&crop=faces"
-                alt="Core Platform-informed counseling"
+                alt="Platform-approved provider support"
                 className="w-full h-full object-cover"
-                data-testid="img-directory-why-corePlatform-informed"
+                data-testid="img-directory-why-platform-approved"
               />
             </div>
           </div>
           <div>
             <h2 className="font-heading text-2xl sm:text-3xl font-semibold mb-3" data-testid="text-directory-why-informed-heading">
-              Why Core Platform Informed?
+              Why Platform Approved?
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Traditional therapy models were developed within a single cultural framework. When Core Platforms bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A Core Platform-informed mental health professional understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.
+              A trusted directory should make provider qualifications, service formats, specialties, and fit easier to understand. Platform-approved listings help members compare options with clearer context, reviewed profile details, and practical filters for finding the right next step.
             </p>
           </div>
         </div>

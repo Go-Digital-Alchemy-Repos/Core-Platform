@@ -4,6 +4,7 @@ import type { AdminPermission } from "@shared/types";
 import type { User } from "@shared/schema";
 import type { PublicDirectorySettings } from "@shared/types/directory-settings";
 import { buildNavGroups } from "@/features/admin/admin-sidebar";
+import { buildAdminCommandItems } from "@/features/admin/admin-command-palette";
 
 const adminUser = {
   id: "user-1",
@@ -106,5 +107,35 @@ describe("buildNavGroups", () => {
       { title: "Add New", href: "/admin/careers/new" },
       { title: "Settings", href: "/admin/careers/settings" },
     ]);
+  });
+
+  it("builds command palette items from gated navigation and known sub-routes", () => {
+    const navGroups = buildNavGroups(
+      { ...DEFAULT_SITE_FEATURES, ecommerceEnabled: true, eventsEnabled: true },
+      adminUser,
+      () => true,
+      directorySettings,
+    );
+
+    const commands = buildAdminCommandItems(navGroups);
+    const hrefs = commands.map((item) => item.href);
+
+    expect(hrefs).toContain("/admin/events/new");
+    expect(hrefs).toContain("/admin/events/settings");
+    expect(hrefs).toContain("/admin/ecommerce/refunds");
+    expect(hrefs).toContain("/admin/settings/email-templates");
+  });
+
+  it("omits app command items when the feature gate removes the nav group", () => {
+    const navGroups = buildNavGroups(
+      { ...DEFAULT_SITE_FEATURES, ecommerceEnabled: false },
+      adminUser,
+      () => true,
+      directorySettings,
+    );
+
+    const commands = buildAdminCommandItems(navGroups);
+
+    expect(commands.some((item) => item.href.startsWith("/admin/ecommerce"))).toBe(false);
   });
 });

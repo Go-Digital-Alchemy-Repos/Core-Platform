@@ -4,12 +4,11 @@ import { eq, asc } from "drizzle-orm";
 import type { Specialization, InsertSpecialization } from "../../shared/schema/specializations";
 
 const SEED_SPECIALIZATIONS = [
-  "Anxiety", "Depression", "Trauma & PTSD", "Grief & Loss",
-  "Identity & Belonging", "Cross-Cultural Transitions", "Third Culture Kids (Core Platform)",
-  "Expatriate Adjustment", "Relationship Issues", "Family Therapy",
-  "Couples Counseling", "Child & Adolescent", "Substance Abuse",
-  "Eating Disorders", "Career Counseling", "Mindfulness & Meditation",
-  "CBT", "EMDR", "Art Therapy", "Play Therapy", "Group Therapy",
+  "Consulting", "Coaching", "Implementation", "Training",
+  "Managed Services", "Operations", "Strategy", "Customer Success",
+  "Marketing", "Sales Enablement", "Technology", "Design",
+  "Finance", "Legal", "Compliance", "Human Resources",
+  "Facilities", "Events", "Community Programs", "Support Services",
 ];
 
 export class SpecializationStorage {

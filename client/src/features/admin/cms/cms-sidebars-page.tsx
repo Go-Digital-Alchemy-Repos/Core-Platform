@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ElementType } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, STALE_TIMES } from "@/lib/queryClient";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { Button } from "@/components/ui/button";
@@ -83,7 +83,7 @@ function defaultWidget(type: SidebarWidgetType): SidebarWidget {
       type,
       title: "Stay Connected",
       settings: {
-        description: "Get Core Platform-informed articles, events, and resources in your inbox.",
+        description: "Get platform updates, events, and resources in your inbox.",
         buttonText: "Sign Up",
         formSlug: "newsletter-signup",
       },
@@ -128,7 +128,7 @@ function WidgetSettings({
 }) {
   const { data: forms = [] } = useQuery<CmsForm[]>({
     queryKey: ["/api/admin/forms"],
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
   });
   const updateSetting = (key: string, value: unknown) => {
     onChange({ settings: { ...widget.settings, [key]: value } });

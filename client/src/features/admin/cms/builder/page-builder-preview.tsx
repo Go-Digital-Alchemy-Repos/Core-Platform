@@ -34,6 +34,30 @@ const PREVIEW_DEVICE_FRAME_CLASSES: Record<PreviewDevice, string> = {
   mobile: "w-full max-w-[430px]",
 };
 
+export function initializeFrontendPreviewDocument(
+  doc: Document,
+  sourceDocument: Document = document,
+) {
+  doc.open();
+  doc.write("<!doctype html><html><head></head><body></body></html>");
+  doc.close();
+
+  doc.documentElement.lang = sourceDocument.documentElement.lang || "en";
+  doc.body.style.margin = "0";
+  doc.body.style.background = "transparent";
+  doc.body.style.minHeight = "100vh";
+
+  Array.from(sourceDocument.head.querySelectorAll('style, link[rel="stylesheet"]')).forEach((node) => {
+    doc.head.appendChild(node.cloneNode(true));
+  });
+
+  const root = doc.createElement("div");
+  root.setAttribute("data-frontend-preview-root", "true");
+  root.style.minHeight = "100vh";
+  doc.body.appendChild(root);
+  return root;
+}
+
 function FrontendPreviewFrame({
   previewDevice,
   blocks,
@@ -52,24 +76,7 @@ function FrontendPreviewFrame({
     const doc = iframe.contentDocument;
     if (!doc) return;
 
-    doc.open();
-    doc.write("<!doctype html><html><head></head><body></body></html>");
-    doc.close();
-
-    doc.documentElement.lang = document.documentElement.lang || "en";
-    doc.body.style.margin = "0";
-    doc.body.style.background = "transparent";
-    doc.body.style.minHeight = "100vh";
-
-    Array.from(document.head.querySelectorAll('style, link[rel="stylesheet"]')).forEach((node) => {
-      doc.head.appendChild(node.cloneNode(true));
-    });
-
-    const root = doc.createElement("div");
-    root.setAttribute("data-frontend-preview-root", "true");
-    root.style.minHeight = "100vh";
-    doc.body.appendChild(root);
-    setMountNode(root);
+    setMountNode(initializeFrontendPreviewDocument(doc));
 
     return () => {
       setMountNode(null);

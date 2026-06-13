@@ -96,7 +96,7 @@ export default function JoinNetworkPage() {
         >
           <Clock className="mr-2 h-5 w-5" />
           {directorySettings.directoryRequiresApplicationProcess
-            ? "Applications open in June."
+            ? "Apply to Join"
             : "Registration opens soon."}
         </Button>
 

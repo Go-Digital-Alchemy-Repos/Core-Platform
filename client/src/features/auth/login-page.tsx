@@ -142,7 +142,7 @@ export default function LoginPage() {
               </Form>
 
               <div className="mt-4 text-center text-sm text-muted-foreground" data-testid="text-applications-notice">
-                Applications open in June.
+                Applications are currently closed.
               </div>
             </CardContent>
           </Card>

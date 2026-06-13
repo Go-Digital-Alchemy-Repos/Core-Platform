@@ -13,11 +13,11 @@ const homeContent = {
       id: uid(),
       type: "hero",
       props: {
-        heading: 'Care that understands where members "come from".',
+        heading: 'A modular website platform built to grow with you.',
         subheading: "",
-        ctaText: "Find a Verified Provider!",
+        ctaText: "Browse the Directory",
         ctaLink: "/directory",
-        ctaSecondaryText: "Join the Network!",
+        ctaSecondaryText: "Open Admin",
         ctaSecondaryLink: "/auth/register",
         backgroundImageUrl: "/images/hero-therapy-session-1280w.webp",
         overlayOpacity: 85,
@@ -27,24 +27,24 @@ const homeContent = {
       id: uid(),
       type: "cards-grid",
       props: {
-        title: "Why Platform Approved?",
-        subtitle: "We bridge the gap between members of globally mobile communities and culturally competent verified providers.",
+        title: "Why Core Platform?",
+        subtitle: "Build public pages, directories, events, storefronts, and member workflows on one configurable platform.",
         columns: "3",
         cards: [
           {
             icon: "Globe",
-            title: "Culturally Informed Care",
-            description: "Every verified provider in our directory understands the unique challenges of growing up across cultures.",
+            title: "Modular Site Apps",
+            description: "Enable directory, events, ecommerce, careers, portfolio, CRM, and content modules as each install needs them.",
           },
           {
             icon: "Heart",
-            title: "Specialized Support",
-            description: "Find professionals trained in identity, belonging, grief of place, and cross-cultural transitions.",
+            title: "Verified Workflows",
+            description: "Review applications, manage listings, publish content, and keep operational settings consistent from one admin shell.",
           },
           {
             icon: "Users",
-            title: "Global Community",
-            description: "Join a community that celebrates the richness of a multicultural upbringing.",
+            title: "Public Experiences",
+            description: "Give visitors fast pages, searchable listings, event registration, storefronts, and clear paths to action.",
           },
         ],
       },
@@ -53,7 +53,7 @@ const homeContent = {
       id: uid(),
       type: "section-header",
       props: {
-        title: "What Kind of Support Is Needed?",
+        title: "What Can Each Install Become?",
         alignment: "center",
       },
     },
@@ -61,7 +61,7 @@ const homeContent = {
       id: uid(),
       type: "rich-text",
       props: {
-        content: "<p>Not every challenge requires a formal service plan. Sometimes what members need most is validation, community, or practical guidance for navigating transitions. Our directory includes a range of professionals — from licensed professionals to certified coaches and peer support specialists — so you can find the right kind of support for wherever you are in your journey.</p>",
+        content: "<p>Each install can be shaped around the apps it needs. Start with content and a directory, add events or ecommerce when ready, and keep the admin workflow consistent as the site grows.</p>",
         alignment: "center",
       },
     },
@@ -73,54 +73,54 @@ const homeContent = {
         items: [
           {
             quote:
-              "For the first time, I didn't have to explain what it means to grow up between cultures. My verified provider just understood.",
+              "We launched a polished directory, events hub, and content site without stitching together separate tools.",
             name: "Sarah M.",
-            role: "Adult Community Member",
+            role: "Operations Lead",
             location: "Singapore",
             avatarUrl:
               "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces",
           },
           {
             quote:
-              "Core Platform connected me with a verified provider who speaks my language — literally and figuratively. It's been life-changing.",
+              "Core Platform gave our team one place to manage pages, listings, registrations, and member workflows.",
             name: "James K.",
-            role: "Expat Parent",
+            role: "Program Director",
             location: "Dubai",
             avatarUrl:
               "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces",
           },
           {
             quote:
-              "As a verified provider, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
-            name: "Dr. Amara O.",
-            role: "Verified Provider",
+              "As a listing owner, I can keep my profile current and respond to inquiries without depending on an admin.",
+            name: "Amara O.",
+            role: "Listing Owner",
             location: "Nairobi",
             avatarUrl:
               "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&h=100&fit=crop&crop=faces",
           },
           {
             quote:
-              "I struggled for years to find someone who understood repatriation grief. Core Platform made it possible in minutes.",
+              "The admin experience is clear enough for daily updates and flexible enough for our future modules.",
             name: "Lena T.",
-            role: "College Student",
+            role: "Site Editor",
             location: "Germany",
             avatarUrl:
               "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=faces",
           },
           {
             quote:
-              "The specialization filters helped me find a verified provider experienced with military kid transitions. Highly recommend.",
+              "The filters helped visitors compare providers quickly, and the map view made regional discovery much easier.",
             name: "Marcus W.",
-            role: "Military Family Member",
+            role: "Directory Visitor",
             location: "Virginia, USA",
             avatarUrl:
               "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces",
           },
           {
             quote:
-              "Finally, a platform that recognizes our unique needs. I feel seen and supported for the first time here.",
+              "Finally, a site platform that feels built for real operations, not just a landing page.",
             name: "Priya D.",
-            role: "Cross-Cultural Professional",
+            role: "Executive Sponsor",
             location: "London",
             avatarUrl:
               "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=faces",
@@ -132,8 +132,8 @@ const homeContent = {
       id: uid(),
       type: "therapist-map",
       props: {
-        title: "Our Verified Providers Around the World",
-        subtitle: "Click a pin to learn more about a platform-approved professional near you",
+        title: "Our Listing Owners Around the World",
+        subtitle: "Use map and list views to help visitors discover relevant listings quickly",
       },
     },
     {
@@ -141,7 +141,7 @@ const homeContent = {
       type: "events-preview",
       props: {
         title: "Upcoming Events",
-        subtitle: "Join our community events for members and verified providers.",
+        subtitle: "Publish events, registrations, reminders, and member-only programming from the same platform.",
         limit: 3,
       },
     },
@@ -150,7 +150,7 @@ const homeContent = {
       type: "blog-preview",
       props: {
         title: "Featured Articles",
-        subtitle: "Latest insights on platform operations, community support, and cross-cultural wellness.",
+        subtitle: "Latest insights on platform operations, content workflows, admin UX, and launch readiness.",
         limit: 6,
       },
     },
@@ -158,9 +158,9 @@ const homeContent = {
       id: uid(),
       type: "cta",
       props: {
-        heading: "Are You a Platform-Approved Verified Provider?",
+        heading: "Ready to Build on Core Platform?",
         subheading:
-          "Join our growing directory and connect with members who need your unique expertise. List your practice and reach the global member community.",
+          "Use one admin workspace to manage content, listings, events, storefronts, integrations, and the operational details that keep a modern site moving.",
         primaryText: "Join the Directory",
         primaryLink: "/auth/register",
         variant: "accent",
@@ -175,8 +175,9 @@ const aboutContent = {
       id: uid(),
       type: "section-header",
       props: {
-        eyebrow: "OUR STORY",
-        title: "History",
+        eyebrow: "ABOUT CORE PLATFORM",
+        title: "A Modular Platform for Modern Website Operations",
+        subtitle: "Core Platform helps teams manage public content, directories, events, commerce, memberships, and operational workflows from one admin workspace.",
         alignment: "left",
       },
     },
@@ -184,36 +185,8 @@ const aboutContent = {
       id: uid(),
       type: "rich-text",
       props: {
-        content: "<p>Core Platform was born from the lived experience of growing up between cultures. Our founders — adult members and community advocates — experienced firsthand how difficult it is to find a verified provider who truly understands what it means to call multiple countries \"home.\" In 2024, they set out to build a bridge between members of globally mobile communities and the culturally competent professionals who serve them.</p>",
+        content: "<p>Core Platform was built for organizations that need more than a brochure site. It brings configurable public experiences and practical admin tools together so teams can launch, maintain, and grow complex sites without stitching together unrelated systems.</p>",
         alignment: "left",
-      },
-    },
-    {
-      id: uid(),
-      type: "section-header",
-      props: {
-        eyebrow: "WHAT WE STAND FOR",
-        title: "Vision & Mission",
-        alignment: "left",
-      },
-    },
-    {
-      id: uid(),
-      type: "rich-text",
-      props: {
-        content: "<p>Our vision is a world where every member of a globally mobile community has access to specialized support that honors their multicultural identity. Our mission is to build the most trusted directory of verified providers — vetted, accessible, and global — so that no one has to navigate the complexities of cross-cultural life alone.</p>",
-        alignment: "left",
-      },
-    },
-    {
-      id: uid(),
-      type: "section-header",
-      props: {
-        eyebrow: "THE RESEARCH",
-        title: "The Stats Speak for Themselves",
-        subtitle:
-          "According to internal platform research across member communities:",
-        alignment: "center",
       },
     },
     {
@@ -223,159 +196,29 @@ const aboutContent = {
         columns: "3",
         cards: [
           {
-            icon: "AlertCircle",
-            title: "60% of members",
-            description: "experienced symptoms of anxiety related to their cross-cultural upbringing and transitions.",
+            icon: "LayoutDashboard",
+            title: "One Admin Workspace",
+            description: "Manage content, listings, events, ecommerce, forms, settings, and integrations from a consistent operational shell.",
           },
           {
-            icon: "AlertCircle",
-            title: "59% of members",
-            description: "experienced symptoms of depression, often connected to unresolved grief of place and identity.",
+            icon: "Puzzle",
+            title: "Installable Apps",
+            description: "Enable only the modules each site needs, then expand cleanly as new programs or revenue streams come online.",
           },
           {
-            icon: "AlertCircle",
-            title: "47% of members",
-            description: "experienced symptoms of suicidal ideation at some point in their lives.",
+            icon: "ShieldCheck",
+            title: "Launch Discipline",
+            description: "Use permissions, feature gates, SEO tools, save-state protections, and preview flows to keep releases controlled.",
           },
         ],
       },
     },
     {
       id: uid(),
-      type: "rich-text",
-      props: {
-        content: "<p>However, significantly smaller numbers get diagnosed. While we can only speculate on why, due to our decades of observations and expertise in the field, we think a large reason is due to lack of accessibility to proper specialized services. <strong>Which is a major driver in why we do what we do!</strong></p>",
-        alignment: "center",
-      },
-    },
-    {
-      id: uid(),
       type: "section-header",
       props: {
-        eyebrow: "WHY IT MATTERS",
-        title: "Why Platform Approved?",
-        alignment: "left",
-      },
-    },
-    {
-      id: uid(),
-      type: "rich-text",
-      props: {
-        content: "<p>Traditional support models were developed within a single cultural framework. When members bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A verified provider understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.</p>",
-        alignment: "left",
-      },
-    },
-    {
-      id: uid(),
-      type: "section-header",
-      props: {
-        eyebrow: "OUR VETTING",
-        title: "What Our Vetting Process Means — and Doesn't Mean",
-        subtitle:
-          "We take our responsibility to both verified providers and members seriously. Here's what you can expect from our process.",
-        alignment: "center",
-      },
-    },
-    {
-      id: uid(),
-      type: "rich-text",
-      props: {
-        content: `<div>
-<h3>What vetting means:</h3>
-<ul>
-<li>Every verified provider completes a detailed application process</li>
-<li>Credentials and licensure are verified</li>
-<li>Training or lived experience with globally mobile and cross-cultural populations is required</li>
-<li>Profiles are reviewed by our team before being published</li>
-</ul>
-<h3>What vetting does not mean:</h3>
-<ul>
-<li>We are not a licensing or credentialing body</li>
-<li>We do not provide clinical supervision</li>
-<li>Listing does not constitute an endorsement of specific service outcomes</li>
-<li>We do not guarantee a service match — but we make finding one easier</li>
-</ul>
-</div>`,
-        alignment: "left",
-      },
-    },
-    {
-      id: uid(),
-      type: "testimonials",
-      props: {
-        title: "What Are People Saying?",
-        items: [
-          {
-            quote:
-              "For the first time, I didn't have to explain what it means to grow up between cultures. My verified provider just understood.",
-            name: "Sarah M.",
-            role: "Adult Community Member",
-            location: "Singapore",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces",
-          },
-          {
-            quote:
-              "Core Platform connected me with a verified provider who speaks my language — literally and figuratively. It's been life-changing.",
-            name: "James K.",
-            role: "Expat Parent",
-            location: "Dubai",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces",
-          },
-          {
-            quote:
-              "As a verified provider, this platform lets me reach the exact community I trained to serve. The directory is beautifully done.",
-            name: "Dr. Amara O.",
-            role: "Verified Provider",
-            location: "Nairobi",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&h=100&fit=crop&crop=faces",
-          },
-          {
-            quote:
-              "I struggled for years to find someone who understood repatriation grief. Core Platform made it possible in minutes.",
-            name: "Lena T.",
-            role: "College Student",
-            location: "Germany",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=faces",
-          },
-          {
-            quote:
-              "The specialization filters helped me find a verified provider experienced with military kid transitions. Highly recommend.",
-            name: "Marcus W.",
-            role: "Military Family Member",
-            location: "Virginia, USA",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces",
-          },
-          {
-            quote:
-              "Finally, a platform that recognizes our unique needs. I feel seen and supported for the first time here.",
-            name: "Priya D.",
-            role: "Cross-Cultural Professional",
-            location: "London",
-            avatarUrl:
-              "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=faces",
-          },
-        ],
-      },
-    },
-    {
-      id: uid(),
-      type: "blog-preview",
-      props: {
-        title: "Featured On",
-        subtitle: "",
-        limit: 3,
-      },
-    },
-    {
-      id: uid(),
-      type: "section-header",
-      props: {
-        title: "FAQs",
+        eyebrow: "FAQ",
+        title: "Common Questions",
         alignment: "center",
       },
     },
@@ -385,52 +228,26 @@ const aboutContent = {
       props: {
         items: [
           {
-            question: "What is a member of a globally mobile community (Core Platform)?",
-            answer:
-              "A member of a globally mobile community (Core Platform) is a person who has spent a significant part of their developmental years outside their parents' culture. They build relationships with multiple cultures while not having full ownership of any, creating a blended cultural framework shaped by passport countries, host countries, and communities.",
+            question: "What kinds of sites can Core Platform support?",
+            answer: "Core Platform can support content sites, provider or vendor directories, event programs, ecommerce storefronts, portfolio sites, careers pages, memberships, and CRM-backed forms.",
           },
           {
-            question: "Who can use Core Platform to find a verified provider?",
-            answer:
-              "Core Platform is for anyone who has had a cross-cultural upbringing or is navigating globally-mobile life: members of all ages, expat families, international students, military families, missionary kids, diplomats' children, and cross-cultural professionals.",
+            question: "Do all installs need every module?",
+            answer: "No. Optional apps can be enabled or disabled so each install only exposes the routes, navigation, and API surfaces it needs.",
           },
           {
-            question: "How are verified providers vetted before joining the directory?",
-            answer:
-              "Every verified provider completes an application process, provides verified credentials, and must demonstrate training or lived experience with globally mobile and cross-cultural populations. Our team reviews each profile before it goes live in the directory.",
+            question: "Can public branding differ by site?",
+            answer: "Yes. CMS theme presets can style public content while the admin interface keeps stable operational design tokens.",
           },
           {
-            question: "Is Core Platform a support service?",
-            answer:
-              "No. Core Platform is a directory and community platform. We connect individuals with qualified verified providers — we do not provide support directly. All service relationships are between members and their chosen verified providers.",
-          },
-          {
-            question: "Can I use the directory if I live outside the United States?",
-            answer:
-              "Yes. Our verified providers serve members globally, with many offering online/telehealth sessions. Use the location and online session filters in the directory to find verified providers who can work with you wherever you are.",
-          },
-          {
-            question: "How can I support Core Platform?",
-            answer:
-              "You can support us by sharing the platform with members and expat communities, following us on social media, attending our events, or if you're a verified provider — joining our network.",
+            question: "Who manages listings and applications?",
+            answer: "Admins can review applications, approve listings, manage profile data, and configure the labels and fields that match their use case.",
           },
         ],
       },
     },
-    {
-      id: uid(),
-      type: "cta",
-      props: {
-        heading: "Donate to Core Platform",
-        subheading: "Your support helps us maintain this platform, expand our directory, and provide resources to the global member community. Every contribution — large or small — makes a difference in connecting members with the care they deserve.",
-        primaryText: "Donate",
-        primaryLink: "/donate",
-        variant: "accent",
-      },
-    },
   ],
 };
-
 const contactContent = {
   blocks: [
     {
@@ -457,53 +274,16 @@ const joinContent = {
       id: uid(),
       type: "join-registration-form",
       props: {
-        heading: "Are you a Platform-Approved Verified Provider?",
-        accentHeading: "Join the Network!",
-        subheading: "",
+        heading: "Apply to Join the Directory",
+        accentHeading: "Get Started",
+        subheading: "Submit your information for review and keep your listing details current after approval.",
       },
     },
     {
       id: uid(),
       type: "section-header",
       props: {
-        title: "What Does Membership Include?",
-        alignment: "center",
-      },
-    },
-    {
-      id: uid(),
-      type: "cards-grid",
-      props: {
-        columns: "4",
-        cards: [
-          {
-            icon: "ClipboardCheck",
-            title: "Directory Listing",
-            description: "Get a professional profile in our searchable directory, visible to members and cross-cultural families seeking specialized support worldwide.",
-          },
-          {
-            icon: "Users",
-            title: "Member Connections",
-            description: "Receive referrals from individuals actively searching for verified providers who understand their experience.",
-          },
-          {
-            icon: "BarChart3",
-            title: "Profile Analytics",
-            description: "Track how many people view your profile, where they're located, and which specializations attract the most interest.",
-          },
-          {
-            icon: "Star",
-            title: "Community Access",
-            description: "Join a network of platform-approved professionals for peer consultation, shared resources, and community events.",
-          },
-        ],
-      },
-    },
-    {
-      id: uid(),
-      type: "section-header",
-      props: {
-        title: "The Application Process",
+        title: "What Happens Next?",
         alignment: "center",
       },
     },
@@ -515,47 +295,24 @@ const joinContent = {
         cards: [
           {
             icon: "ClipboardCheck",
-            title: "1. Submit Your Application",
-            description: "Complete our online application with your credentials, areas of specialization, and experience working with Core Platform or cross-cultural populations.",
+            title: "1. Submit Details",
+            description: "Complete the application with your profile, qualifications, services, and contact preferences.",
           },
           {
-            icon: "CheckCircle",
-            title: "2. Credential Verification",
-            description: "Our team verifies your licensure, certifications, and professional standing to ensure quality and trust for our community.",
+            icon: "ShieldCheck",
+            title: "2. Review",
+            description: "Admins review the application, request follow-up if needed, and approve listings that meet the site's standards.",
           },
           {
-            icon: "Search",
-            title: "3. Core Platform Competency Review",
-            description: "We assess your training and lived experience with Core Platform, expat, and cross-cultural members to confirm a strong fit for our directory.",
-          },
-          {
-            icon: "User",
-            title: "4. Profile Setup",
-            description: "Build your professional profile with your bio, specializations, languages, session formats, and availability for prospective members.",
-          },
-          {
-            icon: "Star",
-            title: "5. Go Live in the Directory",
-            description: "Once approved, your profile goes live and you begin receiving visibility from members and families searching for support.",
+            icon: "UserCheck",
+            title: "3. Publish",
+            description: "Approved listing owners can keep their profile current while visitors discover them through search, filters, and maps.",
           },
         ],
       },
     },
-    {
-      id: uid(),
-      type: "cta",
-      props: {
-        heading: "Interested in Training but Not a Member?",
-        subheading:
-          "We offer platform-approved training programs for verified providers who want to deepen their cross-cultural competency. Whether you're just beginning to explore the Core Platform space or want to sharpen your skills, our training equips you with the frameworks and lived-experience insights to better serve globally-mobile members.",
-        primaryText: "Learn More",
-        primaryLink: "/training",
-        variant: "light",
-      },
-    },
   ],
 };
-
 const insightsContent = {
   blocks: [
     {
@@ -564,7 +321,7 @@ const insightsContent = {
       props: {
         eyebrow: "Core Platform Blog",
         title: "Insights & Articles",
-        subtitle: "Explore articles, research, and insights for globally mobile communities.",
+        subtitle: "Explore articles, research, and insights for member communities.",
         alignment: "center",
       },
     },
@@ -600,7 +357,7 @@ const eventsContent = {
       props: {
         heading: "Upcoming Events",
         subheading:
-          "We offer quarterly platform-approved trainings for professional providers. All of our members get free registration to the events below.",
+          "We offer quarterly platform-approved trainings for professional providers. All of our customers get free registration to the events below.",
         defaultView: "list",
         showViewToggle: true,
       },
@@ -671,7 +428,7 @@ const directoryContent = {
       id: uid(),
       type: "directory-browser",
       props: {
-        heading: "Find a Verified Provider",
+        heading: "Find a Listing Owner",
         subheading:
           "Search for platform-approved care by specialty, location, language, or session format, then explore results on the map.",
         showCategoryChips: true,
@@ -682,9 +439,9 @@ const directoryContent = {
       id: uid(),
       type: "text-image",
       props: {
-        heading: "Why Platform Approved?",
+        heading: "Why Core Platform?",
         body:
-          "Traditional support models were developed within a single cultural framework. When members bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A verified provider understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.",
+          "Traditional support models were developed within a single cultural framework. When customers bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A listing owner understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.",
         imageUrl:
           "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1200&h=1200&fit=crop&crop=faces",
         imageAlt: "platform-approved support",
@@ -698,7 +455,7 @@ const directoryContent = {
         title: 'What does it mean to be "vetted"?',
         subtitle: "And just as importantly, what it does not mean.",
         content:
-          "<h3>What does it mean to be &ldquo;vetted&rdquo;?</h3><ul><li>Every verified provider completes a detailed application process</li><li>Credentials and licensure are verified</li><li>Training or lived experience with globally mobile and cross-cultural populations is required</li><li>Profiles are reviewed by our team before being published</li></ul><h3>What does it NOT mean to be &ldquo;vetted&rdquo;?</h3><ul><li>We are not a licensing or credentialing body</li><li>We do not provide clinical supervision</li><li>Listing does not constitute an endorsement of specific service outcomes</li><li>We do not guarantee a service match, but we make finding one easier</li></ul>",
+          "<h3>What does it mean to be &ldquo;vetted&rdquo;?</h3><ul><li>Every listing owner completes a detailed application process</li><li>Credentials and licensure are verified</li><li>Relevant experience, qualifications, or service fit can be reviewed</li><li>Profiles are reviewed by our team before being published</li></ul><h3>What does it NOT mean to be &ldquo;vetted&rdquo;?</h3><ul><li>We are not a licensing or credentialing body</li><li>We do not provide operational supervision</li><li>Listing does not constitute an endorsement of specific service outcomes</li><li>We do not guarantee a listing match, but we make finding one easier</li></ul>",
         alignment: "left",
         sectionBackgroundColor: "#f6f7f5",
         sectionShowRadialGradient: true,
@@ -715,9 +472,9 @@ const pages = [
     pageType: "home" as const,
     status: "published" as const,
     content: homeContent,
-    seoTitle: "Core Platform — Specialized Support for Globally Mobile Communities",
+    seoTitle: "Core Platform — Modular Website Operations",
     seoDescription:
-      "Find a verified provider who understands your cross-cultural experience. Core Platform connects members of globally mobile communities, expats, and globally-mobile families with specialized verified providers.",
+      "Find a listing owner who understands your platform experience. Core Platform connects customers of member communities, expats, and globally-mobile families with specialized listing owners.",
   },
   {
     slug: "about",
@@ -727,7 +484,7 @@ const pages = [
     content: aboutContent,
     seoTitle: "About Core Platform",
     seoDescription:
-      "Learn about Core Platform, our mission to support members of globally mobile communities, and how we vet verified providers for cross-cultural competency.",
+      "Learn about Core Platform, our mission to support customers of member communities, and how we vet listing owners for platform competency.",
   },
   {
     slug: "contact",
@@ -737,17 +494,17 @@ const pages = [
     content: contactContent,
     seoTitle: "Contact Core Platform",
     seoDescription:
-      "Get in touch with the Core Platform team. We're here to help you find the right verified provider or answer questions about our platform.",
+      "Get in touch with the Core Platform team. We're here to help you find the right listing owner or answer questions about our platform.",
   },
   {
     slug: "join",
-    title: "Join as a Verified Provider",
+    title: "Join as a Listing Owner",
     pageType: "custom" as const,
     status: "published" as const,
     content: joinContent,
-    seoTitle: "Join the Core Platform Verified Provider Network",
+    seoTitle: "Join the Core Platform Listing Owner Network",
     seoDescription:
-      "Apply to join the Core Platform verified provider network. Reach members and cross-cultural families who need your specialized expertise.",
+      "Apply to join the Core Platform listing owner network. Reach customers and platform families who need your specialized expertise.",
   },
   {
     slug: "insights",
@@ -758,7 +515,7 @@ const pages = [
     content: insightsContent,
     seoTitle: "Insights & Articles | Core Platform",
     seoDescription:
-      "Explore articles, research, and insights for globally mobile communities.",
+      "Explore articles, research, and insights for member communities.",
   },
   {
     slug: "events",
@@ -792,13 +549,13 @@ const pages = [
   },
   {
     slug: "directory",
-    title: "Find a Verified Provider",
+    title: "Find a Listing Owner",
     pageType: "custom" as const,
     status: "published" as const,
     content: directoryContent,
-    seoTitle: "Find a Verified Provider | Core Platform",
+    seoTitle: "Find a Listing Owner | Core Platform",
     seoDescription:
-      "Browse verified providers by location, specialty, language, and more.",
+      "Browse listing owners by location, specialty, language, and more.",
   },
 ];
 

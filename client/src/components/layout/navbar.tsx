@@ -1,3 +1,4 @@
+import { STALE_TIMES } from "@/lib/queryClient";
 import { useEffect, useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import {
@@ -240,7 +241,7 @@ export function Navbar() {
   const directoryNavLabel =
     directoryExperience === "therapists" &&
     directorySettings.participantLabelPlural === "Therapists"
-      ? "Find a Mental Health Professional"
+      ? "Find a Provider"
       : `Find ${directoryPrimaryPlural || "Listings"}`;
   const dashboardLabel =
     directoryExperience === "therapists" ? "Professional Dashboard" : "Listing Dashboard";
@@ -258,7 +259,7 @@ export function Navbar() {
 
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
-    staleTime: 60000,
+    staleTime: STALE_TIMES.LIVE,
   });
   const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
 
@@ -270,7 +271,7 @@ export function Navbar() {
       return res.json();
     },
     enabled: siteFeatures.cmsEnabled,
-    staleTime: 60000,
+    staleTime: STALE_TIMES.LIVE,
   });
 
   const dynamicItems = useMemo(() => {

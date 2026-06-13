@@ -1,3 +1,4 @@
+import { STALE_TIMES } from "@/lib/queryClient";
 import { useMemo } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -153,7 +154,7 @@ export function Footer() {
   const directoryLinkLabel =
     directoryExperience === "therapists" &&
     directorySettings.participantLabelPlural === "Therapists"
-      ? "Find a Mental Health Professional"
+      ? "Find a Provider"
       : `Find ${directoryPlural}`;
   const professionalColumnTitle =
     directoryExperience === "therapists" ? "For Professionals" : "For Listing Owners";
@@ -161,7 +162,7 @@ export function Footer() {
     directoryExperience === "therapists" ? "Professional Login" : "Listing Owner Login";
   const brandBlurb =
     directoryExperience === "therapists"
-      ? "Connecting Third Culture Kids with culturally informed professionals worldwide. Find support that understands your unique journey."
+      ? "Connecting members with trusted providers through a flexible, searchable directory."
       : `Connecting people with trusted ${directoryPlural.toLowerCase()} through a flexible, searchable directory.`;
   const defaultPlatformLinks = [
     { href: "/directory", label: directoryLinkLabel, testId: "link-footer-directory" },
@@ -169,7 +170,7 @@ export function Footer() {
     { href: "/about", label: "How It Works", testId: "link-footer-how-it-works" },
   ];
   const defaultProfessionalLinks = [
-    { href: "/join", label: "Applications open in June", testId: "link-footer-join" },
+    { href: "/join", label: "Apply to Join", testId: "link-footer-join" },
     { href: "/auth/login", label: professionalLoginLabel, testId: "link-footer-login" },
     {
       href: "/therapist/subscription",
@@ -178,13 +179,13 @@ export function Footer() {
     },
   ];
   const defaultResourceLinks = [
-    { href: "/about", label: "About Core Platforms", testId: "link-footer-about-corePlatforms" },
+    { href: "/about", label: "About the Platform", testId: "link-footer-about-corePlatforms" },
     { href: "/events", label: "Upcoming Events", testId: "link-footer-upcoming-events" },
     { href: "/directory", label: "Browse the Directory", testId: "link-footer-specializations" },
   ];
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
-    staleTime: 60000,
+    staleTime: STALE_TIMES.LIVE,
   });
   const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
   const { data: publicMenus } = useQuery<Partial<Record<PublicMenuLocation, CmsMenu>>>({
@@ -195,7 +196,7 @@ export function Footer() {
       return res.json();
     },
     enabled: siteFeatures.cmsEnabled,
-    staleTime: 60000,
+    staleTime: STALE_TIMES.LIVE,
   });
 
   const legacyFooterItems = useMemo(() => {
@@ -306,7 +307,7 @@ export function Footer() {
           data-testid="text-copyright"
         >
           <span className="text-center sm:text-left">
-            &copy; {new Date().getFullYear()} Interaction International. All rights reserved.
+            &copy; {new Date().getFullYear()} Core Platform. All rights reserved.
           </span>
           <div className="flex items-center gap-4 sm:gap-6">
             {legalLinks.map((link) =>

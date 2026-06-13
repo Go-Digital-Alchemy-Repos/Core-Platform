@@ -1,3 +1,4 @@
+import { STALE_TIMES } from "@/lib/queryClient";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
@@ -35,7 +36,7 @@ function RecentPostsWidget({ widget }: { widget: SidebarWidget }) {
   const limit = numberValue(widget.settings.limit, 5);
   const { data: posts = [] } = useQuery<BlogPost[]>({
     queryKey: ["/api/blog"],
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIMES.SESSION,
   });
 
   const visiblePosts = posts.slice(0, limit);
@@ -166,7 +167,7 @@ function SearchWidget({ widget }: { widget: SidebarWidget }) {
 function CategoriesWidget({ widget }: { widget: SidebarWidget }) {
   const { data: posts = [] } = useQuery<BlogPost[]>({
     queryKey: ["/api/blog"],
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIMES.SESSION,
   });
   const categories = useMemo(() => {
     const counts = new Map<string, number>();
@@ -200,7 +201,7 @@ function CategoriesWidget({ widget }: { widget: SidebarWidget }) {
 function TagsWidget({ widget }: { widget: SidebarWidget }) {
   const { data: posts = [] } = useQuery<BlogPost[]>({
     queryKey: ["/api/blog"],
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIMES.SESSION,
   });
   const tags = useMemo(() => {
     const unique = new Set<string>();
@@ -260,7 +261,7 @@ export function PublicSidebar({
 }) {
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
-    staleTime: 60000,
+    staleTime: STALE_TIMES.LIVE,
   });
   const siteFeatures = siteFeaturesData ?? DEFAULT_SITE_FEATURES;
   const shouldFetch = siteFeatures.cmsEnabled && Boolean(sidebarId || useDefault);
@@ -274,7 +275,7 @@ export function PublicSidebar({
     },
     enabled: shouldFetch,
     retry: false,
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIMES.SESSION,
   });
 
   const widgets = Array.isArray(sidebar?.widgets) ? (sidebar.widgets as SidebarWidget[]) : [];

@@ -217,7 +217,7 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
                     id="wiz-headline"
                     value={headline}
                     onChange={(e) => setHeadline(e.target.value)}
-                    placeholder="e.g. Find a Counselor Who Understands Your World"
+                    placeholder="e.g. Find a Provider Who Fits Your Needs"
                     className="mt-1"
                     data-testid="input-wizard-headline"
                   />

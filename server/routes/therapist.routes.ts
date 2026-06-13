@@ -35,7 +35,7 @@ router.put(
     const data = updateTherapistProfileSchema.parse(req.body);
     const enrichedData = await enrichTherapistLocationFields(data, profile);
     const updated = await storage.therapists.updateProfile(profile.id, enrichedData);
-    await storage.activity.log(req.user!.id, "profile_update", "Profile updated by mental health professional");
+    await storage.activity.log(req.user!.id, "profile_update", "Profile updated by provider");
     res.json(updated);
   })
 );

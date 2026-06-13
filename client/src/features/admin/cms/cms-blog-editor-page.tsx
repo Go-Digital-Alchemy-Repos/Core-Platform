@@ -25,7 +25,7 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { EditorSaveIndicator } from "@/components/shared/editor-save-indicator";
+import { AdminSaveBar } from "@/components/shared/admin-save-bar";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import {
   Select,
@@ -36,7 +36,6 @@ import {
 } from "@/components/ui/select";
 import {
   ArrowLeft,
-  Save,
   Globe,
   Eye,
   EyeOff,
@@ -434,7 +433,6 @@ export default function CmsBlogEditorPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <EditorSaveIndicator state={saveState.state} />
             {!isNew && isPublished && (
               watchPostType === "external" && form.watch("externalUrl") ? (
                 <Button variant="outline" size="sm" asChild>
@@ -452,10 +450,15 @@ export default function CmsBlogEditorPage() {
                 </Button>
               )
             )}
-            <Button onClick={onSave} disabled={isSaving || editorLock.isReadOnly} data-testid="button-save-post">
-              <Save className="h-4 w-4 mr-2" />
-              {isSaving ? "Saving…" : "Save Post"}
-            </Button>
+            <AdminSaveBar
+              state={saveState.state}
+              type="button"
+              onSave={onSave}
+              primaryLabel="Save Post"
+              disabled={isSaving || editorLock.isReadOnly}
+              className="w-auto"
+              buttonTestId="button-save-post"
+            />
           </div>
         </div>
 
@@ -1260,10 +1263,15 @@ export default function CmsBlogEditorPage() {
         </div>
 
         <div className="flex justify-end pb-8">
-          <Button onClick={onSave} disabled={isSaving || editorLock.isReadOnly} data-testid="button-save-post-bottom">
-            <Save className="h-4 w-4 mr-2" />
-            {isSaving ? "Saving…" : "Save Post"}
-          </Button>
+          <AdminSaveBar
+            state={saveState.state}
+            type="button"
+            onSave={onSave}
+            primaryLabel="Save Post"
+            disabled={isSaving || editorLock.isReadOnly}
+            className="w-auto"
+            buttonTestId="button-save-post-bottom"
+          />
         </div>
       </div>
       {unsavedChangesGuard.dialog}

@@ -299,7 +299,7 @@ function BlogContent() {
                 id="category"
                 value={formData.category}
                 onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value }))}
-                placeholder="e.g., Core Platform Research, Mental Health Professional Tips"
+                placeholder="e.g., Core Platform Research, Provider Tips"
                 data-testid="input-post-category"
               />
             </div>

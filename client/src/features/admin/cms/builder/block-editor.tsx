@@ -1,3 +1,4 @@
+import { STALE_TIMES } from "@/lib/queryClient";
 import { Component, useMemo, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -464,12 +465,12 @@ function ArrayItemsField({
   const schema = propDef.itemSchema ?? [];
   const { data: forms = [] } = useQuery<CmsForm[]>({
     queryKey: ["/api/admin/forms"],
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
     enabled: schema.some((field) => field.type === "form-select"),
   });
   const { data: pages = [] } = useQuery<CmsPage[]>({
     queryKey: ["/api/admin/cms/pages"],
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
     enabled: schema.some((field) => field.type === "url" && isButtonLinkFieldKey(field.key)),
   });
 
@@ -653,12 +654,12 @@ function PropField({
 }) {
   const { data: forms = [] } = useQuery<CmsForm[]>({
     queryKey: ["/api/admin/forms"],
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
     enabled: propDef.type === "form-select",
   });
   const { data: pages = [] } = useQuery<CmsPage[]>({
     queryKey: ["/api/admin/cms/pages"],
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.LIVE,
     enabled: propDef.type === "url" && isButtonLinkFieldKey(propDef.key),
   });
   const strVal = String(value ?? "");
