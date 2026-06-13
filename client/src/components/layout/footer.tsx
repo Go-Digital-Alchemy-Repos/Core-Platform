@@ -5,25 +5,9 @@ import logoImg from "@assets/IMG_0002_1772999718659.png";
 import { useBranding } from "@/components/shared/branding-provider";
 import { SocialMediaLinks } from "@/components/shared/social-media-links";
 import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
+import { getDirectoryExperienceMode } from "@shared/types/directory-settings";
 import type { CmsMenu, MenuItem, PublicMenuLocation } from "@shared/schema";
-
-const defaultPlatformLinks = [
-  { href: "/directory", label: "Find a Mental Health Professional", testId: "link-footer-directory" },
-  { href: "/events", label: "Events & Workshops", testId: "link-footer-events" },
-  { href: "/about", label: "How It Works", testId: "link-footer-how-it-works" },
-];
-
-const defaultTherapistLinks = [
-  { href: "/join", label: "Applications open in June", testId: "link-footer-join" },
-  { href: "/auth/login", label: "Mental Health Professional Login", testId: "link-footer-login" },
-  { href: "/therapist/subscription", label: "Membership Plans", testId: "link-footer-membership" },
-];
-
-const defaultResourceLinks = [
-  { href: "/about", label: "About Core Platforms", testId: "link-footer-about-corePlatforms" },
-  { href: "/events", label: "Upcoming Events", testId: "link-footer-upcoming-events" },
-  { href: "/directory", label: "Browse Specializations", testId: "link-footer-specializations" },
-];
 
 const defaultCompanyLinks = [
   { href: "/about", label: "About Us", testId: "link-footer-about" },
@@ -44,7 +28,13 @@ type FooterLegalLink = {
   openInNewTab?: boolean;
 };
 
-function FooterColumn({ title, links }: { title: string; links: { href: string; label: string; testId: string }[] }) {
+function FooterColumn({
+  title,
+  links,
+}: {
+  title: string;
+  links: { href: string; label: string; testId: string }[];
+}) {
   return (
     <div>
       <h4 className="font-semibold text-sm mb-3 sm:mb-4 text-foreground">{title}</h4>
@@ -152,6 +142,46 @@ function StandardFooterColumn({ menu }: { menu: CmsMenu }) {
 
 export function Footer() {
   const { frontendLogoUrl, socialIconStyle, socialLinks } = useBranding();
+  const { settings: directorySettings } = useDirectorySettings();
+  const directoryExperience = getDirectoryExperienceMode(directorySettings);
+  const directoryPlural =
+    directoryExperience === "real_estate"
+      ? directorySettings.listingLabelPlural || directorySettings.directoryLabelPlural || "Listings"
+      : directorySettings.participantLabelPlural ||
+        directorySettings.listingLabelPlural ||
+        "Listings";
+  const directoryLinkLabel =
+    directoryExperience === "therapists" &&
+    directorySettings.participantLabelPlural === "Therapists"
+      ? "Find a Mental Health Professional"
+      : `Find ${directoryPlural}`;
+  const professionalColumnTitle =
+    directoryExperience === "therapists" ? "For Professionals" : "For Listing Owners";
+  const professionalLoginLabel =
+    directoryExperience === "therapists" ? "Professional Login" : "Listing Owner Login";
+  const brandBlurb =
+    directoryExperience === "therapists"
+      ? "Connecting Third Culture Kids with culturally informed professionals worldwide. Find support that understands your unique journey."
+      : `Connecting people with trusted ${directoryPlural.toLowerCase()} through a flexible, searchable directory.`;
+  const defaultPlatformLinks = [
+    { href: "/directory", label: directoryLinkLabel, testId: "link-footer-directory" },
+    { href: "/events", label: "Events & Workshops", testId: "link-footer-events" },
+    { href: "/about", label: "How It Works", testId: "link-footer-how-it-works" },
+  ];
+  const defaultProfessionalLinks = [
+    { href: "/join", label: "Applications open in June", testId: "link-footer-join" },
+    { href: "/auth/login", label: professionalLoginLabel, testId: "link-footer-login" },
+    {
+      href: "/therapist/subscription",
+      label: "Membership Plans",
+      testId: "link-footer-membership",
+    },
+  ];
+  const defaultResourceLinks = [
+    { href: "/about", label: "About Core Platforms", testId: "link-footer-about-corePlatforms" },
+    { href: "/events", label: "Upcoming Events", testId: "link-footer-upcoming-events" },
+    { href: "/directory", label: "Browse the Directory", testId: "link-footer-specializations" },
+  ];
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
     staleTime: 60000,
@@ -176,13 +206,16 @@ export function Footer() {
   }, [publicMenus]);
 
   const standardFooterMenus = useMemo(
-    () => [
-      publicMenus?.footer_platform,
-      publicMenus?.footer_professionals,
-      publicMenus?.footer_resources,
-      publicMenus?.footer_company,
-    ].filter((menu): menu is CmsMenu => Boolean(menu && Array.isArray(menu.items) && menu.items.length > 0)),
-    [publicMenus]
+    () =>
+      [
+        publicMenus?.footer_platform,
+        publicMenus?.footer_professionals,
+        publicMenus?.footer_resources,
+        publicMenus?.footer_company,
+      ].filter((menu): menu is CmsMenu =>
+        Boolean(menu && Array.isArray(menu.items) && menu.items.length > 0),
+      ),
+    [publicMenus],
   );
 
   const legalLinks = useMemo(() => {
@@ -206,16 +239,12 @@ export function Footer() {
   return (
     <footer className="border-t bg-muted/30" data-testid="footer">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-12 lg:py-16">
-        <div className={`grid grid-cols-2 sm:grid-cols-2 ${useStandardFooterMenus ? "lg:grid-cols-6" : "lg:grid-cols-5"} gap-8 sm:gap-10 lg:gap-12`}>
+        <div
+          className={`grid grid-cols-2 sm:grid-cols-2 ${useStandardFooterMenus ? "lg:grid-cols-6" : "lg:grid-cols-5"} gap-8 sm:gap-10 lg:gap-12`}
+        >
           <div className="col-span-2">
-            <img
-              src={brandLogo}
-              alt="Core Platform"
-              className="h-8 sm:h-9 w-auto mb-3 sm:mb-4"
-            />
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              Connecting Third Culture Kids with culturally informed mental health professionals worldwide. Find support that understands your unique journey.
-            </p>
+            <img src={brandLogo} alt="Core Platform" className="h-8 sm:h-9 w-auto mb-3 sm:mb-4" />
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">{brandBlurb}</p>
             <SocialMediaLinks
               links={socialLinks}
               iconStyle={socialIconStyle}
@@ -256,12 +285,12 @@ export function Footer() {
                     </li>
                   </ul>
                 </div>
-              )
+              ),
             )
           ) : (
             <>
               <FooterColumn title="Platform" links={defaultPlatformLinks} />
-              <FooterColumn title="For Mental Health Professionals" links={defaultTherapistLinks} />
+              <FooterColumn title={professionalColumnTitle} links={defaultProfessionalLinks} />
               <div className="col-span-2 sm:col-span-1">
                 <FooterColumn title="Resources" links={defaultResourceLinks} />
                 <div className="mt-6 sm:mt-8">
@@ -272,8 +301,13 @@ export function Footer() {
           )}
         </div>
 
-        <div className="mt-8 sm:mt-10 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-sm text-muted-foreground" data-testid="text-copyright">
-          <span className="text-center sm:text-left">&copy; {new Date().getFullYear()} Interaction International. All rights reserved.</span>
+        <div
+          className="mt-8 sm:mt-10 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-sm text-muted-foreground"
+          data-testid="text-copyright"
+        >
+          <span className="text-center sm:text-left">
+            &copy; {new Date().getFullYear()} Interaction International. All rights reserved.
+          </span>
           <div className="flex items-center gap-4 sm:gap-6">
             {legalLinks.map((link) =>
               link.openInNewTab ? (
@@ -296,12 +330,11 @@ export function Footer() {
                 >
                   {link.label}
                 </Link>
-              )
+              ),
             )}
           </div>
         </div>
       </div>
-
     </footer>
   );
 }

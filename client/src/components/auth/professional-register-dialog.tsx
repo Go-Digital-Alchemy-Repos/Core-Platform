@@ -5,6 +5,7 @@ import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useSpecializations } from "@/hooks/use-specializations";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +56,12 @@ export function ProfessionalRegisterDialog({
   const { register } = useAuth();
   const { toast } = useToast();
   const { specializations: specList } = useSpecializations();
+  const { settings: directorySettings } = useDirectorySettings();
+  const listingLabel =
+    directorySettings.listingLabelSingular ||
+    directorySettings.participantLabelSingular ||
+    "Directory Profile";
+  const specialtyLabel = directorySettings.specialtyLabelPlural || "Categories";
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -97,8 +104,11 @@ export function ProfessionalRegisterDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Mental Health Professional Registration</DialogTitle>
-          <DialogDescription>Fill in your basic details to register. Once you've registered for an account you'll be able to apply for membership and be listed on the directory.</DialogDescription>
+          <DialogTitle>{listingLabel} Registration</DialogTitle>
+          <DialogDescription>
+            Fill in your basic details to register. Once your account is created, you can apply to
+            be listed in the directory.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -110,7 +120,11 @@ export function ProfessionalRegisterDialog({
                   <FormItem>
                     <FormLabel>First Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="John" data-testid="input-professional-first-name" {...field} />
+                      <Input
+                        placeholder="John"
+                        data-testid="input-professional-first-name"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -123,7 +137,11 @@ export function ProfessionalRegisterDialog({
                   <FormItem>
                     <FormLabel>Last Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Doe" data-testid="input-professional-last-name" {...field} />
+                      <Input
+                        placeholder="Doe"
+                        data-testid="input-professional-last-name"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -138,7 +156,12 @@ export function ProfessionalRegisterDialog({
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="you@example.com" data-testid="input-professional-email" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      data-testid="input-professional-email"
+                      {...field}
+                    />
                   </FormControl>
                   <FormDescription data-testid="text-email-privacy-note">
                     Your email will remain hidden and private at all times from the public.
@@ -153,9 +176,14 @@ export function ProfessionalRegisterDialog({
               name="specializations"
               render={() => (
                 <FormItem>
-                  <FormLabel>Specializations</FormLabel>
-                  <p className="text-xs text-muted-foreground mb-2">Select all that apply. You can update these later from your profile.</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 max-h-48 overflow-y-auto border rounded-md p-3" data-testid="checkbox-group-professional-specializations">
+                  <FormLabel>{specialtyLabel}</FormLabel>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Select all that apply. You can update these later from your profile.
+                  </p>
+                  <div
+                    className="grid grid-cols-2 gap-x-4 gap-y-2 max-h-48 overflow-y-auto border rounded-md p-3"
+                    data-testid="checkbox-group-professional-specializations"
+                  >
                     {specList.map(({ name: spec }) => {
                       const current = form.getValues("specializations") || [];
                       const isChecked = current.includes(spec);
@@ -167,14 +195,23 @@ export function ProfessionalRegisterDialog({
                             onCheckedChange={(checked) => {
                               const prev = form.getValues("specializations") || [];
                               if (checked) {
-                                form.setValue("specializations", [...prev, spec], { shouldDirty: true });
+                                form.setValue("specializations", [...prev, spec], {
+                                  shouldDirty: true,
+                                });
                               } else {
-                                form.setValue("specializations", prev.filter((s) => s !== spec), { shouldDirty: true });
+                                form.setValue(
+                                  "specializations",
+                                  prev.filter((s) => s !== spec),
+                                  { shouldDirty: true },
+                                );
                               }
                             }}
                             data-testid={`checkbox-professional-spec-${spec.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
                           />
-                          <Label htmlFor={`professional-spec-${spec}`} className="text-xs font-normal cursor-pointer leading-tight">
+                          <Label
+                            htmlFor={`professional-spec-${spec}`}
+                            className="text-xs font-normal cursor-pointer leading-tight"
+                          >
                             {spec}
                           </Label>
                         </div>
@@ -193,7 +230,12 @@ export function ProfessionalRegisterDialog({
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="At least 8 characters" data-testid="input-professional-password" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="At least 8 characters"
+                      data-testid="input-professional-password"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -207,14 +249,24 @@ export function ProfessionalRegisterDialog({
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Re-enter your password" data-testid="input-professional-confirm-password" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="Re-enter your password"
+                      data-testid="input-professional-confirm-password"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={isPending} data-testid="button-professional-register">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isPending}
+              data-testid="button-professional-register"
+            >
               {isPending ? (
                 <LoadingSpinner className="h-4 w-4 mr-2" />
               ) : (

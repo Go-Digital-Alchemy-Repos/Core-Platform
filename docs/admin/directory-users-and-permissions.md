@@ -1,6 +1,6 @@
 # Directory, Users & Permissions
 
-The directory is both a public search product and an admin-managed provider database. User management controls internal admins/editors, while therapist records control public provider visibility.
+The directory is both a public search product and an admin-managed provider database. User management controls internal admins/editors, while directory profile records control public listing visibility.
 
 ## Public Directory
 
@@ -15,13 +15,13 @@ Supported search inputs include keyword, specialization, practice mode, language
 
 Directory settings can require approved applications before profiles appear publicly. When that requirement is enabled, public listing/filter/detail queries only expose approved active profiles.
 
-## Therapist Administration
+## Directory Profile Administration
 
-Admin therapist routes live under `/api/admin/therapists` and require the directory permission.
+Admin directory profile routes currently live under the legacy `/api/admin/therapists` path and require the directory permission.
 
 Admins can:
 
-- create therapist users and profiles
+- create listing-owner users and directory profiles
 - approve or reject profiles
 - update profile details, social handles, location fields, feature status, active status, and public visibility flags
 - trigger approval/rejection email notifications

@@ -41,16 +41,14 @@ export const mixedBuilderFixture: BuilderContent = {
       type: "faq",
       props: {
         heading: "Common Questions",
-        items: [
-          { question: "How do I apply?", answer: "<p>Use the application form.</p>" },
-        ],
+        items: [{ question: "How do I apply?", answer: "<p>Use the application form.</p>" }],
       },
     },
     {
       id: "directory-block",
       type: "directory-browser",
       props: {
-        heading: "Find a Mental Health Professional",
+        heading: "Find a Verified Provider",
       },
     },
   ],

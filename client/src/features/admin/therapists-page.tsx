@@ -31,9 +31,22 @@ import {
   SheetBody,
   SheetFooter,
 } from "@/components/ui/sheet";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   Table,
   TableBody,
@@ -42,12 +55,42 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Search, Loader2, Trash2, CheckCircle, ThumbsDown, Pencil, Camera, Calendar, LogIn, FileEdit, Clock, X, ArrowUpDown, ArrowUp, ArrowDown, CreditCard, Activity } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Plus,
+  Search,
+  Loader2,
+  Trash2,
+  CheckCircle,
+  ThumbsDown,
+  Pencil,
+  Camera,
+  Calendar,
+  LogIn,
+  FileEdit,
+  Clock,
+  X,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  CreditCard,
+  Activity,
+} from "lucide-react";
 import { SiInstagram, SiFacebook, SiX, SiLinkedin, SiYoutube, SiTiktok } from "react-icons/si";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CmsRichTextEditor } from "@/features/admin/cms/builder/cms-rich-text-editor";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
+import type { PublicDirectorySettings } from "@shared/types/directory-settings";
 
 interface TherapistWithUser {
   id: string;
@@ -89,10 +132,45 @@ interface TherapistWithUser {
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
 
+function getAdminDirectoryLabels(settings: PublicDirectorySettings) {
+  return {
+    singular:
+      settings.listingLabelSingular || settings.participantLabelSingular || "Directory Profile",
+    plural: settings.listingLabelPlural || settings.participantLabelPlural || "Directory Profiles",
+    participantSingular: settings.participantLabelSingular || "Listing Owner",
+    title: settings.profileTitleLabel || "Profile Title",
+    titlePlaceholder:
+      settings.profileTitlePlaceholder || "e.g. Featured provider, location, or service",
+    bio: settings.profileBioLabel || "Profile Description",
+    bioPlaceholder: settings.profileBioPlaceholder || "Describe this listing...",
+    specialties: settings.specialtyLabelPlural || "Categories",
+    credentials: settings.credentialsLabel || "Credentials",
+    credentialsPlaceholder:
+      settings.credentialsPlaceholder || "e.g. Certifications, license, MLS ID",
+    license: settings.licenseNumberLabel || "Reference Number",
+    licensePlaceholder:
+      settings.licenseNumberPlaceholder || "e.g. License, MLS, or registration number",
+    practiceMode: settings.practiceModeLabel || "Service Format",
+    accepting: settings.acceptingClientsLabel || "Accepting Inquiries",
+    travel: settings.willingToTravelLabel || "Travel / Mobile Option",
+  };
+}
+
 function getStatusInfo(t: TherapistWithUser) {
-  if (t.isApproved) return { label: "Approved", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" };
-  if (t.rejectionReason) return { label: "Rejected", color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" };
-  return { label: "Pending", color: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200" };
+  if (t.isApproved)
+    return {
+      label: "Approved",
+      color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+    };
+  if (t.rejectionReason)
+    return {
+      label: "Rejected",
+      color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    };
+  return {
+    label: "Pending",
+    color: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+  };
 }
 
 function getInitials(t: TherapistWithUser) {
@@ -165,6 +243,8 @@ export default function AdminTherapistsPage() {
 
 function TherapistsContent() {
   const { toast } = useToast();
+  const { settings: directorySettings } = useDirectorySettings();
+  const labels = getAdminDirectoryLabels(directorySettings);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   type SortCol = "name" | "email" | "location" | "status" | "sessionFormat";
@@ -172,13 +252,18 @@ function TherapistsContent() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const toggleSort = (col: SortCol) => {
     if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortCol(col); setSortDir("asc"); }
+    else {
+      setSortCol(col);
+      setSortDir("asc");
+    }
   };
   const SortIcon = ({ col }: { col: SortCol }) => {
     if (sortCol !== col) return <ArrowUpDown className="ml-1 h-3.5 w-3.5 opacity-40" />;
-    return sortDir === "asc"
-      ? <ArrowUp className="ml-1 h-3.5 w-3.5" />
-      : <ArrowDown className="ml-1 h-3.5 w-3.5" />;
+    return sortDir === "asc" ? (
+      <ArrowUp className="ml-1 h-3.5 w-3.5" />
+    ) : (
+      <ArrowDown className="ml-1 h-3.5 w-3.5" />
+    );
   };
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
@@ -194,10 +279,14 @@ function TherapistsContent() {
     refetchOnWindowFocus: true,
   });
 
-  useAdminEditDeepLink(therapists, (therapist) => therapist.id, (therapist) => {
-    setSelectedTherapist(therapist);
-    setEditSheetOpen(true);
-  });
+  useAdminEditDeepLink(
+    therapists,
+    (therapist) => therapist.id,
+    (therapist) => {
+      setSelectedTherapist(therapist);
+      setEditSheetOpen(true);
+    },
+  );
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["/api/admin/therapists"] });
@@ -212,7 +301,7 @@ function TherapistsContent() {
     onSuccess: () => {
       invalidateAll();
       setAddSheetOpen(false);
-      toast({ title: "Mental health professional created successfully" });
+      toast({ title: `${labels.singular} created successfully` });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -228,7 +317,7 @@ function TherapistsContent() {
       invalidateAll();
       setEditSheetOpen(false);
       setSelectedTherapist(null);
-      toast({ title: "Mental health professional updated successfully" });
+      toast({ title: `${labels.singular} updated successfully` });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -242,7 +331,7 @@ function TherapistsContent() {
     onSuccess: () => {
       invalidateAll();
       setApproveTarget(null);
-      toast({ title: "Mental health professional approved" });
+      toast({ title: `${labels.singular} approved` });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -257,7 +346,7 @@ function TherapistsContent() {
       invalidateAll();
       setRejectTarget(null);
       setRejectReason("");
-      toast({ title: "Mental health professional rejected" });
+      toast({ title: `${labels.singular} rejected` });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -271,7 +360,7 @@ function TherapistsContent() {
     onSuccess: () => {
       invalidateAll();
       setDeleteTarget(null);
-      toast({ title: "Mental health professional removed" });
+      toast({ title: `${labels.singular} removed` });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -329,12 +418,15 @@ function TherapistsContent() {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-        <h1 className="text-2xl font-heading font-semibold" data-testid="text-admin-therapists-title">
-          Mental Health Professionals
+        <h1
+          className="text-2xl font-heading font-semibold"
+          data-testid="text-admin-therapists-title"
+        >
+          {labels.plural}
         </h1>
         <Button onClick={() => setAddSheetOpen(true)} data-testid="button-add-therapist">
           <Plus className="w-4 h-4 mr-2" />
-          Add Mental Health Professional
+          Add {labels.singular}
         </Button>
       </div>
 
@@ -377,28 +469,53 @@ function TherapistsContent() {
           <TableRow>
             <TableHead className="w-[50px]"></TableHead>
             <TableHead>
-              <button onClick={() => toggleSort("name")} className="flex items-center font-medium hover:text-foreground" data-testid="sort-name">
-                Name<SortIcon col="name" />
+              <button
+                onClick={() => toggleSort("name")}
+                className="flex items-center font-medium hover:text-foreground"
+                data-testid="sort-name"
+              >
+                Name
+                <SortIcon col="name" />
               </button>
             </TableHead>
             <TableHead>
-              <button onClick={() => toggleSort("email")} className="flex items-center font-medium hover:text-foreground" data-testid="sort-email">
-                Email<SortIcon col="email" />
+              <button
+                onClick={() => toggleSort("email")}
+                className="flex items-center font-medium hover:text-foreground"
+                data-testid="sort-email"
+              >
+                Email
+                <SortIcon col="email" />
               </button>
             </TableHead>
             <TableHead>
-              <button onClick={() => toggleSort("location")} className="flex items-center font-medium hover:text-foreground" data-testid="sort-location">
-                Location<SortIcon col="location" />
+              <button
+                onClick={() => toggleSort("location")}
+                className="flex items-center font-medium hover:text-foreground"
+                data-testid="sort-location"
+              >
+                Location
+                <SortIcon col="location" />
               </button>
             </TableHead>
             <TableHead>
-              <button onClick={() => toggleSort("status")} className="flex items-center font-medium hover:text-foreground" data-testid="sort-status">
-                Status<SortIcon col="status" />
+              <button
+                onClick={() => toggleSort("status")}
+                className="flex items-center font-medium hover:text-foreground"
+                data-testid="sort-status"
+              >
+                Status
+                <SortIcon col="status" />
               </button>
             </TableHead>
             <TableHead>
-              <button onClick={() => toggleSort("sessionFormat")} className="flex items-center font-medium hover:text-foreground" data-testid="sort-session-format">
-                Session Format<SortIcon col="sessionFormat" />
+              <button
+                onClick={() => toggleSort("sessionFormat")}
+                className="flex items-center font-medium hover:text-foreground"
+                data-testid="sort-session-format"
+              >
+                {labels.practiceMode}
+                <SortIcon col="sessionFormat" />
               </button>
             </TableHead>
             <TableHead>Actions</TableHead>
@@ -420,7 +537,10 @@ function TherapistsContent() {
                 <TableCell>
                   <Avatar className="h-10 w-10" data-testid={`avatar-therapist-${t.id}`}>
                     {t.user?.profileImageUrl && (
-                      <AvatarImage src={t.user.profileImageUrl} alt={`${t.user?.firstName ?? ""} ${t.user?.lastName ?? ""}`} />
+                      <AvatarImage
+                        src={t.user.profileImageUrl}
+                        alt={`${t.user?.firstName ?? ""} ${t.user?.lastName ?? ""}`}
+                      />
                     )}
                     <AvatarFallback className="text-xs">{getInitials(t)}</AvatarFallback>
                   </Avatar>
@@ -435,12 +555,21 @@ function TherapistsContent() {
                   {[t.city, t.country].filter(Boolean).join(", ") || "\u2014"}
                 </TableCell>
                 <TableCell>
-                  <Badge className={`${status.color} no-default-hover-elevate no-default-active-elevate`} data-testid={`badge-status-${t.id}`}>
+                  <Badge
+                    className={`${status.color} no-default-hover-elevate no-default-active-elevate`}
+                    data-testid={`badge-status-${t.id}`}
+                  >
                     {status.label}
                   </Badge>
                 </TableCell>
                 <TableCell data-testid={`text-practice-mode-${t.id}`}>
-                  {t.practiceMode === "in_person" ? "In-Person" : t.practiceMode === "virtual" ? "Virtual" : t.practiceMode === "both" ? "Both" : "\u2014"}
+                  {t.practiceMode === "in_person"
+                    ? "In-Person"
+                    : t.practiceMode === "virtual"
+                      ? "Virtual"
+                      : t.practiceMode === "both"
+                        ? "Both"
+                        : "\u2014"}
                 </TableCell>
                 <TableCell>
                   <TooltipProvider delayDuration={300}>
@@ -513,7 +642,7 @@ function TherapistsContent() {
           {filtered.length === 0 && (
             <TableRow>
               <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                No therapists found.
+                No {labels.plural.toLowerCase()} found.
               </TableCell>
             </TableRow>
           )}
@@ -525,6 +654,7 @@ function TherapistsContent() {
         onOpenChange={setAddSheetOpen}
         onSubmit={(data) => createMutation.mutate(data)}
         isPending={createMutation.isPending}
+        labels={labels}
       />
 
       {selectedTherapist && (
@@ -537,15 +667,17 @@ function TherapistsContent() {
           therapist={selectedTherapist}
           onSubmit={(data) => updateMutation.mutate({ id: selectedTherapist.id, data })}
           isPending={updateMutation.isPending}
+          labels={labels}
         />
       )}
 
       <AlertDialog open={!!approveTarget} onOpenChange={(open) => !open && setApproveTarget(null)}>
         <AlertDialogContent data-testid="dialog-approve-confirm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Approve Mental Health Professional</AlertDialogTitle>
+            <AlertDialogTitle>Approve {labels.singular}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to approve {approveTarget?.user?.firstName} {approveTarget?.user?.lastName}? They will be listed in the public directory.
+              Are you sure you want to approve {approveTarget?.user?.firstName}{" "}
+              {approveTarget?.user?.lastName}? They will be listed in the public directory.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -562,12 +694,21 @@ function TherapistsContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Sheet open={!!rejectTarget} onOpenChange={(open) => { if (!open) { setRejectTarget(null); setRejectReason(""); } }}>
+      <Sheet
+        open={!!rejectTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRejectTarget(null);
+            setRejectReason("");
+          }
+        }}
+      >
         <SheetContent side="right" size="default" data-testid="dialog-reject">
           <SheetHeader>
-            <SheetTitle>Reject Mental Health Professional</SheetTitle>
+            <SheetTitle>Reject {labels.singular}</SheetTitle>
             <SheetDescription>
-              Provide a reason for rejecting {rejectTarget?.user?.firstName} {rejectTarget?.user?.lastName}.
+              Provide a reason for rejecting {rejectTarget?.user?.firstName}{" "}
+              {rejectTarget?.user?.lastName}.
             </SheetDescription>
           </SheetHeader>
           <SheetBody>
@@ -584,12 +725,21 @@ function TherapistsContent() {
             </div>
           </SheetBody>
           <SheetFooter>
-            <Button variant="outline" onClick={() => { setRejectTarget(null); setRejectReason(""); }} data-testid="button-reject-cancel">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRejectTarget(null);
+                setRejectReason("");
+              }}
+              data-testid="button-reject-cancel"
+            >
               Cancel
             </Button>
             <Button
               variant="destructive"
-              onClick={() => rejectTarget && rejectMutation.mutate({ id: rejectTarget.id, reason: rejectReason })}
+              onClick={() =>
+                rejectTarget && rejectMutation.mutate({ id: rejectTarget.id, reason: rejectReason })
+              }
               disabled={!rejectReason.trim() || rejectMutation.isPending}
               data-testid="button-reject-confirm"
             >
@@ -603,9 +753,11 @@ function TherapistsContent() {
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent data-testid="dialog-delete-confirm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Mental Health Professional</AlertDialogTitle>
+            <AlertDialogTitle>Delete {labels.singular}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to permanently delete {deleteTarget?.user?.firstName} {deleteTarget?.user?.lastName}? This is only available for rejected or inactive profiles and will remove the profile from the directory system.
+              Are you sure you want to permanently delete {deleteTarget?.user?.firstName}{" "}
+              {deleteTarget?.user?.lastName}? This is only available for rejected or inactive
+              profiles and will remove the profile from the directory system.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -631,11 +783,13 @@ function AddTherapistSheet({
   onOpenChange,
   onSubmit,
   isPending,
+  labels,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: CreateTherapistValues) => void;
   isPending: boolean;
+  labels: ReturnType<typeof getAdminDirectoryLabels>;
 }) {
   const { specializations: specList } = useSpecializations();
   const [otherLangOpen, setOtherLangOpen] = useState(false);
@@ -666,308 +820,495 @@ function AddTherapistSheet({
   });
 
   return (
-    <Sheet open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { form.reset(); setOtherLangOpen(false); } }}>
+    <Sheet
+      open={open}
+      onOpenChange={(o) => {
+        onOpenChange(o);
+        if (!o) {
+          form.reset();
+          setOtherLangOpen(false);
+        }
+      }}
+    >
       <SheetContent side="right" size="lg" data-testid="dialog-add-therapist">
         <SheetHeader>
-          <SheetTitle>Add New Mental Health Professional</SheetTitle>
-          <SheetDescription>Create a new mental health professional account and profile.</SheetDescription>
+          <SheetTitle>Add New {labels.singular}</SheetTitle>
+          <SheetDescription>Create a new account and directory profile.</SheetDescription>
         </SheetHeader>
         <SheetBody>
           <Form {...form}>
-            <form id="add-therapist-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-4">
+            <form
+              id="add-therapist-form"
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-4 pb-4"
+            >
               <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="firstName" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Name</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-add-firstName" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="lastName" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-add-lastName" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-add-firstName" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-add-lastName" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="email" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl><Input type="email" {...field} data-testid="input-add-email" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="password" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl><Input type="password" {...field} data-testid="input-add-password" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" {...field} data-testid="input-add-email" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} data-testid="input-add-password" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              <FormField control={form.control} name="title" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Professional Title</FormLabel>
-                  <FormControl><Input placeholder="e.g. Licensed Clinical Psychologist" {...field} data-testid="input-add-title" /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="bio" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bio</FormLabel>
-                  <FormControl>
-                    <CmsRichTextEditor
-                      value={field.value ?? ""}
-                      onChange={field.onChange}
-                      placeholder="About the mental health professional..."
-                      data-testid="input-add-bio"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="credentials" render={({ field }) => (
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Credentials</FormLabel>
-                    <FormControl><Input placeholder="e.g. PhD, LMFT" {...field} data-testid="input-add-credentials" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="licenseNumber" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>License Number</FormLabel>
-                    <FormControl><Input placeholder="e.g. PSY12345" {...field} data-testid="input-add-licenseNumber" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
-              <FormField control={form.control} name="practiceMode" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Session Format</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormLabel>{labels.title}</FormLabel>
                     <FormControl>
-                      <SelectTrigger data-testid="select-add-practiceMode">
-                        <SelectValue placeholder="Select session format" />
-                      </SelectTrigger>
+                      <Input
+                        placeholder={labels.titlePlaceholder}
+                        {...field}
+                        data-testid="input-add-title"
+                      />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value={PracticeMode.IN_PERSON}>In-Person</SelectItem>
-                      <SelectItem value={PracticeMode.VIRTUAL}>Virtual</SelectItem>
-                      <SelectItem value={PracticeMode.BOTH}>Both</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="bio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{labels.bio}</FormLabel>
+                    <FormControl>
+                      <CmsRichTextEditor
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        placeholder={labels.bioPlaceholder}
+                        data-testid="input-add-bio"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="credentials"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{labels.credentials}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={labels.credentialsPlaceholder}
+                          {...field}
+                          data-testid="input-add-credentials"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="licenseNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{labels.license}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={labels.licensePlaceholder}
+                          {...field}
+                          data-testid="input-add-licenseNumber"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="practiceMode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{labels.practiceMode}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-add-practiceMode">
+                          <SelectValue placeholder="Select session format" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={PracticeMode.IN_PERSON}>In-Person</SelectItem>
+                        <SelectItem value={PracticeMode.VIRTUAL}>Virtual</SelectItem>
+                        <SelectItem value={PracticeMode.BOTH}>Both</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="grid grid-cols-3 gap-4">
-                <FormField control={form.control} name="city" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-add-city" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="state" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>State</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-add-state" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="country" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Country</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-add-country" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>City</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-add-city" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>State</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-add-state" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Country</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-add-country" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="phone" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl><PhoneInput {...field} data-testid="input-add-phone" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="website" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Website</FormLabel>
-                    <FormControl><Input placeholder="https://example.com" autoPrependHttps {...field} data-testid="input-add-website" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone</FormLabel>
+                      <FormControl>
+                        <PhoneInput {...field} data-testid="input-add-phone" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="website"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Website</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://example.com"
+                          autoPrependHttps
+                          {...field}
+                          data-testid="input-add-website"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Specializations</Label>
-                <FormField control={form.control} name="specializations" render={({ field }) => (
-                  <FormItem>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      {specList.map(({ name: spec }) => (
-                        <div key={spec} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`add-spec-${spec}`}
-                            checked={field.value?.includes(spec)}
-                            onCheckedChange={(checked) => {
-                              const current = field.value ?? [];
-                              field.onChange(checked ? [...current, spec] : current.filter((s) => s !== spec));
-                            }}
-                            data-testid={`checkbox-add-spec-${spec}`}
-                          />
-                          <Label htmlFor={`add-spec-${spec}`} className="text-sm cursor-pointer">{spec}</Label>
-                        </div>
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                <Label className="text-sm font-medium">{labels.specialties}</Label>
+                <FormField
+                  control={form.control}
+                  name="specializations"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {specList.map(({ name: spec }) => (
+                          <div key={spec} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`add-spec-${spec}`}
+                              checked={field.value?.includes(spec)}
+                              onCheckedChange={(checked) => {
+                                const current = field.value ?? [];
+                                field.onChange(
+                                  checked ? [...current, spec] : current.filter((s) => s !== spec),
+                                );
+                              }}
+                              data-testid={`checkbox-add-spec-${spec}`}
+                            />
+                            <Label htmlFor={`add-spec-${spec}`} className="text-sm cursor-pointer">
+                              {spec}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div>
                 <Label className="text-sm font-medium">Languages</Label>
-                <FormField control={form.control} name="languages" render={({ field }) => {
-                  const presetSet = new Set<string>(LANGUAGES);
-                  const customLangs = (field.value ?? []).filter((l: string) => !presetSet.has(l));
-                  const showOther = otherLangOpen || customLangs.length > 0;
-                  const isDuplicate = (val: string) => {
-                    const lower = val.toLowerCase();
-                    return (field.value ?? []).some((l: string) => l.toLowerCase() === lower)
-                      || LANGUAGES.some((l) => l.toLowerCase() === lower);
-                  };
-                  return (
-                    <FormItem>
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        {LANGUAGES.map((lang) => (
-                          <div key={lang} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`add-lang-${lang}`}
-                              checked={field.value?.includes(lang)}
-                              onCheckedChange={(checked) => {
-                                const current = field.value ?? [];
-                                field.onChange(checked ? [...current, lang] : current.filter((l: string) => l !== lang));
-                              }}
-                              data-testid={`checkbox-add-lang-${lang}`}
-                            />
-                            <Label htmlFor={`add-lang-${lang}`} className="text-sm cursor-pointer">{lang}</Label>
-                          </div>
-                        ))}
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="add-lang-other"
-                            checked={showOther}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setOtherLangOpen(true);
-                              } else {
-                                setOtherLangOpen(false);
-                                field.onChange((field.value ?? []).filter((l: string) => presetSet.has(l)));
-                              }
-                            }}
-                            data-testid="checkbox-add-lang-other"
-                          />
-                          <Label htmlFor="add-lang-other" className="text-sm cursor-pointer">Other</Label>
-                        </div>
-                      </div>
-                      {showOther && (
-                        <div className="mt-3 space-y-2">
-                          {customLangs.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5">
-                              {customLangs.map((lang: string) => (
-                                <Badge key={lang} variant="secondary" className="gap-1" data-testid={`badge-add-custom-lang-${lang}`}>
-                                  {lang}
-                                  <button
-                                    type="button"
-                                    onClick={() => field.onChange((field.value ?? []).filter((l: string) => l !== lang))}
-                                    className="ml-0.5 hover:text-destructive"
-                                    data-testid={`remove-add-custom-lang-${lang}`}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </Badge>
-                              ))}
+                <FormField
+                  control={form.control}
+                  name="languages"
+                  render={({ field }) => {
+                    const presetSet = new Set<string>(LANGUAGES);
+                    const customLangs = (field.value ?? []).filter(
+                      (l: string) => !presetSet.has(l),
+                    );
+                    const showOther = otherLangOpen || customLangs.length > 0;
+                    const isDuplicate = (val: string) => {
+                      const lower = val.toLowerCase();
+                      return (
+                        (field.value ?? []).some((l: string) => l.toLowerCase() === lower) ||
+                        LANGUAGES.some((l) => l.toLowerCase() === lower)
+                      );
+                    };
+                    return (
+                      <FormItem>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          {LANGUAGES.map((lang) => (
+                            <div key={lang} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`add-lang-${lang}`}
+                                checked={field.value?.includes(lang)}
+                                onCheckedChange={(checked) => {
+                                  const current = field.value ?? [];
+                                  field.onChange(
+                                    checked
+                                      ? [...current, lang]
+                                      : current.filter((l: string) => l !== lang),
+                                  );
+                                }}
+                                data-testid={`checkbox-add-lang-${lang}`}
+                              />
+                              <Label
+                                htmlFor={`add-lang-${lang}`}
+                                className="text-sm cursor-pointer"
+                              >
+                                {lang}
+                              </Label>
                             </div>
-                          )}
-                          <div className="flex gap-2">
-                            <Input
-                              ref={addCustomLangInputRef}
-                              placeholder="Enter language..."
-                              maxLength={50}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  const val = (e.target as HTMLInputElement).value.trim();
+                          ))}
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="add-lang-other"
+                              checked={showOther}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setOtherLangOpen(true);
+                                } else {
+                                  setOtherLangOpen(false);
+                                  field.onChange(
+                                    (field.value ?? []).filter((l: string) => presetSet.has(l)),
+                                  );
+                                }
+                              }}
+                              data-testid="checkbox-add-lang-other"
+                            />
+                            <Label htmlFor="add-lang-other" className="text-sm cursor-pointer">
+                              Other
+                            </Label>
+                          </div>
+                        </div>
+                        {showOther && (
+                          <div className="mt-3 space-y-2">
+                            {customLangs.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {customLangs.map((lang: string) => (
+                                  <Badge
+                                    key={lang}
+                                    variant="secondary"
+                                    className="gap-1"
+                                    data-testid={`badge-add-custom-lang-${lang}`}
+                                  >
+                                    {lang}
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        field.onChange(
+                                          (field.value ?? []).filter((l: string) => l !== lang),
+                                        )
+                                      }
+                                      className="ml-0.5 hover:text-destructive"
+                                      data-testid={`remove-add-custom-lang-${lang}`}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex gap-2">
+                              <Input
+                                ref={addCustomLangInputRef}
+                                placeholder="Enter language..."
+                                maxLength={50}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    const val = (e.target as HTMLInputElement).value.trim();
+                                    if (val && !isDuplicate(val)) {
+                                      field.onChange([...(field.value ?? []), val]);
+                                      (e.target as HTMLInputElement).value = "";
+                                    }
+                                  }
+                                }}
+                                className="max-w-[200px]"
+                                data-testid="input-add-custom-language"
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  const val = addCustomLangInputRef.current?.value.trim();
                                   if (val && !isDuplicate(val)) {
                                     field.onChange([...(field.value ?? []), val]);
-                                    (e.target as HTMLInputElement).value = "";
+                                    if (addCustomLangInputRef.current)
+                                      addCustomLangInputRef.current.value = "";
                                   }
-                                }
-                              }}
-                              className="max-w-[200px]"
-                              data-testid="input-add-custom-language"
-                            />
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                const val = addCustomLangInputRef.current?.value.trim();
-                                if (val && !isDuplicate(val)) {
-                                  field.onChange([...(field.value ?? []), val]);
-                                  if (addCustomLangInputRef.current) addCustomLangInputRef.current.value = "";
-                                }
-                              }}
-                              data-testid="button-add-custom-language"
-                            >
-                              <Plus className="h-4 w-4 mr-1" />
-                              Add
-                            </Button>
+                                }}
+                                data-testid="button-add-custom-language"
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                Add
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }} />
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
               </div>
 
               <div className="flex items-center gap-4 flex-wrap">
-                <FormField control={form.control} name="acceptingClients" render={({ field }) => (
-                  <FormItem className="flex items-center gap-2">
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-add-acceptingClients" />
-                    </FormControl>
-                    <FormLabel className="!mt-0">Accepting Clients</FormLabel>
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="willingToTravel" render={({ field }) => (
-                  <FormItem className="flex items-center gap-2">
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-add-willingToTravel" />
-                    </FormControl>
-                    <FormLabel className="!mt-0">Willing to Travel</FormLabel>
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="isApproved" render={({ field }) => (
-                  <FormItem className="flex items-center gap-2">
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-add-isApproved" />
-                    </FormControl>
-                    <FormLabel className="!mt-0">Pre-Approved</FormLabel>
-                  </FormItem>
-                )} />
+                <FormField
+                  control={form.control}
+                  name="acceptingClients"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2">
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="switch-add-acceptingClients"
+                        />
+                      </FormControl>
+                      <FormLabel className="!mt-0">{labels.accepting}</FormLabel>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="willingToTravel"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2">
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="switch-add-willingToTravel"
+                        />
+                      </FormControl>
+                      <FormLabel className="!mt-0">{labels.travel}</FormLabel>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="isApproved"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2">
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="switch-add-isApproved"
+                        />
+                      </FormControl>
+                      <FormLabel className="!mt-0">Pre-Approved</FormLabel>
+                    </FormItem>
+                  )}
+                />
               </div>
             </form>
           </Form>
         </SheetBody>
         <SheetFooter>
-          <Button variant="outline" onClick={() => { onOpenChange(false); form.reset(); }} data-testid="button-add-cancel">Cancel</Button>
-          <Button type="submit" form="add-therapist-form" disabled={isPending} data-testid="button-add-submit">
+          <Button
+            variant="outline"
+            onClick={() => {
+              onOpenChange(false);
+              form.reset();
+            }}
+            data-testid="button-add-cancel"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="add-therapist-form"
+            disabled={isPending}
+            data-testid="button-add-submit"
+          >
             {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Create Therapist
+            Create {labels.singular}
           </Button>
         </SheetFooter>
       </SheetContent>
@@ -1009,7 +1350,11 @@ interface SubscriptionData {
 function formatDate(date: string | null | undefined) {
   if (!date) return "Never";
   return new Date(date).toLocaleDateString("en-US", {
-    year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -1028,7 +1373,7 @@ function SearchableLanguageInput({
     if (!search.trim()) return [];
     const q = search.toLowerCase();
     return ALL_LANGUAGES.filter(
-      (lang) => lang.toLowerCase().includes(q) && !selected.includes(lang)
+      (lang) => lang.toLowerCase().includes(q) && !selected.includes(lang),
     ).slice(0, 8);
   }, [search, selected]);
 
@@ -1059,7 +1404,10 @@ function SearchableLanguageInput({
         <Input
           ref={inputRef}
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setDropdownOpen(true); }}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setDropdownOpen(true);
+          }}
           onFocus={() => setDropdownOpen(true)}
           onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
           placeholder="Search languages..."
@@ -1101,6 +1449,7 @@ function OverviewTab({
   onAvatarUpload,
   isAvatarUploading,
   localImageUrl,
+  labels,
 }: {
   therapist: TherapistWithUser;
   form: ReturnType<typeof useForm<EditProfileValues>>;
@@ -1111,6 +1460,7 @@ function OverviewTab({
   onAvatarUpload: (file: File) => void;
   isAvatarUploading: boolean;
   localImageUrl: string | null;
+  labels: ReturnType<typeof getAdminDirectoryLabels>;
 }) {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { specializations: specList } = useSpecializations();
@@ -1127,351 +1477,598 @@ function OverviewTab({
 
   return (
     <>
-    <ImageCropperSheet
-      imageSrc={cropSrc}
-      fileName={cropFileName}
-      aspect={1}
-      circularCrop
-      onConfirm={(file) => { setCropSrc(null); onAvatarUpload(file); }}
-      onCancel={() => setCropSrc(null)}
-    />
-    <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-      <div className="space-y-6">
-        <div className="flex flex-col items-center gap-3 p-4 rounded-lg border bg-muted/30">
-          <div className="relative group">
-            <Avatar className="h-24 w-24" data-testid="avatar-edit-profile">
-              {localImageUrl && (
-                <AvatarImage src={localImageUrl} />
+      <ImageCropperSheet
+        imageSrc={cropSrc}
+        fileName={cropFileName}
+        aspect={1}
+        circularCrop
+        onConfirm={(file) => {
+          setCropSrc(null);
+          onAvatarUpload(file);
+        }}
+        onCancel={() => setCropSrc(null)}
+      />
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+        <div className="space-y-6">
+          <div className="flex flex-col items-center gap-3 p-4 rounded-lg border bg-muted/30">
+            <div className="relative group">
+              <Avatar className="h-24 w-24" data-testid="avatar-edit-profile">
+                {localImageUrl && <AvatarImage src={localImageUrl} />}
+                <AvatarFallback className="text-xl">{getInitials(therapist)}</AvatarFallback>
+              </Avatar>
+              <button
+                type="button"
+                className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={isAvatarUploading}
+                data-testid="button-change-avatar"
+              >
+                {isAvatarUploading ? (
+                  <Loader2 className="w-5 h-5 text-white animate-spin" />
+                ) : (
+                  <Camera className="w-5 h-5 text-white" />
+                )}
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleAvatarFile(file);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+            <form onSubmit={userForm.handleSubmit(onUserSubmit)} className="w-full space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">First Name</Label>
+                  <Input
+                    {...userForm.register("firstName")}
+                    className="h-8 text-sm"
+                    data-testid="input-edit-firstName"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Last Name</Label>
+                  <Input
+                    {...userForm.register("lastName")}
+                    className="h-8 text-sm"
+                    data-testid="input-edit-lastName"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Email</Label>
+                <Input
+                  {...userForm.register("email")}
+                  type="email"
+                  className="h-8 text-sm"
+                  data-testid="input-edit-email"
+                />
+              </div>
+              <Button
+                type="submit"
+                size="sm"
+                variant="outline"
+                className="w-full"
+                disabled={isUserPending}
+                data-testid="button-save-user"
+              >
+                {isUserPending && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                Update Account
+              </Button>
+            </form>
+          </div>
+
+          <div className="p-4 rounded-lg border space-y-3">
+            <Label className="text-sm font-medium">Status & Visibility</Label>
+            <Form {...form}>
+              <div className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="acceptingClients"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between">
+                      <FormLabel className="!mt-0 text-sm">{labels.accepting}</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="switch-edit-acceptingClients"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="willingToTravel"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between">
+                      <FormLabel className="!mt-0 text-sm">{labels.travel}</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="switch-edit-willingToTravel"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="isFeatured"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between">
+                      <FormLabel className="!mt-0 text-sm">Featured {labels.singular}</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="switch-edit-isFeatured"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="isApproved"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between">
+                      <FormLabel className="!mt-0 text-sm">Approved</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="switch-edit-isApproved"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </Form>
+            {therapist.rejectionReason && (
+              <div className="rounded-md border border-destructive/50 p-2 mt-2">
+                <p className="text-xs font-medium text-destructive">Rejection Reason</p>
+                <p
+                  className="text-xs text-muted-foreground mt-0.5"
+                  data-testid="text-rejection-reason"
+                >
+                  {therapist.rejectionReason}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <Form {...form}>
+          <form
+            id="edit-therapist-form"
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-5"
+          >
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{labels.title}</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={labels.titlePlaceholder}
+                      {...field}
+                      data-testid="input-edit-title"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-              <AvatarFallback className="text-xl">{getInitials(therapist)}</AvatarFallback>
-            </Avatar>
-            <button
-              type="button"
-              className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-              onClick={() => avatarInputRef.current?.click()}
-              disabled={isAvatarUploading}
-              data-testid="button-change-avatar"
-            >
-              {isAvatarUploading ? (
-                <Loader2 className="w-5 h-5 text-white animate-spin" />
-              ) : (
-                <Camera className="w-5 h-5 text-white" />
-              )}
-            </button>
-            <input
-              ref={avatarInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleAvatarFile(file);
-                e.target.value = "";
-              }}
             />
-          </div>
-          <form onSubmit={userForm.handleSubmit(onUserSubmit)} className="w-full space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-xs text-muted-foreground">First Name</Label>
-                <Input {...userForm.register("firstName")} className="h-8 text-sm" data-testid="input-edit-firstName" />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Last Name</Label>
-                <Input {...userForm.register("lastName")} className="h-8 text-sm" data-testid="input-edit-lastName" />
+            <FormField
+              control={form.control}
+              name="bio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{labels.bio}</FormLabel>
+                  <FormControl>
+                    <CmsRichTextEditor
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      placeholder={labels.bioPlaceholder}
+                      data-testid="input-edit-bio"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="credentials"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{labels.credentials}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={labels.credentialsPlaceholder}
+                        {...field}
+                        data-testid="input-edit-credentials"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="licenseNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{labels.license}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={labels.licensePlaceholder}
+                        {...field}
+                        data-testid="input-edit-licenseNumber"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="practiceMode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{labels.practiceMode}</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-edit-practiceMode">
+                        <SelectValue placeholder="Select session format" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={PracticeMode.IN_PERSON}>In-Person</SelectItem>
+                      <SelectItem value={PracticeMode.VIRTUAL}>Virtual</SelectItem>
+                      <SelectItem value={PracticeMode.BOTH}>Both</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="addressLine1"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address Line 1</FormLabel>
+                  <FormControl>
+                    <Input {...field} data-testid="input-edit-addressLine1" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="addressLine2"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address Line 2</FormLabel>
+                  <FormControl>
+                    <Input {...field} data-testid="input-edit-addressLine2" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-edit-city" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>State</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-edit-state" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-edit-country" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="zipCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Zip Code</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-edit-zipCode" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl>
+                      <PhoneInput {...field} data-testid="input-edit-phone" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="website"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Website</FormLabel>
+                    <FormControl>
+                      <Input autoPrependHttps {...field} data-testid="input-edit-website" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="rounded-lg border p-4 space-y-3">
+              <p className="text-sm font-medium">Social Media</p>
+              <p className="text-xs text-muted-foreground">
+                Enter username/handle only — no full URLs needed.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="instagramHandle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1.5 text-xs">
+                        <SiInstagram className="h-3.5 w-3.5 text-pink-500" />
+                        Instagram
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="yourhandle"
+                          {...field}
+                          className="h-8 text-sm"
+                          data-testid="input-edit-instagram"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="facebookHandle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1.5 text-xs">
+                        <SiFacebook className="h-3.5 w-3.5 text-blue-600" />
+                        Facebook
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="yourpage"
+                          {...field}
+                          className="h-8 text-sm"
+                          data-testid="input-edit-facebook"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="twitterHandle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1.5 text-xs">
+                        <SiX className="h-3.5 w-3.5" />X / Twitter
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="yourhandle"
+                          {...field}
+                          className="h-8 text-sm"
+                          data-testid="input-edit-twitter"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="linkedinHandle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1.5 text-xs">
+                        <SiLinkedin className="h-3.5 w-3.5 text-blue-700" />
+                        LinkedIn
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="your-name"
+                          {...field}
+                          className="h-8 text-sm"
+                          data-testid="input-edit-linkedin"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="youtubeHandle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1.5 text-xs">
+                        <SiYoutube className="h-3.5 w-3.5 text-red-600" />
+                        YouTube
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="yourchannel"
+                          {...field}
+                          className="h-8 text-sm"
+                          data-testid="input-edit-youtube"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tiktokHandle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1.5 text-xs">
+                        <SiTiktok className="h-3.5 w-3.5" />
+                        TikTok
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="yourhandle"
+                          {...field}
+                          className="h-8 text-sm"
+                          data-testid="input-edit-tiktok"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
+
             <div>
-              <Label className="text-xs text-muted-foreground">Email</Label>
-              <Input {...userForm.register("email")} type="email" className="h-8 text-sm" data-testid="input-edit-email" />
+              <Label className="text-sm font-medium">{labels.specialties}</Label>
+              <FormField
+                control={form.control}
+                name="specializations"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                      {specList.map(({ name: spec }) => (
+                        <div key={spec} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`edit-spec-${spec}`}
+                            checked={field.value?.includes(spec)}
+                            onCheckedChange={(checked) => {
+                              const current = field.value ?? [];
+                              field.onChange(
+                                checked ? [...current, spec] : current.filter((s) => s !== spec),
+                              );
+                            }}
+                            data-testid={`checkbox-edit-spec-${spec}`}
+                          />
+                          <Label htmlFor={`edit-spec-${spec}`} className="text-sm cursor-pointer">
+                            {spec}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            <Button
-              type="submit"
-              size="sm"
-              variant="outline"
-              className="w-full"
-              disabled={isUserPending}
-              data-testid="button-save-user"
-            >
-              {isUserPending && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
-              Update Account
-            </Button>
+
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Languages</Label>
+              <FormField
+                control={form.control}
+                name="languages"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+                      {LANGUAGES.map((lang) => (
+                        <div key={lang} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`edit-lang-${lang}`}
+                            checked={field.value?.includes(lang)}
+                            onCheckedChange={(checked) => {
+                              const current = field.value ?? [];
+                              field.onChange(
+                                checked ? [...current, lang] : current.filter((l) => l !== lang),
+                              );
+                            }}
+                            data-testid={`checkbox-edit-lang-${lang}`}
+                          />
+                          <Label htmlFor={`edit-lang-${lang}`} className="text-sm cursor-pointer">
+                            {lang}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    <Label className="text-xs text-muted-foreground mb-1 block">
+                      Additional Languages
+                    </Label>
+                    <SearchableLanguageInput
+                      selected={(field.value ?? []).filter((l) => !LANGUAGES.includes(l as any))}
+                      onChange={(extra) => {
+                        const common = (field.value ?? []).filter((l) =>
+                          LANGUAGES.includes(l as any),
+                        );
+                        field.onChange([...common, ...extra]);
+                      }}
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </form>
-        </div>
-
-        <div className="p-4 rounded-lg border space-y-3">
-          <Label className="text-sm font-medium">Status & Visibility</Label>
-          <Form {...form}>
-            <div className="space-y-3">
-              <FormField control={form.control} name="acceptingClients" render={({ field }) => (
-                <FormItem className="flex items-center justify-between">
-                  <FormLabel className="!mt-0 text-sm">Accepting Clients</FormLabel>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-edit-acceptingClients" />
-                  </FormControl>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="willingToTravel" render={({ field }) => (
-                <FormItem className="flex items-center justify-between">
-                  <FormLabel className="!mt-0 text-sm">Willing to Travel</FormLabel>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-edit-willingToTravel" />
-                  </FormControl>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="isFeatured" render={({ field }) => (
-                <FormItem className="flex items-center justify-between">
-                  <FormLabel className="!mt-0 text-sm">Featured Mental Health Professional</FormLabel>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-edit-isFeatured" />
-                  </FormControl>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="isApproved" render={({ field }) => (
-                <FormItem className="flex items-center justify-between">
-                  <FormLabel className="!mt-0 text-sm">Approved</FormLabel>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-edit-isApproved" />
-                  </FormControl>
-                </FormItem>
-              )} />
-            </div>
-          </Form>
-          {therapist.rejectionReason && (
-            <div className="rounded-md border border-destructive/50 p-2 mt-2">
-              <p className="text-xs font-medium text-destructive">Rejection Reason</p>
-              <p className="text-xs text-muted-foreground mt-0.5" data-testid="text-rejection-reason">{therapist.rejectionReason}</p>
-            </div>
-          )}
-        </div>
+        </Form>
       </div>
-
-      <Form {...form}>
-        <form id="edit-therapist-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          <FormField control={form.control} name="title" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Professional Title</FormLabel>
-              <FormControl><Input {...field} data-testid="input-edit-title" /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="bio" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Bio</FormLabel>
-              <FormControl>
-                <CmsRichTextEditor
-                  value={field.value ?? ""}
-                  onChange={field.onChange}
-                  data-testid="input-edit-bio"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <div className="grid grid-cols-2 gap-4">
-            <FormField control={form.control} name="credentials" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Credentials</FormLabel>
-                <FormControl><Input {...field} data-testid="input-edit-credentials" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="licenseNumber" render={({ field }) => (
-              <FormItem>
-                <FormLabel>License Number</FormLabel>
-                <FormControl><Input {...field} data-testid="input-edit-licenseNumber" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-          </div>
-          <FormField control={form.control} name="practiceMode" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Session Format</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger data-testid="select-edit-practiceMode">
-                    <SelectValue placeholder="Select session format" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value={PracticeMode.IN_PERSON}>In-Person</SelectItem>
-                  <SelectItem value={PracticeMode.VIRTUAL}>Virtual</SelectItem>
-                  <SelectItem value={PracticeMode.BOTH}>Both</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="addressLine1" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Address Line 1</FormLabel>
-              <FormControl><Input {...field} data-testid="input-edit-addressLine1" /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="addressLine2" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Address Line 2</FormLabel>
-              <FormControl><Input {...field} data-testid="input-edit-addressLine2" /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <FormField control={form.control} name="city" render={({ field }) => (
-              <FormItem>
-                <FormLabel>City</FormLabel>
-                <FormControl><Input {...field} data-testid="input-edit-city" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="state" render={({ field }) => (
-              <FormItem>
-                <FormLabel>State</FormLabel>
-                <FormControl><Input {...field} data-testid="input-edit-state" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="country" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Country</FormLabel>
-                <FormControl><Input {...field} data-testid="input-edit-country" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="zipCode" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Zip Code</FormLabel>
-                <FormControl><Input {...field} data-testid="input-edit-zipCode" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <FormField control={form.control} name="phone" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone</FormLabel>
-                <FormControl><PhoneInput {...field} data-testid="input-edit-phone" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="website" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Website</FormLabel>
-                <FormControl><Input autoPrependHttps {...field} data-testid="input-edit-website" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-          </div>
-
-          <div className="rounded-lg border p-4 space-y-3">
-            <p className="text-sm font-medium">Social Media</p>
-            <p className="text-xs text-muted-foreground">Enter username/handle only — no full URLs needed.</p>
-            <div className="grid grid-cols-2 gap-3">
-              <FormField control={form.control} name="instagramHandle" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5 text-xs"><SiInstagram className="h-3.5 w-3.5 text-pink-500" />Instagram</FormLabel>
-                  <FormControl><Input placeholder="yourhandle" {...field} className="h-8 text-sm" data-testid="input-edit-instagram" /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="facebookHandle" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5 text-xs"><SiFacebook className="h-3.5 w-3.5 text-blue-600" />Facebook</FormLabel>
-                  <FormControl><Input placeholder="yourpage" {...field} className="h-8 text-sm" data-testid="input-edit-facebook" /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="twitterHandle" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5 text-xs"><SiX className="h-3.5 w-3.5" />X / Twitter</FormLabel>
-                  <FormControl><Input placeholder="yourhandle" {...field} className="h-8 text-sm" data-testid="input-edit-twitter" /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="linkedinHandle" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5 text-xs"><SiLinkedin className="h-3.5 w-3.5 text-blue-700" />LinkedIn</FormLabel>
-                  <FormControl><Input placeholder="your-name" {...field} className="h-8 text-sm" data-testid="input-edit-linkedin" /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="youtubeHandle" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5 text-xs"><SiYoutube className="h-3.5 w-3.5 text-red-600" />YouTube</FormLabel>
-                  <FormControl><Input placeholder="yourchannel" {...field} className="h-8 text-sm" data-testid="input-edit-youtube" /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="tiktokHandle" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5 text-xs"><SiTiktok className="h-3.5 w-3.5" />TikTok</FormLabel>
-                  <FormControl><Input placeholder="yourhandle" {...field} className="h-8 text-sm" data-testid="input-edit-tiktok" /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-          </div>
-
-          <div>
-            <Label className="text-sm font-medium">Specializations</Label>
-            <FormField control={form.control} name="specializations" render={({ field }) => (
-              <FormItem>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                  {specList.map(({ name: spec }) => (
-                    <div key={spec} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`edit-spec-${spec}`}
-                        checked={field.value?.includes(spec)}
-                        onCheckedChange={(checked) => {
-                          const current = field.value ?? [];
-                          field.onChange(checked ? [...current, spec] : current.filter((s) => s !== spec));
-                        }}
-                        data-testid={`checkbox-edit-spec-${spec}`}
-                      />
-                      <Label htmlFor={`edit-spec-${spec}`} className="text-sm cursor-pointer">{spec}</Label>
-                    </div>
-                  ))}
-                </div>
-                <FormMessage />
-              </FormItem>
-            )} />
-          </div>
-
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Languages</Label>
-            <FormField control={form.control} name="languages" render={({ field }) => (
-              <FormItem>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-                  {LANGUAGES.map((lang) => (
-                    <div key={lang} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`edit-lang-${lang}`}
-                        checked={field.value?.includes(lang)}
-                        onCheckedChange={(checked) => {
-                          const current = field.value ?? [];
-                          field.onChange(checked ? [...current, lang] : current.filter((l) => l !== lang));
-                        }}
-                        data-testid={`checkbox-edit-lang-${lang}`}
-                      />
-                      <Label htmlFor={`edit-lang-${lang}`} className="text-sm cursor-pointer">{lang}</Label>
-                    </div>
-                  ))}
-                </div>
-                <Label className="text-xs text-muted-foreground mb-1 block">Additional Languages</Label>
-                <SearchableLanguageInput
-                  selected={(field.value ?? []).filter((l) => !LANGUAGES.includes(l as any))}
-                  onChange={(extra) => {
-                    const common = (field.value ?? []).filter((l) => LANGUAGES.includes(l as any));
-                    field.onChange([...common, ...extra]);
-                  }}
-                />
-                <FormMessage />
-              </FormItem>
-            )} />
-          </div>
-        </form>
-      </Form>
-    </div>
     </>
   );
 }
@@ -1498,7 +2095,7 @@ function MembershipTab({ therapistId }: { therapistId: string }) {
     return (
       <div className="text-center py-12 text-muted-foreground" data-testid="text-no-subscription">
         <p className="text-lg font-medium">No Active Subscription</p>
-        <p className="text-sm mt-1">This mental health professional does not have an active subscription.</p>
+        <p className="text-sm mt-1">This profile does not have an active subscription.</p>
       </div>
     );
   }
@@ -1518,7 +2115,9 @@ function MembershipTab({ therapistId }: { therapistId: string }) {
         <Card>
           <CardContent className="pt-6">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Plan</p>
-            <p className="text-lg font-semibold mt-1" data-testid="text-tier-name">{tier?.name ?? "Unknown"}</p>
+            <p className="text-lg font-semibold mt-1" data-testid="text-tier-name">
+              {tier?.name ?? "Unknown"}
+            </p>
             {tier && (
               <p className="text-sm text-muted-foreground" data-testid="text-tier-price">
                 ${(tier.price / 100).toFixed(2)} / {tier.interval}
@@ -1551,7 +2150,10 @@ function MembershipTab({ therapistId }: { therapistId: string }) {
         <Card>
           <CardContent className="pt-6">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Stripe ID</p>
-            <p className="text-sm mt-1 font-mono text-muted-foreground truncate" data-testid="text-stripe-id">
+            <p
+              className="text-sm mt-1 font-mono text-muted-foreground truncate"
+              data-testid="text-stripe-id"
+            >
               {subscription.stripeSubscriptionId ?? "N/A"}
             </p>
           </CardContent>
@@ -1604,7 +2206,10 @@ function ActivityTab({ therapistId }: { therapistId: string }) {
                 <s.icon className="w-4 h-4" />
                 <p className="text-xs uppercase tracking-wide">{s.label}</p>
               </div>
-              <p className="text-sm font-semibold" data-testid={`text-stat-${s.label.toLowerCase().replace(/\s/g, "-")}`}>
+              <p
+                className="text-sm font-semibold"
+                data-testid={`text-stat-${s.label.toLowerCase().replace(/\s/g, "-")}`}
+              >
                 {s.value}
               </p>
             </CardContent>
@@ -1615,20 +2220,24 @@ function ActivityTab({ therapistId }: { therapistId: string }) {
       <div>
         <h3 className="text-sm font-medium mb-3">Activity Log</h3>
         {logs.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4" data-testid="text-no-activity">No activity recorded yet.</p>
+          <p className="text-sm text-muted-foreground py-4" data-testid="text-no-activity">
+            No activity recorded yet.
+          </p>
         ) : (
           <div className="border rounded-lg divide-y max-h-[400px] overflow-y-auto">
             {logs.map((log) => (
-              <div key={log.id} className="flex items-start gap-3 px-4 py-3" data-testid={`row-activity-${log.id}`}>
+              <div
+                key={log.id}
+                className="flex items-start gap-3 px-4 py-3"
+                data-testid={`row-activity-${log.id}`}
+              >
                 <Clock className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium">
-                    {actionLabels[log.action] ?? log.action}
+                  <p className="text-sm font-medium">{actionLabels[log.action] ?? log.action}</p>
+                  {log.details && <p className="text-xs text-muted-foreground">{log.details}</p>}
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {formatDate(log.createdAt)}
                   </p>
-                  {log.details && (
-                    <p className="text-xs text-muted-foreground">{log.details}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-0.5">{formatDate(log.createdAt)}</p>
                 </div>
               </div>
             ))}
@@ -1652,16 +2261,20 @@ function EditTherapistSheet({
   therapist,
   onSubmit,
   isPending,
+  labels,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   therapist: TherapistWithUser;
   onSubmit: (data: EditProfileValues) => void;
   isPending: boolean;
+  labels: ReturnType<typeof getAdminDirectoryLabels>;
 }) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
-  const [localImageUrl, setLocalImageUrl] = useState<string | null>(therapist.user?.profileImageUrl ?? null);
+  const [localImageUrl, setLocalImageUrl] = useState<string | null>(
+    therapist.user?.profileImageUrl ?? null,
+  );
 
   const form = useForm<EditProfileValues>({
     resolver: zodResolver(editProfileSchema),
@@ -1744,9 +2357,7 @@ function EditTherapistSheet({
         <SheetHeader>
           <div className="flex items-center gap-3 flex-wrap">
             <Avatar className="h-10 w-10">
-              {localImageUrl && (
-                <AvatarImage src={localImageUrl} />
-              )}
+              {localImageUrl && <AvatarImage src={localImageUrl} />}
               <AvatarFallback>{getInitials(therapist)}</AvatarFallback>
             </Avatar>
             <div>
@@ -1755,11 +2366,14 @@ function EditTherapistSheet({
               </SheetTitle>
               <p className="text-sm text-muted-foreground">{therapist.user?.email}</p>
             </div>
-            <Badge className={`${status.color} no-default-hover-elevate no-default-active-elevate ml-auto`} data-testid="badge-edit-status">
+            <Badge
+              className={`${status.color} no-default-hover-elevate no-default-active-elevate ml-auto`}
+              data-testid="badge-edit-status"
+            >
               {status.label}
             </Badge>
           </div>
-          <SheetDescription className="sr-only">Edit mental health professional profile details</SheetDescription>
+          <SheetDescription className="sr-only">Edit directory profile details</SheetDescription>
         </SheetHeader>
         <SheetBody>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -1788,6 +2402,7 @@ function EditTherapistSheet({
                 onAvatarUpload={(file) => avatarMutation.mutate(file)}
                 isAvatarUploading={avatarMutation.isPending}
                 localImageUrl={localImageUrl}
+                labels={labels}
               />
             </TabsContent>
             <TabsContent value="membership" className="mt-4">
@@ -1800,8 +2415,19 @@ function EditTherapistSheet({
         </SheetBody>
         {activeTab === "overview" && (
           <SheetFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-edit-cancel">Cancel</Button>
-            <Button type="submit" form="edit-therapist-form" disabled={isPending} data-testid="button-edit-save">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              data-testid="button-edit-cancel"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="edit-therapist-form"
+              disabled={isPending}
+              data-testid="button-edit-save"
+            >
               {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Save Changes
             </Button>

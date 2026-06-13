@@ -23,7 +23,15 @@ export interface PropDef {
   itemSchema?: Omit<PropDef, "itemSchema">[];
 }
 
-export type BlockCategory = "layout" | "hero" | "content" | "media" | "social-proof" | "conversion" | "data" | "dynamic";
+export type BlockCategory =
+  | "layout"
+  | "hero"
+  | "content"
+  | "media"
+  | "social-proof"
+  | "conversion"
+  | "data"
+  | "dynamic";
 
 export interface BlockDef {
   type: string;
@@ -219,35 +227,147 @@ const SHARED_SECTION_STYLE_DEFAULTS = {
 };
 
 const SHARED_SECTION_STYLE_PROP_DEFS: PropDef[] = [
-  { key: "sectionBackgroundColor", label: "Background Color", type: "color", placeholder: "#ffffff" },
-  { key: "sectionBackgroundImageUrl", label: "Background Image", type: "image-url", placeholder: "Upload or select image" },
-  { key: "sectionBackgroundPositionX", label: "Image Position X (%)", type: "number", min: 0, max: 100 },
-  { key: "sectionBackgroundPositionY", label: "Image Position Y (%)", type: "number", min: 0, max: 100 },
-  { key: "sectionBackgroundOverlayColor", label: "Background Image Overlay Color", type: "color", placeholder: "#000000" },
-  { key: "sectionBackgroundOverlayOpacity", label: "Background Image Overlay Opacity (%)", type: "number", min: 0, max: 100 },
+  {
+    key: "sectionBackgroundColor",
+    label: "Background Color",
+    type: "color",
+    placeholder: "#ffffff",
+  },
+  {
+    key: "sectionBackgroundImageUrl",
+    label: "Background Image",
+    type: "image-url",
+    placeholder: "Upload or select image",
+  },
+  {
+    key: "sectionBackgroundPositionX",
+    label: "Image Position X (%)",
+    type: "number",
+    min: 0,
+    max: 100,
+  },
+  {
+    key: "sectionBackgroundPositionY",
+    label: "Image Position Y (%)",
+    type: "number",
+    min: 0,
+    max: 100,
+  },
+  {
+    key: "sectionBackgroundOverlayColor",
+    label: "Background Image Overlay Color",
+    type: "color",
+    placeholder: "#000000",
+  },
+  {
+    key: "sectionBackgroundOverlayOpacity",
+    label: "Background Image Overlay Opacity (%)",
+    type: "number",
+    min: 0,
+    max: 100,
+  },
   { key: "sectionShowRadialGradient", label: "Show Radial Gradient Overlay", type: "boolean" },
-  { key: "sectionRadialGradientColor", label: "Radial Gradient Color", type: "color", placeholder: "#89cda1" },
-  { key: "sectionRadialGradientPosition", label: "Radial Gradient Position", type: "select", options: RADIAL_GRADIENT_POSITION_OPTIONS },
-  { key: "sectionBorderTopWidth", label: "Top Border Thickness (px)", type: "number", min: 0, max: 24 },
-  { key: "sectionBorderTopColor", label: "Top Border Color", type: "color", placeholder: "#d9e2dc" },
-  { key: "sectionBorderBottomWidth", label: "Bottom Border Thickness (px)", type: "number", min: 0, max: 24 },
-  { key: "sectionBorderBottomColor", label: "Bottom Border Color", type: "color", placeholder: "#d9e2dc" },
+  {
+    key: "sectionRadialGradientColor",
+    label: "Radial Gradient Color",
+    type: "color",
+    placeholder: "#89cda1",
+  },
+  {
+    key: "sectionRadialGradientPosition",
+    label: "Radial Gradient Position",
+    type: "select",
+    options: RADIAL_GRADIENT_POSITION_OPTIONS,
+  },
+  {
+    key: "sectionBorderTopWidth",
+    label: "Top Border Thickness (px)",
+    type: "number",
+    min: 0,
+    max: 24,
+  },
+  {
+    key: "sectionBorderTopColor",
+    label: "Top Border Color",
+    type: "color",
+    placeholder: "#d9e2dc",
+  },
+  {
+    key: "sectionBorderBottomWidth",
+    label: "Bottom Border Thickness (px)",
+    type: "number",
+    min: 0,
+    max: 24,
+  },
+  {
+    key: "sectionBorderBottomColor",
+    label: "Bottom Border Color",
+    type: "color",
+    placeholder: "#d9e2dc",
+  },
 ];
 
 const SHARED_SECTION_ACCENT_PROP_DEFS: PropDef[] = [
-  { key: "sectionBackgroundColor", label: "Background Color", type: "color", placeholder: "#ffffff" },
+  {
+    key: "sectionBackgroundColor",
+    label: "Background Color",
+    type: "color",
+    placeholder: "#ffffff",
+  },
   { key: "sectionShowRadialGradient", label: "Show Radial Gradient Overlay", type: "boolean" },
-  { key: "sectionRadialGradientColor", label: "Radial Gradient Color", type: "color", placeholder: "#89cda1" },
-  { key: "sectionRadialGradientPosition", label: "Radial Gradient Position", type: "select", options: RADIAL_GRADIENT_POSITION_OPTIONS },
-  { key: "sectionBorderTopWidth", label: "Top Border Thickness (px)", type: "number", min: 0, max: 24 },
-  { key: "sectionBorderTopColor", label: "Top Border Color", type: "color", placeholder: "#d9e2dc" },
-  { key: "sectionBorderBottomWidth", label: "Bottom Border Thickness (px)", type: "number", min: 0, max: 24 },
-  { key: "sectionBorderBottomColor", label: "Bottom Border Color", type: "color", placeholder: "#d9e2dc" },
+  {
+    key: "sectionRadialGradientColor",
+    label: "Radial Gradient Color",
+    type: "color",
+    placeholder: "#89cda1",
+  },
+  {
+    key: "sectionRadialGradientPosition",
+    label: "Radial Gradient Position",
+    type: "select",
+    options: RADIAL_GRADIENT_POSITION_OPTIONS,
+  },
+  {
+    key: "sectionBorderTopWidth",
+    label: "Top Border Thickness (px)",
+    type: "number",
+    min: 0,
+    max: 24,
+  },
+  {
+    key: "sectionBorderTopColor",
+    label: "Top Border Color",
+    type: "color",
+    placeholder: "#d9e2dc",
+  },
+  {
+    key: "sectionBorderBottomWidth",
+    label: "Bottom Border Thickness (px)",
+    type: "number",
+    min: 0,
+    max: 24,
+  },
+  {
+    key: "sectionBorderBottomColor",
+    label: "Bottom Border Color",
+    type: "color",
+    placeholder: "#d9e2dc",
+  },
 ];
 
 const SHARED_SECTION_PADDING_PROP_DEFS: PropDef[] = [
-  { key: "sectionPaddingTop", label: "Top Padding", type: "select", options: SECTION_PADDING_OPTIONS },
-  { key: "sectionPaddingBottom", label: "Bottom Padding", type: "select", options: SECTION_PADDING_OPTIONS },
+  {
+    key: "sectionPaddingTop",
+    label: "Top Padding",
+    type: "select",
+    options: SECTION_PADDING_OPTIONS,
+  },
+  {
+    key: "sectionPaddingBottom",
+    label: "Bottom Padding",
+    type: "select",
+    options: SECTION_PADDING_OPTIONS,
+  },
 ];
 
 const SHARED_SECTION_HEADING_DEFAULTS = {
@@ -257,9 +377,24 @@ const SHARED_SECTION_HEADING_DEFAULTS = {
 };
 
 const SHARED_SECTION_HEADING_PROP_DEFS: PropDef[] = [
-  { key: "sectionEyebrow", label: "Eyebrow Label", type: "text", placeholder: "Small label above title" },
-  { key: "sectionHeadingLevel", label: "Heading Level", type: "select", options: HEADING_LEVEL_OPTIONS },
-  { key: "sectionHeadingAlignment", label: "Heading Alignment", type: "select", options: ALIGN_OPTIONS },
+  {
+    key: "sectionEyebrow",
+    label: "Eyebrow Label",
+    type: "text",
+    placeholder: "Small label above title",
+  },
+  {
+    key: "sectionHeadingLevel",
+    label: "Heading Level",
+    type: "select",
+    options: HEADING_LEVEL_OPTIONS,
+  },
+  {
+    key: "sectionHeadingAlignment",
+    label: "Heading Alignment",
+    type: "select",
+    options: ALIGN_OPTIONS,
+  },
 ];
 
 const SHARED_VISIBILITY_DEFAULTS = {
@@ -278,15 +413,42 @@ const SHARED_MOBILE_IMAGE_DEFAULTS = {
 };
 
 const SHARED_MOBILE_IMAGE_PROP_DEFS: PropDef[] = [
-  { key: "mobileImageFit", label: "Mobile Image Fit", type: "select", options: MOBILE_IMAGE_FIT_OPTIONS },
-  { key: "mobileImageHeight", label: "Mobile Image Height", type: "select", options: MOBILE_IMAGE_HEIGHT_OPTIONS },
-  { key: "mobileImagePositionX", label: "Mobile Image Position X (%)", type: "number", min: 0, max: 100 },
-  { key: "mobileImagePositionY", label: "Mobile Image Position Y (%)", type: "number", min: 0, max: 100 },
+  {
+    key: "mobileImageFit",
+    label: "Mobile Image Fit",
+    type: "select",
+    options: MOBILE_IMAGE_FIT_OPTIONS,
+  },
+  {
+    key: "mobileImageHeight",
+    label: "Mobile Image Height",
+    type: "select",
+    options: MOBILE_IMAGE_HEIGHT_OPTIONS,
+  },
+  {
+    key: "mobileImagePositionX",
+    label: "Mobile Image Position X (%)",
+    type: "number",
+    min: 0,
+    max: 100,
+  },
+  {
+    key: "mobileImagePositionY",
+    label: "Mobile Image Position Y (%)",
+    type: "number",
+    min: 0,
+    max: 100,
+  },
 ];
 
 const OPTIONAL_SECTION_HEADING_PROP_DEFS: PropDef[] = [
   { key: "title", label: "Section Title", type: "text", placeholder: "Optional section heading" },
-  { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Optional supporting description" },
+  {
+    key: "subtitle",
+    label: "Subtitle",
+    type: "textarea",
+    placeholder: "Optional supporting description",
+  },
 ];
 
 const OPTIONAL_SECTION_HEADING_BLOCKS = new Set([
@@ -304,11 +466,13 @@ function mergePropDefs(existing: PropDef[], additions: PropDef[]) {
 
 function withSharedSectionStyles(
   block: BlockDef,
-  options?: { includeImageControls?: boolean; includePaddingControls?: boolean }
+  options?: { includeImageControls?: boolean; includePaddingControls?: boolean },
 ): BlockDef {
   const includeImageControls = options?.includeImageControls ?? true;
   const includePaddingControls = options?.includePaddingControls ?? true;
-  const sharedPropDefs = includeImageControls ? SHARED_SECTION_STYLE_PROP_DEFS : SHARED_SECTION_ACCENT_PROP_DEFS;
+  const sharedPropDefs = includeImageControls
+    ? SHARED_SECTION_STYLE_PROP_DEFS
+    : SHARED_SECTION_ACCENT_PROP_DEFS;
   const sharedDefaults = includeImageControls
     ? SHARED_SECTION_STYLE_DEFAULTS
     : {
@@ -334,7 +498,9 @@ function withSharedSectionStyles(
     },
     propDefs: mergePropDefs(
       block.propDefs,
-      includePaddingControls ? [...sharedPropDefs, ...SHARED_SECTION_PADDING_PROP_DEFS] : sharedPropDefs
+      includePaddingControls
+        ? [...sharedPropDefs, ...SHARED_SECTION_PADDING_PROP_DEFS]
+        : sharedPropDefs,
     ),
   };
 }
@@ -382,9 +548,10 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       accentHeading: "",
       headingColor: "",
       accentHeadingColor: "",
-      subheading: "Connecting Third Culture Kids with mental health professionals who understand your world.",
+      subheading:
+        "Connecting Third Culture Kids with verified providers who understand your world.",
       subheadingColor: "",
-      ctaText: "Find a Mental Health Professional",
+      ctaText: "Find a Verified Provider",
       ctaLink: "/directory",
       ctaAction: "internal-link",
       ctaOpenInNewTab: false,
@@ -411,33 +578,120 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     propDefs: [
       { key: "badge", label: "Badge Text", type: "text", placeholder: "e.g. New, Coming Soon" },
       { key: "heading", label: "Heading", type: "text", placeholder: "Main heading" },
-      { key: "accentHeading", label: "Accent Heading", type: "text", placeholder: "Optional highlighted heading text" },
+      {
+        key: "accentHeading",
+        label: "Accent Heading",
+        type: "text",
+        placeholder: "Optional highlighted heading text",
+      },
       { key: "headingColor", label: "Heading Color", type: "color", placeholder: "#ffffff" },
-      { key: "accentHeadingColor", label: "Accent Heading Color", type: "color", placeholder: "#89cda1" },
-      { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Supporting text beneath the heading" },
+      {
+        key: "accentHeadingColor",
+        label: "Accent Heading Color",
+        type: "color",
+        placeholder: "#89cda1",
+      },
+      {
+        key: "subheading",
+        label: "Subheading",
+        type: "textarea",
+        placeholder: "Supporting text beneath the heading",
+      },
       { key: "subheadingColor", label: "Subheading Color", type: "color", placeholder: "#ffffff" },
-      { key: "ctaText", label: "Primary Button Text", type: "text", placeholder: "e.g. Find a Mental Health Professional" },
-      { key: "ctaAction", label: "Primary Button Action", type: "select", options: BUTTON_ACTION_OPTIONS },
+      {
+        key: "ctaText",
+        label: "Primary Button Text",
+        type: "text",
+        placeholder: "e.g. Find a Verified Provider",
+      },
+      {
+        key: "ctaAction",
+        label: "Primary Button Action",
+        type: "select",
+        options: BUTTON_ACTION_OPTIONS,
+      },
       { key: "ctaLink", label: "Primary Button Link", type: "url", placeholder: "/directory" },
       { key: "ctaOpenInNewTab", label: "Primary Open In New Tab", type: "boolean" },
       { key: "ctaFormSlug", label: "Primary Button Form", type: "form-select" },
-      { key: "ctaModalTitle", label: "Primary Modal Title", type: "text", placeholder: "Optional modal title override" },
-      { key: "ctaModalDescription", label: "Primary Modal Description", type: "textarea", placeholder: "Optional modal description" },
-      { key: "ctaSecondaryText", label: "Secondary Button Text", type: "text", placeholder: "e.g. Learn More" },
-      { key: "ctaSecondaryAction", label: "Secondary Button Action", type: "select", options: BUTTON_ACTION_OPTIONS },
-      { key: "ctaSecondaryLink", label: "Secondary Button Link", type: "url", placeholder: "/about" },
+      {
+        key: "ctaModalTitle",
+        label: "Primary Modal Title",
+        type: "text",
+        placeholder: "Optional modal title override",
+      },
+      {
+        key: "ctaModalDescription",
+        label: "Primary Modal Description",
+        type: "textarea",
+        placeholder: "Optional modal description",
+      },
+      {
+        key: "ctaSecondaryText",
+        label: "Secondary Button Text",
+        type: "text",
+        placeholder: "e.g. Learn More",
+      },
+      {
+        key: "ctaSecondaryAction",
+        label: "Secondary Button Action",
+        type: "select",
+        options: BUTTON_ACTION_OPTIONS,
+      },
+      {
+        key: "ctaSecondaryLink",
+        label: "Secondary Button Link",
+        type: "url",
+        placeholder: "/about",
+      },
       { key: "ctaSecondaryOpenInNewTab", label: "Secondary Open In New Tab", type: "boolean" },
       { key: "ctaSecondaryFormSlug", label: "Secondary Button Form", type: "form-select" },
-      { key: "ctaSecondaryModalTitle", label: "Secondary Modal Title", type: "text", placeholder: "Optional modal title override" },
-      { key: "ctaSecondaryModalDescription", label: "Secondary Modal Description", type: "textarea", placeholder: "Optional modal description" },
-      { key: "backgroundImageUrl", label: "Background Image", type: "image-url", placeholder: "Upload or select image" },
-      { key: "backgroundPositionX", label: "Image Position X (%)", type: "number", min: 0, max: 100 },
-      { key: "backgroundPositionY", label: "Image Position Y (%)", type: "number", min: 0, max: 100 },
-      { key: "videoBackgroundUrl", label: "Video Background URL", type: "url", placeholder: "https://example.com/video.mp4" },
+      {
+        key: "ctaSecondaryModalTitle",
+        label: "Secondary Modal Title",
+        type: "text",
+        placeholder: "Optional modal title override",
+      },
+      {
+        key: "ctaSecondaryModalDescription",
+        label: "Secondary Modal Description",
+        type: "textarea",
+        placeholder: "Optional modal description",
+      },
+      {
+        key: "backgroundImageUrl",
+        label: "Background Image",
+        type: "image-url",
+        placeholder: "Upload or select image",
+      },
+      {
+        key: "backgroundPositionX",
+        label: "Image Position X (%)",
+        type: "number",
+        min: 0,
+        max: 100,
+      },
+      {
+        key: "backgroundPositionY",
+        label: "Image Position Y (%)",
+        type: "number",
+        min: 0,
+        max: 100,
+      },
+      {
+        key: "videoBackgroundUrl",
+        label: "Video Background URL",
+        type: "url",
+        placeholder: "https://example.com/video.mp4",
+      },
       { key: "overlayColor", label: "Overlay Color", type: "color", placeholder: "#000000" },
       { key: "overlayOpacity", label: "Overlay Opacity (%)", type: "number", min: 0, max: 100 },
       { key: "layout", label: "Layout", type: "select", options: HERO_LAYOUT_OPTIONS },
-      { key: "minHeight", label: "Min Height (px)", type: "select", options: HERO_MIN_HEIGHT_OPTIONS },
+      {
+        key: "minHeight",
+        label: "Min Height (px)",
+        type: "select",
+        options: HERO_MIN_HEIGHT_OPTIONS,
+      },
     ],
   },
   {
@@ -449,16 +703,31 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       eyebrow: "Our Approach",
       title: "Why Core Platform-Informed Care Matters",
-      subtitle: "We match you with mental health professionals who understand the Core Platform experience.",
+      subtitle: "We match you with verified providers who understand the Core Platform experience.",
       alignment: "center",
       headingLevel: "h2",
     },
     propDefs: [
-      { key: "eyebrow", label: "Eyebrow Label", type: "text", placeholder: "Small label above title" },
+      {
+        key: "eyebrow",
+        label: "Eyebrow Label",
+        type: "text",
+        placeholder: "Small label above title",
+      },
       { key: "title", label: "Title", type: "text", placeholder: "Section title" },
-      { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Supporting description" },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "textarea",
+        placeholder: "Supporting description",
+      },
       { key: "alignment", label: "Alignment", type: "select", options: ALIGN_OPTIONS },
-      { key: "headingLevel", label: "Heading Level", type: "select", options: HEADING_LEVEL_OPTIONS },
+      {
+        key: "headingLevel",
+        label: "Heading Level",
+        type: "select",
+        options: HEADING_LEVEL_OPTIONS,
+      },
     ],
   },
   {
@@ -485,8 +754,9 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       eyebrow: "Our Story",
       heading: "About Our Mission",
-      subtitle: "Use this supporting introduction to frame the section before the main body copy begins.",
-      body: "<p>We provide access to culturally informed mental health professionals who understand what it means to grow up between worlds.</p>",
+      subtitle:
+        "Use this supporting introduction to frame the section before the main body copy begins.",
+      body: "<p>We provide access to culturally informed providers who understand what it means to grow up between worlds.</p>",
       alignment: "left",
       headingLevel: "h2",
       imageUrl: "",
@@ -496,16 +766,46 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ...SHARED_MOBILE_IMAGE_DEFAULTS,
     },
     propDefs: [
-      { key: "eyebrow", label: "Eyebrow Label", type: "text", placeholder: "Small label above title" },
+      {
+        key: "eyebrow",
+        label: "Eyebrow Label",
+        type: "text",
+        placeholder: "Small label above title",
+      },
       { key: "heading", label: "Section Title", type: "text", placeholder: "Section heading" },
-      { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Supporting description" },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "textarea",
+        placeholder: "Supporting description",
+      },
       { key: "alignment", label: "Alignment", type: "select", options: ALIGN_OPTIONS },
-      { key: "headingLevel", label: "Heading Level", type: "select", options: HEADING_LEVEL_OPTIONS },
+      {
+        key: "headingLevel",
+        label: "Heading Level",
+        type: "select",
+        options: HEADING_LEVEL_OPTIONS,
+      },
       { key: "body", label: "Body Text", type: "richtext", placeholder: "Main text content" },
       { key: "imageUrl", label: "Image", type: "image-url", placeholder: "Upload or select image" },
-      { key: "imageAlt", label: "Image Alt Text", type: "text", placeholder: "Descriptive alt text" },
-      { key: "imageCaption", label: "Image Caption", type: "text", placeholder: "Optional caption" },
-      { key: "imagePosition", label: "Image Position", type: "select", options: IMAGE_POSITION_OPTIONS },
+      {
+        key: "imageAlt",
+        label: "Image Alt Text",
+        type: "text",
+        placeholder: "Descriptive alt text",
+      },
+      {
+        key: "imageCaption",
+        label: "Image Caption",
+        type: "text",
+        placeholder: "Optional caption",
+      },
+      {
+        key: "imagePosition",
+        label: "Image Position",
+        type: "select",
+        options: IMAGE_POSITION_OPTIONS,
+      },
       ...SHARED_MOBILE_IMAGE_PROP_DEFS,
     ],
   },
@@ -520,35 +820,63 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       subtitle: "",
       leftHeading: "Column One",
       leftBody: "<p>Use this space for supporting copy before the list.</p>",
-      leftItems: [
-        { text: "Bullet point one" },
-        { text: "Bullet point two" },
-      ],
+      leftItems: [{ text: "Bullet point one" }, { text: "Bullet point two" }],
       rightHeading: "Column Two",
       rightBody: "<p>Use this column for a second list or additional detail.</p>",
-      rightItems: [
-        { text: "Bullet point one" },
-        { text: "Bullet point two" },
-      ],
+      rightItems: [{ text: "Bullet point one" }, { text: "Bullet point two" }],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Optional section heading" },
-      { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Optional supporting description" },
-      { key: "leftHeading", label: "Left Column Heading", type: "text", placeholder: "Left column title" },
-      { key: "leftBody", label: "Left Column Body", type: "richtext", placeholder: "Optional supporting text" },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Optional section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "textarea",
+        placeholder: "Optional supporting description",
+      },
+      {
+        key: "leftHeading",
+        label: "Left Column Heading",
+        type: "text",
+        placeholder: "Left column title",
+      },
+      {
+        key: "leftBody",
+        label: "Left Column Body",
+        type: "richtext",
+        placeholder: "Optional supporting text",
+      },
       {
         key: "leftItems",
         label: "Left Column Items",
         type: "array-items",
-        itemSchema: [{ key: "text", label: "Item Text", type: "text", placeholder: "Bullet point" }],
+        itemSchema: [
+          { key: "text", label: "Item Text", type: "text", placeholder: "Bullet point" },
+        ],
       },
-      { key: "rightHeading", label: "Right Column Heading", type: "text", placeholder: "Right column title" },
-      { key: "rightBody", label: "Right Column Body", type: "richtext", placeholder: "Optional supporting text" },
+      {
+        key: "rightHeading",
+        label: "Right Column Heading",
+        type: "text",
+        placeholder: "Right column title",
+      },
+      {
+        key: "rightBody",
+        label: "Right Column Body",
+        type: "richtext",
+        placeholder: "Optional supporting text",
+      },
       {
         key: "rightItems",
         label: "Right Column Items",
         type: "array-items",
-        itemSchema: [{ key: "text", label: "Item Text", type: "text", placeholder: "Bullet point" }],
+        itemSchema: [
+          { key: "text", label: "Item Text", type: "text", placeholder: "Bullet point" },
+        ],
       },
     ],
   },
@@ -561,7 +889,8 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       title: "Important Takeaway",
       subtitle: "",
-      content: "<p>Use this callout to highlight a key message, important note, or short supporting explanation.</p>",
+      content:
+        "<p>Use this callout to highlight a key message, important note, or short supporting explanation.</p>",
       variant: "accent",
       ctaText: "",
       ctaLink: "",
@@ -572,17 +901,42 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ctaModalDescription: "",
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Optional section heading" },
-      { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Optional supporting description" },
-      { key: "content", label: "Content", type: "richtext", placeholder: "Add highlighted content..." },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Optional section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "textarea",
+        placeholder: "Optional supporting description",
+      },
+      {
+        key: "content",
+        label: "Content",
+        type: "richtext",
+        placeholder: "Add highlighted content...",
+      },
       { key: "variant", label: "Style Variant", type: "select", options: CALLOUT_VARIANT_OPTIONS },
       { key: "ctaText", label: "Button Text", type: "text", placeholder: "Optional button label" },
       { key: "ctaAction", label: "Button Action", type: "select", options: BUTTON_ACTION_OPTIONS },
       { key: "ctaLink", label: "Button Link", type: "url", placeholder: "/page or https://..." },
       { key: "ctaOpenInNewTab", label: "Open In New Tab", type: "boolean" },
       { key: "ctaFormSlug", label: "Assigned Form", type: "form-select" },
-      { key: "ctaModalTitle", label: "Modal Title", type: "text", placeholder: "Optional modal title override" },
-      { key: "ctaModalDescription", label: "Modal Description", type: "textarea", placeholder: "Optional modal description" },
+      {
+        key: "ctaModalTitle",
+        label: "Modal Title",
+        type: "text",
+        placeholder: "Optional modal title override",
+      },
+      {
+        key: "ctaModalDescription",
+        label: "Modal Description",
+        type: "textarea",
+        placeholder: "Optional modal description",
+      },
     ],
   },
   {
@@ -601,8 +955,18 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Optional section heading" },
-      { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Optional supporting description" },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Optional section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "textarea",
+        placeholder: "Optional supporting description",
+      },
       { key: "columns", label: "Columns", type: "select", options: LINK_LIST_COLUMNS_OPTIONS },
       {
         key: "links",
@@ -610,7 +974,12 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "array-items",
         itemSchema: [
           { key: "label", label: "Label", type: "text", placeholder: "Link title" },
-          { key: "description", label: "Description", type: "textarea", placeholder: "Optional supporting text" },
+          {
+            key: "description",
+            label: "Description",
+            type: "textarea",
+            placeholder: "Optional supporting text",
+          },
           { key: "url", label: "URL", type: "url", placeholder: "/page or https://..." },
         ],
       },
@@ -624,8 +993,8 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     category: "conversion",
     defaultProps: {
       heading: "Ready to Get Started?",
-      subheading: "Find a Core Platform-informed mental health professional and begin your journey today.",
-      primaryText: "Browse Mental Health Professionals",
+      subheading: "Find a Core Platform-informed verified provider and begin your journey today.",
+      primaryText: "Browse the Directory",
       primaryLink: "/directory",
       primaryAction: "internal-link",
       primaryOpenInNewTab: false,
@@ -645,19 +1014,54 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       { key: "heading", label: "Heading", type: "text", placeholder: "CTA heading" },
       { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Supporting text" },
       { key: "primaryText", label: "Primary Button", type: "text", placeholder: "Button label" },
-      { key: "primaryAction", label: "Primary Button Action", type: "select", options: BUTTON_ACTION_OPTIONS },
+      {
+        key: "primaryAction",
+        label: "Primary Button Action",
+        type: "select",
+        options: BUTTON_ACTION_OPTIONS,
+      },
       { key: "primaryLink", label: "Primary Button Link", type: "url", placeholder: "/directory" },
       { key: "primaryOpenInNewTab", label: "Primary Open In New Tab", type: "boolean" },
       { key: "primaryFormSlug", label: "Primary Button Form", type: "form-select" },
-      { key: "primaryModalTitle", label: "Primary Modal Title", type: "text", placeholder: "Optional modal title override" },
-      { key: "primaryModalDescription", label: "Primary Modal Description", type: "textarea", placeholder: "Optional modal description" },
-      { key: "secondaryText", label: "Secondary Button", type: "text", placeholder: "Optional secondary button" },
-      { key: "secondaryAction", label: "Secondary Button Action", type: "select", options: BUTTON_ACTION_OPTIONS },
+      {
+        key: "primaryModalTitle",
+        label: "Primary Modal Title",
+        type: "text",
+        placeholder: "Optional modal title override",
+      },
+      {
+        key: "primaryModalDescription",
+        label: "Primary Modal Description",
+        type: "textarea",
+        placeholder: "Optional modal description",
+      },
+      {
+        key: "secondaryText",
+        label: "Secondary Button",
+        type: "text",
+        placeholder: "Optional secondary button",
+      },
+      {
+        key: "secondaryAction",
+        label: "Secondary Button Action",
+        type: "select",
+        options: BUTTON_ACTION_OPTIONS,
+      },
       { key: "secondaryLink", label: "Secondary Button Link", type: "url", placeholder: "/about" },
       { key: "secondaryOpenInNewTab", label: "Secondary Open In New Tab", type: "boolean" },
       { key: "secondaryFormSlug", label: "Secondary Button Form", type: "form-select" },
-      { key: "secondaryModalTitle", label: "Secondary Modal Title", type: "text", placeholder: "Optional modal title override" },
-      { key: "secondaryModalDescription", label: "Secondary Modal Description", type: "textarea", placeholder: "Optional modal description" },
+      {
+        key: "secondaryModalTitle",
+        label: "Secondary Modal Title",
+        type: "text",
+        placeholder: "Optional modal title override",
+      },
+      {
+        key: "secondaryModalDescription",
+        label: "Secondary Modal Description",
+        type: "textarea",
+        placeholder: "Optional modal description",
+      },
       { key: "variant", label: "Style Variant", type: "select", options: CTA_VARIANT_OPTIONS },
     ],
   },
@@ -672,14 +1076,31 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       subtitle: "",
       columns: "3",
       cards: [
-        { title: "Culturally Informed", description: "Mental health professionals who understand the Core Platform experience.", icon: "Globe" },
-        { title: "Specialized Support", description: "Targeted help for unique Core Platform challenges.", icon: "Heart" },
-        { title: "Global Community", description: "Connect with others who share your journey.", icon: "Users" },
+        {
+          title: "Culturally Informed",
+          description: "Mental health professionals who understand the Core Platform experience.",
+          icon: "Globe",
+        },
+        {
+          title: "Specialized Support",
+          description: "Targeted help for unique Core Platform challenges.",
+          icon: "Heart",
+        },
+        {
+          title: "Global Community",
+          description: "Connect with others who share your journey.",
+          icon: "Users",
+        },
       ],
     },
     propDefs: [
       { key: "title", label: "Section Title", type: "text", placeholder: "Grid section title" },
-      { key: "subtitle", label: "Section Subtitle", type: "text", placeholder: "Optional subtitle" },
+      {
+        key: "subtitle",
+        label: "Section Subtitle",
+        type: "text",
+        placeholder: "Optional subtitle",
+      },
       { key: "columns", label: "Columns", type: "select", options: COLUMNS_OPTIONS },
       {
         key: "cards",
@@ -687,8 +1108,18 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "array-items",
         itemSchema: [
           { key: "title", label: "Card Title", type: "text", placeholder: "Card title" },
-          { key: "description", label: "Description", type: "textarea", placeholder: "Card description" },
-          { key: "icon", label: "Icon Name (Lucide)", type: "text", placeholder: "e.g. Globe, Heart, Users" },
+          {
+            key: "description",
+            label: "Description",
+            type: "textarea",
+            placeholder: "Card description",
+          },
+          {
+            key: "icon",
+            label: "Icon Name (Lucide)",
+            type: "text",
+            placeholder: "e.g. Globe, Heart, Users",
+          },
         ],
       },
     ],
@@ -702,8 +1133,16 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       title: "Frequently Asked Questions",
       items: [
-        { question: "What is a Third Culture Kid?", answer: "A Core Platform is someone who spent a significant part of their developmental years in a culture different from their parents'." },
-        { question: "How are mental health professionals vetted?", answer: "All mental health professionals complete a thorough application and background verification process." },
+        {
+          question: "What is a Third Culture Kid?",
+          answer:
+            "A Core Platform is someone who spent a significant part of their developmental years in a culture different from their parents'.",
+        },
+        {
+          question: "How are verified providers vetted?",
+          answer:
+            "All verified providers complete a thorough application and background verification process.",
+        },
       ],
     },
     propDefs: [
@@ -728,8 +1167,19 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       title: "What Our Community Says",
       items: [
-        { quote: "Finding a mental health professional who truly understood my Core Platform experience was life-changing.", name: "Sarah M.", role: "Core Platform Client", location: "Singapore" },
-        { quote: "I finally feel seen and understood in a way I never did before.", name: "James T.", role: "Core Platform Client", location: "Germany" },
+        {
+          quote:
+            "Finding a verified provider who truly understood my Core Platform experience was life-changing.",
+          name: "Sarah M.",
+          role: "Core Platform Client",
+          location: "Singapore",
+        },
+        {
+          quote: "I finally feel seen and understood in a way I never did before.",
+          name: "James T.",
+          role: "Core Platform Client",
+          location: "Germany",
+        },
       ],
     },
     propDefs: [
@@ -749,36 +1199,36 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
   },
   {
     type: "featured-professionals",
-    label: "Featured Mental Health Professionals",
+    label: "Featured Verified Providers",
     iconName: "UserCheck",
-    description: "Live grid of featured mental health professionals from the directory",
+    description: "Live grid of featured providers from the directory",
     category: "data",
     defaultProps: {
-      title: "Meet Our Mental Health Professionals",
-      subtitle: "Browse our network of Core Platform-informed mental health professionals.",
+      title: "Meet Our Verified Providers",
+      subtitle: "Browse our network of platform-approved professionals.",
       limit: 3,
     },
     propDefs: [
       { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
       { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Supporting text" },
-      { key: "limit", label: "Max Mental Health Professionals to Show", type: "number", min: 1, max: 12 },
+      { key: "limit", label: "Max Providers to Show", type: "number", min: 1, max: 12 },
     ],
   },
   {
     type: "featured-counselors",
-    label: "Featured Mental Health Professionals",
+    label: "Featured Verified Providers",
     iconName: "UserCheck",
-    description: "Live grid of featured mental health professionals from the directory",
+    description: "Live grid of featured providers from the directory",
     category: "data",
     defaultProps: {
-      title: "Meet Our Mental Health Professionals",
-      subtitle: "Browse our network of Core Platform-informed mental health professionals.",
+      title: "Meet Our Verified Providers",
+      subtitle: "Browse our network of platform-approved professionals.",
       limit: 3,
     },
     propDefs: [
       { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
       { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Supporting text" },
-      { key: "limit", label: "Max Mental Health Professionals to Show", type: "number", min: 1, max: 12 },
+      { key: "limit", label: "Max Providers to Show", type: "number", min: 1, max: 12 },
     ],
   },
   {
@@ -808,8 +1258,18 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       { key: "ctaLink", label: "Button Link", type: "url", placeholder: "/events or https://..." },
       { key: "ctaOpenInNewTab", label: "Open In New Tab", type: "boolean" },
       { key: "ctaFormSlug", label: "Assigned Form", type: "form-select" },
-      { key: "ctaModalTitle", label: "Modal Title", type: "text", placeholder: "Optional modal title override" },
-      { key: "ctaModalDescription", label: "Modal Description", type: "textarea", placeholder: "Optional modal description" },
+      {
+        key: "ctaModalTitle",
+        label: "Modal Title",
+        type: "text",
+        placeholder: "Optional modal title override",
+      },
+      {
+        key: "ctaModalDescription",
+        label: "Modal Description",
+        type: "textarea",
+        placeholder: "Optional modal description",
+      },
     ],
   },
   {
@@ -840,8 +1300,24 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       alignment: "center",
       buttons: [
-        { text: "Get Started", action: "url", link: "/directory", formSlug: "contact-form", modalTitle: "", modalDescription: "", variant: "default" },
-        { text: "Learn More", action: "url", link: "/about", formSlug: "contact-form", modalTitle: "", modalDescription: "", variant: "outline" },
+        {
+          text: "Get Started",
+          action: "url",
+          link: "/directory",
+          formSlug: "contact-form",
+          modalTitle: "",
+          modalDescription: "",
+          variant: "default",
+        },
+        {
+          text: "Learn More",
+          action: "url",
+          link: "/about",
+          formSlug: "contact-form",
+          modalTitle: "",
+          modalDescription: "",
+          variant: "outline",
+        },
       ],
     },
     propDefs: [
@@ -856,8 +1332,18 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
           { key: "link", label: "Link", type: "url", placeholder: "/page or https://..." },
           { key: "openInNewTab", label: "Open In New Tab", type: "boolean" },
           { key: "formSlug", label: "Assigned Form", type: "form-select" },
-          { key: "modalTitle", label: "Modal Title", type: "text", placeholder: "Optional modal title override" },
-          { key: "modalDescription", label: "Modal Description", type: "textarea", placeholder: "Optional modal description" },
+          {
+            key: "modalTitle",
+            label: "Modal Title",
+            type: "text",
+            placeholder: "Optional modal title override",
+          },
+          {
+            key: "modalDescription",
+            label: "Modal Description",
+            type: "textarea",
+            placeholder: "Optional modal description",
+          },
           { key: "variant", label: "Style", type: "select", options: BUTTON_VARIANT_OPTIONS },
         ],
       },
@@ -878,7 +1364,12 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     },
     propDefs: [
       { key: "imageUrl", label: "Image", type: "image-url", placeholder: "Upload or select image" },
-      { key: "alt", label: "Alt Text", type: "text", placeholder: "Descriptive alt text for accessibility" },
+      {
+        key: "alt",
+        label: "Alt Text",
+        type: "text",
+        placeholder: "Descriptive alt text for accessibility",
+      },
       { key: "caption", label: "Caption", type: "text", placeholder: "Optional image caption" },
       { key: "width", label: "Image Width", type: "select", options: IMAGE_WIDTH_OPTIONS },
       ...SHARED_MOBILE_IMAGE_PROP_DEFS,
@@ -896,7 +1387,12 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       aspectRatio: "16/9",
     },
     propDefs: [
-      { key: "url", label: "Video URL (YouTube or Vimeo)", type: "url", placeholder: "https://youtube.com/..." },
+      {
+        key: "url",
+        label: "Video URL (YouTube or Vimeo)",
+        type: "url",
+        placeholder: "https://youtube.com/...",
+      },
       { key: "title", label: "Title (optional)", type: "text", placeholder: "Video title" },
       { key: "aspectRatio", label: "Aspect Ratio", type: "select", options: VIDEO_ASPECT_OPTIONS },
     ],
@@ -910,12 +1406,27 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       title: "",
       subtitle: "",
-      html: "<div class=\"rounded-xl border p-6 text-center text-sm text-muted-foreground\">Paste trusted embed code here.</div>",
+      html: '<div class="rounded-xl border p-6 text-center text-sm text-muted-foreground">Paste trusted embed code here.</div>',
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Optional section heading" },
-      { key: "subtitle", label: "Subtitle", type: "textarea", placeholder: "Optional supporting description" },
-      { key: "html", label: "HTML / Embed Code", type: "textarea", placeholder: "<iframe ...></iframe>" },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Optional section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "textarea",
+        placeholder: "Optional supporting description",
+      },
+      {
+        key: "html",
+        label: "HTML / Embed Code",
+        type: "textarea",
+        placeholder: "<iframe ...></iframe>",
+      },
     ],
   },
   {
@@ -932,13 +1443,23 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Contact section heading" },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Contact section heading",
+      },
       {
         key: "items",
         label: "Contact Items",
         type: "array-items",
         itemSchema: [
-          { key: "icon", label: "Icon (Lucide name)", type: "text", placeholder: "e.g. MapPin, Mail, Phone" },
+          {
+            key: "icon",
+            label: "Icon (Lucide name)",
+            type: "text",
+            placeholder: "e.g. MapPin, Mail, Phone",
+          },
           { key: "label", label: "Label", type: "text", placeholder: "e.g. Email, Phone" },
           { key: "value", label: "Value", type: "text", placeholder: "Contact detail" },
         ],
@@ -971,9 +1492,21 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       subtitle: "",
       columns: "3",
       features: [
-        { icon: "CheckCircle", title: "Vetted Professionals", description: "Every professional is carefully reviewed and verified." },
-        { icon: "Globe", title: "Global Reach", description: "Connect with professionals worldwide." },
-        { icon: "Heart", title: "Culturally Informed", description: "Professionals who understand the Core Platform experience." },
+        {
+          icon: "CheckCircle",
+          title: "Vetted Professionals",
+          description: "Every professional is carefully reviewed and verified.",
+        },
+        {
+          icon: "Globe",
+          title: "Global Reach",
+          description: "Connect with professionals worldwide.",
+        },
+        {
+          icon: "Heart",
+          title: "Culturally Informed",
+          description: "Professionals who understand the Core Platform experience.",
+        },
       ],
     },
     propDefs: [
@@ -985,9 +1518,19 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         label: "Features",
         type: "array-items",
         itemSchema: [
-          { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. CheckCircle, Globe" },
+          {
+            key: "icon",
+            label: "Icon (Lucide)",
+            type: "text",
+            placeholder: "e.g. CheckCircle, Globe",
+          },
           { key: "title", label: "Title", type: "text", placeholder: "Feature title" },
-          { key: "description", label: "Description", type: "textarea", placeholder: "Feature description" },
+          {
+            key: "description",
+            label: "Description",
+            type: "textarea",
+            placeholder: "Feature description",
+          },
         ],
       },
     ],
@@ -1002,8 +1545,16 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       title: "Common Questions & Concerns",
       subtitle: "",
       items: [
-        { concern: "Will the professional understand my background?", response: "Every professional in our directory has specific training or lived experience with cross-cultural populations." },
-        { concern: "Is online therapy effective?", response: "Research consistently shows that online therapy can be as effective as in-person sessions for many conditions." },
+        {
+          concern: "Will the professional understand my background?",
+          response:
+            "Every professional in our directory has specific training or lived experience with cross-cultural populations.",
+        },
+        {
+          concern: "Is online therapy effective?",
+          response:
+            "Research consistently shows that online therapy can be as effective as in-person sessions for many conditions.",
+        },
       ],
     },
     propDefs: [
@@ -1015,7 +1566,12 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "array-items",
         itemSchema: [
           { key: "concern", label: "Concern", type: "text", placeholder: "What they worry about" },
-          { key: "response", label: "Response", type: "textarea", placeholder: "Reassuring answer" },
+          {
+            key: "response",
+            label: "Response",
+            type: "textarea",
+            placeholder: "Reassuring answer",
+          },
         ],
       },
     ],
@@ -1030,9 +1586,21 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       title: "Your Journey",
       subtitle: "",
       items: [
-        { before: "Feeling isolated and misunderstood", after: "Connected with a professional who gets it", milestone: "Week 1" },
-        { before: "Struggling to articulate cross-cultural grief", after: "Learning frameworks to process your experience", milestone: "Month 1" },
-        { before: "Navigating identity confusion alone", after: "Building confidence in your multicultural identity", milestone: "Month 3" },
+        {
+          before: "Feeling isolated and misunderstood",
+          after: "Connected with a professional who gets it",
+          milestone: "Week 1",
+        },
+        {
+          before: "Struggling to articulate cross-cultural grief",
+          after: "Learning frameworks to process your experience",
+          milestone: "Month 1",
+        },
+        {
+          before: "Navigating identity confusion alone",
+          after: "Building confidence in your multicultural identity",
+          milestone: "Month 3",
+        },
       ],
     },
     propDefs: [
@@ -1043,7 +1611,12 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         label: "Milestones",
         type: "array-items",
         itemSchema: [
-          { key: "milestone", label: "Milestone Label", type: "text", placeholder: "e.g. Week 1, Step 1" },
+          {
+            key: "milestone",
+            label: "Milestone Label",
+            type: "text",
+            placeholder: "e.g. Week 1, Step 1",
+          },
           { key: "before", label: "Before", type: "text", placeholder: "Starting point" },
           { key: "after", label: "After", type: "text", placeholder: "Outcome" },
         ],
@@ -1070,7 +1643,12 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         label: "Trust Signals",
         type: "array-items",
         itemSchema: [
-          { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. ShieldCheck, Lock" },
+          {
+            key: "icon",
+            label: "Icon (Lucide)",
+            type: "text",
+            placeholder: "e.g. ShieldCheck, Lock",
+          },
           { key: "label", label: "Label", type: "text", placeholder: "Trust signal text" },
         ],
       },
@@ -1084,12 +1662,15 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     category: "social-proof",
     defaultProps: {
       title: "As Seen In",
-      items: [
-        { name: "Publication Name", logoUrl: "", link: "" },
-      ],
+      items: [{ name: "Publication Name", logoUrl: "", link: "" }],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "e.g. As Seen In, Featured By" },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "e.g. As Seen In, Featured By",
+      },
       {
         key: "items",
         label: "Press Items",
@@ -1128,7 +1709,12 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
           { key: "label", label: "Label", type: "text", placeholder: "What the stat represents" },
         ],
       },
-      { key: "disclaimer", label: "Disclaimer", type: "text", placeholder: "Optional disclaimer text" },
+      {
+        key: "disclaimer",
+        label: "Disclaimer",
+        type: "text",
+        placeholder: "Optional disclaimer text",
+      },
     ],
   },
   {
@@ -1181,7 +1767,12 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         itemSchema: [
           { key: "imageUrl", label: "Image", type: "image-url", placeholder: "Upload slide image" },
           { key: "heading", label: "Heading", type: "text", placeholder: "Slide heading" },
-          { key: "description", label: "Description", type: "textarea", placeholder: "Slide description" },
+          {
+            key: "description",
+            label: "Description",
+            type: "textarea",
+            placeholder: "Slide description",
+          },
         ],
       },
     ],
@@ -1255,9 +1846,21 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       subtitle: "",
       layout: "stack",
       items: [
-        { icon: "CheckCircle", title: "Expert Guidance", description: "Work with professionals who specialize in cross-cultural challenges." },
-        { icon: "Globe", title: "Global Accessibility", description: "Find support no matter where you are in the world." },
-        { icon: "Heart", title: "Cultural Understanding", description: "Be understood without having to explain your background." },
+        {
+          icon: "CheckCircle",
+          title: "Expert Guidance",
+          description: "Work with professionals who specialize in cross-cultural challenges.",
+        },
+        {
+          icon: "Globe",
+          title: "Global Accessibility",
+          description: "Find support no matter where you are in the world.",
+        },
+        {
+          icon: "Heart",
+          title: "Cultural Understanding",
+          description: "Be understood without having to explain your background.",
+        },
       ],
     },
     propDefs: [
@@ -1271,7 +1874,12 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         itemSchema: [
           { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. CheckCircle" },
           { key: "title", label: "Title", type: "text", placeholder: "Benefit title" },
-          { key: "description", label: "Description", type: "textarea", placeholder: "Benefit description" },
+          {
+            key: "description",
+            label: "Description",
+            type: "textarea",
+            placeholder: "Benefit description",
+          },
         ],
       },
     ],
@@ -1285,9 +1893,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       title: "The Research Behind Our Approach",
       body: "",
-      citations: [
-        { text: "Core Platform Training Research Study, 2024", url: "" },
-      ],
+      citations: [{ text: "Core Platform Training Research Study, 2024", url: "" }],
     },
     propDefs: [
       { key: "title", label: "Title", type: "text", placeholder: "Section heading" },
@@ -1313,7 +1919,7 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       title: "Safety & Quality Standards",
       disclaimer: "",
       items: [
-        { text: "Licensed mental health professional", required: true },
+        { text: "Licensed or credentialed professional", required: true },
         { text: "Cross-cultural training or experience", required: true },
         { text: "Background verification completed", required: true },
         { text: "Specialized in Core Platform-related challenges", required: false },
@@ -1321,7 +1927,12 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
     },
     propDefs: [
       { key: "title", label: "Title", type: "text", placeholder: "Section heading" },
-      { key: "disclaimer", label: "Disclaimer", type: "textarea", placeholder: "Optional legal disclaimer" },
+      {
+        key: "disclaimer",
+        label: "Disclaimer",
+        type: "textarea",
+        placeholder: "Optional legal disclaimer",
+      },
       {
         key: "items",
         label: "Checklist Items",
@@ -1367,12 +1978,27 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         ],
       },
       { key: "ctaText", label: "CTA Button Text", type: "text", placeholder: "Button label" },
-      { key: "ctaAction", label: "CTA Button Action", type: "select", options: BUTTON_ACTION_OPTIONS },
+      {
+        key: "ctaAction",
+        label: "CTA Button Action",
+        type: "select",
+        options: BUTTON_ACTION_OPTIONS,
+      },
       { key: "ctaLink", label: "CTA Link", type: "url", placeholder: "/contact" },
       { key: "ctaOpenInNewTab", label: "Open In New Tab", type: "boolean" },
       { key: "ctaFormSlug", label: "Assigned Form", type: "form-select" },
-      { key: "ctaModalTitle", label: "Modal Title", type: "text", placeholder: "Optional modal title override" },
-      { key: "ctaModalDescription", label: "Modal Description", type: "textarea", placeholder: "Optional modal description" },
+      {
+        key: "ctaModalTitle",
+        label: "Modal Title",
+        type: "text",
+        placeholder: "Optional modal title override",
+      },
+      {
+        key: "ctaModalDescription",
+        label: "Modal Description",
+        type: "textarea",
+        placeholder: "Optional modal description",
+      },
     ],
   },
   {
@@ -1385,9 +2011,21 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       title: "How It Works",
       subtitle: "",
       steps: [
-        { step: "1", title: "Browse the Directory", description: "Search by specialty, location, or language." },
-        { step: "2", title: "Review Profiles", description: "Read about their approach and qualifications." },
-        { step: "3", title: "Make Contact", description: "Reach out directly through their profile." },
+        {
+          step: "1",
+          title: "Browse the Directory",
+          description: "Search by specialty, location, or language.",
+        },
+        {
+          step: "2",
+          title: "Review Profiles",
+          description: "Read about their approach and qualifications.",
+        },
+        {
+          step: "3",
+          title: "Make Contact",
+          description: "Reach out directly through their profile.",
+        },
       ],
       includedItems: [],
     },
@@ -1401,16 +2039,19 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         itemSchema: [
           { key: "step", label: "Step Number/Label", type: "text", placeholder: "e.g. 1, Step A" },
           { key: "title", label: "Title", type: "text", placeholder: "Step title" },
-          { key: "description", label: "Description", type: "textarea", placeholder: "Step details" },
+          {
+            key: "description",
+            label: "Description",
+            type: "textarea",
+            placeholder: "Step details",
+          },
         ],
       },
       {
         key: "includedItems",
         label: "What's Included (optional)",
         type: "array-items",
-        itemSchema: [
-          { key: "text", label: "Item", type: "text", placeholder: "Included item" },
-        ],
+        itemSchema: [{ key: "text", label: "Item", type: "text", placeholder: "Included item" }],
       },
     ],
   },
@@ -1424,9 +2065,24 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       title: "Who Is Core Platform For?",
       subtitle: "",
       personas: [
-        { title: "Adult Core Platforms", description: "Adults who grew up across cultures and need support navigating identity, belonging, and transitions.", icon: "User" },
-        { title: "Expat Families", description: "Parents raising children between cultures who want proactive mental health support.", icon: "Users" },
-        { title: "Organizations", description: "Companies and schools supporting internationally mobile employees and students.", icon: "Building2" },
+        {
+          title: "Adult Core Platforms",
+          description:
+            "Adults who grew up across cultures and need support navigating identity, belonging, and transitions.",
+          icon: "User",
+        },
+        {
+          title: "Expat Families",
+          description:
+            "Parents raising children between cultures who want proactive mental health support.",
+          icon: "Users",
+        },
+        {
+          title: "Organizations",
+          description:
+            "Companies and schools supporting internationally mobile employees and students.",
+          icon: "Building2",
+        },
       ],
     },
     propDefs: [
@@ -1438,8 +2094,18 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "array-items",
         itemSchema: [
           { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. User, Users" },
-          { key: "title", label: "Persona Title", type: "text", placeholder: "e.g. Adult Core Platforms" },
-          { key: "description", label: "Description", type: "textarea", placeholder: "Who they are and what they need" },
+          {
+            key: "title",
+            label: "Persona Title",
+            type: "text",
+            placeholder: "e.g. Adult Core Platforms",
+          },
+          {
+            key: "description",
+            label: "Description",
+            type: "textarea",
+            placeholder: "Who they are and what they need",
+          },
         ],
       },
     ],
@@ -1456,21 +2122,37 @@ const BASE_BLOCK_REGISTRY: BlockDef[] = [
       level: "beginner",
       steps: [
         { title: "Create Your Account", description: "Sign up for free and set your preferences." },
-        { title: "Explore the Directory", description: "Use filters to find professionals matching your needs." },
-        { title: "Schedule a Session", description: "Contact a professional and book your first appointment." },
+        {
+          title: "Explore the Directory",
+          description: "Use filters to find professionals matching your needs.",
+        },
+        {
+          title: "Schedule a Session",
+          description: "Contact a professional and book your first appointment.",
+        },
       ],
     },
     propDefs: [
       { key: "title", label: "Title", type: "text", placeholder: "Protocol title" },
       { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
-      { key: "level", label: "Experience Level", type: "select", options: EXPERIENCE_LEVEL_OPTIONS },
+      {
+        key: "level",
+        label: "Experience Level",
+        type: "select",
+        options: EXPERIENCE_LEVEL_OPTIONS,
+      },
       {
         key: "steps",
         label: "Steps",
         type: "array-items",
         itemSchema: [
           { key: "title", label: "Step Title", type: "text", placeholder: "Step title" },
-          { key: "description", label: "Description", type: "textarea", placeholder: "Step details" },
+          {
+            key: "description",
+            label: "Description",
+            type: "textarea",
+            placeholder: "Step details",
+          },
         ],
       },
     ],
@@ -1497,22 +2179,24 @@ export const BLOCK_REGISTRY: BlockDef[] = BASE_BLOCK_REGISTRY.map((block) => {
   if (block.type === "hero") {
     return withSharedVisibility(blockWithHeading);
   }
-  return withSharedVisibility(withSharedSectionStyles(blockWithHeading, {
-    includeImageControls: true,
-    includePaddingControls: !FULL_WIDTH_BLOCK_TYPES.has(block.type),
-  }));
+  return withSharedVisibility(
+    withSharedSectionStyles(blockWithHeading, {
+      includeImageControls: true,
+      includePaddingControls: !FULL_WIDTH_BLOCK_TYPES.has(block.type),
+    }),
+  );
 });
 
 const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
   {
     type: "therapist-map",
-    label: "Global Therapist Map (Live Data)",
+    label: "Global Provider Map (Live Data)",
     iconName: "Map",
-    description: "Interactive map showing all mental health professionals — populated from live data",
+    description: "Interactive map showing live directory profiles",
     isDynamic: true,
     category: "dynamic",
     defaultProps: {
-      title: "Our Mental Health Professionals Around the World",
+      title: "Our Verified Providers Around the World",
       subtitle: "Click a pin to learn more about a Core Platform-informed professional near you",
     },
     propDefs: [
@@ -1582,7 +2266,8 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     type: "standard-blog-page",
     label: "Standard Blog Page (Live)",
     iconName: "Newspaper",
-    description: "Combined blog archive with filters, featured post, and article feed in one reusable live block",
+    description:
+      "Combined blog archive with filters, featured post, and article feed in one reusable live block",
     isDynamic: true,
     category: "dynamic",
     defaultProps: {
@@ -1626,12 +2311,14 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     type: "events-archive",
     label: "Events Archive (Live)",
     iconName: "CalendarDays",
-    description: "Upcoming events listing with list/calendar views powered by the live events system",
+    description:
+      "Upcoming events listing with list/calendar views powered by the live events system",
     isDynamic: true,
     category: "dynamic",
     defaultProps: {
       heading: "Upcoming Events",
-      subheading: "We offer quarterly Core Platform-informed trainings for professional providers. All of our members get free registration to the events below.",
+      subheading:
+        "We offer quarterly Core Platform-informed trainings for professional providers. All of our members get free registration to the events below.",
       defaultView: "list",
       showViewToggle: true,
     },
@@ -1654,7 +2341,8 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     type: "video-archives",
     label: "Video Archives (Live)",
     iconName: "Video",
-    description: "On-demand recording archive with search and purchase/access controls powered by live event recordings",
+    description:
+      "On-demand recording archive with search and purchase/access controls powered by live event recordings",
     isDynamic: true,
     category: "dynamic",
     defaultProps: {
@@ -1676,18 +2364,25 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     type: "directory-browser",
     label: "Professional Directory (Live)",
     iconName: "Map",
-    description: "Interactive therapist directory with filters, results, and map powered by the live directory data",
+    description:
+      "Interactive directory with filters, results, and map powered by live directory data",
     isDynamic: true,
     category: "dynamic",
     defaultProps: {
-      heading: "Find a Mental Health Professional",
-      subheading: "Search for Core Platform-informed care by specialty, location, language, or session format, then explore results on the map.",
+      heading: "Find a Verified Provider",
+      subheading:
+        "Search for Core Platform-informed care by specialty, location, language, or session format, then explore results on the map.",
       showCategoryChips: true,
       showMap: true,
     },
     propDefs: [
       { key: "heading", label: "Heading", type: "text", placeholder: "Section heading" },
-      { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Optional supporting text" },
+      {
+        key: "subheading",
+        label: "Subheading",
+        type: "textarea",
+        placeholder: "Optional supporting text",
+      },
       { key: "showCategoryChips", label: "Show Category Chips", type: "boolean" },
       { key: "showMap", label: "Show Map", type: "boolean" },
     ],
@@ -1772,19 +2467,17 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     defaultProps: {
       formSlug: "contact-form",
     },
-    propDefs: [
-      { key: "formSlug", label: "Assigned Form", type: "form-select" },
-    ],
+    propDefs: [{ key: "formSlug", label: "Assigned Form", type: "form-select" }],
   },
   {
     type: "join-hero",
     label: "Join Hero (Live)",
     iconName: "UserPlus",
-    description: "Join page hero heading for mental health professionals — managed automatically",
+    description: "Join page hero heading for verified providers — managed automatically",
     isDynamic: true,
     category: "hero",
     defaultProps: {
-      heading: "Are you a Core Platform-Informed Mental Health Professional?",
+      heading: "Are you a Core Platform-informed verified provider?",
       accentHeading: "Join the Network!",
       headingColor: "",
       accentHeadingColor: "",
@@ -1793,10 +2486,25 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     },
     propDefs: [
       { key: "heading", label: "Heading", type: "text", placeholder: "Main heading" },
-      { key: "accentHeading", label: "Accent Heading", type: "text", placeholder: "Highlighted heading text" },
+      {
+        key: "accentHeading",
+        label: "Accent Heading",
+        type: "text",
+        placeholder: "Highlighted heading text",
+      },
       { key: "headingColor", label: "Heading Color", type: "color", placeholder: "#ffffff" },
-      { key: "accentHeadingColor", label: "Accent Heading Color", type: "color", placeholder: "#89cda1" },
-      { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Optional supporting text" },
+      {
+        key: "accentHeadingColor",
+        label: "Accent Heading Color",
+        type: "color",
+        placeholder: "#89cda1",
+      },
+      {
+        key: "subheading",
+        label: "Subheading",
+        type: "textarea",
+        placeholder: "Optional supporting text",
+      },
       { key: "subheadingColor", label: "Subheading Color", type: "color", placeholder: "#ffffff" },
     ],
   },
@@ -1804,11 +2512,12 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     type: "join-registration-form",
     label: "Join Hero + Application Status (Live)",
     iconName: "UserPlus",
-    description: "Combined Join page hero, application status, and member login prompt — managed automatically",
+    description:
+      "Combined Join page hero, application status, and member login prompt — managed automatically",
     isDynamic: true,
     category: "dynamic",
     defaultProps: {
-      heading: "Are you a Core Platform-Informed Mental Health Professional?",
+      heading: "Are you a Core Platform-informed verified provider?",
       accentHeading: "Join the Network!",
       headingColor: "",
       accentHeadingColor: "",
@@ -1821,23 +2530,55 @@ const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     },
     propDefs: [
       { key: "heading", label: "Heading", type: "text", placeholder: "Main heading" },
-      { key: "accentHeading", label: "Accent Heading", type: "text", placeholder: "Highlighted heading text" },
+      {
+        key: "accentHeading",
+        label: "Accent Heading",
+        type: "text",
+        placeholder: "Highlighted heading text",
+      },
       { key: "headingColor", label: "Heading Color", type: "color", placeholder: "#ffffff" },
-      { key: "accentHeadingColor", label: "Accent Heading Color", type: "color", placeholder: "#89cda1" },
-      { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Optional supporting text" },
+      {
+        key: "accentHeadingColor",
+        label: "Accent Heading Color",
+        type: "color",
+        placeholder: "#89cda1",
+      },
+      {
+        key: "subheading",
+        label: "Subheading",
+        type: "textarea",
+        placeholder: "Optional supporting text",
+      },
       { key: "subheadingColor", label: "Subheading Color", type: "color", placeholder: "#ffffff" },
-      { key: "applicationStatusText", label: "Button Status Text", type: "text", placeholder: "Applications open in June." },
-      { key: "loginPromptPrefix", label: "Login Prompt Prefix", type: "text", placeholder: "If you're already a member click here to" },
+      {
+        key: "applicationStatusText",
+        label: "Button Status Text",
+        type: "text",
+        placeholder: "Applications open in June.",
+      },
+      {
+        key: "loginPromptPrefix",
+        label: "Login Prompt Prefix",
+        type: "text",
+        placeholder: "If you're already a member click here to",
+      },
       { key: "loginLinkText", label: "Login Link Text", type: "text", placeholder: "Log in" },
-      { key: "loginPromptSuffix", label: "Login Prompt Suffix", type: "text", placeholder: "to your profile!" },
+      {
+        key: "loginPromptSuffix",
+        label: "Login Prompt Suffix",
+        type: "text",
+        placeholder: "to your profile!",
+      },
     ],
   },
 ];
 
 export const DYNAMIC_BLOCK_TYPES: BlockDef[] = BASE_DYNAMIC_BLOCK_TYPES.map((block) =>
-  withSharedVisibility(withSharedSectionStyles(withSharedSectionHeading(block), {
-    includePaddingControls: !FULL_WIDTH_BLOCK_TYPES.has(block.type),
-  }))
+  withSharedVisibility(
+    withSharedSectionStyles(withSharedSectionHeading(block), {
+      includePaddingControls: !FULL_WIDTH_BLOCK_TYPES.has(block.type),
+    }),
+  ),
 );
 
 export const ALL_BLOCKS: BlockDef[] = [...BLOCK_REGISTRY, ...DYNAMIC_BLOCK_TYPES];

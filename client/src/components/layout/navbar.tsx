@@ -1,6 +1,17 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, User, LogOut, LayoutDashboard, Shield, UserCog, ChevronDown, Bell, ShoppingBag, ShoppingCart } from "lucide-react";
+import {
+  Menu,
+  User,
+  LogOut,
+  LayoutDashboard,
+  Shield,
+  UserCog,
+  ChevronDown,
+  Bell,
+  ShoppingBag,
+  ShoppingCart,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count";
 import logoImg from "@assets/IMG_0002_1772999718659.png";
@@ -22,13 +33,9 @@ import { FormModalButton } from "@/components/forms/form-modal-button";
 import { getCartItemCount, readCart, type CartItem } from "@/features/ecommerce/cart-store";
 import { MiniCartDrawer } from "@/features/ecommerce/mini-cart-drawer";
 import { DEFAULT_SITE_FEATURES, type SiteFeatures } from "@shared/site-features";
+import { useDirectorySettings } from "@/hooks/use-directory-settings";
+import { getDirectoryExperienceMode } from "@shared/types/directory-settings";
 import type { CmsMenu, MenuItem, PublicMenuLocation } from "@shared/schema";
-
-const defaultNavLinks = [
-  { label: "About", href: "/about" },
-  { label: "Find a Mental Health Professional", href: "/directory" },
-  { label: "Join the Network", href: "/join" },
-];
 
 const allResourceLinks = [
   { label: "Events", href: "/events" },
@@ -224,6 +231,24 @@ export function Navbar() {
   const [cartOpen, setCartOpen] = useState(false);
   const cartItems = useCartItems();
   const cartItemCount = getCartItemCount(cartItems);
+  const { settings: directorySettings } = useDirectorySettings();
+  const directoryExperience = getDirectoryExperienceMode(directorySettings);
+  const directoryPrimaryPlural =
+    directoryExperience === "real_estate"
+      ? directorySettings.listingLabelPlural || directorySettings.directoryLabelPlural
+      : directorySettings.participantLabelPlural || directorySettings.listingLabelPlural;
+  const directoryNavLabel =
+    directoryExperience === "therapists" &&
+    directorySettings.participantLabelPlural === "Therapists"
+      ? "Find a Mental Health Professional"
+      : `Find ${directoryPrimaryPlural || "Listings"}`;
+  const dashboardLabel =
+    directoryExperience === "therapists" ? "Professional Dashboard" : "Listing Dashboard";
+  const defaultNavLinks = [
+    { label: "About", href: "/about" },
+    { label: directoryNavLabel, href: "/directory" },
+    { label: "Join the Network", href: "/join" },
+  ];
 
   useEffect(() => {
     const openMiniCart = () => setCartOpen(true);
@@ -259,17 +284,18 @@ export function Navbar() {
   const hasCustomerAccountAccess = Boolean(
     siteFeatures.ecommerceEnabled &&
     user &&
-    (user.role === "client" || user.role === "admin" || user.role === "editor")
+    (user.role === "client" || user.role === "admin" || user.role === "editor"),
   );
-  const resourceLinks = allResourceLinks.filter(
-    (link) => !(link.hideFromClients && isClient)
-  );
+  const resourceLinks = allResourceLinks.filter((link) => !(link.hideFromClients && isClient));
 
   const unreadNotifCount = useUnreadNotificationCount();
   const brandLogo = frontendLogoUrl || logoImg;
 
   return (
-    <nav className="sticky top-0 z-[999] bg-background/95 backdrop-blur-sm border-b" data-testid="navbar">
+    <nav
+      className="sticky top-0 z-[999] bg-background/95 backdrop-blur-sm border-b"
+      data-testid="navbar"
+    >
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 py-3 sm:py-4">
         <Link href="/" data-testid="link-brand">
           <img src={brandLogo} alt="Core Platform" className="h-8 sm:h-10 w-auto" />
@@ -282,7 +308,7 @@ export function Navbar() {
                 <DynamicDropdown key={item.id} item={item} location={location} />
               ) : (
                 <DynamicMenuButton key={item.id} item={item} location={location} />
-              )
+              ),
             )
           ) : (
             <>
@@ -302,7 +328,11 @@ export function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className={resourceLinks.some((r) => location === r.href) ? "toggle-elevate toggle-elevated" : ""}
+                    className={
+                      resourceLinks.some((r) => location === r.href)
+                        ? "toggle-elevate toggle-elevated"
+                        : ""
+                    }
                     data-testid="link-nav-resources"
                   >
                     Resources
@@ -312,7 +342,10 @@ export function Navbar() {
                 <DropdownMenuContent align="start" className="z-[1000]">
                   {resourceLinks.map((link) => (
                     <DropdownMenuItem key={link.href} asChild>
-                      <Link href={link.href} data-testid={`link-nav-resource-${link.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
+                      <Link
+                        href={link.href}
+                        data-testid={`link-nav-resource-${link.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+                      >
                         {link.label}
                       </Link>
                     </DropdownMenuItem>
@@ -335,7 +368,9 @@ export function Navbar() {
 
         <div className="hidden md:flex items-center gap-3 flex-wrap">
           <NavbarSearchPopover />
-          {siteFeatures.ecommerceEnabled ? <CartNavButton cartItemCount={cartItemCount} onClick={() => setCartOpen(true)} /> : null}
+          {siteFeatures.ecommerceEnabled ? (
+            <CartNavButton cartItemCount={cartItemCount} onClick={() => setCartOpen(true)} />
+          ) : null}
           {isLoading ? null : user ? (
             <>
               <DropdownMenu>
@@ -346,7 +381,11 @@ export function Navbar() {
                     data-testid="button-user-menu"
                   >
                     {user.profileImageUrl ? (
-                      <img src={user.profileImageUrl} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={user.profileImageUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       <User className="h-4 w-4 text-muted-foreground" />
                     )}
@@ -362,7 +401,7 @@ export function Navbar() {
                     <DropdownMenuItem asChild>
                       <Link href="/therapist" data-testid="link-therapist-dashboard">
                         <LayoutDashboard className="mr-2 h-4 w-4" />
-                        Mental Health Professional Dashboard
+                        {dashboardLabel}
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -405,7 +444,7 @@ export function Navbar() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => isClient ? undefined : setProfileOpen(true)}
+                    onClick={() => (isClient ? undefined : setProfileOpen(true))}
                     data-testid="button-my-profile"
                     asChild={Boolean(isClient)}
                   >
@@ -422,10 +461,7 @@ export function Navbar() {
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => logout.mutate()}
-                    data-testid="button-logout"
-                  >
+                  <DropdownMenuItem onClick={() => logout.mutate()} data-testid="button-logout">
                     <LogOut className="mr-2 h-4 w-4" />
                     Logout
                   </DropdownMenuItem>
@@ -444,7 +480,13 @@ export function Navbar() {
         </div>
 
         <div className="flex md:hidden items-center gap-2">
-          {siteFeatures.ecommerceEnabled ? <CartNavButton cartItemCount={cartItemCount} compact onClick={() => setCartOpen(true)} /> : null}
+          {siteFeatures.ecommerceEnabled ? (
+            <CartNavButton
+              cartItemCount={cartItemCount}
+              compact
+              onClick={() => setCartOpen(true)}
+            />
+          ) : null}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button size="icon" variant="ghost" data-testid="button-mobile-menu">
@@ -459,7 +501,7 @@ export function Navbar() {
               </SheetHeader>
               <div className="flex flex-col gap-1 mt-6">
                 {dynamicItems ? (
-                  flattenItems(dynamicItems).map(({ item, depth }) => (
+                  flattenItems(dynamicItems).map(({ item, depth }) =>
                     item.children && item.children.length > 0 ? (
                       <p
                         key={item.id}
@@ -470,7 +512,13 @@ export function Navbar() {
                         {item.label}
                       </p>
                     ) : item.openInNewTab ? (
-                      <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer" onClick={() => setMobileOpen(false)}>
+                      <a
+                        key={item.id}
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setMobileOpen(false)}
+                      >
                         <Button
                           variant="ghost"
                           className="w-full justify-start"
@@ -492,8 +540,8 @@ export function Navbar() {
                           {item.label}
                         </Button>
                       </Link>
-                    )
-                  ))
+                    ),
+                  )
                 ) : (
                   <>
                     {defaultNavLinks.map((link) => (
@@ -508,7 +556,9 @@ export function Navbar() {
                         </Button>
                       </Link>
                     ))}
-                    <p className="px-4 pt-3 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resources</p>
+                    <p className="px-4 pt-3 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Resources
+                    </p>
                     {resourceLinks.map((link) => (
                       <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}>
                         <Button
@@ -565,15 +615,23 @@ export function Navbar() {
                     </p>
                     {isTherapist && (
                       <Link href="/therapist" onClick={() => setMobileOpen(false)}>
-                        <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-therapist">
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                          data-testid="link-mobile-therapist"
+                        >
                           <LayoutDashboard className="mr-2 h-4 w-4" />
-                          Mental Health Professional Dashboard
+                          {dashboardLabel}
                         </Button>
                       </Link>
                     )}
                     {isAdmin && (
                       <Link href="/admin" onClick={() => setMobileOpen(false)}>
-                        <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-admin">
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                          data-testid="link-mobile-admin"
+                        >
                           <Shield className="mr-2 h-4 w-4" />
                           Admin Dashboard
                         </Button>
@@ -582,13 +640,21 @@ export function Navbar() {
                     {hasCustomerAccountAccess && (
                       <>
                         <Link href="/account" onClick={() => setMobileOpen(false)}>
-                          <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-customer-account">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                            data-testid="link-mobile-customer-account"
+                          >
                             <LayoutDashboard className="mr-2 h-4 w-4" />
                             My Account
                           </Button>
                         </Link>
                         <Link href="/account/orders" onClick={() => setMobileOpen(false)}>
-                          <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-customer-orders">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                            data-testid="link-mobile-customer-orders"
+                          >
                             <ShoppingBag className="mr-2 h-4 w-4" />
                             Orders
                           </Button>
@@ -655,7 +721,11 @@ export function Navbar() {
                 ) : (
                   <>
                     <Link href="/auth/login" onClick={() => setMobileOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-start" data-testid="link-mobile-login">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start"
+                        data-testid="link-mobile-login"
+                      >
                         Login
                       </Button>
                     </Link>
@@ -667,7 +737,9 @@ export function Navbar() {
         </div>
       </div>
 
-      {user && <NotificationBell open={notifOpen} onOpenChange={setNotifOpen} showTrigger={false} />}
+      {user && (
+        <NotificationBell open={notifOpen} onOpenChange={setNotifOpen} showTrigger={false} />
+      )}
       <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
       {siteFeatures.ecommerceEnabled ? (
         <MiniCartDrawer open={cartOpen} onOpenChange={setCartOpen} items={cartItems} />
