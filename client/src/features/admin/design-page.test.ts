@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderToString } from "react-dom/server";
 import {
   BrandingTab,
+  ECOMMERCE_INTEGRATION_CATEGORIES,
   filterIntegrations,
   filterEmailTemplates,
   getIntegrationLibraryCounts,
@@ -107,6 +108,16 @@ describe("integration library helpers", () => {
         statusFilter: "not_configured",
       }).map((config) => config.category),
     ).toEqual(["mailgun"]);
+  });
+
+  it("keeps buy-now-pay-later and wallet providers in system integrations", () => {
+    const systemIntegrationCategories = INTEGRATIONS.filter(
+      (config) => !ECOMMERCE_INTEGRATION_CATEGORIES.has(config.category),
+    ).map((config) => config.category);
+
+    expect(systemIntegrationCategories).toContain("affirm");
+    expect(systemIntegrationCategories).toContain("afterpay");
+    expect(systemIntegrationCategories).toContain("paypal");
   });
 });
 
