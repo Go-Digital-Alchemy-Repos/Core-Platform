@@ -470,8 +470,8 @@ export function DirectoryBrowserSection({
       values.push({ name: clean });
     };
 
-    specList.forEach((spec) => add(spec.name));
     therapists.forEach((profile) => profile.specializations?.forEach(add));
+    specList.forEach((spec) => add(spec.name));
 
     return values;
   }, [specList, therapists]);
