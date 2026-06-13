@@ -356,7 +356,7 @@ describe("CmsPageEditorPage", () => {
 
   it("prompts before publishing when unsaved page edits are still dirty", async () => {
     editorLockState.isReadOnly = false;
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const confirmSpy = vi.spyOn(window, "confirm");
     root = createRoot(container);
 
     await act(async () => {
@@ -377,9 +377,17 @@ describe("CmsPageEditorPage", () => {
       publishButton?.click();
     });
 
-    expect(confirmSpy).toHaveBeenCalledWith(
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(document.body.textContent).toContain(
       "You have unsaved changes to this page. Publishing will use the last saved version, not your in-progress edits. Continue?"
     );
+    const keepEditingButton = [...document.body.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("Keep editing"),
+    ) as HTMLButtonElement | undefined;
+    expect(keepEditingButton).toBeDefined();
+    await act(async () => {
+      keepEditingButton?.click();
+    });
     expect(mutationStates[2]?.mutate).not.toHaveBeenCalled();
   });
 });

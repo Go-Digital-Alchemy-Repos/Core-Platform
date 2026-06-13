@@ -2047,6 +2047,7 @@ function FormsPageContent() {
           </div>
         </TabsContent>
       </Tabs>
+      {unsavedChangesGuard.dialog}
     </div>
   );
 }

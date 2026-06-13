@@ -337,9 +337,17 @@ describe("CmsBlogEditorPage", () => {
       confirmScheduleButton?.click();
     });
 
-    expect(confirmSpy).toHaveBeenCalledWith(
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(document.body.textContent).toContain(
       "You have unsaved changes to this post. Scheduling this post will use the last saved version, not your in-progress edits. Continue?"
     );
+    const keepEditingButton = [...document.body.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("Keep editing"),
+    ) as HTMLButtonElement | undefined;
+    expect(keepEditingButton).toBeDefined();
+    await act(async () => {
+      keepEditingButton?.click();
+    });
     expect(fetch).not.toHaveBeenCalled();
   });
 });

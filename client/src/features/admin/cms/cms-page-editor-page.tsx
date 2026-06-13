@@ -1439,6 +1439,7 @@ export default function CmsPageEditorPage() {
           />
         </>
       )}
+      {unsavedChangesGuard.dialog}
     </AdminSidebar>
   );
 }

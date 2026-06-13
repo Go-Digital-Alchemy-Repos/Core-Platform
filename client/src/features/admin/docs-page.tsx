@@ -649,6 +649,7 @@ export default function DocsPage() {
           </SheetFooter>
         </SheetContent>
       </Sheet>
+      {unsavedChangesGuard.dialog}
     </AdminSidebar>
   );
 }

@@ -3399,6 +3399,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {unsavedChangesGuard.dialog}
     </div>
   );
 }

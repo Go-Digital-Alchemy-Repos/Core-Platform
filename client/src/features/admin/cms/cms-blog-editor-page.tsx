@@ -1260,6 +1260,7 @@ export default function CmsBlogEditorPage() {
           </Button>
         </div>
       </div>
+      {unsavedChangesGuard.dialog}
     </AdminSidebar>
   );
 }

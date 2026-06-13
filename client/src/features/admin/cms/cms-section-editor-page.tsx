@@ -349,6 +349,7 @@ export default function CmsSectionEditorPage() {
           </Button>
         </div>
       </div>
+      {unsavedChangesGuard.dialog}
     </AdminSidebar>
   );
 }
