@@ -123,7 +123,10 @@ export async function ensureSystemEcommerce() {
   const categoryBySlug = new Map(existingCategories.map((category) => [category.slug, category]));
 
   for (const category of seededCategories) {
-    if (!categoryBySlug.has(category.slug)) {
+    const existingCategory = categoryBySlug.get(category.slug);
+    if (existingCategory) {
+      await storage.ecommerce.updateCategory(existingCategory.id, category);
+    } else {
       const created = await storage.ecommerce.createCategory({ ...category, active: true });
       categoryBySlug.set(created.slug, created);
     }
@@ -131,11 +134,35 @@ export async function ensureSystemEcommerce() {
 
   const existingProducts = await storage.ecommerce.getProducts();
   const productSlugs = new Set(existingProducts.map((product) => product.urlSlug));
+  const productBySku = new Map(existingProducts.map((product) => [product.sku, product]));
   for (const product of seededProducts) {
-    if (productSlugs.has(product.urlSlug)) continue;
     const categoryIds = product.categories
       .map((slug) => categoryBySlug.get(slug)?.id)
       .filter((id): id is string => Boolean(id));
+    const existingProduct = productBySku.get(product.sku);
+    if (existingProduct) {
+      await storage.ecommerce.updateProduct(existingProduct.id, {
+        name: product.name,
+        tagline: product.tagline,
+        description: product.description,
+        price: product.price,
+        salePrice: product.salePrice,
+        primaryImage: product.primaryImage,
+        features: product.features,
+        included: product.included,
+        sku: product.sku,
+        tags: product.tags,
+        urlSlug: product.urlSlug,
+        metaTitle: product.metaTitle,
+        metaDescription: product.metaDescription,
+        metaKeywords: "Core Platform, ecommerce, digital resources",
+        ogTitle: product.metaTitle,
+        ogDescription: product.metaDescription,
+        ogImage: product.primaryImage,
+      }, categoryIds);
+      continue;
+    }
+    if (productSlugs.has(product.urlSlug)) continue;
     await storage.ecommerce.createProduct({
       name: product.name,
       tagline: product.tagline,
