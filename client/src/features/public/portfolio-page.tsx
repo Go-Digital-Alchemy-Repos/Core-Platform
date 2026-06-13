@@ -34,8 +34,8 @@ function ProjectCard({ project, layout }: { project: PortfolioProject; layout: "
   return (
     <Link href={`/portfolio/${project.slug}`} className="block">
       <Card className="group h-full cursor-pointer overflow-hidden hover-elevate" data-testid={`card-portfolio-project-${project.id}`}>
-        <div className={isList ? "grid gap-0 md:grid-cols-[320px_1fr]" : ""}>
-          <div className={isList ? "aspect-[4/3] md:h-full" : "aspect-[4/3]"}>
+        <div className={isList ? "md:flex md:items-stretch" : ""}>
+          <div className={isList ? "aspect-[16/10] overflow-hidden md:aspect-auto md:min-h-[280px] md:w-[38%] md:max-w-[430px] md:shrink-0" : "aspect-[4/3] overflow-hidden"}>
             {image ? (
               <img
                 src={image}
@@ -49,13 +49,13 @@ function ProjectCard({ project, layout }: { project: PortfolioProject; layout: "
               </div>
             )}
           </div>
-          <CardContent className="space-y-4 p-5">
+          <CardContent className={isList ? "min-w-0 flex-1 space-y-4 bg-card p-5 md:p-6" : "space-y-4 p-5"}>
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary">{PORTFOLIO_INDUSTRY_LABELS[project.industry]}</Badge>
               {project.featured && <Badge variant="outline">Featured</Badge>}
             </div>
             <div className="space-y-2">
-              <h2 className="text-xl font-semibold tracking-normal">{project.title}</h2>
+              <h2 className="break-words text-xl font-semibold tracking-normal">{project.title}</h2>
               {project.subtitle && <p className="text-sm text-muted-foreground">{project.subtitle}</p>}
               {(project.location || project.projectType) && (
                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">

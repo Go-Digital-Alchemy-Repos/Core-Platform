@@ -449,7 +449,7 @@ export function buildNavGroups(
             label: "System",
             items: [
               {
-                title: "Documentation",
+                title: "Developer Resources",
                 href: "/admin/docs",
                 icon: FileText,
                 iconColor: "text-indigo-600",
