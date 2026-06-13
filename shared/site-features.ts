@@ -5,6 +5,7 @@ export interface SiteFeatures {
   eventsEnabled: boolean;
   crmEnabled: boolean;
   ecommerceEnabled: boolean;
+  membershipEnabled: boolean;
   careersEnabled: boolean;
 }
 
@@ -15,6 +16,7 @@ export const DEFAULT_SITE_FEATURES: SiteFeatures = {
   eventsEnabled: true,
   crmEnabled: true,
   ecommerceEnabled: true,
+  membershipEnabled: true,
   careersEnabled: true,
 };
 

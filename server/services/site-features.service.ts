@@ -25,6 +25,10 @@ export async function getSiteFeatures(): Promise<SiteFeatures> {
         settings.enable_ecommerce,
         DEFAULT_SITE_FEATURES.ecommerceEnabled,
       ),
+      membershipEnabled: normalizeBooleanSetting(
+        settings.enable_membership,
+        DEFAULT_SITE_FEATURES.membershipEnabled,
+      ),
       careersEnabled: normalizeBooleanSetting(
         settings.enable_careers,
         DEFAULT_SITE_FEATURES.careersEnabled,
