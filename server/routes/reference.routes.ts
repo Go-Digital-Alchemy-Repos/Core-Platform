@@ -156,7 +156,7 @@ router.post(
     if (completedCount >= totalRefs) {
       await storage.applications.update(reference.applicationId, {
         referencesStatus: "completed",
-      } as any);
+      });
 
       await storage.applications.addTimelineEntry({
         applicationId: reference.applicationId,

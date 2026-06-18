@@ -1,4 +1,4 @@
-import express, { type Request, Response, NextFunction } from "express";
+import express, { type ErrorRequestHandler } from "express";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { registerRoutes } from "./routes";
@@ -142,10 +142,17 @@ const REDACTED_KEYS = [
 ];
 const MAX_LOG_BODY_LENGTH = 500;
 
-function redactSensitive(obj: any): any {
+type JsonRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function redactSensitive(obj: unknown): unknown {
   if (!obj || typeof obj !== "object") return obj;
   if (Array.isArray(obj)) return obj.map((item) => redactSensitive(item));
-  const redacted: Record<string, any> = {};
+  if (!isRecord(obj)) return obj;
+  const redacted: JsonRecord = {};
   for (const key of Object.keys(obj)) {
     if (REDACTED_KEYS.some((rk) => key.toLowerCase().includes(rk.toLowerCase()))) {
       redacted[key] = "[REDACTED]";
@@ -171,7 +178,7 @@ function truncateBody(body: string): string {
 app.use((req, res, next) => {
   const start = Date.now();
   const reqPath = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+  let capturedJsonResponse: unknown;
 
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
@@ -217,8 +224,9 @@ app.use((req, res, next) => {
 
   await registerRoutes(httpServer, app);
 
-  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
+  const finalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+    const httpError = err as { status?: number; statusCode?: number; message?: string };
+    const status = httpError.status || httpError.statusCode || 500;
 
     logger.app.error(`${req.method} ${req.path} ${status}`, err, {
       requestId: req.requestId,
@@ -235,10 +243,12 @@ app.use((req, res, next) => {
     const message =
       status >= 500 && isProduction
         ? "Internal Server Error"
-        : err.message || "Internal Server Error";
+        : httpError.message || "Internal Server Error";
 
     return res.status(status).json({ message });
-  });
+  };
+
+  app.use(finalErrorHandler);
 
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);

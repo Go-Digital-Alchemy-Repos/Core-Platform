@@ -10,12 +10,28 @@ import { sql } from "drizzle-orm";
 
 const router = Router();
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function hasPostgresCode(error: unknown, code: string): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === code;
+}
+
+type CreatedAdminRow = {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  role: string;
+};
+
 async function hasAdminUser(): Promise<boolean> {
   try {
     const admins = await storage.users.getUsersByRole("admin");
     return admins.length > 0;
-  } catch (err: any) {
-    logger.app.warn("Setup status check failed (table may not exist yet)", { error: err.message });
+  } catch (err) {
+    logger.app.warn("Setup status check failed (table may not exist yet)", { error: getErrorMessage(err) });
     return false;
   }
 }
@@ -96,7 +112,7 @@ router.post(
         return;
       }
 
-      const created = result.rows[0] as any;
+      const created = result.rows[0] as CreatedAdminRow;
       logger.app.info("Initial admin account created", { userId: created.id, email });
 
       res.status(201).json({
@@ -106,8 +122,8 @@ router.post(
         lastName: created.last_name,
         role: created.role,
       });
-    } catch (err: any) {
-      if (err.code === "23505") {
+    } catch (err) {
+      if (hasPostgresCode(err, "23505")) {
         res.status(409).json({ message: "An account with this email already exists" });
         return;
       }

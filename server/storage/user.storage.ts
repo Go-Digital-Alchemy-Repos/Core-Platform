@@ -21,7 +21,7 @@ export class UserStorage {
     return user;
   }
 
-  async updateUser(id: string, data: Partial<InsertUser>): Promise<User | undefined> {
+  async updateUser(id: string, data: Partial<UserInsertData>): Promise<User | undefined> {
     const [user] = await db
       .update(users)
       .set({ ...(data as Partial<UserInsertData>), updatedAt: new Date() })

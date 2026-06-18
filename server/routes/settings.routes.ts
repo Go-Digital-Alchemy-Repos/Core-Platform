@@ -194,8 +194,11 @@ router.post(
         const stripe = await getStripeClient();
         await stripe.accounts.retrieve();
         res.json({ success: true, message: "Stripe connection successful" });
-      } catch (err: any) {
-        res.json({ success: false, message: err.message || "Stripe connection failed" });
+      } catch (err) {
+        res.json({
+          success: false,
+          message: err instanceof Error ? err.message : "Stripe connection failed",
+        });
       }
       return;
     }

@@ -287,7 +287,7 @@ router.patch(
     }
 
     await ensureAdminGuardrails({ targetUserId: userId, suspend: !user.isSuspended });
-    const updated = await storage.users.updateUser(userId, { isSuspended: !user.isSuspended } as any);
+    const updated = await storage.users.updateUser(userId, { isSuspended: !user.isSuspended });
     res.json(await toSafeUser(updated!));
   })
 );

@@ -165,7 +165,7 @@ export class EventRegistrationStorage {
   }
 
   async updateRegistrationStatus(id: string, status: string): Promise<EventRegistration | undefined> {
-    const updates: Record<string, any> = { status };
+    const updates: Partial<InsertEventRegistration> = { status };
     if (status !== "canceled") {
       updates.canceledAt = null;
     }

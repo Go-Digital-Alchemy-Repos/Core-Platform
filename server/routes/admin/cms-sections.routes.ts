@@ -50,10 +50,9 @@ router.post(
     if (!parsed.success) {
       return res.status(400).json({ error: "Validation failed", issues: parsed.error.issues });
     }
-    const adminId = (req as any).user?.id;
+    const adminId = req.user?.id;
     const section = await storage.cmsSections.createSection({
       ...parsed.data,
-      blocks: parsed.data.blocks as any,
       createdBy: adminId,
     });
     res.status(201).json(section);
@@ -73,7 +72,6 @@ router.put(
     }
     const updated = await storage.cmsSections.updateSection(id, {
       ...parsed.data,
-      blocks: parsed.data.blocks as any,
     });
     res.json(updated);
   })

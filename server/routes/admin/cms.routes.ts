@@ -64,7 +64,7 @@ router.post("/pages", async (req, res) => {
       return res.status(409).json({ error: "A page with this slug already exists" });
     }
 
-    const adminId = (req as any).user?.id;
+    const adminId = req.user!.id;
     const page = await storage.cmsPages.createPage({
       ...data,
       slug,
@@ -182,7 +182,7 @@ router.put("/pages/:id", async (req, res) => {
       }
     }
 
-    const adminId = (req as any).user?.id;
+    const adminId = req.user!.id;
 
     await storage.cmsPageRevisions.createRevision({
       pageId: page.id,
@@ -235,7 +235,7 @@ router.delete("/pages/:id", async (req, res) => {
 router.post("/pages/:id/publish", async (req, res) => {
   try {
     const id = paramString(req.params.id);
-    const adminId = (req as any).user?.id;
+    const adminId = req.user!.id;
     const existingPage = await resolvePage(id);
     if (!existingPage) return res.status(404).json({ error: "Page not found" });
     const page = await storage.cmsPages.publishPage(existingPage.id, adminId);
@@ -250,7 +250,7 @@ router.post("/pages/:id/publish", async (req, res) => {
 router.post("/pages/:id/schedule", async (req, res) => {
   try {
     const id = paramString(req.params.id);
-    const adminId = (req as any).user?.id;
+    const adminId = req.user!.id;
     const { scheduledAt } = req.body;
     if (!scheduledAt) {
       return res.status(400).json({ error: "scheduledAt is required" });
@@ -273,7 +273,7 @@ router.post("/pages/:id/schedule", async (req, res) => {
 router.post("/pages/:id/unpublish", async (req, res) => {
   try {
     const id = paramString(req.params.id);
-    const adminId = (req as any).user?.id;
+    const adminId = req.user!.id;
     const existingPage = await resolvePage(id);
     if (!existingPage) return res.status(404).json({ error: "Page not found" });
     const force = req.query.force === "true";
@@ -312,7 +312,7 @@ router.post("/pages/:pageId/revisions/:revisionId/restore", async (req, res) => 
   try {
     const pageId = paramString(req.params.pageId);
     const revisionId = paramString(req.params.revisionId);
-    const adminId = (req as any).user?.id;
+    const adminId = req.user?.id;
 
     const page = await resolvePage(pageId);
     if (!page) return res.status(404).json({ error: "Page not found" });

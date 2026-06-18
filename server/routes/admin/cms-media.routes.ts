@@ -114,7 +114,7 @@ router.post(
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const adminId = (req as any).user?.id;
+    const adminId = req.user?.id;
     const asset = await createCmsMediaAssetFromUpload({
       buffer: req.file.buffer,
       originalName: req.file.originalname,

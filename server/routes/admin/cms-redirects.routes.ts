@@ -4,6 +4,10 @@ import { insertRedirectSchema } from "../../../shared/schema/redirects";
 
 const router = Router();
 
+function hasPostgresCode(error: unknown, code: string): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === code;
+}
+
 router.get("/redirects", async (_req, res) => {
   try {
     const all = await storage.redirects.getAll();
@@ -21,8 +25,8 @@ router.post("/redirects", async (req, res) => {
   try {
     const created = await storage.redirects.create(parsed.data);
     res.status(201).json(created);
-  } catch (err: any) {
-    if (err?.code === "23505") {
+  } catch (err) {
+    if (hasPostgresCode(err, "23505")) {
       return res.status(409).json({ error: "A redirect for this path already exists" });
     }
     res.status(500).json({ error: "Failed to create redirect" });

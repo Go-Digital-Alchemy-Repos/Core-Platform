@@ -39,9 +39,9 @@ Current as of June 18, 2026 after the production reconciliation and branch clean
 
 ## Code Health Snapshot
 
-- Full ESLint currently reports 0 errors and 114 warnings.
+- Full ESLint currently reports 0 errors and 79 warnings.
 - Warning categories:
-  - 114 `@typescript-eslint/no-explicit-any`
+  - 79 `@typescript-eslint/no-explicit-any`
   - 0 `@typescript-eslint/no-unused-vars`
   - 0 miscellaneous JavaScript cleanup warnings
 - Highest-maintenance files by line count:

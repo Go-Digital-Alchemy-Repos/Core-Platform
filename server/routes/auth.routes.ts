@@ -124,7 +124,7 @@ router.post(
       return;
     }
 
-    await storage.users.updateUser(user.id, { lastLoginAt: new Date() } as any);
+    await storage.users.updateUser(user.id, { lastLoginAt: new Date() });
     await storage.activity.log(user.id, "login", "User logged in");
 
     const token = generateToken(user);

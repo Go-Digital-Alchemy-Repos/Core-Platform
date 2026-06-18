@@ -12,16 +12,22 @@ export class AppError extends Error {
 }
 
 export function asyncHandler(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>
 ): RequestHandler {
   return (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 }
 
-export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
+type HttpError = Error & {
+  status?: number;
+  statusCode?: number;
+};
+
+export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
   const isValidationError = err instanceof ZodError;
-  const status = isValidationError ? 400 : err.statusCode || err.status || 500;
+  const httpError = err as Partial<HttpError>;
+  const status = isValidationError ? 400 : httpError.statusCode || httpError.status || 500;
   const logContext = {
     requestId: req.requestId,
     method: req.method,
@@ -54,7 +60,7 @@ export function errorHandler(err: any, req: Request, res: Response, _next: NextF
     const message =
       status >= 500 && isProduction
         ? "Internal Server Error"
-        : err.message || "Internal Server Error";
+        : err instanceof Error ? err.message : "Internal Server Error";
 
     res.status(status).json({ message });
   }

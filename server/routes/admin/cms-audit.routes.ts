@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { storage } from "../../storage/index";
+import type { BlogPost, CmsPage, Event } from "@shared/schema";
 
 const router = Router();
 
-function pageIssues(page: any): string[] {
+function pageIssues(page: CmsPage): string[] {
   const issues: string[] = [];
   if (!page.seoTitle) issues.push("missing_seo_title");
   if (!page.seoDescription) issues.push("missing_seo_description");
@@ -14,7 +15,7 @@ function pageIssues(page: any): string[] {
   return issues;
 }
 
-function postIssues(post: any): string[] {
+function postIssues(post: BlogPost): string[] {
   const issues: string[] = [];
   if (!post.seoTitle) issues.push("missing_seo_title");
   if (!post.seoDescription) issues.push("missing_seo_description");
@@ -25,7 +26,7 @@ function postIssues(post: any): string[] {
   return issues;
 }
 
-function eventIssues(event: any): string[] {
+function eventIssues(event: Event): string[] {
   const issues: string[] = [];
   if (!event.description) issues.push("missing_description");
   if (!event.imageUrl) issues.push("missing_og_image");
