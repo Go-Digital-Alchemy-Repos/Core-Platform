@@ -133,6 +133,22 @@ function parseBuilderContent(raw: unknown): BuilderContent {
   return EMPTY_CONTENT;
 }
 
+async function getMutationErrorMessage(error: unknown, fallback: string): Promise<string> {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response !== null &&
+    "json" in error.response &&
+    typeof error.response.json === "function"
+  ) {
+    const body = await error.response.json().catch(() => null) as { error?: string } | null;
+    return body?.error || fallback;
+  }
+  return error instanceof Error ? error.message : fallback;
+}
+
 export default function CmsPageEditorPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
@@ -235,7 +251,7 @@ export default function CmsPageEditorPage() {
   const watchStatus = form.watch("status");
   const watchTemplate = form.watch("template");
   const watchSidebarId = form.watch("sidebarId");
-  const hasFaqBlocks = (builderContent?.blocks ?? []).some((b: any) => b.type === "faq");
+  const hasFaqBlocks = (builderContent?.blocks ?? []).some((b) => b.type === "faq");
 
   useEffect(() => {
     if (isNew && !slugManuallyEdited.current && watchTitle !== titleRef.current) {
@@ -287,9 +303,8 @@ export default function CmsPageEditorPage() {
       saveState.markSaved();
       navTimerRef.current = setTimeout(() => navigate(`/admin/cms/pages/${created.id}`), 1500);
     },
-    onError: async (err: any) => {
-      const msg = await err?.response?.json?.().catch(() => null);
-      toast({ title: msg?.error || "Failed to create page", variant: "destructive" });
+    onError: async (err) => {
+      toast({ title: await getMutationErrorMessage(err, "Failed to create page"), variant: "destructive" });
       saveState.markError();
     },
   });
@@ -324,9 +339,8 @@ export default function CmsPageEditorPage() {
       );
       saveState.markSaved();
     },
-    onError: async (err: any) => {
-      const msg = await err?.response?.json?.().catch(() => null);
-      toast({ title: msg?.error || "Failed to save page", variant: "destructive" });
+    onError: async (err) => {
+      toast({ title: await getMutationErrorMessage(err, "Failed to save page"), variant: "destructive" });
       saveState.markError();
     },
   });

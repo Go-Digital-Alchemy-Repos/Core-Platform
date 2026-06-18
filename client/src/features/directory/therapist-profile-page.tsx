@@ -93,8 +93,12 @@ export default function TherapistProfilePage() {
       setContactForm({ name: "", email: "", message: "", preferredContact: "email", phone: "" });
       setShowContactForm(false);
     },
-    onError: (err: any) => {
-      toast({ title: "Failed to send", description: err.message || "Something went wrong. Please try again.", variant: "destructive" });
+    onError: (err) => {
+      toast({
+        title: "Failed to send",
+        description: err instanceof Error ? err.message : "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 

@@ -76,7 +76,7 @@ export default function RegisterPage() {
       ...(specializations && specializations.length > 0 ? { specializations } : {}),
     };
     register.mutate(data, {
-      onSuccess: (result: any) => {
+      onSuccess: (result) => {
         toast({ title: "Account created!", description: "Welcome to Core Platform." });
         redirectByRole(result.role);
       },

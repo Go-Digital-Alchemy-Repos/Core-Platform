@@ -185,8 +185,12 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
       const { url } = await res.json();
       editor?.chain().focus().setImage({ src: url }).run();
       setShowImagePanel(false);
-    } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } catch (err) {
+      toast({
+        title: "Upload failed",
+        description: err instanceof Error ? err.message : "Upload failed",
+        variant: "destructive",
+      });
     } finally {
       setUploading(false);
     }

@@ -17,6 +17,40 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { APPLICATION_STATUS, APPLICATION_STATUS_LABELS, type ApplicationStatus } from "@shared/types";
+import type {
+  ProviderApplication,
+  ProviderApplicationCredential,
+  ProviderApplicationDecision,
+  ProviderApplicationReference,
+  ProviderApplicationTimeline,
+  ProviderBackgroundCheck,
+  ProviderInterview,
+} from "@shared/schema";
+
+type AdminApplicationDetail = Omit<ProviderApplication, "formData" | "submittedSnapshot"> & {
+  userName?: string | null;
+  userEmail?: string | null;
+  formData?: Record<string, unknown> | null;
+  submittedSnapshot?: Record<string, unknown> | null;
+  timeline?: ProviderApplicationTimeline[];
+  credentials?: ProviderApplicationCredential[];
+  references?: ProviderApplicationReference[];
+  backgroundCheck?: ProviderBackgroundCheck | null;
+  interview?: ProviderInterview | null;
+  decision?: ProviderApplicationDecision | null;
+};
+
+function recordFrom(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function displayValue(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return "";
+}
 
 function safeHref(url: string): string | undefined {
   try {
@@ -68,7 +102,7 @@ export default function AdminApplicationDetailPage() {
   const [intOutcome, setIntOutcome] = useState("");
   const [discountReviewNote, setDiscountReviewNote] = useState("");
 
-  const { data: application, isLoading } = useQuery<any>({
+  const { data: application, isLoading } = useQuery<AdminApplicationDetail>({
     queryKey: ["/api/admin/applications", id],
   });
 
@@ -204,11 +238,13 @@ export default function AdminApplicationDetailPage() {
   const bgCheck = application.backgroundCheck;
   const interview = application.interview;
   const decision = application.decision;
-  const fd = (typeof application.formData === "object" && application.formData) || {};
-  const snap = (typeof application.submittedSnapshot === "object" && application.submittedSnapshot) || {};
-  const snapFd = (typeof snap.formData === "object" && snap.formData) || fd;
+  const fd = recordFrom(application.formData);
+  const snap = recordFrom(application.submittedSnapshot);
+  const snapFd = Object.keys(recordFrom(snap.formData)).length > 0 ? recordFrom(snap.formData) : fd;
+  const corePlatformQuestions = recordFrom(snapFd.corePlatformQuestions);
+  const professionalWebsite = displayValue(snapFd.professionalWebsite);
 
-  const completedRefs = references.filter((r: any) => r.status === "completed").length;
+  const completedRefs = references.filter((r) => r.status === "completed").length;
 
   return (
     <AdminSidebar>
@@ -225,10 +261,10 @@ export default function AdminApplicationDetailPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-heading font-bold" data-testid="text-page-title">
-              {snapFd.fullName || application.userName || "Applicant"}
+              {displayValue(snapFd.fullName) || application.userName || "Applicant"}
             </h1>
             <p className="text-muted-foreground text-sm">
-              {snapFd.applyingAs && <span className="capitalize">{snapFd.applyingAs} &middot; </span>}
+              {displayValue(snapFd.applyingAs) && <span className="capitalize">{displayValue(snapFd.applyingAs)} &middot; </span>}
               ID: {application.id?.slice(0, 8)}
             </p>
           </div>
@@ -287,41 +323,41 @@ export default function AdminApplicationDetailPage() {
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <p className="text-muted-foreground">Name</p>
-                      <p className="font-medium">{snapFd.fullName || "—"}</p>
+                      <p className="font-medium">{displayValue(snapFd.fullName) || "—"}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Email</p>
-                      <p className="font-medium">{snapFd.email || application.userEmail || "—"}</p>
+                      <p className="font-medium">{displayValue(snapFd.email) || application.userEmail || "—"}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Phone</p>
-                      <p className="font-medium">{snapFd.phone || "—"}</p>
+                      <p className="font-medium">{displayValue(snapFd.phone) || "—"}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Location</p>
-                      <p className="font-medium">{[snapFd.city, snapFd.country].filter(Boolean).join(", ") || "—"}</p>
+                      <p className="font-medium">{[displayValue(snapFd.city), displayValue(snapFd.country)].filter(Boolean).join(", ") || "—"}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Applying As</p>
-                      <p className="font-medium capitalize">{snapFd.applyingAs || "—"}</p>
+                      <p className="font-medium capitalize">{displayValue(snapFd.applyingAs) || "—"}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Professional Title</p>
-                      <p className="font-medium">{snapFd.professionalTitle || "—"}</p>
+                      <p className="font-medium">{displayValue(snapFd.professionalTitle) || "—"}</p>
                     </div>
-                    {snapFd.organizationName && (
+                    {displayValue(snapFd.organizationName) && (
                       <div>
                         <p className="text-muted-foreground">Organization</p>
-                        <p className="font-medium">{snapFd.organizationName}</p>
+                        <p className="font-medium">{displayValue(snapFd.organizationName)}</p>
                       </div>
                     )}
-                    {snapFd.professionalWebsite && (
+                    {professionalWebsite && (
                       <div>
                         <p className="text-muted-foreground">Website</p>
-                        {safeHref(snapFd.professionalWebsite) ? (
-                          <a href={safeHref(snapFd.professionalWebsite)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{snapFd.professionalWebsite}</a>
+                        {safeHref(professionalWebsite) ? (
+                          <a href={safeHref(professionalWebsite)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">{professionalWebsite}</a>
                         ) : (
-                          <p className="text-sm">{snapFd.professionalWebsite}</p>
+                          <p className="text-sm">{professionalWebsite}</p>
                         )}
                       </div>
                     )}
@@ -362,23 +398,23 @@ export default function AdminApplicationDetailPage() {
                 </CardContent>
               </Card>
 
-              {(snapFd.accessibilityStartingFee || snapFd.accessibilitySlidingScale) && (
+              {(displayValue(snapFd.accessibilityStartingFee) || displayValue(snapFd.accessibilitySlidingScale)) && (
                 <Card>
                   <CardHeader><CardTitle className="text-base flex items-center gap-2"><CreditCard className="w-4 h-4" /> Accessibility & Pricing Review</CardTitle></CardHeader>
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
                         <p className="text-muted-foreground">Starting Fee</p>
-                        <p className="font-medium">{snapFd.accessibilityStartingFee || "—"}</p>
+                        <p className="font-medium">{displayValue(snapFd.accessibilityStartingFee) || "—"}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Sliding Scale</p>
-                        <p className="font-medium capitalize">{snapFd.accessibilitySlidingScale || "—"}</p>
+                        <p className="font-medium capitalize">{displayValue(snapFd.accessibilitySlidingScale) || "—"}</p>
                       </div>
-                      {snapFd.accessibilityDetails && (
+                      {displayValue(snapFd.accessibilityDetails) && (
                         <div className="col-span-2">
                           <p className="text-muted-foreground">Details</p>
-                          <p className="bg-muted/50 rounded p-2 text-xs mt-1">{snapFd.accessibilityDetails}</p>
+                          <p className="bg-muted/50 rounded p-2 text-xs mt-1">{displayValue(snapFd.accessibilityDetails)}</p>
                         </div>
                       )}
                     </div>
@@ -438,7 +474,7 @@ export default function AdminApplicationDetailPage() {
                     <p className="text-sm text-muted-foreground">No activity yet</p>
                   ) : (
                     <div className="space-y-2">
-                      {timeline.slice(0, 5).map((entry: any) => (
+                      {timeline.slice(0, 5).map((entry) => (
                         <div key={entry.id} className="flex gap-2 text-xs">
                           <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                           <div>
@@ -465,18 +501,18 @@ export default function AdminApplicationDetailPage() {
               <CardContent>
                 <div className="space-y-4 text-sm">
                   {[
-                    { label: "Full Name", value: snapFd.fullName },
-                    { label: "Email", value: snapFd.email },
-                    { label: "Phone", value: snapFd.phone },
-                    { label: "City", value: snapFd.city },
-                    { label: "Country", value: snapFd.country },
-                    { label: "Applying As", value: snapFd.applyingAs },
-                    { label: "Professional Title", value: snapFd.professionalTitle },
-                    { label: "Organization", value: snapFd.organizationName },
-                    { label: "Website", value: snapFd.professionalWebsite },
-                    { label: "Starting Fee", value: snapFd.accessibilityStartingFee },
-                    { label: "Sliding Scale", value: snapFd.accessibilitySlidingScale },
-                    { label: "Sliding Scale Details", value: snapFd.accessibilityDetails },
+                    { label: "Full Name", value: displayValue(snapFd.fullName) },
+                    { label: "Email", value: displayValue(snapFd.email) },
+                    { label: "Phone", value: displayValue(snapFd.phone) },
+                    { label: "City", value: displayValue(snapFd.city) },
+                    { label: "Country", value: displayValue(snapFd.country) },
+                    { label: "Applying As", value: displayValue(snapFd.applyingAs) },
+                    { label: "Professional Title", value: displayValue(snapFd.professionalTitle) },
+                    { label: "Organization", value: displayValue(snapFd.organizationName) },
+                    { label: "Website", value: displayValue(snapFd.professionalWebsite) },
+                    { label: "Starting Fee", value: displayValue(snapFd.accessibilityStartingFee) },
+                    { label: "Sliding Scale", value: displayValue(snapFd.accessibilitySlidingScale) },
+                    { label: "Sliding Scale Details", value: displayValue(snapFd.accessibilityDetails) },
                   ].filter(f => f.value).map((field) => (
                     <div key={field.label}>
                       <p className="text-muted-foreground text-xs">{field.label}</p>
@@ -487,15 +523,15 @@ export default function AdminApplicationDetailPage() {
               </CardContent>
             </Card>
 
-            {snapFd.corePlatformQuestions && Object.keys(snapFd.corePlatformQuestions).length > 0 && (
+            {Object.keys(corePlatformQuestions).length > 0 && (
               <Card>
                 <CardHeader><CardTitle className="text-base">Core Platform Questions</CardTitle></CardHeader>
                 <CardContent>
                   <div className="space-y-4 text-sm">
-                    {Object.entries(snapFd.corePlatformQuestions as Record<string, string>).map(([key, val]) => (
+                    {Object.entries(corePlatformQuestions).map(([key, val]) => (
                       <div key={key}>
                         <p className="text-muted-foreground text-xs capitalize">{key.replace(/([A-Z])/g, " $1").replace(/_/g, " ")}</p>
-                        <p className="bg-muted/50 rounded p-2 mt-1">{val || "—"}</p>
+                        <p className="bg-muted/50 rounded p-2 mt-1">{displayValue(val) || "—"}</p>
                       </div>
                     ))}
                   </div>
@@ -523,10 +559,10 @@ export default function AdminApplicationDetailPage() {
                     {snapFd.termsStatementOfFaith ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <XCircle className="w-4 h-4 text-red-600" />}
                     <span>Statement of Faith</span>
                   </div>
-                  {snapFd.termsSignature && (
+                  {displayValue(snapFd.termsSignature) && (
                     <div className="mt-2">
                       <p className="text-muted-foreground text-xs">E-Signature</p>
-                      <p className="font-medium italic">{snapFd.termsSignature}</p>
+                      <p className="font-medium italic">{displayValue(snapFd.termsSignature)}</p>
                     </div>
                   )}
                 </div>
@@ -544,7 +580,7 @@ export default function AdminApplicationDetailPage() {
                   <p className="text-sm text-muted-foreground">No credentials submitted</p>
                 ) : (
                   <div className="space-y-3">
-                    {credentials.map((c: any) => (
+                    {credentials.map((c) => (
                       <div key={c.id} className="border rounded-lg p-3 space-y-2" data-testid={`card-credential-${c.id}`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -597,10 +633,10 @@ export default function AdminApplicationDetailPage() {
                 </CardContent>
               </Card>
             ) : (
-              references.map((r: any, idx: number) => {
-                const hasResponse = r.responseData && typeof r.responseData === "object";
-                const rd = hasResponse ? r.responseData : {};
-                const flags = r.concernFlags && typeof r.concernFlags === "object" ? r.concernFlags : {};
+              references.map((r, idx) => {
+                const rd = recordFrom(r.responseData);
+                const hasResponse = Object.keys(rd).length > 0;
+                const flags = recordFrom(r.concernFlags);
                 const hasConcerns = Object.keys(flags).length > 0;
 
                 return (
@@ -631,9 +667,9 @@ export default function AdminApplicationDetailPage() {
                             <AlertTriangle className="w-4 h-4" /> Concern Flags
                           </p>
                           <div className="space-y-1 text-sm">
-                            {flags.safetyConcern && <p className="text-red-600">Safety Concern: {flags.safetyConcernDetails || "Yes"}</p>}
-                            {flags.professionalConcern && <p className="text-red-600">Professional Concern: {flags.professionalConcernDetails || "Yes"}</p>}
-                            {flags.notRecommended && <p className="text-red-600">Not Recommended</p>}
+                            {Boolean(flags.safetyConcern) && <p className="text-red-600">Safety Concern: {displayValue(flags.safetyConcernDetails) || "Yes"}</p>}
+                            {Boolean(flags.professionalConcern) && <p className="text-red-600">Professional Concern: {displayValue(flags.professionalConcernDetails) || "Yes"}</p>}
+                            {Boolean(flags.notRecommended) && <p className="text-red-600">Not Recommended</p>}
                           </div>
                         </div>
                       )}
@@ -657,17 +693,17 @@ export default function AdminApplicationDetailPage() {
                         <div className="border-t pt-3 space-y-3 text-sm">
                           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Full Response</p>
                           {[
-                            { label: "Respondent Name", value: rd.firstName },
-                            { label: "Relationship", value: rd.relationship },
-                            { label: "Core Platform Observation", value: rd.corePlatformObservation },
-                            { label: "Core Platform Understanding", value: rd.corePlatformUnderstanding },
-                            { label: "Cultural Connection", value: rd.culturalConnection },
-                            { label: "Safety Concern", value: rd.safetyConcern },
-                            { label: "Safety Details", value: rd.safetyConcernDetails },
-                            { label: "Professional Concern", value: rd.professionalConcern },
-                            { label: "Professional Details", value: rd.professionalConcernDetails },
-                            { label: "Recommends", value: rd.recommendation },
-                            { label: "Additional Comments", value: rd.additionalComments },
+                            { label: "Respondent Name", value: displayValue(rd.firstName) },
+                            { label: "Relationship", value: displayValue(rd.relationship) },
+                            { label: "Core Platform Observation", value: displayValue(rd.corePlatformObservation) },
+                            { label: "Core Platform Understanding", value: displayValue(rd.corePlatformUnderstanding) },
+                            { label: "Cultural Connection", value: displayValue(rd.culturalConnection) },
+                            { label: "Safety Concern", value: displayValue(rd.safetyConcern) },
+                            { label: "Safety Details", value: displayValue(rd.safetyConcernDetails) },
+                            { label: "Professional Concern", value: displayValue(rd.professionalConcern) },
+                            { label: "Professional Details", value: displayValue(rd.professionalConcernDetails) },
+                            { label: "Recommends", value: displayValue(rd.recommendation) },
+                            { label: "Additional Comments", value: displayValue(rd.additionalComments) },
                           ].filter(f => f.value).map((field) => (
                             <div key={field.label}>
                               <p className="text-muted-foreground text-xs">{field.label}</p>
@@ -1059,7 +1095,7 @@ export default function AdminApplicationDetailPage() {
                   <p className="text-sm text-muted-foreground">No timeline entries</p>
                 ) : (
                   <div className="space-y-4">
-                    {timeline.map((entry: any) => (
+                    {timeline.map((entry) => (
                       <div key={entry.id} className="flex gap-3 text-sm" data-testid={`timeline-entry-${entry.id}`}>
                         <div className="flex flex-col items-center">
                           <div className="w-2.5 h-2.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />

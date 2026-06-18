@@ -1,6 +1,6 @@
 # QA Status - June 2026
 
-Current as of June 18, 2026 after the production reconciliation, branch cleanup, and server lint cleanup passes.
+Current as of June 18, 2026 after the production reconciliation, branch cleanup, and lint cleanup passes.
 
 ## Release State
 
@@ -39,12 +39,11 @@ Current as of June 18, 2026 after the production reconciliation, branch cleanup,
 
 ## Code Health Snapshot
 
-- Full ESLint currently reports 0 errors and 50 warnings.
+- Full ESLint currently reports 0 errors and 0 warnings.
 - Warning categories:
-  - 50 `@typescript-eslint/no-explicit-any`
+  - 0 `@typescript-eslint/no-explicit-any`
   - 0 `@typescript-eslint/no-unused-vars`
   - 0 miscellaneous JavaScript cleanup warnings
-  - 0 server/shared `@typescript-eslint/no-explicit-any` warnings; the remaining explicit-any backlog is client-side.
 - Highest-maintenance files by line count:
   - `client/src/features/admin/settings-page.tsx` - 5,348 lines
   - `client/src/features/admin/ecommerce/ecommerce-page.tsx` - 4,129 lines
@@ -72,7 +71,7 @@ Candidate cleanup still worth doing:
 
 ## Recommended Next Sprint
 
-1. Continue the remaining `@typescript-eslint/no-explicit-any` cleanup in application workflows and client form/page code.
+1. Keep lint at zero warnings by tightening types as new workflows are added.
 2. Split `settings-page.tsx` by route-backed settings sections.
 3. Classify remaining legacy naming hits into compatibility allowlist vs visible cleanup.
 4. Review and selectively port the two stale branches.

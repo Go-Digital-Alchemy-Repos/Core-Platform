@@ -24,6 +24,7 @@ import {
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
+import type { BlogPost } from "@shared/schema";
 
 const stats = [
   { value: "60%", label: "of teams spend too much time reconciling", highlight: "separate tools" },
@@ -239,7 +240,7 @@ function StatRing({ value, label, highlight }: { value: string; label: string; h
 }
 
 export default function AboutPage() {
-  const { data: blogPosts } = useQuery<any[]>({
+  const { data: blogPosts } = useQuery<BlogPost[]>({
     queryKey: ["/api/blog"],
   });
 
@@ -370,7 +371,7 @@ export default function AboutPage() {
               Featured On
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-              {featuredArticles.map((post: any) => (
+              {featuredArticles.map((post) => (
                 <Link key={post.id} href={`/insights/${post.slug}`}>
                   <Card className="h-full cursor-pointer hover-elevate" data-testid={`card-featured-on-${post.id}`}>
                     {post.coverImageUrl && (

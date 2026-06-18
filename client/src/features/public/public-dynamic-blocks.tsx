@@ -14,6 +14,15 @@ import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
 import { CompanyInformationCard } from "@/components/shared/company-information-card";
 import { stripHtml } from "@/lib/html";
+import type { TherapistProfile, User as AppUser } from "@shared/schema";
+
+type DirectoryProvider = TherapistProfile & {
+  user?: Pick<AppUser, "firstName" | "lastName"> & { profileImageUrl?: string | null };
+};
+
+interface DirectoryProvidersResponse {
+  items: DirectoryProvider[];
+}
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -29,7 +38,7 @@ function colorStyle(value: unknown, fallback?: string) {
 }
 
 export function TherapistMapBlock({ props }: { props: Record<string, unknown> }) {
-  const { data: allTherapistsData, isLoading } = useQuery<any>({
+  const { data: allTherapistsData, isLoading } = useQuery<DirectoryProvidersResponse>({
     queryKey: ["/api/therapists", "pageSize=500"],
     queryFn: async () => {
       const res = await fetch("/api/therapists?pageSize=500");
@@ -40,7 +49,7 @@ export function TherapistMapBlock({ props }: { props: Record<string, unknown> })
 
   const mapTherapists = useMemo(
     () =>
-      (allTherapistsData?.items ?? []).map((t: any) => ({
+      (allTherapistsData?.items ?? []).map((t) => ({
         profile: t,
         user: {
           firstName: t.user?.firstName ?? null,

@@ -79,6 +79,7 @@ import {
 import { LoginDialog } from "@/components/auth/login-dialog";
 import { MapView } from "@/components/directory/map-view";
 import type { BlockInstance } from "./block-registry";
+import type { TherapistProfile, User as AppUser } from "@shared/schema";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
 import { CompanyInformationCard } from "@/components/shared/company-information-card";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
@@ -112,6 +113,14 @@ import {
   SPACING_MAP,
   str,
 } from "./block-renderer.shared";
+
+type DirectoryProvider = TherapistProfile & {
+  user?: Pick<AppUser, "firstName" | "lastName"> & { profileImageUrl?: string | null };
+};
+
+interface DirectoryProvidersResponse {
+  items: DirectoryProvider[];
+}
 
 const LUCIDE_MAP: Record<string, React.ElementType> = {
   Globe,
@@ -2283,7 +2292,7 @@ function StandardBlogPageBlock({ props }: { props: Record<string, unknown> }) {
 }
 
 function TherapistMapBlock({ props }: { props: Record<string, unknown> }) {
-  const { data: allTherapistsData, isLoading } = useQuery<any>({
+  const { data: allTherapistsData, isLoading } = useQuery<DirectoryProvidersResponse>({
     queryKey: ["/api/therapists", "pageSize=500"],
     queryFn: async () => {
       const res = await fetch("/api/therapists?pageSize=500");
@@ -2294,7 +2303,7 @@ function TherapistMapBlock({ props }: { props: Record<string, unknown> }) {
 
   const mapTherapists = useMemo(
     () =>
-      (allTherapistsData?.items ?? []).map((t: any) => ({
+      (allTherapistsData?.items ?? []).map((t) => ({
         profile: t,
         user: {
           firstName: t.user?.firstName ?? null,

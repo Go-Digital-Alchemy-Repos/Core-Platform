@@ -143,8 +143,8 @@ export default function ReferenceFormPage() {
     onSuccess: () => {
       setSubmitted(true);
     },
-    onError: (err: any) => {
-      setValidationError(err?.message || "Failed to submit. Please try again.");
+    onError: (err) => {
+      setValidationError(err instanceof Error ? err.message : "Failed to submit. Please try again.");
     },
   });
 

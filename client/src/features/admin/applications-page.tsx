@@ -17,6 +17,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { APPLICATION_STATUS_LABELS, type ApplicationStatus } from "@shared/types";
+import type { ProviderApplication } from "@shared/schema";
+
+type AdminApplicationListItem = ProviderApplication & {
+  userName: string;
+  userEmail: string;
+};
+
+function recordFrom(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function displayValue(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return "";
+}
 
 function statusBadgeVariant(status: ApplicationStatus): "default" | "secondary" | "destructive" | "outline" {
   if (["active_member", "approved_pending_subscription"].includes(status)) return "default";
@@ -51,7 +69,7 @@ export default function AdminApplicationsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: applications, isLoading } = useQuery<any[]>({
+  const { data: applications, isLoading } = useQuery<AdminApplicationListItem[]>({
     queryKey: ["/api/admin/applications"],
     staleTime: STALE_TIMES.LIVE,
     refetchOnWindowFocus: true,
@@ -75,7 +93,7 @@ export default function AdminApplicationsPage() {
 
   const filterStatuses = statusFilter ? statusFilter.split(",") : [];
 
-  const filtered = (applications ?? []).filter((app: any) => {
+  const filtered = (applications ?? []).filter((app) => {
     if (filterStatuses.length > 0 && !filterStatuses.includes(app.status)) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -179,8 +197,8 @@ export default function AdminApplicationsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map((app: any) => {
-                      const fd = (typeof app.formData === "object" && app.formData) || {};
+                    {filtered.map((app) => {
+                      const fd = recordFrom(app.formData);
                       return (
                         <TableRow
                           key={app.id}
@@ -200,8 +218,8 @@ export default function AdminApplicationsPage() {
                             <div>
                               <p className="font-medium text-sm">{app.userName}</p>
                               <p className="text-xs text-muted-foreground">{app.userEmail}</p>
-                              {fd.applyingAs && (
-                                <p className="text-xs text-muted-foreground capitalize">{fd.applyingAs}</p>
+                              {displayValue(fd.applyingAs) && (
+                                <p className="text-xs text-muted-foreground capitalize">{displayValue(fd.applyingAs)}</p>
                               )}
                             </div>
                           </TableCell>

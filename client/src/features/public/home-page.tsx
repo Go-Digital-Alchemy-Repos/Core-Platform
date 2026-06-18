@@ -24,6 +24,15 @@ import { stripHtml } from "@/lib/html";
 import { getEventPath } from "@shared/event-url";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
+import type { BlogPost, Event, TherapistProfile, User as AppUser } from "@shared/schema";
+
+type DirectoryProvider = TherapistProfile & {
+  user?: Pick<AppUser, "firstName" | "lastName"> & { profileImageUrl?: string | null };
+};
+
+interface DirectoryProvidersResponse {
+  items: DirectoryProvider[];
+}
 
 const testimonials = [
   {
@@ -185,7 +194,7 @@ function TestimonialsCarousel() {
   );
 }
 
-function FeaturedArticlesCarousel({ articles }: { articles: any[] }) {
+function FeaturedArticlesCarousel({ articles }: { articles: BlogPost[] }) {
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { loop: true, align: "start", slidesToScroll: 1 },
     [Autoplay({ delay: 4500, stopOnInteraction: true })]
@@ -225,7 +234,7 @@ function FeaturedArticlesCarousel({ articles }: { articles: any[] }) {
         <div className="relative">
           <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex gap-6">
-              {articles.map((post: any, idx: number) => (
+              {articles.map((post, idx) => (
                 <div
                   key={post.id}
                   className="flex-[0_0_100%] min-w-0 sm:flex-[0_0_50%] lg:flex-[0_0_33.333%]"
@@ -303,12 +312,12 @@ function FeaturedArticlesCarousel({ articles }: { articles: any[] }) {
 }
 
 export default function HomePage() {
-  const { data: events, isLoading: eventsLoading } = useQuery<any[]>({
+  const { data: events, isLoading: eventsLoading } = useQuery<Event[]>({
     queryKey: ["/api/events"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
-  const { data: allTherapistsData, isLoading: therapistsLoading } = useQuery<any>({
+  const { data: allTherapistsData, isLoading: therapistsLoading } = useQuery<DirectoryProvidersResponse>({
     queryKey: ["/api/therapists", "pageSize=500"],
     queryFn: async () => {
       const res = await fetch("/api/therapists?pageSize=500");
@@ -316,13 +325,13 @@ export default function HomePage() {
       return res.json();
     },
   });
-  const { data: blogPosts } = useQuery<any[]>({
+  const { data: blogPosts } = useQuery<BlogPost[]>({
     queryKey: ["/api/blog"],
   });
 
   const mapTherapists = useMemo(
     () =>
-      (allTherapistsData?.items ?? []).map((t: any) => ({
+      (allTherapistsData?.items ?? []).map((t) => ({
         profile: t,
         user: {
           firstName: t.user?.firstName ?? null,
@@ -455,7 +464,7 @@ export default function HomePage() {
           </div>
         ) : upcomingEvents.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-            {upcomingEvents.map((event: any) => (
+            {upcomingEvents.map((event) => (
               <Link key={event.id} href={getEventPath(event)}>
                 <Card className="cursor-pointer hover-elevate h-full" data-testid={`card-event-${event.id}`}>
                   <CardContent className="p-6">
@@ -472,7 +481,7 @@ export default function HomePage() {
                       {event.memberOnly && <Badge variant="outline" className="text-xs">Members Only</Badge>}
                     </div>
                     <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">{stripHtml(event.description)}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">{stripHtml(event.description ?? "")}</p>
                   </CardContent>
                 </Card>
               </Link>

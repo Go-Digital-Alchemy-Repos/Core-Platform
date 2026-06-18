@@ -18,6 +18,11 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import type {
+  ProviderApplication,
+  ProviderApplicationCredential,
+  ProviderApplicationReference,
+} from "@shared/schema";
 
 interface FormData {
   feeAcknowledgment?: boolean;
@@ -49,6 +54,16 @@ interface DirectorySettings {
   applicationFeePolicySummary: string;
   applicationFeeCreditOnApproval: boolean;
   applicationFeeCreditAmountCents: number;
+}
+
+type ApplicationResponse = Omit<ProviderApplication, "formData"> & {
+  formData?: FormData | null;
+  credentials?: ProviderApplicationCredential[];
+  references?: ProviderApplicationReference[];
+};
+
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
 }
 
 const WIZARD_STEPS = [
@@ -426,7 +441,7 @@ function ProfessionalInfoStep({
 }: {
   formData: FormData;
   onChange: (data: Partial<FormData>) => void;
-  application: any;
+  application?: ApplicationResponse | null;
 }) {
   const { toast } = useToast();
   const [credForm, setCredForm] = useState({
@@ -545,7 +560,7 @@ function ProfessionalInfoStep({
 
         {credentials.length > 0 && (
           <div className="space-y-2 mb-4">
-            {credentials.map((c: any) => (
+            {credentials.map((c) => (
               <div key={c.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-sm truncate">{c.credentialType}</p>
@@ -685,7 +700,7 @@ function ProviderPracticeQuestionsStep({ formData, onChange }: { formData: FormD
   );
 }
 
-function ReferencesStep({ application }: { application: any }) {
+function ReferencesStep({ application }: { application?: ApplicationResponse | null }) {
   const { toast } = useToast();
   const [refForm, setRefForm] = useState({ refereeName: "", refereeEmail: "", relationship: "" });
 
@@ -701,7 +716,7 @@ function ReferencesStep({ application }: { application: any }) {
       setRefForm({ refereeName: "", refereeEmail: "", relationship: "" });
       toast({ title: "Reference added" });
     },
-    onError: (err: any) => toast({ title: err?.message || "Failed to add reference", variant: "destructive" }),
+    onError: (err) => toast({ title: errorMessage(err, "Failed to add reference"), variant: "destructive" }),
   });
 
   const deleteReference = useMutation({
@@ -740,7 +755,7 @@ function ReferencesStep({ application }: { application: any }) {
 
       {references.length > 0 && (
         <div className="space-y-2">
-          {references.map((r: any, idx: number) => (
+          {references.map((r, idx) => (
             <div key={r.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-sm">Reference {idx + 1}: {r.refereeName}</p>
@@ -971,7 +986,7 @@ function TermsStep({ formData, onChange }: { formData: FormData; onChange: (data
   );
 }
 
-function getStepValidation(step: number, formData: FormData, application: any): { valid: boolean; message?: string } {
+function getStepValidation(step: number, formData: FormData, application?: ApplicationResponse | null): { valid: boolean; message?: string } {
   switch (step) {
     case 0:
       if (!formData.feeAcknowledgment) return { valid: false, message: "Please acknowledge the application fee policy." };
@@ -1032,7 +1047,7 @@ export default function ApplicationPage() {
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const paymentChecked = useRef(false);
 
-  const { data: application, isLoading } = useQuery<any>({
+  const { data: application, isLoading } = useQuery<ApplicationResponse>({
     queryKey: ["/api/therapist/application"],
   });
 
@@ -1074,8 +1089,8 @@ export default function ApplicationPage() {
         window.location.href = data.url;
       }
     },
-    onError: (err: any) => {
-      toast({ title: "Payment failed", description: err?.message || "Could not initiate payment.", variant: "destructive" });
+    onError: (err) => {
+      toast({ title: "Payment failed", description: errorMessage(err, "Could not initiate payment."), variant: "destructive" });
     },
   });
 
@@ -1094,9 +1109,9 @@ export default function ApplicationPage() {
         setPaymentProcessing(false);
       }
     },
-    onError: (err: any) => {
+    onError: (err) => {
       setPaymentProcessing(false);
-      toast({ title: "Payment verification failed", description: err?.message || "Please contact support if you were charged.", variant: "destructive" });
+      toast({ title: "Payment verification failed", description: errorMessage(err, "Please contact support if you were charged."), variant: "destructive" });
     },
   });
 
@@ -1110,8 +1125,8 @@ export default function ApplicationPage() {
       toast({ title: "Application submitted!", description: "We'll review your application and get back to you soon." });
       setLocation("/therapist/application/status");
     },
-    onError: (err: any) => {
-      toast({ title: "Submission failed", description: err?.message || "Please check all required fields.", variant: "destructive" });
+    onError: (err) => {
+      toast({ title: "Submission failed", description: errorMessage(err, "Please check all required fields."), variant: "destructive" });
     },
   });
 

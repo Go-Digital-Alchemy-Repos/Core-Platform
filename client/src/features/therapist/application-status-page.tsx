@@ -12,6 +12,20 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { APPLICATION_STATUS_LABELS, type ApplicationStatus } from "@shared/types";
+import type {
+  ProviderApplication,
+  ProviderApplicationDecision,
+  ProviderApplicationReference,
+  ProviderApplicationTimeline,
+  ProviderBackgroundCheck,
+} from "@shared/schema";
+
+type ApplicationStatusResponse = ProviderApplication & {
+  references?: ProviderApplicationReference[];
+  timeline?: ProviderApplicationTimeline[];
+  backgroundCheck?: ProviderBackgroundCheck | null;
+  decision?: ProviderApplicationDecision | null;
+};
 
 function statusIcon(status: ApplicationStatus) {
   if (["active_member", "approved_pending_subscription"].includes(status)) {
@@ -54,7 +68,7 @@ interface ProgressStep {
   detail?: string;
 }
 
-function getProgressSteps(application: any): ProgressStep[] {
+function getProgressSteps(application: ApplicationStatusResponse): ProgressStep[] {
   const status = application.status as ApplicationStatus;
   const bgStatus = application.backgroundCheckStatus;
   const refStatus = application.referencesStatus;
@@ -79,7 +93,7 @@ function getProgressSteps(application: any): ProgressStep[] {
 
   const refs = application.references ?? [];
   const totalRefs = refs.length;
-  const completedRefs = refs.filter((r: any) => r.status === "completed").length;
+  const completedRefs = refs.filter((r) => r.status === "completed").length;
 
   let refStepStatus: ProgressStep["status"];
   if (refStatus === "completed" || completedRefs >= totalRefs && totalRefs > 0) {
@@ -241,7 +255,7 @@ export default function ApplicationStatusPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const { data: application, isLoading } = useQuery<any>({
+  const { data: application, isLoading } = useQuery<ApplicationStatusResponse>({
     queryKey: ["/api/therapist/application"],
   });
 
@@ -393,7 +407,7 @@ export default function ApplicationStatusPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {application.references.map((ref: any, idx: number) => {
+              {application.references.map((ref, idx) => {
                 const refStatus = ref.status || "pending";
                 const statusLabel = refStatus === "completed" ? "Completed" : refStatus === "opened" ? "Form opened" : refStatus === "email_sent" ? "Email sent" : "Pending";
                 const statusColor = refStatus === "completed" ? "text-green-600" : refStatus === "opened" ? "text-blue-600" : "text-muted-foreground";
@@ -465,7 +479,7 @@ export default function ApplicationStatusPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {timeline.map((entry: any) => (
+              {timeline.map((entry) => (
                 <div key={entry.id} className="flex gap-3 text-sm">
                   <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                   <div>

@@ -37,7 +37,7 @@ export function useAuth() {
   const login = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
       const res = await apiRequest("POST", "/api/auth/login", credentials);
-      return await res.json();
+      return (await res.json()) as User;
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["/api/auth/me"], data);
@@ -54,7 +54,7 @@ export function useAuth() {
       specializations?: string[];
     }) => {
       const res = await apiRequest("POST", "/api/auth/register", data);
-      return await res.json();
+      return (await res.json()) as User;
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["/api/auth/me"], data);

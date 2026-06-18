@@ -171,10 +171,10 @@ export function RichTextEditor({ onSend, disabled, placeholder, sendRef }: RichT
         type: data.type,
         size: data.size,
       });
-    } catch (err: any) {
+    } catch (err) {
       toast({
         title: "Upload failed",
-        description: err.message,
+        description: err instanceof Error ? err.message : "Upload failed",
         variant: "destructive",
       });
     } finally {

@@ -52,7 +52,7 @@ export function LoginDialog({
 
   async function onSubmit(values: LoginForm) {
     login.mutate(values, {
-      onSuccess: (data: any) => {
+      onSuccess: (data) => {
         toast({ title: "Welcome back!", description: "You have been logged in." });
         onOpenChange(false);
         if (data.role === "admin") setLocation("/admin");

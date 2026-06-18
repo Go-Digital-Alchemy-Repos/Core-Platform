@@ -32,7 +32,7 @@ import { ArrowLeft, Layers } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { CmsSection } from "@shared/schema";
 import { PageBuilder } from "./builder/page-builder";
-import type { BuilderContent } from "./builder/block-registry";
+import type { BlockInstance, BuilderContent } from "./builder/block-registry";
 import { cn } from "@/lib/utils";
 import { useEditorLock } from "@/hooks/use-editor-lock";
 import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
@@ -92,8 +92,8 @@ export default function CmsSectionEditorPage() {
         description: section.description ?? "",
         category: section.category ?? "general",
       });
-      const blocks = Array.isArray(section.blocks) ? section.blocks : [];
-      setBuilderContent({ blocks: blocks as any });
+      const blocks = Array.isArray(section.blocks) ? section.blocks as BlockInstance[] : [];
+      setBuilderContent({ blocks });
       setSavedBuilderSnapshot(JSON.stringify({ blocks }));
       setInitialized(true);
     }

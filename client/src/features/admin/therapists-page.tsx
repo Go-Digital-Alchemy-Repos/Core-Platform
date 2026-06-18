@@ -92,6 +92,8 @@ import { CmsRichTextEditor } from "@/features/admin/cms/builder/cms-rich-text-ed
 import { useDirectorySettings } from "@/hooks/use-directory-settings";
 import type { PublicDirectorySettings } from "@shared/types/directory-settings";
 
+const LANGUAGE_SET = new Set<string>(LANGUAGES);
+
 interface TherapistWithUser {
   id: string;
   userId: string;
@@ -2053,10 +2055,10 @@ function OverviewTab({
                       Additional Languages
                     </Label>
                     <SearchableLanguageInput
-                      selected={(field.value ?? []).filter((l) => !LANGUAGES.includes(l as any))}
+                      selected={(field.value ?? []).filter((l) => !LANGUAGE_SET.has(l))}
                       onChange={(extra) => {
                         const common = (field.value ?? []).filter((l) =>
-                          LANGUAGES.includes(l as any),
+                          LANGUAGE_SET.has(l),
                         );
                         field.onChange([...common, ...extra]);
                       }}
