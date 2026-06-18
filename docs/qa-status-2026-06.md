@@ -47,7 +47,7 @@ Current as of June 18, 2026 after the production reconciliation, branch cleanup,
 - Highest-maintenance files by line count:
   - `client/src/features/admin/settings-page.tsx` - 4,723 lines after extracting settings sub-tabs
   - `client/src/features/admin/ecommerce/ecommerce-page.tsx` - 3,527 lines after extracting ecommerce refunds, integrations, and settings tabs
-  - `client/src/features/admin/events-page.tsx` - 3,417 lines
+  - `client/src/features/admin/events-page.tsx` - 3,227 lines after extracting event display, export, and analytics helpers
   - `client/src/features/admin/cms/builder/block-renderer.tsx` - 2,756 lines
   - `client/src/features/admin/therapists-page.tsx` - 2,441 lines
 
