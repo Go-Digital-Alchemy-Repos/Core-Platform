@@ -45,7 +45,7 @@ Current as of June 18, 2026 after the production reconciliation, branch cleanup,
   - 0 `@typescript-eslint/no-unused-vars`
   - 0 miscellaneous JavaScript cleanup warnings
 - Highest-maintenance files by line count:
-  - `client/src/features/admin/settings-page.tsx` - 5,348 lines
+  - `client/src/features/admin/settings-page.tsx` - 4,724 lines after extracting settings sub-tabs
   - `client/src/features/admin/ecommerce/ecommerce-page.tsx` - 4,129 lines
   - `client/src/features/admin/events-page.tsx` - 3,417 lines
   - `client/src/features/admin/cms/builder/block-renderer.tsx` - 2,747 lines
