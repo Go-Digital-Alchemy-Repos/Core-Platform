@@ -11,31 +11,32 @@ Items that should be addressed in the next development cycle.
 ### TD-001: Eliminate `any` Types
 
 - **Impact**: Type safety, maintainability
-- **Scope**: Full-lint warning backlog, primarily `@typescript-eslint/no-explicit-any`
-- **Files**: Across client components, server routes, storage classes, webhook handler
+- **Scope**: Lint currently passes with zero warnings; keep new code from reintroducing `@typescript-eslint/no-explicit-any`
+- **Files**: Watch new client components, server routes, storage classes, and webhook handlers
 - **Effort**: Medium (systematic but straightforward replacement with proper types)
-- **Recommendation**: Replace `any` with proper types, starting with server-side code where type safety matters most
+- **Recommendation**: Treat any reintroduced `any` usage as a cleanup item during review, starting with server-side code where type safety matters most
 
 ### TD-002: Clean Up Unused Imports and Variables
 
 - **Impact**: Code cleanliness
-- **Scope**: Remaining unused import and variable warnings in full lint output
-- **Files**: Various client and server files
+- **Scope**: Lint currently passes with zero warnings
+- **Files**: Various client and server files as new work lands
 - **Effort**: Small (can be auto-fixed with `eslint --fix` for some cases)
+- **Recommendation**: Keep `npm run lint` as a zero-warning release gate instead of allowing a warning backlog to rebuild
 
 ### TD-003: Token Revocation Strategy
 
 - **Impact**: Security
 - **Current**: JWT tokens cannot be revoked before expiry (7 days)
 - **Risk**: Compromised tokens remain valid until expiration
-- **Recommendation**: Add a token deny-list (in-memory or Redis) for critical revocation cases (password change, account lockout)
+- **Recommendation**: Add user-level `session_version` revocation first; see `docs/architecture/security-ops-stabilization-roadmap.md`
 
 ### TD-004: CSRF Protection Enhancement
 
 - **Impact**: Security
 - **Current**: Origin checking via `Origin`/`Referer` headers, `sameSite: lax` cookies
 - **Risk**: Some edge cases not covered by origin check alone
-- **Recommendation**: Add double-submit cookie pattern or synchronizer token for critical state-changing endpoints
+- **Recommendation**: Add a double-submit CSRF token for authenticated browser writes; see `docs/architecture/security-ops-stabilization-roadmap.md`
 
 ---
 
@@ -76,7 +77,7 @@ Items that should be scheduled but are not urgent.
 ### TD-010: Test Coverage Expansion
 
 - **Impact**: Reliability
-- **Current**: 359 tests across server and client stabilization coverage
+- **Current**: 361 tests across server and client stabilization coverage
 - **Gaps**: More coverage still needed for CMS routes, Stripe integration, email service, admin routes, and storage classes
 - **Recommendation**: Add integration tests for critical paths (application workflow, subscription management, CMS page publishing)
 
@@ -103,7 +104,7 @@ Strategic improvements for scale and maintainability.
 
 - **Impact**: Reliability, UX
 - **Current**: Email sending, background checks, and scheduled publishing run synchronously or via simple intervals
-- **Recommendation**: Adopt a job queue (e.g., BullMQ, pg-boss) for async processing with retry logic, dead-letter queues, and job monitoring
+- **Recommendation**: Adopt `pg-boss` for Postgres-backed async processing with retry logic, dead-letter visibility, and job monitoring; see `docs/architecture/security-ops-stabilization-roadmap.md`
 
 ### TD-014: Database Migration Cleanup
 

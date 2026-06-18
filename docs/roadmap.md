@@ -103,12 +103,14 @@ Recommended improvements for the next development wave, ordered by impact and fe
 - Job monitoring dashboard
 
 ### Implementation Plan
-1. Adopt `pg-boss` (PostgreSQL-backed) or `BullMQ` (Redis-backed) job queue
+1. Adopt `pg-boss` as the default PostgreSQL-backed job queue
 2. Migrate email sending from synchronous to queued
 3. Move background check processing to the job queue
 4. Add notification dispatch as a queued job
 5. Move scheduled CMS publishing from interval-based to job-based
 6. Add admin UI for viewing job status, retrying failed jobs
+
+See `docs/architecture/security-ops-stabilization-roadmap.md` for rollout sequencing, rollback notes, and acceptance criteria.
 
 ---
 

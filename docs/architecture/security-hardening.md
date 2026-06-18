@@ -4,6 +4,7 @@
 
 - **JWT tokens** stored in HTTP-only cookies (`corePlatform_token`)
 - Token expiry: 7 days
+- Token revocation is planned via user-level `session_version`; see `security-ops-stabilization-roadmap.md`
 - Password hashing: `bcryptjs` with 12 salt rounds
 - Cookie settings: `httpOnly: true`, `secure: true` (production), `sameSite: lax`
 
@@ -63,6 +64,7 @@ All rate limiters are skipped in development mode.
 - Stripe webhook endpoint is exempt
 - Trusted origins are derived from `APP_URL`, `TRUSTED_ORIGINS`, and the request `Host` header
 - Skipped in development mode
+- Explicit CSRF token protection is planned as a companion to origin checking; see `security-ops-stabilization-roadmap.md`
 
 ### Request Body Limits
 

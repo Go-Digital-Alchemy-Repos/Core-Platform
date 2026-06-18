@@ -1,6 +1,6 @@
 # Validation Report
 
-**Date**: 2026-06-12
+**Date**: 2026-06-18
 **Scope**: Production reconciliation and stabilization cleanup
 
 ---
@@ -16,27 +16,27 @@
 
 Zero errors. All 62 original TypeScript errors from the initial audit have been resolved.
 
-## 2. ESLint (`npm run lint -- --quiet`)
+## 2. ESLint (`npm run lint`)
 
 **Result**: PASS
 
 ```
 > core-platform@1.0.0 lint
-> eslint client/src server shared --quiet
+> eslint client/src server shared
 ```
 
-Quiet lint is the release gate for this pass and passed with zero errors. The full warning backlog remains tracked in the technical debt catalog, primarily explicit `any` usage and unused imports/variables.
+Full lint is the release gate for this pass and passed with zero errors and zero warnings.
 
 ## 3. Test Suite (`npm test` / vitest)
 
 **Result**: PASS
 
 ```
- Test Files  70 passed (70)
-      Tests  346 passed (346)
+ Test Files  76 passed (76)
+      Tests  361 passed (361)
 ```
 
-All 346 tests pass. Coverage now includes directory, auth, validation, logging, route helpers, ecommerce, feature gates, events, public/admin workflows, and stabilization smoke coverage.
+All 361 tests pass. Coverage now includes directory, auth, validation, logging, route helpers, ecommerce, feature gates, events, public/admin workflows, platform-language guardrails, and stabilization smoke coverage.
 
 ## 4. Functional Flow Verification
 
@@ -79,8 +79,8 @@ All 346 tests pass. Coverage now includes directory, auth, validation, logging, 
 | Check | Status | Details |
 |-------|--------|---------|
 | TypeScript (`tsc`) | PASS | 0 errors |
-| ESLint quiet mode | PASS | 0 errors |
-| Tests (vitest) | PASS | 346 tests pass |
+| ESLint | PASS | 0 errors, 0 warnings |
+| Tests (vitest) | PASS | 361 tests pass |
 | Directory flows | VERIFIED | Search, filters, pagination, profiles functional |
 | Admin flows | VERIFIED | CMS, applications, user management properly guarded |
 | Auth flows | VERIFIED | JWT cookies, role checks, rate limiting in place |
