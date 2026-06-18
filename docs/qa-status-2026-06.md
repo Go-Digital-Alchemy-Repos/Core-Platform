@@ -45,7 +45,7 @@ Current as of June 18, 2026 after the production reconciliation, branch cleanup,
   - 0 `@typescript-eslint/no-unused-vars`
   - 0 miscellaneous JavaScript cleanup warnings
 - Highest-maintenance files by line count:
-  - `client/src/features/admin/settings-page.tsx` - 3,823 lines after extracting settings sub-tabs and email template management
+  - `client/src/features/admin/settings-page.tsx` - 2,589 lines after extracting settings sub-tabs, email template management, and design branding management
   - `client/src/features/admin/ecommerce/ecommerce-page.tsx` - 2,608 lines after extracting ecommerce refunds, integrations, settings, categories, coupons, and shared ecommerce admin utilities
   - `client/src/features/admin/events-page.tsx` - 3,050 lines after extracting event display, export, analytics helpers, and event form schemas/defaults
   - `client/src/features/admin/therapists-page.tsx` - 2,222 lines after extracting membership and activity tabs
