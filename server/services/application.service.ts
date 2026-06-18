@@ -13,10 +13,13 @@ import {
   type PaymentConfirmationResult,
 } from "@shared/types";
 import type {
+  InsertProviderApplication,
   ProviderApplication,
   ProviderApplicationReference,
   ProviderBackgroundCheck,
 } from "@shared/schema";
+
+type ProviderApplicationUpdate = Partial<InsertProviderApplication>;
 
 export const APPLICATION_FEE_CENTS = DEFAULT_DIRECTORY_SETTINGS.applicationFeeAmountCents;
 export const REFUND_ELIGIBLE_CENTS = DEFAULT_DIRECTORY_SETTINGS.applicationFeeCreditAmountCents;
@@ -137,7 +140,7 @@ export async function autosaveApplication(userId: string, formData: unknown, cur
     return { success: false, error: "Cannot edit a submitted application", status: 400 } as const;
   }
 
-  const updateData: Record<string, unknown> = {};
+  const updateData: ProviderApplicationUpdate = {};
   if (formData !== undefined && typeof formData === "object" && formData !== null) {
     updateData.formData = formData;
   }
@@ -149,7 +152,7 @@ export async function autosaveApplication(userId: string, formData: unknown, cur
     return { success: false, error: "No valid fields to update", status: 400 } as const;
   }
 
-  const updated = await storage.applications.update(application.id, updateData as any);
+  const updated = await storage.applications.update(application.id, updateData);
   return { success: true, application: updated } as const;
 }
 
@@ -212,7 +215,7 @@ export async function createPaymentSession(userId: string, userEmail: string, ho
   await storage.applications.update(application.id, {
     stripeCheckoutSessionId: session.id,
     paymentStatus: "pending",
-  } as any);
+  });
 
   await storage.applications.addTimelineEntry({
     applicationId: application.id,
@@ -252,7 +255,7 @@ export async function confirmPayment(userId: string): Promise<PaymentConfirmatio
           ? directorySettings.applicationFeeCreditAmountCents
           : 0,
         stripePaymentIntentId: session.payment_intent as string,
-      } as any);
+      });
 
       await storage.applications.addTimelineEntry({
         applicationId: application.id,
@@ -321,7 +324,7 @@ export async function submitApplication(userId: string): Promise<SubmitApplicati
     status: "submitted",
     submittedAt: new Date(),
     submittedSnapshot: snapshot,
-  } as any);
+  });
 
   await storage.applications.addTimelineEntry({
     applicationId: application.id,
@@ -394,7 +397,7 @@ async function dispatchReferenceEmails(
 
   await storage.applications.update(applicationId, {
     referencesStatus: "in_progress",
-  } as any);
+  });
 
   await storage.applications.addTimelineEntry({
     applicationId,
@@ -454,12 +457,12 @@ export async function transitionStatus(
     };
   }
 
-  const updateData: Record<string, unknown> = { status: newStatus };
+  const updateData: ProviderApplicationUpdate = { status: newStatus };
   if (["approved_pending_subscription", "active_member", "denied"].includes(newStatus)) {
     updateData.decidedAt = new Date();
   }
 
-  const updated = await storage.applications.update(application.id, updateData as any);
+  const updated = await storage.applications.update(application.id, updateData);
 
   await storage.applications.addTimelineEntry({
     applicationId: application.id,

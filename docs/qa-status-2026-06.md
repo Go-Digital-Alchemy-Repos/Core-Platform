@@ -39,11 +39,12 @@ Current as of June 18, 2026 after the production reconciliation, branch cleanup,
 
 ## Code Health Snapshot
 
-- Full ESLint currently reports 0 errors and 56 warnings.
+- Full ESLint currently reports 0 errors and 50 warnings.
 - Warning categories:
-  - 56 `@typescript-eslint/no-explicit-any`
+  - 50 `@typescript-eslint/no-explicit-any`
   - 0 `@typescript-eslint/no-unused-vars`
   - 0 miscellaneous JavaScript cleanup warnings
+  - 0 server/shared `@typescript-eslint/no-explicit-any` warnings; the remaining explicit-any backlog is client-side.
 - Highest-maintenance files by line count:
   - `client/src/features/admin/settings-page.tsx` - 5,348 lines
   - `client/src/features/admin/ecommerce/ecommerce-page.tsx` - 4,129 lines
