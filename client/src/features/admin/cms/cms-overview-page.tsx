@@ -34,7 +34,6 @@ export default function CmsOverviewPage() {
 
   const totalPages = pages.length;
   const publishedPages = pages.filter((p) => p.status === "published").length;
-  const draftPages = pages.filter((p) => p.status === "draft").length;
   const recentPages = pages.slice(0, 5);
 
   const totalPosts = posts.length;

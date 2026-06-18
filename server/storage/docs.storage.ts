@@ -1,4 +1,4 @@
-import { eq, asc, ilike, and } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { db } from "../db";
 import { docs, type Doc, type InsertDoc } from "@shared/schema";
 

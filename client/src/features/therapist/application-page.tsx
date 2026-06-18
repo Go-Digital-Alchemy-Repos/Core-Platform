@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Link, useLocation, useSearch } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { TherapistLayout } from "./therapist-layout";
 import {
   ArrowLeft, ArrowRight, Send, CheckCircle2, Loader2, Clock,
   FileText, User, Briefcase, MessageSquare, Users, DollarSign, Shield,
-  Plus, X, Save, ExternalLink, AlertCircle, CreditCard
+  Plus, X, ExternalLink, AlertCircle, CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

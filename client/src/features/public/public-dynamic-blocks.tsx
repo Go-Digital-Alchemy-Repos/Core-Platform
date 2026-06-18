@@ -4,7 +4,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { MapPin, Send, Loader2, ArrowRight, Clock, Search, BookOpen, ExternalLink } from "lucide-react";
+import { Send, Loader2, ArrowRight, Clock, Search, BookOpen, ExternalLink } from "lucide-react";
 import { LoginDialog } from "@/components/auth/login-dialog";
 import { MapView } from "@/components/directory/map-view";
 import { SectionHeading } from "@/features/admin/cms/builder/section-heading";

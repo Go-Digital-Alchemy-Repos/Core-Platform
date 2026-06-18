@@ -408,7 +408,7 @@ export function registerApiRoutes(app: Express) {
       res.set("Content-Type", "application/xml; charset=utf-8");
       res.set("Cache-Control", "public, max-age=3600");
       res.send(xml);
-    } catch (err) {
+    } catch {
       res.status(500).send("Error generating sitemap");
     }
   });
@@ -426,7 +426,7 @@ export function registerApiRoutes(app: Express) {
       res.set("Content-Type", "application/xml; charset=utf-8");
       res.set("Cache-Control", "public, max-age=1800");
       res.send(await buildCurrentProductFeedXml());
-    } catch (err) {
+    } catch {
       res.status(500).send("Error generating product feed");
     }
   });

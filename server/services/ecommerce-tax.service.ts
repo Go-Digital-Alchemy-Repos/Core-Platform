@@ -64,9 +64,6 @@ export async function calculateEcommerceTax(input: {
     return { taxAmount: 0, taxableAmount: 0, rateBps: 0, provider: "none", lineTaxAmounts: input.lines.map(() => 0) };
   }
 
-  const taxableSubtotal = input.lines
-    .filter((line) => line.taxable)
-    .reduce((sum, line) => sum + line.lineTotal, 0);
   const discountRatio = input.subtotalAmount > 0
     ? Math.min(1, Math.max(0, input.discountAmount / input.subtotalAmount))
     : 0;

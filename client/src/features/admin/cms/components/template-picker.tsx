@@ -17,7 +17,7 @@ import {
   Wand2,
   Check,
 } from "lucide-react";
-import { PAGE_TEMPLATES, type PageTemplate } from "../builder/page-templates";
+import { PAGE_TEMPLATES } from "../builder/page-templates";
 import type { BuilderContent } from "../builder/block-registry";
 
 const ICON_MAP: Record<string, React.ElementType> = {

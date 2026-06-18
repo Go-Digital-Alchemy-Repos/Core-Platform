@@ -19,7 +19,7 @@ export function formatPhoneNumber(raw: string): string {
     return `+1 (${area}) ${pfx}-${line}`;
   }
 
-  const cleaned = raw.replace(/[^\d\s\-\(\)]/g, "").trim();
+  const cleaned = raw.replace(/[^\d\s\-()]/g, "").trim();
   return cleaned ? "+" + cleaned : "+";
 }
 

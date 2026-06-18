@@ -1,4 +1,4 @@
-import { eq, desc, sql, and, gte } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 import { db } from "../db";
 import { activityLogs, type ActivityLog } from "@shared/schema";
 

@@ -91,7 +91,7 @@ vi.mock("@/components/ui/popover", () => {
       );
     },
     PopoverTrigger: ({
-      asChild,
+      asChild: _asChild,
       children,
     }: {
       asChild?: boolean;

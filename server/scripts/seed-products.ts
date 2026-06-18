@@ -9,7 +9,7 @@ async function seedStripeProducts() {
   let stripe;
   try {
     stripe = await getStripeClient();
-  } catch (e) {
+  } catch {
     console.log("Stripe not configured. Skipping product sync.");
     console.log("Tiers exist in database without Stripe price IDs.");
     return;

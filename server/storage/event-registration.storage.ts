@@ -1,4 +1,4 @@
-import { eq, and, count, asc, sum, sql, inArray, isNull, gte, lte, ne } from "drizzle-orm";
+import { eq, and, count, asc, sum, sql, inArray, isNull } from "drizzle-orm";
 import { db } from "../db";
 import { eventRegistrations, type EventRegistration, type InsertEventRegistration } from "@shared/schema";
 

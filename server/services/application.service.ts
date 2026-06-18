@@ -15,7 +15,6 @@ import {
 import type {
   ProviderApplication,
   ProviderApplicationReference,
-  ProviderApplicationCredential,
   ProviderBackgroundCheck,
 } from "@shared/schema";
 
@@ -175,7 +174,7 @@ export async function createPaymentSession(userId: string, userEmail: string, ho
       if (existingSession.status === "open") {
         return { url: existingSession.url } as const;
       }
-    } catch (err) {
+    } catch {
       logger.stripe.warn("Previous checkout session not found, creating new one");
     }
   }

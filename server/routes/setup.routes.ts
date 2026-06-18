@@ -6,7 +6,6 @@ import { validateBody } from "../middleware/validation";
 import { asyncHandler } from "../middleware/error-handler";
 import { logger } from "../utils/logger";
 import { db } from "../db";
-import { users } from "@shared/schema";
 import { sql } from "drizzle-orm";
 
 const router = Router();

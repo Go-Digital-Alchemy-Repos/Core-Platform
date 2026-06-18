@@ -67,7 +67,7 @@ export function RegisterDialog({
   });
 
   async function onSubmit(values: RegisterForm) {
-    const { confirmPassword, ageAcknowledged, ...rest } = values;
+    const { confirmPassword: _confirmPassword, ageAcknowledged: _ageAcknowledged, ...rest } = values;
     register.mutate(
       { ...rest, role: "therapist" },
       {

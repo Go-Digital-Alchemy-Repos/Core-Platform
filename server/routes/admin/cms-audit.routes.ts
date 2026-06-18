@@ -81,7 +81,7 @@ router.get("/seo-audit", async (_req, res) => {
         issues: eventIssues(e),
       })),
     });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Failed to run SEO audit" });
   }
 });

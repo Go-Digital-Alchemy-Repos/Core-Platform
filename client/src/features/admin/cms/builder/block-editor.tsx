@@ -527,7 +527,7 @@ function ArrayItemsField({
                     onCheckedChange={(checked) => updateItem(idx, field.key, checked)}
                     data-testid={`array-item-${idx}-${field.key}`}
                   />
-                  <span className="text-xs text-muted-foreground">{Boolean(item[field.key]) ? "Yes" : "No"}</span>
+                  <span className="text-xs text-muted-foreground">{item[field.key] ? "Yes" : "No"}</span>
                 </div>
               ) : field.type === "image-url" ? (
                 <CmsImageUpload
@@ -839,7 +839,7 @@ function PropField({
 
 export function BlockEditor({
   blockDef,
-  blockType,
+  blockType: _blockType,
   props,
   onChange,
   mode = "full",

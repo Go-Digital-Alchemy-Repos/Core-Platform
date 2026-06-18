@@ -17,7 +17,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowRight,
-  Calendar,
   Heart,
   CheckCircle,
   XCircle,

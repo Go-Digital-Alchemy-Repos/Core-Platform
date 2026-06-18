@@ -46,7 +46,7 @@ Items that should be scheduled but are not urgent.
 ### TD-005: Block Renderer / Registry Size
 
 - **Impact**: Maintainability
-- **Current**: `block-renderer.tsx` (1481 lines), `block-registry.ts` (1108 lines)
+- **Current**: `block-renderer.tsx` (~2,747 lines), `block-registry.ts` (~2,608 lines)
 - **Recommendation**: Split into individual block component files, create a plugin-style block registration system
 
 ### TD-006: Application Routes Size
@@ -64,19 +64,19 @@ Items that should be scheduled but are not urgent.
 ### TD-008: Query Freshness Differentiation
 
 - **Impact**: Performance, UX
-- **Current**: All queries share the same 5-minute stale time
-- **Recommendation**: Categorize queries (STATIC, SESSION, LIVE) and apply appropriate stale times. Add optimistic updates for common mutations.
+- **Current**: Client queries now use named `STALE_TIMES` tiers, but new query code should keep using those constants instead of raw millisecond literals.
+- **Recommendation**: Continue applying `STALE_TIMES.STATIC`, `SESSION`, `LIVE`, and `OPERATIONAL` consistently. Add optimistic updates for common mutations.
 
 ### TD-009: Server-Side Caching
 
 - **Impact**: Performance
-- **Current**: No server-side caching; every request hits the database
-- **Recommendation**: Add in-memory or Redis cache for frequently-read, rarely-changed data (specializations, theme settings, membership tiers, CMS pages)
+- **Current**: Basic in-memory TTL caching exists in `server/lib/cache.ts` and is used by selected settings/service paths.
+- **Recommendation**: Expand caching deliberately for frequently-read, rarely-changed data and add explicit invalidation where admin writes can stale public reads.
 
 ### TD-010: Test Coverage Expansion
 
 - **Impact**: Reliability
-- **Current**: 346 tests across server and client stabilization coverage
+- **Current**: 359 tests across server and client stabilization coverage
 - **Gaps**: More coverage still needed for CMS routes, Stripe integration, email service, admin routes, and storage classes
 - **Recommendation**: Add integration tests for critical paths (application workflow, subscription management, CMS page publishing)
 

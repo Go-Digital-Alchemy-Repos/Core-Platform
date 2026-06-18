@@ -134,7 +134,7 @@ describe("SettingsStorage caching", () => {
   });
 
   it("getSetting returns fresh value after upsert of previously-missing key", async () => {
-    const { from, where, returning } = setupMockDb();
+    const { where, returning } = setupMockDb();
     where.mockResolvedValue([]);
 
     const val1 = await storage.getSetting("new_key");

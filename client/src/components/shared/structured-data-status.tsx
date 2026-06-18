@@ -45,16 +45,14 @@ function buildChecks(contentType: ContentType, fields: StructuredDataStatusProps
     missingFields: [],
   });
 
-  if (contentType !== "page" || true) {
-    const breadcrumbMissing: string[] = [];
-    if (!fields.hasTitle) breadcrumbMissing.push("title");
-    checks.push({
-      type: "BreadcrumbList",
-      label: "BreadcrumbList",
-      applies: true,
-      missingFields: breadcrumbMissing,
-    });
-  }
+  const breadcrumbMissing: string[] = [];
+  if (!fields.hasTitle) breadcrumbMissing.push("title");
+  checks.push({
+    type: "BreadcrumbList",
+    label: "BreadcrumbList",
+    applies: true,
+    missingFields: breadcrumbMissing,
+  });
 
   if (contentType === "post") {
     const missing: string[] = [];

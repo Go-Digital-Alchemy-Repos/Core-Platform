@@ -8,7 +8,7 @@ router.get("/redirects", async (_req, res) => {
   try {
     const all = await storage.redirects.getAll();
     res.json(all);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch redirects" });
   }
 });
@@ -38,7 +38,7 @@ router.put("/redirects/:id", async (req, res) => {
     const updated = await storage.redirects.update(req.params.id, parsed.data);
     if (!updated) return res.status(404).json({ error: "Redirect not found" });
     res.json(updated);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Failed to update redirect" });
   }
 });
@@ -48,7 +48,7 @@ router.delete("/redirects/:id", async (req, res) => {
     const deleted = await storage.redirects.delete(req.params.id);
     if (!deleted) return res.status(404).json({ error: "Redirect not found" });
     res.json({ success: true });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Failed to delete redirect" });
   }
 });

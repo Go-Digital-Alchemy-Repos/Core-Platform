@@ -12,8 +12,6 @@ import {
   Globe,
   Heart,
   Users,
-  MapPin,
-  Video,
   Calendar,
   ArrowRight,
   Quote,

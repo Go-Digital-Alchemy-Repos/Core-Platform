@@ -26,10 +26,6 @@ function canUseEditorLocks(user: User | undefined): user is User {
   return user.role === "admin" || user.role === "editor";
 }
 
-function isExpired(lock: EditorLock, now: Date) {
-  return new Date(lock.expiresAt).getTime() <= now.getTime();
-}
-
 function buildResponse(
   user: User,
   resourceType: EditorLockResourceType,

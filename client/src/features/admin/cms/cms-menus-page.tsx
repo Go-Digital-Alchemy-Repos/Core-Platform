@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -583,7 +583,7 @@ function MenuItemEditor({
               onMoveUp={moveChildUp}
               onMoveDown={moveChildDown}
               onReorder={reorderChild}
-              onIndent={(childId) => {
+              onIndent={(_childId) => {
                 if (cIdx === 0) return;
                 const arr = [...item.children];
                 const prevSibling = arr[cIdx - 1];
@@ -727,7 +727,6 @@ function MenuEditor({
 
   function outdentFromChildren(parent: MenuItem, targetId: string): { item: MenuItem; extracted?: MenuItem } {
     const newChildren: MenuItem[] = [];
-    let extracted: MenuItem | undefined;
     for (const child of parent.children) {
       const childIdx = child.children.findIndex((c) => c.id === targetId);
       if (childIdx >= 0) {
@@ -738,9 +737,6 @@ function MenuEditor({
       } else {
         const result = outdentFromChildren(child, targetId);
         newChildren.push(result.item);
-        if (result.extracted) {
-          newChildren.push(result.extracted);
-        }
       }
     }
     return { item: { ...parent, children: newChildren } };

@@ -39,7 +39,7 @@ export function CompanyInformationCard({
             <div>
               {hasCompanyInfo ? (
                 <div className={cn("space-y-1 text-sm text-muted-foreground", bodyClassName)}>
-                  {companyName ? <p className="font-medium text-foreground">{companyName}</p> : null}
+                  {companyName ? <p className={cn("font-medium text-foreground", titleClassName)}>{companyName}</p> : null}
                   {companyAddress ? (
                     companyGoogleBusinessUrl ? (
                       <a

@@ -76,7 +76,7 @@ export function ProfessionalRegisterDialog({
   });
 
   async function onSubmit(values: RegisterForm) {
-    const { confirmPassword, specializations, ...rest } = values;
+    const { confirmPassword: _confirmPassword, specializations, ...rest } = values;
     const data = {
       ...rest,
       role: "therapist" as const,

@@ -69,7 +69,7 @@ export default function RegisterPage() {
   }
 
   async function onSubmit(values: RegisterForm) {
-    const { confirmPassword, specializations, ageAcknowledged, ...rest } = values;
+    const { confirmPassword: _confirmPassword, specializations, ageAcknowledged: _ageAcknowledged, ...rest } = values;
     const data = {
       ...rest,
       role: "therapist" as const,

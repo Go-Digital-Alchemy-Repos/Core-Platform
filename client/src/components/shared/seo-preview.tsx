@@ -1,4 +1,4 @@
-import { Globe, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Globe, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SeoPreviewProps {

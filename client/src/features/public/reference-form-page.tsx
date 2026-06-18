@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { apiRequest } from "@/lib/queryClient";
 
 const CORE_PLATFORM_DEFINITION = `A "platform-approved" provider is a verified provider who demonstrates meaningful understanding of the developmental, emotional, and cultural experiences common in globally mobile communities. Platform-approved providers recognize themes such as high mobility, repeated loss and grief, cultural identity complexity, hidden diversity, rootlessness, restlessness, and the challenge of repatriation. They approach their work with cultural humility and an awareness of how cross-cultural upbringing shapes identity, attachment, and belonging.`;
 

@@ -18,7 +18,6 @@ import { getBlockDef, isDynamicBlock, type BlockDef, type BlockInstance } from "
 import {
   BlockIcon,
   getBlockSummary,
-  groupBlocksByCategory,
   SectionsLibrary,
 } from "./page-builder-support";
 import { FULL_WIDTH_BLOCK_TYPES } from "./page-builder-constants";

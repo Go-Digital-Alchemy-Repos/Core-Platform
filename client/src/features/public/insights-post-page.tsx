@@ -40,7 +40,9 @@ function PodcastPlayer({ podcastUrl }: { podcastUrl: string }) {
     if (navigator.share) {
       try {
         await navigator.share({ title: "Podcast Episode", url: podcastUrl });
-      } catch {}
+      } catch {
+        return;
+      }
     } else {
       await navigator.clipboard.writeText(podcastUrl);
       toast({ title: "Link copied to clipboard" });

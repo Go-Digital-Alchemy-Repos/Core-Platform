@@ -9,6 +9,7 @@ async function throwIfResNotOk(res: Response) {
       if (json.message) message = json.message;
       else if (json.error) message = json.error;
     } catch {
+      // Keep the raw response text when the server does not return JSON.
     }
     throw new Error(message);
   }

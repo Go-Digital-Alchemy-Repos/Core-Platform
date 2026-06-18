@@ -1,6 +1,5 @@
 import { Router } from "express";
 import crypto from "crypto";
-import { z } from "zod";
 import { storage } from "../storage/index";
 import { asyncHandler } from "../middleware/error-handler";
 import { publicBlogCommentSubmissionSchema, type BlogPost } from "@shared/schema";

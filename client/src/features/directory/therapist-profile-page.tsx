@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useRoute, Link, useLocation } from "wouter";
+import { useRoute, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -23,14 +23,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { MapView } from "@/components/directory/map-view";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import { useDirectorySettings } from "@/hooks/use-directory-settings";
 import { useGlobalSeo } from "@/hooks/use-global-seo";
 import { useSeo } from "@/hooks/use-seo";
@@ -59,7 +57,6 @@ function getSessionFormatLabel(mode: string | null) {
 export default function TherapistProfilePage() {
   const [, params] = useRoute("/directory/:id");
   const id = params?.id;
-  const [, navigate] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const { settings: directorySettings } = useDirectorySettings();

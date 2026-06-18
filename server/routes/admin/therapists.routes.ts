@@ -80,7 +80,13 @@ router.post(
       role: "therapist",
     });
 
-    const { email, password, firstName, lastName, ...profileData } = data;
+    const {
+      email: _email,
+      password: _password,
+      firstName: _firstName,
+      lastName: _lastName,
+      ...profileData
+    } = data;
     const profilePayload = await enrichTherapistLocationFields(profileData);
     const profile = await storage.therapists.createProfile({
       userId: user.id,

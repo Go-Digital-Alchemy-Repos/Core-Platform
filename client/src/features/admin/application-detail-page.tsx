@@ -4,7 +4,7 @@ import { useParams, Link } from "wouter";
 import {
   ArrowLeft, Loader2, Send, UserCheck, XCircle, Shield, RefreshCw, RotateCcw,
   Users, Video, FileText, Clock, CheckCircle2, AlertTriangle, Mail, Calendar,
-  CreditCard, Award, ClipboardList, MessageSquare, Eye
+  CreditCard, Award, MessageSquare, Eye
 } from "lucide-react";
 import { AdminSidebar } from "./admin-sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +22,9 @@ function safeHref(url: string): string | undefined {
   try {
     const parsed = new URL(url);
     if (["http:", "https:"].includes(parsed.protocol)) return url;
-  } catch {}
+  } catch {
+    return undefined;
+  }
   return undefined;
 }
 
