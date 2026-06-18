@@ -48,7 +48,7 @@ Current as of June 18, 2026 after the production reconciliation, branch cleanup,
   - `client/src/features/admin/settings-page.tsx` - 4,723 lines after extracting settings sub-tabs
   - `client/src/features/admin/ecommerce/ecommerce-page.tsx` - 3,527 lines after extracting ecommerce refunds, integrations, and settings tabs
   - `client/src/features/admin/events-page.tsx` - 3,227 lines after extracting event display, export, and analytics helpers
-  - `client/src/features/admin/cms/builder/block-renderer.tsx` - 2,276 lines after extracting the CMS block icon registry and core content blocks
+  - `client/src/features/admin/cms/builder/block-renderer.tsx` - 1,664 lines after extracting the CMS block icon registry, core content blocks, and conversion blocks
   - `client/src/features/admin/therapists-page.tsx` - 2,222 lines after extracting membership and activity tabs
 
 ## Legacy Naming Policy
