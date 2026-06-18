@@ -22,6 +22,10 @@ interface BackupObjectSummary {
   lastModified: string | null;
 }
 
+interface ByteArrayTransformable {
+  transformToByteArray: () => Promise<Uint8Array>;
+}
+
 let cachedClient: S3Client | null = null;
 let cachedConfig: BackupStorageConfig | null = null;
 
@@ -114,8 +118,13 @@ async function streamToBuffer(stream: unknown): Promise<Buffer> {
     return Buffer.from(stream);
   }
 
-  if (typeof (stream as any).transformToByteArray === "function") {
-    const bytes = await (stream as any).transformToByteArray();
+  if (
+    typeof stream === "object" &&
+    stream !== null &&
+    "transformToByteArray" in stream &&
+    typeof stream.transformToByteArray === "function"
+  ) {
+    const bytes = await (stream as ByteArrayTransformable).transformToByteArray();
     return Buffer.from(bytes);
   }
 

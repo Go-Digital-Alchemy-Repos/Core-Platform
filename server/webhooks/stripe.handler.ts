@@ -47,7 +47,7 @@ export class WebhookHandlers {
                   ? directorySettings.applicationFeeCreditAmountCents
                   : 0,
                 stripePaymentIntentId: session.payment_intent as string,
-              } as any);
+              });
 
               await storage.applications.addTimelineEntry({
                 applicationId: application.id,
@@ -220,7 +220,7 @@ export class WebhookHandlers {
                   await storage.applications.update(application.id, {
                     status: "active_member",
                     decisionStatus: "completed",
-                  } as any);
+                  });
 
                   await storage.applications.addTimelineEntry({
                     applicationId: application.id,

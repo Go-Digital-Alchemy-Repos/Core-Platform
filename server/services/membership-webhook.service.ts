@@ -7,6 +7,15 @@ function fromUnix(value: number | null | undefined): Date | null {
   return value ? new Date(value * 1000) : null;
 }
 
+type StripeSubscriptionWithPeriods = Stripe.Subscription & {
+  current_period_start?: number | null;
+  current_period_end?: number | null;
+};
+
+type StripeInvoiceWithSubscription = Stripe.Invoice & {
+  subscription?: string | Stripe.Subscription | null;
+};
+
 function metadataFromStripeObject(obj: { metadata?: Stripe.Metadata | null }) {
   return {
     userId: obj.metadata?.userId || "",
@@ -16,6 +25,7 @@ function metadataFromStripeObject(obj: { metadata?: Stripe.Metadata | null }) {
 }
 
 async function syncStripeSubscription(subscription: Stripe.Subscription) {
+  const subscriptionWithPeriods = subscription as StripeSubscriptionWithPeriods;
   const metadata = metadataFromStripeObject(subscription);
   const existing = await storage.membership.getSubscriptionByProviderSubscriptionId(subscription.id);
   const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id;
@@ -28,8 +38,8 @@ async function syncStripeSubscription(subscription: Stripe.Subscription) {
     provider: "stripe",
     providerCustomerId: customerId ?? existing?.providerCustomerId ?? null,
     providerSubscriptionId: subscription.id,
-    currentPeriodStart: fromUnix((subscription as any).current_period_start),
-    currentPeriodEnd: fromUnix((subscription as any).current_period_end),
+    currentPeriodStart: fromUnix(subscriptionWithPeriods.current_period_start),
+    currentPeriodEnd: fromUnix(subscriptionWithPeriods.current_period_end),
     trialEndsAt: fromUnix(subscription.trial_end),
     canceledAt: fromUnix(subscription.canceled_at),
   };
@@ -104,7 +114,8 @@ export async function handleMembershipStripeWebhook(payload: Buffer | string, si
       break;
     case "invoice.payment_succeeded": {
       const invoice = event.data.object as Stripe.Invoice;
-      const subscriptionId = typeof (invoice as any).subscription === "string" ? (invoice as any).subscription : undefined;
+      const invoiceSubscription = (invoice as StripeInvoiceWithSubscription).subscription;
+      const subscriptionId = typeof invoiceSubscription === "string" ? invoiceSubscription : invoiceSubscription?.id;
       if (subscriptionId) {
         const subscription = await storage.membership.getSubscriptionByProviderSubscriptionId(subscriptionId);
         if (subscription) {
@@ -124,7 +135,8 @@ export async function handleMembershipStripeWebhook(payload: Buffer | string, si
     }
     case "invoice.payment_failed": {
       const invoice = event.data.object as Stripe.Invoice;
-      const subscriptionId = typeof (invoice as any).subscription === "string" ? (invoice as any).subscription : undefined;
+      const invoiceSubscription = (invoice as StripeInvoiceWithSubscription).subscription;
+      const subscriptionId = typeof invoiceSubscription === "string" ? invoiceSubscription : invoiceSubscription?.id;
       if (subscriptionId) {
         const subscription = await storage.membership.getSubscriptionByProviderSubscriptionId(subscriptionId);
         if (subscription) {

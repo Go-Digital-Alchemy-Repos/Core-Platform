@@ -1,11 +1,11 @@
 # QA Status - June 2026
 
-Current as of June 18, 2026 after the production reconciliation and branch cleanup pass.
+Current as of June 18, 2026 after the production reconciliation, branch cleanup, and server lint cleanup passes.
 
 ## Release State
 
-- Production Railway deployment is healthy and running commit `1a3b616`.
-- `main`, `origin/main`, and the local checkout are aligned at `1a3b616`.
+- Production Railway deployment is healthy after the latest `main` deployment.
+- `main`, `origin/main`, and the local checkout are expected to stay aligned after each release push.
 - Latest release gates passed before deployment:
   - `npm run check`
   - `npm run lint -- --quiet`
@@ -39,9 +39,9 @@ Current as of June 18, 2026 after the production reconciliation and branch clean
 
 ## Code Health Snapshot
 
-- Full ESLint currently reports 0 errors and 79 warnings.
+- Full ESLint currently reports 0 errors and 56 warnings.
 - Warning categories:
-  - 79 `@typescript-eslint/no-explicit-any`
+  - 56 `@typescript-eslint/no-explicit-any`
   - 0 `@typescript-eslint/no-unused-vars`
   - 0 miscellaneous JavaScript cleanup warnings
 - Highest-maintenance files by line count:
@@ -71,7 +71,7 @@ Candidate cleanup still worth doing:
 
 ## Recommended Next Sprint
 
-1. Start a server-first `@typescript-eslint/no-explicit-any` cleanup pass.
+1. Continue the remaining `@typescript-eslint/no-explicit-any` cleanup in application workflows and client form/page code.
 2. Split `settings-page.tsx` by route-backed settings sections.
 3. Classify remaining legacy naming hits into compatibility allowlist vs visible cleanup.
 4. Review and selectively port the two stale branches.

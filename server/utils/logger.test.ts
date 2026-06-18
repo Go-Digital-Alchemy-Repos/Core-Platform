@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
+import type { NextFunction, Request, Response } from "express";
 import { logger, requestIdMiddleware, requestContext } from "./logger";
+
+type MockRequest = Partial<Request> & { headers: Record<string, string>; requestId?: string };
+type MockResponse = Pick<Response, "setHeader">;
 
 describe("logger", () => {
   it("exposes named child loggers with info/warn/error methods", () => {
@@ -27,12 +31,12 @@ describe("logger", () => {
 
 describe("requestIdMiddleware", () => {
   it("assigns a UUID requestId and sets X-Request-Id header", () => {
-    const req: any = { headers: {} };
+    const req: MockRequest = { headers: {} };
     const setHeader = vi.fn();
-    const res: any = { setHeader };
-    const next = vi.fn();
+    const res: MockResponse = { setHeader };
+    const next: NextFunction = vi.fn();
 
-    requestIdMiddleware(req, res, next);
+    requestIdMiddleware(req as Request, res as Response, next);
 
     expect(req.requestId).toBeDefined();
     expect(req.requestId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
@@ -42,12 +46,12 @@ describe("requestIdMiddleware", () => {
 
   it("accepts an incoming X-Request-Id header", () => {
     const incomingId = "custom-request-id-123";
-    const req: any = { headers: { "x-request-id": incomingId } };
+    const req: MockRequest = { headers: { "x-request-id": incomingId } };
     const setHeader = vi.fn();
-    const res: any = { setHeader };
-    const next = vi.fn();
+    const res: MockResponse = { setHeader };
+    const next: NextFunction = vi.fn();
 
-    requestIdMiddleware(req, res, next);
+    requestIdMiddleware(req as Request, res as Response, next);
 
     expect(req.requestId).toBe(incomingId);
     expect(setHeader).toHaveBeenCalledWith("X-Request-Id", incomingId);
@@ -71,12 +75,12 @@ describe("requestContext (AsyncLocalStorage)", () => {
   });
 
   it("middleware sets up AsyncLocalStorage context for downstream code", () => {
-    const req: any = { headers: {} };
+    const req: MockRequest = { headers: {} };
     const setHeader = vi.fn();
-    const res: any = { setHeader };
+    const res: MockResponse = { setHeader };
     let contextId: string | undefined;
 
-    requestIdMiddleware(req, res, () => {
+    requestIdMiddleware(req as Request, res as Response, () => {
       contextId = requestContext.getStore()?.requestId;
     });
 

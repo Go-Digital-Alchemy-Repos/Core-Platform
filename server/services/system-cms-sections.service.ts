@@ -150,7 +150,6 @@ export async function ensureSystemCmsSections(options?: { refreshExisting?: bool
     if (!existing) {
       await storage.cmsSections.createSection({
         ...starterSection,
-        blocks: starterSection.blocks as any,
       });
       created += 1;
       continue;
@@ -161,7 +160,7 @@ export async function ensureSystemCmsSections(options?: { refreshExisting?: bool
         name: starterSection.name,
         description: starterSection.description,
         category: starterSection.category,
-        blocks: starterSection.blocks as any,
+        blocks: starterSection.blocks,
       });
       updated += 1;
     }

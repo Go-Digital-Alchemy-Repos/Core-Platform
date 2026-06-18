@@ -487,8 +487,11 @@ export async function testMailgunConnection(): Promise<{
     const mg = mailgun.client({ username: "api", key: config.apiKey });
     await mg.domains.get(config.domain);
     return { success: true, message: "Mailgun connection successful" };
-  } catch (err: any) {
-    return { success: false, message: err.message || "Connection failed" };
+  } catch (err) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Connection failed",
+    };
   }
 }
 

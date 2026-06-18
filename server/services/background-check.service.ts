@@ -16,6 +16,21 @@ export const BACKGROUND_CHECK_STATUSES = [
 
 export type BackgroundCheckStatus = (typeof BACKGROUND_CHECK_STATUSES)[number];
 
+type BackgroundCheckUpdate = Partial<{
+  status: string;
+  result: string;
+  completedAt: Date;
+  reportUrl: string;
+  vendorName: string;
+  vendorExternalId: string;
+  providerFacingLabel: string;
+  adminStatusDetails: string;
+  notes: string;
+  requestedAt: Date;
+  lastStatusSyncAt: Date;
+  updatedAt: Date;
+}>;
+
 const PROVIDER_FACING_LABELS: Record<BackgroundCheckStatus, string> = {
   not_sent: "Not Started",
   pending: "Pending",
@@ -157,7 +172,7 @@ export async function syncBackgroundCheckStatus(
   try {
     const result = await vendor.syncStatus(check.vendorExternalId);
     const newStatus = result.status as BackgroundCheckStatus;
-    const updateData: Record<string, unknown> = {
+    const updateData: BackgroundCheckUpdate = {
       status: newStatus,
       providerFacingLabel: getProviderFacingLabel(newStatus),
       lastStatusSyncAt: new Date(),
@@ -168,7 +183,7 @@ export async function syncBackgroundCheckStatus(
     if (result.details) updateData.adminStatusDetails = result.details;
     if (isTerminalStatus(newStatus)) updateData.completedAt = new Date();
 
-    const updated = await storage.applications.updateBackgroundCheck(check.id, updateData as any);
+    const updated = await storage.applications.updateBackgroundCheck(check.id, updateData);
 
     if (isTerminalStatus(newStatus)) {
       await storage.applications.update(applicationId, {
@@ -210,7 +225,7 @@ export async function resendBackgroundCheckInvite(
         providerFacingLabel: getProviderFacingLabel("invited"),
         adminStatusDetails: "Invite resent",
         lastStatusSyncAt: new Date(),
-      } as any);
+      });
     }
     return success;
   } catch (err) {
@@ -233,7 +248,7 @@ export async function adminUpdateBackgroundCheck(
   const check = await storage.applications.getBackgroundCheck(applicationId);
   if (!check) return undefined;
 
-  const updateData: Record<string, unknown> = { updatedAt: new Date() };
+  const updateData: BackgroundCheckUpdate = { updatedAt: new Date() };
 
   if (data.status) {
     updateData.status = data.status;
@@ -249,7 +264,7 @@ export async function adminUpdateBackgroundCheck(
   if (data.vendorExternalId !== undefined) updateData.vendorExternalId = data.vendorExternalId;
   if (data.reportUrl !== undefined) updateData.reportUrl = data.reportUrl;
 
-  const updated = await storage.applications.updateBackgroundCheck(check.id, updateData as any);
+  const updated = await storage.applications.updateBackgroundCheck(check.id, updateData);
 
   if (data.status && isTerminalStatus(data.status)) {
     await storage.applications.update(applicationId, {

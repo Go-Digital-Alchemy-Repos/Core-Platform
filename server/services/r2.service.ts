@@ -241,8 +241,11 @@ export async function testConnection(): Promise<{
   try {
     await r2.client.send(new HeadBucketCommand({ Bucket: r2.bucketName }));
     return { success: true, message: "R2 connection successful" };
-  } catch (err: any) {
-    return { success: false, message: err.message || "Connection failed" };
+  } catch (err) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Connection failed",
+    };
   }
 }
 
