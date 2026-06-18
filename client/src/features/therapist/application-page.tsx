@@ -519,7 +519,7 @@ function ProfessionalInfoStep({
             id="professionalTitle"
             value={formData.professionalTitle || ""}
             onChange={(e) => onChange({ professionalTitle: e.target.value })}
-            placeholder="e.g., Licensed Professional Counselor"
+            placeholder="e.g., Certified Program Facilitator"
             data-testid="input-professional-title"
           />
         </div>
@@ -530,7 +530,7 @@ function ProfessionalInfoStep({
             id="organizationName"
             value={formData.organizationName || ""}
             onChange={(e) => onChange({ organizationName: e.target.value })}
-            placeholder="e.g., Crossroads Counseling Center"
+            placeholder="e.g., Example Community Organization"
             data-testid="input-organization-name"
           />
         </div>
@@ -595,7 +595,7 @@ function ProfessionalInfoStep({
                 id="credentialType"
                 value={credForm.credentialType}
                 onChange={(e) => setCredForm((f) => ({ ...f, credentialType: e.target.value }))}
-                placeholder="e.g., Licensed Professional Counselor (LPC)"
+                placeholder="e.g., Certified Program Facilitator"
                 data-testid="input-credential-type"
               />
             </div>

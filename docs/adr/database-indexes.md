@@ -6,7 +6,7 @@
 
 ## Context
 
-The Core Platform application has grown to include a therapist directory with filterable listings, direct messaging, events with recurrence support, and admin contact message management. While the schema had basic indexes (e.g., `idx_tp_visibility` on `is_approved, is_active`), several query patterns lacked index support, and one FK relationship was missing.
+The Core Platform application has grown to include a provider directory with filterable listings, direct messaging, events with recurrence support, and admin contact message management. While the schema had basic indexes (e.g., `idx_tp_visibility` on `is_approved, is_active`), several query patterns lacked index support, and one FK relationship was missing.
 
 ## Decisions
 
@@ -15,14 +15,14 @@ The Core Platform application has grown to include a therapist directory with fi
 - **Index:** `idx_tp_specializations_gin` (GIN)
 - **Query pattern:** `WHERE specializations @> ARRAY['CBT']::text[]`
 - **Rationale:** The directory filter uses the `@>` (array-contains) operator on the `specializations` column. B-tree indexes cannot accelerate `@>` queries on arrays; GIN indexes are designed specifically for this. Without the GIN index, Postgres must do a sequential scan and unnest each row's array to check containment.
-- **Selectivity:** Medium-high. Each therapist has 1–10 specializations from a pool of ~50+ options, so individual filter values typically match 5–20% of rows.
+- **Selectivity:** Medium-high. Each provider has 1–10 specializations from a pool of ~50+ options, so individual filter values typically match 5–20% of rows.
 
 ### 2. GIN Index on `therapist_profiles.languages`
 
 - **Index:** `idx_tp_languages_gin` (GIN)
 - **Query pattern:** `WHERE languages @> ARRAY['French']::text[]`
 - **Rationale:** Same as specializations — `@>` queries on array columns require GIN indexes. The directory allows filtering by language.
-- **Selectivity:** High. Most therapists list 1–3 languages, so filtering by a non-English language is highly selective.
+- **Selectivity:** High. Most providers list 1–3 languages, so filtering by a non-English language is highly selective.
 
 ### 3. Composite B-tree Index on `therapist_profiles` Directory Filter
 

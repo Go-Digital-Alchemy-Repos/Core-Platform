@@ -8,6 +8,6 @@ export const PRACTICE_MODES = {
 
 export const ROLE_LABELS = {
   admin: "Admin",
-  therapist: "Therapist",
-  client: "Client",
+  therapist: "Provider",
+  client: "Member",
 } as const;

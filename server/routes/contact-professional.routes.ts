@@ -84,7 +84,7 @@ router.post("/", guestMessageLimiter, async (req: Request, res: Response) => {
         </div>
         <p style="color: #666; font-size: 14px;">You can reply directly to this person at <a href="mailto:${safeEmail}">${safeEmail}</a>.</p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-        <p style="color: #999; font-size: 12px;">This message was sent through your Core Platform counselor profile.</p>
+        <p style="color: #999; font-size: 12px;">This message was sent through your Core Platform directory profile.</p>
       </div>
     `;
 

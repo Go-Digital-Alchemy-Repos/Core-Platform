@@ -71,7 +71,7 @@ const fallbackCategoryLabels = {
     "Expatriate Adjustment",
     "Cross-Cultural",
     "Grief & Loss",
-    "Family Therapy",
+    "Family Support",
     "Trauma & PTSD",
     "CBT",
     "Mindfulness",

@@ -21,12 +21,14 @@ The stabilization pass neutralized high-visibility default copy in:
 - CMS builder block defaults and page template starter copy.
 - Directory page fallback explanatory copy.
 - Provider application labels and helper text.
+- Provider application status, mobile shell badges, role display labels, contact email footer copy, directory fallback categories, and demo seed provider examples.
 
-Remaining `therapist`, `counselor`, and `Core Platform` hits should be classified before editing:
+Remaining `therapist`, `counselor`, and old domain-specific hits were reviewed again on 2026-06-18. Current remaining matches are intentionally retained for compatibility or pending a dedicated asset/key migration:
 
 - Compatibility identifiers are intentionally preserved.
 - Historical docs should be rewritten only when the doc is still reader-facing and current.
-- Demo seed data should be replaced in a dedicated seed-content cleanup so tests and demos can be reviewed together.
+- Public asset filenames should be renamed only after references and generated derivatives are migrated together.
+- Test fixture search strings may retain old terms when they are validating free-form search behavior rather than product language.
 
 ## Preserved Identifiers
 

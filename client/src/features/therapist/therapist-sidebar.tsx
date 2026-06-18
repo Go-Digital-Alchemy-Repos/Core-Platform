@@ -315,7 +315,7 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{user.firstName} {user.lastName}</p>
-                        <Badge variant="outline" className="text-[10px]">Counselor</Badge>
+                        <Badge variant="outline" className="text-[10px]">Provider</Badge>
                       </div>
                     </div>
                   </div>

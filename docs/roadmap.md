@@ -69,14 +69,14 @@ Recommended improvements for the next development wave, ordered by impact and fe
 
 ---
 
-## Phase 4: Admin Analytics for Therapist Onboarding & Subscriptions
+## Phase 4: Admin Analytics for Provider Onboarding & Subscriptions
 
 **Priority**: Medium
 **Effort**: Medium
 **Dependencies**: None
 
 ### Goals
-- Dashboard visualizations for therapist onboarding funnel
+- Dashboard visualizations for provider onboarding funnel
 - Subscription analytics (MRR, churn, upgrades)
 - Application pipeline metrics
 
