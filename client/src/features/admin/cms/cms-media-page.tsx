@@ -7,7 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Image, Search, Trash2, Copy, Upload, Save, Crop, Loader2, FileText, CheckCircle2, Circle } from "lucide-react";
+import {
+  Image,
+  Search,
+  Trash2,
+  Copy,
+  Upload,
+  Save,
+  Crop,
+  Loader2,
+  FileText,
+  CheckCircle2,
+  Circle,
+} from "lucide-react";
 import { CmsImageUpload } from "./components/cms-image-upload";
 import type { CmsMediaLibraryAsset } from "@shared/schema";
 import { format } from "date-fns";
@@ -66,7 +78,16 @@ export default function CmsMediaPage() {
   const [pendingUploadUrl, setPendingUploadUrl] = useState("");
   const [usageFilter, setUsageFilter] = useState<"all" | "in-use" | "draft-only" | "unused">("all");
   const [typeFilter, setTypeFilter] = useState<"all" | "images" | "documents">("all");
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name-asc" | "name-desc" | "largest" | "smallest" | "most-used" | "least-used">("newest");
+  const [sortBy, setSortBy] = useState<
+    | "newest"
+    | "oldest"
+    | "name-asc"
+    | "name-desc"
+    | "largest"
+    | "smallest"
+    | "most-used"
+    | "least-used"
+  >("newest");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<CmsMediaLibraryAsset | null>(null);
   const [metadataForm, setMetadataForm] = useState<MediaMetadataForm>(buildMetadataForm(null));
@@ -105,7 +126,11 @@ export default function CmsMediaPage() {
 
   const metadataMutation = useMutation({
     mutationFn: async (payload: { id: string; data: MediaMetadataForm }) => {
-      const response = await apiRequest("PATCH", `/api/admin/cms/media/${payload.id}`, payload.data);
+      const response = await apiRequest(
+        "PATCH",
+        `/api/admin/cms/media/${payload.id}`,
+        payload.data,
+      );
       return response.json() as Promise<Partial<CmsMediaLibraryAsset>>;
     },
     onSuccess: (asset) => {
@@ -138,7 +163,9 @@ export default function CmsMediaPage() {
     },
     onSuccess: (asset) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/media"] });
-      setSelectedAsset((current) => (current ? ({ ...current, ...asset } as CmsMediaLibraryAsset) : current));
+      setSelectedAsset((current) =>
+        current ? ({ ...current, ...asset } as CmsMediaLibraryAsset) : current,
+      );
       toast({ title: "Media file updated" });
       if (cropSrc?.startsWith("blob:")) {
         URL.revokeObjectURL(cropSrc);
@@ -259,7 +286,9 @@ export default function CmsMediaPage() {
               Media Library
             </h1>
             <p className="text-muted-foreground mt-1">
-              {assets.length} media item{assets.length !== 1 ? "s" : ""} uploaded · {totalInUse} live · {totalDraftOnly} draft-only · {totalUnused} unused · {totalDocuments} document{totalDocuments !== 1 ? "s" : ""}
+              {assets.length} media item{assets.length !== 1 ? "s" : ""} uploaded · {totalInUse}{" "}
+              live · {totalDraftOnly} draft-only · {totalUnused} unused · {totalDocuments} document
+              {totalDocuments !== 1 ? "s" : ""}
             </p>
           </div>
           <Button
@@ -334,7 +363,9 @@ export default function CmsMediaPage() {
                 <Image className="h-8 w-8 text-violet-400" />
               </div>
               <h2 className="text-lg font-semibold mb-2">
-                {search || usageFilter !== "all" || typeFilter !== "all" ? "No media matches your filters" : "No media yet"}
+                {search || usageFilter !== "all" || typeFilter !== "all"
+                  ? "No media matches your filters"
+                  : "No media yet"}
               </h2>
               <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-5">
                 {search || usageFilter !== "all" || typeFilter !== "all"
@@ -376,7 +407,9 @@ export default function CmsMediaPage() {
                       <FileText className="h-7 w-7 text-violet-500" />
                     </div>
                     <div>
-                      <p className="line-clamp-2 text-xs font-semibold text-foreground">{asset.originalName}</p>
+                      <p className="line-clamp-2 text-xs font-semibold text-foreground">
+                        {asset.originalName}
+                      </p>
                       <p className="mt-1 text-[11px] text-muted-foreground">{asset.mimeType}</p>
                     </div>
                   </div>
@@ -406,7 +439,12 @@ export default function CmsMediaPage() {
                     {asset.originalName}
                   </p>
                   <p className="text-white/70 text-[9px]">
-                    {formatBytes(asset.fileSize)} · {asset.isInUse ? `${asset.liveUsageCount} live use` : asset.usageCount > 0 ? `${asset.usageCount} draft/private ref` : "unused"}
+                    {formatBytes(asset.fileSize)} ·{" "}
+                    {asset.isInUse
+                      ? `${asset.liveUsageCount} live use`
+                      : asset.usageCount > 0
+                        ? `${asset.usageCount} draft/private ref`
+                        : "unused"}
                   </p>
                 </div>
               </button>
@@ -474,7 +512,9 @@ export default function CmsMediaPage() {
               )}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/40 text-xs font-mono break-all">
-                  <span className="flex-1 text-muted-foreground line-clamp-2">{selectedAsset.url}</span>
+                  <span className="flex-1 text-muted-foreground line-clamp-2">
+                    {selectedAsset.url}
+                  </span>
                   <Button
                     type="button"
                     variant="ghost"
@@ -507,20 +547,27 @@ export default function CmsMediaPage() {
                     </span>
                   )}
                   <span className="inline-flex items-center gap-1 rounded-full bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                    {selectedAsset.liveUsageCount} live use{selectedAsset.liveUsageCount !== 1 ? "s" : ""}
+                    {selectedAsset.liveUsageCount} live use
+                    {selectedAsset.liveUsageCount !== 1 ? "s" : ""}
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                    {selectedAsset.usageCount} total reference{selectedAsset.usageCount !== 1 ? "s" : ""}
+                    {selectedAsset.usageCount} total reference
+                    {selectedAsset.usageCount !== 1 ? "s" : ""}
                   </span>
                 </div>
                 {selectedAsset.usageRefs.length > 0 ? (
                   <div className="max-h-48 space-y-2 overflow-y-auto pr-1">
                     {selectedAsset.usageRefs.map((reference, index) => (
-                      <div key={`${reference.entityType}-${reference.entityId}-${reference.field}-${index}`} className="rounded-lg border bg-background px-3 py-2 text-sm">
+                      <div
+                        key={`${reference.entityType}-${reference.entityId}-${reference.field}-${index}`}
+                        className="rounded-lg border bg-background px-3 py-2 text-sm"
+                      >
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium">{reference.entityName}</span>
                           <span className="text-xs text-muted-foreground">{reference.field}</span>
-                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${reference.isLive ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${reference.isLive ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}
+                          >
                             {reference.statusLabel}
                           </span>
                         </div>
@@ -547,7 +594,9 @@ export default function CmsMediaPage() {
                     placeholder="hero-image.webp"
                     data-testid="input-media-original-name"
                   />
-                  <p className="text-xs text-muted-foreground">Updates the library label without changing the current file URL.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Updates the library label without changing the current file URL.
+                  </p>
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="media-title">Title</Label>
@@ -597,7 +646,8 @@ export default function CmsMediaPage() {
                 <div>
                   <h3 className="text-sm font-semibold">SEO & Social Metadata</h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Use these fields when an image needs its own editorial metadata for search previews or social sharing workflows.
+                    Use these fields when an image needs its own editorial metadata for search
+                    previews or social sharing workflows.
                   </p>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
@@ -654,7 +704,11 @@ export default function CmsMediaPage() {
                     size="sm"
                     className="gap-1.5"
                     onClick={prepareCropper}
-                    disabled={selectedAsset.assetKind !== "image" || isPreparingCrop || replaceImageMutation.isPending}
+                    disabled={
+                      selectedAsset.assetKind !== "image" ||
+                      isPreparingCrop ||
+                      replaceImageMutation.isPending
+                    }
                     data-testid="button-crop-image"
                   >
                     {isPreparingCrop ? (
@@ -679,8 +733,14 @@ export default function CmsMediaPage() {
                     type="button"
                     size="sm"
                     className="gap-1.5"
-                    onClick={() => metadataMutation.mutate({ id: selectedAsset.id, data: metadataForm })}
-                    disabled={!hasMetadataChanges || metadataMutation.isPending || replaceImageMutation.isPending}
+                    onClick={() =>
+                      metadataMutation.mutate({ id: selectedAsset.id, data: metadataForm })
+                    }
+                    disabled={
+                      !hasMetadataChanges ||
+                      metadataMutation.isPending ||
+                      replaceImageMutation.isPending
+                    }
                     data-testid="button-save-media-details"
                   >
                     <Save className="h-3.5 w-3.5" />
@@ -731,7 +791,8 @@ export default function CmsMediaPage() {
             <AlertDialogTitle>Delete this media item?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently remove the file from your media library and from Cloudflare R2.
-              Any pages, posts, events, or blocks that reference this URL will show a broken file link or missing image.
+              Any pages, posts, events, or blocks that reference this URL will show a broken file
+              link or missing image.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

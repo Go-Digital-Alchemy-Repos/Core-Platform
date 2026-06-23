@@ -18,11 +18,12 @@ function getAdminPermissions(user: User | null): AdminPermissionType[] {
     return [];
   }
 
-  return user.adminPermissions.filter((permission): permission is AdminPermissionType =>
-    permission === AdminPermission.DIRECTORY ||
-    permission === AdminPermission.CONTENT ||
-    permission === AdminPermission.DESIGN ||
-    permission === AdminPermission.CRM
+  return user.adminPermissions.filter(
+    (permission): permission is AdminPermissionType =>
+      permission === AdminPermission.DIRECTORY ||
+      permission === AdminPermission.CONTENT ||
+      permission === AdminPermission.DESIGN ||
+      permission === AdminPermission.CRM,
   );
 }
 
@@ -80,6 +81,7 @@ export function useAuth() {
     isEditor: user?.role === "editor",
     isTherapist: user?.role === "therapist",
     adminPermissions: getAdminPermissions(user ?? null),
-    hasAdminPermission: (permission: AdminPermissionType) => getAdminPermissions(user ?? null).includes(permission),
+    hasAdminPermission: (permission: AdminPermissionType) =>
+      getAdminPermissions(user ?? null).includes(permission),
   };
 }

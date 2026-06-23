@@ -104,13 +104,7 @@ function parseDateTimeLocal(value: string): [number, number, number, number, num
   }
 
   const [, year, month, day, hour, minute] = match;
-  return [
-    Number(year),
-    Number(month),
-    Number(day),
-    Number(hour),
-    Number(minute),
-  ];
+  return [Number(year), Number(month), Number(day), Number(hour), Number(minute)];
 }
 
 export function getDefaultEventTimeZone(): string {
@@ -139,7 +133,10 @@ export function toDateTimeLocalValue(value: DateLike, timeZone?: string | null):
   return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 }
 
-export function fromDateTimeLocalValue(value: string | null | undefined, timeZone?: string | null): string | null {
+export function fromDateTimeLocalValue(
+  value: string | null | undefined,
+  timeZone?: string | null,
+): string | null {
   if (!value) {
     return null;
   }
@@ -220,11 +217,7 @@ export function formatEventTime(
   }).format(date);
 }
 
-export function isSameEventDay(
-  start: DateLike,
-  end: DateLike,
-  timeZone?: string | null,
-): boolean {
+export function isSameEventDay(start: DateLike, end: DateLike, timeZone?: string | null): boolean {
   const startKey = getCalendarDateKey(start, timeZone);
   const endKey = getCalendarDateKey(end, timeZone);
   return Boolean(startKey && endKey && startKey === endKey);

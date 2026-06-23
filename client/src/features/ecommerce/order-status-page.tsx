@@ -9,7 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { formatMoney } from "./cart-store";
-import { getEcommerceOrderStatusBadge, getEcommercePaymentStatusBadge } from "./order-status-labels";
+import {
+  getEcommerceOrderStatusBadge,
+  getEcommercePaymentStatusBadge,
+} from "./order-status-labels";
 
 interface OrderDetails {
   id: string;
@@ -21,7 +24,14 @@ interface OrderDetails {
   shippingAmount?: number;
   taxAmount?: number;
   createdAt?: string;
-  items: Array<{ id: string; productName: string; variantTitle?: string | null; quantity: number; unitPrice?: number; lineTotal: number }>;
+  items: Array<{
+    id: string;
+    productName: string;
+    variantTitle?: string | null;
+    quantity: number;
+    unitPrice?: number;
+    lineTotal: number;
+  }>;
   shipments: Array<{
     id: string;
     carrier?: string | null;
@@ -52,8 +62,12 @@ function OrderStatusBadges({ status, paymentStatus }: { status: string; paymentS
 
   return (
     <div className="flex flex-wrap justify-end gap-2">
-      <Badge variant={orderStatus.variant} className={orderStatus.className}>{orderStatus.label}</Badge>
-      <Badge variant={payment.variant} className={payment.className}>{payment.label}</Badge>
+      <Badge variant={orderStatus.variant} className={orderStatus.className}>
+        {orderStatus.label}
+      </Badge>
+      <Badge variant={payment.variant} className={payment.className}>
+        {payment.label}
+      </Badge>
     </div>
   );
 }
@@ -68,7 +82,11 @@ export default function OrderStatusPage() {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/ecommerce/orders/status", { orderId, email, token });
+      const res = await apiRequest("POST", "/api/ecommerce/orders/status", {
+        orderId,
+        email,
+        token,
+      });
       return res.json() as Promise<OrderDetails>;
     },
     onSuccess: setOrder,
@@ -102,20 +120,50 @@ export default function OrderStatusPage() {
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
         <div className="flex flex-col gap-2">
           <h1 className="font-heading text-4xl font-semibold">Order status</h1>
-          <p className="text-muted-foreground">Track fulfillment, shipment details, and order totals.</p>
+          <p className="text-muted-foreground">
+            Track fulfillment, shipment details, and order totals.
+          </p>
         </div>
         <Card className="mt-8">
-          <CardHeader><CardTitle>Look up an order</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Look up an order</CardTitle>
+          </CardHeader>
           <CardContent>
             <form onSubmit={submit} className="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
-              <div className="space-y-2"><Label>Order ID</Label><Input value={orderId} onChange={(e) => setOrderId(e.target.value)} required /></div>
-              <div className="space-y-2"><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
-              <div className="space-y-2"><Label>Secure token</Label><Input value={token} onChange={(e) => setToken(e.target.value)} placeholder="Optional if requesting a secure link" /></div>
-              <Button type="submit" disabled={mutation.isPending || linkMutation.isPending} className="sm:col-span-3">
+              <div className="space-y-2">
+                <Label>Order ID</Label>
+                <Input value={orderId} onChange={(e) => setOrderId(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Secure token</Label>
+                <Input
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  placeholder="Optional if requesting a secure link"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={mutation.isPending || linkMutation.isPending}
+                className="sm:col-span-3"
+              >
                 {token.trim() ? "Find order" : "Email secure status link"}
               </Button>
             </form>
-            {linkMessage ? <p className="mt-4 rounded-lg border p-3 text-sm text-muted-foreground">{linkMessage}</p> : null}
+            {linkMessage ? (
+              <p className="mt-4 rounded-lg border p-3 text-sm text-muted-foreground">
+                {linkMessage}
+              </p>
+            ) : null}
           </CardContent>
         </Card>
         {order ? (
@@ -125,7 +173,11 @@ export default function OrderStatusPage() {
                 <div>
                   <p className="font-mono text-sm text-muted-foreground">#{order.id}</p>
                   <h2 className="text-2xl font-semibold">Order details</h2>
-                  {order.createdAt ? <p className="text-sm text-muted-foreground">Placed {new Date(order.createdAt).toLocaleDateString()}</p> : null}
+                  {order.createdAt ? (
+                    <p className="text-sm text-muted-foreground">
+                      Placed {new Date(order.createdAt).toLocaleDateString()}
+                    </p>
+                  ) : null}
                 </div>
                 <OrderStatusBadges status={order.status} paymentStatus={order.paymentStatus} />
               </div>
@@ -141,7 +193,11 @@ export default function OrderStatusPage() {
                     return (
                       <div key={step.key} className="rounded-lg border p-3">
                         <div className="flex items-center gap-2">
-                          {complete ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Clock3 className="h-4 w-4 text-muted-foreground" />}
+                          {complete ? (
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                          ) : (
+                            <Clock3 className="h-4 w-4 text-muted-foreground" />
+                          )}
                           <span className="font-medium">{step.label}</span>
                         </div>
                       </div>
@@ -155,47 +211,85 @@ export default function OrderStatusPage() {
                   {order.items.map((item) => (
                     <div key={item.id} className="flex justify-between rounded-md border p-3">
                       <span>
-                        <span className="block font-medium">{item.productName} x {item.quantity}</span>
-                        {item.variantTitle ? <span className="text-sm text-muted-foreground">{item.variantTitle}</span> : null}
+                        <span className="block font-medium">
+                          {item.productName} x {item.quantity}
+                        </span>
+                        {item.variantTitle ? (
+                          <span className="text-sm text-muted-foreground">{item.variantTitle}</span>
+                        ) : null}
                       </span>
                       <span>{formatMoney(item.lineTotal)}</span>
                     </div>
                   ))}
                 </div>
                 <div className="h-fit rounded-lg border p-4 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatMoney(order.subtotalAmount ?? order.items.reduce((sum, item) => sum + item.lineTotal, 0))}</span></div>
-                  <div className="mt-2 flex justify-between"><span className="text-muted-foreground">Discount</span><span>-{formatMoney(order.discountAmount ?? 0)}</span></div>
-                  <div className="mt-2 flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{formatMoney(order.shippingAmount ?? 0)}</span></div>
-                  <div className="mt-2 flex justify-between"><span className="text-muted-foreground">Tax</span><span>{formatMoney(order.taxAmount ?? 0)}</span></div>
-                  <div className="mt-3 flex justify-between border-t pt-3 text-base font-semibold"><span>Total</span><span>{formatMoney(order.totalAmount)}</span></div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>
+                      {formatMoney(
+                        order.subtotalAmount ??
+                          order.items.reduce((sum, item) => sum + item.lineTotal, 0),
+                      )}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex justify-between">
+                    <span className="text-muted-foreground">Discount</span>
+                    <span>-{formatMoney(order.discountAmount ?? 0)}</span>
+                  </div>
+                  <div className="mt-2 flex justify-between">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span>{formatMoney(order.shippingAmount ?? 0)}</span>
+                  </div>
+                  <div className="mt-2 flex justify-between">
+                    <span className="text-muted-foreground">Tax</span>
+                    <span>{formatMoney(order.taxAmount ?? 0)}</span>
+                  </div>
+                  <div className="mt-3 flex justify-between border-t pt-3 text-base font-semibold">
+                    <span>Total</span>
+                    <span>{formatMoney(order.totalAmount)}</span>
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <h3 className="flex items-center gap-2 font-semibold"><Package className="h-4 w-4" /> Shipments</h3>
-                {order.shipments.length ? order.shipments.map((shipment) => (
-                  <div key={shipment.id} className="rounded-lg border p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2 font-medium">
-                          <Truck className="h-4 w-4" />
-                          {shipment.carrier || "Carrier pending"}
+                <h3 className="flex items-center gap-2 font-semibold">
+                  <Package className="h-4 w-4" /> Shipments
+                </h3>
+                {order.shipments.length ? (
+                  order.shipments.map((shipment) => (
+                    <div key={shipment.id} className="rounded-lg border p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2 font-medium">
+                            <Truck className="h-4 w-4" />
+                            {shipment.carrier || "Carrier pending"}
+                          </div>
+                          {shipment.shippedAt ? (
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Shipped {new Date(shipment.shippedAt).toLocaleDateString()}
+                            </p>
+                          ) : null}
+                          {shipment.trackingNumber ? (
+                            <p className="mt-1 font-mono text-sm">{shipment.trackingNumber}</p>
+                          ) : null}
                         </div>
-                        {shipment.shippedAt ? <p className="mt-1 text-sm text-muted-foreground">Shipped {new Date(shipment.shippedAt).toLocaleDateString()}</p> : null}
-                        {shipment.trackingNumber ? <p className="mt-1 font-mono text-sm">{shipment.trackingNumber}</p> : null}
+                        <Badge variant="outline">{shipment.status}</Badge>
                       </div>
-                      <Badge variant="outline">{shipment.status}</Badge>
+                      {shipment.trackingUrl ? (
+                        <Button asChild variant="outline" className="mt-4">
+                          <a href={shipment.trackingUrl} target="_blank" rel="noreferrer">
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Track package
+                          </a>
+                        </Button>
+                      ) : null}
                     </div>
-                    {shipment.trackingUrl ? (
-                      <Button asChild variant="outline" className="mt-4">
-                        <a href={shipment.trackingUrl} target="_blank" rel="noreferrer">
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Track package
-                        </a>
-                      </Button>
-                    ) : null}
-                  </div>
-                )) : <p className="rounded-lg border p-4 text-sm text-muted-foreground">No shipments yet. Tracking details will appear here once your order ships.</p>}
+                  ))
+                ) : (
+                  <p className="rounded-lg border p-4 text-sm text-muted-foreground">
+                    No shipments yet. Tracking details will appear here once your order ships.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

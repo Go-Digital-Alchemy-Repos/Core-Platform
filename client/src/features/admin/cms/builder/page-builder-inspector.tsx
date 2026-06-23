@@ -33,7 +33,8 @@ export function BlockInspectorPanel({
           <Settings2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground/35" />
           <p className="text-base font-semibold">Select a block to inspect</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Click any section directly on the canvas or from the structure panel. The docked inspector will open with the full editing form for that block.
+            Click any section directly on the canvas or from the structure panel. The docked
+            inspector will open with the full editing form for that block.
           </p>
         </div>
       </div>
@@ -53,7 +54,8 @@ export function BlockInspectorPanel({
               <p className="text-sm font-semibold">Contextual Inspector</p>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Full editing for the selected section lives here, with grouped controls for content, media, layout, and section settings.
+              Full editing for the selected section lives here, with grouped controls for content,
+              media, layout, and section settings.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -67,12 +69,7 @@ export function BlockInspectorPanel({
               <LocateFixed className="mr-1.5 h-4 w-4" />
               Locate
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onSaveSection}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={onSaveSection}>
               <Bookmark className="mr-1.5 h-4 w-4" />
               Save Section
             </Button>
@@ -95,7 +92,9 @@ export function BlockInspectorPanel({
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{selectedEditorDef.label}</p>
-            <p className="truncate text-xs text-muted-foreground">{selectedEditorDef.description}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {selectedEditorDef.description}
+            </p>
           </div>
           <Badge variant="outline" className="ml-auto shrink-0">
             Block {selectedBlockIndex + 1}
@@ -123,11 +122,7 @@ interface DesktopInspectorPanelProps {
   children: ReactNode;
 }
 
-export function DesktopInspectorPanel({
-  shellRef,
-  offset,
-  children,
-}: DesktopInspectorPanelProps) {
+export function DesktopInspectorPanel({ shellRef, offset, children }: DesktopInspectorPanelProps) {
   return (
     <div ref={shellRef} className="h-full min-h-0 overflow-hidden p-3">
       <div

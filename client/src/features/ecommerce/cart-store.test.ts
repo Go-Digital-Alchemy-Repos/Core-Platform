@@ -9,8 +9,22 @@ describe("ecommerce cart store", () => {
   });
 
   it("aggregates matching product and variant lines", () => {
-    addCartItem({ productId: "prod-1", variantId: "variant-1", name: "Journal", slug: "journal", unitPrice: 2400, quantity: 1 });
-    addCartItem({ productId: "prod-1", variantId: "variant-1", name: "Journal", slug: "journal", unitPrice: 2400, quantity: 2 });
+    addCartItem({
+      productId: "prod-1",
+      variantId: "variant-1",
+      name: "Journal",
+      slug: "journal",
+      unitPrice: 2400,
+      quantity: 1,
+    });
+    addCartItem({
+      productId: "prod-1",
+      variantId: "variant-1",
+      name: "Journal",
+      slug: "journal",
+      unitPrice: 2400,
+      quantity: 2,
+    });
 
     const cart = readCart();
     expect(cart).toHaveLength(1);
@@ -22,7 +36,13 @@ describe("ecommerce cart store", () => {
     const listener = vi.fn();
     window.addEventListener("ecommerce-cart-changed", listener);
 
-    addCartItem({ productId: "prod-2", name: "Toolkit", slug: "toolkit", unitPrice: 8900, quantity: 1 });
+    addCartItem({
+      productId: "prod-2",
+      name: "Toolkit",
+      slug: "toolkit",
+      unitPrice: 8900,
+      quantity: 1,
+    });
     clearCart();
 
     expect(listener).toHaveBeenCalledTimes(2);
@@ -33,7 +53,13 @@ describe("ecommerce cart store", () => {
     const listener = vi.fn();
     window.addEventListener("ecommerce-cart-item-added", listener);
 
-    addCartItem({ productId: "prod-3", name: "Cards", slug: "cards", unitPrice: 2900, quantity: 1 });
+    addCartItem({
+      productId: "prod-3",
+      name: "Cards",
+      slug: "cards",
+      unitPrice: 2900,
+      quantity: 1,
+    });
 
     expect(listener).toHaveBeenCalledTimes(1);
     expect(listener.mock.calls[0][0]).toMatchObject({

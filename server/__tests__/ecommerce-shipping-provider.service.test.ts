@@ -18,18 +18,20 @@ describe("ecommerce shipping provider registry", () => {
   it("includes first-class aggregator, workflow, simplicity, and direct carrier options", () => {
     const providers = ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.map((definition) => definition.provider);
 
-    expect(providers).toEqual(expect.arrayContaining([
-      "easypost",
-      "shippo",
-      "shipstation",
-      "veeqo",
-      "easyship",
-      "pirate_ship",
-      "ups",
-      "usps",
-      "fedex",
-      "dhl_express",
-    ]));
+    expect(providers).toEqual(
+      expect.arrayContaining([
+        "easypost",
+        "shippo",
+        "shipstation",
+        "veeqo",
+        "easyship",
+        "pirate_ship",
+        "ups",
+        "usps",
+        "fedex",
+        "dhl_express",
+      ]),
+    );
   });
 
   it("merges configured provider status without exposing settings", () => {
@@ -73,14 +75,25 @@ describe("ecommerce shipping provider registry", () => {
   });
 
   it("uses provider-scoped encrypted settings categories", () => {
-    expect(getShippingProviderCredentialCategory("shippo")).toBe("ecommerce_shipping_provider_shippo");
+    expect(getShippingProviderCredentialCategory("shippo")).toBe(
+      "ecommerce_shipping_provider_shippo",
+    );
   });
 
   it("reports missing credential labels before provider activation", () => {
-    const definition = ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.find((provider) => provider.provider === "shipstation");
+    const definition = ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.find(
+      (provider) => provider.provider === "shipstation",
+    );
     expect(definition).toBeDefined();
-    expect(getMissingShippingProviderCredentialLabels(definition!, { apiKey: "key" })).toEqual(["API secret"]);
-    expect(getMissingShippingProviderCredentialLabels(definition!, { apiKey: "key", apiSecret: "secret" })).toEqual([]);
+    expect(getMissingShippingProviderCredentialLabels(definition!, { apiKey: "key" })).toEqual([
+      "API secret",
+    ]);
+    expect(
+      getMissingShippingProviderCredentialLabels(definition!, {
+        apiKey: "key",
+        apiSecret: "secret",
+      }),
+    ).toEqual([]);
   });
 
   it("exposes capability lookups for carrier-provider orchestration", () => {
@@ -95,27 +108,29 @@ describe("ecommerce shipping provider registry", () => {
     const client = createShippingProviderClient("easypost", { apiKey: "test-key" });
     expect(client).toBeInstanceOf(EasyPostShippingProviderClient);
     expect(client.capabilities).toEqual(expect.arrayContaining(["rates", "labels", "tracking"]));
-    expect((client as EasyPostShippingProviderClient).buildRateQuotePayload({
-      provider: "easypost",
-      orderId: "order-1",
-      fromAddress: {
-        name: "Warehouse",
-        street1: "10 Main St",
-        city: "Grand Rapids",
-        state: "MI",
-        zip: "49503",
-        country: "US",
-      },
-      toAddress: {
-        name: "Customer",
-        street1: "50 Market St",
-        city: "Detroit",
-        state: "MI",
-        zip: "48226",
-        country: "US",
-      },
-      parcels: [{ length: 10, width: 6, height: 2, weight: 16, weightUnit: "oz" }],
-    })).toMatchObject({
+    expect(
+      (client as EasyPostShippingProviderClient).buildRateQuotePayload({
+        provider: "easypost",
+        orderId: "order-1",
+        fromAddress: {
+          name: "Warehouse",
+          street1: "10 Main St",
+          city: "Grand Rapids",
+          state: "MI",
+          zip: "49503",
+          country: "US",
+        },
+        toAddress: {
+          name: "Customer",
+          street1: "50 Market St",
+          city: "Detroit",
+          state: "MI",
+          zip: "48226",
+          country: "US",
+        },
+        parcels: [{ length: 10, width: 6, height: 2, weight: 16, weightUnit: "oz" }],
+      }),
+    ).toMatchObject({
       shipment: {
         options: { reference: "order-1" },
         parcel: { mass_unit: "oz", distance_unit: "in", weight: 16 },
@@ -136,12 +151,16 @@ describe("ecommerce shipping provider registry", () => {
   });
 
   it("keeps explicit tracking URLs and ignores unknown carriers", () => {
-    expect(inferCarrierTrackingUrl({
-      carrier: "UPS",
-      trackingNumber: "1Z999",
-      trackingUrl: "https://example.com/track/1Z999",
-    })).toBe("https://example.com/track/1Z999");
-    expect(inferCarrierTrackingUrl({ carrier: "Local Courier", trackingNumber: "LOCAL-1" })).toBeNull();
+    expect(
+      inferCarrierTrackingUrl({
+        carrier: "UPS",
+        trackingNumber: "1Z999",
+        trackingUrl: "https://example.com/track/1Z999",
+      }),
+    ).toBe("https://example.com/track/1Z999");
+    expect(
+      inferCarrierTrackingUrl({ carrier: "Local Courier", trackingNumber: "LOCAL-1" }),
+    ).toBeNull();
     expect(inferCarrierTrackingUrl({ carrier: "UPS" })).toBeNull();
   });
 });

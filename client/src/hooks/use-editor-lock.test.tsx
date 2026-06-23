@@ -38,16 +38,17 @@ function createLockResponse(
     resourceType: "cms_page" as const,
     resourceId: "page-1",
     ownedByCurrentUser,
-    lock: status === "expired_available"
-      ? null
-      : {
-          id: "lock-1",
-          lockedByUserId: ownedByCurrentUser ? "user-1" : "user-2",
-          lockedByName: ownedByCurrentUser ? "Alex Admin" : lockedByName,
-          lockedAt: new Date("2026-04-16T10:00:00.000Z").toISOString(),
-          lastHeartbeatAt: new Date("2026-04-16T10:00:00.000Z").toISOString(),
-          expiresAt: new Date("2026-04-16T10:05:00.000Z").toISOString(),
-        },
+    lock:
+      status === "expired_available"
+        ? null
+        : {
+            id: "lock-1",
+            lockedByUserId: ownedByCurrentUser ? "user-1" : "user-2",
+            lockedByName: ownedByCurrentUser ? "Alex Admin" : lockedByName,
+            lockedAt: new Date("2026-04-16T10:00:00.000Z").toISOString(),
+            lastHeartbeatAt: new Date("2026-04-16T10:00:00.000Z").toISOString(),
+            expiresAt: new Date("2026-04-16T10:05:00.000Z").toISOString(),
+          },
   };
 }
 
@@ -77,8 +78,12 @@ describe("useEditorLock", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -109,10 +114,13 @@ describe("useEditorLock", () => {
   }
 
   it("acquires the lock on mount and reports editable state for the current user", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => createLockResponse("acquired"),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => createLockResponse("acquired"),
+      }),
+    );
 
     await renderHarness();
     await act(async () => {
@@ -120,16 +128,20 @@ describe("useEditorLock", () => {
     });
 
     const stateNode = getStateNode();
-    expect(fetch).toHaveBeenCalledWith("/api/admin/editor-locks/acquire", expect.objectContaining({
-      method: "POST",
-    }));
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/admin/editor-locks/acquire",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
     expect(stateNode?.dataset.owned).toBe("true");
     expect(stateNode?.dataset.readonly).toBe("false");
     expect(stateNode?.textContent).toBe("You’re editing this item");
   });
 
   it("reacquires the lock if a heartbeat finds the lock temporarily expired", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce({
         ok: true,
         json: async () => createLockResponse("acquired"),
@@ -161,36 +173,47 @@ describe("useEditorLock", () => {
     });
 
     const stateNode = getStateNode();
-    expect(fetchMock).toHaveBeenNthCalledWith(2, "/api/admin/editor-locks/heartbeat", expect.objectContaining({
-      method: "POST",
-    }));
-    expect(fetchMock).toHaveBeenNthCalledWith(3, "/api/admin/editor-locks/acquire", expect.objectContaining({
-      method: "POST",
-    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "/api/admin/editor-locks/heartbeat",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      "/api/admin/editor-locks/acquire",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
     expect(stateNode?.dataset.owned).toBe("true");
     expect(stateNode?.dataset["lostLock"]).toBe("false");
     expect(stateNode?.textContent).toBe("You’re editing this item");
   });
 
   it("switches into lost-lock read-only mode when another user holds the resource after refresh", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce({
         ok: true,
         json: async () => createLockResponse("acquired"),
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => createLockResponse("locked_by_other", {
-          ownedByCurrentUser: false,
-          lockedByName: "Jamie Editor",
-        }),
+        json: async () =>
+          createLockResponse("locked_by_other", {
+            ownedByCurrentUser: false,
+            lockedByName: "Jamie Editor",
+          }),
       })
       .mockResolvedValue({
         ok: true,
-        json: async () => createLockResponse("locked_by_other", {
-          ownedByCurrentUser: false,
-          lockedByName: "Jamie Editor",
-        }),
+        json: async () =>
+          createLockResponse("locked_by_other", {
+            ownedByCurrentUser: false,
+            lockedByName: "Jamie Editor",
+          }),
       });
 
     vi.stubGlobal("fetch", fetchMock);

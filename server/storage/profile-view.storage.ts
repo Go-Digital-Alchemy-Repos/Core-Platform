@@ -28,7 +28,9 @@ export class ProfileViewStorage {
       .limit(limit);
   }
 
-  async getViewCountsByProfile(profileId: string): Promise<{ total: number; last7d: number; last30d: number }> {
+  async getViewCountsByProfile(
+    profileId: string,
+  ): Promise<{ total: number; last7d: number; last30d: number }> {
     const now = new Date();
     const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);

@@ -57,7 +57,9 @@ export function CookieConsentBanner() {
   const [ready, setReady] = useState(false);
   const [visible, setVisible] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [preferences, setPreferences] = useState<CookieConsentPreferences>(DEFAULT_COOKIE_CONSENT_PREFERENCES);
+  const [preferences, setPreferences] = useState<CookieConsentPreferences>(
+    DEFAULT_COOKIE_CONSENT_PREFERENCES,
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -116,19 +118,25 @@ export function CookieConsentBanner() {
               title="Preferences Cookies"
               description="Remember choices such as display preferences to improve your experience on return visits."
               checked={preferences.preferences}
-              onCheckedChange={(checked) => setPreferences((current) => ({ ...current, preferences: checked }))}
+              onCheckedChange={(checked) =>
+                setPreferences((current) => ({ ...current, preferences: checked }))
+              }
             />
             <CookiePreferenceRow
               title="Analytics Cookies"
               description="Help us understand how visitors use the site so we can improve performance and usability."
               checked={preferences.analytics}
-              onCheckedChange={(checked) => setPreferences((current) => ({ ...current, analytics: checked }))}
+              onCheckedChange={(checked) =>
+                setPreferences((current) => ({ ...current, analytics: checked }))
+              }
             />
             <CookiePreferenceRow
               title="Marketing Cookies"
               description="Support campaign tracking and embedded third-party tools that help us reach the right audience."
               checked={preferences.marketing}
-              onCheckedChange={(checked) => setPreferences((current) => ({ ...current, marketing: checked }))}
+              onCheckedChange={(checked) =>
+                setPreferences((current) => ({ ...current, marketing: checked }))
+              }
             />
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -155,10 +163,12 @@ export function CookieConsentBanner() {
             <div className="min-w-0 flex-1 space-y-2">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold text-foreground">We use cookies to improve your experience.</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    We use cookies to improve your experience.
+                  </p>
                   <p className="text-sm leading-6 text-muted-foreground">
-                    Essential cookies keep the site working. You can accept all cookies or review cookie settings
-                    to turn off non-essential cookies at any time.
+                    Essential cookies keep the site working. You can accept all cookies or review
+                    cookie settings to turn off non-essential cookies at any time.
                   </p>
                 </div>
                 <button
@@ -208,19 +218,25 @@ export function CookieConsentBanner() {
               title="Preferences Cookies"
               description="Remember choices such as display preferences to improve your experience on return visits."
               checked={preferences.preferences}
-              onCheckedChange={(checked) => setPreferences((current) => ({ ...current, preferences: checked }))}
+              onCheckedChange={(checked) =>
+                setPreferences((current) => ({ ...current, preferences: checked }))
+              }
             />
             <CookiePreferenceRow
               title="Analytics Cookies"
               description="Help us understand how visitors use the site so we can improve performance and usability."
               checked={preferences.analytics}
-              onCheckedChange={(checked) => setPreferences((current) => ({ ...current, analytics: checked }))}
+              onCheckedChange={(checked) =>
+                setPreferences((current) => ({ ...current, analytics: checked }))
+              }
             />
             <CookiePreferenceRow
               title="Marketing Cookies"
               description="Support campaign tracking and embedded third-party tools that help us reach the right audience."
               checked={preferences.marketing}
-              onCheckedChange={(checked) => setPreferences((current) => ({ ...current, marketing: checked }))}
+              onCheckedChange={(checked) =>
+                setPreferences((current) => ({ ...current, marketing: checked }))
+              }
             />
           </div>
           <DialogFooter className="gap-2 sm:gap-0">

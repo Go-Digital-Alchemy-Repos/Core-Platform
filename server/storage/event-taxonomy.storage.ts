@@ -28,7 +28,10 @@ export class EventVenuesStorage {
   }
 
   async createVenue(data: InsertEventVenue): Promise<EventVenue> {
-    const [venue] = await db.insert(eventVenues).values(data as EventVenueInsert).returning();
+    const [venue] = await db
+      .insert(eventVenues)
+      .values(data as EventVenueInsert)
+      .returning();
     return venue;
   }
 
@@ -58,16 +61,25 @@ export class EventOrganizersStorage {
   }
 
   async getOrganizerSlugOwner(slug: string): Promise<EventOrganizer | undefined> {
-    const [organizer] = await db.select().from(eventOrganizers).where(eq(eventOrganizers.slug, slug));
+    const [organizer] = await db
+      .select()
+      .from(eventOrganizers)
+      .where(eq(eventOrganizers.slug, slug));
     return organizer;
   }
 
   async createOrganizer(data: InsertEventOrganizer): Promise<EventOrganizer> {
-    const [organizer] = await db.insert(eventOrganizers).values(data as EventOrganizerInsert).returning();
+    const [organizer] = await db
+      .insert(eventOrganizers)
+      .values(data as EventOrganizerInsert)
+      .returning();
     return organizer;
   }
 
-  async updateOrganizer(id: string, data: Partial<InsertEventOrganizer>): Promise<EventOrganizer | undefined> {
+  async updateOrganizer(
+    id: string,
+    data: Partial<InsertEventOrganizer>,
+  ): Promise<EventOrganizer | undefined> {
     const [organizer] = await db
       .update(eventOrganizers)
       .set({ ...(data as Partial<EventOrganizerInsert>), updatedAt: new Date() })
@@ -77,7 +89,10 @@ export class EventOrganizersStorage {
   }
 
   async deleteOrganizer(id: string): Promise<EventOrganizer | undefined> {
-    const [organizer] = await db.delete(eventOrganizers).where(eq(eventOrganizers.id, id)).returning();
+    const [organizer] = await db
+      .delete(eventOrganizers)
+      .where(eq(eventOrganizers.id, id))
+      .returning();
     return organizer;
   }
 }

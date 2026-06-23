@@ -12,7 +12,7 @@ router.get(
   "/system/backups/status",
   asyncHandler(async (_req, res) => {
     res.json(await getBackupStatus());
-  })
+  }),
 );
 
 router.post(
@@ -21,7 +21,7 @@ router.post(
     const requestedReason = req.body?.reason === "manual" ? "manual" : "manual";
     const manifest = await runSystemBackup(requestedReason);
     res.status(201).json(manifest);
-  })
+  }),
 );
 
 router.post(
@@ -40,7 +40,7 @@ router.post(
       manifest,
       message: `Restore completed from backup created ${manifest.createdAt}.`,
     });
-  })
+  }),
 );
 
 export default router;

@@ -22,7 +22,10 @@ import { users } from "@shared/schema";
 
 export class ApplicationStorage {
   async getById(id: string): Promise<ProviderApplication | undefined> {
-    const [app] = await db.select().from(providerApplications).where(eq(providerApplications.id, id));
+    const [app] = await db
+      .select()
+      .from(providerApplications)
+      .where(eq(providerApplications.id, id));
     return app;
   }
 
@@ -49,7 +52,10 @@ export class ApplicationStorage {
     return app;
   }
 
-  async update(id: string, data: Partial<InsertProviderApplication>): Promise<ProviderApplication | undefined> {
+  async update(
+    id: string,
+    data: Partial<InsertProviderApplication>,
+  ): Promise<ProviderApplication | undefined> {
     const [app] = await db
       .update(providerApplications)
       .set({ ...data, updatedAt: new Date() })
@@ -58,7 +64,9 @@ export class ApplicationStorage {
     return app;
   }
 
-  async getAll(status?: string): Promise<(ProviderApplication & { userName: string; userEmail: string })[]> {
+  async getAll(
+    status?: string,
+  ): Promise<(ProviderApplication & { userName: string; userEmail: string })[]> {
     let query = db
       .select({
         id: providerApplications.id,
@@ -164,10 +172,18 @@ export class ApplicationStorage {
   async deleteCredential(id: string, applicationId: string): Promise<void> {
     await db
       .delete(providerApplicationCredentials)
-      .where(and(eq(providerApplicationCredentials.id, id), eq(providerApplicationCredentials.applicationId, applicationId)));
+      .where(
+        and(
+          eq(providerApplicationCredentials.id, id),
+          eq(providerApplicationCredentials.applicationId, applicationId),
+        ),
+      );
   }
 
-  async updateCredential(id: string, data: Partial<{ verificationStatus: string; documentUrl: string }>): Promise<ProviderApplicationCredential | undefined> {
+  async updateCredential(
+    id: string,
+    data: Partial<{ verificationStatus: string; documentUrl: string }>,
+  ): Promise<ProviderApplicationCredential | undefined> {
     const [cred] = await db
       .update(providerApplicationCredentials)
       .set(data)
@@ -186,10 +202,13 @@ export class ApplicationStorage {
     applicantNameSnapshot?: string;
   }): Promise<ProviderApplicationReference> {
     const token = data.secureToken || randomBytes(48).toString("hex");
-    const [ref] = await db.insert(providerApplicationReferences).values({
-      ...data,
-      secureToken: token,
-    }).returning();
+    const [ref] = await db
+      .insert(providerApplicationReferences)
+      .values({
+        ...data,
+        secureToken: token,
+      })
+      .returning();
     return ref;
   }
 
@@ -200,7 +219,9 @@ export class ApplicationStorage {
       .where(eq(providerApplicationReferences.applicationId, applicationId));
   }
 
-  async getByToken(token: string): Promise<(ProviderApplicationReference & { applicationStatus?: string }) | undefined> {
+  async getByToken(
+    token: string,
+  ): Promise<(ProviderApplicationReference & { applicationStatus?: string }) | undefined> {
     const [ref] = await db
       .select({
         id: providerApplicationReferences.id,
@@ -221,18 +242,24 @@ export class ApplicationStorage {
         applicationStatus: providerApplications.status,
       })
       .from(providerApplicationReferences)
-      .innerJoin(providerApplications, eq(providerApplicationReferences.applicationId, providerApplications.id))
+      .innerJoin(
+        providerApplications,
+        eq(providerApplicationReferences.applicationId, providerApplications.id),
+      )
       .where(eq(providerApplicationReferences.secureToken, token));
     return ref;
   }
 
-  async updateReferenceByToken(token: string, data: Partial<{
-    status: string;
-    openedAt: Date;
-    responseReceivedAt: Date;
-    responseData: unknown;
-    concernFlags: unknown;
-  }>): Promise<ProviderApplicationReference | undefined> {
+  async updateReferenceByToken(
+    token: string,
+    data: Partial<{
+      status: string;
+      openedAt: Date;
+      responseReceivedAt: Date;
+      responseData: unknown;
+      concernFlags: unknown;
+    }>,
+  ): Promise<ProviderApplicationReference | undefined> {
     const [ref] = await db
       .update(providerApplicationReferences)
       .set(data)
@@ -245,20 +272,39 @@ export class ApplicationStorage {
     const [result] = await db
       .select({ count: count() })
       .from(providerApplicationReferences)
-      .where(and(
-        eq(providerApplicationReferences.applicationId, applicationId),
-        eq(providerApplicationReferences.status, "completed")
-      ));
+      .where(
+        and(
+          eq(providerApplicationReferences.applicationId, applicationId),
+          eq(providerApplicationReferences.status, "completed"),
+        ),
+      );
     return result?.count ?? 0;
   }
 
   async deleteReference(id: string, applicationId: string): Promise<void> {
     await db
       .delete(providerApplicationReferences)
-      .where(and(eq(providerApplicationReferences.id, id), eq(providerApplicationReferences.applicationId, applicationId)));
+      .where(
+        and(
+          eq(providerApplicationReferences.id, id),
+          eq(providerApplicationReferences.applicationId, applicationId),
+        ),
+      );
   }
 
-  async updateReference(id: string, data: Partial<{ status: string; responseReceivedAt: Date; responseData: unknown; openedAt: Date; concernFlags: unknown; emailSentAt: Date; secureToken: string; applicantNameSnapshot: string }>): Promise<ProviderApplicationReference | undefined> {
+  async updateReference(
+    id: string,
+    data: Partial<{
+      status: string;
+      responseReceivedAt: Date;
+      responseData: unknown;
+      openedAt: Date;
+      concernFlags: unknown;
+      emailSentAt: Date;
+      secureToken: string;
+      applicantNameSnapshot: string;
+    }>,
+  ): Promise<ProviderApplicationReference | undefined> {
     const [ref] = await db
       .update(providerApplicationReferences)
       .set(data)
@@ -288,20 +334,23 @@ export class ApplicationStorage {
     return check;
   }
 
-  async updateBackgroundCheck(id: string, data: Partial<{
-    status: string;
-    result: string;
-    completedAt: Date;
-    reportUrl: string;
-    vendorName: string;
-    vendorExternalId: string;
-    providerFacingLabel: string;
-    adminStatusDetails: string;
-    notes: string;
-    requestedAt: Date;
-    lastStatusSyncAt: Date;
-    updatedAt: Date;
-  }>): Promise<ProviderBackgroundCheck | undefined> {
+  async updateBackgroundCheck(
+    id: string,
+    data: Partial<{
+      status: string;
+      result: string;
+      completedAt: Date;
+      reportUrl: string;
+      vendorName: string;
+      vendorExternalId: string;
+      providerFacingLabel: string;
+      adminStatusDetails: string;
+      notes: string;
+      requestedAt: Date;
+      lastStatusSyncAt: Date;
+      updatedAt: Date;
+    }>,
+  ): Promise<ProviderBackgroundCheck | undefined> {
     const [check] = await db
       .update(providerBackgroundChecks)
       .set({ ...data, updatedAt: new Date() })
@@ -329,7 +378,16 @@ export class ApplicationStorage {
     return interview;
   }
 
-  async updateInterview(id: string, data: Partial<{ scheduledAt: Date; completedAt: Date; notes: string; outcome: string; meetingUrl: string }>): Promise<ProviderInterview | undefined> {
+  async updateInterview(
+    id: string,
+    data: Partial<{
+      scheduledAt: Date;
+      completedAt: Date;
+      notes: string;
+      outcome: string;
+      meetingUrl: string;
+    }>,
+  ): Promise<ProviderInterview | undefined> {
     const [interview] = await db
       .update(providerInterviews)
       .set(data)

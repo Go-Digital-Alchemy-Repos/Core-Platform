@@ -36,12 +36,17 @@ export interface MembershipSubscriptionWithDetails extends MembershipSubscriptio
 }
 
 export class MembershipStorage {
-  async getPlans(options: { publicOnly?: boolean; includeInactive?: boolean } = {}): Promise<MembershipPlanWithDetails[]> {
+  async getPlans(
+    options: { publicOnly?: boolean; includeInactive?: boolean } = {},
+  ): Promise<MembershipPlanWithDetails[]> {
     const clauses = [];
     if (!options.includeInactive) clauses.push(eq(membershipPlans.status, "active"));
     if (options.publicOnly) clauses.push(eq(membershipPlans.visibility, "public"));
 
-    const query = db.select().from(membershipPlans).orderBy(membershipPlans.sortOrder, membershipPlans.name);
+    const query = db
+      .select()
+      .from(membershipPlans)
+      .orderBy(membershipPlans.sortOrder, membershipPlans.name);
     const plans = clauses.length ? await query.where(and(...clauses)) : await query;
     return Promise.all(plans.map((plan) => this.getPlanWithDetails(plan)));
   }
@@ -71,7 +76,10 @@ export class MembershipStorage {
     return plan;
   }
 
-  async updatePlan(id: string, data: Partial<InsertMembershipPlan>): Promise<MembershipPlan | undefined> {
+  async updatePlan(
+    id: string,
+    data: Partial<InsertMembershipPlan>,
+  ): Promise<MembershipPlan | undefined> {
     const [plan] = await db
       .update(membershipPlans)
       .set({ ...data, updatedAt: new Date() })
@@ -81,7 +89,10 @@ export class MembershipStorage {
   }
 
   async deletePlan(id: string): Promise<void> {
-    await db.update(membershipPlans).set({ status: "archived", updatedAt: new Date() }).where(eq(membershipPlans.id, id));
+    await db
+      .update(membershipPlans)
+      .set({ status: "archived", updatedAt: new Date() })
+      .where(eq(membershipPlans.id, id));
   }
 
   async getPlanPrices(planId: string): Promise<MembershipPlanPrice[]> {
@@ -93,7 +104,10 @@ export class MembershipStorage {
   }
 
   async getPrice(id: string): Promise<MembershipPlanPrice | undefined> {
-    const [price] = await db.select().from(membershipPlanPrices).where(eq(membershipPlanPrices.id, id));
+    const [price] = await db
+      .select()
+      .from(membershipPlanPrices)
+      .where(eq(membershipPlanPrices.id, id));
     return price;
   }
 
@@ -102,7 +116,10 @@ export class MembershipStorage {
     return price;
   }
 
-  async updatePrice(id: string, data: Partial<InsertMembershipPlanPrice>): Promise<MembershipPlanPrice | undefined> {
+  async updatePrice(
+    id: string,
+    data: Partial<InsertMembershipPlanPrice>,
+  ): Promise<MembershipPlanPrice | undefined> {
     const [price] = await db
       .update(membershipPlanPrices)
       .set({ ...data, updatedAt: new Date() })
@@ -112,7 +129,10 @@ export class MembershipStorage {
   }
 
   async deletePrice(id: string): Promise<void> {
-    await db.update(membershipPlanPrices).set({ active: false, updatedAt: new Date() }).where(eq(membershipPlanPrices.id, id));
+    await db
+      .update(membershipPlanPrices)
+      .set({ active: false, updatedAt: new Date() })
+      .where(eq(membershipPlanPrices.id, id));
   }
 
   async getPlanEntitlements(planId: string): Promise<MembershipPlanEntitlement[]> {
@@ -123,18 +143,31 @@ export class MembershipStorage {
       .orderBy(membershipPlanEntitlements.entitlement);
   }
 
-  async replacePlanEntitlements(planId: string, entitlements: InsertMembershipPlanEntitlement[]): Promise<MembershipPlanEntitlement[]> {
+  async replacePlanEntitlements(
+    planId: string,
+    entitlements: InsertMembershipPlanEntitlement[],
+  ): Promise<MembershipPlanEntitlement[]> {
     return db.transaction(async (tx) => {
-      await tx.delete(membershipPlanEntitlements).where(eq(membershipPlanEntitlements.planId, planId));
+      await tx
+        .delete(membershipPlanEntitlements)
+        .where(eq(membershipPlanEntitlements.planId, planId));
       if (!entitlements.length) return [];
       return tx.insert(membershipPlanEntitlements).values(entitlements).returning();
     });
   }
 
-  async getSubscriptions(options: { search?: string } = {}): Promise<MembershipSubscriptionWithDetails[]> {
+  async getSubscriptions(
+    options: { search?: string } = {},
+  ): Promise<MembershipSubscriptionWithDetails[]> {
     const clauses = [];
     if (options.search) {
-      clauses.push(or(ilike(users.email, `%${options.search}%`), ilike(users.firstName, `%${options.search}%`), ilike(users.lastName, `%${options.search}%`)));
+      clauses.push(
+        or(
+          ilike(users.email, `%${options.search}%`),
+          ilike(users.firstName, `%${options.search}%`),
+          ilike(users.lastName, `%${options.search}%`),
+        ),
+      );
     }
     const rows = await db
       .select({
@@ -155,11 +188,19 @@ export class MembershipStorage {
       .leftJoin(users, eq(membershipSubscriptions.userId, users.id))
       .where(clauses.length ? and(...clauses) : undefined)
       .orderBy(desc(membershipSubscriptions.updatedAt));
-    return rows.map((row) => ({ ...row.subscription, plan: row.plan, price: row.price, user: row.user }));
+    return rows.map((row) => ({
+      ...row.subscription,
+      plan: row.plan,
+      price: row.price,
+      user: row.user,
+    }));
   }
 
   async getSubscription(id: string): Promise<MembershipSubscription | undefined> {
-    const [subscription] = await db.select().from(membershipSubscriptions).where(eq(membershipSubscriptions.id, id));
+    const [subscription] = await db
+      .select()
+      .from(membershipSubscriptions)
+      .where(eq(membershipSubscriptions.id, id));
     return subscription;
   }
 
@@ -173,7 +214,9 @@ export class MembershipStorage {
     return subscription;
   }
 
-  async getSubscriptionByProviderSubscriptionId(providerSubscriptionId: string): Promise<MembershipSubscription | undefined> {
+  async getSubscriptionByProviderSubscriptionId(
+    providerSubscriptionId: string,
+  ): Promise<MembershipSubscription | undefined> {
     const [subscription] = await db
       .select()
       .from(membershipSubscriptions)
@@ -181,7 +224,9 @@ export class MembershipStorage {
     return subscription;
   }
 
-  async getSubscriptionByProviderCustomerId(providerCustomerId: string): Promise<MembershipSubscription | undefined> {
+  async getSubscriptionByProviderCustomerId(
+    providerCustomerId: string,
+  ): Promise<MembershipSubscription | undefined> {
     const [subscription] = await db
       .select()
       .from(membershipSubscriptions)
@@ -196,7 +241,10 @@ export class MembershipStorage {
     return subscription;
   }
 
-  async updateSubscription(id: string, data: Partial<InsertMembershipSubscription>): Promise<MembershipSubscription | undefined> {
+  async updateSubscription(
+    id: string,
+    data: Partial<InsertMembershipSubscription>,
+  ): Promise<MembershipSubscription | undefined> {
     const [subscription] = await db
       .update(membershipSubscriptions)
       .set({ ...data, updatedAt: new Date() })
@@ -205,7 +253,10 @@ export class MembershipStorage {
     return subscription;
   }
 
-  async upsertSubscriptionForUser(userId: string, data: Partial<InsertMembershipSubscription>): Promise<MembershipSubscription> {
+  async upsertSubscriptionForUser(
+    userId: string,
+    data: Partial<InsertMembershipSubscription>,
+  ): Promise<MembershipSubscription> {
     const existing = await this.getActiveSubscriptionForUser(userId);
     if (existing) {
       const updated = await this.updateSubscription(existing.id, data);
@@ -219,16 +270,27 @@ export class MembershipStorage {
     } as InsertMembershipSubscription);
   }
 
-  async getAccessRule(resourceType: string, resourceId: string): Promise<MembershipAccessRule | undefined> {
+  async getAccessRule(
+    resourceType: string,
+    resourceId: string,
+  ): Promise<MembershipAccessRule | undefined> {
     const [rule] = await db
       .select()
       .from(membershipAccessRules)
-      .where(and(eq(membershipAccessRules.resourceType, resourceType), eq(membershipAccessRules.resourceId, resourceId)));
+      .where(
+        and(
+          eq(membershipAccessRules.resourceType, resourceType),
+          eq(membershipAccessRules.resourceId, resourceId),
+        ),
+      );
     return rule;
   }
 
   async getAccessRules(resourceType?: string): Promise<MembershipAccessRule[]> {
-    const query = db.select().from(membershipAccessRules).orderBy(desc(membershipAccessRules.updatedAt));
+    const query = db
+      .select()
+      .from(membershipAccessRules)
+      .orderBy(desc(membershipAccessRules.updatedAt));
     return resourceType ? query.where(eq(membershipAccessRules.resourceType, resourceType)) : query;
   }
 
@@ -259,11 +321,20 @@ export class MembershipStorage {
     const [event] = await db
       .select()
       .from(membershipProcessedWebhookEvents)
-      .where(and(eq(membershipProcessedWebhookEvents.provider, provider), eq(membershipProcessedWebhookEvents.eventId, eventId)));
+      .where(
+        and(
+          eq(membershipProcessedWebhookEvents.provider, provider),
+          eq(membershipProcessedWebhookEvents.eventId, eventId),
+        ),
+      );
     return !!event;
   }
 
-  async markWebhookProcessed(provider: string, eventId: string, eventType: string): Promise<boolean> {
+  async markWebhookProcessed(
+    provider: string,
+    eventId: string,
+    eventType: string,
+  ): Promise<boolean> {
     const existing = await this.hasProcessedWebhook(provider, eventId);
     if (existing) return false;
     await db.insert(membershipProcessedWebhookEvents).values({ provider, eventId, eventType });
@@ -276,6 +347,10 @@ export class MembershipStorage {
   }
 
   async getAuditEvents(limit = 100): Promise<MembershipAuditEvent[]> {
-    return db.select().from(membershipAuditEvents).orderBy(desc(membershipAuditEvents.createdAt)).limit(limit);
+    return db
+      .select()
+      .from(membershipAuditEvents)
+      .orderBy(desc(membershipAuditEvents.createdAt))
+      .limit(limit);
   }
 }

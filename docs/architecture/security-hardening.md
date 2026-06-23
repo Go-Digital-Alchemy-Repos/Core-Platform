@@ -12,19 +12,20 @@
 
 ### Required Environment Variables
 
-| Variable | Required In | Description |
-|----------|------------|-------------|
-| `SESSION_SECRET` | Production | JWT signing key; must not be the dev default |
-| `DATABASE_URL` | Production | PostgreSQL connection string |
-| `STRIPE_SECRET_KEY` | Stripe features | Stripe API key |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhooks | Webhook signature verification |
-| `R2_ACCESS_KEY_ID` | File uploads | Cloudflare R2 access key |
-| `R2_SECRET_ACCESS_KEY` | File uploads | Cloudflare R2 secret |
-| `R2_BUCKET_NAME` | File uploads | R2 bucket name |
-| `R2_ENDPOINT` | File uploads | R2 endpoint URL |
-| `SENDGRID_API_KEY` | Email | SendGrid API key |
-| `APP_URL` | Production | Base URL for origin validation |
-| `TRUSTED_ORIGINS` | Production | Comma-separated trusted origins |
+| Variable                              | Required In     | Description                                  |
+| ------------------------------------- | --------------- | -------------------------------------------- |
+| `SESSION_SECRET`                      | Production      | JWT signing key; must not be the dev default |
+| `DATABASE_URL`                        | Production      | PostgreSQL connection string                 |
+| `STRIPE_SECRET_KEY`                   | Stripe features | Stripe API key                               |
+| `STRIPE_WEBHOOK_SECRET`               | Stripe webhooks | Webhook signature verification               |
+| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` | Email           | SMTP delivery configuration                  |
+| `SMTP_FROM`                           | Email           | Default sender address                       |
+| `BACKUP_R2_ACCESS_KEY_ID`             | System backups  | Cloudflare R2 backup access key              |
+| `BACKUP_R2_SECRET_ACCESS_KEY`         | System backups  | Cloudflare R2 backup secret                  |
+| `BACKUP_R2_BUCKET_NAME`               | System backups  | Cloudflare R2 backup bucket                  |
+| `BACKUP_R2_ACCOUNT_ID`                | System backups  | Cloudflare R2 account ID                     |
+| `APP_URL`                             | Production      | Base URL for origin validation               |
+| `TRUSTED_ORIGINS`                     | Production      | Comma-separated trusted origins              |
 
 ### Enforcement
 
@@ -37,6 +38,7 @@
 ### Helmet CSP
 
 Content Security Policy directives are configured in `securityHeaders()`:
+
 - Scripts: self + Stripe JS
 - Styles: self + unsafe-inline + Google Fonts
 - Images: self + R2 + OpenStreetMap tiles
@@ -46,14 +48,14 @@ Content Security Policy directives are configured in `securityHeaders()`:
 
 ### Rate Limiting
 
-| Limiter | Window | Max Requests | Scope |
-|---------|--------|-------------|-------|
-| `apiLimiter` | 15 min | 300 | All `/api/*` |
-| `loginLimiter` | 15 min | 10 | Login endpoint |
-| `registerLimiter` | 60 min | 5 | Registration |
-| `forgotPasswordLimiter` | 15 min | 5 | Password reset request |
-| `resetPasswordLimiter` | 15 min | 10 | Password reset execution |
-| `guestMessageLimiter` | 15 min | 5 | Guest messages |
+| Limiter                 | Window | Max Requests | Scope                    |
+| ----------------------- | ------ | ------------ | ------------------------ |
+| `apiLimiter`            | 15 min | 300          | All `/api/*`             |
+| `loginLimiter`          | 15 min | 10           | Login endpoint           |
+| `registerLimiter`       | 60 min | 5            | Registration             |
+| `forgotPasswordLimiter` | 15 min | 5            | Password reset request   |
+| `resetPasswordLimiter`  | 15 min | 10           | Password reset execution |
+| `guestMessageLimiter`   | 15 min | 5            | Guest messages           |
 
 All rate limiters are skipped in development mode.
 

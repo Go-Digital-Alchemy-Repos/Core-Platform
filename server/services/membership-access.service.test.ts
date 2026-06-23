@@ -45,10 +45,15 @@ describe("isSubscriptionCurrentlyActive", () => {
 
   it("allows active, trialing, manual, and past-due memberships within their period", () => {
     for (const status of ["active", "trialing", "manual", "past_due"]) {
-      expect(isSubscriptionCurrentlyActive(subscription({
-        status,
-        currentPeriodEnd: new Date("2026-06-20T12:00:00.000Z"),
-      }), now)).toBe(true);
+      expect(
+        isSubscriptionCurrentlyActive(
+          subscription({
+            status,
+            currentPeriodEnd: new Date("2026-06-20T12:00:00.000Z"),
+          }),
+          now,
+        ),
+      ).toBe(true);
     }
   });
 
@@ -59,13 +64,23 @@ describe("isSubscriptionCurrentlyActive", () => {
   });
 
   it("rejects suspended or expired memberships even when status is active", () => {
-    expect(isSubscriptionCurrentlyActive(subscription({
-      status: "active",
-      suspendedAt: new Date("2026-06-12T12:00:00.000Z"),
-    }), now)).toBe(false);
-    expect(isSubscriptionCurrentlyActive(subscription({
-      status: "active",
-      expiresAt: new Date("2026-06-12T12:00:00.000Z"),
-    }), now)).toBe(false);
+    expect(
+      isSubscriptionCurrentlyActive(
+        subscription({
+          status: "active",
+          suspendedAt: new Date("2026-06-12T12:00:00.000Z"),
+        }),
+        now,
+      ),
+    ).toBe(false);
+    expect(
+      isSubscriptionCurrentlyActive(
+        subscription({
+          status: "active",
+          expiresAt: new Date("2026-06-12T12:00:00.000Z"),
+        }),
+        now,
+      ),
+    ).toBe(false);
   });
 });

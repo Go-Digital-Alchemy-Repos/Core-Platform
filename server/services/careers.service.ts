@@ -40,18 +40,18 @@ export async function getCareerSettings(includeSecrets = false): Promise<CareerS
     },
     integrations: {
       googleIndexingEnabled: bool(settings.google_indexing_enabled, false),
-      googleServiceAccountJson: includeSecrets ? settings.google_service_account_json ?? "" : "",
+      googleServiceAccountJson: includeSecrets ? (settings.google_service_account_json ?? "") : "",
       indeedFeedEnabled: bool(settings.indeed_feed_enabled, false),
       indeedApplyEnabled: bool(settings.indeed_apply_enabled, false),
-      indeedApplySecret: includeSecrets ? settings.indeed_apply_secret ?? "" : "",
+      indeedApplySecret: includeSecrets ? (settings.indeed_apply_secret ?? "") : "",
       indeedDispositionSyncEnabled: bool(settings.indeed_disposition_sync_enabled, false),
       zipRecruiterEnabled: bool(settings.zip_recruiter_enabled, false),
-      zipRecruiterApiKey: includeSecrets ? settings.zip_recruiter_api_key ?? "" : "",
+      zipRecruiterApiKey: includeSecrets ? (settings.zip_recruiter_api_key ?? "") : "",
       linkedinApiEnabled: bool(settings.linkedin_api_enabled, false),
       linkedinPartnerId: settings.linkedin_partner_id ?? "",
       genericWebhookEnabled: bool(settings.generic_webhook_enabled, false),
       genericWebhookUrl: settings.generic_webhook_url ?? "",
-      genericWebhookSecret: includeSecrets ? settings.generic_webhook_secret ?? "" : "",
+      genericWebhookSecret: includeSecrets ? (settings.generic_webhook_secret ?? "") : "",
     },
   });
   return parsed;
@@ -72,7 +72,11 @@ export async function saveCareerSettings(settings: CareerSettings): Promise<Care
     ["indeed_feed_enabled", String(normalized.integrations.indeedFeedEnabled), false],
     ["indeed_apply_enabled", String(normalized.integrations.indeedApplyEnabled), false],
     ["indeed_apply_secret", normalized.integrations.indeedApplySecret, true],
-    ["indeed_disposition_sync_enabled", String(normalized.integrations.indeedDispositionSyncEnabled), false],
+    [
+      "indeed_disposition_sync_enabled",
+      String(normalized.integrations.indeedDispositionSyncEnabled),
+      false,
+    ],
     ["zip_recruiter_enabled", String(normalized.integrations.zipRecruiterEnabled), false],
     ["zip_recruiter_api_key", normalized.integrations.zipRecruiterApiKey, true],
     ["linkedin_api_enabled", String(normalized.integrations.linkedinApiEnabled), false],
@@ -82,9 +86,11 @@ export async function saveCareerSettings(settings: CareerSettings): Promise<Care
     ["generic_webhook_secret", normalized.integrations.genericWebhookSecret, true],
   ];
 
-  await Promise.all(entries.map(([key, value, isSecret]) =>
-    storage.settings.upsertSetting(key, value, CAREER_SETTINGS_CATEGORY, isSecret),
-  ));
+  await Promise.all(
+    entries.map(([key, value, isSecret]) =>
+      storage.settings.upsertSetting(key, value, CAREER_SETTINGS_CATEGORY, isSecret),
+    ),
+  );
   storage.settings.invalidateCategory(CAREER_SETTINGS_CATEGORY);
   return getCareerSettings(false);
 }
@@ -152,7 +158,11 @@ function jobUrl(req: Request, job: CareerJob) {
   return `${req.protocol}://${req.get("host")}/careers/${job.slug}`;
 }
 
-export async function notifyCareerApplication(req: Request, job: CareerJob, application: CareerApplication) {
+export async function notifyCareerApplication(
+  req: Request,
+  job: CareerJob,
+  application: CareerApplication,
+) {
   const baseUrl = `${req.protocol}://${req.get("host")}`;
   const applicantName = `${application.firstName} ${application.lastName}`.trim();
 
@@ -160,10 +170,12 @@ export async function notifyCareerApplication(req: Request, job: CareerJob, appl
     application.email,
     `Application received: ${job.title}`,
     `<p>Hi ${applicantName},</p><p>Thanks for applying for <strong>${job.title}</strong>. Our team has received your application.</p><p><a href="${jobUrl(req, job)}">View job listing</a></p>`,
-  ).catch((err) => logger.email.warn("Failed to send career application confirmation", {
-    applicationId: application.id,
-    error: err instanceof Error ? err.message : String(err),
-  }));
+  ).catch((err) =>
+    logger.email.warn("Failed to send career application confirmation", {
+      applicationId: application.id,
+      error: err instanceof Error ? err.message : String(err),
+    }),
+  );
 
   const admins = await storage.users.getUsersByRole("admin");
   const recipients = admins.map((admin) => admin.email).filter(Boolean);
@@ -174,16 +186,19 @@ export async function notifyCareerApplication(req: Request, job: CareerJob, appl
       recipient,
       `New career application: ${job.title}`,
       `<p><strong>${applicantName}</strong> applied for <strong>${job.title}</strong>.</p><p>Email: ${application.email}</p><p><a href="${baseUrl}/admin/careers?tab=applications&application=${application.id}">Review application</a></p>`,
-    ).catch((err) => logger.email.warn("Failed to send career admin notification", {
-      applicationId: application.id,
-      error: err instanceof Error ? err.message : String(err),
-    }));
+    ).catch((err) =>
+      logger.email.warn("Failed to send career admin notification", {
+        applicationId: application.id,
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    );
   }
 }
 
 export async function dispatchCareerWebhook(eventType: string, payload: unknown) {
   const settings = await getCareerSettings(true);
-  if (!settings.integrations.genericWebhookEnabled || !settings.integrations.genericWebhookUrl) return;
+  if (!settings.integrations.genericWebhookEnabled || !settings.integrations.genericWebhookUrl)
+    return;
 
   const body = JSON.stringify({ type: eventType, payload, sentAt: new Date().toISOString() });
   const headers: Record<string, string> = { "content-type": "application/json" };

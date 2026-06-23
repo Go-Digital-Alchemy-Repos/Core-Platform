@@ -403,4 +403,3 @@ export function TestimonialsBlock({ props }: { props: Record<string, unknown> })
     </div>
   );
 }
-

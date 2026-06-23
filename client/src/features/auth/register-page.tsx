@@ -11,7 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { UserPlus } from "lucide-react";
 import { Link } from "wouter";
 import { useSpecializations } from "@/hooks/use-specializations";
@@ -24,7 +31,9 @@ const registerSchema = z
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
     specializations: z.array(z.string()).optional(),
-    ageAcknowledged: z.literal(true, { errorMap: () => ({ message: "You must confirm you are 18 or older" }) }),
+    ageAcknowledged: z.literal(true, {
+      errorMap: () => ({ message: "You must confirm you are 18 or older" }),
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -69,7 +78,12 @@ export default function RegisterPage() {
   }
 
   async function onSubmit(values: RegisterForm) {
-    const { confirmPassword: _confirmPassword, specializations, ageAcknowledged: _ageAcknowledged, ...rest } = values;
+    const {
+      confirmPassword: _confirmPassword,
+      specializations,
+      ageAcknowledged: _ageAcknowledged,
+      ...rest
+    } = values;
     const data = {
       ...rest,
       role: "therapist" as const,
@@ -121,11 +135,7 @@ export default function RegisterPage() {
                         <FormItem>
                           <FormLabel>First Name</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="John"
-                              data-testid="input-first-name"
-                              {...field}
-                            />
+                            <Input placeholder="John" data-testid="input-first-name" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -139,11 +149,7 @@ export default function RegisterPage() {
                         <FormItem>
                           <FormLabel>Last Name</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Doe"
-                              data-testid="input-last-name"
-                              {...field}
-                            />
+                            <Input placeholder="Doe" data-testid="input-last-name" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -176,8 +182,13 @@ export default function RegisterPage() {
                     render={() => (
                       <FormItem>
                         <FormLabel>Specializations</FormLabel>
-                        <p className="text-xs text-muted-foreground mb-2">Select all that apply. You can update these later from your profile.</p>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 max-h-48 overflow-y-auto border rounded-md p-3" data-testid="checkbox-group-specializations">
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Select all that apply. You can update these later from your profile.
+                        </p>
+                        <div
+                          className="grid grid-cols-2 gap-x-4 gap-y-2 max-h-48 overflow-y-auto border rounded-md p-3"
+                          data-testid="checkbox-group-specializations"
+                        >
                           {specList.map(({ name: spec }) => {
                             const current = form.getValues("specializations") || [];
                             const isChecked = current.includes(spec);
@@ -189,14 +200,23 @@ export default function RegisterPage() {
                                   onCheckedChange={(checked) => {
                                     const prev = form.getValues("specializations") || [];
                                     if (checked) {
-                                      form.setValue("specializations", [...prev, spec], { shouldDirty: true });
+                                      form.setValue("specializations", [...prev, spec], {
+                                        shouldDirty: true,
+                                      });
                                     } else {
-                                      form.setValue("specializations", prev.filter((s) => s !== spec), { shouldDirty: true });
+                                      form.setValue(
+                                        "specializations",
+                                        prev.filter((s) => s !== spec),
+                                        { shouldDirty: true },
+                                      );
                                     }
                                   }}
                                   data-testid={`checkbox-spec-${spec.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
                                 />
-                                <Label htmlFor={`reg-spec-${spec}`} className="text-xs font-normal cursor-pointer leading-tight">
+                                <Label
+                                  htmlFor={`reg-spec-${spec}`}
+                                  className="text-xs font-normal cursor-pointer leading-tight"
+                                >
                                   {spec}
                                 </Label>
                               </div>
@@ -257,7 +277,9 @@ export default function RegisterPage() {
                           <FormControl>
                             <Checkbox
                               checked={field.value === true}
-                              onCheckedChange={(checked) => field.onChange(checked === true ? true : undefined)}
+                              onCheckedChange={(checked) =>
+                                field.onChange(checked === true ? true : undefined)
+                              }
                               data-testid="checkbox-age-acknowledgment"
                             />
                           </FormControl>
@@ -270,7 +292,6 @@ export default function RegisterPage() {
                         </FormItem>
                       )}
                     />
-
                   </div>
 
                   <Button

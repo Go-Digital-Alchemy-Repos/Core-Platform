@@ -76,4 +76,9 @@ export const storage = {
   portfolio: new PortfolioStorage(),
 };
 
-export type { TherapistWithUser, PaginatedTherapists, DirectoryFilterOptions, TherapistSearchParams } from "@shared/types/directory";
+export type {
+  TherapistWithUser,
+  PaginatedTherapists,
+  DirectoryFilterOptions,
+  TherapistSearchParams,
+} from "@shared/types/directory";

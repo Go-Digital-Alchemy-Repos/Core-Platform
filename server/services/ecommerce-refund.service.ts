@@ -4,7 +4,12 @@ import { sendEcommerceRefundEmail } from "./ecommerce-email.service";
 
 type RefundStatus = "pending" | "processed" | "failed";
 
-const refundablePaymentStatuses = new Set(["paid", "partially_refunded", "refund_pending", "refund_failed"]);
+const refundablePaymentStatuses = new Set([
+  "paid",
+  "partially_refunded",
+  "refund_pending",
+  "refund_failed",
+]);
 
 function refundError(message: string, statusCode: number) {
   const error = new Error(message) as Error & { statusCode: number };
@@ -18,7 +23,9 @@ export function computeRefundedAmount(refunds: Array<{ amount: number; status: s
     .reduce((sum, refund) => sum + refund.amount, 0);
 }
 
-function computeProcessedRefundedAmount(refunds: Array<{ amount: number; status: string }>): number {
+function computeProcessedRefundedAmount(
+  refunds: Array<{ amount: number; status: string }>,
+): number {
   return refunds
     .filter((refund) => refund.status === "processed")
     .reduce((sum, refund) => sum + refund.amount, 0);
@@ -93,12 +100,18 @@ export async function createEcommerceRefund(params: {
   const source = params.source ?? (order.stripePaymentIntentId ? "stripe" : "manual");
 
   if (source === "stripe") {
-    if (!order.stripePaymentIntentId) throw new Error("Order does not have a Stripe payment intent");
+    if (!order.stripePaymentIntentId)
+      throw new Error("Order does not have a Stripe payment intent");
     const stripe = await getEcommerceStripeClient();
     const refund = await stripe.refunds.create({
       payment_intent: order.stripePaymentIntentId,
       amount: params.amount,
-      reason: params.reasonCode === "fraudulent" ? "fraudulent" : params.reasonCode === "duplicate" ? "duplicate" : "requested_by_customer",
+      reason:
+        params.reasonCode === "fraudulent"
+          ? "fraudulent"
+          : params.reasonCode === "duplicate"
+            ? "duplicate"
+            : "requested_by_customer",
       metadata: { orderId: order.id },
     });
     stripeRefundId = refund.id;
@@ -120,7 +133,9 @@ export async function createEcommerceRefund(params: {
 
   const refreshed = await storage.ecommerce.getOrderWithDetails(order.id);
   if (refreshed) {
-    const refundsForStatus = refreshed.refunds.some((existingRefund) => existingRefund.id === refund.id)
+    const refundsForStatus = refreshed.refunds.some(
+      (existingRefund) => existingRefund.id === refund.id,
+    )
       ? refreshed.refunds
       : [...refreshed.refunds, refund];
     await storage.ecommerce.updateOrder(order.id, {
@@ -142,7 +157,7 @@ export async function recordStripeRefundWebhook(params: {
   if (existing) {
     const refund = await storage.ecommerce.updateRefund(existing.id, {
       status,
-      processedAt: status === "processed" ? new Date() : existing.processedAt ?? undefined,
+      processedAt: status === "processed" ? new Date() : (existing.processedAt ?? undefined),
     });
     await syncOrderRefundPaymentStatus(existing.orderId);
     return refund;

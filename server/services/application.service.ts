@@ -29,13 +29,44 @@ export type { StatusTransitionResult, SubmitApplicationResult, PaymentConfirmati
 
 export const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   draft: ["submitted", "withdrawn"],
-  submitted: ["awaiting_background_check", "background_check_in_progress", "awaiting_references", "references_in_progress", "ready_for_interview", "denied", "withdrawn"],
-  awaiting_background_check: ["background_check_in_progress", "awaiting_references", "references_in_progress", "ready_for_interview", "denied", "withdrawn"],
-  background_check_in_progress: ["awaiting_references", "references_in_progress", "ready_for_interview", "denied", "withdrawn"],
+  submitted: [
+    "awaiting_background_check",
+    "background_check_in_progress",
+    "awaiting_references",
+    "references_in_progress",
+    "ready_for_interview",
+    "denied",
+    "withdrawn",
+  ],
+  awaiting_background_check: [
+    "background_check_in_progress",
+    "awaiting_references",
+    "references_in_progress",
+    "ready_for_interview",
+    "denied",
+    "withdrawn",
+  ],
+  background_check_in_progress: [
+    "awaiting_references",
+    "references_in_progress",
+    "ready_for_interview",
+    "denied",
+    "withdrawn",
+  ],
   awaiting_references: ["references_in_progress", "ready_for_interview", "denied", "withdrawn"],
   references_in_progress: ["ready_for_interview", "denied", "withdrawn"],
-  ready_for_interview: ["interview_scheduled", "approved_pending_subscription", "denied", "withdrawn"],
-  interview_scheduled: ["interview_completed", "approved_pending_subscription", "denied", "withdrawn"],
+  ready_for_interview: [
+    "interview_scheduled",
+    "approved_pending_subscription",
+    "denied",
+    "withdrawn",
+  ],
+  interview_scheduled: [
+    "interview_completed",
+    "approved_pending_subscription",
+    "denied",
+    "withdrawn",
+  ],
   interview_completed: ["approved_pending_subscription", "denied", "withdrawn"],
   approved_pending_subscription: ["active_member", "denied", "withdrawn"],
   active_member: [],
@@ -43,7 +74,10 @@ export const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   withdrawn: [],
 };
 
-export function isValidTransition(fromStatus: string, toStatus: string): { valid: boolean; allowedTransitions?: string[] } {
+export function isValidTransition(
+  fromStatus: string,
+  toStatus: string,
+): { valid: boolean; allowedTransitions?: string[] } {
   const allowed = ALLOWED_TRANSITIONS[fromStatus];
   if (!allowed) {
     return { valid: false, allowedTransitions: [] };
@@ -59,14 +93,15 @@ export function isValidApplicationStatus(status: string): boolean {
 }
 
 export async function getFullApplication(applicationId: string) {
-  const [timeline, credentials, references, backgroundCheck, interview, decision] = await Promise.all([
-    storage.applications.getTimeline(applicationId),
-    storage.applications.getCredentials(applicationId),
-    storage.applications.getReferences(applicationId),
-    storage.applications.getBackgroundCheck(applicationId),
-    storage.applications.getInterview(applicationId),
-    storage.applications.getDecision(applicationId),
-  ]);
+  const [timeline, credentials, references, backgroundCheck, interview, decision] =
+    await Promise.all([
+      storage.applications.getTimeline(applicationId),
+      storage.applications.getCredentials(applicationId),
+      storage.applications.getReferences(applicationId),
+      storage.applications.getBackgroundCheck(applicationId),
+      storage.applications.getInterview(applicationId),
+      storage.applications.getDecision(applicationId),
+    ]);
   return { timeline, credentials, references, backgroundCheck, interview, decision };
 }
 
@@ -83,7 +118,9 @@ export function sanitizeReferencesForApplicant(references: ProviderApplicationRe
   }));
 }
 
-export function sanitizeBackgroundCheckForApplicant(backgroundCheck: ProviderBackgroundCheck | null | undefined) {
+export function sanitizeBackgroundCheckForApplicant(
+  backgroundCheck: ProviderBackgroundCheck | null | undefined,
+) {
   if (!backgroundCheck) return null;
   return {
     id: backgroundCheck.id,
@@ -144,7 +181,12 @@ export async function autosaveApplication(userId: string, formData: unknown, cur
   if (formData !== undefined && typeof formData === "object" && formData !== null) {
     updateData.formData = formData;
   }
-  if (currentStep !== undefined && typeof currentStep === "number" && currentStep >= 0 && currentStep <= 8) {
+  if (
+    currentStep !== undefined &&
+    typeof currentStep === "number" &&
+    currentStep >= 0 &&
+    currentStep <= 8
+  ) {
     updateData.currentStep = currentStep;
   }
 
@@ -173,7 +215,9 @@ export async function createPaymentSession(userId: string, userEmail: string, ho
   if (application.stripeCheckoutSessionId) {
     try {
       const stripe = await getUncachableStripeClient();
-      const existingSession = await stripe.checkout.sessions.retrieve(application.stripeCheckoutSessionId);
+      const existingSession = await stripe.checkout.sessions.retrieve(
+        application.stripeCheckoutSessionId,
+      );
       if (existingSession.status === "open") {
         return { url: existingSession.url } as const;
       }
@@ -184,7 +228,8 @@ export async function createPaymentSession(userId: string, userEmail: string, ho
 
   const stripe = await getUncachableStripeClient();
   const directorySettings = await getDirectorySettings();
-  const host = process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || hostname}`;
+  const host =
+    process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || hostname}`;
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -284,27 +329,43 @@ export async function submitApplication(userId: string): Promise<SubmitApplicati
   }
 
   if (application.paymentStatus !== "paid") {
-    return { success: false, error: "Application fee must be paid before submitting", statusCode: 400 };
+    return {
+      success: false,
+      error: "Application fee must be paid before submitting",
+      statusCode: 400,
+    };
   }
 
   const credentials = await storage.applications.getCredentials(application.id);
   if (credentials.length === 0) {
-    return { success: false, error: "At least one credential is required before submitting", statusCode: 400 };
+    return {
+      success: false,
+      error: "At least one credential is required before submitting",
+      statusCode: 400,
+    };
   }
 
   const references = await storage.applications.getReferences(application.id);
   if (references.length < 3) {
-    return { success: false, error: "Exactly three professional references are required before submitting", statusCode: 400 };
+    return {
+      success: false,
+      error: "Exactly three professional references are required before submitting",
+      statusCode: 400,
+    };
   }
 
   const formData = (application.formData ?? {}) as Record<string, unknown>;
   if (!formData.termsAccepted || !formData.termsSignature) {
-    return { success: false, error: "Terms and conditions must be accepted and signed", statusCode: 400 };
+    return {
+      success: false,
+      error: "Terms and conditions must be accepted and signed",
+      statusCode: 400,
+    };
   }
 
   const snapshot = {
     formData,
-    credentials: credentials.map(c => ({
+    credentials: credentials.map((c) => ({
       credentialType: c.credentialType,
       issuer: c.issuer,
       licenseNumber: c.licenseNumber,
@@ -312,7 +373,7 @@ export async function submitApplication(userId: string): Promise<SubmitApplicati
       middleName: c.middleName,
       verificationUrl: c.verificationUrl,
     })),
-    references: references.map(r => ({
+    references: references.map((r) => ({
       refereeName: r.refereeName,
       refereeEmail: r.refereeEmail,
       relationship: r.relationship,
@@ -347,7 +408,9 @@ export async function submitApplication(userId: string): Promise<SubmitApplicati
       performedBy: userId,
     });
   } catch (err) {
-    logger.app.error("Failed to create background check record on submit", err, { applicationId: application.id });
+    logger.app.error("Failed to create background check record on submit", err, {
+      applicationId: application.id,
+    });
   }
 
   return { success: true, application: updated };
@@ -360,7 +423,9 @@ async function dispatchReferenceEmails(
   userId: string,
 ) {
   const applicantName = (formData.fullName as string) || "the applicant";
-  const baseUrl = process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "localhost:5000"}`;
+  const baseUrl =
+    process.env.APP_URL ||
+    `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "localhost:5000"}`;
 
   for (const ref of references) {
     try {
@@ -381,7 +446,7 @@ async function dispatchReferenceEmails(
         ref.refereeEmail,
         ref.refereeName,
         applicantName,
-        referenceUrl
+        referenceUrl,
       );
 
       if (sent) {
@@ -481,12 +546,20 @@ export async function transitionStatus(
     await handleDenial(application, note, performedBy);
   }
 
-  await storage.activity.log(performedBy, "application_status_changed", `Application ${application.id} status changed to ${newStatus}`);
+  await storage.activity.log(
+    performedBy,
+    "application_status_changed",
+    `Application ${application.id} status changed to ${newStatus}`,
+  );
 
   return { success: true, application: updated };
 }
 
-async function handleApproval(application: ProviderApplication, note: string | undefined, decidedBy: string) {
+async function handleApproval(
+  application: ProviderApplication,
+  note: string | undefined,
+  decidedBy: string,
+) {
   await storage.applications.addDecision({
     applicationId: application.id,
     decision: "approved",
@@ -500,7 +573,11 @@ async function handleApproval(application: ProviderApplication, note: string | u
   }
 }
 
-async function handleDenial(application: ProviderApplication, note: string | undefined, decidedBy: string) {
+async function handleDenial(
+  application: ProviderApplication,
+  note: string | undefined,
+  decidedBy: string,
+) {
   await storage.applications.addDecision({
     applicationId: application.id,
     decision: "denied",
@@ -643,7 +720,11 @@ export async function resendReferenceEmail(
     const elapsed = Date.now() - new Date(ref.emailSentAt).getTime();
     if (elapsed < RESEND_COOLDOWN_MS) {
       const waitMinutes = Math.ceil((RESEND_COOLDOWN_MS - elapsed) / 60000);
-      return { success: false, error: `Please wait ${waitMinutes} minute(s) before resending`, status: 429 } as const;
+      return {
+        success: false,
+        error: `Please wait ${waitMinutes} minute(s) before resending`,
+        status: 429,
+      } as const;
     }
   }
 
@@ -658,7 +739,7 @@ export async function resendReferenceEmail(
     ref.refereeEmail,
     ref.refereeName,
     applicantName,
-    referenceUrl
+    referenceUrl,
   );
 
   if (!sent) {
@@ -680,11 +761,7 @@ export async function resendReferenceEmail(
   return { success: true } as const;
 }
 
-export async function addTimelineNote(
-  applicationId: string,
-  note: string,
-  performedBy: string,
-) {
+export async function addTimelineNote(applicationId: string, note: string, performedBy: string) {
   const application = await storage.applications.getById(applicationId);
   if (!application) {
     return { success: false, error: "Application not found", status: 404 } as const;

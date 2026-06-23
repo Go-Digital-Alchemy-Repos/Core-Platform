@@ -1,10 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../../middleware/error-handler";
-import {
-  editorLockRequestSchema,
-  editorLockResourceTypeSchema,
-} from "@shared/schema";
+import { editorLockRequestSchema, editorLockResourceTypeSchema } from "@shared/schema";
 import {
   acquireEditorLock,
   getEditorLock,

@@ -16,7 +16,10 @@ export function getImageObjectPosition(positionX?: unknown, positionY?: unknown)
   return `${normalizePercentage(positionX)}% ${normalizePercentage(positionY)}%`;
 }
 
-export function getImageObjectPositionStyle(positionX?: unknown, positionY?: unknown): CSSProperties {
+export function getImageObjectPositionStyle(
+  positionX?: unknown,
+  positionY?: unknown,
+): CSSProperties {
   return {
     objectPosition: getImageObjectPosition(positionX, positionY),
   };

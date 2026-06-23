@@ -67,7 +67,11 @@ export function RegisterDialog({
   });
 
   async function onSubmit(values: RegisterForm) {
-    const { confirmPassword: _confirmPassword, ageAcknowledged: _ageAcknowledged, ...rest } = values;
+    const {
+      confirmPassword: _confirmPassword,
+      ageAcknowledged: _ageAcknowledged,
+      ...rest
+    } = values;
     register.mutate(
       { ...rest, role: "therapist" },
       {
@@ -83,7 +87,7 @@ export function RegisterDialog({
             variant: "destructive",
           });
         },
-      }
+      },
     );
   }
 
@@ -106,7 +110,11 @@ export function RegisterDialog({
                   <FormItem>
                     <FormLabel>First Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="John" data-testid="input-register-first-name" {...field} />
+                      <Input
+                        placeholder="John"
+                        data-testid="input-register-first-name"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -134,7 +142,12 @@ export function RegisterDialog({
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="you@example.com" data-testid="input-register-email" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      data-testid="input-register-email"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -148,7 +161,12 @@ export function RegisterDialog({
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="At least 8 characters" data-testid="input-register-password" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="At least 8 characters"
+                      data-testid="input-register-password"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -162,7 +180,12 @@ export function RegisterDialog({
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Re-enter your password" data-testid="input-register-confirm-password" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="Re-enter your password"
+                      data-testid="input-register-confirm-password"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -191,7 +214,12 @@ export function RegisterDialog({
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={isPending} data-testid="button-register-submit">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isPending}
+              data-testid="button-register-submit"
+            >
               {isPending ? (
                 <LoadingSpinner className="h-4 w-4 mr-2" />
               ) : (

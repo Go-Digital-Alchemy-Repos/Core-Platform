@@ -115,4 +115,3 @@ export function HeadTagAdditionsTab({ settings }: { settings: SettingsData }) {
     </div>
   );
 }
-

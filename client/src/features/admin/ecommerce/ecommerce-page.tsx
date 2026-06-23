@@ -7,7 +7,6 @@ import {
   ClipboardList,
   Copy,
   DollarSign,
-  FolderTree,
   Eye,
   Image,
   Package,
@@ -22,7 +21,6 @@ import {
   ShoppingBag,
   Tag,
   TicketPercent,
-  Trash2,
   Truck,
   Undo2,
 } from "lucide-react";
@@ -46,16 +44,46 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminEditDeepLink } from "@/features/frontend-edit/frontend-edit";
 import { formatMoney } from "@/features/ecommerce/cart-store";
-import { getEcommerceOrderStatusBadge, getEcommercePaymentStatusBadge } from "@/features/ecommerce/order-status-labels";
+import {
+  getEcommerceOrderStatusBadge,
+  getEcommercePaymentStatusBadge,
+} from "@/features/ecommerce/order-status-labels";
 import { cn } from "@/lib/utils";
 import { CategoriesTab } from "@/features/admin/ecommerce/categories-tab";
 import { CouponsTab } from "@/features/admin/ecommerce/coupons-tab";
@@ -71,8 +99,6 @@ import type {
   Order,
   PaymentRequest,
   Product,
-  ProductMedia,
-  ProductVariant,
   ShippingProvider,
   ShippingRate,
   ShippingZone,
@@ -153,13 +179,19 @@ function OrderTableRow({
             <Copy className="h-3.5 w-3.5" />
           </Button>
         </div>
-        <div className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</div>
+        <div className="text-xs text-muted-foreground">
+          {new Date(order.createdAt).toLocaleDateString()}
+        </div>
       </TableCell>
       <TableCell>{order.customer?.email || "-"}</TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-2">
-          <Badge variant={orderStatus.variant} className={orderStatus.className}>{orderStatus.label}</Badge>
-          <Badge variant={paymentStatus.variant} className={paymentStatus.className}>{paymentStatus.label}</Badge>
+          <Badge variant={orderStatus.variant} className={orderStatus.className}>
+            {orderStatus.label}
+          </Badge>
+          <Badge variant={paymentStatus.variant} className={paymentStatus.className}>
+            {paymentStatus.label}
+          </Badge>
         </div>
       </TableCell>
       <TableCell>{formatMoney(order.totalAmount)}</TableCell>
@@ -194,8 +226,12 @@ const nav: Array<{ view: View; label: string; icon: ElementType; iconColor: stri
 
 export function ProductsTab() {
   const { toast } = useToast();
-  const { data: products = [] } = useQuery<Product[]>({ queryKey: ["/api/admin/ecommerce/products"] });
-  const { data: categories = [] } = useQuery<Category[]>({ queryKey: ["/api/admin/ecommerce/categories"] });
+  const { data: products = [] } = useQuery<Product[]>({
+    queryKey: ["/api/admin/ecommerce/products"],
+  });
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/admin/ecommerce/categories"],
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [activeProductEditorTab, setActiveProductEditorTab] = useState("content");
@@ -308,7 +344,8 @@ export function ProductsTab() {
   };
 
   const openEdit = (product: Product) => {
-    const defaultVariant = product.variants?.find((variant) => variant.isDefault) ?? product.variants?.[0];
+    const defaultVariant =
+      product.variants?.find((variant) => variant.isDefault) ?? product.variants?.[0];
     setEditingId(product.id);
     setForm({
       name: product.name,
@@ -354,7 +391,8 @@ export function ProductsTab() {
       badgeText: product.badgeText ?? "",
       trackInventory: defaultVariant?.trackInventory ?? false,
       inventoryQuantity: String(defaultVariant?.inventoryQuantity ?? 0),
-      lowStockThreshold: defaultVariant?.lowStockThreshold == null ? "" : String(defaultVariant.lowStockThreshold),
+      lowStockThreshold:
+        defaultVariant?.lowStockThreshold == null ? "" : String(defaultVariant.lowStockThreshold),
       allowBackorder: defaultVariant?.allowBackorder ?? false,
     });
     setActiveProductEditorTab("content");
@@ -364,45 +402,45 @@ export function ProductsTab() {
   useAdminEditDeepLink(products, (product) => product.id, openEdit);
 
   const productPayload = () => ({
-      name: form.name.trim(),
-      tagline: form.tagline.trim() || null,
-      shortDescription: form.shortDescription.trim() || null,
-      description: form.description.trim() || null,
-      productType: form.productType.trim() || null,
-      vendor: form.vendor.trim() || null,
-      price: cents(form.price),
-      compareAtPrice: nullableCents(form.compareAtPrice),
-      salePrice: nullableCents(form.salePrice),
-      costPerItem: nullableCents(form.costPerItem),
-      sku: form.sku.trim() || null,
-      primaryImage: form.primaryImage.trim() || null,
-      tags: csv(form.tags),
-      features: csv(form.features),
-      included: csv(form.included),
-      secondaryImages: [],
-      urlSlug: form.urlSlug || slugify(form.name),
-      categoryIds: form.categoryIds,
-      status: form.status,
-      active: form.active,
-      featured: form.featured,
-      visibility: form.visibility,
-      publishedAt: form.publishedAt ? new Date(form.publishedAt).toISOString() : null,
-      taxable: form.taxable,
-      taxCategory: form.taxCategory.trim() || null,
-      metaTitle: form.metaTitle.trim() || null,
-      metaDescription: form.metaDescription.trim() || null,
-      ogImage: form.ogImage.trim() || null,
-      physicalProduct: form.physicalProduct,
-      requiresShipping: form.requiresShipping,
-      weight: nullableInt(form.weight),
-      weightUnit: form.weightUnit,
-      length: nullableInt(form.length),
-      width: nullableInt(form.width),
-      height: nullableInt(form.height),
-      dimensionUnit: form.dimensionUnit,
-      shippingProfile: form.shippingProfile.trim() || null,
-      fulfillmentType: form.fulfillmentType,
-      badgeText: form.badgeText.trim() || null,
+    name: form.name.trim(),
+    tagline: form.tagline.trim() || null,
+    shortDescription: form.shortDescription.trim() || null,
+    description: form.description.trim() || null,
+    productType: form.productType.trim() || null,
+    vendor: form.vendor.trim() || null,
+    price: cents(form.price),
+    compareAtPrice: nullableCents(form.compareAtPrice),
+    salePrice: nullableCents(form.salePrice),
+    costPerItem: nullableCents(form.costPerItem),
+    sku: form.sku.trim() || null,
+    primaryImage: form.primaryImage.trim() || null,
+    tags: csv(form.tags),
+    features: csv(form.features),
+    included: csv(form.included),
+    secondaryImages: [],
+    urlSlug: form.urlSlug || slugify(form.name),
+    categoryIds: form.categoryIds,
+    status: form.status,
+    active: form.active,
+    featured: form.featured,
+    visibility: form.visibility,
+    publishedAt: form.publishedAt ? new Date(form.publishedAt).toISOString() : null,
+    taxable: form.taxable,
+    taxCategory: form.taxCategory.trim() || null,
+    metaTitle: form.metaTitle.trim() || null,
+    metaDescription: form.metaDescription.trim() || null,
+    ogImage: form.ogImage.trim() || null,
+    physicalProduct: form.physicalProduct,
+    requiresShipping: form.requiresShipping,
+    weight: nullableInt(form.weight),
+    weightUnit: form.weightUnit,
+    length: nullableInt(form.length),
+    width: nullableInt(form.width),
+    height: nullableInt(form.height),
+    dimensionUnit: form.dimensionUnit,
+    shippingProfile: form.shippingProfile.trim() || null,
+    fulfillmentType: form.fulfillmentType,
+    badgeText: form.badgeText.trim() || null,
   });
 
   const saveMutation = useMutation({
@@ -412,24 +450,30 @@ export function ProductsTab() {
         editingId ? `/api/admin/ecommerce/products/${editingId}` : "/api/admin/ecommerce/products",
         productPayload(),
       );
-      const product = await response.json() as Product;
-      const defaultVariant = products.find((item) => item.id === product.id)?.variants?.find((variant) => variant.isDefault);
+      const product = (await response.json()) as Product;
+      const defaultVariant = products
+        .find((item) => item.id === product.id)
+        ?.variants?.find((variant) => variant.isDefault);
       if (editingId && defaultVariant) {
-        await apiRequest("PUT", `/api/admin/ecommerce/products/${product.id}/variants/${defaultVariant.id}`, {
-          sku: form.sku.trim() || null,
-          barcode: form.barcode.trim() || null,
-          price: cents(form.price),
-          salePrice: nullableCents(form.salePrice),
-          compareAtPrice: nullableCents(form.compareAtPrice),
-          costPerItem: nullableCents(form.costPerItem),
-          inventoryQuantity: nullableInt(form.inventoryQuantity) ?? 0,
-          trackInventory: form.trackInventory,
-          lowStockThreshold: nullableInt(form.lowStockThreshold),
-          allowBackorder: form.allowBackorder,
-          active: form.active,
-          status: form.active ? "active" : "inactive",
-          image: form.primaryImage.trim() || null,
-        });
+        await apiRequest(
+          "PUT",
+          `/api/admin/ecommerce/products/${product.id}/variants/${defaultVariant.id}`,
+          {
+            sku: form.sku.trim() || null,
+            barcode: form.barcode.trim() || null,
+            price: cents(form.price),
+            salePrice: nullableCents(form.salePrice),
+            compareAtPrice: nullableCents(form.compareAtPrice),
+            costPerItem: nullableCents(form.costPerItem),
+            inventoryQuantity: nullableInt(form.inventoryQuantity) ?? 0,
+            trackInventory: form.trackInventory,
+            lowStockThreshold: nullableInt(form.lowStockThreshold),
+            allowBackorder: form.allowBackorder,
+            active: form.active,
+            status: form.active ? "active" : "inactive",
+            image: form.primaryImage.trim() || null,
+          },
+        );
       }
       if (form.mediaUrl.trim()) {
         await apiRequest("POST", `/api/admin/ecommerce/products/${product.id}/media`, {
@@ -448,11 +492,12 @@ export function ProductsTab() {
       resetForm();
       setEditorOpen(false);
     },
-    onError: (error) => toast({
-      title: "Product could not be saved",
-      description: error instanceof Error ? error.message : "Please review product settings.",
-      variant: "destructive",
-    }),
+    onError: (error) =>
+      toast({
+        title: "Product could not be saved",
+        description: error instanceof Error ? error.message : "Please review product settings.",
+        variant: "destructive",
+      }),
   });
 
   const submit = (event: FormEvent) => {
@@ -470,12 +515,20 @@ export function ProductsTab() {
   };
 
   const inventoryStatus = (product: Product) => {
-    const defaultVariant = product.variants?.find((variant) => variant.isDefault) ?? product.variants?.[0];
-    if (!defaultVariant?.trackInventory) return { label: "Not tracked", variant: "outline" as const };
+    const defaultVariant =
+      product.variants?.find((variant) => variant.isDefault) ?? product.variants?.[0];
+    if (!defaultVariant?.trackInventory)
+      return { label: "Not tracked", variant: "outline" as const };
     if (defaultVariant.inventoryQuantity <= 0) {
-      return { label: defaultVariant.allowBackorder ? "Backordered" : "Out of stock", variant: "destructive" as const };
+      return {
+        label: defaultVariant.allowBackorder ? "Backordered" : "Out of stock",
+        variant: "destructive" as const,
+      };
     }
-    if (defaultVariant.lowStockThreshold != null && defaultVariant.inventoryQuantity <= defaultVariant.lowStockThreshold) {
+    if (
+      defaultVariant.lowStockThreshold != null &&
+      defaultVariant.inventoryQuantity <= defaultVariant.lowStockThreshold
+    ) {
       return { label: "Low stock", variant: "secondary" as const };
     }
     return { label: "In stock", variant: "default" as const };
@@ -490,10 +543,15 @@ export function ProductsTab() {
 
   const filteredProducts = products.filter((product) => {
     const term = search.trim().toLowerCase();
-    const text = `${product.name} ${product.sku ?? ""} ${product.vendor ?? ""} ${product.tags.join(" ")}`.toLowerCase();
+    const text =
+      `${product.name} ${product.sku ?? ""} ${product.vendor ?? ""} ${product.tags.join(" ")}`.toLowerCase();
     if (term && !text.includes(term)) return false;
     if (statusFilter !== "all" && product.status !== statusFilter) return false;
-    if (inventoryFilter !== "all" && inventoryStatus(product).label.toLowerCase() !== inventoryFilter) return false;
+    if (
+      inventoryFilter !== "all" &&
+      inventoryStatus(product).label.toLowerCase() !== inventoryFilter
+    )
+      return false;
     return true;
   });
 
@@ -512,92 +570,276 @@ export function ProductsTab() {
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px]">
-            <div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search title, SKU, vendor, tag" /></div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All statuses</SelectItem><SelectItem value="draft">Draft</SelectItem><SelectItem value="published">Published</SelectItem><SelectItem value="archived">Archived</SelectItem><SelectItem value="scheduled">Scheduled</SelectItem></SelectContent></Select>
-            <Select value={inventoryFilter} onValueChange={setInventoryFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All inventory</SelectItem><SelectItem value="in stock">In stock</SelectItem><SelectItem value="low stock">Low stock</SelectItem><SelectItem value="out of stock">Out of stock</SelectItem><SelectItem value="backordered">Backordered</SelectItem><SelectItem value="not tracked">Not tracked</SelectItem></SelectContent></Select>
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search title, SKU, vendor, tag"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={inventoryFilter} onValueChange={setInventoryFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All inventory</SelectItem>
+                <SelectItem value="in stock">In stock</SelectItem>
+                <SelectItem value="low stock">Low stock</SelectItem>
+                <SelectItem value="out of stock">Out of stock</SelectItem>
+                <SelectItem value="backordered">Backordered</SelectItem>
+                <SelectItem value="not tracked">Not tracked</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Status</TableHead><TableHead>Inventory</TableHead><TableHead>Price</TableHead><TableHead>Vendor</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader><TableBody>
-            {filteredProducts.map((product) => {
-              const inventory = inventoryStatus(product);
-              const defaultVariant = product.variants?.find((variant) => variant.isDefault) ?? product.variants?.[0];
-              return (
-                <TableRow
-                  key={product.id}
-                  role="button"
-                  tabIndex={0}
-                  className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  onClick={() => openEdit(product)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      openEdit(product);
-                    }
-                  }}
-                >
-                  <TableCell>
-                    <div className="font-medium">{product.name}</div>
-                    <div className="text-xs text-muted-foreground">{defaultVariant?.sku || product.sku || product.urlSlug}</div>
-                  </TableCell>
-                  <TableCell><Badge variant={product.status === "published" ? "default" : "secondary"}>{product.status}</Badge></TableCell>
-                  <TableCell><Badge variant={inventory.variant}>{inventory.label}</Badge></TableCell>
-                  <TableCell>{formatMoney(defaultVariant?.salePrice ?? product.salePrice ?? defaultVariant?.price ?? product.price)}</TableCell>
-                  <TableCell>{product.vendor || "-"}</TableCell>
-                  <TableCell><div className="flex justify-end gap-2"><Button type="button" variant="outline" size="sm" asChild onClick={(event) => event.stopPropagation()}><Link href={`/products/${product.urlSlug}`}><Eye className="mr-2 h-4 w-4" />Preview</Link></Button><Button type="button" variant="outline" size="sm" onClick={(event) => { event.stopPropagation(); openEdit(product); }}><Pencil className="mr-2 h-4 w-4" />Edit</Button></div></TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody></Table>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Inventory</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Vendor</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredProducts.map((product) => {
+                const inventory = inventoryStatus(product);
+                const defaultVariant =
+                  product.variants?.find((variant) => variant.isDefault) ?? product.variants?.[0];
+                return (
+                  <TableRow
+                    key={product.id}
+                    role="button"
+                    tabIndex={0}
+                    className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    onClick={() => openEdit(product)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openEdit(product);
+                      }
+                    }}
+                  >
+                    <TableCell>
+                      <div className="font-medium">{product.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {defaultVariant?.sku || product.sku || product.urlSlug}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={product.status === "published" ? "default" : "secondary"}>
+                        {product.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={inventory.variant}>{inventory.label}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {formatMoney(
+                        defaultVariant?.salePrice ??
+                          product.salePrice ??
+                          defaultVariant?.price ??
+                          product.price,
+                      )}
+                    </TableCell>
+                    <TableCell>{product.vendor || "-"}</TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <Link href={`/products/${product.urlSlug}`}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Preview
+                          </Link>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openEdit(product);
+                          }}
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
-      <Sheet open={editorOpen} onOpenChange={(open) => {
-        setEditorOpen(open);
-        if (!open) resetForm();
-      }}>
+      <Sheet
+        open={editorOpen}
+        onOpenChange={(open) => {
+          setEditorOpen(open);
+          if (!open) resetForm();
+        }}
+      >
         <SheetContent side="right" size="full" className="p-0">
           <SheetHeader className="border-b p-6 pr-12">
             <SheetTitle>{editingId ? "Edit product" : "Create product"}</SheetTitle>
-            <SheetDescription>Manage content, media, pricing, inventory, shipping, publishing, and SEO.</SheetDescription>
+            <SheetDescription>
+              Manage content, media, pricing, inventory, shipping, publishing, and SEO.
+            </SheetDescription>
           </SheetHeader>
           <SheetBody className="p-0">
             <form id="ecommerce-product-form" onSubmit={submit}>
-              <Tabs value={activeProductEditorTab} onValueChange={setActiveProductEditorTab} className="flex min-h-full flex-col">
+              <Tabs
+                value={activeProductEditorTab}
+                onValueChange={setActiveProductEditorTab}
+                className="flex min-h-full flex-col"
+              >
                 <div className="border-b bg-muted/30 px-6 py-3">
                   <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 bg-transparent p-0">
-                    <TabsTrigger value="content"><Package className="mr-1.5 h-4 w-4 text-emerald-600" />Content</TabsTrigger>
-                    <TabsTrigger value="media"><Image className="mr-1.5 h-4 w-4 text-sky-600" />Media</TabsTrigger>
-                    <TabsTrigger value="pricing"><Percent className="mr-1.5 h-4 w-4 text-amber-600" />Pricing</TabsTrigger>
-                    <TabsTrigger value="inventory"><ClipboardList className="mr-1.5 h-4 w-4 text-blue-600" />Inventory</TabsTrigger>
-                    <TabsTrigger value="shipping"><Truck className="mr-1.5 h-4 w-4 text-cyan-600" />Shipping</TabsTrigger>
-                    <TabsTrigger value="settings"><SlidersHorizontal className="mr-1.5 h-4 w-4 text-slate-600" />Settings</TabsTrigger>
-                    <TabsTrigger value="seo"><Search className="mr-1.5 h-4 w-4 text-violet-600" />SEO</TabsTrigger>
+                    <TabsTrigger value="content">
+                      <Package className="mr-1.5 h-4 w-4 text-emerald-600" />
+                      Content
+                    </TabsTrigger>
+                    <TabsTrigger value="media">
+                      <Image className="mr-1.5 h-4 w-4 text-sky-600" />
+                      Media
+                    </TabsTrigger>
+                    <TabsTrigger value="pricing">
+                      <Percent className="mr-1.5 h-4 w-4 text-amber-600" />
+                      Pricing
+                    </TabsTrigger>
+                    <TabsTrigger value="inventory">
+                      <ClipboardList className="mr-1.5 h-4 w-4 text-blue-600" />
+                      Inventory
+                    </TabsTrigger>
+                    <TabsTrigger value="shipping">
+                      <Truck className="mr-1.5 h-4 w-4 text-cyan-600" />
+                      Shipping
+                    </TabsTrigger>
+                    <TabsTrigger value="settings">
+                      <SlidersHorizontal className="mr-1.5 h-4 w-4 text-slate-600" />
+                      Settings
+                    </TabsTrigger>
+                    <TabsTrigger value="seo">
+                      <Search className="mr-1.5 h-4 w-4 text-violet-600" />
+                      SEO
+                    </TabsTrigger>
                   </TabsList>
                 </div>
                 <div className="p-6">
                   <TabsContent value="content" className="mt-0">
                     <ProductEditorSection title="Product content">
                       <div className="grid gap-4 lg:grid-cols-2">
-                        <div className="space-y-2"><Label>Title</Label><Input value={form.name} onChange={(e) => setForm((current) => ({ ...current, name: e.target.value }))} required /></div>
-                        <div className="space-y-2"><Label>Subtitle</Label><Input value={form.tagline} onChange={(e) => setForm((current) => ({ ...current, tagline: e.target.value }))} /></div>
+                        <div className="space-y-2">
+                          <Label>Title</Label>
+                          <Input
+                            value={form.name}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, name: e.target.value }))
+                            }
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Subtitle</Label>
+                          <Input
+                            value={form.tagline}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, tagline: e.target.value }))
+                            }
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2"><Label>Short description</Label><Textarea value={form.shortDescription} onChange={(e) => setForm((current) => ({ ...current, shortDescription: e.target.value }))} rows={3} /></div>
+                      <div className="space-y-2">
+                        <Label>Short description</Label>
+                        <Textarea
+                          value={form.shortDescription}
+                          onChange={(e) =>
+                            setForm((current) => ({ ...current, shortDescription: e.target.value }))
+                          }
+                          rows={3}
+                        />
+                      </div>
                       <div className="space-y-2">
                         <Label>Description</Label>
                         <CmsRichTextEditor
                           value={form.description}
-                          onChange={(description) => setForm((current) => ({ ...current, description }))}
+                          onChange={(description) =>
+                            setForm((current) => ({ ...current, description }))
+                          }
                           placeholder="Write the complete product description customers should see on the product detail page..."
                           data-testid="ecommerce-product-description-editor"
                         />
                       </div>
                       <div className="grid gap-4 lg:grid-cols-2">
-                        <div className="space-y-2"><Label>Product type</Label><Input value={form.productType} onChange={(e) => setForm((current) => ({ ...current, productType: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Vendor / brand</Label><Input value={form.vendor} onChange={(e) => setForm((current) => ({ ...current, vendor: e.target.value }))} /></div>
+                        <div className="space-y-2">
+                          <Label>Product type</Label>
+                          <Input
+                            value={form.productType}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, productType: e.target.value }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Vendor / brand</Label>
+                          <Input
+                            value={form.vendor}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, vendor: e.target.value }))
+                            }
+                          />
+                        </div>
                       </div>
                     </ProductEditorSection>
                     <ProductEditorSection title="Merchandising">
-                      <div className="space-y-2"><Label>Tags</Label><Input value={form.tags} onChange={(e) => setForm((current) => ({ ...current, tags: e.target.value }))} /></div>
-                      <div className="space-y-2"><Label>Features</Label><Input value={form.features} onChange={(e) => setForm((current) => ({ ...current, features: e.target.value }))} /></div>
-                      <div className="space-y-2"><Label>Included items</Label><Input value={form.included} onChange={(e) => setForm((current) => ({ ...current, included: e.target.value }))} /></div>
+                      <div className="space-y-2">
+                        <Label>Tags</Label>
+                        <Input
+                          value={form.tags}
+                          onChange={(e) =>
+                            setForm((current) => ({ ...current, tags: e.target.value }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Features</Label>
+                        <Input
+                          value={form.features}
+                          onChange={(e) =>
+                            setForm((current) => ({ ...current, features: e.target.value }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Included items</Label>
+                        <Input
+                          value={form.included}
+                          onChange={(e) =>
+                            setForm((current) => ({ ...current, included: e.target.value }))
+                          }
+                        />
+                      </div>
                     </ProductEditorSection>
                   </TabsContent>
                   <TabsContent value="media" className="mt-0">
@@ -605,7 +847,9 @@ export function ProductsTab() {
                       <CmsImageUpload
                         label="Primary image"
                         value={form.primaryImage}
-                        onChange={(primaryImage) => setForm((current) => ({ ...current, primaryImage }))}
+                        onChange={(primaryImage) =>
+                          setForm((current) => ({ ...current, primaryImage }))
+                        }
                         helpText="Upload, drop, or choose the main storefront image from the CMS media library."
                         data-testid="ecommerce-product-primary-image"
                       />
@@ -617,70 +861,342 @@ export function ProductsTab() {
                           helpText="Adds a product gallery image when the product is saved."
                           data-testid="ecommerce-product-gallery-image"
                         />
-                        <div className="space-y-2"><Label>Gallery image alt text</Label><Input value={form.mediaAltText} onChange={(e) => setForm((current) => ({ ...current, mediaAltText: e.target.value }))} /></div>
+                        <div className="space-y-2">
+                          <Label>Gallery image alt text</Label>
+                          <Input
+                            value={form.mediaAltText}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, mediaAltText: e.target.value }))
+                            }
+                          />
+                        </div>
                       </div>
                     </ProductEditorSection>
                   </TabsContent>
                   <TabsContent value="pricing" className="mt-0">
                     <ProductEditorSection title="Pricing">
                       <div className="grid gap-4 lg:grid-cols-2">
-                        <div className="space-y-2"><Label>Base price</Label><Input value={form.price} onChange={(e) => setForm((current) => ({ ...current, price: e.target.value }))} required /></div>
-                        <div className="space-y-2"><Label>Sale price</Label><Input value={form.salePrice} onChange={(e) => setForm((current) => ({ ...current, salePrice: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Compare-at price</Label><Input value={form.compareAtPrice} onChange={(e) => setForm((current) => ({ ...current, compareAtPrice: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Cost per item</Label><Input value={form.costPerItem} onChange={(e) => setForm((current) => ({ ...current, costPerItem: e.target.value }))} /></div>
+                        <div className="space-y-2">
+                          <Label>Base price</Label>
+                          <Input
+                            value={form.price}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, price: e.target.value }))
+                            }
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Sale price</Label>
+                          <Input
+                            value={form.salePrice}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, salePrice: e.target.value }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Compare-at price</Label>
+                          <Input
+                            value={form.compareAtPrice}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, compareAtPrice: e.target.value }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Cost per item</Label>
+                          <Input
+                            value={form.costPerItem}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, costPerItem: e.target.value }))
+                            }
+                          />
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground">Estimated margin: {profitMargin == null ? "Add cost and price" : `${profitMargin}%`}</p>
-                      <div className="flex items-center gap-3"><Switch checked={form.taxable} onCheckedChange={(taxable) => setForm((current) => ({ ...current, taxable }))} /><Label>Taxable</Label></div>
-                      <div className="space-y-2"><Label>Tax category</Label><Input value={form.taxCategory} onChange={(e) => setForm((current) => ({ ...current, taxCategory: e.target.value }))} /></div>
+                      <p className="text-xs text-muted-foreground">
+                        Estimated margin:{" "}
+                        {profitMargin == null ? "Add cost and price" : `${profitMargin}%`}
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          checked={form.taxable}
+                          onCheckedChange={(taxable) =>
+                            setForm((current) => ({ ...current, taxable }))
+                          }
+                        />
+                        <Label>Taxable</Label>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Tax category</Label>
+                        <Input
+                          value={form.taxCategory}
+                          onChange={(e) =>
+                            setForm((current) => ({ ...current, taxCategory: e.target.value }))
+                          }
+                        />
+                      </div>
                     </ProductEditorSection>
                   </TabsContent>
                   <TabsContent value="inventory" className="mt-0">
                     <ProductEditorSection title="Inventory">
                       <div className="grid gap-4 lg:grid-cols-2">
-                        <div className="space-y-2"><Label>SKU</Label><Input value={form.sku} onChange={(e) => setForm((current) => ({ ...current, sku: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Barcode / UPC</Label><Input value={form.barcode} onChange={(e) => setForm((current) => ({ ...current, barcode: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Quantity</Label><Input type="number" value={form.inventoryQuantity} onChange={(e) => setForm((current) => ({ ...current, inventoryQuantity: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Low stock threshold</Label><Input type="number" value={form.lowStockThreshold} onChange={(e) => setForm((current) => ({ ...current, lowStockThreshold: e.target.value }))} /></div>
+                        <div className="space-y-2">
+                          <Label>SKU</Label>
+                          <Input
+                            value={form.sku}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, sku: e.target.value }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Barcode / UPC</Label>
+                          <Input
+                            value={form.barcode}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, barcode: e.target.value }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Quantity</Label>
+                          <Input
+                            type="number"
+                            value={form.inventoryQuantity}
+                            onChange={(e) =>
+                              setForm((current) => ({
+                                ...current,
+                                inventoryQuantity: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Low stock threshold</Label>
+                          <Input
+                            type="number"
+                            value={form.lowStockThreshold}
+                            onChange={(e) =>
+                              setForm((current) => ({
+                                ...current,
+                                lowStockThreshold: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
                       </div>
                       <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="flex items-center gap-3"><Switch checked={form.trackInventory} onCheckedChange={(trackInventory) => setForm((current) => ({ ...current, trackInventory }))} /><Label>Track inventory</Label></div>
-                        <div className="flex items-center gap-3"><Switch checked={form.allowBackorder} onCheckedChange={(allowBackorder) => setForm((current) => ({ ...current, allowBackorder }))} /><Label>Allow backorders</Label></div>
+                        <div className="flex items-center gap-3">
+                          <Switch
+                            checked={form.trackInventory}
+                            onCheckedChange={(trackInventory) =>
+                              setForm((current) => ({ ...current, trackInventory }))
+                            }
+                          />
+                          <Label>Track inventory</Label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Switch
+                            checked={form.allowBackorder}
+                            onCheckedChange={(allowBackorder) =>
+                              setForm((current) => ({ ...current, allowBackorder }))
+                            }
+                          />
+                          <Label>Allow backorders</Label>
+                        </div>
                       </div>
                     </ProductEditorSection>
                   </TabsContent>
                   <TabsContent value="shipping" className="mt-0">
                     <ProductEditorSection title="Shipping">
                       <div className="grid gap-4 lg:grid-cols-2">
-                        <div className="flex items-center gap-3"><Switch checked={form.physicalProduct} onCheckedChange={(physicalProduct) => setForm((current) => ({ ...current, physicalProduct }))} /><Label>Physical product</Label></div>
-                        <div className="flex items-center gap-3"><Switch checked={form.requiresShipping} onCheckedChange={(requiresShipping) => setForm((current) => ({ ...current, requiresShipping }))} /><Label>Requires shipping</Label></div>
-                        <div className="space-y-2"><Label>Weight</Label><Input type="number" value={form.weight} onChange={(e) => setForm((current) => ({ ...current, weight: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Weight unit</Label><Select value={form.weightUnit} onValueChange={(weightUnit) => setForm((current) => ({ ...current, weightUnit }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="oz">oz</SelectItem><SelectItem value="lb">lb</SelectItem><SelectItem value="g">g</SelectItem><SelectItem value="kg">kg</SelectItem></SelectContent></Select></div>
-                        <div className="space-y-2"><Label>Length</Label><Input type="number" value={form.length} onChange={(e) => setForm((current) => ({ ...current, length: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Width</Label><Input type="number" value={form.width} onChange={(e) => setForm((current) => ({ ...current, width: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Height</Label><Input type="number" value={form.height} onChange={(e) => setForm((current) => ({ ...current, height: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Shipping profile</Label><Input value={form.shippingProfile} onChange={(e) => setForm((current) => ({ ...current, shippingProfile: e.target.value }))} /></div>
+                        <div className="flex items-center gap-3">
+                          <Switch
+                            checked={form.physicalProduct}
+                            onCheckedChange={(physicalProduct) =>
+                              setForm((current) => ({ ...current, physicalProduct }))
+                            }
+                          />
+                          <Label>Physical product</Label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Switch
+                            checked={form.requiresShipping}
+                            onCheckedChange={(requiresShipping) =>
+                              setForm((current) => ({ ...current, requiresShipping }))
+                            }
+                          />
+                          <Label>Requires shipping</Label>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Weight</Label>
+                          <Input
+                            type="number"
+                            value={form.weight}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, weight: e.target.value }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Weight unit</Label>
+                          <Select
+                            value={form.weightUnit}
+                            onValueChange={(weightUnit) =>
+                              setForm((current) => ({ ...current, weightUnit }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="oz">oz</SelectItem>
+                              <SelectItem value="lb">lb</SelectItem>
+                              <SelectItem value="g">g</SelectItem>
+                              <SelectItem value="kg">kg</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Length</Label>
+                          <Input
+                            type="number"
+                            value={form.length}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, length: e.target.value }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Width</Label>
+                          <Input
+                            type="number"
+                            value={form.width}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, width: e.target.value }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Height</Label>
+                          <Input
+                            type="number"
+                            value={form.height}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, height: e.target.value }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Shipping profile</Label>
+                          <Input
+                            value={form.shippingProfile}
+                            onChange={(e) =>
+                              setForm((current) => ({
+                                ...current,
+                                shippingProfile: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
                       </div>
                     </ProductEditorSection>
                   </TabsContent>
                   <TabsContent value="settings" className="mt-0">
                     <ProductEditorSection title="Publishing and organization">
                       <div className="grid gap-4 lg:grid-cols-2">
-                        <div className="space-y-2"><Label>Status</Label><Select value={form.status} onValueChange={(status) => setForm((current) => ({ ...current, status }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="published">Published</SelectItem><SelectItem value="archived">Archived</SelectItem><SelectItem value="scheduled">Scheduled</SelectItem></SelectContent></Select></div>
-                        <div className="space-y-2"><Label>Visibility</Label><Select value={form.visibility} onValueChange={(visibility) => setForm((current) => ({ ...current, visibility }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="online">Online store</SelectItem><SelectItem value="hidden">Hidden</SelectItem><SelectItem value="admin">Admin only</SelectItem></SelectContent></Select></div>
-                        <div className="space-y-2"><Label>Scheduled publish</Label><Input type="datetime-local" value={form.publishedAt} onChange={(e) => setForm((current) => ({ ...current, publishedAt: e.target.value }))} /></div>
-                        <div className="space-y-2"><Label>Badge text</Label><Input value={form.badgeText} onChange={(e) => setForm((current) => ({ ...current, badgeText: e.target.value }))} /></div>
+                        <div className="space-y-2">
+                          <Label>Status</Label>
+                          <Select
+                            value={form.status}
+                            onValueChange={(status) =>
+                              setForm((current) => ({ ...current, status }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="draft">Draft</SelectItem>
+                              <SelectItem value="published">Published</SelectItem>
+                              <SelectItem value="archived">Archived</SelectItem>
+                              <SelectItem value="scheduled">Scheduled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Visibility</Label>
+                          <Select
+                            value={form.visibility}
+                            onValueChange={(visibility) =>
+                              setForm((current) => ({ ...current, visibility }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="online">Online store</SelectItem>
+                              <SelectItem value="hidden">Hidden</SelectItem>
+                              <SelectItem value="admin">Admin only</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Scheduled publish</Label>
+                          <Input
+                            type="datetime-local"
+                            value={form.publishedAt}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, publishedAt: e.target.value }))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Badge text</Label>
+                          <Input
+                            value={form.badgeText}
+                            onChange={(e) =>
+                              setForm((current) => ({ ...current, badgeText: e.target.value }))
+                            }
+                          />
+                        </div>
                       </div>
                       <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="flex items-center gap-3"><Switch checked={form.active} onCheckedChange={(active) => setForm((current) => ({ ...current, active }))} /><Label>Active</Label></div>
-                        <div className="flex items-center gap-3"><Switch checked={form.featured} onCheckedChange={(featured) => setForm((current) => ({ ...current, featured }))} /><Label>Featured</Label></div>
+                        <div className="flex items-center gap-3">
+                          <Switch
+                            checked={form.active}
+                            onCheckedChange={(active) =>
+                              setForm((current) => ({ ...current, active }))
+                            }
+                          />
+                          <Label>Active</Label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Switch
+                            checked={form.featured}
+                            onCheckedChange={(featured) =>
+                              setForm((current) => ({ ...current, featured }))
+                            }
+                          />
+                          <Label>Featured</Label>
+                        </div>
                       </div>
                       {categories.length ? (
                         <div className="space-y-2">
                           <Label>Categories</Label>
                           <div className="max-h-48 overflow-auto rounded-md border p-2">
                             {categories.map((category) => (
-                              <label key={category.id} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm">
-                                <input type="checkbox" checked={form.categoryIds.includes(category.id)} onChange={() => toggleCategory(category.id)} />
+                              <label
+                                key={category.id}
+                                className="flex items-center gap-2 rounded-md px-2 py-1 text-sm"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={form.categoryIds.includes(category.id)}
+                                  onChange={() => toggleCategory(category.id)}
+                                />
                                 <span>{category.name}</span>
                               </label>
                             ))}
@@ -691,9 +1207,34 @@ export function ProductsTab() {
                   </TabsContent>
                   <TabsContent value="seo" className="mt-0">
                     <ProductEditorSection title="SEO and social preview">
-                      <div className="space-y-2"><Label>URL slug</Label><Input value={form.urlSlug} onChange={(e) => setForm((current) => ({ ...current, urlSlug: e.target.value }))} /></div>
-                      <div className="space-y-2"><Label>Meta title</Label><Input value={form.metaTitle} onChange={(e) => setForm((current) => ({ ...current, metaTitle: e.target.value }))} /></div>
-                      <div className="space-y-2"><Label>Meta description</Label><Textarea value={form.metaDescription} onChange={(e) => setForm((current) => ({ ...current, metaDescription: e.target.value }))} rows={4} /></div>
+                      <div className="space-y-2">
+                        <Label>URL slug</Label>
+                        <Input
+                          value={form.urlSlug}
+                          onChange={(e) =>
+                            setForm((current) => ({ ...current, urlSlug: e.target.value }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Meta title</Label>
+                        <Input
+                          value={form.metaTitle}
+                          onChange={(e) =>
+                            setForm((current) => ({ ...current, metaTitle: e.target.value }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Meta description</Label>
+                        <Textarea
+                          value={form.metaDescription}
+                          onChange={(e) =>
+                            setForm((current) => ({ ...current, metaDescription: e.target.value }))
+                          }
+                          rows={4}
+                        />
+                      </div>
                       <CmsImageUpload
                         label="OpenGraph image"
                         value={form.ogImage}
@@ -708,7 +1249,9 @@ export function ProductsTab() {
             </form>
           </SheetBody>
           <SheetFooter>
-            <Button type="button" variant="outline" onClick={() => setEditorOpen(false)}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={() => setEditorOpen(false)}>
+              Cancel
+            </Button>
             <Button type="submit" form="ecommerce-product-form" disabled={saveMutation.isPending}>
               <Save className="mr-2 h-4 w-4" />
               {editingId ? "Update product" : "Save product"}
@@ -760,7 +1303,10 @@ function formatOrderPlacedDateTime(value: string | Date, timeZone = "America/New
   }
 }
 
-function formatOptionalDateTime(value: string | Date | null | undefined, timeZone = "America/New_York") {
+function formatOptionalDateTime(
+  value: string | Date | null | undefined,
+  timeZone = "America/New_York",
+) {
   if (!value) return "Not recorded";
   const formatted = formatOrderPlacedDateTime(value, timeZone);
   return `${formatted.date} · ${formatted.time}`;
@@ -770,7 +1316,9 @@ function formatShippingAddress(order: Order) {
   const cityRegion = [
     order.shippingCity,
     [order.shippingState, order.shippingZip].filter(Boolean).join(" "),
-  ].filter(Boolean).join(", ");
+  ]
+    .filter(Boolean)
+    .join(", ");
   return [
     order.shippingName,
     order.shippingCompany,
@@ -785,7 +1333,9 @@ function DetailLine({ label, value }: { label: string; value?: React.ReactNode }
   return (
     <div className="space-y-1">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <div className="text-sm text-foreground">{value || <span className="text-muted-foreground">Not provided</span>}</div>
+      <div className="text-sm text-foreground">
+        {value || <span className="text-muted-foreground">Not provided</span>}
+      </div>
     </div>
   );
 }
@@ -862,9 +1412,10 @@ function dollarsToCents(value: string) {
 
 function getProductEffectivePrice(product?: Product, variantId?: string) {
   if (!product) return 0;
-  const variant = product.variants?.find((candidate) => candidate.id === variantId)
-    ?? product.variants?.find((candidate) => candidate.isDefault)
-    ?? product.variants?.[0];
+  const variant =
+    product.variants?.find((candidate) => candidate.id === variantId) ??
+    product.variants?.find((candidate) => candidate.isDefault) ??
+    product.variants?.[0];
   return variant?.salePrice ?? variant?.price ?? product.salePrice ?? product.price;
 }
 
@@ -884,21 +1435,33 @@ function ManualOrderWizard({
   const [form, setForm] = useState<ManualOrderWizardForm>(defaultManualOrderWizardForm);
   const selectedProduct = products.find((product) => product.id === form.productId);
   const selectedCustomer = customers.find((customer) => customer.id === form.customerId);
-  const selectedVariantId = form.variantId || selectedProduct?.variants?.find((variant) => variant.isDefault)?.id || selectedProduct?.variants?.[0]?.id || "";
+  const selectedVariantId =
+    form.variantId ||
+    selectedProduct?.variants?.find((variant) => variant.isDefault)?.id ||
+    selectedProduct?.variants?.[0]?.id ||
+    "";
   const quantity = Math.max(1, Number.parseInt(form.quantity, 10) || 1);
-  const productSubtotal = form.mode === "order" ? getProductEffectivePrice(selectedProduct, selectedVariantId) * quantity : 0;
+  const productSubtotal =
+    form.mode === "order"
+      ? getProductEffectivePrice(selectedProduct, selectedVariantId) * quantity
+      : 0;
   const discountAmount = Math.min(productSubtotal, dollarsToCents(form.discountAmount));
   const orderTotal = Math.max(0, productSubtotal - discountAmount);
   const paymentRequestAmount = dollarsToCents(form.paymentAmount);
   const canCreateNewCustomer = form.customerName.trim() && form.customerEmail.trim();
-  const hasCustomer = form.customerMode === "existing" ? Boolean(form.customerId) : Boolean(canCreateNewCustomer);
+  const hasCustomer =
+    form.customerMode === "existing" ? Boolean(form.customerId) : Boolean(canCreateNewCustomer);
   const hasOrderLine = form.mode === "payment_request" || Boolean(form.productId);
-  const reasonRequired = form.mode === "payment_request" || discountAmount > 0 || form.fulfillmentMode === "custom";
+  const reasonRequired =
+    form.mode === "payment_request" || discountAmount > 0 || form.fulfillmentMode === "custom";
   const hasReason = !reasonRequired || Boolean(form.customReason.trim() || form.notes.trim());
-  const canSubmit = hasCustomer
-    && hasOrderLine
-    && hasReason
-    && (form.mode === "order" ? orderTotal > 0 || form.paymentAction === "save_draft" : paymentRequestAmount > 0 && form.paymentTitle.trim());
+  const canSubmit =
+    hasCustomer &&
+    hasOrderLine &&
+    hasReason &&
+    (form.mode === "order"
+      ? orderTotal > 0 || form.paymentAction === "save_draft"
+      : paymentRequestAmount > 0 && form.paymentTitle.trim());
 
   const reset = () => {
     setStep(1);
@@ -931,20 +1494,26 @@ function ManualOrderWizard({
       }
       const response = await apiRequest("POST", "/api/admin/ecommerce/orders/manual-draft", {
         customerId,
-        items: [{
-          productId: form.productId,
-          variantId: selectedVariantId || undefined,
-          quantity,
-          discountAmount,
-        }],
+        items: [
+          {
+            productId: form.productId,
+            variantId: selectedVariantId || undefined,
+            quantity,
+            discountAmount,
+          },
+        ],
         fulfillmentMode: form.fulfillmentMode,
         notes: form.notes || undefined,
         customReason: form.customReason || undefined,
         paymentAction: form.paymentAction,
-        manualPaymentMethod: form.paymentAction === "mark_paid" ? form.manualPaymentMethod : undefined,
-        manualPaymentReference: form.paymentAction === "mark_paid" ? form.manualPaymentReference : undefined,
+        manualPaymentMethod:
+          form.paymentAction === "mark_paid" ? form.manualPaymentMethod : undefined,
+        manualPaymentReference:
+          form.paymentAction === "mark_paid" ? form.manualPaymentReference : undefined,
       });
-      return response.json() as Promise<Order & { paymentLink?: { paymentUrl?: string | null } | null }>;
+      return response.json() as Promise<
+        Order & { paymentLink?: { paymentUrl?: string | null } | null }
+      >;
     },
     onSuccess: async (order) => {
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/orders"] });
@@ -954,16 +1523,19 @@ function ManualOrderWizard({
       }
       toast({
         title: "Manual order created",
-        description: order.paymentLink?.paymentUrl ? "The secure payment link was copied to your clipboard." : undefined,
+        description: order.paymentLink?.paymentUrl
+          ? "The secure payment link was copied to your clipboard."
+          : undefined,
       });
       onOpenChange(false);
       reset();
     },
-    onError: (error) => toast({
-      title: "Manual order could not be created",
-      description: error instanceof Error ? error.message : "Please review the order details.",
-      variant: "destructive",
-    }),
+    onError: (error) =>
+      toast({
+        title: "Manual order could not be created",
+        description: error instanceof Error ? error.message : "Please review the order details.",
+        variant: "destructive",
+      }),
   });
 
   const paymentRequestMutation = useMutation({
@@ -988,20 +1560,30 @@ function ManualOrderWizard({
       if (request.paymentUrl) {
         await navigator.clipboard?.writeText(request.paymentUrl).catch(() => undefined);
       }
-      toast({ title: "Payment request created", description: request.paymentUrl ? "The secure payment link was copied to your clipboard." : "The payment request is ready." });
+      toast({
+        title: "Payment request created",
+        description: request.paymentUrl
+          ? "The secure payment link was copied to your clipboard."
+          : "The payment request is ready.",
+      });
       onOpenChange(false);
       reset();
     },
-    onError: (error) => toast({
-      title: "Payment request could not be created",
-      description: error instanceof Error ? error.message : "Please review the payment request.",
-      variant: "destructive",
-    }),
+    onError: (error) =>
+      toast({
+        title: "Payment request could not be created",
+        description: error instanceof Error ? error.message : "Please review the payment request.",
+        variant: "destructive",
+      }),
   });
 
   const submit = () => {
     if (!canSubmit) {
-      toast({ title: "Finish required details", description: "Customer, line items, totals, and reason fields are required.", variant: "destructive" });
+      toast({
+        title: "Finish required details",
+        description: "Customer, line items, totals, and reason fields are required.",
+        variant: "destructive",
+      });
       return;
     }
     if (form.mode === "payment_request") {
@@ -1012,11 +1594,20 @@ function ManualOrderWizard({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(nextOpen) => { onOpenChange(nextOpen); if (!nextOpen) reset(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        onOpenChange(nextOpen);
+        if (!nextOpen) reset();
+      }}
+    >
       <DialogContent className="max-h-[92vh] max-w-5xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create order</DialogTitle>
-          <DialogDescription>Create a manual order, send a payment link, or collect a standalone custom payment request.</DialogDescription>
+          <DialogDescription>
+            Create a manual order, send a payment link, or collect a standalone custom payment
+            request.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
@@ -1025,10 +1616,15 @@ function ManualOrderWizard({
               <button
                 key={label}
                 type="button"
-                className={cn("flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm", step === index + 1 ? "bg-primary text-primary-foreground" : "hover:bg-muted")}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm",
+                  step === index + 1 ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                )}
                 onClick={() => setStep(index + 1)}
               >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full border text-xs">{index + 1}</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded-full border text-xs">
+                  {index + 1}
+                </span>
                 {label}
               </button>
             ))}
@@ -1038,24 +1634,52 @@ function ManualOrderWizard({
             {step === 1 ? (
               <div className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Button type="button" variant={form.customerMode === "existing" ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, customerMode: "existing" }))}>Select existing customer</Button>
-                  <Button type="button" variant={form.customerMode === "new" ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, customerMode: "new" }))}>Create new customer</Button>
+                  <Button
+                    type="button"
+                    variant={form.customerMode === "existing" ? "default" : "outline"}
+                    onClick={() => setForm((current) => ({ ...current, customerMode: "existing" }))}
+                  >
+                    Select existing customer
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={form.customerMode === "new" ? "default" : "outline"}
+                    onClick={() => setForm((current) => ({ ...current, customerMode: "new" }))}
+                  >
+                    Create new customer
+                  </Button>
                 </div>
                 {form.customerMode === "existing" ? (
                   <div className="space-y-3">
-                    <Input value={form.customerSearch} onChange={(event) => setForm((current) => ({ ...current, customerSearch: event.target.value }))} placeholder="Search customers by name, email, or phone" />
+                    <Input
+                      value={form.customerSearch}
+                      onChange={(event) =>
+                        setForm((current) => ({ ...current, customerSearch: event.target.value }))
+                      }
+                      placeholder="Search customers by name, email, or phone"
+                    />
                     <div className="grid max-h-72 gap-2 overflow-y-auto">
                       {customers
                         .filter((customer) => {
                           const query = form.customerSearch.trim().toLowerCase();
-                          return !query || [customer.name, customer.email, customer.phone ?? ""].some((value) => value.toLowerCase().includes(query));
+                          return (
+                            !query ||
+                            [customer.name, customer.email, customer.phone ?? ""].some((value) =>
+                              value.toLowerCase().includes(query),
+                            )
+                          );
                         })
                         .map((customer) => (
                           <button
                             key={customer.id}
                             type="button"
-                            className={cn("rounded-lg border p-3 text-left transition-colors hover:bg-muted/50", form.customerId === customer.id ? "border-primary bg-primary/5" : "")}
-                            onClick={() => setForm((current) => ({ ...current, customerId: customer.id }))}
+                            className={cn(
+                              "rounded-lg border p-3 text-left transition-colors hover:bg-muted/50",
+                              form.customerId === customer.id ? "border-primary bg-primary/5" : "",
+                            )}
+                            onClick={() =>
+                              setForm((current) => ({ ...current, customerId: customer.id }))
+                            }
                           >
                             <div className="font-medium">{customer.name}</div>
                             <div className="text-sm text-muted-foreground">{customer.email}</div>
@@ -1065,14 +1689,79 @@ function ManualOrderWizard({
                   </div>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-2"><Label>Name</Label><Input value={form.customerName} onChange={(event) => setForm((current) => ({ ...current, customerName: event.target.value }))} /></div>
-                    <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.customerEmail} onChange={(event) => setForm((current) => ({ ...current, customerEmail: event.target.value }))} /></div>
-                    <div className="space-y-2"><Label>Phone</Label><Input value={form.customerPhone} onChange={(event) => setForm((current) => ({ ...current, customerPhone: event.target.value }))} /></div>
-                    <div className="space-y-2 sm:col-span-2"><Label>Address</Label><Input value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} /></div>
-                    <div className="space-y-2"><Label>Address line 2</Label><Input value={form.line2} onChange={(event) => setForm((current) => ({ ...current, line2: event.target.value }))} /></div>
-                    <div className="space-y-2"><Label>City</Label><Input value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))} /></div>
-                    <div className="space-y-2"><Label>State / region</Label><Input value={form.state} onChange={(event) => setForm((current) => ({ ...current, state: event.target.value }))} /></div>
-                    <div className="space-y-2"><Label>Postal code</Label><Input value={form.zipCode} onChange={(event) => setForm((current) => ({ ...current, zipCode: event.target.value }))} /></div>
+                    <div className="space-y-2">
+                      <Label>Name</Label>
+                      <Input
+                        value={form.customerName}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, customerName: event.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input
+                        type="email"
+                        value={form.customerEmail}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, customerEmail: event.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Phone</Label>
+                      <Input
+                        value={form.customerPhone}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, customerPhone: event.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label>Address</Label>
+                      <Input
+                        value={form.address}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, address: event.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Address line 2</Label>
+                      <Input
+                        value={form.line2}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, line2: event.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>City</Label>
+                      <Input
+                        value={form.city}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, city: event.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>State / region</Label>
+                      <Input
+                        value={form.state}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, state: event.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Postal code</Label>
+                      <Input
+                        value={form.zipCode}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, zipCode: event.target.value }))
+                        }
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -1081,40 +1770,130 @@ function ManualOrderWizard({
             {step === 2 ? (
               <div className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Button type="button" variant={form.mode === "order" ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, mode: "order" }))}>Manual order</Button>
-                  <Button type="button" variant={form.mode === "payment_request" ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, mode: "payment_request" }))}>Custom payment request</Button>
+                  <Button
+                    type="button"
+                    variant={form.mode === "order" ? "default" : "outline"}
+                    onClick={() => setForm((current) => ({ ...current, mode: "order" }))}
+                  >
+                    Manual order
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={form.mode === "payment_request" ? "default" : "outline"}
+                    onClick={() => setForm((current) => ({ ...current, mode: "payment_request" }))}
+                  >
+                    Custom payment request
+                  </Button>
                 </div>
                 {form.mode === "order" ? (
                   <div className="grid gap-3 sm:grid-cols-[1fr_150px_150px]">
                     <div className="space-y-2">
                       <Label>Product</Label>
-                      <Select value={form.productId || "__none"} onValueChange={(productId) => setForm((current) => ({ ...current, productId: productId === "__none" ? "" : productId, variantId: "" }))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                      <Select
+                        value={form.productId || "__none"}
+                        onValueChange={(productId) =>
+                          setForm((current) => ({
+                            ...current,
+                            productId: productId === "__none" ? "" : productId,
+                            variantId: "",
+                          }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none">Choose product</SelectItem>
-                          {products.map((product) => <SelectItem key={product.id} value={product.id}>{product.name}</SelectItem>)}
+                          {products.map((product) => (
+                            <SelectItem key={product.id} value={product.id}>
+                              {product.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2"><Label>Quantity</Label><Input type="number" min={1} value={form.quantity} onChange={(event) => setForm((current) => ({ ...current, quantity: event.target.value }))} /></div>
-                    <div className="space-y-2"><Label>Line discount</Label><Input value={form.discountAmount} onChange={(event) => setForm((current) => ({ ...current, discountAmount: event.target.value }))} placeholder="0.00" /></div>
+                    <div className="space-y-2">
+                      <Label>Quantity</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={form.quantity}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, quantity: event.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Line discount</Label>
+                      <Input
+                        value={form.discountAmount}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, discountAmount: event.target.value }))
+                        }
+                        placeholder="0.00"
+                      />
+                    </div>
                     {selectedProduct && (selectedProduct.variants?.length ?? 0) > 1 ? (
                       <div className="space-y-2 sm:col-span-3">
                         <Label>Variant</Label>
-                        <Select value={selectedVariantId} onValueChange={(variantId) => setForm((current) => ({ ...current, variantId }))}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>{selectedProduct.variants?.map((variant) => <SelectItem key={variant.id} value={variant.id}>{variant.title}</SelectItem>)}</SelectContent>
+                        <Select
+                          value={selectedVariantId}
+                          onValueChange={(variantId) =>
+                            setForm((current) => ({ ...current, variantId }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {selectedProduct.variants?.map((variant) => (
+                              <SelectItem key={variant.id} value={variant.id}>
+                                {variant.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
                         </Select>
                       </div>
                     ) : null}
                   </div>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-2"><Label>Payment title</Label><Input value={form.paymentTitle} onChange={(event) => setForm((current) => ({ ...current, paymentTitle: event.target.value }))} placeholder="Special in-person sale" /></div>
-                    <div className="space-y-2"><Label>Amount</Label><Input value={form.paymentAmount} onChange={(event) => setForm((current) => ({ ...current, paymentAmount: event.target.value }))} placeholder="125.00" /></div>
-                    <div className="space-y-2 sm:col-span-2"><Label>Description</Label><Textarea value={form.paymentDescription} onChange={(event) => setForm((current) => ({ ...current, paymentDescription: event.target.value }))} rows={3} /></div>
+                    <div className="space-y-2">
+                      <Label>Payment title</Label>
+                      <Input
+                        value={form.paymentTitle}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, paymentTitle: event.target.value }))
+                        }
+                        placeholder="Special in-person sale"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Amount</Label>
+                      <Input
+                        value={form.paymentAmount}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, paymentAmount: event.target.value }))
+                        }
+                        placeholder="125.00"
+                      />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label>Description</Label>
+                      <Textarea
+                        value={form.paymentDescription}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            paymentDescription: event.target.value,
+                          }))
+                        }
+                        rows={3}
+                      />
+                    </div>
                     <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 sm:col-span-2">
-                      Custom payment requests do not create fulfillment, shipment, inventory, or order records.
+                      Custom payment requests do not create fulfillment, shipment, inventory, or
+                      order records.
                     </p>
                   </div>
                 )}
@@ -1133,43 +1912,86 @@ function ManualOrderWizard({
                     key={value}
                     type="button"
                     variant={form.fulfillmentMode === value ? "default" : "outline"}
-                    onClick={() => setForm((current) => ({ ...current, fulfillmentMode: value as ManualOrderWizardForm["fulfillmentMode"] }))}
+                    onClick={() =>
+                      setForm((current) => ({
+                        ...current,
+                        fulfillmentMode: value as ManualOrderWizardForm["fulfillmentMode"],
+                      }))
+                    }
                     disabled={form.mode === "payment_request"}
                   >
                     {label}
                   </Button>
                 ))}
-                {form.mode === "payment_request" ? <p className="text-sm text-muted-foreground sm:col-span-2">Standalone payment requests skip fulfillment by design.</p> : null}
+                {form.mode === "payment_request" ? (
+                  <p className="text-sm text-muted-foreground sm:col-span-2">
+                    Standalone payment requests skip fulfillment by design.
+                  </p>
+                ) : null}
               </div>
             ) : null}
 
             {step === 4 ? (
               <div className="grid gap-4">
                 <div className="rounded-lg border p-4">
-                  <div className="font-medium">{form.customerMode === "existing" ? selectedCustomer?.name : form.customerName}</div>
-                  <div className="text-sm text-muted-foreground">{form.customerMode === "existing" ? selectedCustomer?.email : form.customerEmail}</div>
+                  <div className="font-medium">
+                    {form.customerMode === "existing" ? selectedCustomer?.name : form.customerName}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {form.customerMode === "existing"
+                      ? selectedCustomer?.email
+                      : form.customerEmail}
+                  </div>
                 </div>
                 <div className="rounded-lg border p-4 text-sm">
                   {form.mode === "order" ? (
                     <>
-                      <div className="flex justify-between"><span>{selectedProduct?.name || "No product selected"} x {quantity}</span><span>{formatMoney(productSubtotal)}</span></div>
-                      <div className="flex justify-between text-muted-foreground"><span>Manual discount</span><span>-{formatMoney(discountAmount)}</span></div>
-                      <div className="mt-3 flex justify-between border-t pt-3 text-base font-semibold"><span>Total</span><span>{formatMoney(orderTotal)}</span></div>
+                      <div className="flex justify-between">
+                        <span>
+                          {selectedProduct?.name || "No product selected"} x {quantity}
+                        </span>
+                        <span>{formatMoney(productSubtotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Manual discount</span>
+                        <span>-{formatMoney(discountAmount)}</span>
+                      </div>
+                      <div className="mt-3 flex justify-between border-t pt-3 text-base font-semibold">
+                        <span>Total</span>
+                        <span>{formatMoney(orderTotal)}</span>
+                      </div>
                     </>
                   ) : (
                     <>
-                      <div className="flex justify-between"><span>{form.paymentTitle || "Custom payment request"}</span><span>{formatMoney(paymentRequestAmount)}</span></div>
-                      <p className="mt-2 text-muted-foreground">No fulfillment or shipment will be created.</p>
+                      <div className="flex justify-between">
+                        <span>{form.paymentTitle || "Custom payment request"}</span>
+                        <span>{formatMoney(paymentRequestAmount)}</span>
+                      </div>
+                      <p className="mt-2 text-muted-foreground">
+                        No fulfillment or shipment will be created.
+                      </p>
                     </>
                   )}
                 </div>
                 <div className="space-y-2">
                   <Label>{reasonRequired ? "Reason / internal note" : "Internal note"}</Label>
-                  <Textarea value={form.customReason} onChange={(event) => setForm((current) => ({ ...current, customReason: event.target.value }))} rows={3} />
+                  <Textarea
+                    value={form.customReason}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, customReason: event.target.value }))
+                    }
+                    rows={3}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Order notes</Label>
-                  <Textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} rows={3} />
+                  <Textarea
+                    value={form.notes}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, notes: event.target.value }))
+                    }
+                    rows={3}
+                  />
                 </div>
               </div>
             ) : null}
@@ -1179,16 +2001,51 @@ function ManualOrderWizard({
                 {form.mode === "order" ? (
                   <>
                     <div className="grid gap-3 sm:grid-cols-3">
-                      <Button type="button" variant={form.paymentAction === "send_payment_link" ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, paymentAction: "send_payment_link" }))}>Send payment link</Button>
-                      <Button type="button" variant={form.paymentAction === "mark_paid" ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, paymentAction: "mark_paid" }))}>Mark paid externally</Button>
-                      <Button type="button" variant={form.paymentAction === "save_draft" ? "default" : "outline"} onClick={() => setForm((current) => ({ ...current, paymentAction: "save_draft" }))}>Save draft</Button>
+                      <Button
+                        type="button"
+                        variant={form.paymentAction === "send_payment_link" ? "default" : "outline"}
+                        onClick={() =>
+                          setForm((current) => ({ ...current, paymentAction: "send_payment_link" }))
+                        }
+                      >
+                        Send payment link
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={form.paymentAction === "mark_paid" ? "default" : "outline"}
+                        onClick={() =>
+                          setForm((current) => ({ ...current, paymentAction: "mark_paid" }))
+                        }
+                      >
+                        Mark paid externally
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={form.paymentAction === "save_draft" ? "default" : "outline"}
+                        onClick={() =>
+                          setForm((current) => ({ ...current, paymentAction: "save_draft" }))
+                        }
+                      >
+                        Save draft
+                      </Button>
                     </div>
                     {form.paymentAction === "mark_paid" ? (
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div className="space-y-2">
                           <Label>Payment method</Label>
-                          <Select value={form.manualPaymentMethod} onValueChange={(manualPaymentMethod) => setForm((current) => ({ ...current, manualPaymentMethod: manualPaymentMethod as ManualOrderWizardForm["manualPaymentMethod"] }))}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                          <Select
+                            value={form.manualPaymentMethod}
+                            onValueChange={(manualPaymentMethod) =>
+                              setForm((current) => ({
+                                ...current,
+                                manualPaymentMethod:
+                                  manualPaymentMethod as ManualOrderWizardForm["manualPaymentMethod"],
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="cash">Cash</SelectItem>
                               <SelectItem value="external_card">External card terminal</SelectItem>
@@ -1197,23 +2054,62 @@ function ManualOrderWizard({
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="space-y-2"><Label>Reference</Label><Input value={form.manualPaymentReference} onChange={(event) => setForm((current) => ({ ...current, manualPaymentReference: event.target.value }))} placeholder="Receipt or terminal reference" /></div>
+                        <div className="space-y-2">
+                          <Label>Reference</Label>
+                          <Input
+                            value={form.manualPaymentReference}
+                            onChange={(event) =>
+                              setForm((current) => ({
+                                ...current,
+                                manualPaymentReference: event.target.value,
+                              }))
+                            }
+                            placeholder="Receipt or terminal reference"
+                          />
+                        </div>
                       </div>
                     ) : null}
                   </>
                 ) : (
-                  <p className="rounded-lg border p-3 text-sm text-muted-foreground">A secure Stripe-hosted payment link will be generated and copied when possible.</p>
+                  <p className="rounded-lg border p-3 text-sm text-muted-foreground">
+                    A secure Stripe-hosted payment link will be generated and copied when possible.
+                  </p>
                 )}
-                <Button type="button" className="w-full" disabled={!canSubmit || manualOrderMutation.isPending || paymentRequestMutation.isPending || createCustomerMutation.isPending} onClick={submit}>
+                <Button
+                  type="button"
+                  className="w-full"
+                  disabled={
+                    !canSubmit ||
+                    manualOrderMutation.isPending ||
+                    paymentRequestMutation.isPending ||
+                    createCustomerMutation.isPending
+                  }
+                  onClick={submit}
+                >
                   <CheckCircle2 className="mr-2 h-4 w-4" />
-                  {manualOrderMutation.isPending || paymentRequestMutation.isPending ? "Creating..." : "Create"}
+                  {manualOrderMutation.isPending || paymentRequestMutation.isPending
+                    ? "Creating..."
+                    : "Create"}
                 </Button>
               </div>
             ) : null}
 
             <div className="flex items-center justify-between border-t pt-4">
-              <Button type="button" variant="outline" disabled={step === 1} onClick={() => setStep((current) => Math.max(1, current - 1))}>Back</Button>
-              <Button type="button" disabled={step === 5} onClick={() => setStep((current) => Math.min(5, current + 1))}>Next</Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={step === 1}
+                onClick={() => setStep((current) => Math.max(1, current - 1))}
+              >
+                Back
+              </Button>
+              <Button
+                type="button"
+                disabled={step === 5}
+                onClick={() => setStep((current) => Math.min(5, current + 1))}
+              >
+                Next
+              </Button>
             </div>
           </div>
         </div>
@@ -1226,9 +2122,15 @@ export function OrdersTab() {
   const { toast } = useToast();
   const trackingNumberInputRef = useRef<HTMLInputElement>(null);
   const { data: orders = [] } = useQuery<Order[]>({ queryKey: ["/api/admin/ecommerce/orders"] });
-  const { data: products = [] } = useQuery<Product[]>({ queryKey: ["/api/admin/ecommerce/products"] });
-  const { data: customers = [] } = useQuery<Customer[]>({ queryKey: ["/api/admin/ecommerce/customers"] });
-  const { data: storeSettings } = useQuery<EcommerceStoreSettings>({ queryKey: ["/api/admin/ecommerce/settings/store"] });
+  const { data: products = [] } = useQuery<Product[]>({
+    queryKey: ["/api/admin/ecommerce/products"],
+  });
+  const { data: customers = [] } = useQuery<Customer[]>({
+    queryKey: ["/api/admin/ecommerce/customers"],
+  });
+  const { data: storeSettings } = useQuery<EcommerceStoreSettings>({
+    queryKey: ["/api/admin/ecommerce/settings/store"],
+  });
   const { data: locations = [] } = useQuery<FulfillmentLocation[]>({
     queryKey: ["/api/admin/ecommerce/shipping/locations"],
   });
@@ -1249,17 +2151,21 @@ export function OrdersTab() {
     status: "",
     notes: "",
   });
-  const [trackingPromptAction, setTrackingPromptAction] = useState<"status" | "shipment" | null>(null);
+  const [trackingPromptAction, setTrackingPromptAction] = useState<"status" | "shipment" | null>(
+    null,
+  );
   const filteredOrders = orders.filter((order) => {
     const query = orderSearch.trim().toLowerCase();
-    const matchesSearch = !query || [
-      order.id,
-      getOrderDisplayNumber(order.id),
-      order.customer?.email,
-      order.customer?.name,
-      ...order.items.map((item) => item.productName),
-      ...(order.shipments ?? []).map((shipment) => shipment.trackingNumber ?? ""),
-    ].some((value) => value?.toLowerCase().includes(query));
+    const matchesSearch =
+      !query ||
+      [
+        order.id,
+        getOrderDisplayNumber(order.id),
+        order.customer?.email,
+        order.customer?.name,
+        ...order.items.map((item) => item.productName),
+        ...(order.shipments ?? []).map((shipment) => shipment.trackingNumber ?? ""),
+      ].some((value) => value?.toLowerCase().includes(query));
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     const matchesPayment = paymentFilter === "all" || order.paymentStatus === paymentFilter;
     return matchesSearch && matchesStatus && matchesPayment;
@@ -1271,7 +2177,9 @@ export function OrdersTab() {
     : null;
   const selectedOrderShippingAddress = selectedOrder ? formatShippingAddress(selectedOrder) : [];
   const visibleRevenue = filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-  const unfulfilledCount = orders.filter((order) => !["shipped", "delivered", "cancelled"].includes(order.status)).length;
+  const unfulfilledCount = orders.filter(
+    (order) => !["shipped", "delivered", "cancelled"].includes(order.status),
+  ).length;
 
   const copyOrderNumber = async (order: Order) => {
     const displayOrderNumber = getOrderDisplayNumber(order.id);
@@ -1299,9 +2207,9 @@ export function OrdersTab() {
   };
 
   const hasTrackingData = Boolean(
-    shipmentForm.trackingNumber.trim()
-      || shipmentForm.trackingUrl.trim()
-      || selectedOrder?.shipments?.some((shipment) => shipment.trackingNumber || shipment.trackingUrl),
+    shipmentForm.trackingNumber.trim() ||
+    shipmentForm.trackingUrl.trim() ||
+    selectedOrder?.shipments?.some((shipment) => shipment.trackingNumber || shipment.trackingUrl),
   );
 
   const focusTrackingNumber = () => {
@@ -1353,23 +2261,28 @@ export function OrdersTab() {
       toast({ title: "Order updated" });
       setStatusForm((current) => ({ ...current, notes: "" }));
     },
-    onError: (error) => toast({
-      title: "Order could not be updated",
-      description: error instanceof Error ? error.message : "Please review the order status.",
-      variant: "destructive",
-    }),
+    onError: (error) =>
+      toast({
+        title: "Order could not be updated",
+        description: error instanceof Error ? error.message : "Please review the order status.",
+        variant: "destructive",
+      }),
   });
 
   const shipmentMutation = useMutation({
     mutationFn: async () => {
       if (!selectedOrder) throw new Error("Select an order first.");
-      const shipmentResponse = await apiRequest("POST", `/api/admin/ecommerce/orders/${selectedOrder.id}/shipments`, {
-        carrier: shipmentForm.carrier.trim() || null,
-        trackingNumber: shipmentForm.trackingNumber.trim() || null,
-        trackingUrl: shipmentForm.trackingUrl.trim() || null,
-        status: "shipped",
-      });
-      const shipment = await shipmentResponse.json() as { id: string };
+      const shipmentResponse = await apiRequest(
+        "POST",
+        `/api/admin/ecommerce/orders/${selectedOrder.id}/shipments`,
+        {
+          carrier: shipmentForm.carrier.trim() || null,
+          trackingNumber: shipmentForm.trackingNumber.trim() || null,
+          trackingUrl: shipmentForm.trackingUrl.trim() || null,
+          status: "shipped",
+        },
+      );
+      const shipment = (await shipmentResponse.json()) as { id: string };
       await apiRequest("POST", `/api/admin/ecommerce/orders/${selectedOrder.id}/fulfillments`, {
         fulfillment: {
           shipmentId: shipment.id,
@@ -1382,19 +2295,30 @@ export function OrdersTab() {
           trackingUrl: shipmentForm.trackingUrl.trim() || null,
           fulfilledAt: new Date().toISOString(),
         },
-        items: selectedOrder.items.map((item) => ({ orderItemId: item.id, quantity: item.quantity })),
+        items: selectedOrder.items.map((item) => ({
+          orderItemId: item.id,
+          quantity: item.quantity,
+        })),
       });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/orders"] });
       toast({ title: "Order marked shipped" });
-      setShipmentForm({ carrier: "", trackingNumber: "", trackingUrl: "", locationId: "", serviceLevel: "" });
+      setShipmentForm({
+        carrier: "",
+        trackingNumber: "",
+        trackingUrl: "",
+        locationId: "",
+        serviceLevel: "",
+      });
     },
-    onError: (error) => toast({
-      title: "Shipment could not be created",
-      description: error instanceof Error ? error.message : "Please review the fulfillment details.",
-      variant: "destructive",
-    }),
+    onError: (error) =>
+      toast({
+        title: "Shipment could not be created",
+        description:
+          error instanceof Error ? error.message : "Please review the fulfillment details.",
+        variant: "destructive",
+      }),
   });
 
   return (
@@ -1402,8 +2326,12 @@ export function OrdersTab() {
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2"><ShoppingBag className="h-5 w-5" /> Orders</CardTitle>
-            <CardDescription>Select an order to review items and create a shipment.</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5" /> Orders
+            </CardTitle>
+            <CardDescription>
+              Select an order to review items and create a shipment.
+            </CardDescription>
           </div>
           <Button type="button" onClick={() => setManualOrderOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
@@ -1427,7 +2355,9 @@ export function OrdersTab() {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
@@ -1438,7 +2368,9 @@ export function OrdersTab() {
               </SelectContent>
             </Select>
             <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All payments</SelectItem>
                 <SelectItem value="unpaid">Unpaid</SelectItem>
@@ -1500,15 +2432,37 @@ export function OrdersTab() {
                   Order detail
                 </SheetTitle>
                 <SheetDescription>
-                  {getOrderDisplayNumber(selectedOrder.id)} · {selectedOrder.customer?.email || "No customer email"} · {selectedOrderPlacedAt?.date} · {selectedOrderPlacedAt?.time}
+                  {getOrderDisplayNumber(selectedOrder.id)} ·{" "}
+                  {selectedOrder.customer?.email || "No customer email"} ·{" "}
+                  {selectedOrderPlacedAt?.date} · {selectedOrderPlacedAt?.time}
                 </SheetDescription>
               </SheetHeader>
               <SheetBody className="space-y-5">
                 <div className="grid gap-3 md:grid-cols-4">
-                  <Metric label="Total" value={formatMoney(selectedOrder.totalAmount)} icon={DollarSign} iconClassName="bg-emerald-50 text-emerald-600" />
-                  <Metric label="Subtotal" value={formatMoney(selectedOrder.subtotalAmount ?? 0)} icon={ShoppingBag} iconClassName="bg-blue-50 text-blue-600" />
-                  <Metric label="Shipping" value={formatMoney(selectedOrder.shippingAmount ?? 0)} icon={Truck} iconClassName="bg-amber-50 text-amber-600" />
-                  <Metric label="Tax" value={formatMoney(selectedOrder.taxAmount ?? 0)} icon={Percent} iconClassName="bg-violet-50 text-violet-600" />
+                  <Metric
+                    label="Total"
+                    value={formatMoney(selectedOrder.totalAmount)}
+                    icon={DollarSign}
+                    iconClassName="bg-emerald-50 text-emerald-600"
+                  />
+                  <Metric
+                    label="Subtotal"
+                    value={formatMoney(selectedOrder.subtotalAmount ?? 0)}
+                    icon={ShoppingBag}
+                    iconClassName="bg-blue-50 text-blue-600"
+                  />
+                  <Metric
+                    label="Shipping"
+                    value={formatMoney(selectedOrder.shippingAmount ?? 0)}
+                    icon={Truck}
+                    iconClassName="bg-amber-50 text-amber-600"
+                  />
+                  <Metric
+                    label="Tax"
+                    value={formatMoney(selectedOrder.taxAmount ?? 0)}
+                    icon={Percent}
+                    iconClassName="bg-violet-50 text-violet-600"
+                  />
                 </div>
 
                 <div className="grid gap-5 lg:grid-cols-3">
@@ -1518,7 +2472,10 @@ export function OrdersTab() {
                       <CardDescription>Contact information attached to this order.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-3">
-                      <DetailLine label="Name" value={selectedOrder.customer?.name || selectedOrder.shippingName} />
+                      <DetailLine
+                        label="Name"
+                        value={selectedOrder.customer?.name || selectedOrder.shippingName}
+                      />
                       <DetailLine label="Email" value={selectedOrder.customer?.email} />
                       <DetailLine label="Phone" value={selectedOrder.customer?.phone} />
                     </CardContent>
@@ -1526,15 +2483,21 @@ export function OrdersTab() {
                   <Card>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base">Ship to</CardTitle>
-                      <CardDescription>Destination used for fulfillment and labels.</CardDescription>
+                      <CardDescription>
+                        Destination used for fulfillment and labels.
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       {selectedOrderShippingAddress.length ? (
                         <div className="space-y-1 text-sm leading-6">
-                          {selectedOrderShippingAddress.map((line) => <p key={line}>{line}</p>)}
+                          {selectedOrderShippingAddress.map((line) => (
+                            <p key={line}>{line}</p>
+                          ))}
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground">No shipping address was captured for this order.</p>
+                        <p className="text-sm text-muted-foreground">
+                          No shipping address was captured for this order.
+                        </p>
                       )}
                     </CardContent>
                   </Card>
@@ -1544,9 +2507,18 @@ export function OrdersTab() {
                       <CardDescription>Shown in the store timezone.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-3">
-                      <DetailLine label="Received" value={selectedOrderPlacedAt ? `${selectedOrderPlacedAt.date} · ${selectedOrderPlacedAt.time}` : undefined} />
+                      <DetailLine
+                        label="Received"
+                        value={
+                          selectedOrderPlacedAt
+                            ? `${selectedOrderPlacedAt.date} · ${selectedOrderPlacedAt.time}`
+                            : undefined
+                        }
+                      />
                       <DetailLine label="Timezone" value={storeTimezone} />
-                      {selectedOrder.isManualOrder ? <DetailLine label="Order source" value="Manual order" /> : null}
+                      {selectedOrder.isManualOrder ? (
+                        <DetailLine label="Order source" value="Manual order" />
+                      ) : null}
                     </CardContent>
                   </Card>
                 </div>
@@ -1559,9 +2531,14 @@ export function OrdersTab() {
                       </CardHeader>
                       <CardContent className="space-y-3">
                         {selectedOrder.items.map((item) => (
-                          <div key={item.id} className="flex items-start justify-between gap-4 rounded-lg border p-3 text-sm">
+                          <div
+                            key={item.id}
+                            className="flex items-start justify-between gap-4 rounded-lg border p-3 text-sm"
+                          >
                             <div>
-                              <div className="font-medium">{item.productName} x {item.quantity}</div>
+                              <div className="font-medium">
+                                {item.productName} x {item.quantity}
+                              </div>
                               <div className="text-xs text-muted-foreground">Line item</div>
                             </div>
                             <span className="font-medium">{formatMoney(item.lineTotal)}</span>
@@ -1575,17 +2552,46 @@ export function OrdersTab() {
                         <CardTitle className="text-base">Payment summary</CardTitle>
                       </CardHeader>
                       <CardContent className="grid gap-2 text-sm">
-                        <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatMoney(selectedOrder.subtotalAmount ?? 0)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Discount</span><span>-{formatMoney(selectedOrder.discountAmount ?? 0)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span>{formatMoney(selectedOrder.shippingAmount ?? 0)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>{formatMoney(selectedOrder.taxAmount ?? 0)}</span></div>
-                        <div className="flex justify-between border-t pt-2 text-base font-semibold"><span>Total</span><span>{formatMoney(selectedOrder.totalAmount)}</span></div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Subtotal</span>
+                          <span>{formatMoney(selectedOrder.subtotalAmount ?? 0)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Discount</span>
+                          <span>-{formatMoney(selectedOrder.discountAmount ?? 0)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Shipping</span>
+                          <span>{formatMoney(selectedOrder.shippingAmount ?? 0)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Tax</span>
+                          <span>{formatMoney(selectedOrder.taxAmount ?? 0)}</span>
+                        </div>
+                        <div className="flex justify-between border-t pt-2 text-base font-semibold">
+                          <span>Total</span>
+                          <span>{formatMoney(selectedOrder.totalAmount)}</span>
+                        </div>
                         {selectedOrder.manualPaymentMethod ? (
                           <div className="mt-3 grid gap-1 rounded-lg bg-muted/40 p-3 text-xs">
                             <div className="font-medium text-foreground">Manual payment</div>
-                            <div className="text-muted-foreground">Method: {selectedOrder.manualPaymentMethod.replace(/_/g, " ")}</div>
-                            {selectedOrder.manualPaymentReference ? <div className="text-muted-foreground">Reference: {selectedOrder.manualPaymentReference}</div> : null}
-                            {selectedOrder.manualPaymentMarkedAt ? <div className="text-muted-foreground">Marked paid: {formatOptionalDateTime(selectedOrder.manualPaymentMarkedAt, storeTimezone)}</div> : null}
+                            <div className="text-muted-foreground">
+                              Method: {selectedOrder.manualPaymentMethod.replace(/_/g, " ")}
+                            </div>
+                            {selectedOrder.manualPaymentReference ? (
+                              <div className="text-muted-foreground">
+                                Reference: {selectedOrder.manualPaymentReference}
+                              </div>
+                            ) : null}
+                            {selectedOrder.manualPaymentMarkedAt ? (
+                              <div className="text-muted-foreground">
+                                Marked paid:{" "}
+                                {formatOptionalDateTime(
+                                  selectedOrder.manualPaymentMarkedAt,
+                                  storeTimezone,
+                                )}
+                              </div>
+                            ) : null}
                           </div>
                         ) : null}
                       </CardContent>
@@ -1594,47 +2600,77 @@ export function OrdersTab() {
                     <Card>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base">Shipment history</CardTitle>
-                        <CardDescription>Carrier, tracking, fulfillment, and notification activity.</CardDescription>
+                        <CardDescription>
+                          Carrier, tracking, fulfillment, and notification activity.
+                        </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        {(selectedOrder.shipments ?? []).length || (selectedOrder.fulfillments ?? []).length ? (
+                        {(selectedOrder.shipments ?? []).length ||
+                        (selectedOrder.fulfillments ?? []).length ? (
                           <>
-                          {(selectedOrder.shipments ?? []).map((shipment) => (
-                            <div key={shipment.id} className="rounded-lg border p-3 text-sm">
-                              <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div>
-                                  <p className="font-medium">{shipment.carrier || "Shipment"} · {shipment.status}</p>
-                                  <p className="text-xs text-muted-foreground">Shipped {formatOptionalDateTime(shipment.shippedAt, storeTimezone)}</p>
-                                </div>
-                                {shipment.trackingNumber ? (
-                                  shipment.trackingUrl ? (
-                                    <Button asChild size="sm" variant="outline">
-                                      <a href={shipment.trackingUrl} target="_blank" rel="noreferrer">{shipment.trackingNumber}</a>
-                                    </Button>
+                            {(selectedOrder.shipments ?? []).map((shipment) => (
+                              <div key={shipment.id} className="rounded-lg border p-3 text-sm">
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                  <div>
+                                    <p className="font-medium">
+                                      {shipment.carrier || "Shipment"} · {shipment.status}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Shipped{" "}
+                                      {formatOptionalDateTime(shipment.shippedAt, storeTimezone)}
+                                    </p>
+                                  </div>
+                                  {shipment.trackingNumber ? (
+                                    shipment.trackingUrl ? (
+                                      <Button asChild size="sm" variant="outline">
+                                        <a
+                                          href={shipment.trackingUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                        >
+                                          {shipment.trackingNumber}
+                                        </a>
+                                      </Button>
+                                    ) : (
+                                      <Badge variant="outline">{shipment.trackingNumber}</Badge>
+                                    )
                                   ) : (
-                                    <Badge variant="outline">{shipment.trackingNumber}</Badge>
-                                  )
-                                ) : (
-                                  <Badge variant="secondary">No tracking</Badge>
-                                )}
+                                    <Badge variant="secondary">No tracking</Badge>
+                                  )}
+                                </div>
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                  Notification:{" "}
+                                  {shipment.emailSentAt
+                                    ? formatOptionalDateTime(shipment.emailSentAt, storeTimezone)
+                                    : "Not sent"}
+                                </p>
                               </div>
-                              <p className="mt-2 text-xs text-muted-foreground">
-                                Notification: {shipment.emailSentAt ? formatOptionalDateTime(shipment.emailSentAt, storeTimezone) : "Not sent"}
-                              </p>
-                            </div>
-                          ))}
-                          {(selectedOrder.fulfillments ?? []).map((fulfillment) => (
-                            <div key={fulfillment.id} className="rounded-lg border bg-muted/20 p-3 text-sm">
-                              <p className="font-medium">Fulfillment · {fulfillment.status}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {fulfillment.carrier || "Manual"}{fulfillment.serviceLevel ? ` · ${fulfillment.serviceLevel}` : ""} · {formatOptionalDateTime(fulfillment.fulfilledAt, storeTimezone)}
-                              </p>
-                              {fulfillment.trackingNumber ? <p className="mt-1 text-xs text-muted-foreground">Tracking: {fulfillment.trackingNumber}</p> : null}
-                            </div>
-                          ))}
+                            ))}
+                            {(selectedOrder.fulfillments ?? []).map((fulfillment) => (
+                              <div
+                                key={fulfillment.id}
+                                className="rounded-lg border bg-muted/20 p-3 text-sm"
+                              >
+                                <p className="font-medium">Fulfillment · {fulfillment.status}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {fulfillment.carrier || "Manual"}
+                                  {fulfillment.serviceLevel
+                                    ? ` · ${fulfillment.serviceLevel}`
+                                    : ""}{" "}
+                                  · {formatOptionalDateTime(fulfillment.fulfilledAt, storeTimezone)}
+                                </p>
+                                {fulfillment.trackingNumber ? (
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    Tracking: {fulfillment.trackingNumber}
+                                  </p>
+                                ) : null}
+                              </div>
+                            ))}
                           </>
                         ) : (
-                          <p className="text-sm text-muted-foreground">No shipments or fulfillment records yet.</p>
+                          <p className="text-sm text-muted-foreground">
+                            No shipments or fulfillment records yet.
+                          </p>
                         )}
                       </CardContent>
                     </Card>
@@ -1650,12 +2686,21 @@ export function OrdersTab() {
                     >
                       <div>
                         <h3 className="text-sm font-semibold">Status</h3>
-                        <p className="text-xs text-muted-foreground">Changing status sends the customer an order status email.</p>
+                        <p className="text-xs text-muted-foreground">
+                          Changing status sends the customer an order status email.
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label>Order status</Label>
-                        <Select value={statusForm.status || selectedOrder.status} onValueChange={(status) => setStatusForm((current) => ({ ...current, status }))}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                        <Select
+                          value={statusForm.status || selectedOrder.status}
+                          onValueChange={(status) =>
+                            setStatusForm((current) => ({ ...current, status }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="pending">Pending</SelectItem>
                             <SelectItem value="paid">Paid</SelectItem>
@@ -1667,9 +2712,19 @@ export function OrdersTab() {
                       </div>
                       <div className="space-y-2">
                         <Label>Add internal note</Label>
-                        <Textarea value={statusForm.notes} onChange={(event) => setStatusForm((current) => ({ ...current, notes: event.target.value }))} rows={3} />
+                        <Textarea
+                          value={statusForm.notes}
+                          onChange={(event) =>
+                            setStatusForm((current) => ({ ...current, notes: event.target.value }))
+                          }
+                          rows={3}
+                        />
                       </div>
-                      <Button type="submit" variant="outline" disabled={statusMutation.isPending || !statusForm.status}>
+                      <Button
+                        type="submit"
+                        variant="outline"
+                        disabled={statusMutation.isPending || !statusForm.status}
+                      >
                         <Save className="mr-2 h-4 w-4" />
                         Update order
                       </Button>
@@ -1678,7 +2733,9 @@ export function OrdersTab() {
                     <Card>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base">Internal notes</CardTitle>
-                        <CardDescription>Private order notes for admins and operators.</CardDescription>
+                        <CardDescription>
+                          Private order notes for admins and operators.
+                        </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         {(selectedOrder.internalNotes ?? []).length > 0 ? (
@@ -1686,12 +2743,16 @@ export function OrdersTab() {
                             <div key={note.id} className="rounded-lg border p-3">
                               <p className="whitespace-pre-wrap text-sm">{note.body}</p>
                               <p className="mt-2 text-xs text-muted-foreground">
-                                {formatOrderNoteAuthor(note)} · {formatOrderPlacedDateTime(note.createdAt, storeTimezone).date} · {formatOrderPlacedDateTime(note.createdAt, storeTimezone).time}
+                                {formatOrderNoteAuthor(note)} ·{" "}
+                                {formatOrderPlacedDateTime(note.createdAt, storeTimezone).date} ·{" "}
+                                {formatOrderPlacedDateTime(note.createdAt, storeTimezone).time}
                               </p>
                             </div>
                           ))
                         ) : (
-                          <p className="text-sm text-muted-foreground">No internal notes have been added yet.</p>
+                          <p className="text-sm text-muted-foreground">
+                            No internal notes have been added yet.
+                          </p>
                         )}
                       </CardContent>
                     </Card>
@@ -1705,37 +2766,92 @@ export function OrdersTab() {
                     >
                       <div>
                         <h3 className="text-sm font-semibold">Fulfillment</h3>
-                        <p className="text-xs text-muted-foreground">Creates a shipment, fulfillment record, and customer shipping email.</p>
+                        <p className="text-xs text-muted-foreground">
+                          Creates a shipment, fulfillment record, and customer shipping email.
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label>Fulfillment location</Label>
-                        <Select value={shipmentForm.locationId || "__none"} onValueChange={(locationId) => setShipmentForm((current) => ({ ...current, locationId: locationId === "__none" ? "" : locationId }))}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                        <Select
+                          value={shipmentForm.locationId || "__none"}
+                          onValueChange={(locationId) =>
+                            setShipmentForm((current) => ({
+                              ...current,
+                              locationId: locationId === "__none" ? "" : locationId,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="__none">No location</SelectItem>
-                            {locations.map((location) => <SelectItem key={location.id} value={location.id}>{location.name}</SelectItem>)}
+                            {locations.map((location) => (
+                              <SelectItem key={location.id} value={location.id}>
+                                {location.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div className="space-y-2">
                           <Label>Carrier</Label>
-                          <Input value={shipmentForm.carrier} onChange={(event) => setShipmentForm((current) => ({ ...current, carrier: event.target.value }))} placeholder="UPS" />
+                          <Input
+                            value={shipmentForm.carrier}
+                            onChange={(event) =>
+                              setShipmentForm((current) => ({
+                                ...current,
+                                carrier: event.target.value,
+                              }))
+                            }
+                            placeholder="UPS"
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label>Service</Label>
-                          <Input value={shipmentForm.serviceLevel} onChange={(event) => setShipmentForm((current) => ({ ...current, serviceLevel: event.target.value }))} placeholder="Ground" />
+                          <Input
+                            value={shipmentForm.serviceLevel}
+                            onChange={(event) =>
+                              setShipmentForm((current) => ({
+                                ...current,
+                                serviceLevel: event.target.value,
+                              }))
+                            }
+                            placeholder="Ground"
+                          />
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label>Tracking number</Label>
-                        <Input ref={trackingNumberInputRef} value={shipmentForm.trackingNumber} onChange={(event) => setShipmentForm((current) => ({ ...current, trackingNumber: event.target.value }))} />
+                        <Input
+                          ref={trackingNumberInputRef}
+                          value={shipmentForm.trackingNumber}
+                          onChange={(event) =>
+                            setShipmentForm((current) => ({
+                              ...current,
+                              trackingNumber: event.target.value,
+                            }))
+                          }
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Tracking URL</Label>
-                        <Input value={shipmentForm.trackingUrl} onChange={(event) => setShipmentForm((current) => ({ ...current, trackingUrl: event.target.value }))} placeholder="https://..." />
+                        <Input
+                          value={shipmentForm.trackingUrl}
+                          onChange={(event) =>
+                            setShipmentForm((current) => ({
+                              ...current,
+                              trackingUrl: event.target.value,
+                            }))
+                          }
+                          placeholder="https://..."
+                        />
                       </div>
-                      <Button type="submit" disabled={shipmentMutation.isPending || selectedOrder.items.length === 0}>
+                      <Button
+                        type="submit"
+                        disabled={shipmentMutation.isPending || selectedOrder.items.length === 0}
+                      >
                         <Save className="mr-2 h-4 w-4" />
                         Mark shipped
                       </Button>
@@ -1757,12 +2873,18 @@ export function OrdersTab() {
           )}
         </SheetContent>
       </Sheet>
-      <AlertDialog open={trackingPromptAction !== null} onOpenChange={(open) => { if (!open) setTrackingPromptAction(null); }}>
+      <AlertDialog
+        open={trackingPromptAction !== null}
+        onOpenChange={(open) => {
+          if (!open) setTrackingPromptAction(null);
+        }}
+      >
         <AlertDialogContent className="z-[1200]">
           <AlertDialogHeader>
             <AlertDialogTitle>Add tracking before marking shipped?</AlertDialogTitle>
             <AlertDialogDescription>
-              This order does not have tracking information yet. Would you like to add a tracking number before marking it as shipped?
+              This order does not have tracking information yet. Would you like to add a tracking
+              number before marking it as shipped?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1816,7 +2938,9 @@ export function ShippingTab() {
     isPrimary: false,
     active: true,
   });
-  const [providerCredentialForms, setProviderCredentialForms] = useState<Record<string, Record<string, string>>>({});
+  const [providerCredentialForms, setProviderCredentialForms] = useState<
+    Record<string, Record<string, string>>
+  >({});
 
   useEffect(() => {
     if (!rateForm.zoneId && zones[0]?.id) {
@@ -1824,35 +2948,38 @@ export function ShippingTab() {
     }
   }, [rateForm.zoneId, zones]);
 
-  const resetZoneForm = () => setZoneForm({
-    id: "",
-    name: "",
-    countries: "US",
-    states: "",
-    active: true,
-  });
+  const resetZoneForm = () =>
+    setZoneForm({
+      id: "",
+      name: "",
+      countries: "US",
+      states: "",
+      active: true,
+    });
 
-  const resetRateForm = () => setRateForm({
-    id: "",
-    zoneId: zones[0]?.id ?? "",
-    name: "",
-    description: "",
-    amount: "",
-    minOrderAmount: "",
-    maxOrderAmount: "",
-    active: true,
-  });
+  const resetRateForm = () =>
+    setRateForm({
+      id: "",
+      zoneId: zones[0]?.id ?? "",
+      name: "",
+      description: "",
+      amount: "",
+      minOrderAmount: "",
+      maxOrderAmount: "",
+      active: true,
+    });
 
-  const resetLocationForm = () => setLocationForm({
-    id: "",
-    name: "",
-    type: "merchant",
-    city: "",
-    state: "",
-    country: "US",
-    isPrimary: false,
-    active: true,
-  });
+  const resetLocationForm = () =>
+    setLocationForm({
+      id: "",
+      name: "",
+      type: "merchant",
+      city: "",
+      state: "",
+      country: "US",
+      isPrimary: false,
+      active: true,
+    });
 
   const zoneMutation = useMutation({
     mutationFn: async () => {
@@ -1871,11 +2998,12 @@ export function ShippingTab() {
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/zones"] });
       toast({ title: zoneForm.id ? "Shipping zone updated" : "Shipping zone created" });
     },
-    onError: (error) => toast({
-      title: "Shipping zone could not be saved",
-      description: error instanceof Error ? error.message : "Please review the zone details.",
-      variant: "destructive",
-    }),
+    onError: (error) =>
+      toast({
+        title: "Shipping zone could not be saved",
+        description: error instanceof Error ? error.message : "Please review the zone details.",
+        variant: "destructive",
+      }),
   });
   const rateMutation = useMutation({
     mutationFn: async () => {
@@ -1897,11 +3025,12 @@ export function ShippingTab() {
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/rates"] });
       toast({ title: rateForm.id ? "Shipping rate updated" : "Shipping rate created" });
     },
-    onError: (error) => toast({
-      title: "Shipping rate could not be saved",
-      description: error instanceof Error ? error.message : "Please review the rate details.",
-      variant: "destructive",
-    }),
+    onError: (error) =>
+      toast({
+        title: "Shipping rate could not be saved",
+        description: error instanceof Error ? error.message : "Please review the rate details.",
+        variant: "destructive",
+      }),
   });
   const locationMutation = useMutation({
     mutationFn: async () => {
@@ -1919,18 +3048,32 @@ export function ShippingTab() {
         : apiRequest("POST", "/api/admin/ecommerce/shipping/locations", payload);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/locations"] });
-      toast({ title: locationForm.id ? "Fulfillment location updated" : "Fulfillment location created" });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/admin/ecommerce/shipping/locations"],
+      });
+      toast({
+        title: locationForm.id ? "Fulfillment location updated" : "Fulfillment location created",
+      });
       resetLocationForm();
     },
-    onError: (error) => toast({
-      title: "Location could not be saved",
-      description: error instanceof Error ? error.message : "Please review the fulfillment location.",
-      variant: "destructive",
-    }),
+    onError: (error) =>
+      toast({
+        title: "Location could not be saved",
+        description:
+          error instanceof Error ? error.message : "Please review the fulfillment location.",
+        variant: "destructive",
+      }),
   });
   const providerMutation = useMutation({
-    mutationFn: async ({ provider, active, testMode }: { provider: ShippingProvider; active: boolean; testMode: boolean }) =>
+    mutationFn: async ({
+      provider,
+      active,
+      testMode,
+    }: {
+      provider: ShippingProvider;
+      active: boolean;
+      testMode: boolean;
+    }) =>
       apiRequest("PUT", `/api/admin/ecommerce/shipping/providers/${provider.provider}`, {
         displayName: provider.displayName,
         type: provider.type,
@@ -1940,31 +3083,40 @@ export function ShippingTab() {
         testMode,
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/providers"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/admin/ecommerce/shipping/providers"],
+      });
       toast({ title: "Shipping provider updated" });
     },
-    onError: (error) => toast({
-      title: "Shipping provider could not be updated",
-      description: error instanceof Error ? error.message : "Save provider credentials before enabling it.",
-      variant: "destructive",
-    }),
+    onError: (error) =>
+      toast({
+        title: "Shipping provider could not be updated",
+        description:
+          error instanceof Error ? error.message : "Save provider credentials before enabling it.",
+        variant: "destructive",
+      }),
   });
   const credentialMutation = useMutation({
-    mutationFn: async (provider: ShippingProvider) => apiRequest(
-      "PUT",
-      `/api/admin/ecommerce/shipping/providers/${provider.provider}/credentials`,
-      { credentials: providerCredentialForms[provider.provider] ?? {} },
-    ),
+    mutationFn: async (provider: ShippingProvider) =>
+      apiRequest(
+        "PUT",
+        `/api/admin/ecommerce/shipping/providers/${provider.provider}/credentials`,
+        { credentials: providerCredentialForms[provider.provider] ?? {} },
+      ),
     onSuccess: async (_response, provider) => {
-      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/shipping/providers"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/admin/ecommerce/shipping/providers"],
+      });
       setProviderCredentialForms((current) => ({ ...current, [provider.provider]: {} }));
       toast({ title: `${provider.displayName} credentials saved` });
     },
-    onError: (error) => toast({
-      title: "Credentials could not be saved",
-      description: error instanceof Error ? error.message : "Please review the provider credentials.",
-      variant: "destructive",
-    }),
+    onError: (error) =>
+      toast({
+        title: "Credentials could not be saved",
+        description:
+          error instanceof Error ? error.message : "Please review the provider credentials.",
+        variant: "destructive",
+      }),
   });
 
   const updateProviderCredential = (provider: string, key: string, value: string) => {
@@ -1977,11 +3129,14 @@ export function ShippingTab() {
     }));
   };
 
-  const groupedProviders = providers.reduce<Record<string, ShippingProvider[]>>((groups, provider) => {
-    const key = provider.type.replace(/_/g, " ");
-    groups[key] = [...(groups[key] ?? []), provider];
-    return groups;
-  }, {});
+  const groupedProviders = providers.reduce<Record<string, ShippingProvider[]>>(
+    (groups, provider) => {
+      const key = provider.type.replace(/_/g, " ");
+      groups[key] = [...(groups[key] ?? []), provider];
+      return groups;
+    },
+    {},
+  );
   const zoneMap = new Map(zones.map((zone) => [zone.id, zone]));
 
   return (
@@ -1993,7 +3148,9 @@ export function ShippingTab() {
               <Truck className="h-5 w-5" />
               {zoneForm.id ? "Edit shipping zone" : "Shipping zone"}
             </CardTitle>
-            <CardDescription>Define the countries and optional states a group of checkout rates applies to.</CardDescription>
+            <CardDescription>
+              Define the countries and optional states a group of checkout rates applies to.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -2007,7 +3164,9 @@ export function ShippingTab() {
                 <Label>Name</Label>
                 <Input
                   value={zoneForm.name}
-                  onChange={(event) => setZoneForm((current) => ({ ...current, name: event.target.value }))}
+                  onChange={(event) =>
+                    setZoneForm((current) => ({ ...current, name: event.target.value }))
+                  }
                   placeholder="United States"
                   required
                 />
@@ -2017,7 +3176,9 @@ export function ShippingTab() {
                   <Label>Countries</Label>
                   <Input
                     value={zoneForm.countries}
-                    onChange={(event) => setZoneForm((current) => ({ ...current, countries: event.target.value }))}
+                    onChange={(event) =>
+                      setZoneForm((current) => ({ ...current, countries: event.target.value }))
+                    }
                     placeholder="US, CA"
                   />
                 </div>
@@ -2025,13 +3186,18 @@ export function ShippingTab() {
                   <Label>States</Label>
                   <Input
                     value={zoneForm.states}
-                    onChange={(event) => setZoneForm((current) => ({ ...current, states: event.target.value }))}
+                    onChange={(event) =>
+                      setZoneForm((current) => ({ ...current, states: event.target.value }))
+                    }
                     placeholder="MI, OH"
                   />
                 </div>
               </div>
               <label className="flex items-center gap-3 rounded-lg border p-3">
-                <Switch checked={zoneForm.active} onCheckedChange={(active) => setZoneForm((current) => ({ ...current, active }))} />
+                <Switch
+                  checked={zoneForm.active}
+                  onCheckedChange={(active) => setZoneForm((current) => ({ ...current, active }))}
+                />
                 <span className="text-sm font-medium">Active</span>
               </label>
               <div className="flex flex-wrap gap-2">
@@ -2039,7 +3205,11 @@ export function ShippingTab() {
                   <Save className="mr-2 h-4 w-4" />
                   {zoneForm.id ? "Update zone" : "Create zone"}
                 </Button>
-                {zoneForm.id ? <Button type="button" variant="outline" onClick={resetZoneForm}>Cancel</Button> : null}
+                {zoneForm.id ? (
+                  <Button type="button" variant="outline" onClick={resetZoneForm}>
+                    Cancel
+                  </Button>
+                ) : null}
               </div>
             </form>
           </CardContent>
@@ -2051,7 +3221,9 @@ export function ShippingTab() {
               <Truck className="h-5 w-5" />
               Shipping zones
             </CardTitle>
-            <CardDescription>Active zones determine which shipping rates can be selected at checkout.</CardDescription>
+            <CardDescription>
+              Active zones determine which shipping rates can be selected at checkout.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {zones.length ? (
@@ -2072,13 +3244,15 @@ export function ShippingTab() {
                       role="button"
                       tabIndex={0}
                       className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      onClick={() => setZoneForm({
-                        id: zone.id,
-                        name: zone.name,
-                        countries: zone.countries.join(", "),
-                        states: zone.states.join(", "),
-                        active: zone.active,
-                      })}
+                      onClick={() =>
+                        setZoneForm({
+                          id: zone.id,
+                          name: zone.name,
+                          countries: zone.countries.join(", "),
+                          states: zone.states.join(", "),
+                          active: zone.active,
+                        })
+                      }
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
@@ -2093,9 +3267,15 @@ export function ShippingTab() {
                       }}
                     >
                       <TableCell className="font-medium">{zone.name}</TableCell>
-                      <TableCell>{zone.countries.length ? zone.countries.join(", ") : "All"}</TableCell>
+                      <TableCell>
+                        {zone.countries.length ? zone.countries.join(", ") : "All"}
+                      </TableCell>
                       <TableCell>{zone.states.length ? zone.states.join(", ") : "All"}</TableCell>
-                      <TableCell><Badge variant={zone.active ? "default" : "secondary"}>{zone.active ? "Active" : "Inactive"}</Badge></TableCell>
+                      <TableCell>
+                        <Badge variant={zone.active ? "default" : "secondary"}>
+                          {zone.active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           type="button"
@@ -2104,12 +3284,12 @@ export function ShippingTab() {
                           onClick={(event) => {
                             event.stopPropagation();
                             setZoneForm({
-                            id: zone.id,
-                            name: zone.name,
-                            countries: zone.countries.join(", "),
-                            states: zone.states.join(", "),
-                            active: zone.active,
-                          });
+                              id: zone.id,
+                              name: zone.name,
+                              countries: zone.countries.join(", "),
+                              states: zone.states.join(", "),
+                              active: zone.active,
+                            });
                           }}
                         >
                           <Pencil className="mr-2 h-4 w-4" />
@@ -2121,7 +3301,9 @@ export function ShippingTab() {
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-sm text-muted-foreground">No shipping zones have been added yet.</p>
+              <p className="text-sm text-muted-foreground">
+                No shipping zones have been added yet.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -2134,7 +3316,9 @@ export function ShippingTab() {
               <Truck className="h-5 w-5" />
               {rateForm.id ? "Edit shipping rate" : "Shipping rate"}
             </CardTitle>
-            <CardDescription>Add flat rates and optional order thresholds for checkout.</CardDescription>
+            <CardDescription>
+              Add flat rates and optional order thresholds for checkout.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -2150,44 +3334,103 @@ export function ShippingTab() {
                   value={rateForm.zoneId}
                   onValueChange={(zoneId) => setRateForm((current) => ({ ...current, zoneId }))}
                 >
-                  <SelectTrigger><SelectValue placeholder="Select a zone" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a zone" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {zones.map((zone) => <SelectItem key={zone.id} value={zone.id}>{zone.name}</SelectItem>)}
+                    {zones.map((zone) => (
+                      <SelectItem key={zone.id} value={zone.id}>
+                        {zone.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Name</Label>
-                <Input value={rateForm.name} onChange={(event) => setRateForm((current) => ({ ...current, name: event.target.value }))} placeholder="Standard shipping" required />
+                <Input
+                  value={rateForm.name}
+                  onChange={(event) =>
+                    setRateForm((current) => ({ ...current, name: event.target.value }))
+                  }
+                  placeholder="Standard shipping"
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label>Description</Label>
-                <Input value={rateForm.description} onChange={(event) => setRateForm((current) => ({ ...current, description: event.target.value }))} placeholder="3-5 business days" />
+                <Input
+                  value={rateForm.description}
+                  onChange={(event) =>
+                    setRateForm((current) => ({ ...current, description: event.target.value }))
+                  }
+                  placeholder="3-5 business days"
+                />
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label>Amount</Label>
-                  <Input type="number" min="0" step="0.01" value={rateForm.amount} onChange={(event) => setRateForm((current) => ({ ...current, amount: event.target.value }))} required />
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={rateForm.amount}
+                    onChange={(event) =>
+                      setRateForm((current) => ({ ...current, amount: event.target.value }))
+                    }
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Min order</Label>
-                  <Input type="number" min="0" step="0.01" value={rateForm.minOrderAmount} onChange={(event) => setRateForm((current) => ({ ...current, minOrderAmount: event.target.value }))} />
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={rateForm.minOrderAmount}
+                    onChange={(event) =>
+                      setRateForm((current) => ({ ...current, minOrderAmount: event.target.value }))
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Max order</Label>
-                  <Input type="number" min="0" step="0.01" value={rateForm.maxOrderAmount} onChange={(event) => setRateForm((current) => ({ ...current, maxOrderAmount: event.target.value }))} />
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={rateForm.maxOrderAmount}
+                    onChange={(event) =>
+                      setRateForm((current) => ({ ...current, maxOrderAmount: event.target.value }))
+                    }
+                  />
                 </div>
               </div>
               <label className="flex items-center gap-3 rounded-lg border p-3">
-                <Switch checked={rateForm.active} onCheckedChange={(active) => setRateForm((current) => ({ ...current, active }))} />
+                <Switch
+                  checked={rateForm.active}
+                  onCheckedChange={(active) => setRateForm((current) => ({ ...current, active }))}
+                />
                 <span className="text-sm font-medium">Active</span>
               </label>
               <div className="flex flex-wrap gap-2">
-                <Button type="submit" disabled={rateMutation.isPending || !rateForm.zoneId || !rateForm.name.trim() || !rateForm.amount.trim()}>
+                <Button
+                  type="submit"
+                  disabled={
+                    rateMutation.isPending ||
+                    !rateForm.zoneId ||
+                    !rateForm.name.trim() ||
+                    !rateForm.amount.trim()
+                  }
+                >
                   <Save className="mr-2 h-4 w-4" />
                   {rateForm.id ? "Update rate" : "Create rate"}
                 </Button>
-                {rateForm.id ? <Button type="button" variant="outline" onClick={resetRateForm}>Cancel</Button> : null}
+                {rateForm.id ? (
+                  <Button type="button" variant="outline" onClick={resetRateForm}>
+                    Cancel
+                  </Button>
+                ) : null}
               </div>
             </form>
           </CardContent>
@@ -2199,7 +3442,9 @@ export function ShippingTab() {
               <Truck className="h-5 w-5" />
               Shipping rates
             </CardTitle>
-            <CardDescription>These rates are returned to checkout when their zone and order thresholds match.</CardDescription>
+            <CardDescription>
+              These rates are returned to checkout when their zone and order thresholds match.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {rates.length ? (
@@ -2221,16 +3466,20 @@ export function ShippingTab() {
                       role="button"
                       tabIndex={0}
                       className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      onClick={() => setRateForm({
-                        id: rate.id,
-                        zoneId: rate.zoneId,
-                        name: rate.name,
-                        description: rate.description ?? "",
-                        amount: String(rate.amount / 100),
-                        minOrderAmount: rate.minOrderAmount == null ? "" : String(rate.minOrderAmount / 100),
-                        maxOrderAmount: rate.maxOrderAmount == null ? "" : String(rate.maxOrderAmount / 100),
-                        active: rate.active,
-                      })}
+                      onClick={() =>
+                        setRateForm({
+                          id: rate.id,
+                          zoneId: rate.zoneId,
+                          name: rate.name,
+                          description: rate.description ?? "",
+                          amount: String(rate.amount / 100),
+                          minOrderAmount:
+                            rate.minOrderAmount == null ? "" : String(rate.minOrderAmount / 100),
+                          maxOrderAmount:
+                            rate.maxOrderAmount == null ? "" : String(rate.maxOrderAmount / 100),
+                          active: rate.active,
+                        })
+                      }
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
@@ -2240,8 +3489,10 @@ export function ShippingTab() {
                             name: rate.name,
                             description: rate.description ?? "",
                             amount: String(rate.amount / 100),
-                            minOrderAmount: rate.minOrderAmount == null ? "" : String(rate.minOrderAmount / 100),
-                            maxOrderAmount: rate.maxOrderAmount == null ? "" : String(rate.maxOrderAmount / 100),
+                            minOrderAmount:
+                              rate.minOrderAmount == null ? "" : String(rate.minOrderAmount / 100),
+                            maxOrderAmount:
+                              rate.maxOrderAmount == null ? "" : String(rate.maxOrderAmount / 100),
                             active: rate.active,
                           });
                         }
@@ -2249,7 +3500,9 @@ export function ShippingTab() {
                     >
                       <TableCell>
                         <div className="font-medium">{rate.name}</div>
-                        {rate.description ? <div className="text-xs text-muted-foreground">{rate.description}</div> : null}
+                        {rate.description ? (
+                          <div className="text-xs text-muted-foreground">{rate.description}</div>
+                        ) : null}
                       </TableCell>
                       <TableCell>{zoneMap.get(rate.zoneId)?.name ?? "Missing zone"}</TableCell>
                       <TableCell>{formatMoney(rate.amount)}</TableCell>
@@ -2258,7 +3511,11 @@ export function ShippingTab() {
                           ? `${rate.minOrderAmount ? formatMoney(rate.minOrderAmount) : "$0.00"} - ${rate.maxOrderAmount ? formatMoney(rate.maxOrderAmount) : "No max"}`
                           : "Any order"}
                       </TableCell>
-                      <TableCell><Badge variant={rate.active ? "default" : "secondary"}>{rate.active ? "Active" : "Inactive"}</Badge></TableCell>
+                      <TableCell>
+                        <Badge variant={rate.active ? "default" : "secondary"}>
+                          {rate.active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           type="button"
@@ -2267,15 +3524,21 @@ export function ShippingTab() {
                           onClick={(event) => {
                             event.stopPropagation();
                             setRateForm({
-                            id: rate.id,
-                            zoneId: rate.zoneId,
-                            name: rate.name,
-                            description: rate.description ?? "",
-                            amount: String(rate.amount / 100),
-                            minOrderAmount: rate.minOrderAmount == null ? "" : String(rate.minOrderAmount / 100),
-                            maxOrderAmount: rate.maxOrderAmount == null ? "" : String(rate.maxOrderAmount / 100),
-                            active: rate.active,
-                          });
+                              id: rate.id,
+                              zoneId: rate.zoneId,
+                              name: rate.name,
+                              description: rate.description ?? "",
+                              amount: String(rate.amount / 100),
+                              minOrderAmount:
+                                rate.minOrderAmount == null
+                                  ? ""
+                                  : String(rate.minOrderAmount / 100),
+                              maxOrderAmount:
+                                rate.maxOrderAmount == null
+                                  ? ""
+                                  : String(rate.maxOrderAmount / 100),
+                              active: rate.active,
+                            });
                           }}
                         >
                           <Pencil className="mr-2 h-4 w-4" />
@@ -2287,7 +3550,9 @@ export function ShippingTab() {
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-sm text-muted-foreground">No shipping rates have been added yet.</p>
+              <p className="text-sm text-muted-foreground">
+                No shipping rates have been added yet.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -2300,7 +3565,9 @@ export function ShippingTab() {
               <Package className="h-5 w-5" />
               {locationForm.id ? "Edit location" : "Fulfillment location"}
             </CardTitle>
-            <CardDescription>Create merchant, store, warehouse, or future 3PL fulfillment locations.</CardDescription>
+            <CardDescription>
+              Create merchant, store, warehouse, or future 3PL fulfillment locations.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -2314,7 +3581,9 @@ export function ShippingTab() {
                 <Label>Name</Label>
                 <Input
                   value={locationForm.name}
-                  onChange={(event) => setLocationForm((current) => ({ ...current, name: event.target.value }))}
+                  onChange={(event) =>
+                    setLocationForm((current) => ({ ...current, name: event.target.value }))
+                  }
                   placeholder="Main warehouse"
                   required
                 />
@@ -2325,7 +3594,9 @@ export function ShippingTab() {
                   value={locationForm.type}
                   onValueChange={(type) => setLocationForm((current) => ({ ...current, type }))}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="merchant">Merchant</SelectItem>
                     <SelectItem value="store">Store</SelectItem>
@@ -2337,33 +3608,65 @@ export function ShippingTab() {
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-2 sm:col-span-1">
                   <Label>City</Label>
-                  <Input value={locationForm.city} onChange={(event) => setLocationForm((current) => ({ ...current, city: event.target.value }))} />
+                  <Input
+                    value={locationForm.city}
+                    onChange={(event) =>
+                      setLocationForm((current) => ({ ...current, city: event.target.value }))
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>State</Label>
-                  <Input value={locationForm.state} onChange={(event) => setLocationForm((current) => ({ ...current, state: event.target.value }))} />
+                  <Input
+                    value={locationForm.state}
+                    onChange={(event) =>
+                      setLocationForm((current) => ({ ...current, state: event.target.value }))
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Country</Label>
-                  <Input value={locationForm.country} onChange={(event) => setLocationForm((current) => ({ ...current, country: event.target.value }))} />
+                  <Input
+                    value={locationForm.country}
+                    onChange={(event) =>
+                      setLocationForm((current) => ({ ...current, country: event.target.value }))
+                    }
+                  />
                 </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="flex items-center gap-3 rounded-lg border p-3">
-                  <Switch checked={locationForm.isPrimary} onCheckedChange={(isPrimary) => setLocationForm((current) => ({ ...current, isPrimary }))} />
+                  <Switch
+                    checked={locationForm.isPrimary}
+                    onCheckedChange={(isPrimary) =>
+                      setLocationForm((current) => ({ ...current, isPrimary }))
+                    }
+                  />
                   <span className="text-sm font-medium">Primary location</span>
                 </label>
                 <label className="flex items-center gap-3 rounded-lg border p-3">
-                  <Switch checked={locationForm.active} onCheckedChange={(active) => setLocationForm((current) => ({ ...current, active }))} />
+                  <Switch
+                    checked={locationForm.active}
+                    onCheckedChange={(active) =>
+                      setLocationForm((current) => ({ ...current, active }))
+                    }
+                  />
                   <span className="text-sm font-medium">Active</span>
                 </label>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button type="submit" disabled={locationMutation.isPending || !locationForm.name.trim()}>
+                <Button
+                  type="submit"
+                  disabled={locationMutation.isPending || !locationForm.name.trim()}
+                >
                   <Save className="mr-2 h-4 w-4" />
                   {locationForm.id ? "Update location" : "Create location"}
                 </Button>
-                {locationForm.id ? <Button type="button" variant="outline" onClick={resetLocationForm}>Cancel</Button> : null}
+                {locationForm.id ? (
+                  <Button type="button" variant="outline" onClick={resetLocationForm}>
+                    Cancel
+                  </Button>
+                ) : null}
               </div>
             </form>
           </CardContent>
@@ -2375,7 +3678,10 @@ export function ShippingTab() {
               <Package className="h-5 w-5" />
               Fulfillment locations
             </CardTitle>
-            <CardDescription>Locations are the foundation for future warehouse routing, local delivery, split shipments, and 3PL workflows.</CardDescription>
+            <CardDescription>
+              Locations are the foundation for future warehouse routing, local delivery, split
+              shipments, and 3PL workflows.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {locations.length ? (
@@ -2396,16 +3702,18 @@ export function ShippingTab() {
                       role="button"
                       tabIndex={0}
                       className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      onClick={() => setLocationForm({
-                        id: location.id,
-                        name: location.name,
-                        type: location.type,
-                        city: location.city ?? "",
-                        state: location.state ?? "",
-                        country: location.country,
-                        isPrimary: location.isPrimary,
-                        active: location.active,
-                      })}
+                      onClick={() =>
+                        setLocationForm({
+                          id: location.id,
+                          name: location.name,
+                          type: location.type,
+                          city: location.city ?? "",
+                          state: location.state ?? "",
+                          country: location.country,
+                          isPrimary: location.isPrimary,
+                          active: location.active,
+                        })
+                      }
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
@@ -2423,8 +3731,14 @@ export function ShippingTab() {
                       }}
                     >
                       <TableCell className="font-medium">{location.name}</TableCell>
-                      <TableCell className="capitalize">{location.type.replace(/_/g, " ")}</TableCell>
-                      <TableCell>{[location.city, location.state, location.country].filter(Boolean).join(", ")}</TableCell>
+                      <TableCell className="capitalize">
+                        {location.type.replace(/_/g, " ")}
+                      </TableCell>
+                      <TableCell>
+                        {[location.city, location.state, location.country]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={location.active ? "default" : "secondary"}>
                           {location.isPrimary ? "Primary" : location.active ? "Active" : "Inactive"}
@@ -2438,15 +3752,15 @@ export function ShippingTab() {
                           onClick={(event) => {
                             event.stopPropagation();
                             setLocationForm({
-                            id: location.id,
-                            name: location.name,
-                            type: location.type,
-                            city: location.city ?? "",
-                            state: location.state ?? "",
-                            country: location.country,
-                            isPrimary: location.isPrimary,
-                            active: location.active,
-                          });
+                              id: location.id,
+                              name: location.name,
+                              type: location.type,
+                              city: location.city ?? "",
+                              state: location.state ?? "",
+                              country: location.country,
+                              isPrimary: location.isPrimary,
+                              active: location.active,
+                            });
                           }}
                         >
                           <Pencil className="mr-2 h-4 w-4" />
@@ -2458,7 +3772,9 @@ export function ShippingTab() {
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-sm text-muted-foreground">No fulfillment locations have been added yet.</p>
+              <p className="text-sm text-muted-foreground">
+                No fulfillment locations have been added yet.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -2470,7 +3786,10 @@ export function ShippingTab() {
             <Plug className="h-5 w-5" />
             Carrier and fulfillment providers
           </CardTitle>
-          <CardDescription>Provider connections are modeled separately from zones so checkout, labels, tracking, and fulfillment automation can share the same engine.</CardDescription>
+          <CardDescription>
+            Provider connections are modeled separately from zones so checkout, labels, tracking,
+            and fulfillment automation can share the same engine.
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-5">
           {Object.entries(groupedProviders).map(([group, groupProviders]) => (
@@ -2484,10 +3803,16 @@ export function ShippingTab() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="font-semibold">{provider.displayName}</div>
-                          <p className="mt-1 text-sm text-muted-foreground">{provider.recommendedFor}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {provider.recommendedFor}
+                          </p>
                         </div>
                         <Badge variant={provider.active ? "default" : "secondary"}>
-                          {provider.operational ? "Operational" : provider.active ? "Needs setup" : "Available"}
+                          {provider.operational
+                            ? "Operational"
+                            : provider.active
+                              ? "Needs setup"
+                              : "Available"}
                         </Badge>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -2502,11 +3827,13 @@ export function ShippingTab() {
                           <span className="font-medium">Enabled</span>
                           <Switch
                             checked={provider.active}
-                            onCheckedChange={(active) => providerMutation.mutate({
-                              provider,
-                              active,
-                              testMode: provider.testMode,
-                            })}
+                            onCheckedChange={(active) =>
+                              providerMutation.mutate({
+                                provider,
+                                active,
+                                testMode: provider.testMode,
+                              })
+                            }
                             disabled={activationBlocked || providerMutation.isPending}
                           />
                         </label>
@@ -2514,11 +3841,13 @@ export function ShippingTab() {
                           <span className="font-medium">Test mode</span>
                           <Switch
                             checked={provider.testMode}
-                            onCheckedChange={(testMode) => providerMutation.mutate({
-                              provider,
-                              active: provider.active,
-                              testMode,
-                            })}
+                            onCheckedChange={(testMode) =>
+                              providerMutation.mutate({
+                                provider,
+                                active: provider.active,
+                                testMode,
+                              })
+                            }
                             disabled={providerMutation.isPending}
                           />
                         </label>
@@ -2535,8 +3864,16 @@ export function ShippingTab() {
                               <Input
                                 key={field.key}
                                 type={field.secret ? "password" : "text"}
-                                value={providerCredentialForms[provider.provider]?.[field.key] ?? ""}
-                                onChange={(event) => updateProviderCredential(provider.provider, field.key, event.target.value)}
+                                value={
+                                  providerCredentialForms[provider.provider]?.[field.key] ?? ""
+                                }
+                                onChange={(event) =>
+                                  updateProviderCredential(
+                                    provider.provider,
+                                    field.key,
+                                    event.target.value,
+                                  )
+                                }
                                 placeholder={field.hasValue ? `${field.label} saved` : field.label}
                               />
                             ))}
@@ -2547,7 +3884,9 @@ export function ShippingTab() {
                               onClick={() => credentialMutation.mutate(provider)}
                               disabled={
                                 credentialMutation.isPending ||
-                                !Object.values(providerCredentialForms[provider.provider] ?? {}).some((value) => value.trim())
+                                !Object.values(
+                                  providerCredentialForms[provider.provider] ?? {},
+                                ).some((value) => value.trim())
                               }
                             >
                               <Save className="mr-2 h-4 w-4" />
@@ -2577,7 +3916,9 @@ export default function AdminEcommercePage() {
       <div className="space-y-6 p-6">
         <div>
           <h1 className="text-3xl font-semibold tracking-normal">Ecommerce</h1>
-          <p className="text-muted-foreground">Manage the storefront, checkout operations, fulfillment, and Stripe configuration.</p>
+          <p className="text-muted-foreground">
+            Manage the storefront, checkout operations, fulfillment, and Stripe configuration.
+          </p>
         </div>
         <Tabs value={activeView}>
           <TabsList className="flex h-auto flex-wrap justify-start">

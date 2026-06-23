@@ -60,11 +60,7 @@ import {
   Trash2,
   Pencil,
 } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { CmsPage, CmsPageRevision, CmsSidebar } from "@shared/schema";
 import { format } from "date-fns";
 import { PageBuilder } from "./builder/page-builder";
@@ -98,7 +94,10 @@ interface CmsPageRelationshipSummary {
 
 const editorSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  slug: z.string().min(1, "Slug is required").regex(/^[a-z0-9-/]+$/, "Lowercase letters, numbers, hyphens and slashes only"),
+  slug: z
+    .string()
+    .min(1, "Slug is required")
+    .regex(/^[a-z0-9-/]+$/, "Lowercase letters, numbers, hyphens and slashes only"),
   pageType: z.enum(["home", "about", "contact", "landing", "custom"]),
   template: z.enum(["full-width", "with-sidebar"]).default("full-width"),
   sidebarId: z.string().default(""),
@@ -143,7 +142,7 @@ async function getMutationErrorMessage(error: unknown, fallback: string): Promis
     "json" in error.response &&
     typeof error.response.json === "function"
   ) {
-    const body = await error.response.json().catch(() => null) as { error?: string } | null;
+    const body = (await error.response.json().catch(() => null)) as { error?: string } | null;
     return body?.error || fallback;
   }
   return error instanceof Error ? error.message : fallback;
@@ -160,7 +159,7 @@ export default function CmsPageEditorPage() {
   const slugManuallyEdited = useRef(false);
   const [builderContent, setBuilderContent] = useState<BuilderContent>(EMPTY_CONTENT);
   const [savedBuilderSnapshot, setSavedBuilderSnapshot] = useState(() =>
-    JSON.stringify(EMPTY_CONTENT)
+    JSON.stringify(EMPTY_CONTENT),
   );
   const [activeTab, setActiveTab] = useState("builder");
   const [templatePickerOpen, setTemplatePickerOpen] = useState(isNew);
@@ -168,13 +167,17 @@ export default function CmsPageEditorPage() {
 
   const { data: page, isLoading: pageLoading } = useQuery<CmsPage>({
     queryKey: ["/api/admin/cms/pages", id],
-    queryFn: () => fetch(`/api/admin/cms/pages/${id}`, { credentials: "include" }).then((r) => r.json()),
+    queryFn: () =>
+      fetch(`/api/admin/cms/pages/${id}`, { credentials: "include" }).then((r) => r.json()),
     enabled: !isNew,
   });
 
   const { data: revisions = [] } = useQuery<CmsPageRevision[]>({
     queryKey: ["/api/admin/cms/pages", id, "revisions"],
-    queryFn: () => fetch(`/api/admin/cms/pages/${id}/revisions`, { credentials: "include" }).then((r) => r.json()),
+    queryFn: () =>
+      fetch(`/api/admin/cms/pages/${id}/revisions`, { credentials: "include" }).then((r) =>
+        r.json(),
+      ),
     enabled: !isNew,
   });
 
@@ -184,7 +187,10 @@ export default function CmsPageEditorPage() {
 
   const { data: relationships } = useQuery<CmsPageRelationshipSummary>({
     queryKey: ["/api/admin/cms/pages", id, "relationships"],
-    queryFn: () => fetch(`/api/admin/cms/pages/${id}/relationships`, { credentials: "include" }).then((r) => r.json()),
+    queryFn: () =>
+      fetch(`/api/admin/cms/pages/${id}/relationships`, { credentials: "include" }).then((r) =>
+        r.json(),
+      ),
     enabled: !isNew,
   });
 
@@ -270,7 +276,7 @@ export default function CmsPageEditorPage() {
       setBuilderContent(content);
       setSavedBuilderSnapshot(JSON.stringify(content));
     },
-    [form]
+    [form],
   );
 
   const createMutation = useMutation({
@@ -298,13 +304,16 @@ export default function CmsPageEditorPage() {
           canonicalUrl: variables.canonicalUrl ?? "",
           noindex: variables.noindex ?? false,
         },
-        variables.content
+        variables.content,
       );
       saveState.markSaved();
       navTimerRef.current = setTimeout(() => navigate(`/admin/cms/pages/${created.id}`), 1500);
     },
     onError: async (err) => {
-      toast({ title: await getMutationErrorMessage(err, "Failed to create page"), variant: "destructive" });
+      toast({
+        title: await getMutationErrorMessage(err, "Failed to create page"),
+        variant: "destructive",
+      });
       saveState.markError();
     },
   });
@@ -335,12 +344,15 @@ export default function CmsPageEditorPage() {
           canonicalUrl: variables.canonicalUrl ?? "",
           noindex: variables.noindex ?? false,
         },
-        variables.content
+        variables.content,
       );
       saveState.markSaved();
     },
     onError: async (err) => {
-      toast({ title: await getMutationErrorMessage(err, "Failed to save page"), variant: "destructive" });
+      toast({
+        title: await getMutationErrorMessage(err, "Failed to save page"),
+        variant: "destructive",
+      });
       saveState.markError();
     },
   });
@@ -364,7 +376,12 @@ export default function CmsPageEditorPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id, "relationships"] });
       toast({ title: "Page unpublished — reverted to draft" });
     },
-    onError: (error: Error) => toast({ title: "Failed to unpublish page", description: error.message, variant: "destructive" }),
+    onError: (error: Error) =>
+      toast({
+        title: "Failed to unpublish page",
+        description: error.message,
+        variant: "destructive",
+      }),
   });
 
   const [scheduleDate, setScheduleDate] = useState("");
@@ -385,7 +402,8 @@ export default function CmsPageEditorPage() {
   });
 
   const removeMenuReferencesMutation = useMutation({
-    mutationFn: () => apiRequest("POST", `/api/admin/cms/pages/${id}/relationships/remove-menu-items`),
+    mutationFn: () =>
+      apiRequest("POST", `/api/admin/cms/pages/${id}/relationships/remove-menu-items`),
     onSuccess: async (res) => {
       const result = await res.json().catch(() => null);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/pages", id, "relationships"] });
@@ -399,7 +417,11 @@ export default function CmsPageEditorPage() {
       });
     },
     onError: (error: Error) => {
-      toast({ title: "Failed to remove references", description: error.message, variant: "destructive" });
+      toast({
+        title: "Failed to remove references",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -426,7 +448,11 @@ export default function CmsPageEditorPage() {
   const previewLinkMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("GET", `/api/admin/cms/pages/${id}/preview-link`);
-      return response.json() as Promise<{ previewUrl: string; previewPath: string; expiresInHours: number }>;
+      return response.json() as Promise<{
+        previewUrl: string;
+        previewPath: string;
+        expiresInHours: number;
+      }>;
     },
     onSuccess: (result) => {
       setDraftPreviewUrl(result.previewUrl);
@@ -481,7 +507,7 @@ export default function CmsPageEditorPage() {
   const isPending = createMutation.isPending || updateMutation.isPending;
   const builderDirty = useMemo(
     () => JSON.stringify(builderContent) !== savedBuilderSnapshot,
-    [builderContent, savedBuilderSnapshot]
+    [builderContent, savedBuilderSnapshot],
   );
   const saveState = useEditorSaveState({
     isDirty: form.formState.isDirty || builderDirty,
@@ -496,9 +522,9 @@ export default function CmsPageEditorPage() {
     (actionLabel: string, onProceed: () => void) =>
       unsavedChangesGuard.confirmIfDirty(
         onProceed,
-        `You have unsaved changes to this page. ${actionLabel} will use the last saved version, not your in-progress edits. Continue?`
+        `You have unsaved changes to this page. ${actionLabel} will use the last saved version, not your in-progress edits. Continue?`,
       ),
-    [unsavedChangesGuard]
+    [unsavedChangesGuard],
   );
 
   useEffect(() => {
@@ -533,7 +559,7 @@ export default function CmsPageEditorPage() {
       watchSeoTitle,
       watchStatus,
       watchTemplate,
-    ]
+    ],
   );
 
   const qualitySummary = useMemo(() => {
@@ -573,13 +599,12 @@ export default function CmsPageEditorPage() {
     );
   }
 
-
   return (
     <AdminSidebar>
       <div
         className={cn(
           "space-y-4 p-6 mx-auto",
-          activeTab === "builder" ? "max-w-[1800px]" : "max-w-6xl"
+          activeTab === "builder" ? "max-w-[1800px]" : "max-w-6xl",
         )}
       >
         {editorLock.summary ? (
@@ -606,11 +631,14 @@ export default function CmsPageEditorPage() {
             </Button>
             <div>
               <h1 className="text-xl font-heading font-semibold" data-testid="text-editor-title">
-                {isNew ? "Create Page" : (form.watch("title") || "Edit Page")}
+                {isNew ? "Create Page" : form.watch("title") || "Edit Page"}
               </h1>
               {!isNew && page && (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Last saved {page.updatedAt ? format(new Date(page.updatedAt), "MMM d, yyyy 'at' h:mm a") : "—"}
+                  Last saved{" "}
+                  {page.updatedAt
+                    ? format(new Date(page.updatedAt), "MMM d, yyyy 'at' h:mm a")
+                    : "—"}
                 </p>
               )}
             </div>
@@ -649,9 +677,14 @@ export default function CmsPageEditorPage() {
               </>
             )}
             {qualityIssues.length > 0 ? (
-              <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800" data-testid="badge-quality-issues">
+              <Badge
+                variant="outline"
+                className="border-amber-300 bg-amber-50 text-amber-800"
+                data-testid="badge-quality-issues"
+              >
                 <AlertTriangle className="mr-1 h-3 w-3" />
-                {qualitySummary.errors + qualitySummary.warnings} quality issue{qualitySummary.errors + qualitySummary.warnings === 1 ? "" : "s"}
+                {qualitySummary.errors + qualitySummary.warnings} quality issue
+                {qualitySummary.errors + qualitySummary.warnings === 1 ? "" : "s"}
               </Badge>
             ) : (
               <Badge className="bg-emerald-600 text-white" data-testid="badge-quality-ready">
@@ -760,10 +793,12 @@ export default function CmsPageEditorPage() {
                       <Button
                         className="w-full"
                         size="sm"
-                        disabled={!scheduleDate || scheduleMutation.isPending || editorLock.isReadOnly}
+                        disabled={
+                          !scheduleDate || scheduleMutation.isPending || editorLock.isReadOnly
+                        }
                         onClick={() =>
                           confirmPageStatusAction("Scheduling this page", () =>
-                            scheduleMutation.mutate(new Date(scheduleDate).toISOString())
+                            scheduleMutation.mutate(new Date(scheduleDate).toISOString()),
                           )
                         }
                         data-testid="button-confirm-schedule"
@@ -813,7 +848,13 @@ export default function CmsPageEditorPage() {
           </TabsList>
 
           <TabsContent value="builder" className="mt-0">
-            <div className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
+            <div
+              className={cn(
+                editorLock.hasLocking &&
+                  editorLock.isReadOnly &&
+                  "pointer-events-none select-none opacity-70",
+              )}
+            >
               <ErrorBoundary
                 name="page-builder-shell"
                 onError={(error, errorInfo) =>
@@ -834,7 +875,10 @@ export default function CmsPageEditorPage() {
                       The visual page builder hit a rendering problem.
                     </h3>
                     <p className="mt-2 text-sm text-amber-800/90 dark:text-amber-300/90">
-                      The page content is still loaded, but one builder surface failed to render. Reload after deploying this patch. If a single section preview is the issue, the builder will now isolate that section instead of blanking the whole editor.
+                      The page content is still loaded, but one builder surface failed to render.
+                      Reload after deploying this patch. If a single section preview is the issue,
+                      the builder will now isolate that section instead of blanking the whole
+                      editor.
                     </p>
                   </div>
                 }
@@ -845,7 +889,14 @@ export default function CmsPageEditorPage() {
           </TabsContent>
 
           <TabsContent value="settings" className="mt-0">
-            <div className={cn("grid grid-cols-1 lg:grid-cols-3 gap-6", editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
+            <div
+              className={cn(
+                "grid grid-cols-1 lg:grid-cols-3 gap-6",
+                editorLock.hasLocking &&
+                  editorLock.isReadOnly &&
+                  "pointer-events-none select-none opacity-70",
+              )}
+            >
               <div className="lg:col-span-2">
                 <Form {...form}>
                   <form className="space-y-6">
@@ -861,7 +912,11 @@ export default function CmsPageEditorPage() {
                             <FormItem>
                               <FormLabel>Title</FormLabel>
                               <FormControl>
-                                <Input placeholder="Page title" {...field} data-testid="input-title" />
+                                <Input
+                                  placeholder="Page title"
+                                  {...field}
+                                  data-testid="input-title"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -949,7 +1004,12 @@ export default function CmsPageEditorPage() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Assigned Sidebar</FormLabel>
-                                <Select onValueChange={(value) => field.onChange(value === "none" ? "" : value)} value={field.value || "none"}>
+                                <Select
+                                  onValueChange={(value) =>
+                                    field.onChange(value === "none" ? "" : value)
+                                  }
+                                  value={field.value || "none"}
+                                >
                                   <FormControl>
                                     <SelectTrigger data-testid="select-page-sidebar">
                                       <SelectValue placeholder="Select sidebar" />
@@ -990,7 +1050,9 @@ export default function CmsPageEditorPage() {
                                     <SelectItem value="draft">Draft</SelectItem>
                                     <SelectItem value="published">Published</SelectItem>
                                     {field.value === "scheduled" && (
-                                      <SelectItem value="scheduled" disabled>Scheduled</SelectItem>
+                                      <SelectItem value="scheduled" disabled>
+                                        Scheduled
+                                      </SelectItem>
                                     )}
                                     <SelectItem value="archived">Archived</SelectItem>
                                   </SelectContent>
@@ -1024,16 +1086,27 @@ export default function CmsPageEditorPage() {
                     </CardHeader>
                     <CardContent className="pt-0">
                       {menuReferenceCount === 0 ? (
-                        <p className="text-xs text-muted-foreground" data-testid="text-no-page-references">
+                        <p
+                          className="text-xs text-muted-foreground"
+                          data-testid="text-no-page-references"
+                        >
                           No navigation menu items currently reference this page.
                         </p>
                       ) : (
                         <div className="space-y-2" data-testid="list-page-references">
                           {relationships?.menuReferences.map((reference) => (
-                            <div key={`${reference.menuId}-${reference.itemId}`} className="rounded-md border p-2 text-xs">
+                            <div
+                              key={`${reference.menuId}-${reference.itemId}`}
+                              className="rounded-md border p-2 text-xs"
+                            >
                               <div className="flex items-center justify-between gap-2">
-                                <span className="font-medium">{reference.itemLabel || "(no label)"}</span>
-                                <Badge variant={reference.labelSource === "page" ? "default" : "outline"} className="text-[10px]">
+                                <span className="font-medium">
+                                  {reference.itemLabel || "(no label)"}
+                                </span>
+                                <Badge
+                                  variant={reference.labelSource === "page" ? "default" : "outline"}
+                                  className="text-[10px]"
+                                >
                                   {reference.labelSource === "page" ? "Synced" : "Custom"}
                                 </Badge>
                               </div>
@@ -1044,7 +1117,11 @@ export default function CmsPageEditorPage() {
                                 variant="ghost"
                                 size="sm"
                                 className="mt-2 h-7 px-2 text-xs"
-                                onClick={() => navigate(`/admin/cms/menus?editMenu=${reference.menuId}&item=${reference.itemId}`)}
+                                onClick={() =>
+                                  navigate(
+                                    `/admin/cms/menus?editMenu=${reference.menuId}&item=${reference.itemId}`,
+                                  )
+                                }
                                 data-testid={`button-edit-reference-menu-${reference.itemId}`}
                               >
                                 <Pencil className="mr-1.5 h-3.5 w-3.5" />
@@ -1057,7 +1134,9 @@ export default function CmsPageEditorPage() {
                             size="sm"
                             className="w-full"
                             onClick={removeMenuReferences}
-                            disabled={removeMenuReferencesMutation.isPending || editorLock.isReadOnly}
+                            disabled={
+                              removeMenuReferencesMutation.isPending || editorLock.isReadOnly
+                            }
                             data-testid="button-remove-page-menu-references"
                           >
                             {removeMenuReferencesMutation.isPending ? (
@@ -1084,12 +1163,20 @@ export default function CmsPageEditorPage() {
                       ) : (
                         <div className="space-y-2" data-testid="list-revisions">
                           {revisions.slice(0, 8).map((rev, idx) => (
-                            <div key={rev.id} className="text-xs border-b last:border-0 pb-2 last:pb-0" data-testid={`item-revision-${rev.id}`}>
+                            <div
+                              key={rev.id}
+                              className="text-xs border-b last:border-0 pb-2 last:pb-0"
+                              data-testid={`item-revision-${rev.id}`}
+                            >
                               <div className="flex items-center justify-between gap-1 flex-wrap">
                                 <div>
-                                  <span className="font-medium">{idx === 0 ? "Current" : `v${revisions.length - idx}`}</span>
+                                  <span className="font-medium">
+                                    {idx === 0 ? "Current" : `v${revisions.length - idx}`}
+                                  </span>
                                   <span className="text-muted-foreground ml-1.5">
-                                    {rev.createdAt ? format(new Date(rev.createdAt), "MMM d 'at' h:mm a") : "—"}
+                                    {rev.createdAt
+                                      ? format(new Date(rev.createdAt), "MMM d 'at' h:mm a")
+                                      : "—"}
                                   </span>
                                 </div>
                                 {idx > 0 && (
@@ -1114,12 +1201,16 @@ export default function CmsPageEditorPage() {
                                 )}
                               </div>
                               {rev.changeNote && (
-                                <p className="text-muted-foreground italic mt-0.5">{rev.changeNote}</p>
+                                <p className="text-muted-foreground italic mt-0.5">
+                                  {rev.changeNote}
+                                </p>
                               )}
                             </div>
                           ))}
                           {revisions.length > 8 && (
-                            <p className="text-xs text-muted-foreground">+{revisions.length - 8} older revisions</p>
+                            <p className="text-xs text-muted-foreground">
+                              +{revisions.length - 8} older revisions
+                            </p>
                           )}
                         </div>
                       )}
@@ -1139,7 +1230,14 @@ export default function CmsPageEditorPage() {
           </TabsContent>
 
           <TabsContent value="seo" className="mt-0">
-            <div className={cn("max-w-2xl space-y-5", editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
+            <div
+              className={cn(
+                "max-w-2xl space-y-5",
+                editorLock.hasLocking &&
+                  editorLock.isReadOnly &&
+                  "pointer-events-none select-none opacity-70",
+              )}
+            >
               <Form {...form}>
                 <form className="space-y-5">
                   <Card>
@@ -1156,17 +1254,30 @@ export default function CmsPageEditorPage() {
                         render={({ field }) => (
                           <FormItem>
                             <div className="flex items-center justify-between">
-                              <FormLabel>SEO Title <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
+                              <FormLabel>
+                                SEO Title{" "}
+                                <span className="text-muted-foreground font-normal text-xs">
+                                  (optional)
+                                </span>
+                              </FormLabel>
                               {(field.value ?? "").length > 0 && (
-                                <span className={`text-xs ${(field.value ?? "").length > 60 ? "text-amber-500" : (field.value ?? "").length < 20 ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400"}`}>
+                                <span
+                                  className={`text-xs ${(field.value ?? "").length > 60 ? "text-amber-500" : (field.value ?? "").length < 20 ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400"}`}
+                                >
                                   {(field.value ?? "").length}/60
                                 </span>
                               )}
                             </div>
                             <FormControl>
-                              <Input placeholder="Overrides page title in search results" {...field} data-testid="input-seo-title" />
+                              <Input
+                                placeholder="Overrides page title in search results"
+                                {...field}
+                                data-testid="input-seo-title"
+                              />
                             </FormControl>
-                            <FormDescription className="text-xs">If blank, the page title is used. Aim for 30–60 characters.</FormDescription>
+                            <FormDescription className="text-xs">
+                              If blank, the page title is used. Aim for 30–60 characters.
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -1178,7 +1289,9 @@ export default function CmsPageEditorPage() {
                           <FormItem>
                             <FormLabel>
                               Meta Description
-                              <span className={`ml-2 text-xs font-normal ${(field.value ?? "").length > 130 ? "text-amber-500" : "text-muted-foreground"}`}>
+                              <span
+                                className={`ml-2 text-xs font-normal ${(field.value ?? "").length > 130 ? "text-amber-500" : "text-muted-foreground"}`}
+                              >
                                 ({(field.value ?? "").length}/160)
                               </span>
                             </FormLabel>
@@ -1199,9 +1312,18 @@ export default function CmsPageEditorPage() {
                         name="seoKeywords"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Keywords <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
+                            <FormLabel>
+                              Keywords{" "}
+                              <span className="text-muted-foreground font-normal text-xs">
+                                (optional)
+                              </span>
+                            </FormLabel>
                             <FormControl>
-                              <Input placeholder="comma, separated, keywords" {...field} data-testid="input-seo-keywords" />
+                              <Input
+                                placeholder="comma, separated, keywords"
+                                {...field}
+                                data-testid="input-seo-keywords"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1212,12 +1334,23 @@ export default function CmsPageEditorPage() {
                         name="canonicalUrl"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Canonical URL <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
+                            <FormLabel>
+                              Canonical URL{" "}
+                              <span className="text-muted-foreground font-normal text-xs">
+                                (optional)
+                              </span>
+                            </FormLabel>
                             <FormControl>
-                              <Input placeholder="https://coreplatform.com/about" autoPrependHttps {...field} data-testid="input-canonical-url" />
+                              <Input
+                                placeholder="https://coreplatform.com/about"
+                                autoPrependHttps
+                                {...field}
+                                data-testid="input-canonical-url"
+                              />
                             </FormControl>
                             <FormDescription className="text-xs">
-                              Override the canonical link tag. Leave blank to auto-generate from the page slug.
+                              Override the canonical link tag. Leave blank to auto-generate from the
+                              page slug.
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -1264,7 +1397,12 @@ export default function CmsPageEditorPage() {
                         name="ogImageUrl"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Open Graph Image <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
+                            <FormLabel>
+                              Open Graph Image{" "}
+                              <span className="text-muted-foreground font-normal text-xs">
+                                (optional)
+                              </span>
+                            </FormLabel>
                             <CmsImageUpload
                               value={field.value ?? ""}
                               onChange={field.onChange}
@@ -1305,7 +1443,14 @@ export default function CmsPageEditorPage() {
           </TabsContent>
 
           <TabsContent value="quality" className="mt-0">
-            <div className={cn("grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]", editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
+            <div
+              className={cn(
+                "grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]",
+                editorLock.hasLocking &&
+                  editorLock.isReadOnly &&
+                  "pointer-events-none select-none opacity-70",
+              )}
+            >
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Publication Checklist</CardTitle>
@@ -1318,7 +1463,8 @@ export default function CmsPageEditorPage() {
                         This page looks ready for publishing
                       </div>
                       <p className="mt-2 text-sm">
-                        We did not detect any obvious content, SEO, or structural issues in the current draft.
+                        We did not detect any obvious content, SEO, or structural issues in the
+                        current draft.
                       </p>
                     </div>
                   ) : (
@@ -1330,15 +1476,19 @@ export default function CmsPageEditorPage() {
                             "rounded-xl border p-4",
                             issue.severity === "error" && "border-red-200 bg-red-50",
                             issue.severity === "warning" && "border-amber-200 bg-amber-50",
-                            issue.severity === "info" && "border-blue-200 bg-blue-50"
+                            issue.severity === "info" && "border-blue-200 bg-blue-50",
                           )}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <p className="font-medium text-sm">{issue.title}</p>
-                              <p className="mt-1 text-sm text-muted-foreground">{issue.description}</p>
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {issue.description}
+                              </p>
                             </div>
-                            <Badge variant="outline" className="capitalize">{issue.severity}</Badge>
+                            <Badge variant="outline" className="capitalize">
+                              {issue.severity}
+                            </Badge>
                           </div>
                           <div className="mt-3">
                             <Button
@@ -1348,7 +1498,12 @@ export default function CmsPageEditorPage() {
                               className="h-7 px-2 text-xs"
                               onClick={() => setActiveTab(issue.tab)}
                             >
-                              Open {issue.tab === "builder" ? "Builder" : issue.tab === "seo" ? "SEO" : "Settings"}
+                              Open{" "}
+                              {issue.tab === "builder"
+                                ? "Builder"
+                                : issue.tab === "seo"
+                                  ? "SEO"
+                                  : "Settings"}
                             </Button>
                           </div>
                         </div>
@@ -1411,7 +1566,8 @@ export default function CmsPageEditorPage() {
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                      Preview links open the real frontend renderer with the current saved draft, so editors can review layout and content before publishing.
+                      Preview links open the real frontend renderer with the current saved draft, so
+                      editors can review layout and content before publishing.
                     </p>
                   </CardContent>
                 </Card>

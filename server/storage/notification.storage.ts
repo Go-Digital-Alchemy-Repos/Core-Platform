@@ -49,10 +49,7 @@ export class NotificationStorage {
   }
 
   async markAllRead(userId: string): Promise<void> {
-    await db
-      .update(notifications)
-      .set({ isRead: true })
-      .where(eq(notifications.userId, userId));
+    await db.update(notifications).set({ isRead: true }).where(eq(notifications.userId, userId));
   }
 
   async getPreferences(userId: string): Promise<NotificationPreferences> {
@@ -70,7 +67,7 @@ export class NotificationStorage {
 
   async updatePreferences(
     userId: string,
-    prefs: { emailNewMessage?: boolean; inAppNewMessage?: boolean }
+    prefs: { emailNewMessage?: boolean; inAppNewMessage?: boolean },
   ): Promise<NotificationPreferences> {
     await db
       .insert(notificationPreferences)

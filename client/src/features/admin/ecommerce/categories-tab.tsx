@@ -8,9 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -20,7 +33,9 @@ import { slugify } from "./ecommerce-page.utils";
 
 export function CategoriesTab() {
   const { toast } = useToast();
-  const { data: categories = [] } = useQuery<Category[]>({ queryKey: ["/api/admin/ecommerce/categories"] });
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/admin/ecommerce/categories"],
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [categorySearch, setCategorySearch] = useState("");
   const [categoryStatusFilter, setCategoryStatusFilter] = useState("all");
@@ -70,7 +85,9 @@ export function CategoriesTab() {
       }
     };
     visit(childrenByParent.get("root") ?? [], 0);
-    const orphaned = categories.filter((category) => category.parentId && !categoryMap.has(category.parentId));
+    const orphaned = categories.filter(
+      (category) => category.parentId && !categoryMap.has(category.parentId),
+    );
     visit(orphaned, 0);
     return rows;
   })();
@@ -80,13 +97,12 @@ export function CategoriesTab() {
 
   const categorySearchTerm = categorySearch.trim().toLowerCase();
   const visibleCategories = flattenedCategories.filter((category) => {
-    const parentName = category.parentId ? categoryMap.get(category.parentId)?.name ?? "" : "";
-    const matchesSearch = !categorySearchTerm || [
-      category.name,
-      category.slug,
-      category.description ?? "",
-      parentName,
-    ].some((value) => value.toLowerCase().includes(categorySearchTerm));
+    const parentName = category.parentId ? (categoryMap.get(category.parentId)?.name ?? "") : "";
+    const matchesSearch =
+      !categorySearchTerm ||
+      [category.name, category.slug, category.description ?? "", parentName].some((value) =>
+        value.toLowerCase().includes(categorySearchTerm),
+      );
     const matchesStatus =
       categoryStatusFilter === "all" ||
       (categoryStatusFilter === "active" && category.active) ||
@@ -140,7 +156,9 @@ export function CategoriesTab() {
         active: form.active,
       };
       const method = editingId ? "PUT" : "POST";
-      const url = editingId ? `/api/admin/ecommerce/categories/${editingId}` : "/api/admin/ecommerce/categories";
+      const url = editingId
+        ? `/api/admin/ecommerce/categories/${editingId}`
+        : "/api/admin/ecommerce/categories";
       return apiRequest(method, url, payload);
     },
     onSuccess: async () => {
@@ -158,7 +176,8 @@ export function CategoriesTab() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (categoryId: string) => apiRequest("DELETE", `/api/admin/ecommerce/categories/${categoryId}`),
+    mutationFn: async (categoryId: string) =>
+      apiRequest("DELETE", `/api/admin/ecommerce/categories/${categoryId}`),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/categories"] });
       toast({ title: "Category deactivated" });
@@ -179,7 +198,9 @@ export function CategoriesTab() {
             <FolderTree className="h-5 w-5" />
             {editingId ? "Edit category" : "Category editor"}
           </CardTitle>
-          <CardDescription>Create parent categories and sub-categories for product browsing.</CardDescription>
+          <CardDescription>
+            Create parent categories and sub-categories for product browsing.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={submit} className="grid gap-4">
@@ -187,7 +208,9 @@ export function CategoriesTab() {
               <Label>Name</Label>
               <Input
                 value={form.name}
-                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, name: event.target.value }))
+                }
                 placeholder="Guides & Workbooks"
                 required
               />
@@ -196,7 +219,9 @@ export function CategoriesTab() {
               <Label>Slug</Label>
               <Input
                 value={form.slug}
-                onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, slug: event.target.value }))
+                }
                 placeholder={slugify(form.name) || "guides-workbooks"}
               />
             </div>
@@ -228,7 +253,9 @@ export function CategoriesTab() {
               <Label>Description</Label>
               <Textarea
                 value={form.description}
-                onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, description: event.target.value }))
+                }
                 rows={3}
               />
             </div>
@@ -245,7 +272,9 @@ export function CategoriesTab() {
                 <Input
                   type="number"
                   value={form.sortOrder}
-                  onChange={(event) => setForm((current) => ({ ...current, sortOrder: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, sortOrder: event.target.value }))
+                  }
                 />
               </div>
               <div className="flex items-center gap-3 pt-7">
@@ -276,7 +305,9 @@ export function CategoriesTab() {
             <Tag className="h-5 w-5" />
             Categories
           </CardTitle>
-          <CardDescription>Edit existing categories or add child categories under any parent.</CardDescription>
+          <CardDescription>
+            Edit existing categories or add child categories under any parent.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-3">
@@ -327,61 +358,88 @@ export function CategoriesTab() {
             <TableBody>
               {visibleCategories.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                  <TableCell
+                    colSpan={5}
+                    className="py-10 text-center text-sm text-muted-foreground"
+                  >
                     No categories match the current filters.
                   </TableCell>
                 </TableRow>
-              ) : visibleCategories.map((category) => (
-                <TableRow
-                  key={category.id}
-                  role="button"
-                  tabIndex={0}
-                  className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  onClick={() => openEdit(category)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      openEdit(category);
-                    }
-                  }}
-                >
-                  <TableCell className="font-medium">
-                    <span style={{ paddingLeft: `${category.depth * 1.25}rem` }}>{category.name}</span>
-                  </TableCell>
-                  <TableCell>{category.slug}</TableCell>
-                  <TableCell>{category.parentId ? categoryMap.get(category.parentId)?.name ?? "Missing parent" : "-"}</TableCell>
-                  <TableCell>
-                    <Badge variant={category.active ? "default" : "secondary"}>
-                      {category.active ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={(event) => { event.stopPropagation(); startSubcategory(category.id); }}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Sub
-                      </Button>
-                      <Button type="button" variant="outline" size="sm" onClick={(event) => { event.stopPropagation(); openEdit(category); }}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Edit
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          deleteMutation.mutate(category.id);
-                        }}
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Deactivate
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              ) : (
+                visibleCategories.map((category) => (
+                  <TableRow
+                    key={category.id}
+                    role="button"
+                    tabIndex={0}
+                    className="cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    onClick={() => openEdit(category)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openEdit(category);
+                      }
+                    }}
+                  >
+                    <TableCell className="font-medium">
+                      <span style={{ paddingLeft: `${category.depth * 1.25}rem` }}>
+                        {category.name}
+                      </span>
+                    </TableCell>
+                    <TableCell>{category.slug}</TableCell>
+                    <TableCell>
+                      {category.parentId
+                        ? (categoryMap.get(category.parentId)?.name ?? "Missing parent")
+                        : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={category.active ? "default" : "secondary"}>
+                        {category.active ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            startSubcategory(category.id);
+                          }}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Sub
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openEdit(category);
+                          }}
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            deleteMutation.mutate(category.id);
+                          }}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Deactivate
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -389,4 +447,3 @@ export function CategoriesTab() {
     </div>
   );
 }
-

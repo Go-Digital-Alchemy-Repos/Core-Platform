@@ -87,7 +87,7 @@ vi.mock("@/components/ui/popover", () => {
       return React.createElement(
         PopoverContext.Provider,
         { value: { open: currentOpen, setOpen } },
-        children
+        children,
       );
     },
     PopoverTrigger: ({
@@ -120,7 +120,8 @@ vi.mock("@/components/shared/seo-preview", () => ({
 }));
 
 vi.mock("@/components/shared/structured-data-status", () => ({
-  StructuredDataStatus: () => React.createElement("div", { "data-testid": "structured-data-status" }),
+  StructuredDataStatus: () =>
+    React.createElement("div", { "data-testid": "structured-data-status" }),
 }));
 
 vi.mock("@/features/admin/cms/components/cms-image-upload", () => ({
@@ -212,15 +213,20 @@ describe("CmsBlogEditorPage", () => {
     );
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () =>
-        new Response(JSON.stringify({ ok: true }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        })
-      ) as typeof fetch
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+      ) as typeof fetch,
     );
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -256,7 +262,9 @@ describe("CmsBlogEditorPage", () => {
       guardArgs.onConflict();
     });
 
-    const saveButton = container.querySelector('[data-testid="button-save-post"]') as HTMLButtonElement | null;
+    const saveButton = container.querySelector(
+      '[data-testid="button-save-post"]',
+    ) as HTMLButtonElement | null;
     expect(saveButton).not.toBeNull();
     expect(saveButton?.disabled).toBe(true);
     expect(navigateMock).toHaveBeenCalledWith("/admin/cms/blog");
@@ -270,7 +278,9 @@ describe("CmsBlogEditorPage", () => {
       root!.render(React.createElement(CmsBlogEditorPage));
     });
 
-    const saveButton = container.querySelector('[data-testid="button-save-post"]') as HTMLButtonElement | null;
+    const saveButton = container.querySelector(
+      '[data-testid="button-save-post"]',
+    ) as HTMLButtonElement | null;
     expect(saveButton).not.toBeNull();
 
     await act(async () => {
@@ -283,7 +293,7 @@ describe("CmsBlogEditorPage", () => {
         title: "Latest Insights",
         slug: "latest-insights",
         authorName: "Admin",
-      })
+      }),
     );
   });
 
@@ -296,7 +306,9 @@ describe("CmsBlogEditorPage", () => {
       root!.render(React.createElement(CmsBlogEditorPage));
     });
 
-    const titleInput = container.querySelector('[data-testid="input-post-title"]') as HTMLInputElement | null;
+    const titleInput = container.querySelector(
+      '[data-testid="input-post-title"]',
+    ) as HTMLInputElement | null;
     expect(titleInput).not.toBeNull();
 
     await act(async () => {
@@ -307,7 +319,7 @@ describe("CmsBlogEditorPage", () => {
     });
 
     const openScheduleButton = container.querySelector(
-      '[data-testid="button-open-blog-schedule"]'
+      '[data-testid="button-open-blog-schedule"]',
     ) as HTMLButtonElement | null;
     expect(openScheduleButton).not.toBeNull();
 
@@ -316,7 +328,7 @@ describe("CmsBlogEditorPage", () => {
     });
 
     const scheduleInput = document.body.querySelector(
-      '[data-testid="input-blog-schedule-date"]'
+      '[data-testid="input-blog-schedule-date"]',
     ) as HTMLInputElement | null;
     expect(scheduleInput).not.toBeNull();
 
@@ -328,7 +340,7 @@ describe("CmsBlogEditorPage", () => {
     });
 
     const confirmScheduleButton = document.body.querySelector(
-      '[data-testid="button-confirm-blog-schedule"]'
+      '[data-testid="button-confirm-blog-schedule"]',
     ) as HTMLButtonElement | null;
     expect(confirmScheduleButton).not.toBeNull();
     expect(confirmScheduleButton?.disabled).toBe(false);
@@ -339,7 +351,7 @@ describe("CmsBlogEditorPage", () => {
 
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(document.body.textContent).toContain(
-      "You have unsaved changes to this post. Scheduling this post will use the last saved version, not your in-progress edits. Continue?"
+      "You have unsaved changes to this post. Scheduling this post will use the last saved version, not your in-progress edits. Continue?",
     );
     const keepEditingButton = [...document.body.querySelectorAll("button")].find((button) =>
       button.textContent?.includes("Keep editing"),

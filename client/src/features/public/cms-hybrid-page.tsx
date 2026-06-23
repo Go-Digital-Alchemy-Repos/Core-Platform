@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import type { BlockInstance, BuilderContent } from "@/features/admin/cms/builder/block-registry";
 import type { CmsPage, SeoSettings } from "@shared/schema";
 import { JsonLd } from "@/components/shared/json-ld";
+import { CarolinaLayout } from "@/features/carolina-public/carolina-layout";
 import {
   buildOrganizationLd,
   buildBreadcrumbLd,
@@ -103,9 +104,9 @@ function CmsPageSeo({ page, globalSeo }: { page: CmsPage; globalSeo?: SeoSetting
   useEffect(() => {
     const prevTitle = document.title;
     const effectiveTitle = page.seoTitle || page.title;
-    const titleSuffix = globalSeo?.titleSuffix ?? " | Core Platform";
-    const effectiveDescription =
-      page.seoDescription || globalSeo?.defaultMetaDescription || "";
+    const titleSuffix =
+      page.template === "carolina" ? "" : (globalSeo?.titleSuffix ?? " | Core Platform");
+    const effectiveDescription = page.seoDescription || globalSeo?.defaultMetaDescription || "";
     const effectiveOgImage = page.ogImageUrl || globalSeo?.defaultOgImageUrl || "";
     const origin =
       globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
@@ -215,61 +216,79 @@ export function CmsPageView({ page, globalSeo, previewLabel }: CmsPageViewProps)
   });
 
   const blocks = parseCmsContent(page.content);
-  const showSidebar = page.template === "with-sidebar" && Boolean(page.sidebarId || page.slug === "insights");
+  const showSidebar =
+    page.template === "with-sidebar" && Boolean(page.sidebarId || page.slug === "insights");
   const useDefaultSidebar = !page.sidebarId && page.slug === "insights";
   const heroBlocks = showSidebar && blocks[0] && /hero/i.test(blocks[0].type) ? [blocks[0]] : [];
   const contentBlocks = heroBlocks.length > 0 ? blocks.slice(1) : blocks;
 
+  const LayoutComponent = page.template === "carolina" ? CarolinaLayout : DefaultCmsLayout;
+
   return (
-    <div className="min-h-screen flex flex-col" data-testid="cms-public-page">
+    <LayoutComponent>
       <CmsPageSeo page={page} globalSeo={globalSeo} />
       {previewLabel ? (
         <div className="border-b border-primary/20 bg-primary/10 px-4 py-2 text-center text-sm font-medium text-primary">
           {previewLabel}
         </div>
       ) : null}
-      <Navbar />
-      <main className="flex-1">
-        {blocks.length > 0 ? (
-          showSidebar ? (
-            <>
-              {heroBlocks.length > 0 && <PublicPageRenderer blocks={heroBlocks} />}
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-                <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
-                  <div className="space-y-8" data-testid="cms-page-main-with-sidebar">
-                    {contentBlocks.map((block) => (
-                      <PublicBlockRenderer key={block.id} block={block} />
-                    ))}
-                  </div>
-                  <PublicSidebar sidebarId={page.sidebarId} useDefault={useDefaultSidebar} />
+      {blocks.length > 0 ? (
+        showSidebar ? (
+          <>
+            {heroBlocks.length > 0 && <PublicPageRenderer blocks={heroBlocks} />}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+              <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
+                <div className="space-y-8" data-testid="cms-page-main-with-sidebar">
+                  {contentBlocks.map((block) => (
+                    <PublicBlockRenderer key={block.id} block={block} />
+                  ))}
                 </div>
+                <PublicSidebar sidebarId={page.sidebarId} useDefault={useDefaultSidebar} />
               </div>
-            </>
-          ) : (
-            <PublicPageRenderer blocks={blocks} />
-          )
+            </div>
+          </>
         ) : (
-          <div className="max-w-4xl mx-auto px-4 py-16">
-            <h1 className="text-3xl font-heading font-semibold">{page.title}</h1>
-          </div>
-        )}
-      </main>
+          <PublicPageRenderer blocks={blocks} />
+        )
+      ) : (
+        <div className="max-w-4xl mx-auto px-4 py-16">
+          <h1 className="text-3xl font-heading font-semibold">{page.title}</h1>
+        </div>
+      )}
+    </LayoutComponent>
+  );
+}
+
+function DefaultCmsLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen flex flex-col" data-testid="cms-public-page">
+      <Navbar />
+      <main className="flex-1">{children}</main>
       <Footer />
     </div>
   );
 }
 
 export function CmsHybridPage({ slug, fallback, enabled = true }: CmsHybridPageProps) {
-  const { data: page, isLoading, error } = useQuery<CmsPage>({
+  const {
+    data: page,
+    isLoading,
+    error,
+  } = useQuery<CmsPage>({
     queryKey: ["/api/cms/pages/by-slug", slug],
     queryFn: async () => {
-      const res = await fetch(`/api/cms/pages/by-slug/${slug}`, { credentials: "include" });
+      const res = await fetch(`/api/cms/pages/by-slug/${encodeURIComponent(slug)}`, {
+        credentials: "include",
+      });
       if (res.status === 404) {
         throw new CmsNotFoundError(slug);
       }
       if (res.status === 401 || res.status === 403) {
         const payload = await res.json().catch(() => ({}));
-        throw new CmsMembershipAccessError(res.status, typeof payload.teaser === "string" ? payload.teaser : null);
+        throw new CmsMembershipAccessError(
+          res.status,
+          typeof payload.teaser === "string" ? payload.teaser : null,
+        );
       }
       if (!res.ok) {
         throw new Error(`CMS fetch failed: ${res.status} ${res.statusText}`);
@@ -309,7 +328,10 @@ export function CmsHybridPage({ slug, fallback, enabled = true }: CmsHybridPageP
       return <MembershipRestrictedPage status={error.status} teaser={error.teaser} />;
     }
     if (import.meta.env.DEV && !(error instanceof CmsNotFoundError)) {
-      console.warn(`[CmsHybridPage] Transient error for slug "${slug}", showing fallback:`, error.message);
+      console.warn(
+        `[CmsHybridPage] Transient error for slug "${slug}", showing fallback:`,
+        error.message,
+      );
     }
     return <>{fallback}</>;
   }

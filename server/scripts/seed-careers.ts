@@ -4,10 +4,7 @@ import { ensureSystemCmsPages } from "../services/system-cms-pages.service";
 
 loadLocalEnv();
 
-Promise.all([
-  ensureSystemCmsPages(),
-  ensureSystemCareers(),
-])
+Promise.all([ensureSystemCmsPages(), ensureSystemCareers()])
   .then(() => {
     console.log("Career Center CMS page and seed jobs ensured.");
   })

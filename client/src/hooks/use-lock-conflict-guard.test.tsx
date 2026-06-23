@@ -52,8 +52,12 @@ describe("useLockConflictGuard", () => {
 
   beforeEach(() => {
     toastMock.mockReset();
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -92,7 +96,8 @@ describe("useLockConflictGuard", () => {
     expect(toastMock).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Page already checked out",
-        description: "Alex Admin is already editing this page. Please try again after they leave the editor or the lock expires.",
+        description:
+          "Alex Admin is already editing this page. Please try again after they leave the editor or the lock expires.",
         variant: "destructive",
       }),
     );

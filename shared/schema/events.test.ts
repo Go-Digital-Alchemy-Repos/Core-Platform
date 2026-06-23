@@ -47,7 +47,7 @@ describe("event flexibility constants", () => {
         transitInfo: "One block from DASH bus service.",
         arrivalNotes: "Check in at the front desk.",
         isVirtual: false,
-      })
+      }),
     ).toMatchObject({
       name: "Main Training Room",
       slug: "main-training-room",
@@ -60,7 +60,7 @@ describe("event flexibility constants", () => {
         name: "Education Team",
         slug: "education-team",
         email: "events@example.com",
-      })
+      }),
     ).toMatchObject({
       name: "Education Team",
       slug: "education-team",

@@ -12,7 +12,7 @@ export class AppError extends Error {
 }
 
 export function asyncHandler(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>,
 ): RequestHandler {
   return (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
@@ -60,7 +60,9 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
     const message =
       status >= 500 && isProduction
         ? "Internal Server Error"
-        : err instanceof Error ? err.message : "Internal Server Error";
+        : err instanceof Error
+          ? err.message
+          : "Internal Server Error";
 
     res.status(status).json({ message });
   }

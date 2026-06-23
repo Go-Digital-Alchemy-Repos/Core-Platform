@@ -5,7 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetBody, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import {
   ECOMMERCE_INTEGRATION_CATEGORIES,
@@ -60,7 +67,9 @@ function hasSavedIntegrationSettings(config: IntegrationConfig, settings: Settin
 function getEcommerceIntegrationLibrary(): IntegrationConfig[] {
   return INTEGRATIONS.filter((config) => {
     if (ECOMMERCE_INTEGRATION_CATEGORIES.has(config.category)) return true;
-    return ["commerce", "shipping", "marketing"].includes(config.group) && config.category !== "crm";
+    return (
+      ["commerce", "shipping", "marketing"].includes(config.group) && config.category !== "crm"
+    );
   });
 }
 
@@ -127,8 +136,9 @@ export function IntegrationsTab() {
           const count =
             category === "All"
               ? ecommerceIntegrations.length
-              : ecommerceIntegrations.filter((config) => getIntegrationCategory(config) === category)
-                  .length;
+              : ecommerceIntegrations.filter(
+                  (config) => getIntegrationCategory(config) === category,
+                ).length;
           if (count === 0 && category !== "All") return null;
           const isActive = category === activeCategory;
           return (
@@ -284,5 +294,3 @@ export function IntegrationsTab() {
     </div>
   );
 }
-
-

@@ -104,7 +104,16 @@ const ICON_MAP: Record<string, ElementType> = {
   Users,
 };
 
-const SECTION_CATEGORIES = ["general", "hero", "cta", "testimonials", "faq", "features", "content", "team"];
+const SECTION_CATEGORIES = [
+  "general",
+  "hero",
+  "cta",
+  "testimonials",
+  "faq",
+  "features",
+  "content",
+  "team",
+];
 const SYSTEM_SECTION_NAME_PREFIX = "Starter - ";
 
 export const BLOCK_CATEGORY_LABELS: Record<BlockCategory, string> = {
@@ -118,9 +127,20 @@ export const BLOCK_CATEGORY_LABELS: Record<BlockCategory, string> = {
   dynamic: "Dynamic / Interactive",
 };
 
-const BLOCK_CATEGORY_ORDER: BlockCategory[] = ["hero", "layout", "content", "media", "social-proof", "conversion", "data", "dynamic"];
+const BLOCK_CATEGORY_ORDER: BlockCategory[] = [
+  "hero",
+  "layout",
+  "content",
+  "media",
+  "social-proof",
+  "conversion",
+  "data",
+  "dynamic",
+];
 
-export function groupBlocksByCategory(blocks: BlockDef[]): { category: BlockCategory; label: string; items: BlockDef[] }[] {
+export function groupBlocksByCategory(
+  blocks: BlockDef[],
+): { category: BlockCategory; label: string; items: BlockDef[] }[] {
   const grouped = new Map<BlockCategory, BlockDef[]>();
   for (const block of blocks) {
     const category = block.category;
@@ -128,13 +148,11 @@ export function groupBlocksByCategory(blocks: BlockDef[]): { category: BlockCate
     grouped.get(category)!.push(block);
   }
 
-  return BLOCK_CATEGORY_ORDER
-    .filter((category) => grouped.has(category))
-    .map((category) => ({
-      category,
-      label: BLOCK_CATEGORY_LABELS[category],
-      items: grouped.get(category)!,
-    }));
+  return BLOCK_CATEGORY_ORDER.filter((category) => grouped.has(category)).map((category) => ({
+    category,
+    label: BLOCK_CATEGORY_LABELS[category],
+    items: grouped.get(category)!,
+  }));
 }
 
 export function BlockIcon({ name, className }: { name: string; className?: string }) {
@@ -165,7 +183,9 @@ export function getBlockSummary(block: BlockInstance) {
     block.props.badge,
     block.props.ctaText,
   ];
-  const summary = candidates.find((candidate) => typeof candidate === "string" && candidate.trim().length > 0);
+  const summary = candidates.find(
+    (candidate) => typeof candidate === "string" && candidate.trim().length > 0,
+  );
   return typeof summary === "string" ? summary : "";
 }
 
@@ -320,7 +340,9 @@ export function SectionsLibrary({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-xs">All</SelectItem>
+            <SelectItem value="all" className="text-xs">
+              All
+            </SelectItem>
             {SECTION_CATEGORIES.map((value) => (
               <SelectItem key={value} value={value} className="text-xs capitalize">
                 {value}
@@ -331,13 +353,19 @@ export function SectionsLibrary({
       </div>
 
       {isLoading ? (
-        <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">Loading...</div>
+        <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+          Loading...
+        </div>
       ) : filteredSections.length === 0 ? (
         <div className="flex h-32 flex-col items-center justify-center gap-2 text-muted-foreground">
           <Blocks className="h-8 w-8 opacity-30" />
-          <p className="text-sm font-medium">{search ? "No sections match" : "No saved sections yet"}</p>
+          <p className="text-sm font-medium">
+            {search ? "No sections match" : "No saved sections yet"}
+          </p>
           <p className="text-xs">
-            {search ? "Try a different search" : "Save a block as a reusable section from the visual builder"}
+            {search
+              ? "Try a different search"
+              : "Save a block as a reusable section from the visual builder"}
           </p>
         </div>
       ) : (

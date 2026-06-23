@@ -11,6 +11,7 @@ export function isEcommerceOrderLookupAuthorized(
   params: { email: string; token: string },
 ): boolean {
   if (!details.customer) return false;
-  if (details.customer.email.trim().toLowerCase() !== params.email.trim().toLowerCase()) return false;
+  if (details.customer.email.trim().toLowerCase() !== params.email.trim().toLowerCase())
+    return false;
   return details.lookupToken === params.token;
 }

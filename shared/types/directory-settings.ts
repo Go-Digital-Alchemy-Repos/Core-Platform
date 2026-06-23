@@ -478,14 +478,16 @@ function normalizedLabel(value: string | null | undefined): string {
   return (value || "").trim().toLowerCase();
 }
 
-export function getDirectoryExperienceMode(settings: Pick<
-  PublicDirectorySettings,
-  | "directoryMode"
-  | "directoryLabelPlural"
-  | "listingLabelPlural"
-  | "participantLabelPlural"
-  | "specialtyLabelPlural"
->): DirectoryMode {
+export function getDirectoryExperienceMode(
+  settings: Pick<
+    PublicDirectorySettings,
+    | "directoryMode"
+    | "directoryLabelPlural"
+    | "listingLabelPlural"
+    | "participantLabelPlural"
+    | "specialtyLabelPlural"
+  >,
+): DirectoryMode {
   const directoryPlural = normalizedLabel(settings.directoryLabelPlural);
   const listingPlural = normalizedLabel(settings.listingLabelPlural);
   const participantPlural = normalizedLabel(settings.participantLabelPlural);

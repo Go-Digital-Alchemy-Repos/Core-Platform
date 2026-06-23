@@ -39,9 +39,9 @@ function trimOptional(value: NullableString): string | null {
 }
 
 function buildAddressParts(data: TherapistLocationFields): string[] {
-  return ADDRESS_KEYS
-    .map((key) => trimOptional(data[key]))
-    .filter((part): part is string => !!part);
+  return ADDRESS_KEYS.map((key) => trimOptional(data[key])).filter(
+    (part): part is string => !!part,
+  );
 }
 
 function hasAddress(data: TherapistLocationFields): boolean {

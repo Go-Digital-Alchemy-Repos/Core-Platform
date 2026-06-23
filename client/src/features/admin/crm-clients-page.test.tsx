@@ -36,12 +36,36 @@ describe("AdminCrmClientsPage", () => {
   let root: Root | null = null;
 
   beforeEach(() => {
-    useQueryMock.mockImplementation(({ queryKey, enabled = true }: { queryKey: unknown[]; enabled?: boolean }) => {
-      if (!enabled) return { data: undefined, isLoading: false };
-      if (queryKey[0] === "/api/admin/crm/clients" && typeof queryKey[1] === "object") {
-        return {
-          data: [
-            {
+    useQueryMock.mockImplementation(
+      ({ queryKey, enabled = true }: { queryKey: unknown[]; enabled?: boolean }) => {
+        if (!enabled) return { data: undefined, isLoading: false };
+        if (queryKey[0] === "/api/admin/crm/clients" && typeof queryKey[1] === "object") {
+          return {
+            data: [
+              {
+                id: "client-1",
+                name: "Ada Lovelace",
+                email: "ada@example.com",
+                phone: null,
+                company: "Compiler Co",
+                clientType: "business",
+                primaryEmail: "ada@example.com",
+                primaryPhone: null,
+                preferredContactMethod: "email",
+                companyName: "Compiler Co",
+                onboardingStatus: "not_started",
+                internalTags: [],
+                status: "onboarding",
+                source: "website_form",
+                nextFollowUpAt: null,
+              },
+            ],
+            isLoading: false,
+          };
+        }
+        if (queryKey[0] === "/api/admin/crm/clients" && queryKey[1] === "client-1") {
+          return {
+            data: {
               id: "client-1",
               name: "Ada Lovelace",
               email: "ada@example.com",
@@ -50,76 +74,58 @@ describe("AdminCrmClientsPage", () => {
               clientType: "business",
               primaryEmail: "ada@example.com",
               primaryPhone: null,
+              secondaryEmail: null,
+              alternatePhone: null,
               preferredContactMethod: "email",
+              addressLine1: null,
+              addressLine2: null,
+              city: "Arlington",
+              region: "VA",
+              postalCode: null,
+              country: "United States",
               companyName: "Compiler Co",
+              legalName: null,
+              website: "https://compiler.example",
+              industry: "Technology",
+              companySize: "11-50",
+              businessType: "LLC",
+              companyPhone: null,
+              companyEmail: "hello@compiler.example",
+              billingContactName: "Ada Lovelace",
+              billingEmail: "billing@compiler.example",
+              billingPhone: null,
+              accountOwnerId: null,
               onboardingStatus: "not_started",
-              internalTags: [],
+              serviceStartDate: null,
+              renewalDate: null,
+              clientSince: null,
+              internalTags: ["priority"],
               status: "onboarding",
               source: "website_form",
               nextFollowUpAt: null,
+              sourceLead: { id: "lead-1", name: "Ada Lead" },
+              notes: [],
+              tasks: [],
+              formData: {},
+              metadata: {},
             },
-          ],
-          isLoading: false,
-        };
-      }
-      if (queryKey[0] === "/api/admin/crm/clients" && queryKey[1] === "client-1") {
-        return {
-          data: {
-            id: "client-1",
-            name: "Ada Lovelace",
-            email: "ada@example.com",
-            phone: null,
-            company: "Compiler Co",
-            clientType: "business",
-            primaryEmail: "ada@example.com",
-            primaryPhone: null,
-            secondaryEmail: null,
-            alternatePhone: null,
-            preferredContactMethod: "email",
-            addressLine1: null,
-            addressLine2: null,
-            city: "Arlington",
-            region: "VA",
-            postalCode: null,
-            country: "United States",
-            companyName: "Compiler Co",
-            legalName: null,
-            website: "https://compiler.example",
-            industry: "Technology",
-            companySize: "11-50",
-            businessType: "LLC",
-            companyPhone: null,
-            companyEmail: "hello@compiler.example",
-            billingContactName: "Ada Lovelace",
-            billingEmail: "billing@compiler.example",
-            billingPhone: null,
-            accountOwnerId: null,
-            onboardingStatus: "not_started",
-            serviceStartDate: null,
-            renewalDate: null,
-            clientSince: null,
-            internalTags: ["priority"],
-            status: "onboarding",
-            source: "website_form",
-            nextFollowUpAt: null,
-            sourceLead: { id: "lead-1", name: "Ada Lead" },
-            notes: [],
-            tasks: [],
-            formData: {},
-            metadata: {},
-          },
-          isLoading: false,
-        };
-      }
+            isLoading: false,
+          };
+        }
 
-      return { data: undefined, isLoading: false };
-    });
+        return { data: undefined, isLoading: false };
+      },
+    );
     useMutationMock.mockReturnValue({
       mutate: vi.fn(),
       isPending: false,
     });
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
   });

@@ -76,7 +76,10 @@ const productPayloadSchema = insertEcommerceProductSchema.extend({
   categoryIds: z.array(z.string()).default([]),
 });
 
-async function validateCategoryParent(categoryId: string | null, parentId: string | null | undefined) {
+async function validateCategoryParent(
+  categoryId: string | null,
+  parentId: string | null | undefined,
+) {
   if (!parentId) return;
   if (categoryId && parentId === categoryId) {
     throw Object.assign(new Error("A category cannot be its own parent"), { statusCode: 400 });
@@ -104,7 +107,9 @@ async function validateCategorySlug(categoryId: string | null, slug: string | nu
 
   const normalizedSlug = slug.trim().toLowerCase();
   const categories = await storage.ecommerce.getCategories(false);
-  const existingCategory = categories.find((category) => category.slug.toLowerCase() === normalizedSlug);
+  const existingCategory = categories.find(
+    (category) => category.slug.toLowerCase() === normalizedSlug,
+  );
   if (existingCategory && existingCategory.id !== categoryId) {
     throw Object.assign(new Error("A category with this slug already exists"), { statusCode: 409 });
   }
@@ -115,519 +120,831 @@ async function validateProductSlug(productId: string | null, slug: string | null
 
   const normalizedSlug = slug.trim().toLowerCase();
   const products = await storage.ecommerce.getProducts({ includeArchived: true });
-  const existingProduct = products.find((product) => product.urlSlug.toLowerCase() === normalizedSlug);
+  const existingProduct = products.find(
+    (product) => product.urlSlug.toLowerCase() === normalizedSlug,
+  );
   if (existingProduct && existingProduct.id !== productId) {
-    throw Object.assign(new Error("A product with this URL slug already exists"), { statusCode: 409 });
+    throw Object.assign(new Error("A product with this URL slug already exists"), {
+      statusCode: 409,
+    });
   }
 }
 
-router.get("/products", asyncHandler(async (_req, res) => {
-  const products = await storage.ecommerce.getProducts();
-  const withCategories = await Promise.all(products.map(async (product) => ({
-    ...product,
-    categories: await storage.ecommerce.getProductCategories(product.id),
-    variants: await storage.ecommerce.getProductVariants(product.id),
-    media: await storage.ecommerce.getProductMedia(product.id),
-  })));
-  res.json(withCategories);
-}));
-
-router.post("/products", asyncHandler(async (req, res) => {
-  const { categoryIds, ...data } = productPayloadSchema.parse(req.body);
-  await validateProductSlug(null, data.urlSlug);
-  res.status(201).json(await storage.ecommerce.createProduct(data, categoryIds));
-}));
-
-router.put("/products/:id", asyncHandler(async (req, res) => {
-  const productId = paramString(req.params.id);
-  const parsed = productPayloadSchema.partial().parse(req.body);
-  const { categoryIds, ...data } = parsed;
-  await validateProductSlug(productId, data.urlSlug);
-  const product = await storage.ecommerce.updateProduct(productId, data, categoryIds);
-  if (!product) {
-    res.status(404).json({ message: "Product not found" });
-    return;
-  }
-  res.json(product);
-}));
-
-router.get("/products/:id/variants", asyncHandler(async (req, res) => {
-  res.json(await storage.ecommerce.getProductVariants(paramString(req.params.id)));
-}));
-
-router.put("/products/:id/variants/:variantId", asyncHandler(async (req, res) => {
-  const productId = paramString(req.params.id);
-  const variantId = paramString(req.params.variantId);
-  const existing = await storage.ecommerce.getProductVariant(variantId);
-  if (!existing || existing.productId !== productId) {
-    res.status(404).json({ message: "Variant not found" });
-    return;
-  }
-  const variant = await storage.ecommerce.updateProductVariant(
-    variantId,
-    insertEcommerceProductVariantSchema.partial().parse(req.body),
-  );
-  res.json(variant);
-}));
-
-router.post("/products/:id/media", asyncHandler(async (req, res) => {
-  const productId = paramString(req.params.id);
-  const product = await storage.ecommerce.getProduct(productId);
-  if (!product) {
-    res.status(404).json({ message: "Product not found" });
-    return;
-  }
-  const media = await storage.ecommerce.createProductMedia(
-    insertEcommerceProductMediaSchema.parse({ ...req.body, productId }),
-  );
-  res.status(201).json(media);
-}));
-
-router.delete("/products/:id", asyncHandler(async (req, res) => {
-  await storage.ecommerce.deleteProduct(paramString(req.params.id));
-  res.json({ success: true });
-}));
-
-router.get("/categories", asyncHandler(async (_req, res) => {
-  res.json(await storage.ecommerce.getCategories(false));
-}));
-
-router.post("/categories", asyncHandler(async (req, res) => {
-  const data = insertEcommerceCategorySchema.parse(req.body);
-  await validateCategoryParent(null, data.parentId);
-  await validateCategorySlug(null, data.slug);
-  res.status(201).json(await storage.ecommerce.createCategory(data));
-}));
-
-router.put("/categories/:id", asyncHandler(async (req, res) => {
-  const categoryId = paramString(req.params.id);
-  const data = insertEcommerceCategorySchema.partial().parse(req.body);
-  await validateCategoryParent(categoryId, data.parentId);
-  await validateCategorySlug(categoryId, data.slug);
-  const category = await storage.ecommerce.updateCategory(categoryId, data);
-  if (!category) {
-    res.status(404).json({ message: "Category not found" });
-    return;
-  }
-  res.json(category);
-}));
-
-router.delete("/categories/:id", asyncHandler(async (req, res) => {
-  await storage.ecommerce.deleteCategory(paramString(req.params.id));
-  res.json({ success: true });
-}));
-
-router.get("/coupons", asyncHandler(async (req, res) => {
-  res.json(await storage.ecommerce.getCoupons({
-    includeArchived: req.query.includeArchived === "true",
-    search: typeof req.query.search === "string" ? req.query.search : undefined,
-  }));
-}));
-
-router.get("/coupons/:id/report", asyncHandler(async (req, res) => {
-  const report = await storage.ecommerce.getCouponReport(paramString(req.params.id));
-  if (!report) {
-    res.status(404).json({ message: "Coupon not found" });
-    return;
-  }
-  res.json(report);
-}));
-
-router.get("/coupons/:id", asyncHandler(async (req, res) => {
-  const coupon = await storage.ecommerce.getCoupon(paramString(req.params.id));
-  if (!coupon) {
-    res.status(404).json({ message: "Coupon not found" });
-    return;
-  }
-  res.json(coupon);
-}));
-
-router.post("/coupons", asyncHandler(async (req, res) => {
-  const data = insertEcommerceCouponSchema.parse({ ...req.body, createdBy: req.user?.id, updatedBy: req.user?.id });
-  res.status(201).json(await storage.ecommerce.createCoupon(data));
-}));
-
-router.post("/coupons/:id/duplicate", asyncHandler(async (req, res) => {
-  const data = z.object({ code: z.string().min(1) }).parse(req.body);
-  const coupon = await storage.ecommerce.duplicateCoupon(paramString(req.params.id), data.code);
-  if (!coupon) {
-    res.status(404).json({ message: "Coupon not found" });
-    return;
-  }
-  res.status(201).json(coupon);
-}));
-
-router.put("/coupons/:id", asyncHandler(async (req, res) => {
-  const coupon = await storage.ecommerce.updateCoupon(
-    paramString(req.params.id),
-    insertEcommerceCouponSchema.partial().parse({ ...req.body, updatedBy: req.user?.id }),
-  );
-  if (!coupon) {
-    res.status(404).json({ message: "Coupon not found" });
-    return;
-  }
-  res.json(coupon);
-}));
-
-router.delete("/coupons/:id", asyncHandler(async (req, res) => {
-  await storage.ecommerce.deleteCoupon(paramString(req.params.id));
-  res.json({ success: true });
-}));
-
-router.get("/orders", asyncHandler(async (_req, res) => {
-  res.json(await storage.ecommerce.getOrders());
-}));
-
-router.get("/customers", asyncHandler(async (req, res) => {
-  res.json(await storage.ecommerce.searchCustomers(typeof req.query.search === "string" ? req.query.search : undefined));
-}));
-
-router.post("/customers", asyncHandler(async (req, res) => {
-  const customer = await storage.ecommerce.findOrCreateCustomer(insertEcommerceCustomerSchema.parse(req.body));
-  res.status(201).json(customer);
-}));
-
-router.get("/orders/:id", asyncHandler(async (req, res) => {
-  const order = await storage.ecommerce.getOrderWithDetails(paramString(req.params.id));
-  if (!order) {
-    res.status(404).json({ message: "Order not found" });
-    return;
-  }
-  res.json(order);
-}));
-
-router.put("/orders/:id", asyncHandler(async (req, res) => {
-  const order = await updateAdminEcommerceOrder(
-    paramString(req.params.id),
-    adminOrderUpdateSchema.parse(req.body),
-    req.user,
-  );
-  if (!order) {
-    res.status(404).json({ message: "Order not found" });
-    return;
-  }
-  res.json(order);
-}));
-
-router.post("/orders/manual", asyncHandler(async (req, res) => {
-  res.status(201).json(await createManualEcommerceOrder(manualOrderSchema.parse(req.body)));
-}));
-
-router.post("/orders/manual-draft", asyncHandler(async (req, res) => {
-  res.status(201).json(await createManualEcommerceOrderDraft(manualOrderSchema.parse(req.body), req.user));
-}));
-
-router.post("/orders/:id/payment-link", asyncHandler(async (req, res) => {
-  const data = z.object({ reason: z.string().trim().min(1).max(500).optional() }).parse(req.body);
-  res.status(201).json(await createPaymentLinkForOrder(paramString(req.params.id), {
-    reason: data.reason,
-    createdBy: req.user?.id,
-  }));
-}));
-
-router.post("/orders/:id/mark-paid", asyncHandler(async (req, res) => {
-  const order = await markManualEcommerceOrderPaid(paramString(req.params.id), manualPaymentSchema.parse(req.body), req.user);
-  if (!order) {
-    res.status(404).json({ message: "Order not found" });
-    return;
-  }
-  res.json(order);
-}));
-
-router.post("/payment-requests", asyncHandler(async (req, res) => {
-  res.status(201).json(await createStandalonePaymentRequest(standalonePaymentRequestSchema.parse(req.body), req.user));
-}));
-
-router.post("/refunds", asyncHandler(async (req, res) => {
-  const data = z.object({
-    orderId: z.string(),
-    amount: z.number().int().min(1),
-    reason: z.string().optional(),
-    reasonCode: z.string().optional(),
-    type: z.enum(["full", "partial"]).optional(),
-    source: z.enum(["stripe", "manual"]).optional(),
-  }).parse(req.body);
-  res.status(201).json(await createEcommerceRefund({ ...data, processedBy: req.user?.id }));
-}));
-
-router.get("/shipping/zones", asyncHandler(async (_req, res) => {
-  res.json(await storage.ecommerce.getShippingZones());
-}));
-
-router.post("/shipping/zones", asyncHandler(async (req, res) => {
-  res.status(201).json(await storage.ecommerce.createShippingZone(insertEcommerceShippingZoneSchema.parse(req.body)));
-}));
-
-router.put("/shipping/zones/:id", asyncHandler(async (req, res) => {
-  const zone = await storage.ecommerce.updateShippingZone(paramString(req.params.id), insertEcommerceShippingZoneSchema.partial().parse(req.body));
-  if (!zone) {
-    res.status(404).json({ message: "Shipping zone not found" });
-    return;
-  }
-  res.json(zone);
-}));
-
-router.delete("/shipping/zones/:id", asyncHandler(async (req, res) => {
-  await storage.ecommerce.deleteShippingZone(paramString(req.params.id));
-  res.json({ success: true });
-}));
-
-router.get("/shipping/rates", asyncHandler(async (req, res) => {
-  res.json(await storage.ecommerce.getShippingRates(typeof req.query.zoneId === "string" ? req.query.zoneId : undefined));
-}));
-
-router.post("/shipping/rates", asyncHandler(async (req, res) => {
-  res.status(201).json(await storage.ecommerce.createShippingRate(insertEcommerceShippingRateSchema.parse(req.body)));
-}));
-
-router.put("/shipping/rates/:id", asyncHandler(async (req, res) => {
-  const rate = await storage.ecommerce.updateShippingRate(paramString(req.params.id), insertEcommerceShippingRateSchema.partial().parse(req.body));
-  if (!rate) {
-    res.status(404).json({ message: "Shipping rate not found" });
-    return;
-  }
-  res.json(rate);
-}));
-
-router.delete("/shipping/rates/:id", asyncHandler(async (req, res) => {
-  await storage.ecommerce.deleteShippingRate(paramString(req.params.id));
-  res.json({ success: true });
-}));
-
-router.get("/shipping/locations", asyncHandler(async (_req, res) => {
-  res.json(await storage.ecommerce.getFulfillmentLocations());
-}));
-
-router.post("/shipping/locations", asyncHandler(async (req, res) => {
-  res.status(201).json(await storage.ecommerce.createFulfillmentLocation(
-    insertEcommerceFulfillmentLocationSchema.parse(req.body),
-  ));
-}));
-
-router.put("/shipping/locations/:id", asyncHandler(async (req, res) => {
-  const location = await storage.ecommerce.updateFulfillmentLocation(
-    paramString(req.params.id),
-    insertEcommerceFulfillmentLocationSchema.partial().parse(req.body),
-  );
-  if (!location) {
-    res.status(404).json({ message: "Fulfillment location not found" });
-    return;
-  }
-  res.json(location);
-}));
-
-router.get("/shipping/providers", asyncHandler(async (_req, res) => {
-  const credentialStatus: Record<string, Record<string, boolean>> = {};
-  await Promise.all(ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.map(async (definition) => {
-    const settings = await storage.settings.getDecryptedCategory(
-      getShippingProviderCredentialCategory(definition.provider),
+router.get(
+  "/products",
+  asyncHandler(async (_req, res) => {
+    const products = await storage.ecommerce.getProducts();
+    const withCategories = await Promise.all(
+      products.map(async (product) => ({
+        ...product,
+        categories: await storage.ecommerce.getProductCategories(product.id),
+        variants: await storage.ecommerce.getProductVariants(product.id),
+        media: await storage.ecommerce.getProductMedia(product.id),
+      })),
     );
-    credentialStatus[definition.provider] = Object.fromEntries(
-      definition.setupFields.map((field) => [field.key, Boolean(settings[field.key])]),
-    );
-  }));
-  res.json(mergeShippingProviderStatuses(await storage.ecommerce.getShippingProviders(), credentialStatus));
-}));
+    res.json(withCategories);
+  }),
+);
 
-router.get("/shipping/providers/:provider/readiness", asyncHandler(async (req, res) => {
-  const provider = paramString(req.params.provider);
-  const definition = getShippingProviderDefinition(provider);
-  if (!definition) {
-    res.status(404).json({ message: "Shipping provider not found" });
-    return;
-  }
+router.post(
+  "/products",
+  asyncHandler(async (req, res) => {
+    const { categoryIds, ...data } = productPayloadSchema.parse(req.body);
+    await validateProductSlug(null, data.urlSlug);
+    res.status(201).json(await storage.ecommerce.createProduct(data, categoryIds));
+  }),
+);
 
-  const [settings, configuredProviders] = await Promise.all([
-    storage.settings.getDecryptedCategory(getShippingProviderCredentialCategory(provider)),
-    storage.ecommerce.getShippingProviders(),
-  ]);
-  const credentialStatus = {
-    [provider]: Object.fromEntries(definition.setupFields.map((field) => [field.key, Boolean(settings[field.key])])),
-  };
-  const [status] = mergeShippingProviderStatuses(
-    configuredProviders.filter((configuredProvider) => configuredProvider.provider === provider),
-    credentialStatus,
-  ).filter((candidate) => candidate.provider === provider);
-  res.json(status);
-}));
-
-router.put("/shipping/providers/:provider", asyncHandler(async (req, res) => {
-  const provider = paramString(req.params.provider);
-  const definition = getShippingProviderDefinition(provider);
-  if (!definition) {
-    res.status(404).json({ message: "Shipping provider not found" });
-    return;
-  }
-
-  const data = insertEcommerceShippingProviderSchema.partial().extend({
-    displayName: z.string().min(1),
-    type: z.enum(["direct_carrier", "aggregator", "workflow", "marketplace"]),
-  }).parse({ ...req.body, provider });
-
-  if (data.active) {
-    const settings = await storage.settings.getDecryptedCategory(getShippingProviderCredentialCategory(provider));
-    const missingCredentialLabels = getMissingShippingProviderCredentialLabels(definition, settings);
-    if (missingCredentialLabels.length > 0) {
-      res.status(400).json({
-        message: `Save ${missingCredentialLabels.join(", ")} before activating ${definition.displayName}.`,
-        missingCredentialLabels,
-      });
+router.put(
+  "/products/:id",
+  asyncHandler(async (req, res) => {
+    const productId = paramString(req.params.id);
+    const parsed = productPayloadSchema.partial().parse(req.body);
+    const { categoryIds, ...data } = parsed;
+    await validateProductSlug(productId, data.urlSlug);
+    const product = await storage.ecommerce.updateProduct(productId, data, categoryIds);
+    if (!product) {
+      res.status(404).json({ message: "Product not found" });
       return;
     }
-  }
+    res.json(product);
+  }),
+);
 
-  res.json(await storage.ecommerce.upsertShippingProvider({
-    provider,
-    displayName: data.displayName,
-    type: data.type,
-    capabilities: data.capabilities ?? [],
-    settings: data.settings ?? {},
-    testMode: data.testMode ?? true,
-    active: data.active ?? false,
-    connectedAt: data.active ? data.connectedAt ?? new Date() : data.connectedAt ?? null,
-  }));
-}));
+router.get(
+  "/products/:id/variants",
+  asyncHandler(async (req, res) => {
+    res.json(await storage.ecommerce.getProductVariants(paramString(req.params.id)));
+  }),
+);
 
-router.put("/shipping/providers/:provider/credentials", asyncHandler(async (req, res) => {
-  const provider = paramString(req.params.provider);
-  const definition = getShippingProviderDefinition(provider);
-  if (!definition) {
-    res.status(404).json({ message: "Shipping provider not found" });
-    return;
-  }
+router.put(
+  "/products/:id/variants/:variantId",
+  asyncHandler(async (req, res) => {
+    const productId = paramString(req.params.id);
+    const variantId = paramString(req.params.variantId);
+    const existing = await storage.ecommerce.getProductVariant(variantId);
+    if (!existing || existing.productId !== productId) {
+      res.status(404).json({ message: "Variant not found" });
+      return;
+    }
+    const variant = await storage.ecommerce.updateProductVariant(
+      variantId,
+      insertEcommerceProductVariantSchema.partial().parse(req.body),
+    );
+    res.json(variant);
+  }),
+);
 
-  const credentials = z.record(z.string(), z.string()).parse(req.body.credentials ?? {});
-  const category = getShippingProviderCredentialCategory(provider);
-  const writes = definition.setupFields
-    .map((field) => ({ field, value: credentials[field.key]?.trim() }))
-    .filter((entry): entry is { field: typeof definition.setupFields[number]; value: string } => Boolean(entry.value))
-    .map(({ field, value }) => storage.settings.upsertSetting(field.key, value, category, field.secret ?? true));
+router.post(
+  "/products/:id/media",
+  asyncHandler(async (req, res) => {
+    const productId = paramString(req.params.id);
+    const product = await storage.ecommerce.getProduct(productId);
+    if (!product) {
+      res.status(404).json({ message: "Product not found" });
+      return;
+    }
+    const media = await storage.ecommerce.createProductMedia(
+      insertEcommerceProductMediaSchema.parse({ ...req.body, productId }),
+    );
+    res.status(201).json(media);
+  }),
+);
 
-  await Promise.all(writes);
-  storage.settings.invalidateCategory(category);
+router.delete(
+  "/products/:id",
+  asyncHandler(async (req, res) => {
+    await storage.ecommerce.deleteProduct(paramString(req.params.id));
+    res.json({ success: true });
+  }),
+);
 
-  const settings = await storage.settings.getDecryptedCategory(category);
-  res.json({
-    provider,
-    setupFields: definition.setupFields.map((field) => ({
-      key: field.key,
-      label: field.label,
-      secret: field.secret ?? true,
-      hasValue: Boolean(settings[field.key]),
-    })),
-  });
-}));
+router.get(
+  "/categories",
+  asyncHandler(async (_req, res) => {
+    res.json(await storage.ecommerce.getCategories(false));
+  }),
+);
 
-router.post("/orders/:orderId/shipments", asyncHandler(async (req, res) => {
-  const orderId = paramString(req.params.orderId);
-  await assertEcommerceOrderCanShip(orderId);
-  const shipmentPayload = insertEcommerceShipmentSchema.parse({
-    ...req.body,
-    orderId,
-    shippedBy: req.user?.id,
-  });
-  const shipment = await storage.ecommerce.createShipment({
-    ...shipmentPayload,
-    trackingUrl: inferCarrierTrackingUrl(shipmentPayload),
-  });
-  await storage.ecommerce.updateOrder(orderId, { status: "shipped" });
-  const details = await storage.ecommerce.getOrderWithDetails(orderId);
-  if (details && await sendEcommerceShipmentEmail(details, shipment)) {
-    const updatedShipment = await storage.ecommerce.updateShipment(shipment.id, { emailSentAt: new Date() });
-    res.status(201).json(updatedShipment ?? shipment);
-    return;
-  }
-  res.status(201).json(shipment);
-}));
+router.post(
+  "/categories",
+  asyncHandler(async (req, res) => {
+    const data = insertEcommerceCategorySchema.parse(req.body);
+    await validateCategoryParent(null, data.parentId);
+    await validateCategorySlug(null, data.slug);
+    res.status(201).json(await storage.ecommerce.createCategory(data));
+  }),
+);
 
-router.get("/orders/:orderId/fulfillments", asyncHandler(async (req, res) => {
-  res.json(await storage.ecommerce.getFulfillmentsForOrder(paramString(req.params.orderId)));
-}));
+router.put(
+  "/categories/:id",
+  asyncHandler(async (req, res) => {
+    const categoryId = paramString(req.params.id);
+    const data = insertEcommerceCategorySchema.partial().parse(req.body);
+    await validateCategoryParent(categoryId, data.parentId);
+    await validateCategorySlug(categoryId, data.slug);
+    const category = await storage.ecommerce.updateCategory(categoryId, data);
+    if (!category) {
+      res.status(404).json({ message: "Category not found" });
+      return;
+    }
+    res.json(category);
+  }),
+);
 
-router.post("/orders/:orderId/fulfillments", asyncHandler(async (req, res) => {
-  const orderId = paramString(req.params.orderId);
-  const body = z.object({
-    fulfillment: insertEcommerceFulfillmentSchema.omit({ orderId: true }),
-    items: fulfillmentItemsSchema,
-  }).parse(req.body);
-  const items = await assertEcommerceFulfillmentRequest(orderId, body.items);
+router.delete(
+  "/categories/:id",
+  asyncHandler(async (req, res) => {
+    await storage.ecommerce.deleteCategory(paramString(req.params.id));
+    res.json({ success: true });
+  }),
+);
 
-  res.status(201).json(await storage.ecommerce.createFulfillment(
-    {
-      ...body.fulfillment,
+router.get(
+  "/coupons",
+  asyncHandler(async (req, res) => {
+    res.json(
+      await storage.ecommerce.getCoupons({
+        includeArchived: req.query.includeArchived === "true",
+        search: typeof req.query.search === "string" ? req.query.search : undefined,
+      }),
+    );
+  }),
+);
+
+router.get(
+  "/coupons/:id/report",
+  asyncHandler(async (req, res) => {
+    const report = await storage.ecommerce.getCouponReport(paramString(req.params.id));
+    if (!report) {
+      res.status(404).json({ message: "Coupon not found" });
+      return;
+    }
+    res.json(report);
+  }),
+);
+
+router.get(
+  "/coupons/:id",
+  asyncHandler(async (req, res) => {
+    const coupon = await storage.ecommerce.getCoupon(paramString(req.params.id));
+    if (!coupon) {
+      res.status(404).json({ message: "Coupon not found" });
+      return;
+    }
+    res.json(coupon);
+  }),
+);
+
+router.post(
+  "/coupons",
+  asyncHandler(async (req, res) => {
+    const data = insertEcommerceCouponSchema.parse({
+      ...req.body,
+      createdBy: req.user?.id,
+      updatedBy: req.user?.id,
+    });
+    res.status(201).json(await storage.ecommerce.createCoupon(data));
+  }),
+);
+
+router.post(
+  "/coupons/:id/duplicate",
+  asyncHandler(async (req, res) => {
+    const data = z.object({ code: z.string().min(1) }).parse(req.body);
+    const coupon = await storage.ecommerce.duplicateCoupon(paramString(req.params.id), data.code);
+    if (!coupon) {
+      res.status(404).json({ message: "Coupon not found" });
+      return;
+    }
+    res.status(201).json(coupon);
+  }),
+);
+
+router.put(
+  "/coupons/:id",
+  asyncHandler(async (req, res) => {
+    const coupon = await storage.ecommerce.updateCoupon(
+      paramString(req.params.id),
+      insertEcommerceCouponSchema.partial().parse({ ...req.body, updatedBy: req.user?.id }),
+    );
+    if (!coupon) {
+      res.status(404).json({ message: "Coupon not found" });
+      return;
+    }
+    res.json(coupon);
+  }),
+);
+
+router.delete(
+  "/coupons/:id",
+  asyncHandler(async (req, res) => {
+    await storage.ecommerce.deleteCoupon(paramString(req.params.id));
+    res.json({ success: true });
+  }),
+);
+
+router.get(
+  "/orders",
+  asyncHandler(async (_req, res) => {
+    res.json(await storage.ecommerce.getOrders());
+  }),
+);
+
+router.get(
+  "/customers",
+  asyncHandler(async (req, res) => {
+    res.json(
+      await storage.ecommerce.searchCustomers(
+        typeof req.query.search === "string" ? req.query.search : undefined,
+      ),
+    );
+  }),
+);
+
+router.post(
+  "/customers",
+  asyncHandler(async (req, res) => {
+    const customer = await storage.ecommerce.findOrCreateCustomer(
+      insertEcommerceCustomerSchema.parse(req.body),
+    );
+    res.status(201).json(customer);
+  }),
+);
+
+router.get(
+  "/orders/:id",
+  asyncHandler(async (req, res) => {
+    const order = await storage.ecommerce.getOrderWithDetails(paramString(req.params.id));
+    if (!order) {
+      res.status(404).json({ message: "Order not found" });
+      return;
+    }
+    res.json(order);
+  }),
+);
+
+router.put(
+  "/orders/:id",
+  asyncHandler(async (req, res) => {
+    const order = await updateAdminEcommerceOrder(
+      paramString(req.params.id),
+      adminOrderUpdateSchema.parse(req.body),
+      req.user,
+    );
+    if (!order) {
+      res.status(404).json({ message: "Order not found" });
+      return;
+    }
+    res.json(order);
+  }),
+);
+
+router.post(
+  "/orders/manual",
+  asyncHandler(async (req, res) => {
+    res.status(201).json(await createManualEcommerceOrder(manualOrderSchema.parse(req.body)));
+  }),
+);
+
+router.post(
+  "/orders/manual-draft",
+  asyncHandler(async (req, res) => {
+    res
+      .status(201)
+      .json(await createManualEcommerceOrderDraft(manualOrderSchema.parse(req.body), req.user));
+  }),
+);
+
+router.post(
+  "/orders/:id/payment-link",
+  asyncHandler(async (req, res) => {
+    const data = z.object({ reason: z.string().trim().min(1).max(500).optional() }).parse(req.body);
+    res.status(201).json(
+      await createPaymentLinkForOrder(paramString(req.params.id), {
+        reason: data.reason,
+        createdBy: req.user?.id,
+      }),
+    );
+  }),
+);
+
+router.post(
+  "/orders/:id/mark-paid",
+  asyncHandler(async (req, res) => {
+    const order = await markManualEcommerceOrderPaid(
+      paramString(req.params.id),
+      manualPaymentSchema.parse(req.body),
+      req.user,
+    );
+    if (!order) {
+      res.status(404).json({ message: "Order not found" });
+      return;
+    }
+    res.json(order);
+  }),
+);
+
+router.post(
+  "/payment-requests",
+  asyncHandler(async (req, res) => {
+    res
+      .status(201)
+      .json(
+        await createStandalonePaymentRequest(
+          standalonePaymentRequestSchema.parse(req.body),
+          req.user,
+        ),
+      );
+  }),
+);
+
+router.post(
+  "/refunds",
+  asyncHandler(async (req, res) => {
+    const data = z
+      .object({
+        orderId: z.string(),
+        amount: z.number().int().min(1),
+        reason: z.string().optional(),
+        reasonCode: z.string().optional(),
+        type: z.enum(["full", "partial"]).optional(),
+        source: z.enum(["stripe", "manual"]).optional(),
+      })
+      .parse(req.body);
+    res.status(201).json(await createEcommerceRefund({ ...data, processedBy: req.user?.id }));
+  }),
+);
+
+router.get(
+  "/shipping/zones",
+  asyncHandler(async (_req, res) => {
+    res.json(await storage.ecommerce.getShippingZones());
+  }),
+);
+
+router.post(
+  "/shipping/zones",
+  asyncHandler(async (req, res) => {
+    res
+      .status(201)
+      .json(
+        await storage.ecommerce.createShippingZone(
+          insertEcommerceShippingZoneSchema.parse(req.body),
+        ),
+      );
+  }),
+);
+
+router.put(
+  "/shipping/zones/:id",
+  asyncHandler(async (req, res) => {
+    const zone = await storage.ecommerce.updateShippingZone(
+      paramString(req.params.id),
+      insertEcommerceShippingZoneSchema.partial().parse(req.body),
+    );
+    if (!zone) {
+      res.status(404).json({ message: "Shipping zone not found" });
+      return;
+    }
+    res.json(zone);
+  }),
+);
+
+router.delete(
+  "/shipping/zones/:id",
+  asyncHandler(async (req, res) => {
+    await storage.ecommerce.deleteShippingZone(paramString(req.params.id));
+    res.json({ success: true });
+  }),
+);
+
+router.get(
+  "/shipping/rates",
+  asyncHandler(async (req, res) => {
+    res.json(
+      await storage.ecommerce.getShippingRates(
+        typeof req.query.zoneId === "string" ? req.query.zoneId : undefined,
+      ),
+    );
+  }),
+);
+
+router.post(
+  "/shipping/rates",
+  asyncHandler(async (req, res) => {
+    res
+      .status(201)
+      .json(
+        await storage.ecommerce.createShippingRate(
+          insertEcommerceShippingRateSchema.parse(req.body),
+        ),
+      );
+  }),
+);
+
+router.put(
+  "/shipping/rates/:id",
+  asyncHandler(async (req, res) => {
+    const rate = await storage.ecommerce.updateShippingRate(
+      paramString(req.params.id),
+      insertEcommerceShippingRateSchema.partial().parse(req.body),
+    );
+    if (!rate) {
+      res.status(404).json({ message: "Shipping rate not found" });
+      return;
+    }
+    res.json(rate);
+  }),
+);
+
+router.delete(
+  "/shipping/rates/:id",
+  asyncHandler(async (req, res) => {
+    await storage.ecommerce.deleteShippingRate(paramString(req.params.id));
+    res.json({ success: true });
+  }),
+);
+
+router.get(
+  "/shipping/locations",
+  asyncHandler(async (_req, res) => {
+    res.json(await storage.ecommerce.getFulfillmentLocations());
+  }),
+);
+
+router.post(
+  "/shipping/locations",
+  asyncHandler(async (req, res) => {
+    res
+      .status(201)
+      .json(
+        await storage.ecommerce.createFulfillmentLocation(
+          insertEcommerceFulfillmentLocationSchema.parse(req.body),
+        ),
+      );
+  }),
+);
+
+router.put(
+  "/shipping/locations/:id",
+  asyncHandler(async (req, res) => {
+    const location = await storage.ecommerce.updateFulfillmentLocation(
+      paramString(req.params.id),
+      insertEcommerceFulfillmentLocationSchema.partial().parse(req.body),
+    );
+    if (!location) {
+      res.status(404).json({ message: "Fulfillment location not found" });
+      return;
+    }
+    res.json(location);
+  }),
+);
+
+router.get(
+  "/shipping/providers",
+  asyncHandler(async (_req, res) => {
+    const credentialStatus: Record<string, Record<string, boolean>> = {};
+    await Promise.all(
+      ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.map(async (definition) => {
+        const settings = await storage.settings.getDecryptedCategory(
+          getShippingProviderCredentialCategory(definition.provider),
+        );
+        credentialStatus[definition.provider] = Object.fromEntries(
+          definition.setupFields.map((field) => [field.key, Boolean(settings[field.key])]),
+        );
+      }),
+    );
+    res.json(
+      mergeShippingProviderStatuses(
+        await storage.ecommerce.getShippingProviders(),
+        credentialStatus,
+      ),
+    );
+  }),
+);
+
+router.get(
+  "/shipping/providers/:provider/readiness",
+  asyncHandler(async (req, res) => {
+    const provider = paramString(req.params.provider);
+    const definition = getShippingProviderDefinition(provider);
+    if (!definition) {
+      res.status(404).json({ message: "Shipping provider not found" });
+      return;
+    }
+
+    const [settings, configuredProviders] = await Promise.all([
+      storage.settings.getDecryptedCategory(getShippingProviderCredentialCategory(provider)),
+      storage.ecommerce.getShippingProviders(),
+    ]);
+    const credentialStatus = {
+      [provider]: Object.fromEntries(
+        definition.setupFields.map((field) => [field.key, Boolean(settings[field.key])]),
+      ),
+    };
+    const [status] = mergeShippingProviderStatuses(
+      configuredProviders.filter((configuredProvider) => configuredProvider.provider === provider),
+      credentialStatus,
+    ).filter((candidate) => candidate.provider === provider);
+    res.json(status);
+  }),
+);
+
+router.put(
+  "/shipping/providers/:provider",
+  asyncHandler(async (req, res) => {
+    const provider = paramString(req.params.provider);
+    const definition = getShippingProviderDefinition(provider);
+    if (!definition) {
+      res.status(404).json({ message: "Shipping provider not found" });
+      return;
+    }
+
+    const data = insertEcommerceShippingProviderSchema
+      .partial()
+      .extend({
+        displayName: z.string().min(1),
+        type: z.enum(["direct_carrier", "aggregator", "workflow", "marketplace"]),
+      })
+      .parse({ ...req.body, provider });
+
+    if (data.active) {
+      const settings = await storage.settings.getDecryptedCategory(
+        getShippingProviderCredentialCategory(provider),
+      );
+      const missingCredentialLabels = getMissingShippingProviderCredentialLabels(
+        definition,
+        settings,
+      );
+      if (missingCredentialLabels.length > 0) {
+        res.status(400).json({
+          message: `Save ${missingCredentialLabels.join(", ")} before activating ${definition.displayName}.`,
+          missingCredentialLabels,
+        });
+        return;
+      }
+    }
+
+    res.json(
+      await storage.ecommerce.upsertShippingProvider({
+        provider,
+        displayName: data.displayName,
+        type: data.type,
+        capabilities: data.capabilities ?? [],
+        settings: data.settings ?? {},
+        testMode: data.testMode ?? true,
+        active: data.active ?? false,
+        connectedAt: data.active ? (data.connectedAt ?? new Date()) : (data.connectedAt ?? null),
+      }),
+    );
+  }),
+);
+
+router.put(
+  "/shipping/providers/:provider/credentials",
+  asyncHandler(async (req, res) => {
+    const provider = paramString(req.params.provider);
+    const definition = getShippingProviderDefinition(provider);
+    if (!definition) {
+      res.status(404).json({ message: "Shipping provider not found" });
+      return;
+    }
+
+    const credentials = z.record(z.string(), z.string()).parse(req.body.credentials ?? {});
+    const category = getShippingProviderCredentialCategory(provider);
+    const writes = definition.setupFields
+      .map((field) => ({ field, value: credentials[field.key]?.trim() }))
+      .filter((entry): entry is { field: (typeof definition.setupFields)[number]; value: string } =>
+        Boolean(entry.value),
+      )
+      .map(({ field, value }) =>
+        storage.settings.upsertSetting(field.key, value, category, field.secret ?? true),
+      );
+
+    await Promise.all(writes);
+    storage.settings.invalidateCategory(category);
+
+    const settings = await storage.settings.getDecryptedCategory(category);
+    res.json({
+      provider,
+      setupFields: definition.setupFields.map((field) => ({
+        key: field.key,
+        label: field.label,
+        secret: field.secret ?? true,
+        hasValue: Boolean(settings[field.key]),
+      })),
+    });
+  }),
+);
+
+router.post(
+  "/orders/:orderId/shipments",
+  asyncHandler(async (req, res) => {
+    const orderId = paramString(req.params.orderId);
+    await assertEcommerceOrderCanShip(orderId);
+    const shipmentPayload = insertEcommerceShipmentSchema.parse({
+      ...req.body,
       orderId,
-      trackingUrl: inferCarrierTrackingUrl(body.fulfillment),
-    },
-    items,
-  ));
-}));
+      shippedBy: req.user?.id,
+    });
+    const shipment = await storage.ecommerce.createShipment({
+      ...shipmentPayload,
+      trackingUrl: inferCarrierTrackingUrl(shipmentPayload),
+    });
+    await storage.ecommerce.updateOrder(orderId, { status: "shipped" });
+    const details = await storage.ecommerce.getOrderWithDetails(orderId);
+    if (details && (await sendEcommerceShipmentEmail(details, shipment))) {
+      const updatedShipment = await storage.ecommerce.updateShipment(shipment.id, {
+        emailSentAt: new Date(),
+      });
+      res.status(201).json(updatedShipment ?? shipment);
+      return;
+    }
+    res.status(201).json(shipment);
+  }),
+);
 
-router.get("/settings/stripe", asyncHandler(async (_req, res) => {
-  res.json(await getMaskedEcommerceStripeStatus());
-}));
+router.get(
+  "/orders/:orderId/fulfillments",
+  asyncHandler(async (req, res) => {
+    res.json(await storage.ecommerce.getFulfillmentsForOrder(paramString(req.params.orderId)));
+  }),
+);
 
-router.put("/settings/stripe", asyncHandler(async (req, res) => {
-  const data = z.object({
-    activeMode: z.enum(["test", "live"]).default("test"),
-    testPublishableKey: z.string().optional(),
-    testSecretKey: z.string().optional(),
-    testWebhookSecret: z.string().optional(),
-    livePublishableKey: z.string().optional(),
-    liveSecretKey: z.string().optional(),
-    liveWebhookSecret: z.string().optional(),
-  }).parse(req.body);
+router.post(
+  "/orders/:orderId/fulfillments",
+  asyncHandler(async (req, res) => {
+    const orderId = paramString(req.params.orderId);
+    const body = z
+      .object({
+        fulfillment: insertEcommerceFulfillmentSchema.omit({ orderId: true }),
+        items: fulfillmentItemsSchema,
+      })
+      .parse(req.body);
+    const items = await assertEcommerceFulfillmentRequest(orderId, body.items);
 
-  const activeError = validateStripeKeyMode(
-    data.activeMode as EcommerceStripeMode,
-    data.activeMode === "live" ? data.livePublishableKey : data.testPublishableKey,
-    data.activeMode === "live" ? data.liveSecretKey : data.testSecretKey,
-  );
-  const keyModeError = activeError ?? validateStripeSettingsKeyModes(data);
-  if (keyModeError) {
-    res.status(400).json({ message: keyModeError });
-    return;
-  }
+    res.status(201).json(
+      await storage.ecommerce.createFulfillment(
+        {
+          ...body.fulfillment,
+          orderId,
+          trackingUrl: inferCarrierTrackingUrl(body.fulfillment),
+        },
+        items,
+      ),
+    );
+  }),
+);
 
-  const writes = [
-    storage.settings.upsertSetting("active_mode", data.activeMode, "ecommerce_stripe", false),
-  ];
-  if (data.testPublishableKey !== undefined) writes.push(storage.settings.upsertSetting("test_publishable_key", data.testPublishableKey, "ecommerce_stripe", false));
-  if (data.livePublishableKey !== undefined) writes.push(storage.settings.upsertSetting("live_publishable_key", data.livePublishableKey, "ecommerce_stripe", false));
-  if (data.testSecretKey) writes.push(storage.settings.upsertSetting("test_secret_key", data.testSecretKey, "ecommerce_stripe", true));
-  if (data.liveSecretKey) writes.push(storage.settings.upsertSetting("live_secret_key", data.liveSecretKey, "ecommerce_stripe", true));
-  if (data.testWebhookSecret) writes.push(storage.settings.upsertSetting("test_webhook_secret", data.testWebhookSecret, "ecommerce_stripe", true));
-  if (data.liveWebhookSecret) writes.push(storage.settings.upsertSetting("live_webhook_secret", data.liveWebhookSecret, "ecommerce_stripe", true));
-  await Promise.all(writes);
-  storage.settings.invalidateCategory("ecommerce_stripe");
-  res.json(await getMaskedEcommerceStripeStatus());
-}));
+router.get(
+  "/settings/stripe",
+  asyncHandler(async (_req, res) => {
+    res.json(await getMaskedEcommerceStripeStatus());
+  }),
+);
 
-router.post("/settings/stripe/test", asyncHandler(async (_req, res) => {
-  res.json(await testEcommerceStripeConnection());
-}));
+router.put(
+  "/settings/stripe",
+  asyncHandler(async (req, res) => {
+    const data = z
+      .object({
+        activeMode: z.enum(["test", "live"]).default("test"),
+        testPublishableKey: z.string().optional(),
+        testSecretKey: z.string().optional(),
+        testWebhookSecret: z.string().optional(),
+        livePublishableKey: z.string().optional(),
+        liveSecretKey: z.string().optional(),
+        liveWebhookSecret: z.string().optional(),
+      })
+      .parse(req.body);
 
-router.get("/settings/tax", asyncHandler(async (_req, res) => {
-  res.json(await getEcommerceTaxSettings());
-}));
+    const activeError = validateStripeKeyMode(
+      data.activeMode as EcommerceStripeMode,
+      data.activeMode === "live" ? data.livePublishableKey : data.testPublishableKey,
+      data.activeMode === "live" ? data.liveSecretKey : data.testSecretKey,
+    );
+    const keyModeError = activeError ?? validateStripeSettingsKeyModes(data);
+    if (keyModeError) {
+      res.status(400).json({ message: keyModeError });
+      return;
+    }
 
-router.put("/settings/tax", asyncHandler(async (req, res) => {
-  res.json(await saveEcommerceTaxSettings(ecommerceTaxSettingsSchema.parse(req.body)));
-}));
+    const writes = [
+      storage.settings.upsertSetting("active_mode", data.activeMode, "ecommerce_stripe", false),
+    ];
+    if (data.testPublishableKey !== undefined)
+      writes.push(
+        storage.settings.upsertSetting(
+          "test_publishable_key",
+          data.testPublishableKey,
+          "ecommerce_stripe",
+          false,
+        ),
+      );
+    if (data.livePublishableKey !== undefined)
+      writes.push(
+        storage.settings.upsertSetting(
+          "live_publishable_key",
+          data.livePublishableKey,
+          "ecommerce_stripe",
+          false,
+        ),
+      );
+    if (data.testSecretKey)
+      writes.push(
+        storage.settings.upsertSetting(
+          "test_secret_key",
+          data.testSecretKey,
+          "ecommerce_stripe",
+          true,
+        ),
+      );
+    if (data.liveSecretKey)
+      writes.push(
+        storage.settings.upsertSetting(
+          "live_secret_key",
+          data.liveSecretKey,
+          "ecommerce_stripe",
+          true,
+        ),
+      );
+    if (data.testWebhookSecret)
+      writes.push(
+        storage.settings.upsertSetting(
+          "test_webhook_secret",
+          data.testWebhookSecret,
+          "ecommerce_stripe",
+          true,
+        ),
+      );
+    if (data.liveWebhookSecret)
+      writes.push(
+        storage.settings.upsertSetting(
+          "live_webhook_secret",
+          data.liveWebhookSecret,
+          "ecommerce_stripe",
+          true,
+        ),
+      );
+    await Promise.all(writes);
+    storage.settings.invalidateCategory("ecommerce_stripe");
+    res.json(await getMaskedEcommerceStripeStatus());
+  }),
+);
 
-router.get("/settings/customer-accounts", asyncHandler(async (_req, res) => {
-  res.json(await getEcommerceCustomerAccountSettings());
-}));
+router.post(
+  "/settings/stripe/test",
+  asyncHandler(async (_req, res) => {
+    res.json(await testEcommerceStripeConnection());
+  }),
+);
 
-router.put("/settings/customer-accounts", asyncHandler(async (req, res) => {
-  res.json(await saveEcommerceCustomerAccountSettings(ecommerceCustomerAccountSettingsSchema.parse(req.body)));
-}));
+router.get(
+  "/settings/tax",
+  asyncHandler(async (_req, res) => {
+    res.json(await getEcommerceTaxSettings());
+  }),
+);
 
-router.get("/settings/store", asyncHandler(async (_req, res) => {
-  res.json(await getEcommerceStoreSettings());
-}));
+router.put(
+  "/settings/tax",
+  asyncHandler(async (req, res) => {
+    res.json(await saveEcommerceTaxSettings(ecommerceTaxSettingsSchema.parse(req.body)));
+  }),
+);
 
-router.put("/settings/store", asyncHandler(async (req, res) => {
-  res.json(await saveEcommerceStoreSettings(ecommerceStoreSettingsSchema.parse(req.body)));
-}));
+router.get(
+  "/settings/customer-accounts",
+  asyncHandler(async (_req, res) => {
+    res.json(await getEcommerceCustomerAccountSettings());
+  }),
+);
+
+router.put(
+  "/settings/customer-accounts",
+  asyncHandler(async (req, res) => {
+    res.json(
+      await saveEcommerceCustomerAccountSettings(
+        ecommerceCustomerAccountSettingsSchema.parse(req.body),
+      ),
+    );
+  }),
+);
+
+router.get(
+  "/settings/store",
+  asyncHandler(async (_req, res) => {
+    res.json(await getEcommerceStoreSettings());
+  }),
+);
+
+router.put(
+  "/settings/store",
+  asyncHandler(async (req, res) => {
+    res.json(await saveEcommerceStoreSettings(ecommerceStoreSettingsSchema.parse(req.body)));
+  }),
+);
 
 export default router;

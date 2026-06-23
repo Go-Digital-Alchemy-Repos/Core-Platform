@@ -34,7 +34,13 @@ function isValidDate(d: Date): boolean {
   return d instanceof Date && !isNaN(d.getTime());
 }
 
-const DATE_FIELDS = ["date", "endDate", "registrationOpensAt", "registrationClosesAt", "recurrenceEndDate"] as const;
+const DATE_FIELDS = [
+  "date",
+  "endDate",
+  "registrationOpensAt",
+  "registrationClosesAt",
+  "recurrenceEndDate",
+] as const;
 
 function isValidTimeZone(timeZone: string): boolean {
   try {
@@ -55,7 +61,11 @@ function slugifyEventTitle(value: string): string {
     .replace(/-{2,}/g, "-");
 }
 
-async function buildUniqueEventSlug(title: string, requestedSlug?: string | null, currentEventId?: string): Promise<string> {
+async function buildUniqueEventSlug(
+  title: string,
+  requestedSlug?: string | null,
+  currentEventId?: string,
+): Promise<string> {
   const base = slugifyEventTitle(requestedSlug || title) || "event";
 
   for (let i = 0; i < 100; i += 1) {
@@ -69,7 +79,11 @@ async function buildUniqueEventSlug(title: string, requestedSlug?: string | null
   return `${base}-${Date.now().toString(36)}`;
 }
 
-async function buildUniqueVenueSlug(name: string, requestedSlug?: string | null, currentVenueId?: string): Promise<string> {
+async function buildUniqueVenueSlug(
+  name: string,
+  requestedSlug?: string | null,
+  currentVenueId?: string,
+): Promise<string> {
   const base = slugifyEventTitle(requestedSlug || name) || "venue";
 
   for (let i = 0; i < 100; i += 1) {
@@ -83,7 +97,11 @@ async function buildUniqueVenueSlug(name: string, requestedSlug?: string | null,
   return `${base}-${Date.now().toString(36)}`;
 }
 
-async function buildUniqueOrganizerSlug(name: string, requestedSlug?: string | null, currentOrganizerId?: string): Promise<string> {
+async function buildUniqueOrganizerSlug(
+  name: string,
+  requestedSlug?: string | null,
+  currentOrganizerId?: string,
+): Promise<string> {
   const base = slugifyEventTitle(requestedSlug || name) || "organizer";
 
   for (let i = 0; i < 100; i += 1) {
@@ -122,7 +140,7 @@ function normalizeBlankStrings(data: Record<string, unknown>): Record<string, un
     Object.entries(data).map(([key, value]) => [
       key,
       typeof value === "string" && value.trim() === "" ? null : value,
-    ])
+    ]),
   );
 }
 
@@ -166,11 +184,19 @@ function validateEventData(data: EventRequestData): string | null {
     return `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`;
   }
 
-  if (visibility && !VALID_VISIBILITIES.includes(visibility as (typeof VALID_VISIBILITIES)[number])) {
+  if (
+    visibility &&
+    !VALID_VISIBILITIES.includes(visibility as (typeof VALID_VISIBILITIES)[number])
+  ) {
     return `Invalid visibility. Must be one of: ${VALID_VISIBILITIES.join(", ")}`;
   }
 
-  if (registrationType && !VALID_REGISTRATION_TYPES.includes(registrationType as (typeof VALID_REGISTRATION_TYPES)[number])) {
+  if (
+    registrationType &&
+    !VALID_REGISTRATION_TYPES.includes(
+      registrationType as (typeof VALID_REGISTRATION_TYPES)[number],
+    )
+  ) {
     return `Invalid registration type. Must be one of: ${VALID_REGISTRATION_TYPES.join(", ")}`;
   }
 
@@ -190,13 +216,18 @@ function validateEventData(data: EventRequestData): string | null {
     return `Invalid event format. Must be one of: ${EVENT_FORMATS.join(", ")}`;
   }
 
-  if (deliveryMode && !EVENT_DELIVERY_MODES.includes(deliveryMode as (typeof EVENT_DELIVERY_MODES)[number])) {
+  if (
+    deliveryMode &&
+    !EVENT_DELIVERY_MODES.includes(deliveryMode as (typeof EVENT_DELIVERY_MODES)[number])
+  ) {
     return `Invalid delivery mode. Must be one of: ${EVENT_DELIVERY_MODES.join(", ")}`;
   }
 
   if (
     registrationApprovalMode &&
-    !EVENT_REGISTRATION_APPROVAL_MODES.includes(registrationApprovalMode as (typeof EVENT_REGISTRATION_APPROVAL_MODES)[number])
+    !EVENT_REGISTRATION_APPROVAL_MODES.includes(
+      registrationApprovalMode as (typeof EVENT_REGISTRATION_APPROVAL_MODES)[number],
+    )
   ) {
     return `Invalid registration approval mode. Must be one of: ${EVENT_REGISTRATION_APPROVAL_MODES.join(", ")}`;
   }
@@ -211,7 +242,10 @@ function validateEventData(data: EventRequestData): string | null {
     return "Slug must use lowercase letters, numbers, and hyphens only";
   }
 
-  if (registrationType === "paid" && (!numberField(data, "registrationFee") || numberField(data, "registrationFee")! <= 0)) {
+  if (
+    registrationType === "paid" &&
+    (!numberField(data, "registrationFee") || numberField(data, "registrationFee")! <= 0)
+  ) {
     return "Registration fee must be greater than 0 for paid events";
   }
 
@@ -288,7 +322,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const eventsList = await storage.events.getAllEvents();
     res.json(await Promise.all(eventsList.map(normalizeEventImage)));
-  })
+  }),
 );
 
 router.post(
@@ -309,14 +343,14 @@ router.post(
     payload.slug = await buildUniqueEventSlug(payload.title ?? "Event", payload.slug);
     const event = await storage.events.createEvent(payload as InsertEvent);
     res.status(201).json(await normalizeEventImage(event));
-  })
+  }),
 );
 
 router.get(
   "/venues",
   asyncHandler(async (_req, res) => {
     res.json(await storage.eventVenues.getAllVenues());
-  })
+  }),
 );
 
 router.post(
@@ -328,7 +362,9 @@ router.post(
     }
     const slug = textField(req.body, "slug");
     if (slug && !SLUG_PATTERN.test(slug)) {
-      return res.status(400).json({ message: "Slug must use lowercase letters, numbers, and hyphens only" });
+      return res
+        .status(400)
+        .json({ message: "Slug must use lowercase letters, numbers, and hyphens only" });
     }
 
     const payload = normalizeBlankStrings(req.body) as InsertEventVenue & { slug?: string | null };
@@ -336,7 +372,7 @@ router.post(
     payload.slug = await buildUniqueVenueSlug(name, payload.slug);
     const venue = await storage.eventVenues.createVenue(payload);
     res.status(201).json(venue);
-  })
+  }),
 );
 
 router.put(
@@ -353,10 +389,14 @@ router.put(
       return res.status(400).json({ message: "Venue name is required" });
     }
     if (slug && !SLUG_PATTERN.test(slug)) {
-      return res.status(400).json({ message: "Slug must use lowercase letters, numbers, and hyphens only" });
+      return res
+        .status(400)
+        .json({ message: "Slug must use lowercase letters, numbers, and hyphens only" });
     }
 
-    const payload = normalizeBlankStrings(req.body) as Partial<InsertEventVenue> & { slug?: string | null };
+    const payload = normalizeBlankStrings(req.body) as Partial<InsertEventVenue> & {
+      slug?: string | null;
+    };
     if (name) {
       payload.name = name;
     }
@@ -365,7 +405,7 @@ router.put(
     }
     const updated = await storage.eventVenues.updateVenue(id, payload);
     res.json(updated);
-  })
+  }),
 );
 
 router.delete(
@@ -376,7 +416,7 @@ router.delete(
       return notFound(res, "Venue");
     }
     res.json({ message: "Venue deleted" });
-  })
+  }),
 );
 
 router.get(
@@ -388,10 +428,10 @@ router.get(
         organizers.map(async (organizer) => ({
           ...organizer,
           imageUrl: (await r2Service.normalizePublicUrl(organizer.imageUrl)) ?? null,
-        }))
-      )
+        })),
+      ),
     );
-  })
+  }),
 );
 
 router.post(
@@ -403,16 +443,20 @@ router.post(
     }
     const slug = textField(req.body, "slug");
     if (slug && !SLUG_PATTERN.test(slug)) {
-      return res.status(400).json({ message: "Slug must use lowercase letters, numbers, and hyphens only" });
+      return res
+        .status(400)
+        .json({ message: "Slug must use lowercase letters, numbers, and hyphens only" });
     }
 
-    const payload = normalizeBlankStrings(req.body) as InsertEventOrganizer & { slug?: string | null };
+    const payload = normalizeBlankStrings(req.body) as InsertEventOrganizer & {
+      slug?: string | null;
+    };
     payload.name = name;
     payload.slug = await buildUniqueOrganizerSlug(name, payload.slug);
     payload.imageUrl = (await r2Service.normalizePublicUrl(payload.imageUrl)) ?? null;
     const organizer = await storage.eventOrganizers.createOrganizer(payload);
     res.status(201).json(organizer);
-  })
+  }),
 );
 
 router.put(
@@ -429,33 +473,43 @@ router.put(
       return res.status(400).json({ message: "Organizer name is required" });
     }
     if (slug && !SLUG_PATTERN.test(slug)) {
-      return res.status(400).json({ message: "Slug must use lowercase letters, numbers, and hyphens only" });
+      return res
+        .status(400)
+        .json({ message: "Slug must use lowercase letters, numbers, and hyphens only" });
     }
 
-    const payload = normalizeBlankStrings(req.body) as Partial<InsertEventOrganizer> & { slug?: string | null };
+    const payload = normalizeBlankStrings(req.body) as Partial<InsertEventOrganizer> & {
+      slug?: string | null;
+    };
     if (name) {
       payload.name = name;
     }
     if (payload.slug !== undefined || name) {
-      payload.slug = await buildUniqueOrganizerSlug(name || organizer.name, payload.slug ?? organizer.slug, id);
+      payload.slug = await buildUniqueOrganizerSlug(
+        name || organizer.name,
+        payload.slug ?? organizer.slug,
+        id,
+      );
     }
     if (payload.imageUrl !== undefined) {
       payload.imageUrl = (await r2Service.normalizePublicUrl(payload.imageUrl)) ?? null;
     }
     const updated = await storage.eventOrganizers.updateOrganizer(id, payload);
     res.json(updated);
-  })
+  }),
 );
 
 router.delete(
   "/organizers/:organizerId",
   asyncHandler(async (req, res) => {
-    const deleted = await storage.eventOrganizers.deleteOrganizer(paramString(req.params.organizerId));
+    const deleted = await storage.eventOrganizers.deleteOrganizer(
+      paramString(req.params.organizerId),
+    );
     if (!deleted) {
       return notFound(res, "Organizer");
     }
     res.json({ message: "Organizer deleted" });
-  })
+  }),
 );
 
 router.put(
@@ -480,15 +534,8 @@ router.put(
       payload.tags = payload.tags.map((tag: string) => tag.trim()).filter(Boolean);
     }
     if (payload.slug !== undefined || payload.title !== undefined) {
-      const requestedSlug =
-        payload.slug !== undefined
-          ? payload.slug
-          : oldEvent.slug;
-      payload.slug = await buildUniqueEventSlug(
-        payload.title || oldEvent.title,
-        requestedSlug,
-        id
-      );
+      const requestedSlug = payload.slug !== undefined ? payload.slug : oldEvent.slug;
+      payload.slug = await buildUniqueEventSlug(payload.title || oldEvent.title, requestedSlug, id);
     }
 
     const event = await storage.events.updateEvent(id, payload as Partial<InsertEvent>);
@@ -501,25 +548,24 @@ router.put(
     if (req.body.status === "canceled" && oldEvent.status !== "canceled") {
       const canceledCount = await storage.eventRegistrations.cancelAllActiveRegistrations(id);
       if (canceledCount > 0) {
-        const confirmedRegistrations = await storage.eventRegistrations.getConfirmedRegistrations(id);
+        const confirmedRegistrations =
+          await storage.eventRegistrations.getConfirmedRegistrations(id);
         for (const reg of confirmedRegistrations) {
-          sendEventCanceledEmail(
-            reg.email,
-            reg.fullName.split(" ")[0],
-            event.title
-          ).catch((err) => {
-            logger.email.warn("Failed to send event cancellation email", {
-              email: reg.email,
-              error: err instanceof Error ? err.message : String(err),
-            });
-          });
+          sendEventCanceledEmail(reg.email, reg.fullName.split(" ")[0], event.title).catch(
+            (err) => {
+              logger.email.warn("Failed to send event cancellation email", {
+                email: reg.email,
+                error: err instanceof Error ? err.message : String(err),
+              });
+            },
+          );
         }
         logger.app.info(`Event ${id} canceled, ${canceledCount} registrations updated.`);
       }
     }
 
     res.json(await normalizeEventImage(event));
-  })
+  }),
 );
 
 router.post(
@@ -535,12 +581,7 @@ router.post(
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(10, 0, 0, 0);
 
-    const {
-      id: _id,
-      createdAt: _createdAt,
-      slug: _slug,
-      ...eventData
-    } = sourceEvent;
+    const { id: _id, createdAt: _createdAt, slug: _slug, ...eventData } = sourceEvent;
 
     const newEvent = await storage.events.createEvent({
       ...eventData,
@@ -555,7 +596,7 @@ router.post(
     } as InsertEvent);
 
     res.status(201).json(await normalizeEventImage(newEvent));
-  })
+  }),
 );
 
 router.get(
@@ -564,7 +605,7 @@ router.get(
     const id = paramString(req.params.id);
     const analytics = await storage.eventRegistrations.getEventAnalytics(id);
     res.json(analytics);
-  })
+  }),
 );
 
 router.post(
@@ -592,23 +633,35 @@ router.post(
       month: "long",
       day: "numeric",
     });
-    const eventLocation = event.locationName || event.location || (event.isVirtual ? "Virtual" : null);
+    const eventLocation =
+      event.locationName || event.location || (event.isVirtual ? "Virtual" : null);
 
     for (const reg of confirmed) {
       const firstName = reg.fullName.split(" ")[0];
       if (type === "reminder") {
-        sendEventReminderEmail(reg.email, firstName, event.title, eventDateStr, eventLocation).catch((err) => {
+        sendEventReminderEmail(
+          reg.email,
+          firstName,
+          event.title,
+          eventDateStr,
+          eventLocation,
+        ).catch((err) => {
           logger.email.warn("Failed to send reminder email", { email: reg.email, error: err });
         });
       } else if (type === "recording") {
-        sendRecordingAvailableEmail(reg.email, firstName, event.title, event.recordingUrl!).catch((err) => {
-          logger.email.warn("Failed to send recording email", { email: reg.email, error: err });
-        });
+        sendRecordingAvailableEmail(reg.email, firstName, event.title, event.recordingUrl!).catch(
+          (err) => {
+            logger.email.warn("Failed to send recording email", { email: reg.email, error: err });
+          },
+        );
       }
     }
 
-    res.json({ sent: confirmed.length, message: `Notification sent to ${confirmed.length} registrants` });
-  })
+    res.json({
+      sent: confirmed.length,
+      message: `Notification sent to ${confirmed.length} registrants`,
+    });
+  }),
 );
 
 router.delete(
@@ -616,7 +669,7 @@ router.delete(
   asyncHandler(async (req, res) => {
     await storage.events.deleteEvent(paramString(req.params.id));
     res.json({ message: "Event deleted" });
-  })
+  }),
 );
 
 export default router;

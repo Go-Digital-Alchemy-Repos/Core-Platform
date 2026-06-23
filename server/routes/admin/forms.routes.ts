@@ -10,7 +10,7 @@ router.get(
   "/forms",
   asyncHandler(async (_req, res) => {
     res.json(await storage.forms.getAll());
-  })
+  }),
 );
 
 router.get(
@@ -22,7 +22,7 @@ router.get(
       return res.status(404).json({ message: "Form not found" });
     }
     res.json(form);
-  })
+  }),
 );
 
 router.get(
@@ -34,7 +34,7 @@ router.get(
       return res.status(404).json({ message: "Form not found" });
     }
     res.json(await storage.forms.getSubmissionsByFormId(id));
-  })
+  }),
 );
 
 router.delete(
@@ -53,7 +53,7 @@ router.delete(
     }
 
     res.json({ success: true });
-  })
+  }),
 );
 
 router.post(
@@ -61,7 +61,9 @@ router.post(
   asyncHandler(async (req, res) => {
     const parsed = insertCmsFormSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid form payload", errors: parsed.error.flatten() });
+      return res
+        .status(400)
+        .json({ message: "Invalid form payload", errors: parsed.error.flatten() });
     }
 
     const existing = await storage.forms.getBySlug(parsed.data.slug);
@@ -71,7 +73,7 @@ router.post(
 
     const form = await storage.forms.create(parsed.data);
     res.status(201).json(form);
-  })
+  }),
 );
 
 router.put(
@@ -79,7 +81,9 @@ router.put(
   asyncHandler(async (req, res) => {
     const parsed = insertCmsFormSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid form payload", errors: parsed.error.flatten() });
+      return res
+        .status(400)
+        .json({ message: "Invalid form payload", errors: parsed.error.flatten() });
     }
 
     const id = paramString(req.params.id);
@@ -95,7 +99,7 @@ router.put(
 
     const form = await storage.forms.update(id, parsed.data);
     res.json(form);
-  })
+  }),
 );
 
 router.delete(
@@ -113,7 +117,7 @@ router.delete(
 
     const deleted = await storage.forms.delete(id);
     res.json({ success: deleted });
-  })
+  }),
 );
 
 export default router;

@@ -15,11 +15,7 @@ import { PublicSidebar } from "@/features/public/public-sidebar";
 import { useFrontendEditTarget } from "@/features/frontend-edit/frontend-edit";
 import { BlogComments } from "@/components/blog/blog-comments";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
-import {
-  buildOrganizationLd,
-  buildBreadcrumbLd,
-  buildArticleLd,
-} from "@/lib/structured-data";
+import { buildOrganizationLd, buildBreadcrumbLd, buildArticleLd } from "@/lib/structured-data";
 
 class BlogMembershipAccessError extends Error {
   status: number;
@@ -58,14 +54,11 @@ function PodcastPlayer({ podcastUrl }: { podcastUrl: string }) {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-sm mb-1 public-heading-3">Listen to this episode</h3>
-            <p className="text-xs public-helper-text mb-3">Available on your favorite podcast platform</p>
+            <p className="text-xs public-helper-text mb-3">
+              Available on your favorite podcast platform
+            </p>
             <div className="flex items-center gap-2 flex-wrap">
-              <Button
-                size="sm"
-                className="gap-1.5"
-                asChild
-                data-testid="button-play-podcast"
-              >
+              <Button size="sm" className="gap-1.5" asChild data-testid="button-play-podcast">
                 <a href={podcastUrl} target="_blank" rel="noopener noreferrer">
                   <Play className="h-3.5 w-3.5" />
                   Listen Now
@@ -127,13 +120,20 @@ function PostSeo({ post, globalSeo }: { post: BlogPost; globalSeo?: SeoSettings 
 export default function InsightsPostPage() {
   const params = useParams<{ slug: string }>();
 
-  const { data: post, isLoading, error } = useQuery<BlogPost>({
+  const {
+    data: post,
+    isLoading,
+    error,
+  } = useQuery<BlogPost>({
     queryKey: ["/api/blog", params.slug],
     queryFn: async () => {
       const res = await fetch(`/api/blog/${params.slug}`, { credentials: "include" });
       if (res.status === 401 || res.status === 403) {
         const payload = await res.json().catch(() => ({}));
-        throw new BlogMembershipAccessError(res.status, typeof payload.teaser === "string" ? payload.teaser : null);
+        throw new BlogMembershipAccessError(
+          res.status,
+          typeof payload.teaser === "string" ? payload.teaser : null,
+        );
       }
       if (!res.ok) throw new Error("Article not found");
       return res.json();
@@ -145,11 +145,15 @@ export default function InsightsPostPage() {
     staleTime: STALE_TIMES.CONTENT,
   });
 
-  useFrontendEditTarget(post ? {
-    kind: "blog-post",
-    id: post.id,
-    label: `Edit ${post.title}`,
-  } : null);
+  useFrontendEditTarget(
+    post
+      ? {
+          kind: "blog-post",
+          id: post.id,
+          label: `Edit ${post.title}`,
+        }
+      : null,
+  );
 
   if (isLoading) {
     return (
@@ -188,7 +192,9 @@ export default function InsightsPostPage() {
       <PageLayout>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-24 text-center">
           <h1 className="text-2xl font-semibold mb-4 public-heading-1">Article Not Found</h1>
-          <p className="public-helper-text mb-6">The article you're looking for doesn't exist or has been removed.</p>
+          <p className="public-helper-text mb-6">
+            The article you're looking for doesn't exist or has been removed.
+          </p>
           <Link href="/insights">
             <Button variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -219,7 +225,10 @@ export default function InsightsPostPage() {
                   src={post.coverImageUrl}
                   alt={post.title}
                   className="w-full h-full object-cover"
-                  style={getImageObjectPositionStyle(post.coverImagePositionX, post.coverImagePositionY)}
+                  style={getImageObjectPositionStyle(
+                    post.coverImagePositionX,
+                    post.coverImagePositionY,
+                  )}
                   data-testid="img-post-cover"
                 />
               </div>
@@ -232,18 +241,26 @@ export default function InsightsPostPage() {
             <div className="flex items-center gap-3 mb-4 flex-wrap">
               {post.postType === "podcast" && (
                 <Badge variant="secondary" data-testid="badge-post-type">
-                  <Headphones className="h-3 w-3 mr-1" />Podcast
+                  <Headphones className="h-3 w-3 mr-1" />
+                  Podcast
                 </Badge>
               )}
               {post.category && (
-                <Badge variant="secondary" data-testid="badge-post-category">{post.category}</Badge>
+                <Badge variant="secondary" data-testid="badge-post-category">
+                  {post.category}
+                </Badge>
               )}
               {post.tags?.map((tag) => (
-                <Badge key={tag} variant="outline" data-testid={`badge-post-tag-${tag}`}>{tag}</Badge>
+                <Badge key={tag} variant="outline" data-testid={`badge-post-tag-${tag}`}>
+                  {tag}
+                </Badge>
               ))}
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-heading font-semibold mb-4 public-heading-1" data-testid="text-post-title">
+            <h1
+              className="text-3xl sm:text-4xl font-heading font-semibold mb-4 public-heading-1"
+              data-testid="text-post-title"
+            >
               {post.title}
             </h1>
 
@@ -255,7 +272,10 @@ export default function InsightsPostPage() {
             </div>
 
             {post.excerpt && (
-              <p className="text-lg public-body-text mb-8 leading-relaxed" data-testid="text-post-excerpt">
+              <p
+                className="text-lg public-body-text mb-8 leading-relaxed"
+                data-testid="text-post-excerpt"
+              >
                 {post.excerpt}
               </p>
             )}

@@ -11,7 +11,10 @@ import {
 const CHECK_INTERVAL_MS = 15 * 60_000;
 
 function getAppBaseUrl() {
-  return process.env.APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "localhost:5000"}`;
+  return (
+    process.env.APP_URL ||
+    `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "localhost:5000"}`
+  );
 }
 
 function formatDateTime(date: Date) {
@@ -73,14 +76,9 @@ export async function processDirectoryMembershipLifecycle() {
         subscription.currentPeriodEnd &&
         subscription.currentPeriodEnd > now &&
         subscription.currentPeriodEnd <= renewalWindowEnd &&
-        !sameMoment(
-          subscription.renewalReminderSentForPeriodEnd,
-          subscription.currentPeriodEnd,
-        )
+        !sameMoment(subscription.renewalReminderSentForPeriodEnd, subscription.currentPeriodEnd)
       ) {
-        const tier = subscription.tierId
-          ? await storage.tiers.getTier(subscription.tierId)
-          : null;
+        const tier = subscription.tierId ? await storage.tiers.getTier(subscription.tierId) : null;
 
         const sent = await sendMembershipRenewalReminderEmail(
           user.email,
@@ -125,9 +123,13 @@ export async function processDirectoryMembershipLifecycle() {
         });
       }
     } catch (err) {
-      logger.app.error("[directory-membership] Failed to process subscription lifecycle item", err, {
-        subscriptionId: subscription.id,
-      });
+      logger.app.error(
+        "[directory-membership] Failed to process subscription lifecycle item",
+        err,
+        {
+          subscriptionId: subscription.id,
+        },
+      );
     }
   }
 }
@@ -154,12 +156,18 @@ export async function notifyMembershipPaymentFailed(subscriptionId: string, ther
   );
 
   await storage.subscriptions.updateSubscription(subscription.id, {
-    paymentFailureNoticeSentAt: sent ? new Date() : subscription.paymentFailureNoticeSentAt ?? null,
+    paymentFailureNoticeSentAt: sent
+      ? new Date()
+      : (subscription.paymentFailureNoticeSentAt ?? null),
     gracePeriodEndsAt,
   });
 }
 
-export async function handleMembershipRecovered(subscriptionId: string, therapistId: string, hadBillingIssue: boolean) {
+export async function handleMembershipRecovered(
+  subscriptionId: string,
+  therapistId: string,
+  hadBillingIssue: boolean,
+) {
   const [subscription, user] = await Promise.all([
     storage.subscriptions.getSubscription(subscriptionId),
     storage.users.getUser(therapistId),

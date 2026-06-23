@@ -4,7 +4,10 @@ import { blogTaxonomies, type BlogTaxonomy, type InsertBlogTaxonomy } from "@sha
 
 export class BlogTaxonomyStorage {
   async getAllTaxonomies(): Promise<BlogTaxonomy[]> {
-    return db.select().from(blogTaxonomies).orderBy(asc(blogTaxonomies.type), asc(blogTaxonomies.sortOrder), asc(blogTaxonomies.name));
+    return db
+      .select()
+      .from(blogTaxonomies)
+      .orderBy(asc(blogTaxonomies.type), asc(blogTaxonomies.sortOrder), asc(blogTaxonomies.name));
   }
 
   async getTaxonomy(id: string): Promise<BlogTaxonomy | undefined> {
@@ -12,7 +15,10 @@ export class BlogTaxonomyStorage {
     return row;
   }
 
-  async findByTypeAndName(type: BlogTaxonomy["type"], name: string): Promise<BlogTaxonomy | undefined> {
+  async findByTypeAndName(
+    type: BlogTaxonomy["type"],
+    name: string,
+  ): Promise<BlogTaxonomy | undefined> {
     const rows = await db.select().from(blogTaxonomies).where(eq(blogTaxonomies.type, type));
     return rows.find((row) => row.name.trim().toLowerCase() === name.trim().toLowerCase());
   }
@@ -22,7 +28,10 @@ export class BlogTaxonomyStorage {
     return row;
   }
 
-  async updateTaxonomy(id: string, data: Partial<InsertBlogTaxonomy>): Promise<BlogTaxonomy | undefined> {
+  async updateTaxonomy(
+    id: string,
+    data: Partial<InsertBlogTaxonomy>,
+  ): Promise<BlogTaxonomy | undefined> {
     const [row] = await db
       .update(blogTaxonomies)
       .set({ ...data, updatedAt: new Date() })
@@ -49,6 +58,9 @@ export class BlogTaxonomyStorage {
   }
 
   async getChildren(parentId: string): Promise<BlogTaxonomy[]> {
-    return db.select().from(blogTaxonomies).where(and(eq(blogTaxonomies.parentId, parentId), eq(blogTaxonomies.type, "category")));
+    return db
+      .select()
+      .from(blogTaxonomies)
+      .where(and(eq(blogTaxonomies.parentId, parentId), eq(blogTaxonomies.type, "category")));
   }
 }

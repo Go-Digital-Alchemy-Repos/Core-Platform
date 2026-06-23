@@ -63,15 +63,30 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       minHeight: "420",
     },
     propDefs: [
-      { key: "badge", label: "Badge Text", type: "text", placeholder: "e.g. New, Coming Soon" },
-      { key: "heading", label: "Heading", type: "text", placeholder: "Main heading" },
+      {
+        key: "badge",
+        label: "Badge Text",
+        type: "text",
+        placeholder: "e.g. New, Coming Soon",
+      },
+      {
+        key: "heading",
+        label: "Heading",
+        type: "text",
+        placeholder: "Main heading",
+      },
       {
         key: "accentHeading",
         label: "Accent Heading",
         type: "text",
         placeholder: "Optional highlighted heading text",
       },
-      { key: "headingColor", label: "Heading Color", type: "color", placeholder: "#ffffff" },
+      {
+        key: "headingColor",
+        label: "Heading Color",
+        type: "color",
+        placeholder: "#ffffff",
+      },
       {
         key: "accentHeadingColor",
         label: "Accent Heading Color",
@@ -84,7 +99,12 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "textarea",
         placeholder: "Supporting text beneath the heading",
       },
-      { key: "subheadingColor", label: "Subheading Color", type: "color", placeholder: "#ffffff" },
+      {
+        key: "subheadingColor",
+        label: "Subheading Color",
+        type: "color",
+        placeholder: "#ffffff",
+      },
       {
         key: "ctaText",
         label: "Primary Button Text",
@@ -97,8 +117,17 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "select",
         options: BUTTON_ACTION_OPTIONS,
       },
-      { key: "ctaLink", label: "Primary Button Link", type: "url", placeholder: "/directory" },
-      { key: "ctaOpenInNewTab", label: "Primary Open In New Tab", type: "boolean" },
+      {
+        key: "ctaLink",
+        label: "Primary Button Link",
+        type: "url",
+        placeholder: "/directory",
+      },
+      {
+        key: "ctaOpenInNewTab",
+        label: "Primary Open In New Tab",
+        type: "boolean",
+      },
       { key: "ctaFormSlug", label: "Primary Button Form", type: "form-select" },
       {
         key: "ctaModalTitle",
@@ -130,8 +159,16 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "url",
         placeholder: "/about",
       },
-      { key: "ctaSecondaryOpenInNewTab", label: "Secondary Open In New Tab", type: "boolean" },
-      { key: "ctaSecondaryFormSlug", label: "Secondary Button Form", type: "form-select" },
+      {
+        key: "ctaSecondaryOpenInNewTab",
+        label: "Secondary Open In New Tab",
+        type: "boolean",
+      },
+      {
+        key: "ctaSecondaryFormSlug",
+        label: "Secondary Button Form",
+        type: "form-select",
+      },
       {
         key: "ctaSecondaryModalTitle",
         label: "Secondary Modal Title",
@@ -170,9 +207,25 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "url",
         placeholder: "https://example.com/video.mp4",
       },
-      { key: "overlayColor", label: "Overlay Color", type: "color", placeholder: "#000000" },
-      { key: "overlayOpacity", label: "Overlay Opacity (%)", type: "number", min: 0, max: 100 },
-      { key: "layout", label: "Layout", type: "select", options: HERO_LAYOUT_OPTIONS },
+      {
+        key: "overlayColor",
+        label: "Overlay Color",
+        type: "color",
+        placeholder: "#000000",
+      },
+      {
+        key: "overlayOpacity",
+        label: "Overlay Opacity (%)",
+        type: "number",
+        min: 0,
+        max: 100,
+      },
+      {
+        key: "layout",
+        label: "Layout",
+        type: "select",
+        options: HERO_LAYOUT_OPTIONS,
+      },
       {
         key: "minHeight",
         label: "Min Height (px)",
@@ -201,14 +254,24 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "text",
         placeholder: "Small label above title",
       },
-      { key: "title", label: "Title", type: "text", placeholder: "Section title" },
+      {
+        key: "title",
+        label: "Title",
+        type: "text",
+        placeholder: "Section title",
+      },
       {
         key: "subtitle",
         label: "Subtitle",
         type: "textarea",
         placeholder: "Supporting description",
       },
-      { key: "alignment", label: "Alignment", type: "select", options: ALIGN_OPTIONS },
+      {
+        key: "alignment",
+        label: "Alignment",
+        type: "select",
+        options: ALIGN_OPTIONS,
+      },
       {
         key: "headingLevel",
         label: "Heading Level",
@@ -228,8 +291,18 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       alignment: "left",
     },
     propDefs: [
-      { key: "content", label: "Content", type: "richtext", placeholder: "Enter content..." },
-      { key: "alignment", label: "Alignment", type: "select", options: ALIGN_OPTIONS },
+      {
+        key: "content",
+        label: "Content",
+        type: "richtext",
+        placeholder: "Enter content...",
+      },
+      {
+        key: "alignment",
+        label: "Alignment",
+        type: "select",
+        options: ALIGN_OPTIONS,
+      },
     ],
   },
   {
@@ -259,22 +332,42 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "text",
         placeholder: "Small label above title",
       },
-      { key: "heading", label: "Section Title", type: "text", placeholder: "Section heading" },
+      {
+        key: "heading",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Section heading",
+      },
       {
         key: "subtitle",
         label: "Subtitle",
         type: "textarea",
         placeholder: "Supporting description",
       },
-      { key: "alignment", label: "Alignment", type: "select", options: ALIGN_OPTIONS },
+      {
+        key: "alignment",
+        label: "Alignment",
+        type: "select",
+        options: ALIGN_OPTIONS,
+      },
       {
         key: "headingLevel",
         label: "Heading Level",
         type: "select",
         options: HEADING_LEVEL_OPTIONS,
       },
-      { key: "body", label: "Body Text", type: "richtext", placeholder: "Main text content" },
-      { key: "imageUrl", label: "Image", type: "image-url", placeholder: "Upload or select image" },
+      {
+        key: "body",
+        label: "Body Text",
+        type: "richtext",
+        placeholder: "Main text content",
+      },
+      {
+        key: "imageUrl",
+        label: "Image",
+        type: "image-url",
+        placeholder: "Upload or select image",
+      },
       {
         key: "imageAlt",
         label: "Image Alt Text",
@@ -342,7 +435,12 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         label: "Left Column Items",
         type: "array-items",
         itemSchema: [
-          { key: "text", label: "Item Text", type: "text", placeholder: "Bullet point" },
+          {
+            key: "text",
+            label: "Item Text",
+            type: "text",
+            placeholder: "Bullet point",
+          },
         ],
       },
       {
@@ -362,7 +460,12 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         label: "Right Column Items",
         type: "array-items",
         itemSchema: [
-          { key: "text", label: "Item Text", type: "text", placeholder: "Bullet point" },
+          {
+            key: "text",
+            label: "Item Text",
+            type: "text",
+            placeholder: "Bullet point",
+          },
         ],
       },
     ],
@@ -406,10 +509,30 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "richtext",
         placeholder: "Add highlighted content...",
       },
-      { key: "variant", label: "Style Variant", type: "select", options: CALLOUT_VARIANT_OPTIONS },
-      { key: "ctaText", label: "Button Text", type: "text", placeholder: "Optional button label" },
-      { key: "ctaAction", label: "Button Action", type: "select", options: BUTTON_ACTION_OPTIONS },
-      { key: "ctaLink", label: "Button Link", type: "url", placeholder: "/page or https://..." },
+      {
+        key: "variant",
+        label: "Style Variant",
+        type: "select",
+        options: CALLOUT_VARIANT_OPTIONS,
+      },
+      {
+        key: "ctaText",
+        label: "Button Text",
+        type: "text",
+        placeholder: "Optional button label",
+      },
+      {
+        key: "ctaAction",
+        label: "Button Action",
+        type: "select",
+        options: BUTTON_ACTION_OPTIONS,
+      },
+      {
+        key: "ctaLink",
+        label: "Button Link",
+        type: "url",
+        placeholder: "/page or https://...",
+      },
       { key: "ctaOpenInNewTab", label: "Open In New Tab", type: "boolean" },
       { key: "ctaFormSlug", label: "Assigned Form", type: "form-select" },
       {
@@ -437,8 +560,16 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       subtitle: "",
       columns: "1",
       links: [
-        { label: "Resource title", description: "Short supporting description", url: "#" },
-        { label: "Another resource", description: "Optional summary text", url: "#" },
+        {
+          label: "Resource title",
+          description: "Short supporting description",
+          url: "#",
+        },
+        {
+          label: "Another resource",
+          description: "Optional summary text",
+          url: "#",
+        },
       ],
     },
     propDefs: [
@@ -454,20 +585,35 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "textarea",
         placeholder: "Optional supporting description",
       },
-      { key: "columns", label: "Columns", type: "select", options: LINK_LIST_COLUMNS_OPTIONS },
+      {
+        key: "columns",
+        label: "Columns",
+        type: "select",
+        options: LINK_LIST_COLUMNS_OPTIONS,
+      },
       {
         key: "links",
         label: "Links",
         type: "array-items",
         itemSchema: [
-          { key: "label", label: "Label", type: "text", placeholder: "Link title" },
+          {
+            key: "label",
+            label: "Label",
+            type: "text",
+            placeholder: "Link title",
+          },
           {
             key: "description",
             label: "Description",
             type: "textarea",
             placeholder: "Optional supporting text",
           },
-          { key: "url", label: "URL", type: "url", placeholder: "/page or https://..." },
+          {
+            key: "url",
+            label: "URL",
+            type: "url",
+            placeholder: "/page or https://...",
+          },
         ],
       },
     ],
@@ -498,18 +644,46 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       variant: "dark",
     },
     propDefs: [
-      { key: "heading", label: "Heading", type: "text", placeholder: "CTA heading" },
-      { key: "subheading", label: "Subheading", type: "textarea", placeholder: "Supporting text" },
-      { key: "primaryText", label: "Primary Button", type: "text", placeholder: "Button label" },
+      {
+        key: "heading",
+        label: "Heading",
+        type: "text",
+        placeholder: "CTA heading",
+      },
+      {
+        key: "subheading",
+        label: "Subheading",
+        type: "textarea",
+        placeholder: "Supporting text",
+      },
+      {
+        key: "primaryText",
+        label: "Primary Button",
+        type: "text",
+        placeholder: "Button label",
+      },
       {
         key: "primaryAction",
         label: "Primary Button Action",
         type: "select",
         options: BUTTON_ACTION_OPTIONS,
       },
-      { key: "primaryLink", label: "Primary Button Link", type: "url", placeholder: "/directory" },
-      { key: "primaryOpenInNewTab", label: "Primary Open In New Tab", type: "boolean" },
-      { key: "primaryFormSlug", label: "Primary Button Form", type: "form-select" },
+      {
+        key: "primaryLink",
+        label: "Primary Button Link",
+        type: "url",
+        placeholder: "/directory",
+      },
+      {
+        key: "primaryOpenInNewTab",
+        label: "Primary Open In New Tab",
+        type: "boolean",
+      },
+      {
+        key: "primaryFormSlug",
+        label: "Primary Button Form",
+        type: "form-select",
+      },
       {
         key: "primaryModalTitle",
         label: "Primary Modal Title",
@@ -534,9 +708,22 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "select",
         options: BUTTON_ACTION_OPTIONS,
       },
-      { key: "secondaryLink", label: "Secondary Button Link", type: "url", placeholder: "/about" },
-      { key: "secondaryOpenInNewTab", label: "Secondary Open In New Tab", type: "boolean" },
-      { key: "secondaryFormSlug", label: "Secondary Button Form", type: "form-select" },
+      {
+        key: "secondaryLink",
+        label: "Secondary Button Link",
+        type: "url",
+        placeholder: "/about",
+      },
+      {
+        key: "secondaryOpenInNewTab",
+        label: "Secondary Open In New Tab",
+        type: "boolean",
+      },
+      {
+        key: "secondaryFormSlug",
+        label: "Secondary Button Form",
+        type: "form-select",
+      },
       {
         key: "secondaryModalTitle",
         label: "Secondary Modal Title",
@@ -549,7 +736,12 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "textarea",
         placeholder: "Optional modal description",
       },
-      { key: "variant", label: "Style Variant", type: "select", options: CTA_VARIANT_OPTIONS },
+      {
+        key: "variant",
+        label: "Style Variant",
+        type: "select",
+        options: CTA_VARIANT_OPTIONS,
+      },
     ],
   },
   {
@@ -581,20 +773,35 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Grid section title" },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Grid section title",
+      },
       {
         key: "subtitle",
         label: "Section Subtitle",
         type: "text",
         placeholder: "Optional subtitle",
       },
-      { key: "columns", label: "Columns", type: "select", options: COLUMNS_OPTIONS },
+      {
+        key: "columns",
+        label: "Columns",
+        type: "select",
+        options: COLUMNS_OPTIONS,
+      },
       {
         key: "cards",
         label: "Cards",
         type: "array-items",
         itemSchema: [
-          { key: "title", label: "Card Title", type: "text", placeholder: "Card title" },
+          {
+            key: "title",
+            label: "Card Title",
+            type: "text",
+            placeholder: "Card title",
+          },
           {
             key: "description",
             label: "Description",
@@ -633,14 +840,29 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "FAQ section heading" },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "FAQ section heading",
+      },
       {
         key: "items",
         label: "Questions",
         type: "array-items",
         itemSchema: [
-          { key: "question", label: "Question", type: "text", placeholder: "FAQ question" },
-          { key: "answer", label: "Answer", type: "textarea", placeholder: "FAQ answer" },
+          {
+            key: "question",
+            label: "Question",
+            type: "text",
+            placeholder: "FAQ question",
+          },
+          {
+            key: "answer",
+            label: "Answer",
+            type: "textarea",
+            placeholder: "FAQ answer",
+          },
         ],
       },
     ],
@@ -670,16 +892,41 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Testimonials heading" },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Testimonials heading",
+      },
       {
         key: "items",
         label: "Testimonials",
         type: "array-items",
         itemSchema: [
-          { key: "quote", label: "Quote", type: "textarea", placeholder: "Testimonial text" },
-          { key: "name", label: "Name", type: "text", placeholder: "Person's name" },
-          { key: "role", label: "Role", type: "text", placeholder: "e.g. Core Platform Client" },
-          { key: "location", label: "Location", type: "text", placeholder: "e.g. Singapore" },
+          {
+            key: "quote",
+            label: "Quote",
+            type: "textarea",
+            placeholder: "Testimonial text",
+          },
+          {
+            key: "name",
+            label: "Name",
+            type: "text",
+            placeholder: "Person's name",
+          },
+          {
+            key: "role",
+            label: "Role",
+            type: "text",
+            placeholder: "e.g. Core Platform Client",
+          },
+          {
+            key: "location",
+            label: "Location",
+            type: "text",
+            placeholder: "e.g. Singapore",
+          },
         ],
       },
     ],
@@ -696,9 +943,25 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       limit: 3,
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
-      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Supporting text" },
-      { key: "limit", label: "Max Providers to Show", type: "number", min: 1, max: 12 },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "text",
+        placeholder: "Supporting text",
+      },
+      {
+        key: "limit",
+        label: "Max Providers to Show",
+        type: "number",
+        min: 1,
+        max: 12,
+      },
     ],
   },
   {
@@ -713,9 +976,25 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       limit: 3,
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
-      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Supporting text" },
-      { key: "limit", label: "Max Providers to Show", type: "number", min: 1, max: 12 },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "text",
+        placeholder: "Supporting text",
+      },
+      {
+        key: "limit",
+        label: "Max Providers to Show",
+        type: "number",
+        min: 1,
+        max: 12,
+      },
     ],
   },
   {
@@ -737,12 +1016,43 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ctaModalDescription: "",
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
-      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Supporting text" },
-      { key: "limit", label: "Max Events to Show", type: "number", min: 1, max: 12 },
-      { key: "ctaText", label: "Button Text", type: "text", placeholder: "Optional button label" },
-      { key: "ctaAction", label: "Button Action", type: "select", options: BUTTON_ACTION_OPTIONS },
-      { key: "ctaLink", label: "Button Link", type: "url", placeholder: "/events or https://..." },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "text",
+        placeholder: "Supporting text",
+      },
+      {
+        key: "limit",
+        label: "Max Events to Show",
+        type: "number",
+        min: 1,
+        max: 12,
+      },
+      {
+        key: "ctaText",
+        label: "Button Text",
+        type: "text",
+        placeholder: "Optional button label",
+      },
+      {
+        key: "ctaAction",
+        label: "Button Action",
+        type: "select",
+        options: BUTTON_ACTION_OPTIONS,
+      },
+      {
+        key: "ctaLink",
+        label: "Button Link",
+        type: "url",
+        placeholder: "/events or https://...",
+      },
       { key: "ctaOpenInNewTab", label: "Open In New Tab", type: "boolean" },
       { key: "ctaFormSlug", label: "Assigned Form", type: "form-select" },
       {
@@ -772,10 +1082,30 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       enableHoverMotion: true,
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
-      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Supporting text" },
-      { key: "limit", label: "Max Articles to Show", type: "number", min: 1, max: 12 },
-      { key: "enableHoverMotion", label: "Enable Hover Motion", type: "boolean" },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "text",
+        placeholder: "Supporting text",
+      },
+      {
+        key: "limit",
+        label: "Max Articles to Show",
+        type: "number",
+        min: 1,
+        max: 12,
+      },
+      {
+        key: "enableHoverMotion",
+        label: "Enable Hover Motion",
+        type: "boolean",
+      },
     ],
   },
   {
@@ -808,15 +1138,35 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ],
     },
     propDefs: [
-      { key: "alignment", label: "Alignment", type: "select", options: ALIGN_OPTIONS },
+      {
+        key: "alignment",
+        label: "Alignment",
+        type: "select",
+        options: ALIGN_OPTIONS,
+      },
       {
         key: "buttons",
         label: "Buttons",
         type: "array-items",
         itemSchema: [
-          { key: "text", label: "Button Text", type: "text", placeholder: "Button label" },
-          { key: "action", label: "Action", type: "select", options: BUTTON_ACTION_OPTIONS },
-          { key: "link", label: "Link", type: "url", placeholder: "/page or https://..." },
+          {
+            key: "text",
+            label: "Button Text",
+            type: "text",
+            placeholder: "Button label",
+          },
+          {
+            key: "action",
+            label: "Action",
+            type: "select",
+            options: BUTTON_ACTION_OPTIONS,
+          },
+          {
+            key: "link",
+            label: "Link",
+            type: "url",
+            placeholder: "/page or https://...",
+          },
           { key: "openInNewTab", label: "Open In New Tab", type: "boolean" },
           { key: "formSlug", label: "Assigned Form", type: "form-select" },
           {
@@ -831,7 +1181,12 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
             type: "textarea",
             placeholder: "Optional modal description",
           },
-          { key: "variant", label: "Style", type: "select", options: BUTTON_VARIANT_OPTIONS },
+          {
+            key: "variant",
+            label: "Style",
+            type: "select",
+            options: BUTTON_VARIANT_OPTIONS,
+          },
         ],
       },
     ],
@@ -850,15 +1205,30 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ...SHARED_MOBILE_IMAGE_DEFAULTS,
     },
     propDefs: [
-      { key: "imageUrl", label: "Image", type: "image-url", placeholder: "Upload or select image" },
+      {
+        key: "imageUrl",
+        label: "Image",
+        type: "image-url",
+        placeholder: "Upload or select image",
+      },
       {
         key: "alt",
         label: "Alt Text",
         type: "text",
         placeholder: "Descriptive alt text for accessibility",
       },
-      { key: "caption", label: "Caption", type: "text", placeholder: "Optional image caption" },
-      { key: "width", label: "Image Width", type: "select", options: IMAGE_WIDTH_OPTIONS },
+      {
+        key: "caption",
+        label: "Caption",
+        type: "text",
+        placeholder: "Optional image caption",
+      },
+      {
+        key: "width",
+        label: "Image Width",
+        type: "select",
+        options: IMAGE_WIDTH_OPTIONS,
+      },
       ...SHARED_MOBILE_IMAGE_PROP_DEFS,
     ],
   },
@@ -880,8 +1250,18 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         type: "url",
         placeholder: "https://youtube.com/...",
       },
-      { key: "title", label: "Title (optional)", type: "text", placeholder: "Video title" },
-      { key: "aspectRatio", label: "Aspect Ratio", type: "select", options: VIDEO_ASPECT_OPTIONS },
+      {
+        key: "title",
+        label: "Title (optional)",
+        type: "text",
+        placeholder: "Video title",
+      },
+      {
+        key: "aspectRatio",
+        label: "Aspect Ratio",
+        type: "select",
+        options: VIDEO_ASPECT_OPTIONS,
+      },
     ],
   },
   {
@@ -925,7 +1305,11 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       title: "Get in Touch",
       items: [
-        { icon: "MapPin", label: "Location", value: "Global - serving members worldwide" },
+        {
+          icon: "MapPin",
+          label: "Location",
+          value: "Global - serving members worldwide",
+        },
         { icon: "Globe", label: "Website", value: "www.coreplatform.com" },
       ],
     },
@@ -947,8 +1331,18 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
             type: "text",
             placeholder: "e.g. MapPin, Mail, Phone",
           },
-          { key: "label", label: "Label", type: "text", placeholder: "e.g. Email, Phone" },
-          { key: "value", label: "Value", type: "text", placeholder: "Contact detail" },
+          {
+            key: "label",
+            label: "Label",
+            type: "text",
+            placeholder: "e.g. Email, Phone",
+          },
+          {
+            key: "value",
+            label: "Value",
+            type: "text",
+            placeholder: "Contact detail",
+          },
         ],
       },
     ],
@@ -964,8 +1358,18 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       spacing: "md",
     },
     propDefs: [
-      { key: "style", label: "Style", type: "select", options: DIVIDER_STYLE_OPTIONS },
-      { key: "spacing", label: "Spacing", type: "select", options: SPACING_OPTIONS },
+      {
+        key: "style",
+        label: "Style",
+        type: "select",
+        options: DIVIDER_STYLE_OPTIONS,
+      },
+      {
+        key: "spacing",
+        label: "Spacing",
+        type: "select",
+        options: SPACING_OPTIONS,
+      },
     ],
   },
   {
@@ -997,9 +1401,24 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
-      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
-      { key: "columns", label: "Columns", type: "select", options: FEATURE_LIST_COLUMNS_OPTIONS },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "text",
+        placeholder: "Optional subtitle",
+      },
+      {
+        key: "columns",
+        label: "Columns",
+        type: "select",
+        options: FEATURE_LIST_COLUMNS_OPTIONS,
+      },
       {
         key: "features",
         label: "Features",
@@ -1011,7 +1430,12 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
             type: "text",
             placeholder: "e.g. CheckCircle, Globe",
           },
-          { key: "title", label: "Title", type: "text", placeholder: "Feature title" },
+          {
+            key: "title",
+            label: "Title",
+            type: "text",
+            placeholder: "Feature title",
+          },
           {
             key: "description",
             label: "Description",
@@ -1045,14 +1469,29 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
-      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "text",
+        placeholder: "Optional subtitle",
+      },
       {
         key: "items",
         label: "Objections",
         type: "array-items",
         itemSchema: [
-          { key: "concern", label: "Concern", type: "text", placeholder: "What they worry about" },
+          {
+            key: "concern",
+            label: "Concern",
+            type: "text",
+            placeholder: "What they worry about",
+          },
           {
             key: "response",
             label: "Response",
@@ -1091,8 +1530,18 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
-      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "text",
+        placeholder: "Optional subtitle",
+      },
       {
         key: "items",
         label: "Milestones",
@@ -1104,8 +1553,18 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
             type: "text",
             placeholder: "e.g. Week 1, Step 1",
           },
-          { key: "before", label: "Before", type: "text", placeholder: "Starting point" },
-          { key: "after", label: "After", type: "text", placeholder: "Outcome" },
+          {
+            key: "before",
+            label: "Before",
+            type: "text",
+            placeholder: "Starting point",
+          },
+          {
+            key: "after",
+            label: "After",
+            type: "text",
+            placeholder: "Outcome",
+          },
         ],
       },
     ],
@@ -1136,7 +1595,12 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
             type: "text",
             placeholder: "e.g. ShieldCheck, Lock",
           },
-          { key: "label", label: "Label", type: "text", placeholder: "Trust signal text" },
+          {
+            key: "label",
+            label: "Label",
+            type: "text",
+            placeholder: "Trust signal text",
+          },
         ],
       },
     ],
@@ -1163,9 +1627,24 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         label: "Press Items",
         type: "array-items",
         itemSchema: [
-          { key: "name", label: "Publication Name", type: "text", placeholder: "e.g. CNN, Forbes" },
-          { key: "logoUrl", label: "Logo Image", type: "image-url", placeholder: "Upload logo" },
-          { key: "link", label: "Link (optional)", type: "url", placeholder: "https://..." },
+          {
+            key: "name",
+            label: "Publication Name",
+            type: "text",
+            placeholder: "e.g. CNN, Forbes",
+          },
+          {
+            key: "logoUrl",
+            label: "Logo Image",
+            type: "image-url",
+            placeholder: "Upload logo",
+          },
+          {
+            key: "link",
+            label: "Link (optional)",
+            type: "url",
+            placeholder: "https://...",
+          },
         ],
       },
     ],
@@ -1186,14 +1665,29 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       disclaimer: "",
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Optional heading" },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Optional heading",
+      },
       {
         key: "stats",
         label: "Statistics",
         type: "array-items",
         itemSchema: [
-          { key: "value", label: "Value", type: "text", placeholder: "e.g. 500+, 98%" },
-          { key: "label", label: "Label", type: "text", placeholder: "What the stat represents" },
+          {
+            key: "value",
+            label: "Value",
+            type: "text",
+            placeholder: "e.g. 500+, 98%",
+          },
+          {
+            key: "label",
+            label: "Label",
+            type: "text",
+            placeholder: "What the stat represents",
+          },
         ],
       },
       {
@@ -1217,17 +1711,47 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       images: [],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Optional heading" },
-      { key: "columns", label: "Columns", type: "select", options: COLUMNS_OPTIONS },
-      { key: "gap", label: "Gap Size", type: "select", options: SPACING_OPTIONS },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Optional heading",
+      },
+      {
+        key: "columns",
+        label: "Columns",
+        type: "select",
+        options: COLUMNS_OPTIONS,
+      },
+      {
+        key: "gap",
+        label: "Gap Size",
+        type: "select",
+        options: SPACING_OPTIONS,
+      },
       {
         key: "images",
         label: "Images",
         type: "array-items",
         itemSchema: [
-          { key: "url", label: "Image", type: "image-url", placeholder: "Upload image" },
-          { key: "alt", label: "Alt Text", type: "text", placeholder: "Image description" },
-          { key: "caption", label: "Caption", type: "text", placeholder: "Optional caption" },
+          {
+            key: "url",
+            label: "Image",
+            type: "image-url",
+            placeholder: "Upload image",
+          },
+          {
+            key: "alt",
+            label: "Alt Text",
+            type: "text",
+            placeholder: "Image description",
+          },
+          {
+            key: "caption",
+            label: "Caption",
+            type: "text",
+            placeholder: "Optional caption",
+          },
         ],
       },
     ],
@@ -1241,19 +1765,42 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
     defaultProps: {
       title: "",
       slides: [
-        { imageUrl: "", heading: "Slide 1", description: "First slide description" },
-        { imageUrl: "", heading: "Slide 2", description: "Second slide description" },
+        {
+          imageUrl: "",
+          heading: "Slide 1",
+          description: "First slide description",
+        },
+        {
+          imageUrl: "",
+          heading: "Slide 2",
+          description: "Second slide description",
+        },
       ],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Optional heading" },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Optional heading",
+      },
       {
         key: "slides",
         label: "Slides",
         type: "array-items",
         itemSchema: [
-          { key: "imageUrl", label: "Image", type: "image-url", placeholder: "Upload slide image" },
-          { key: "heading", label: "Heading", type: "text", placeholder: "Slide heading" },
+          {
+            key: "imageUrl",
+            label: "Image",
+            type: "image-url",
+            placeholder: "Upload slide image",
+          },
+          {
+            key: "heading",
+            label: "Heading",
+            type: "text",
+            placeholder: "Slide heading",
+          },
           {
             key: "description",
             label: "Description",
@@ -1283,9 +1830,24 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         label: "Stats",
         type: "array-items",
         itemSchema: [
-          { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. Users, Globe" },
-          { key: "value", label: "Value", type: "text", placeholder: "e.g. 1,000+" },
-          { key: "label", label: "Label", type: "text", placeholder: "Stat description" },
+          {
+            key: "icon",
+            label: "Icon (Lucide)",
+            type: "text",
+            placeholder: "e.g. Users, Globe",
+          },
+          {
+            key: "value",
+            label: "Value",
+            type: "text",
+            placeholder: "e.g. 1,000+",
+          },
+          {
+            key: "label",
+            label: "Label",
+            type: "text",
+            placeholder: "Stat description",
+          },
         ],
       },
     ],
@@ -1308,16 +1870,41 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Optional heading" },
-      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
-      { key: "columns", label: "Columns", type: "select", options: COLUMNS_EXTENDED_OPTIONS },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Optional heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "text",
+        placeholder: "Optional subtitle",
+      },
+      {
+        key: "columns",
+        label: "Columns",
+        type: "select",
+        options: COLUMNS_EXTENDED_OPTIONS,
+      },
       {
         key: "items",
         label: "Items",
         type: "array-items",
         itemSchema: [
-          { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. Globe, Heart" },
-          { key: "title", label: "Title", type: "text", placeholder: "Item title" },
+          {
+            key: "icon",
+            label: "Icon (Lucide)",
+            type: "text",
+            placeholder: "e.g. Globe, Heart",
+          },
+          {
+            key: "title",
+            label: "Title",
+            type: "text",
+            placeholder: "Item title",
+          },
         ],
       },
     ],
@@ -1351,16 +1938,41 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
-      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
-      { key: "layout", label: "Layout", type: "select", options: BENEFIT_LAYOUT_OPTIONS },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "text",
+        placeholder: "Optional subtitle",
+      },
+      {
+        key: "layout",
+        label: "Layout",
+        type: "select",
+        options: BENEFIT_LAYOUT_OPTIONS,
+      },
       {
         key: "items",
         label: "Benefits",
         type: "array-items",
         itemSchema: [
-          { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. CheckCircle" },
-          { key: "title", label: "Title", type: "text", placeholder: "Benefit title" },
+          {
+            key: "icon",
+            label: "Icon (Lucide)",
+            type: "text",
+            placeholder: "e.g. CheckCircle",
+          },
+          {
+            key: "title",
+            label: "Title",
+            type: "text",
+            placeholder: "Benefit title",
+          },
           {
             key: "description",
             label: "Description",
@@ -1383,15 +1995,35 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       citations: [{ text: "Core Platform Training Research Study, 2024", url: "" }],
     },
     propDefs: [
-      { key: "title", label: "Title", type: "text", placeholder: "Section heading" },
-      { key: "body", label: "Content", type: "richtext", placeholder: "Explain the evidence..." },
+      {
+        key: "title",
+        label: "Title",
+        type: "text",
+        placeholder: "Section heading",
+      },
+      {
+        key: "body",
+        label: "Content",
+        type: "richtext",
+        placeholder: "Explain the evidence...",
+      },
       {
         key: "citations",
         label: "Citations",
         type: "array-items",
         itemSchema: [
-          { key: "text", label: "Citation Text", type: "text", placeholder: "Author, Year, Title" },
-          { key: "url", label: "Link (optional)", type: "url", placeholder: "https://..." },
+          {
+            key: "text",
+            label: "Citation Text",
+            type: "text",
+            placeholder: "Author, Year, Title",
+          },
+          {
+            key: "url",
+            label: "Link (optional)",
+            type: "url",
+            placeholder: "https://...",
+          },
         ],
       },
     ],
@@ -1409,11 +2041,19 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         { text: "Licensed or credentialed professional", required: true },
         { text: "Cross-cultural training or experience", required: true },
         { text: "Background verification completed", required: true },
-        { text: "Specialized in Core Platform-related challenges", required: false },
+        {
+          text: "Specialized in Core Platform-related challenges",
+          required: false,
+        },
       ],
     },
     propDefs: [
-      { key: "title", label: "Title", type: "text", placeholder: "Section heading" },
+      {
+        key: "title",
+        label: "Title",
+        type: "text",
+        placeholder: "Section heading",
+      },
       {
         key: "disclaimer",
         label: "Disclaimer",
@@ -1425,7 +2065,12 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         label: "Checklist Items",
         type: "array-items",
         itemSchema: [
-          { key: "text", label: "Item Text", type: "text", placeholder: "Checklist item" },
+          {
+            key: "text",
+            label: "Item Text",
+            type: "text",
+            placeholder: "Checklist item",
+          },
           { key: "required", label: "Required?", type: "boolean" },
         ],
       },
@@ -1443,7 +2088,9 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       items: [
         { text: "Every professional is individually vetted and verified" },
         { text: "Your privacy and confidentiality are always protected" },
-        { text: "Support team available if you need help finding the right match" },
+        {
+          text: "Support team available if you need help finding the right match",
+        },
       ],
       ctaText: "Contact Support",
       ctaLink: "/contact",
@@ -1454,24 +2101,49 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ctaModalDescription: "",
     },
     propDefs: [
-      { key: "title", label: "Title", type: "text", placeholder: "Section heading" },
-      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      {
+        key: "title",
+        label: "Title",
+        type: "text",
+        placeholder: "Section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "text",
+        placeholder: "Optional subtitle",
+      },
       {
         key: "items",
         label: "Guarantee Points",
         type: "array-items",
         itemSchema: [
-          { key: "text", label: "Point", type: "text", placeholder: "Guarantee bullet point" },
+          {
+            key: "text",
+            label: "Point",
+            type: "text",
+            placeholder: "Guarantee bullet point",
+          },
         ],
       },
-      { key: "ctaText", label: "CTA Button Text", type: "text", placeholder: "Button label" },
+      {
+        key: "ctaText",
+        label: "CTA Button Text",
+        type: "text",
+        placeholder: "Button label",
+      },
       {
         key: "ctaAction",
         label: "CTA Button Action",
         type: "select",
         options: BUTTON_ACTION_OPTIONS,
       },
-      { key: "ctaLink", label: "CTA Link", type: "url", placeholder: "/contact" },
+      {
+        key: "ctaLink",
+        label: "CTA Link",
+        type: "url",
+        placeholder: "/contact",
+      },
       { key: "ctaOpenInNewTab", label: "Open In New Tab", type: "boolean" },
       { key: "ctaFormSlug", label: "Assigned Form", type: "form-select" },
       {
@@ -1517,15 +2189,35 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       includedItems: [],
     },
     propDefs: [
-      { key: "title", label: "Title", type: "text", placeholder: "Section heading" },
-      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      {
+        key: "title",
+        label: "Title",
+        type: "text",
+        placeholder: "Section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "text",
+        placeholder: "Optional subtitle",
+      },
       {
         key: "steps",
         label: "Steps",
         type: "array-items",
         itemSchema: [
-          { key: "step", label: "Step Number/Label", type: "text", placeholder: "e.g. 1, Step A" },
-          { key: "title", label: "Title", type: "text", placeholder: "Step title" },
+          {
+            key: "step",
+            label: "Step Number/Label",
+            type: "text",
+            placeholder: "e.g. 1, Step A",
+          },
+          {
+            key: "title",
+            label: "Title",
+            type: "text",
+            placeholder: "Step title",
+          },
           {
             key: "description",
             label: "Description",
@@ -1538,7 +2230,14 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         key: "includedItems",
         label: "What's Included (optional)",
         type: "array-items",
-        itemSchema: [{ key: "text", label: "Item", type: "text", placeholder: "Included item" }],
+        itemSchema: [
+          {
+            key: "text",
+            label: "Item",
+            type: "text",
+            placeholder: "Included item",
+          },
+        ],
       },
     ],
   },
@@ -1554,8 +2253,7 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       personas: [
         {
           title: "Members",
-          description:
-            "People looking for trusted providers, resources, events, and next steps.",
+          description: "People looking for trusted providers, resources, events, and next steps.",
           icon: "User",
         },
         {
@@ -1573,14 +2271,29 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ],
     },
     propDefs: [
-      { key: "title", label: "Section Title", type: "text", placeholder: "Section heading" },
-      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      {
+        key: "title",
+        label: "Section Title",
+        type: "text",
+        placeholder: "Section heading",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "text",
+        placeholder: "Optional subtitle",
+      },
       {
         key: "personas",
         label: "Personas",
         type: "array-items",
         itemSchema: [
-          { key: "icon", label: "Icon (Lucide)", type: "text", placeholder: "e.g. User, Users" },
+          {
+            key: "icon",
+            label: "Icon (Lucide)",
+            type: "text",
+            placeholder: "e.g. User, Users",
+          },
           {
             key: "title",
             label: "Persona Title",
@@ -1608,7 +2321,10 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       subtitle: "",
       level: "beginner",
       steps: [
-        { title: "Create Your Account", description: "Sign up for free and set your preferences." },
+        {
+          title: "Create Your Account",
+          description: "Sign up for free and set your preferences.",
+        },
         {
           title: "Explore the Directory",
           description: "Use filters to find professionals matching your needs.",
@@ -1620,8 +2336,18 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       ],
     },
     propDefs: [
-      { key: "title", label: "Title", type: "text", placeholder: "Protocol title" },
-      { key: "subtitle", label: "Subtitle", type: "text", placeholder: "Optional subtitle" },
+      {
+        key: "title",
+        label: "Title",
+        type: "text",
+        placeholder: "Protocol title",
+      },
+      {
+        key: "subtitle",
+        label: "Subtitle",
+        type: "text",
+        placeholder: "Optional subtitle",
+      },
       {
         key: "level",
         label: "Experience Level",
@@ -1633,7 +2359,12 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
         label: "Steps",
         type: "array-items",
         itemSchema: [
-          { key: "title", label: "Step Title", type: "text", placeholder: "Step title" },
+          {
+            key: "title",
+            label: "Step Title",
+            type: "text",
+            placeholder: "Step title",
+          },
           {
             key: "description",
             label: "Description",
@@ -1642,6 +2373,310 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
           },
         ],
       },
+    ],
+  },
+  {
+    type: "carolina-hero",
+    label: "Carolina Hero",
+    iconName: "Trees",
+    description: "Carolina Exterior image hero with CTA buttons and trust signals",
+    category: "hero",
+    defaultProps: {
+      badge: "Rooted in Carolina. Built for Life.",
+      heading: "Professional Lawn Care & Landscaping in Monroe, NC",
+      subheading:
+        "We design, build, and maintain premium outdoor spaces for homes and businesses across Union County.",
+      imageUrl: "/carolina/hero-home.png",
+      imageAlt: "Carolina Exterior landscape",
+      minHeight: "home",
+      align: "left",
+      primaryText: "REQUEST A QUOTE",
+      primaryLink: "/get-a-quote",
+      secondaryText: "OUR STORY",
+      secondaryLink: "/about",
+      showTrustSignals: true,
+      trustSignals: [
+        { label: "Licensed & Insured" },
+        { label: "Locally Owned" },
+        { label: "Reliable Schedules" },
+      ],
+    },
+    propDefs: [
+      { key: "badge", label: "Badge", type: "text" },
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subheading", label: "Subheading", type: "textarea" },
+      { key: "imageUrl", label: "Image", type: "image-url" },
+      { key: "imageAlt", label: "Image Alt Text", type: "text" },
+      {
+        key: "minHeight",
+        label: "Height",
+        type: "select",
+        options: [
+          { label: "Home", value: "home" },
+          { label: "Standard", value: "standard" },
+        ],
+      },
+      {
+        key: "align",
+        label: "Text Alignment",
+        type: "select",
+        options: ALIGN_OPTIONS,
+      },
+      { key: "primaryText", label: "Primary Button", type: "text" },
+      { key: "primaryLink", label: "Primary Link", type: "url" },
+      { key: "secondaryText", label: "Secondary Button", type: "text" },
+      { key: "secondaryLink", label: "Secondary Link", type: "url" },
+      { key: "showTrustSignals", label: "Show Trust Signals", type: "boolean" },
+      {
+        key: "trustSignals",
+        label: "Trust Signals",
+        type: "array-items",
+        itemSchema: [{ key: "label", label: "Label", type: "text" }],
+      },
+    ],
+  },
+  {
+    type: "carolina-intro-hero",
+    label: "Carolina Intro Hero",
+    iconName: "Heading",
+    description: "Simple dark Carolina page introduction hero",
+    category: "hero",
+    defaultProps: {
+      heading: "Page Heading",
+      subheading: "Short supporting introduction.",
+    },
+    propDefs: [
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subheading", label: "Subheading", type: "textarea" },
+    ],
+  },
+  {
+    type: "carolina-rich-content",
+    label: "Carolina Rich Content",
+    iconName: "FileText",
+    description: "Long-form Carolina page copy with optional FAQ and sticky quote CTA",
+    category: "content",
+    defaultProps: {
+      content: "<p>Add long-form content here.</p>",
+      faqs: [],
+      showSidebar: false,
+      sidebarHeading: "Ready to start?",
+      sidebarText: "Contact us today for a free, no-obligation estimate for your property.",
+      sidebarButtonText: "REQUEST A QUOTE",
+      sidebarButtonLink: "/get-a-quote",
+    },
+    propDefs: [
+      { key: "content", label: "Content", type: "richtext" },
+      {
+        key: "faqs",
+        label: "FAQs",
+        type: "array-items",
+        itemSchema: [
+          { key: "question", label: "Question", type: "text" },
+          { key: "answer", label: "Answer", type: "textarea" },
+        ],
+      },
+      { key: "showSidebar", label: "Show Sidebar CTA", type: "boolean" },
+      { key: "sidebarHeading", label: "Sidebar Heading", type: "text" },
+      { key: "sidebarText", label: "Sidebar Text", type: "textarea" },
+      { key: "sidebarButtonText", label: "Sidebar Button Text", type: "text" },
+      { key: "sidebarButtonLink", label: "Sidebar Button Link", type: "url" },
+    ],
+  },
+  {
+    type: "carolina-card-grid",
+    label: "Carolina Card Grid",
+    iconName: "PanelsTopLeft",
+    description: "Reusable Carolina service, value, and feature card grid",
+    category: "content",
+    defaultProps: {
+      heading: "Services",
+      subheading: "",
+      items: [
+        {
+          title: "Lawn Maintenance",
+          description: "Reliable annual outdoor care for Carolina properties.",
+          href: "/residential-lawn-maintenance",
+        },
+      ],
+    },
+    propDefs: [
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subheading", label: "Subheading", type: "textarea" },
+      {
+        key: "items",
+        label: "Cards",
+        type: "array-items",
+        itemSchema: [
+          { key: "title", label: "Title", type: "text" },
+          { key: "description", label: "Description", type: "textarea" },
+          { key: "href", label: "Link", type: "url" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "carolina-location-grid",
+    label: "Carolina Location Grid",
+    iconName: "MapPin",
+    description: "Grid of Carolina service area links",
+    category: "content",
+    defaultProps: {
+      heading: "",
+      subheading: "",
+      items: [{ city: "Monroe", state: "NC", href: "/service-areas/monroe-nc" }],
+    },
+    propDefs: [
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subheading", label: "Subheading", type: "textarea" },
+      {
+        key: "items",
+        label: "Locations",
+        type: "array-items",
+        itemSchema: [
+          { key: "city", label: "City", type: "text" },
+          { key: "state", label: "State", type: "text" },
+          { key: "href", label: "Link", type: "url" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "carolina-gallery-grid",
+    label: "Carolina Gallery Grid",
+    iconName: "Images",
+    description: "Responsive image portfolio gallery",
+    category: "media",
+    defaultProps: {
+      heading: "",
+      subheading: "",
+      aspect: "square",
+      images: [
+        {
+          src: "/carolina/gallery-res-1.png",
+          alt: "Carolina Exterior project",
+        },
+      ],
+    },
+    propDefs: [
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subheading", label: "Subheading", type: "textarea" },
+      {
+        key: "aspect",
+        label: "Aspect Ratio",
+        type: "select",
+        options: [
+          { label: "Square", value: "square" },
+          { label: "Video", value: "video" },
+        ],
+      },
+      {
+        key: "images",
+        label: "Images",
+        type: "array-items",
+        itemSchema: [
+          { key: "src", label: "Image", type: "image-url" },
+          { key: "alt", label: "Alt Text", type: "text" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "carolina-blog-index",
+    label: "Carolina Blog Index",
+    iconName: "Newspaper",
+    description: "Filterable Carolina blog card index",
+    category: "content",
+    defaultProps: {
+      posts: [],
+    },
+    propDefs: [
+      {
+        key: "posts",
+        label: "Posts",
+        type: "array-items",
+        itemSchema: [
+          { key: "slug", label: "Slug", type: "text" },
+          { key: "h1", label: "Title", type: "text" },
+          { key: "category", label: "Category", type: "text" },
+          { key: "excerpt", label: "Excerpt", type: "textarea" },
+          { key: "date", label: "Date", type: "text" },
+          { key: "readMinutes", label: "Read Minutes", type: "number" },
+          { key: "image", label: "Image Filename", type: "text" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "carolina-faq",
+    label: "Carolina FAQ",
+    iconName: "CircleHelp",
+    description: "Carolina accordion FAQ section",
+    category: "content",
+    defaultProps: {
+      heading: "Frequently Asked Questions",
+      subheading: "",
+      showSource: false,
+      items: [
+        {
+          question: "What services do you provide?",
+          answer: "We provide landscaping services.",
+        },
+      ],
+    },
+    propDefs: [
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subheading", label: "Subheading", type: "textarea" },
+      { key: "showSource", label: "Show Source Labels", type: "boolean" },
+      {
+        key: "items",
+        label: "FAQs",
+        type: "array-items",
+        itemSchema: [
+          { key: "question", label: "Question", type: "text" },
+          { key: "answer", label: "Answer", type: "textarea" },
+          { key: "source", label: "Source", type: "text" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "carolina-quote-form",
+    label: "Carolina Quote Form",
+    iconName: "ClipboardList",
+    description: "Styled Carolina managed form embed",
+    category: "conversion",
+    defaultProps: {
+      formSlug: "residential-quote",
+      buttonText: "SUBMIT REQUEST",
+    },
+    propDefs: [
+      { key: "formSlug", label: "Form", type: "form-select" },
+      { key: "buttonText", label: "Button Text", type: "text" },
+    ],
+  },
+  {
+    type: "carolina-cta",
+    label: "Carolina CTA",
+    iconName: "MousePointerClick",
+    description: "Bold Carolina call-to-action band",
+    category: "conversion",
+    defaultProps: {
+      heading: "Ready to transform your property?",
+      subheading:
+        "Contact Carolina Exterior Landscapes today for a free estimate on your residential or commercial landscaping needs.",
+      primaryText: "START YOUR PROJECT",
+      primaryLink: "/get-a-quote",
+      secondaryText: "",
+      secondaryLink: "",
+    },
+    propDefs: [
+      { key: "heading", label: "Heading", type: "text" },
+      { key: "subheading", label: "Subheading", type: "textarea" },
+      { key: "primaryText", label: "Primary Button", type: "text" },
+      { key: "primaryLink", label: "Primary Link", type: "url" },
+      { key: "secondaryText", label: "Secondary Button", type: "text" },
+      { key: "secondaryLink", label: "Secondary Link", type: "url" },
     ],
   },
 ];

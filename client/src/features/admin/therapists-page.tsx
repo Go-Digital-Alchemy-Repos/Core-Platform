@@ -2013,9 +2013,7 @@ function OverviewTab({
                     <SearchableLanguageInput
                       selected={(field.value ?? []).filter((l) => !LANGUAGE_SET.has(l))}
                       onChange={(extra) => {
-                        const common = (field.value ?? []).filter((l) =>
-                          LANGUAGE_SET.has(l),
-                        );
+                        const common = (field.value ?? []).filter((l) => LANGUAGE_SET.has(l));
                         field.onChange([...common, ...extra]);
                       }}
                     />

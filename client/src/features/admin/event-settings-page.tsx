@@ -37,7 +37,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { EventVenue, InsertEventVenue } from "@shared/schema";
 
@@ -88,12 +95,17 @@ function valuesFromVenue(venue: EventVenue): SavedVenueFormValues {
 
 function compactVenuePayload(values: SavedVenueFormValues): Partial<InsertEventVenue> {
   return Object.fromEntries(
-    Object.entries(values).map(([key, value]) => [key, typeof value === "string" ? value.trim() : value]),
+    Object.entries(values).map(([key, value]) => [
+      key,
+      typeof value === "string" ? value.trim() : value,
+    ]),
   ) as Partial<InsertEventVenue>;
 }
 
 function formatVenueAddress(venue: EventVenue): string {
-  return [venue.address, venue.city, venue.region, venue.postalCode, venue.country].filter(Boolean).join(", ");
+  return [venue.address, venue.city, venue.region, venue.postalCode, venue.country]
+    .filter(Boolean)
+    .join(", ");
 }
 
 function formatCoordinates(venue: EventVenue): string {
@@ -216,9 +228,12 @@ export default function AdminEventSettingsPage() {
                 <Settings className="h-4 w-4" />
                 Event Management
               </div>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Event Settings</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
+                Event Settings
+              </h1>
               <p className="mt-2 max-w-2xl text-sm text-slate-600">
-                Manage reusable event configuration. Saved Venues are available when creating or editing events.
+                Manage reusable event configuration. Saved Venues are available when creating or
+                editing events.
               </p>
             </div>
             <Button onClick={openCreateVenue} data-testid="button-create-saved-venue">
@@ -249,7 +264,10 @@ export default function AdminEventSettingsPage() {
                 </CardHeader>
                 <CardContent>
                   {venuesQuery.isLoading ? (
-                    <div className="flex min-h-48 items-center justify-center" data-testid="state-venues-loading">
+                    <div
+                      className="flex min-h-48 items-center justify-center"
+                      data-testid="state-venues-loading"
+                    >
                       <LoadingSpinner />
                     </div>
                   ) : venues.length === 0 ? (
@@ -257,7 +275,8 @@ export default function AdminEventSettingsPage() {
                       <MapPin className="mb-3 h-9 w-9 text-purple-500" />
                       <h2 className="text-lg font-semibold text-slate-950">No saved venues yet</h2>
                       <p className="mt-2 max-w-md text-sm text-slate-600">
-                        Add reusable venues here so event editors can pick locations without re-entering the same details.
+                        Add reusable venues here so event editors can pick locations without
+                        re-entering the same details.
                       </p>
                       <Button className="mt-4" onClick={openCreateVenue}>
                         <Plus className="mr-2 h-4 w-4" />
@@ -284,16 +303,22 @@ export default function AdminEventSettingsPage() {
                               <TableRow key={venue.id} data-testid={`row-saved-venue-${venue.id}`}>
                                 <TableCell>
                                   <div className="font-medium text-slate-950">{venue.name}</div>
-                                  {venue.slug ? <div className="text-xs text-slate-500">{venue.slug}</div> : null}
+                                  {venue.slug ? (
+                                    <div className="text-xs text-slate-500">{venue.slug}</div>
+                                  ) : null}
                                 </TableCell>
                                 <TableCell className="max-w-sm text-slate-600">
                                   {address || <span className="text-slate-400">No address</span>}
                                 </TableCell>
-                                <TableCell className="text-slate-600">{formatCoordinates(venue)}</TableCell>
+                                <TableCell className="text-slate-600">
+                                  {formatCoordinates(venue)}
+                                </TableCell>
                                 <TableCell>
                                   {venue.phone || websiteUrl ? (
                                     <div className="space-y-1 text-sm">
-                                      {venue.phone ? <div className="text-slate-700">{venue.phone}</div> : null}
+                                      {venue.phone ? (
+                                        <div className="text-slate-700">{venue.phone}</div>
+                                      ) : null}
                                       {websiteUrl ? (
                                         <a
                                           href={websiteUrl}
@@ -360,11 +385,23 @@ export default function AdminEventSettingsPage() {
             <form onSubmit={form.handleSubmit(submitVenue)} className="space-y-5">
               <VenueFormFields />
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => handleEditorOpenChange(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleEditorOpenChange(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saveVenueMutation.isPending} data-testid="button-submit-saved-venue">
-                  {saveVenueMutation.isPending ? "Saving..." : editingVenue ? "Save Venue" : "Create Venue"}
+                <Button
+                  type="submit"
+                  disabled={saveVenueMutation.isPending}
+                  data-testid="button-submit-saved-venue"
+                >
+                  {saveVenueMutation.isPending
+                    ? "Saving..."
+                    : editingVenue
+                      ? "Save Venue"
+                      : "Create Venue"}
                 </Button>
               </DialogFooter>
             </form>
@@ -372,13 +409,17 @@ export default function AdminEventSettingsPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <AlertDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete saved venue?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will delete {deleteTarget?.name ? `"${deleteTarget.name}"` : "this venue"}. Events currently linked
-              to this venue will keep their event details but will no longer be linked to this saved venue.
+              This will delete {deleteTarget?.name ? `"${deleteTarget.name}"` : "this venue"}.
+              Events currently linked to this venue will keep their event details but will no longer
+              be linked to this saved venue.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -406,16 +447,57 @@ function VenueFormFields() {
     testId: string;
     type?: string;
   }> = [
-    { name: "name", label: "Venue Name", placeholder: "Core Platform Studio", testId: "input-saved-venue-name" },
-    { name: "address", label: "Street Address", placeholder: "120 Monroe Center St NW", testId: "input-saved-venue-address" },
+    {
+      name: "name",
+      label: "Venue Name",
+      placeholder: "Core Platform Studio",
+      testId: "input-saved-venue-name",
+    },
+    {
+      name: "address",
+      label: "Street Address",
+      placeholder: "120 Monroe Center St NW",
+      testId: "input-saved-venue-address",
+    },
     { name: "city", label: "City", placeholder: "Grand Rapids", testId: "input-saved-venue-city" },
-    { name: "region", label: "State/Region", placeholder: "MI", testId: "input-saved-venue-region" },
-    { name: "postalCode", label: "Postal Code", placeholder: "49503", testId: "input-saved-venue-postal-code" },
+    {
+      name: "region",
+      label: "State/Region",
+      placeholder: "MI",
+      testId: "input-saved-venue-region",
+    },
+    {
+      name: "postalCode",
+      label: "Postal Code",
+      placeholder: "49503",
+      testId: "input-saved-venue-postal-code",
+    },
     { name: "country", label: "Country", placeholder: "US", testId: "input-saved-venue-country" },
-    { name: "latitude", label: "Latitude", placeholder: "42.9634", testId: "input-saved-venue-latitude" },
-    { name: "longitude", label: "Longitude", placeholder: "-85.6681", testId: "input-saved-venue-longitude" },
-    { name: "phone", label: "Phone Number", placeholder: "+1 (616) 555-0100", testId: "input-saved-venue-phone", type: "tel" },
-    { name: "websiteUrl", label: "Venue Website", placeholder: "https://example.com", testId: "input-saved-venue-website" },
+    {
+      name: "latitude",
+      label: "Latitude",
+      placeholder: "42.9634",
+      testId: "input-saved-venue-latitude",
+    },
+    {
+      name: "longitude",
+      label: "Longitude",
+      placeholder: "-85.6681",
+      testId: "input-saved-venue-longitude",
+    },
+    {
+      name: "phone",
+      label: "Phone Number",
+      placeholder: "+1 (616) 555-0100",
+      testId: "input-saved-venue-phone",
+      type: "tel",
+    },
+    {
+      name: "websiteUrl",
+      label: "Venue Website",
+      placeholder: "https://example.com",
+      testId: "input-saved-venue-website",
+    },
   ];
 
   return (
@@ -425,7 +507,11 @@ function VenueFormFields() {
           key={fieldConfig.name}
           name={fieldConfig.name}
           render={({ field }) => (
-            <FormItem className={fieldConfig.name === "name" || fieldConfig.name === "address" ? "sm:col-span-2" : ""}>
+            <FormItem
+              className={
+                fieldConfig.name === "name" || fieldConfig.name === "address" ? "sm:col-span-2" : ""
+              }
+            >
               <FormLabel>{fieldConfig.label}</FormLabel>
               <FormControl>
                 <Input

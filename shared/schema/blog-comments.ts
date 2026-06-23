@@ -8,24 +8,32 @@ import { users } from "./users";
 export const BLOG_COMMENT_STATUSES = ["pending", "approved", "spam", "rejected"] as const;
 export type BlogCommentStatus = (typeof BLOG_COMMENT_STATUSES)[number];
 
-export const blogComments = pgTable("blog_comments", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  postId: varchar("post_id").references(() => blogPosts.id, { onDelete: "cascade" }).notNull(),
-  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
-  authorName: text("author_name").notNull(),
-  authorEmail: text("author_email"),
-  body: text("body").notNull(),
-  status: text("status").$type<BlogCommentStatus>().default("pending").notNull(),
-  ipHash: text("ip_hash"),
-  userAgent: text("user_agent"),
-  moderationNote: text("moderation_note"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_blog_comments_post_status").on(table.postId, table.status, table.createdAt),
-  index("idx_blog_comments_status").on(table.status, table.createdAt),
-  index("idx_blog_comments_user").on(table.userId),
-]);
+export const blogComments = pgTable(
+  "blog_comments",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    postId: varchar("post_id")
+      .references(() => blogPosts.id, { onDelete: "cascade" })
+      .notNull(),
+    userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+    authorName: text("author_name").notNull(),
+    authorEmail: text("author_email"),
+    body: text("body").notNull(),
+    status: text("status").$type<BlogCommentStatus>().default("pending").notNull(),
+    ipHash: text("ip_hash"),
+    userAgent: text("user_agent"),
+    moderationNote: text("moderation_note"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("idx_blog_comments_post_status").on(table.postId, table.status, table.createdAt),
+    index("idx_blog_comments_status").on(table.status, table.createdAt),
+    index("idx_blog_comments_user").on(table.userId),
+  ],
+);
 
 export const insertBlogCommentSchema = createInsertSchema(blogComments).omit({
   id: true,

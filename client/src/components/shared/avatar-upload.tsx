@@ -88,7 +88,7 @@ export function AvatarUpload({
       reader.onload = () => setCropSrc(reader.result as string);
       reader.readAsDataURL(file);
     },
-    [toast]
+    [toast],
   );
 
   const handleCropConfirm = useCallback(
@@ -98,7 +98,7 @@ export function AvatarUpload({
       setCropSrc(null);
       uploadMutation.mutate(croppedFile);
     },
-    [uploadMutation]
+    [uploadMutation],
   );
 
   const handleCropCancel = useCallback(() => {
@@ -126,7 +126,7 @@ export function AvatarUpload({
       const file = e.dataTransfer.files[0];
       if (file) handleFile(file);
     },
-    [handleFile]
+    [handleFile],
   );
 
   const handleInputChange = useCallback(
@@ -135,7 +135,7 @@ export function AvatarUpload({
       if (file) handleFile(file);
       if (fileInputRef.current) fileInputRef.current.value = "";
     },
-    [handleFile]
+    [handleFile],
   );
 
   const displayUrl = preview || currentImageUrl;
@@ -157,9 +157,7 @@ export function AvatarUpload({
         >
           <Avatar className={sizeClasses[size]}>
             {displayUrl ? <AvatarImage src={displayUrl} alt="Profile photo" /> : null}
-            <AvatarFallback className="text-lg font-semibold">
-              {fallbackInitials}
-            </AvatarFallback>
+            <AvatarFallback className="text-lg font-semibold">{fallbackInitials}</AvatarFallback>
           </Avatar>
 
           <div

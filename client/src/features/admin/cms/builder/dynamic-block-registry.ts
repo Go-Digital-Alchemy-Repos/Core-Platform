@@ -131,8 +131,7 @@ export const BASE_DYNAMIC_BLOCK_TYPES: BlockDef[] = [
     category: "dynamic",
     defaultProps: {
       heading: "Upcoming Events",
-      subheading:
-        "Share trainings, workshops, and community events with members and providers.",
+      subheading: "Share trainings, workshops, and community events with members and providers.",
       defaultView: "list",
       showViewToggle: true,
     },

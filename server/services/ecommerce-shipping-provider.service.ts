@@ -19,9 +19,9 @@ export interface EcommerceShippingProviderDefinition {
 }
 
 export interface EcommerceShippingProviderSetupField {
-    key: string;
-    label: string;
-    secret?: boolean;
+  key: string;
+  label: string;
+  secret?: boolean;
 }
 
 export interface EcommerceShippingProviderSetupFieldStatus extends EcommerceShippingProviderSetupField {
@@ -44,7 +44,8 @@ export const ECOMMERCE_SHIPPING_PROVIDER_REGISTRY: EcommerceShippingProviderDefi
     provider: "easypost",
     displayName: "EasyPost",
     type: "aggregator",
-    recommendedFor: "First-class carrier aggregation, live rates, labels, tracking, and address validation.",
+    recommendedFor:
+      "First-class carrier aggregation, live rates, labels, tracking, and address validation.",
     capabilities: ["rates", "labels", "tracking", "address_validation", "international"],
     setupFields: [{ key: "apiKey", label: "API key", secret: true }],
   },
@@ -60,7 +61,8 @@ export const ECOMMERCE_SHIPPING_PROVIDER_REGISTRY: EcommerceShippingProviderDefi
     provider: "shipstation",
     displayName: "ShipStation",
     type: "workflow",
-    recommendedFor: "Operational shipping workflows, fulfillment automation, and marketplace order routing.",
+    recommendedFor:
+      "Operational shipping workflows, fulfillment automation, and marketplace order routing.",
     capabilities: ["labels", "tracking", "workflow_automation"],
     setupFields: [
       { key: "apiKey", label: "API key", secret: true },
@@ -127,7 +129,8 @@ export const ECOMMERCE_SHIPPING_PROVIDER_REGISTRY: EcommerceShippingProviderDefi
     provider: "dhl_express",
     displayName: "DHL Express",
     type: "direct_carrier",
-    recommendedFor: "Direct DHL Express international rates, labels, tracking, and cross-border shipping workflows.",
+    recommendedFor:
+      "Direct DHL Express international rates, labels, tracking, and cross-border shipping workflows.",
     capabilities: ["rates", "labels", "tracking", "international"],
     setupFields: [
       { key: "apiKey", label: "API key", secret: true },
@@ -141,7 +144,9 @@ export function mergeShippingProviderStatuses(
   configuredProviders: EcommerceShippingProvider[],
   credentialStatus: Record<string, Record<string, boolean>> = {},
 ): EcommerceShippingProviderStatus[] {
-  const configuredByProvider = new Map(configuredProviders.map((provider) => [provider.provider, provider]));
+  const configuredByProvider = new Map(
+    configuredProviders.map((provider) => [provider.provider, provider]),
+  );
 
   return ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.map((definition) => {
     const configured = configuredByProvider.get(definition.provider);
@@ -168,15 +173,26 @@ export function mergeShippingProviderStatuses(
   });
 }
 
-export function getShippingProviderDefinition(provider: string): EcommerceShippingProviderDefinition | undefined {
-  return ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.find((definition) => definition.provider === provider);
+export function getShippingProviderDefinition(
+  provider: string,
+): EcommerceShippingProviderDefinition | undefined {
+  return ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.find(
+    (definition) => definition.provider === provider,
+  );
 }
 
-export function getShippingProvidersByCapability(capability: EcommerceShippingProviderCapability): EcommerceShippingProviderDefinition[] {
-  return ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.filter((definition) => definition.capabilities.includes(capability));
+export function getShippingProvidersByCapability(
+  capability: EcommerceShippingProviderCapability,
+): EcommerceShippingProviderDefinition[] {
+  return ECOMMERCE_SHIPPING_PROVIDER_REGISTRY.filter((definition) =>
+    definition.capabilities.includes(capability),
+  );
 }
 
-export function shippingProviderSupportsCapability(provider: string, capability: EcommerceShippingProviderCapability): boolean {
+export function shippingProviderSupportsCapability(
+  provider: string,
+  capability: EcommerceShippingProviderCapability,
+): boolean {
   return getShippingProviderDefinition(provider)?.capabilities.includes(capability) ?? false;
 }
 
@@ -184,9 +200,7 @@ export function getMissingShippingProviderCredentialLabels(
   definition: EcommerceShippingProviderDefinition,
   settings: Record<string, string | undefined>,
 ): string[] {
-  return definition.setupFields
-    .filter((field) => !settings[field.key])
-    .map((field) => field.label);
+  return definition.setupFields.filter((field) => !settings[field.key]).map((field) => field.label);
 }
 
 export function getShippingProviderCredentialCategory(provider: string): string {

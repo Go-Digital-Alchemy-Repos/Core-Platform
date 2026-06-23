@@ -7,7 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { MembershipAccessRule } from "@shared/schema";
 
@@ -18,10 +24,17 @@ interface MembershipAccessRuleCardProps {
 }
 
 function splitList(value: string) {
-  return value.split(/\n|,/).map((item) => item.trim()).filter(Boolean);
+  return value
+    .split(/\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
-export function MembershipAccessRuleCard({ resourceType, resourceId, disabled }: MembershipAccessRuleCardProps) {
+export function MembershipAccessRuleCard({
+  resourceType,
+  resourceId,
+  disabled,
+}: MembershipAccessRuleCardProps) {
   const { toast } = useToast();
   const [accessLevel, setAccessLevel] = useState("public");
   const [planIds, setPlanIds] = useState("");
@@ -92,7 +105,9 @@ export function MembershipAccessRuleCard({ resourceType, resourceId, disabled }:
         <div className="space-y-2">
           <Label>Access Level</Label>
           <Select value={accessLevel} onValueChange={setAccessLevel} disabled={isDisabled}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="public">Public</SelectItem>
               <SelectItem value="logged_in">Logged In</SelectItem>
@@ -104,21 +119,39 @@ export function MembershipAccessRuleCard({ resourceType, resourceId, disabled }:
         </div>
         <div className="space-y-2">
           <Label>Plan IDs</Label>
-          <Input value={planIds} onChange={(event) => setPlanIds(event.target.value)} disabled={isDisabled} />
+          <Input
+            value={planIds}
+            onChange={(event) => setPlanIds(event.target.value)}
+            disabled={isDisabled}
+          />
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label>Entitlements</Label>
-          <Input value={entitlements} onChange={(event) => setEntitlements(event.target.value)} disabled={isDisabled} />
+          <Input
+            value={entitlements}
+            onChange={(event) => setEntitlements(event.target.value)}
+            disabled={isDisabled}
+          />
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label>Teaser</Label>
-          <Textarea value={teaser} onChange={(event) => setTeaser(event.target.value)} disabled={isDisabled} />
+          <Textarea
+            value={teaser}
+            onChange={(event) => setTeaser(event.target.value)}
+            disabled={isDisabled}
+          />
         </div>
         {!resourceId ? (
-          <p className="text-xs text-muted-foreground md:col-span-2">Save this content before configuring membership access.</p>
+          <p className="text-xs text-muted-foreground md:col-span-2">
+            Save this content before configuring membership access.
+          </p>
         ) : null}
         <div className="md:col-span-2">
-          <Button type="button" onClick={() => saveMutation.mutate()} disabled={isDisabled || saveMutation.isPending}>
+          <Button
+            type="button"
+            onClick={() => saveMutation.mutate()}
+            disabled={isDisabled || saveMutation.isPending}
+          >
             <Save className="h-4 w-4 mr-2" />
             Save Access Rule
           </Button>

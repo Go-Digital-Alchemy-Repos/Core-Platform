@@ -115,9 +115,15 @@ async function ensureCrmTables() {
   await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_leads_stage" ON "crm_leads" ("stage")`);
   await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_leads_email" ON "crm_leads" ("email")`);
   await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_leads_phone" ON "crm_leads" ("phone")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_leads_source" ON "crm_leads" ("source")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_leads_created_at" ON "crm_leads" ("created_at")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_leads_owner" ON "crm_leads" ("owner_id")`);
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_leads_source" ON "crm_leads" ("source")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_leads_created_at" ON "crm_leads" ("created_at")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_leads_owner" ON "crm_leads" ("owner_id")`,
+  );
 
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS "crm_lead_notes" (
@@ -129,8 +135,12 @@ async function ensureCrmTables() {
     )
   `);
 
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_lead_notes_lead_id" ON "crm_lead_notes" ("lead_id")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_lead_notes_created_at" ON "crm_lead_notes" ("created_at")`);
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_lead_notes_lead_id" ON "crm_lead_notes" ("lead_id")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_lead_notes_created_at" ON "crm_lead_notes" ("created_at")`,
+  );
 
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS "crm_lead_tasks" (
@@ -146,9 +156,15 @@ async function ensureCrmTables() {
     )
   `);
 
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_lead_tasks_lead_id" ON "crm_lead_tasks" ("lead_id")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_lead_tasks_due_at" ON "crm_lead_tasks" ("due_at")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_lead_tasks_completed" ON "crm_lead_tasks" ("completed")`);
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_lead_tasks_lead_id" ON "crm_lead_tasks" ("lead_id")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_lead_tasks_due_at" ON "crm_lead_tasks" ("due_at")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_lead_tasks_completed" ON "crm_lead_tasks" ("completed")`,
+  );
 
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS "crm_clients" (
@@ -198,12 +214,16 @@ async function ensureCrmTables() {
     )
   `);
 
-  await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "client_type" text NOT NULL DEFAULT 'individual'`);
+  await db.execute(
+    sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "client_type" text NOT NULL DEFAULT 'individual'`,
+  );
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "primary_email" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "secondary_email" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "primary_phone" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "alternate_phone" text`);
-  await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "preferred_contact_method" text NOT NULL DEFAULT 'no_preference'`);
+  await db.execute(
+    sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "preferred_contact_method" text NOT NULL DEFAULT 'no_preference'`,
+  );
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "address_line_1" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "address_line_2" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "city" text`);
@@ -218,25 +238,57 @@ async function ensureCrmTables() {
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "business_type" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "company_phone" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "company_email" text`);
-  await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "billing_contact_name" text`);
+  await db.execute(
+    sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "billing_contact_name" text`,
+  );
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "billing_email" text`);
   await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "billing_phone" text`);
-  await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "account_owner_id" varchar REFERENCES "users"("id") ON DELETE SET NULL`);
-  await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "onboarding_status" text NOT NULL DEFAULT 'not_started'`);
-  await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "service_start_date" timestamp`);
-  await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "renewal_date" timestamp`);
-  await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "client_since" timestamp`);
-  await db.execute(sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "internal_tags" jsonb NOT NULL DEFAULT '[]'::jsonb`);
+  await db.execute(
+    sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "account_owner_id" varchar REFERENCES "users"("id") ON DELETE SET NULL`,
+  );
+  await db.execute(
+    sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "onboarding_status" text NOT NULL DEFAULT 'not_started'`,
+  );
+  await db.execute(
+    sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "service_start_date" timestamp`,
+  );
+  await db.execute(
+    sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "renewal_date" timestamp`,
+  );
+  await db.execute(
+    sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "client_since" timestamp`,
+  );
+  await db.execute(
+    sql`ALTER TABLE "crm_clients" ADD COLUMN IF NOT EXISTS "internal_tags" jsonb NOT NULL DEFAULT '[]'::jsonb`,
+  );
 
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_source_lead" ON "crm_clients" ("source_lead_id")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_status" ON "crm_clients" ("status")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_email" ON "crm_clients" ("email")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_phone" ON "crm_clients" ("phone")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_client_type" ON "crm_clients" ("client_type")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_company_name" ON "crm_clients" ("company_name")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_account_owner" ON "crm_clients" ("account_owner_id")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_owner" ON "crm_clients" ("owner_id")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_created_at" ON "crm_clients" ("created_at")`);
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_source_lead" ON "crm_clients" ("source_lead_id")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_status" ON "crm_clients" ("status")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_email" ON "crm_clients" ("email")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_phone" ON "crm_clients" ("phone")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_client_type" ON "crm_clients" ("client_type")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_company_name" ON "crm_clients" ("company_name")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_account_owner" ON "crm_clients" ("account_owner_id")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_owner" ON "crm_clients" ("owner_id")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_clients_created_at" ON "crm_clients" ("created_at")`,
+  );
 
   await db.execute(sql`
     UPDATE "crm_clients"
@@ -268,8 +320,12 @@ async function ensureCrmTables() {
     )
   `);
 
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_client_notes_client_id" ON "crm_client_notes" ("client_id")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_client_notes_created_at" ON "crm_client_notes" ("created_at")`);
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_client_notes_client_id" ON "crm_client_notes" ("client_id")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_client_notes_created_at" ON "crm_client_notes" ("created_at")`,
+  );
 
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS "crm_client_tasks" (
@@ -285,9 +341,15 @@ async function ensureCrmTables() {
     )
   `);
 
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_client_tasks_client_id" ON "crm_client_tasks" ("client_id")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_client_tasks_due_at" ON "crm_client_tasks" ("due_at")`);
-  await db.execute(sql`CREATE INDEX IF NOT EXISTS "idx_crm_client_tasks_completed" ON "crm_client_tasks" ("completed")`);
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_client_tasks_client_id" ON "crm_client_tasks" ("client_id")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_client_tasks_due_at" ON "crm_client_tasks" ("due_at")`,
+  );
+  await db.execute(
+    sql`CREATE INDEX IF NOT EXISTS "idx_crm_client_tasks_completed" ON "crm_client_tasks" ("completed")`,
+  );
 }
 
 async function tableExists(tableName: string) {
@@ -313,7 +375,9 @@ async function ensureEcommerceTables(migrationsFolder: string) {
   const hasEcommerceTables = await tableExists("ecommerce_categories");
 
   if (!hasEcommerceTables) {
-    logger.app.info("Applying ecommerce base migrations for legacy database without Drizzle journal");
+    logger.app.info(
+      "Applying ecommerce base migrations for legacy database without Drizzle journal",
+    );
     await runSqlMigrationFile(migrationsFolder, "0024_ecommerce.sql");
     await runSqlMigrationFile(migrationsFolder, "0025_ecommerce_indexes.sql");
   }
@@ -351,18 +415,24 @@ async function ensureEventFlexibilityTables(migrationsFolder: string) {
   const hasEventVenueId = await columnExists("events", "venue_id");
 
   if (!hasEventType) {
-    logger.app.info("Applying event flexibility migration for legacy database without Drizzle journal");
+    logger.app.info(
+      "Applying event flexibility migration for legacy database without Drizzle journal",
+    );
     await runSqlMigrationFile(migrationsFolder, "0027_event_flexibility.sql");
   }
 
   if (!hasEventVenues || !hasEventVenueId) {
-    logger.app.info("Applying event venues and organizers migration for legacy database without Drizzle journal");
+    logger.app.info(
+      "Applying event venues and organizers migration for legacy database without Drizzle journal",
+    );
     await runSqlMigrationFile(migrationsFolder, "0028_event_venues_organizers.sql");
   }
 
   const hasEventVenueDetails = await columnExists("event_venues", "email");
   if ((hasEventVenues || (await tableExists("event_venues"))) && !hasEventVenueDetails) {
-    logger.app.info("Applying event venue details migration for legacy database without Drizzle journal");
+    logger.app.info(
+      "Applying event venue details migration for legacy database without Drizzle journal",
+    );
     await runSqlMigrationFile(migrationsFolder, "0035_event_venue_details.sql");
   }
 }
@@ -394,7 +464,9 @@ async function ensurePortfolioTables(migrationsFolder: string) {
 async function ensureDirectoryProfileMediaTable(migrationsFolder: string) {
   const hasDirectoryProfileMedia = await tableExists("directory_profile_media");
   if (!hasDirectoryProfileMedia) {
-    logger.app.info("Applying directory profile media migration for database without gallery media tables");
+    logger.app.info(
+      "Applying directory profile media migration for database without gallery media tables",
+    );
     await runSqlMigrationFile(migrationsFolder, "0039_directory_profile_media.sql");
   }
 }
@@ -410,7 +482,7 @@ async function ensureDirectoryProfileModes(migrationsFolder: string) {
 export async function runMigrations() {
   const migrationsFolder = path.resolve(
     process.env.NODE_ENV === "production" ? __dirname : process.cwd(),
-    "migrations"
+    "migrations",
   );
 
   const bootstrapState = await getMigrationBootstrapState();
@@ -428,7 +500,7 @@ export async function runMigrations() {
 
   if (!bootstrapState.hasJournal && bootstrapState.publicTableCount > 0) {
     logger.app.warn(
-      "Skipping startup migrations because the database already has tables but no Drizzle journal. Assuming schema was provisioned via drizzle push."
+      "Skipping startup migrations because the database already has tables but no Drizzle journal. Assuming schema was provisioned via drizzle push.",
     );
     return;
   }

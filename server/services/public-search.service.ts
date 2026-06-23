@@ -18,7 +18,10 @@ interface FallbackPageDocument extends Omit<SearchDocument, "id"> {
 }
 
 function stripHtml(value: string): string {
-  return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function truncate(value: string, maxLength = 180): string {
@@ -31,7 +34,10 @@ function collectContentText(value: unknown): string {
   if (typeof value === "string") return stripHtml(value);
   if (Array.isArray(value)) return value.map(collectContentText).filter(Boolean).join(" ");
   if (typeof value === "object") {
-    return Object.values(value as Record<string, unknown>).map(collectContentText).filter(Boolean).join(" ");
+    return Object.values(value as Record<string, unknown>)
+      .map(collectContentText)
+      .filter(Boolean)
+      .join(" ");
   }
   return "";
 }
@@ -152,7 +158,8 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
       "Credentials and licensure are verified",
       "Training or lived experience with member and relevant communities is required",
     ].join(" "),
-    excerptSource: "Learn what it means for a provider to be vetted and how Core Platform supports member community support.",
+    excerptSource:
+      "Learn what it means for a provider to be vetted and how Core Platform supports member community support.",
   },
   {
     slug: "contact",
@@ -166,7 +173,8 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
       "Have a question or feedback",
       "Company Information",
     ].join(" "),
-    excerptSource: "Get in touch with Core Platform through the contact form and company information.",
+    excerptSource:
+      "Get in touch with Core Platform through the contact form and company information.",
   },
   {
     slug: "join",
@@ -206,7 +214,8 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
       "What does it mean to be vetted",
       "Every verified provider completes a detailed application process",
     ].join(" "),
-    excerptSource: "Search for platform-approved workflows by specialty, location, language, or session format.",
+    excerptSource:
+      "Search for platform-approved workflows by specialty, location, language, or session format.",
   },
   {
     slug: "careers",
@@ -234,7 +243,8 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
       "Privacy Policy",
       "how Core Platform collects uses stores and protects information",
     ].join(" "),
-    excerptSource: "Review how Core Platform collects, uses, stores, and protects information across the website and related services.",
+    excerptSource:
+      "Review how Core Platform collects, uses, stores, and protects information across the website and related services.",
   },
   {
     slug: "terms-of-service",
@@ -246,7 +256,8 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
       "Terms of Service",
       "terms governing use of the Core Platform website directory events and services",
     ].join(" "),
-    excerptSource: "Review the terms governing use of the Core Platform website, directory, events, and related services.",
+    excerptSource:
+      "Review the terms governing use of the Core Platform website, directory, events, and related services.",
   },
   {
     slug: "disclaimer",
@@ -260,7 +271,8 @@ const FALLBACK_PAGE_DOCUMENTS: FallbackPageDocument[] = [
       "suicide and crisis lifeline",
       "Core Platform conducts a vetting process",
     ].join(" "),
-    excerptSource: "Review emergency guidance, directory vetting limitations, and important information about using the Core Platform directory and related services.",
+    excerptSource:
+      "Review emergency guidance, directory vetting limitations, and important information about using the Core Platform directory and related services.",
   },
 ];
 
@@ -341,33 +353,37 @@ function buildPortfolioText(project: PortfolioProject) {
     ...(project.categories ?? []),
     ...(project.tags ?? []),
     ...(project.sections ?? []).flatMap((section) => [section.title, section.body]),
-    ...(project.metrics ?? []).flatMap((metric) => [metric.value, metric.label, metric.description]),
+    ...(project.metrics ?? []).flatMap((metric) => [
+      metric.value,
+      metric.label,
+      metric.description,
+    ]),
   ]
     .filter(Boolean)
     .join(" ");
 }
 
 function buildFallbackPageDocuments(publishedPageSlugs: Set<string>): SearchDocument[] {
-  return FALLBACK_PAGE_DOCUMENTS
-    .filter((doc) => !publishedPageSlugs.has(doc.slug))
-    .map((doc) => ({
-      id: `fallback:${doc.slug}`,
-      type: doc.type,
-      title: doc.title,
-      url: doc.url,
-      metadata: doc.metadata,
-      searchableText: doc.searchableText,
-      excerptSource: doc.excerptSource,
-    }));
+  return FALLBACK_PAGE_DOCUMENTS.filter((doc) => !publishedPageSlugs.has(doc.slug)).map((doc) => ({
+    id: `fallback:${doc.slug}`,
+    type: doc.type,
+    title: doc.title,
+    url: doc.url,
+    metadata: doc.metadata,
+    searchableText: doc.searchableText,
+    excerptSource: doc.excerptSource,
+  }));
 }
 
 export async function searchPublicSite(query: string): Promise<PublicSearchResult[]> {
   const normalized = normalizeQuery(query);
   if (!normalized.raw) return [];
 
-  const careerStorage = (storage as typeof storage & {
-    careers?: { getJobs: (filters: { publicOnly: boolean }) => Promise<CareerJob[]> };
-  }).careers;
+  const careerStorage = (
+    storage as typeof storage & {
+      careers?: { getJobs: (filters: { publicOnly: boolean }) => Promise<CareerJob[]> };
+    }
+  ).careers;
 
   const [pages, posts, events, jobs, portfolioProjects] = await Promise.all([
     storage.cmsPages.getAllPages(),
@@ -398,13 +414,13 @@ export async function searchPublicSite(query: string): Promise<PublicSearchResul
     ...posts
       .filter((post) => !post.noindex)
       .map((post) => ({
-      type: "post" as const,
-      id: post.id,
-      title: post.title,
-      url: `/insights/${post.slug}`,
-      metadata: post.category || post.authorName || "Article",
-      searchableText: buildPostText(post),
-      excerptSource: post.excerpt || post.content,
+        type: "post" as const,
+        id: post.id,
+        title: post.title,
+        url: `/insights/${post.slug}`,
+        metadata: post.category || post.authorName || "Article",
+        searchableText: buildPostText(post),
+        excerptSource: post.excerpt || post.content,
       })),
     ...events.map((event) => ({
       type: "event" as const,
@@ -453,7 +469,11 @@ export async function searchPublicSite(query: string): Promise<PublicSearchResul
               id: document.id,
               title: document.title,
               url: document.url,
-              excerpt: buildExcerpt(document.excerptSource || document.searchableText, normalized.raw, normalized.terms),
+              excerpt: buildExcerpt(
+                document.excerptSource || document.searchableText,
+                normalized.raw,
+                normalized.terms,
+              ),
               metadata: document.metadata,
             } satisfies PublicSearchResult,
           }

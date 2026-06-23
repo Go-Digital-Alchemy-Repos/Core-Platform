@@ -106,17 +106,17 @@ describe("ensureSystemForms", () => {
     await mod.ensureSystemForms();
 
     const corePlatformInterestUpdate = mockUpdate.mock.calls.find(
-      ([id]: [string]) => id === "interest-form-id"
+      ([id]: [string]) => id === "interest-form-id",
     );
-    const contactUpdate = mockUpdate.mock.calls.find(
-      ([id]: [string]) => id === "contact-form-id"
-    );
+    const contactUpdate = mockUpdate.mock.calls.find(([id]: [string]) => id === "contact-form-id");
 
     expect(corePlatformInterestUpdate).toBeTruthy();
     expect(corePlatformInterestUpdate[1].fields).toHaveLength(1);
     expect(corePlatformInterestUpdate[1].fields[0].label).toBe("Name");
     expect(
-      corePlatformInterestUpdate[1].fields.some((field: { label: string }) => field.label === "Introduction")
+      corePlatformInterestUpdate[1].fields.some(
+        (field: { label: string }) => field.label === "Introduction",
+      ),
     ).toBe(false);
 
     expect(contactUpdate).toBeTruthy();
@@ -132,15 +132,17 @@ describe("ensureSystemForms", () => {
     const mod = await import("../services/system-forms.service");
     await mod.ensureSystemForms();
 
-    expect(mockCreate).toHaveBeenCalledTimes(4);
+    expect(mockCreate).toHaveBeenCalledTimes(6);
     const createdSlugs = mockCreate.mock.calls.map(([form]) => form.slug);
     expect(createdSlugs).toEqual(
       expect.arrayContaining([
         "contact-form",
         "newsletter-signup",
+        "residential-quote",
+        "commercial-quote",
         "corePlatform-interest",
         "directory-application-start",
-      ])
+      ]),
     );
   });
 });

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { EcommerceCategory, EcommerceProduct, EcommerceProductMedia, EcommerceProductVariant } from "@shared/schema";
+import type {
+  EcommerceCategory,
+  EcommerceProduct,
+  EcommerceProductMedia,
+  EcommerceProductVariant,
+} from "@shared/schema";
 import {
   getPublicProductCategories,
   getPublicProductVariants,
@@ -10,8 +15,30 @@ describe("ecommerce public product filters", () => {
   it("hides inactive categories from public product payloads", () => {
     const now = new Date();
     const categories = [
-      { id: "cat-active", name: "Active", slug: "active", description: null, parentId: null, image: null, sortOrder: 0, active: true, createdAt: now, updatedAt: now },
-      { id: "cat-inactive", name: "Inactive", slug: "inactive", description: null, parentId: null, image: null, sortOrder: 1, active: false, createdAt: now, updatedAt: now },
+      {
+        id: "cat-active",
+        name: "Active",
+        slug: "active",
+        description: null,
+        parentId: null,
+        image: null,
+        sortOrder: 0,
+        active: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "cat-inactive",
+        name: "Inactive",
+        slug: "inactive",
+        description: null,
+        parentId: null,
+        image: null,
+        sortOrder: 1,
+        active: false,
+        createdAt: now,
+        updatedAt: now,
+      },
     ] as EcommerceCategory[];
     const publicCategories = getPublicProductCategories(categories);
 
@@ -33,12 +60,89 @@ describe("ecommerce public product filters", () => {
   it("hides inactive and non-active variants from public product payloads", () => {
     const now = new Date();
     const variants = [
-      { id: "variant-active", productId: "p1", title: "Active", optionSignature: "active", optionValues: {}, sku: null, barcode: null, price: 1000, salePrice: null, compareAtPrice: null, costPerItem: null, inventoryQuantity: 0, trackInventory: false, lowStockThreshold: null, allowBackorder: false, weight: null, weightUnit: "oz", image: null, status: "active", active: true, sortOrder: 0, isDefault: true, createdAt: now, updatedAt: now },
-      { id: "variant-hidden", productId: "p1", title: "Hidden", optionSignature: "hidden", optionValues: {}, sku: null, barcode: null, price: 1000, salePrice: null, compareAtPrice: null, costPerItem: null, inventoryQuantity: 0, trackInventory: false, lowStockThreshold: null, allowBackorder: false, weight: null, weightUnit: "oz", image: null, status: "inactive", active: true, sortOrder: 1, isDefault: false, createdAt: now, updatedAt: now },
-      { id: "variant-disabled", productId: "p1", title: "Disabled", optionSignature: "disabled", optionValues: {}, sku: null, barcode: null, price: 1000, salePrice: null, compareAtPrice: null, costPerItem: null, inventoryQuantity: 0, trackInventory: false, lowStockThreshold: null, allowBackorder: false, weight: null, weightUnit: "oz", image: null, status: "active", active: false, sortOrder: 2, isDefault: false, createdAt: now, updatedAt: now },
+      {
+        id: "variant-active",
+        productId: "p1",
+        title: "Active",
+        optionSignature: "active",
+        optionValues: {},
+        sku: null,
+        barcode: null,
+        price: 1000,
+        salePrice: null,
+        compareAtPrice: null,
+        costPerItem: null,
+        inventoryQuantity: 0,
+        trackInventory: false,
+        lowStockThreshold: null,
+        allowBackorder: false,
+        weight: null,
+        weightUnit: "oz",
+        image: null,
+        status: "active",
+        active: true,
+        sortOrder: 0,
+        isDefault: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "variant-hidden",
+        productId: "p1",
+        title: "Hidden",
+        optionSignature: "hidden",
+        optionValues: {},
+        sku: null,
+        barcode: null,
+        price: 1000,
+        salePrice: null,
+        compareAtPrice: null,
+        costPerItem: null,
+        inventoryQuantity: 0,
+        trackInventory: false,
+        lowStockThreshold: null,
+        allowBackorder: false,
+        weight: null,
+        weightUnit: "oz",
+        image: null,
+        status: "inactive",
+        active: true,
+        sortOrder: 1,
+        isDefault: false,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "variant-disabled",
+        productId: "p1",
+        title: "Disabled",
+        optionSignature: "disabled",
+        optionValues: {},
+        sku: null,
+        barcode: null,
+        price: 1000,
+        salePrice: null,
+        compareAtPrice: null,
+        costPerItem: null,
+        inventoryQuantity: 0,
+        trackInventory: false,
+        lowStockThreshold: null,
+        allowBackorder: false,
+        weight: null,
+        weightUnit: "oz",
+        image: null,
+        status: "active",
+        active: false,
+        sortOrder: 2,
+        isDefault: false,
+        createdAt: now,
+        updatedAt: now,
+      },
     ] as EcommerceProductVariant[];
 
-    expect(getPublicProductVariants(variants).map((variant) => variant.id)).toEqual(["variant-active"]);
+    expect(getPublicProductVariants(variants).map((variant) => variant.id)).toEqual([
+      "variant-active",
+    ]);
   });
 
   it("removes admin-only product, variant, category, and media fields from public payloads", () => {
@@ -101,13 +205,61 @@ describe("ecommerce public product filters", () => {
       updatedAt: now,
     } as EcommerceProduct;
     const categories = [
-      { id: "cat-active", name: "Active", slug: "active", description: null, parentId: null, image: null, sortOrder: 0, active: true, createdAt: now, updatedAt: now },
+      {
+        id: "cat-active",
+        name: "Active",
+        slug: "active",
+        description: null,
+        parentId: null,
+        image: null,
+        sortOrder: 0,
+        active: true,
+        createdAt: now,
+        updatedAt: now,
+      },
     ] as EcommerceCategory[];
     const variants = [
-      { id: "variant-active", productId: "prod-1", title: "Active", optionSignature: "active", optionValues: {}, sku: "GUIDE-1", barcode: "hidden-barcode", price: 2500, salePrice: 2000, compareAtPrice: 3000, costPerItem: 700, inventoryQuantity: 12, trackInventory: true, lowStockThreshold: 2, allowBackorder: false, weight: 16, weightUnit: "oz", image: null, status: "active", active: true, sortOrder: 0, isDefault: true, createdAt: now, updatedAt: now },
+      {
+        id: "variant-active",
+        productId: "prod-1",
+        title: "Active",
+        optionSignature: "active",
+        optionValues: {},
+        sku: "GUIDE-1",
+        barcode: "hidden-barcode",
+        price: 2500,
+        salePrice: 2000,
+        compareAtPrice: 3000,
+        costPerItem: 700,
+        inventoryQuantity: 12,
+        trackInventory: true,
+        lowStockThreshold: 2,
+        allowBackorder: false,
+        weight: 16,
+        weightUnit: "oz",
+        image: null,
+        status: "active",
+        active: true,
+        sortOrder: 0,
+        isDefault: true,
+        createdAt: now,
+        updatedAt: now,
+      },
     ] as EcommerceProductVariant[];
     const media = [
-      { id: "media-link-1", productId: "prod-1", variantId: "variant-active", mediaId: "cms-media-1", url: "/uploads/guide.jpg", type: "image", altText: "Guide", sortOrder: 0, primary: true, createdAt: now, updatedAt: now },
+      {
+        id: "media-link-1",
+        productId: "prod-1",
+        variantId: "variant-active",
+        mediaId: "cms-media-1",
+        url: "/uploads/guide.jpg",
+        type: "image",
+        altText: "Guide",
+        sortOrder: 0,
+        primary: true,
+        createdAt: now,
+        updatedAt: now,
+      },
     ] as EcommerceProductMedia[];
 
     const publicProduct = toPublicEcommerceProduct({ product, categories, variants, media });

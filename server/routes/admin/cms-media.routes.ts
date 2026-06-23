@@ -35,9 +35,24 @@ const CMS_MEDIA_MIMES = [
   "application/vnd.oasis.opendocument.presentation",
 ];
 const CMS_MEDIA_EXTENSIONS = [
-  ".png", ".jpg", ".jpeg", ".webp", ".gif",
-  ".pdf", ".doc", ".docx", ".xls", ".xlsx",
-  ".ppt", ".pptx", ".csv", ".txt", ".rtf", ".odt", ".ods", ".odp",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+  ".gif",
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".ppt",
+  ".pptx",
+  ".csv",
+  ".txt",
+  ".rtf",
+  ".odt",
+  ".ods",
+  ".odp",
 ];
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const updateMediaSchema = z.object({
@@ -60,7 +75,11 @@ const cmsUpload = multer({
     if (CMS_MEDIA_MIMES.includes(file.mimetype) || CMS_MEDIA_EXTENSIONS.includes(extension)) {
       cb(null, true);
     } else {
-      cb(new Error("Accepted file types: images, PDF, Word, Excel, PowerPoint, CSV, TXT, RTF, and OpenDocument files"));
+      cb(
+        new Error(
+          "Accepted file types: images, PDF, Word, Excel, PowerPoint, CSV, TXT, RTF, and OpenDocument files",
+        ),
+      );
     }
   },
 });
@@ -82,7 +101,10 @@ function coerceEmptyToNull(value: string | undefined) {
 }
 
 function normalizeDisplayName(name: string, extension: string) {
-  const raw = name.trim().replace(/[\\/:"*?<>|]+/g, " ").replace(/\s+/g, " ");
+  const raw = name
+    .trim()
+    .replace(/[\\/:"*?<>|]+/g, " ")
+    .replace(/\s+/g, " ");
   const withoutExtension = stripExtension(raw) || "image";
   const normalizedExtension = extension.startsWith(".") ? extension : `.${extension}`;
   return `${withoutExtension}${normalizedExtension}`;
@@ -91,7 +113,7 @@ function normalizeDisplayName(name: string, extension: string) {
 function buildUniqueDisplayName(
   baseName: string,
   extension: string,
-  existingNames: Iterable<string>
+  existingNames: Iterable<string>,
 ) {
   const normalizedExtension = extension.startsWith(".") ? extension : `.${extension}`;
   const existing = new Set(Array.from(existingNames, (name) => name.toLowerCase()));
@@ -125,7 +147,7 @@ router.post(
     });
 
     res.status(201).json(asset);
-  })
+  }),
 );
 
 router.get(
@@ -136,10 +158,10 @@ router.get(
       assets.map(async (asset) => ({
         ...asset,
         url: (await r2Service.normalizePublicUrl(asset.url)) ?? asset.url,
-      }))
+      })),
     );
     res.json(await buildCmsMediaLibraryAssets(normalizedAssets));
-  })
+  }),
 );
 
 router.get(
@@ -172,7 +194,7 @@ router.get(
     res.setHeader("Content-Type", contentType || "application/octet-stream");
     res.setHeader("Cache-Control", "private, no-store, max-age=0");
     res.send(fileBuffer);
-  })
+  }),
 );
 
 router.patch(
@@ -197,7 +219,7 @@ router.patch(
       ? buildUniqueDisplayName(
           stripExtension(normalizeDisplayName(parsed.data.originalName, extension)),
           extension,
-          existingNames
+          existingNames,
         )
       : asset.originalName;
 
@@ -218,7 +240,7 @@ router.patch(
       ...updated,
       url: (await r2Service.normalizePublicUrl(updated.url)) ?? updated.url,
     });
-  })
+  }),
 );
 
 router.post(
@@ -239,7 +261,11 @@ router.post(
     let publicUrl = asset.url;
 
     if (asset.r2Key) {
-      const uploadedUrl = await r2Service.uploadFile(asset.r2Key, optimized.buffer, optimized.mimeType);
+      const uploadedUrl = await r2Service.uploadFile(
+        asset.r2Key,
+        optimized.buffer,
+        optimized.mimeType,
+      );
       if (!uploadedUrl) {
         return res.status(500).json({ error: "Failed to replace image in Cloudflare R2" });
       }
@@ -265,7 +291,7 @@ router.post(
       ...updated,
       url: (await r2Service.normalizePublicUrl(updated.url)) ?? updated.url,
     });
-  })
+  }),
 );
 
 router.patch(
@@ -282,7 +308,7 @@ router.patch(
       ...asset,
       url: (await r2Service.normalizePublicUrl(asset.url)) ?? asset.url,
     });
-  })
+  }),
 );
 
 router.delete(
@@ -301,7 +327,7 @@ router.delete(
 
     await storage.cmsMedia.deleteMedia(id);
     res.json({ success: true });
-  })
+  }),
 );
 
 export default router;

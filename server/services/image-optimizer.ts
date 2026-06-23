@@ -31,18 +31,23 @@ export function isImageMime(mime: string): boolean {
 
 function mimeToExtension(mime: string): string {
   switch (mime) {
-    case "image/jpeg": return ".jpg";
-    case "image/png": return ".png";
-    case "image/gif": return ".gif";
-    case "image/webp": return ".webp";
-    default: return ".bin";
+    case "image/jpeg":
+      return ".jpg";
+    case "image/png":
+      return ".png";
+    case "image/gif":
+      return ".gif";
+    case "image/webp":
+      return ".webp";
+    default:
+      return ".bin";
   }
 }
 
 export async function optimizeImage(
   inputBuffer: Buffer,
   inputMime: string,
-  opts: OptimizeOptions = {}
+  opts: OptimizeOptions = {},
 ): Promise<OptimizedImage> {
   const { maxWidth, maxHeight, quality, format } = { ...DEFAULTS, ...opts };
   const originalSize = inputBuffer.length;
@@ -88,7 +93,7 @@ export async function optimizeImage(
     }
 
     logger.app.info(
-      `Image optimized: ${(originalSize / 1024).toFixed(0)}KB → ${(outputBuffer.length / 1024).toFixed(0)}KB (${Math.round((1 - outputBuffer.length / originalSize) * 100)}% reduction)`
+      `Image optimized: ${(originalSize / 1024).toFixed(0)}KB → ${(outputBuffer.length / 1024).toFixed(0)}KB (${Math.round((1 - outputBuffer.length / originalSize) * 100)}% reduction)`,
     );
 
     return {

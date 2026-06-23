@@ -5,7 +5,15 @@ export const ACTIVE_MEMBERSHIP_STATUSES = new Set(["active", "trialing", "manual
 
 export interface MembershipAccessResult {
   allowed: boolean;
-  reason: "public" | "admin_preview" | "logged_in" | "membership" | "plan" | "entitlement" | "login_required" | "upgrade_required";
+  reason:
+    | "public"
+    | "admin_preview"
+    | "logged_in"
+    | "membership"
+    | "plan"
+    | "entitlement"
+    | "login_required"
+    | "upgrade_required";
   rule: MembershipAccessRule | null;
   teaser?: string | null;
 }
@@ -14,12 +22,20 @@ export function isAdminPreviewUser(user: Pick<User, "role"> | undefined | null):
   return user?.role === "admin" || user?.role === "editor";
 }
 
-export function isSubscriptionCurrentlyActive(subscription: MembershipSubscription | undefined | null, now = new Date()): boolean {
+export function isSubscriptionCurrentlyActive(
+  subscription: MembershipSubscription | undefined | null,
+  now = new Date(),
+): boolean {
   if (!subscription) return false;
   if (!ACTIVE_MEMBERSHIP_STATUSES.has(subscription.status)) return false;
   if (subscription.suspendedAt) return false;
   if (subscription.expiresAt && subscription.expiresAt < now) return false;
-  if (subscription.currentPeriodEnd && subscription.status !== "manual" && subscription.currentPeriodEnd < now) return false;
+  if (
+    subscription.currentPeriodEnd &&
+    subscription.status !== "manual" &&
+    subscription.currentPeriodEnd < now
+  )
+    return false;
   return true;
 }
 

@@ -45,7 +45,7 @@ router.get(
       interview,
       decision,
     });
-  })
+  }),
 );
 
 router.post(
@@ -57,7 +57,7 @@ router.post(
       return;
     }
     res.status(201).json(result.application);
-  })
+  }),
 );
 
 router.patch(
@@ -70,7 +70,7 @@ router.patch(
       return;
     }
     res.json(result.application);
-  })
+  }),
 );
 
 router.post(
@@ -82,7 +82,7 @@ router.post(
       return;
     }
     res.json({ url: result.url });
-  })
+  }),
 );
 
 router.post(
@@ -98,7 +98,7 @@ router.post(
       }
       throw err;
     }
-  })
+  }),
 );
 
 router.post(
@@ -110,7 +110,7 @@ router.post(
       return;
     }
     res.json(result.application);
-  })
+  }),
 );
 
 router.post(
@@ -122,7 +122,7 @@ router.post(
       return;
     }
     res.json(result.application);
-  })
+  }),
 );
 
 router.post(
@@ -139,7 +139,17 @@ router.post(
       return;
     }
 
-    const { credentialType, issuer, licenseNumber, stateOrCountry, middleName, verificationUrl, issuedAt, expiresAt, documentUrl } = req.body;
+    const {
+      credentialType,
+      issuer,
+      licenseNumber,
+      stateOrCountry,
+      middleName,
+      verificationUrl,
+      issuedAt,
+      expiresAt,
+      documentUrl,
+    } = req.body;
 
     if (!credentialType) {
       res.status(400).json({ message: "Credential type is required" });
@@ -160,7 +170,7 @@ router.post(
     });
 
     res.status(201).json(credential);
-  })
+  }),
 );
 
 router.delete(
@@ -179,7 +189,7 @@ router.delete(
 
     await storage.applications.deleteCredential(paramStr(req.params.credentialId), application.id);
     res.json({ success: true });
-  })
+  }),
 );
 
 router.post(
@@ -218,7 +228,7 @@ router.post(
     });
 
     res.status(201).json(reference);
-  })
+  }),
 );
 
 router.delete(
@@ -237,7 +247,7 @@ router.delete(
 
     await storage.applications.deleteReference(paramStr(req.params.referenceId), application.id);
     res.json({ success: true });
-  })
+  }),
 );
 
 export default router;

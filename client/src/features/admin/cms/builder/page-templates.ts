@@ -84,13 +84,15 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       }),
       block("feature-list", {
         title: "Why Core Platform?",
-        subtitle: "We built this platform for configurable communities, directories, and member experiences.",
+        subtitle:
+          "We built this platform for configurable communities, directories, and member experiences.",
         columns: "3",
         features: [
           {
             icon: "Globe",
             title: "Context-Aware Support",
-            description: "Directory settings help each site describe the provider expertise that matters.",
+            description:
+              "Directory settings help each site describe the provider expertise that matters.",
           },
           {
             icon: "ShieldCheck",
@@ -131,8 +133,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       }),
       block("cta", {
         heading: "Ready to Find Your Match?",
-        subheading:
-          "Browse a verified provider network and take the first step today.",
+        subheading: "Browse a verified provider network and take the first step today.",
         primaryText: "Browse Providers",
         primaryLink: "/directory",
         secondaryText: "Join as a Provider",
@@ -180,7 +181,8 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
           {
             icon: "Globe",
             title: "Global Network",
-            description: "Providers and resources can be organized across regions, languages, and audiences.",
+            description:
+              "Providers and resources can be organized across regions, languages, and audiences.",
           },
           {
             icon: "ShieldCheck",
@@ -317,8 +319,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       }),
       block("cta", {
         heading: "Take the First Step Today",
-        subheading:
-          "Browse the directory, compare verified providers, and choose a next step.",
+        subheading: "Browse the directory, compare verified providers, and choose a next step.",
         primaryText: "Browse Providers Now",
         primaryLink: "/directory",
         secondaryText: "",
@@ -339,8 +340,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       block("section-header", {
         eyebrow: "Resource Library",
         title: "Insights & Articles",
-        subtitle:
-          "Explore articles, resources, and insights for your community.",
+        subtitle: "Explore articles, resources, and insights for your community.",
         alignment: "center",
       }),
       block("blog-featured-post", {
@@ -529,7 +529,7 @@ export function getRecommendedBlocks(goalId: string): WizardBlockOption[] {
 }
 
 const AUDIENCE_LABELS: Record<string, string> = {
-  "members": "Community Members",
+  members: "Community Members",
   "expat-families": "Families",
   "cross-cultural-couples": "Multi-Audience Groups",
   organizations: "Organizations & Schools",
@@ -547,7 +547,7 @@ function buildAudienceSubheading(audiences: string[], fallback: string): string 
 
 function buildUseCasesForAudiences(audiences: string[]) {
   const personas: Record<string, { title: string; description: string; icon: string }> = {
-    "members": {
+    members: {
       title: "Community Members",
       description:
         "Adults who grew up across cultures and need support navigating identity, belonging, and transitions.",
@@ -555,8 +555,7 @@ function buildUseCasesForAudiences(audiences: string[]) {
     },
     "expat-families": {
       title: "Families",
-      description:
-        "Households looking for trusted services, events, and resources.",
+      description: "Households looking for trusted services, events, and resources.",
       icon: "Users",
     },
     "cross-cultural-couples": {
@@ -573,8 +572,7 @@ function buildUseCasesForAudiences(audiences: string[]) {
     },
     providers: {
       title: "Verified Providers",
-      description:
-        "Qualified providers seeking to join a platform-approved network.",
+      description: "Qualified providers seeking to join a platform-approved network.",
       icon: "UserCheck",
     },
     general: {

@@ -7,7 +7,12 @@ import {
 
 describe("portfolio schema", () => {
   it("defines the expected industry presets", () => {
-    expect(PORTFOLIO_INDUSTRIES).toEqual(["real_estate", "web_development", "artist_creative", "generic"]);
+    expect(PORTFOLIO_INDUSTRIES).toEqual([
+      "real_estate",
+      "web_development",
+      "artist_creative",
+      "generic",
+    ]);
   });
 
   it("applies settings defaults", () => {
@@ -19,8 +24,14 @@ describe("portfolio schema", () => {
   });
 
   it("validates project slugs", () => {
-    const valid = insertPortfolioProjectSchema.safeParse({ title: "Case Study", slug: "case-study" });
-    const invalid = insertPortfolioProjectSchema.safeParse({ title: "Case Study", slug: "Case Study" });
+    const valid = insertPortfolioProjectSchema.safeParse({
+      title: "Case Study",
+      slug: "case-study",
+    });
+    const invalid = insertPortfolioProjectSchema.safeParse({
+      title: "Case Study",
+      slug: "Case Study",
+    });
     expect(valid.success).toBe(true);
     expect(invalid.success).toBe(false);
   });

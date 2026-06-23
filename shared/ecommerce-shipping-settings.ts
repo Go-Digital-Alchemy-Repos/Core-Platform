@@ -7,7 +7,8 @@ export const ECOMMERCE_SHIPPING_DESTINATION_MODES = [
   "custom",
 ] as const;
 
-export type EcommerceShippingDestinationMode = typeof ECOMMERCE_SHIPPING_DESTINATION_MODES[number];
+export type EcommerceShippingDestinationMode =
+  (typeof ECOMMERCE_SHIPPING_DESTINATION_MODES)[number];
 
 export const ECOMMERCE_TIMEZONES = [
   ["America/New_York", "Eastern Time"],
@@ -128,7 +129,10 @@ export const COMMON_ECOMMERCE_COUNTRIES = [
 
 export function getCountryLabel(countryCode: string) {
   const normalizedCountry = countryCode.trim().toUpperCase();
-  return COMMON_ECOMMERCE_COUNTRIES.find(([code]) => code === normalizedCountry)?.[1] ?? normalizedCountry;
+  return (
+    COMMON_ECOMMERCE_COUNTRIES.find(([code]) => code === normalizedCountry)?.[1] ??
+    normalizedCountry
+  );
 }
 
 export const ecommerceStoreOriginSchema = z.object({
@@ -138,7 +142,12 @@ export const ecommerceStoreOriginSchema = z.object({
   city: z.string().trim().max(160).default(""),
   state: z.string().trim().max(80).default(""),
   zip: z.string().trim().max(40).default(""),
-  country: z.string().trim().length(2).default("US").transform((value) => value.toUpperCase()),
+  country: z
+    .string()
+    .trim()
+    .length(2)
+    .default("US")
+    .transform((value) => value.toUpperCase()),
 });
 
 export const ecommerceStoreSettingsSchema = z.object({
@@ -147,7 +156,15 @@ export const ecommerceStoreSettingsSchema = z.object({
     message: "Store timezone must be a valid IANA timezone, such as America/New_York",
   }),
   shippingDestinationMode: z.enum(ECOMMERCE_SHIPPING_DESTINATION_MODES).default("us_only"),
-  allowedCountries: z.array(z.string().trim().length(2).transform((value) => value.toUpperCase())).default(["US"]),
+  allowedCountries: z
+    .array(
+      z
+        .string()
+        .trim()
+        .length(2)
+        .transform((value) => value.toUpperCase()),
+    )
+    .default(["US"]),
 });
 
 export type EcommerceStoreSettings = z.infer<typeof ecommerceStoreSettingsSchema>;
@@ -159,7 +176,9 @@ export function getCountriesForShippingMode(
   if (mode === "us_only") return ["US"];
   if (mode === "us_canada") return ["US", "CA"];
   if (mode === "worldwide") return COMMON_ECOMMERCE_COUNTRIES.map(([code]) => code);
-  return [...new Set(customCountries.map((country) => country.trim().toUpperCase()).filter(Boolean))];
+  return [
+    ...new Set(customCountries.map((country) => country.trim().toUpperCase()).filter(Boolean)),
+  ];
 }
 
 export function getRegionOptions(country: string) {

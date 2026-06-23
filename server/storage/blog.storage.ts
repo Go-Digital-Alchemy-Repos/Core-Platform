@@ -52,25 +52,33 @@ export class BlogStorage {
       posts
         .filter((post) => {
           const primaryMatch = (post.category ?? "").trim().toLowerCase() === target;
-          const categoryListMatch = (post.categories ?? []).some((category) => category.trim().toLowerCase() === target);
+          const categoryListMatch = (post.categories ?? []).some(
+            (category) => category.trim().toLowerCase() === target,
+          );
           return primaryMatch || categoryListMatch;
         })
         .map((post) => {
           const nextCategories = (post.categories ?? [])
             .map((category) => (category.trim().toLowerCase() === target ? nextName : category))
             .filter((category): category is string => Boolean(category))
-            .filter((category, index, arr) => arr.findIndex((item) => item.trim().toLowerCase() === category.trim().toLowerCase()) === index);
+            .filter(
+              (category, index, arr) =>
+                arr.findIndex(
+                  (item) => item.trim().toLowerCase() === category.trim().toLowerCase(),
+                ) === index,
+            );
 
-          const nextPrimaryCategory = (post.category ?? "").trim().toLowerCase() === target
-            ? nextName
-            : post.category ?? nextCategories[0] ?? null;
+          const nextPrimaryCategory =
+            (post.category ?? "").trim().toLowerCase() === target
+              ? nextName
+              : (post.category ?? nextCategories[0] ?? null);
 
           return this.updatePost(post.id, {
             category: nextPrimaryCategory || nextCategories[0] || null,
             categories: nextCategories.length > 0 ? nextCategories : null,
             updatedAt: new Date(),
           } as Partial<InsertBlogPost>);
-        })
+        }),
     );
   }
 
@@ -85,20 +93,22 @@ export class BlogStorage {
           const nextTags = (post.tags ?? [])
             .map((tag) => (tag.trim().toLowerCase() === target ? nextName : tag))
             .filter((tag): tag is string => Boolean(tag))
-            .filter((tag, index, arr) => arr.findIndex((item) => item.trim().toLowerCase() === tag.trim().toLowerCase()) === index);
+            .filter(
+              (tag, index, arr) =>
+                arr.findIndex((item) => item.trim().toLowerCase() === tag.trim().toLowerCase()) ===
+                index,
+            );
 
           return this.updatePost(post.id, {
             tags: nextTags.length > 0 ? nextTags : null,
             updatedAt: new Date(),
           } as Partial<InsertBlogPost>);
-        })
+        }),
     );
   }
 
   async countPosts(): Promise<number> {
-    const result = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(blogPosts);
+    const result = await db.select({ count: sql<number>`count(*)` }).from(blogPosts);
     return Number(result[0].count);
   }
 
@@ -119,8 +129,8 @@ export class BlogStorage {
         and(
           eq(blogPosts.isPublished, false),
           sql`${blogPosts.scheduledAt} IS NOT NULL`,
-          sql`${blogPosts.scheduledAt} <= ${now}`
-        )
+          sql`${blogPosts.scheduledAt} <= ${now}`,
+        ),
       )
       .returning();
     return result.length;
@@ -130,12 +140,7 @@ export class BlogStorage {
     const [row] = await db
       .select({ scheduledAt: blogPosts.scheduledAt })
       .from(blogPosts)
-      .where(
-        and(
-          eq(blogPosts.isPublished, false),
-          sql`${blogPosts.scheduledAt} IS NOT NULL`
-        )
-      )
+      .where(and(eq(blogPosts.isPublished, false), sql`${blogPosts.scheduledAt} IS NOT NULL`))
       .orderBy(sql`${blogPosts.scheduledAt} ASC`)
       .limit(1);
     return row?.scheduledAt ?? null;

@@ -18,12 +18,20 @@ export default function OrderSuccessPage() {
             <CheckCircle className="mx-auto h-14 w-14 text-emerald-600" />
             <div>
               <h1 className="font-heading text-3xl font-semibold">Order created</h1>
-              <p className="mt-2 text-muted-foreground">Your secure payment has been initialized. Save your order lookup details.</p>
+              <p className="mt-2 text-muted-foreground">
+                Your secure payment has been initialized. Save your order lookup details.
+              </p>
             </div>
-            {orderId ? <p className="rounded-md bg-muted p-3 font-mono text-sm">#{orderId}</p> : null}
+            {orderId ? (
+              <p className="rounded-md bg-muted p-3 font-mono text-sm">#{orderId}</p>
+            ) : null}
             <div className="flex flex-col justify-center gap-3 sm:flex-row">
-              <Button asChild><Link href={statusHref}>View order status</Link></Button>
-              <Button asChild variant="outline"><Link href="/shop">Continue shopping</Link></Button>
+              <Button asChild>
+                <Link href={statusHref}>View order status</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/shop">Continue shopping</Link>
+              </Button>
             </div>
           </CardContent>
         </Card>

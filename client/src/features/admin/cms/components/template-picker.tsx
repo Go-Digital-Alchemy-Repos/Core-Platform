@@ -8,15 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  FileText,
-  Sparkles,
-  BookOpen,
-  TrendingUp,
-  Newspaper,
-  Wand2,
-  Check,
-} from "lucide-react";
+import { FileText, Sparkles, BookOpen, TrendingUp, Newspaper, Wand2, Check } from "lucide-react";
 import { PAGE_TEMPLATES } from "../builder/page-templates";
 import type { BuilderContent } from "../builder/block-registry";
 
@@ -59,7 +51,8 @@ export function TemplatePicker({ open, onClose, onSelect, onOpenWizard }: Templa
         <DialogHeader>
           <DialogTitle>Choose a Template</DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Pick a starting point for your new page, or use the landing page wizard for guided creation.
+            Pick a starting point for your new page, or use the landing page wizard for guided
+            creation.
           </p>
         </DialogHeader>
 
@@ -84,17 +77,26 @@ export function TemplatePicker({ open, onClose, onSelect, onOpenWizard }: Templa
                     <Check className="h-3 w-3 text-white" />
                   </div>
                 )}
-                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                  isSelected ? "bg-violet-100 dark:bg-violet-900/50" : "bg-muted"
-                }`}>
-                  <Icon className={`h-5 w-5 ${isSelected ? "text-violet-600" : "text-muted-foreground"}`} />
+                <div
+                  className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                    isSelected ? "bg-violet-100 dark:bg-violet-900/50" : "bg-muted"
+                  }`}
+                >
+                  <Icon
+                    className={`h-5 w-5 ${isSelected ? "text-violet-600" : "text-muted-foreground"}`}
+                  />
                 </div>
                 <div>
                   <p className="text-sm font-medium leading-tight">{tmpl.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{tmpl.description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                    {tmpl.description}
+                  </p>
                 </div>
                 <div className="flex items-center gap-1.5 mt-auto">
-                  <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${CATEGORY_COLORS[tmpl.category] ?? ""}`}>
+                  <Badge
+                    variant="secondary"
+                    className={`text-[10px] px-1.5 py-0 ${CATEGORY_COLORS[tmpl.category] ?? ""}`}
+                  >
                     {tmpl.category}
                   </Badge>
                   {blockCount > 0 && (
@@ -118,9 +120,14 @@ export function TemplatePicker({ open, onClose, onSelect, onOpenWizard }: Templa
             </div>
             <div>
               <p className="text-sm font-medium leading-tight">Landing Page Wizard</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Guided 4-step builder for landing pages</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Guided 4-step builder for landing pages
+              </p>
             </div>
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
+            <Badge
+              variant="secondary"
+              className="text-[10px] px-1.5 py-0 bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400"
+            >
               guided
             </Badge>
           </button>
@@ -130,12 +137,10 @@ export function TemplatePicker({ open, onClose, onSelect, onOpenWizard }: Templa
           <Button variant="outline" onClick={onClose} data-testid="button-cancel-template">
             Cancel
           </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={!selected}
-            data-testid="button-use-template"
-          >
-            {selectedTemplate?.id === "blank" ? "Start with Blank Page" : `Use ${selectedTemplate?.name ?? "Template"}`}
+          <Button onClick={handleConfirm} disabled={!selected} data-testid="button-use-template">
+            {selectedTemplate?.id === "blank"
+              ? "Start with Blank Page"
+              : `Use ${selectedTemplate?.name ?? "Template"}`}
           </Button>
         </DialogFooter>
       </DialogContent>

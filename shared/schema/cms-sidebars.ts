@@ -30,18 +30,24 @@ export const sidebarWidgetSchema = z.object({
   settings: z.record(z.unknown()).default({}),
 });
 
-export const cmsSidebars = pgTable("cms_sidebars", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(),
-  description: text("description"),
-  isDefault: boolean("is_default").default(false),
-  widgets: jsonb("widgets").default([]),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_cms_sidebars_default").on(table.isDefault),
-  index("idx_cms_sidebars_updated_at").on(table.updatedAt),
-]);
+export const cmsSidebars = pgTable(
+  "cms_sidebars",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    name: text("name").notNull(),
+    description: text("description"),
+    isDefault: boolean("is_default").default(false),
+    widgets: jsonb("widgets").default([]),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("idx_cms_sidebars_default").on(table.isDefault),
+    index("idx_cms_sidebars_updated_at").on(table.updatedAt),
+  ],
+);
 
 export const insertCmsSidebarSchema = createInsertSchema(cmsSidebars).omit({
   id: true,

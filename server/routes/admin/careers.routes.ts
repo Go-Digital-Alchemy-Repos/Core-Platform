@@ -34,7 +34,11 @@ function slugify(value: string) {
     .replace(/-{2,}/g, "-");
 }
 
-async function buildUniqueSlug(title: string, requestedSlug?: string | null, currentJobId?: string) {
+async function buildUniqueSlug(
+  title: string,
+  requestedSlug?: string | null,
+  currentJobId?: string,
+) {
   const base = slugify(requestedSlug || title) || "job";
   for (let i = 0; i < 100; i += 1) {
     const candidate = i === 0 ? base : `${base}-${i + 1}`;
@@ -64,8 +68,10 @@ function coerceJobPayload(body: Record<string, unknown>, userId?: string): Recor
       normalized[field] = Number.isNaN(date.getTime()) ? null : date;
     }
   }
-  if (typeof normalized.salaryMin === "string") normalized.salaryMin = Number(normalized.salaryMin) || null;
-  if (typeof normalized.salaryMax === "string") normalized.salaryMax = Number(normalized.salaryMax) || null;
+  if (typeof normalized.salaryMin === "string")
+    normalized.salaryMin = Number(normalized.salaryMin) || null;
+  if (typeof normalized.salaryMax === "string")
+    normalized.salaryMax = Number(normalized.salaryMax) || null;
   if (!normalized.createdBy && userId) normalized.createdBy = userId;
   if (userId) normalized.updatedBy = userId;
   return normalized;
@@ -77,11 +83,19 @@ function validateJobData(data: Record<string, unknown>): string | null {
   const employmentType = typeof data.employmentType === "string" ? data.employmentType : undefined;
   const workMode = typeof data.workMode === "string" ? data.workMode : undefined;
   const slug = typeof data.slug === "string" ? data.slug : undefined;
-  if (status && !CAREER_JOB_STATUSES.includes(status as CareerJob["status"])) return "Invalid job status";
-  if (visibility && !CAREER_JOB_VISIBILITIES.includes(visibility as CareerJob["visibility"])) return "Invalid job visibility";
-  if (employmentType && !CAREER_EMPLOYMENT_TYPES.includes(employmentType as CareerJob["employmentType"])) return "Invalid employment type";
-  if (workMode && !CAREER_WORK_MODES.includes(workMode as CareerJob["workMode"])) return "Invalid work mode";
-  if (slug && !SLUG_PATTERN.test(slug)) return "Slug must use lowercase letters, numbers, and hyphens only";
+  if (status && !CAREER_JOB_STATUSES.includes(status as CareerJob["status"]))
+    return "Invalid job status";
+  if (visibility && !CAREER_JOB_VISIBILITIES.includes(visibility as CareerJob["visibility"]))
+    return "Invalid job visibility";
+  if (
+    employmentType &&
+    !CAREER_EMPLOYMENT_TYPES.includes(employmentType as CareerJob["employmentType"])
+  )
+    return "Invalid employment type";
+  if (workMode && !CAREER_WORK_MODES.includes(workMode as CareerJob["workMode"]))
+    return "Invalid work mode";
+  if (slug && !SLUG_PATTERN.test(slug))
+    return "Slug must use lowercase letters, numbers, and hyphens only";
   return null;
 }
 
@@ -107,10 +121,15 @@ router.post(
     const payload = coerceJobPayload(req.body, req.user?.id);
     const validationError = validateJobData(payload);
     if (validationError) return res.status(400).json({ message: validationError });
-    payload.slug = await buildUniqueSlug(String(payload.title ?? ""), typeof payload.slug === "string" ? payload.slug : null);
+    payload.slug = await buildUniqueSlug(
+      String(payload.title ?? ""),
+      typeof payload.slug === "string" ? payload.slug : null,
+    );
     const parsed = insertCareerJobSchema.safeParse(payload);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid job payload", errors: parsed.error.flatten() });
+      return res
+        .status(400)
+        .json({ message: "Invalid job payload", errors: parsed.error.flatten() });
     }
     const job = await storage.careers.createJob(parsed.data);
     await dispatchCareerWebhook("career.job.created", job);
@@ -136,7 +155,9 @@ router.put(
     }
     const parsed = insertCareerJobSchema.partial().safeParse(payload);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid job payload", errors: parsed.error.flatten() });
+      return res
+        .status(400)
+        .json({ message: "Invalid job payload", errors: parsed.error.flatten() });
     }
     const job = await storage.careers.updateJob(id, parsed.data as Partial<InsertCareerJob>);
     await dispatchCareerWebhook("career.job.updated", job);
@@ -186,7 +207,9 @@ router.put(
     if (!current) return res.status(404).json({ message: "Application not found" });
     const parsed = updateApplicationSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid application update", errors: parsed.error.flatten() });
+      return res
+        .status(400)
+        .json({ message: "Invalid application update", errors: parsed.error.flatten() });
     }
     const updated = parsed.data.status
       ? await storage.careers.updateApplication(id, { status: parsed.data.status })
@@ -213,7 +236,10 @@ router.get(
     const file = await loadCareerResume(application.resumeStorageKey);
     if (!file) return res.status(404).json({ message: "Resume file not found" });
     res.setHeader("Content-Type", file.contentType || application.resumeMimeType);
-    res.setHeader("Content-Disposition", `attachment; filename="${application.resumeFileName.replace(/"/g, "")}"`);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${application.resumeFileName.replace(/"/g, "")}"`,
+    );
     res.send(file.buffer);
   }),
 );
@@ -230,7 +256,9 @@ router.put(
   asyncHandler(async (req, res) => {
     const parsed = careerSettingsSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid career settings", errors: parsed.error.flatten() });
+      return res
+        .status(400)
+        .json({ message: "Invalid career settings", errors: parsed.error.flatten() });
     }
     res.json(await saveCareerSettings(parsed.data));
   }),

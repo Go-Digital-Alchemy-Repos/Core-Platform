@@ -13,7 +13,9 @@ export class SavedProfessionalStorage {
     const [existing] = await db
       .select()
       .from(savedProfessionals)
-      .where(and(eq(savedProfessionals.userId, userId), eq(savedProfessionals.profileId, profileId)))
+      .where(
+        and(eq(savedProfessionals.userId, userId), eq(savedProfessionals.profileId, profileId)),
+      )
       .limit(1);
     if (!existing) throw new Error("Failed to save professional");
     return existing;
@@ -22,7 +24,9 @@ export class SavedProfessionalStorage {
   async unsave(userId: string, profileId: string): Promise<void> {
     await db
       .delete(savedProfessionals)
-      .where(and(eq(savedProfessionals.userId, userId), eq(savedProfessionals.profileId, profileId)));
+      .where(
+        and(eq(savedProfessionals.userId, userId), eq(savedProfessionals.profileId, profileId)),
+      );
   }
 
   async listByUser(userId: string): Promise<SavedProfessional[]> {
@@ -37,7 +41,9 @@ export class SavedProfessionalStorage {
     const rows = await db
       .select()
       .from(savedProfessionals)
-      .where(and(eq(savedProfessionals.userId, userId), eq(savedProfessionals.profileId, profileId)))
+      .where(
+        and(eq(savedProfessionals.userId, userId), eq(savedProfessionals.profileId, profileId)),
+      )
       .limit(1);
     return rows.length > 0;
   }

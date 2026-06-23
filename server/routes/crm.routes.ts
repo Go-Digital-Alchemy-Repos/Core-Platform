@@ -19,7 +19,7 @@ router.post(
       id: result.lead.id,
       duplicate: result.duplicate,
     });
-  })
+  }),
 );
 
 export default router;

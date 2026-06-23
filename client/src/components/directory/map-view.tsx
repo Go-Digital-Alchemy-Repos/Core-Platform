@@ -79,24 +79,32 @@ function MapSizeInvalidator() {
   return null;
 }
 
-export function MapView({ therapists, height = "500px", minHeight, interactive = true, zoom: zoomProp, center: centerProp, highlightedId }: MapViewProps) {
+export function MapView({
+  therapists,
+  height = "500px",
+  minHeight,
+  interactive = true,
+  zoom: zoomProp,
+  center: centerProp,
+  highlightedId,
+}: MapViewProps) {
   const markered = useMemo(
     () =>
       therapists.filter(
-        (t) => Number.isFinite(Number(t.profile.latitude)) && Number.isFinite(Number(t.profile.longitude))
+        (t) =>
+          Number.isFinite(Number(t.profile.latitude)) &&
+          Number.isFinite(Number(t.profile.longitude)),
       ),
-    [therapists]
+    [therapists],
   );
 
   const center = useMemo<[number, number]>(() => {
     if (centerProp) return centerProp;
     if (markered.length === 0) return [20, 0];
     const avgLat =
-      markered.reduce((sum, t) => sum + Number(t.profile.latitude), 0) /
-      markered.length;
+      markered.reduce((sum, t) => sum + Number(t.profile.latitude), 0) / markered.length;
     const avgLng =
-      markered.reduce((sum, t) => sum + Number(t.profile.longitude), 0) /
-      markered.length;
+      markered.reduce((sum, t) => sum + Number(t.profile.longitude), 0) / markered.length;
     return [avgLat, avgLng];
   }, [markered, centerProp]);
 
@@ -126,22 +134,21 @@ export function MapView({ therapists, height = "500px", minHeight, interactive =
         />
         {markered.map((t) => {
           const fullName =
-            [t.user.firstName, t.user.lastName].filter(Boolean).join(" ") ||
-            "Verified Provider";
+            [t.user.firstName, t.user.lastName].filter(Boolean).join(" ") || "Verified Provider";
           const isHighlighted = highlightedId === t.profile.id;
           return (
             <Marker
               key={t.profile.id}
-              position={[
-                Number(t.profile.latitude),
-                Number(t.profile.longitude),
-              ]}
+              position={[Number(t.profile.latitude), Number(t.profile.longitude)]}
               icon={isHighlighted ? pinHighlightIcon : pinIcon}
               zIndexOffset={isHighlighted ? 1000 : 0}
             >
               <Popup>
                 <div className="flex gap-2.5 max-w-[240px]" data-testid={`popup-${t.profile.id}`}>
-                  <Avatar className="h-10 w-10 shrink-0" data-testid={`popup-avatar-${t.profile.id}`}>
+                  <Avatar
+                    className="h-10 w-10 shrink-0"
+                    data-testid={`popup-avatar-${t.profile.id}`}
+                  >
                     {t.user.profileImageUrl && (
                       <AvatarImage src={t.user.profileImageUrl} alt={fullName} />
                     )}
@@ -150,13 +157,14 @@ export function MapView({ therapists, height = "500px", minHeight, interactive =
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col gap-0.5 min-w-0">
-                    <span className="font-semibold text-sm leading-tight" data-testid={`popup-name-${t.profile.id}`}>
+                    <span
+                      className="font-semibold text-sm leading-tight"
+                      data-testid={`popup-name-${t.profile.id}`}
+                    >
                       {fullName}
                     </span>
                     {t.profile.title && (
-                      <span className="text-xs text-gray-500 leading-tight">
-                        {t.profile.title}
-                      </span>
+                      <span className="text-xs text-gray-500 leading-tight">{t.profile.title}</span>
                     )}
                     {t.profile.bio && (
                       <span className="text-xs text-gray-600 leading-snug mt-0.5 line-clamp-2">

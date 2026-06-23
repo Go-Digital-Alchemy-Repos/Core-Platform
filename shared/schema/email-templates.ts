@@ -17,7 +17,9 @@ export const EMAIL_TEMPLATE_MODULES = [
 export type EmailTemplateModule = (typeof EMAIL_TEMPLATE_MODULES)[number];
 
 export const emailTemplates = pgTable("email_templates", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   slug: text("slug").notNull().unique(),
   name: text("name").notNull(),
   module: text("module").notNull().default("system"),

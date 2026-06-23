@@ -22,7 +22,9 @@ export class WebhookHandlers {
         logger.stripe.error("STRIPE_WEBHOOK_SECRET not set in production — rejecting webhook");
         throw new Error("Webhook signature verification is required in production");
       } else {
-        logger.stripe.warn("STRIPE_WEBHOOK_SECRET not set — skipping signature verification (dev only)");
+        logger.stripe.warn(
+          "STRIPE_WEBHOOK_SECRET not set — skipping signature verification (dev only)",
+        );
         event = JSON.parse(payload.toString());
       }
 
@@ -55,9 +57,15 @@ export class WebhookHandlers {
                 note: `Application fee of $${((session.amount_total || 15000) / 100).toFixed(2)} confirmed via webhook`,
               });
 
-              logger.stripe.info("Application fee payment confirmed via webhook", { applicationId: application.id, sessionId: session.id });
+              logger.stripe.info("Application fee payment confirmed via webhook", {
+                applicationId: application.id,
+                sessionId: session.id,
+              });
             } else {
-              logger.stripe.warn("Application not found for checkout session", { applicationId, sessionId: session.id });
+              logger.stripe.warn("Application not found for checkout session", {
+                applicationId,
+                sessionId: session.id,
+              });
             }
             break;
           }
@@ -69,15 +77,23 @@ export class WebhookHandlers {
                 stripePaymentIntentId: session.payment_intent as string,
                 amountPaid: session.amount_total || 0,
               });
-              logger.stripe.info("Recording purchase confirmed", { purchaseId: purchase.id, sessionId: session.id });
+              logger.stripe.info("Recording purchase confirmed", {
+                purchaseId: purchase.id,
+                sessionId: session.id,
+              });
             } else {
-              logger.stripe.warn("Recording purchase not found for checkout session", { recordingPurchaseId, sessionId: session.id });
+              logger.stripe.warn("Recording purchase not found for checkout session", {
+                recordingPurchaseId,
+                sessionId: session.id,
+              });
             }
             break;
           }
 
           if (session.mode === "subscription" && session.subscription && session.customer) {
-            const sub = await storage.subscriptions.getByStripeCustomerId(session.customer as string);
+            const sub = await storage.subscriptions.getByStripeCustomerId(
+              session.customer as string,
+            );
             if (sub) {
               await storage.subscriptions.updateSubscription(sub.id, {
                 stripeSubscriptionId: session.subscription as string,
@@ -88,22 +104,30 @@ export class WebhookHandlers {
                 localSubId: sub.id,
               });
             } else {
-              logger.stripe.warn("No local subscription found for customer during subscription checkout", {
-                customerId: session.customer,
-                sessionId: session.id,
-              });
+              logger.stripe.warn(
+                "No local subscription found for customer during subscription checkout",
+                {
+                  customerId: session.customer,
+                  sessionId: session.id,
+                },
+              );
             }
             break;
           }
 
           if (!registrationId) {
-            logger.stripe.info("Checkout session completed without registrationId metadata", { sessionId: session.id });
+            logger.stripe.info("Checkout session completed without registrationId metadata", {
+              sessionId: session.id,
+            });
             break;
           }
 
           const registration = await storage.eventRegistrations.getRegistration(registrationId);
           if (!registration) {
-            logger.stripe.warn("Registration not found for checkout session", { registrationId, sessionId: session.id });
+            logger.stripe.warn("Registration not found for checkout session", {
+              registrationId,
+              sessionId: session.id,
+            });
             break;
           }
 
@@ -117,10 +141,15 @@ export class WebhookHandlers {
           });
 
           if (eventDetails) {
-            const user = registration.userId ? await storage.users.getUser(registration.userId) : undefined;
+            const user = registration.userId
+              ? await storage.users.getUser(registration.userId)
+              : undefined;
             const recipientEmail = registration.email || user?.email;
             if (!recipientEmail) {
-              logger.email.warn("Skipping payment confirmation email without recipient", { registrationId, sessionId: session.id });
+              logger.email.warn("Skipping payment confirmation email without recipient", {
+                registrationId,
+                sessionId: session.id,
+              });
               break;
             }
             sendPaymentConfirmationEmail(
@@ -130,11 +159,14 @@ export class WebhookHandlers {
               eventDetails.date.toDateString(),
               eventDetails.location,
               session.amount_total || 0,
-              session.currency || "usd"
-            ).catch(err => logger.email.error("Failed to send payment confirmation email", err));
+              session.currency || "usd",
+            ).catch((err) => logger.email.error("Failed to send payment confirmation email", err));
           }
 
-          logger.stripe.info("Event registration payment confirmed", { registrationId, sessionId: session.id });
+          logger.stripe.info("Event registration payment confirmed", {
+            registrationId,
+            sessionId: session.id,
+          });
           break;
         }
 
@@ -147,7 +179,10 @@ export class WebhookHandlers {
             const purchase = await storage.recordingPurchases.getByCheckoutSession(session.id);
             if (purchase && !purchase.stripePaymentIntentId) {
               await storage.recordingPurchases.delete(purchase.id);
-              logger.stripe.info("Deleted expired pending recording purchase", { purchaseId: purchase.id, sessionId: session.id });
+              logger.stripe.info("Deleted expired pending recording purchase", {
+                purchaseId: purchase.id,
+                sessionId: session.id,
+              });
             }
             break;
           }
@@ -157,7 +192,10 @@ export class WebhookHandlers {
           const registration = await storage.eventRegistrations.getRegistration(registrationId);
           if (registration && registration.paymentStatus === "pending") {
             await storage.eventRegistrations.deleteRegistration(registrationId);
-            logger.stripe.info("Deleted expired pending event registration", { registrationId, sessionId: session.id });
+            logger.stripe.info("Deleted expired pending event registration", {
+              registrationId,
+              sessionId: session.id,
+            });
           }
           break;
         }
@@ -170,15 +208,21 @@ export class WebhookHandlers {
             currentPeriodStart: new Date(subscription.current_period_start * 1000),
             currentPeriodEnd: new Date(subscription.current_period_end * 1000),
           });
-          logger.stripe.info(`Subscription ${event.type}`, { subscriptionId: subscription.id, status: subscription.status });
+          logger.stripe.info(`Subscription ${event.type}`, {
+            subscriptionId: subscription.id,
+            status: subscription.status,
+          });
           break;
         }
 
         case "customer.subscription.deleted": {
           const subscription = event.data.object;
-          const canceledSub = await storage.subscriptions.updateByStripeSubscriptionId(subscription.id, {
-            status: "canceled",
-          });
+          const canceledSub = await storage.subscriptions.updateByStripeSubscriptionId(
+            subscription.id,
+            {
+              status: "canceled",
+            },
+          );
           logger.stripe.info("Subscription canceled", { subscriptionId: subscription.id });
 
           if (canceledSub?.therapistId) {
@@ -203,9 +247,11 @@ export class WebhookHandlers {
             const hadBillingIssue = ["past_due", "suspended"].includes(previousSub?.status || "");
             const updatedSub = await storage.subscriptions.updateByStripeSubscriptionId(
               invoice.subscription as string,
-              { status: "active" }
+              { status: "active" },
             );
-            logger.stripe.info("Invoice payment succeeded", { subscriptionId: invoice.subscription });
+            logger.stripe.info("Invoice payment succeeded", {
+              subscriptionId: invoice.subscription,
+            });
 
             if (updatedSub?.therapistId) {
               try {
@@ -231,15 +277,23 @@ export class WebhookHandlers {
                     performedBy: updatedSub.therapistId,
                   });
 
-                  const profile = await storage.therapists.getProfileByUserId(updatedSub.therapistId);
+                  const profile = await storage.therapists.getProfileByUserId(
+                    updatedSub.therapistId,
+                  );
                   if (profile) {
                     await storage.therapists.updateProfile(profile.id, { isActive: true });
                   }
 
-                  logger.stripe.info("Application transitioned to active_member", { applicationId: application.id, therapistId: updatedSub.therapistId });
+                  logger.stripe.info("Application transitioned to active_member", {
+                    applicationId: application.id,
+                    therapistId: updatedSub.therapistId,
+                  });
                 }
               } catch (err) {
-                logger.stripe.error("Failed to transition application on subscription activation", err);
+                logger.stripe.error(
+                  "Failed to transition application on subscription activation",
+                  err,
+                );
               }
             }
           }
@@ -258,7 +312,7 @@ export class WebhookHandlers {
                 status: "past_due",
                 lastFailedInvoiceId: invoice.id,
                 lastPaymentFailedAt: new Date(),
-              }
+              },
             );
             logger.stripe.warn("Invoice payment failed", { subscriptionId: invoice.subscription });
 

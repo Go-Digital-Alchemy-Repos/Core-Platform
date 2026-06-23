@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { Link, useLocation } from "wouter";
 import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -89,7 +97,9 @@ export function buildFrontendEditHref(target: FrontendEditTarget, returnTo: stri
 }
 
 export function shouldHideFrontendEditButton(pathname: string) {
-  return HIDDEN_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  return HIDDEN_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 }
 
 export function canUseFrontendEditTarget(
@@ -109,23 +119,26 @@ export function canUseFrontendEditTarget(
 export function FrontendEditProvider({ children }: { children: ReactNode }) {
   const [targets, setTargets] = useState<Map<string, RegisteredFrontendEditTarget>>(new Map());
 
-  const value = useMemo<FrontendEditContextValue>(() => ({
-    registerTarget: (target) => {
-      const key = getTargetKey(target);
-      setTargets((current) => {
-        const next = new Map(current);
-        next.set(key, { ...target, key });
-        return next;
-      });
-      return () => {
+  const value = useMemo<FrontendEditContextValue>(
+    () => ({
+      registerTarget: (target) => {
+        const key = getTargetKey(target);
         setTargets((current) => {
           const next = new Map(current);
-          next.delete(key);
+          next.set(key, { ...target, key });
           return next;
         });
-      };
-    },
-  }), []);
+        return () => {
+          setTargets((current) => {
+            const next = new Map(current);
+            next.delete(key);
+            return next;
+          });
+        };
+      },
+    }),
+    [],
+  );
 
   return (
     <FrontendEditContext.Provider value={value}>
@@ -236,9 +249,7 @@ function FrontendEditButton({ targets }: { targets: RegisteredFrontendEditTarget
       <DropdownMenuContent align="end" side="top" className="z-[1000] w-56">
         {visibleTargets.map((target) => (
           <DropdownMenuItem key={target.key} asChild>
-            <Link href={buildFrontendEditHref(target, returnTo)}>
-              {target.label}
-            </Link>
+            <Link href={buildFrontendEditHref(target, returnTo)}>{target.label}</Link>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

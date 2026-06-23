@@ -153,11 +153,15 @@ export default function SystemBackupsPage() {
       <div className="mx-auto max-w-6xl space-y-6 p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-heading font-semibold" data-testid="text-system-backups-title">
+            <h1
+              className="text-2xl font-heading font-semibold"
+              data-testid="text-system-backups-title"
+            >
               System Backups
             </h1>
             <p className="mt-1 text-muted-foreground">
-              Monitor automated snapshots, verify retention, and run a manual backup before risky changes.
+              Monitor automated snapshots, verify retention, and run a manual backup before risky
+              changes.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -165,19 +169,31 @@ export default function SystemBackupsPage() {
               type="button"
               variant="outline"
               onClick={() => refetch()}
-              disabled={isFetching || runBackupMutation.isPending || restoreBackupMutation.isPending}
+              disabled={
+                isFetching || runBackupMutation.isPending || restoreBackupMutation.isPending
+              }
               data-testid="button-refresh-backup-status"
             >
-              {isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+              {isFetching ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
               Refresh
             </Button>
             <Button
               type="button"
               onClick={() => runBackupMutation.mutate()}
-              disabled={!data?.configured || runBackupMutation.isPending || restoreBackupMutation.isPending}
+              disabled={
+                !data?.configured || runBackupMutation.isPending || restoreBackupMutation.isPending
+              }
               data-testid="button-run-backup-now"
             >
-              {runBackupMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
+              {runBackupMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Database className="mr-2 h-4 w-4" />
+              )}
               Run Backup Now
             </Button>
           </div>
@@ -220,7 +236,9 @@ export default function SystemBackupsPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Backup Service</p>
                     <div className="mt-1">
-                      <Badge variant={data?.enabled ? "default" : "outline"}>{data?.enabled ? "Enabled" : "Disabled"}</Badge>
+                      <Badge variant={data?.enabled ? "default" : "outline"}>
+                        {data?.enabled ? "Enabled" : "Disabled"}
+                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -276,7 +294,9 @@ export default function SystemBackupsPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Latest Backup</p>
                     <p className="text-sm font-semibold">
-                      {latest ? formatDistanceToNow(new Date(latest.createdAt), { addSuffix: true }) : "No backups yet"}
+                      {latest
+                        ? formatDistanceToNow(new Date(latest.createdAt), { addSuffix: true })
+                        : "No backups yet"}
                     </p>
                   </div>
                 </div>
@@ -305,45 +325,63 @@ export default function SystemBackupsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge>{reasonLabel(latest.reason)}</Badge>
                     <Badge variant="outline">{latest.environment}</Badge>
-                    {latest.railwayEnvironment && <Badge variant="outline">{latest.railwayEnvironment}</Badge>}
+                    {latest.railwayEnvironment && (
+                      <Badge variant="outline">{latest.railwayEnvironment}</Badge>
+                    )}
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</p>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Created
+                      </p>
                       <p className="mt-1 text-sm">{formatDateTime(latest.createdAt)}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">App Version</p>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        App Version
+                      </p>
                       <p className="mt-1 text-sm">{latest.appVersion}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tables</p>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Tables
+                      </p>
                       <p className="mt-1 text-sm">{latest.tableCount}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Rows</p>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Rows
+                      </p>
                       <p className="mt-1 text-sm">{latest.totalRowCount.toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Media Rows</p>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Media Rows
+                      </p>
                       <p className="mt-1 text-sm">{latest.mediaAssetCount.toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Storage Source</p>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Storage Source
+                      </p>
                       <p className="mt-1 text-sm capitalize">{latest.storageSource}</p>
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Backup Object Key</p>
-                    <p className="mt-1 break-all rounded-lg bg-muted/40 px-3 py-2 font-mono text-xs">{latest.key}</p>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Backup Object Key
+                    </p>
+                    <p className="mt-1 break-all rounded-lg bg-muted/40 px-3 py-2 font-mono text-xs">
+                      {latest.key}
+                    </p>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-3 rounded-lg border border-dashed p-4 text-muted-foreground">
                   <AlertCircle className="h-4 w-4" />
                   <p className="text-sm">
-                    No backup has been recorded yet. Once the first scheduled or manual run completes,
-                    details will appear here.
+                    No backup has been recorded yet. Once the first scheduled or manual run
+                    completes, details will appear here.
                   </p>
                 </div>
               )}
@@ -367,28 +405,34 @@ export default function SystemBackupsPage() {
               ) : (
                 <>
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Bucket</p>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Bucket
+                    </p>
                     <p className="mt-1 text-sm">{data?.storage?.bucketName || "Not configured"}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Prefix</p>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Prefix
+                    </p>
                     <p className="mt-1 break-all rounded-lg bg-muted/40 px-3 py-2 font-mono text-xs">
                       {data?.storage?.prefix || "Not configured"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Retention Rule</p>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Retention Rule
+                    </p>
                     <p className="mt-1 text-sm">
-                      Keep newest <strong>{data?.maxSnapshots ?? 0}</strong> snapshots and prune anything older than{" "}
-                      <strong>{data?.retentionDays ?? 0}</strong> days.
+                      Keep newest <strong>{data?.maxSnapshots ?? 0}</strong> snapshots and prune
+                      anything older than <strong>{data?.retentionDays ?? 0}</strong> days.
                     </p>
                   </div>
                   <Alert>
                     <ShieldAlert className="h-4 w-4" />
                     <AlertTitle>Restore is available with confirmation</AlertTitle>
                     <AlertDescription>
-                      Restoring replaces the live database with the selected snapshot. Use it carefully,
-                      ideally after creating a fresh manual backup first.
+                      Restoring replaces the live database with the selected snapshot. Use it
+                      carefully, ideally after creating a fresh manual backup first.
                     </AlertDescription>
                   </Alert>
                 </>
@@ -451,7 +495,9 @@ export default function SystemBackupsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => setRestoreTarget(backup)}
-                            disabled={restoreBackupMutation.isPending || runBackupMutation.isPending}
+                            disabled={
+                              restoreBackupMutation.isPending || runBackupMutation.isPending
+                            }
                             data-testid={`button-restore-backup-${backup.createdAt}`}
                           >
                             <RotateCcw className="mr-2 h-3.5 w-3.5" />
@@ -486,9 +532,11 @@ export default function SystemBackupsPage() {
             <AlertDialogTitle>Restore this backup?</AlertDialogTitle>
             <AlertDialogDescription>
               This will replace the live database with the snapshot from{" "}
-              <strong>{restoreTarget ? formatDateTime(restoreTarget.createdAt) : "the selected backup"}</strong>.
-              Any content changes made after that point will be lost. Creating a fresh manual backup first
-              is strongly recommended.
+              <strong>
+                {restoreTarget ? formatDateTime(restoreTarget.createdAt) : "the selected backup"}
+              </strong>
+              . Any content changes made after that point will be lost. Creating a fresh manual
+              backup first is strongly recommended.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {restoreTarget && (
@@ -497,9 +545,12 @@ export default function SystemBackupsPage() {
                 <span className="font-medium">Reason:</span> {reasonLabel(restoreTarget.reason)}
               </p>
               <p className="mt-1">
-                <span className="font-medium">Rows:</span> {restoreTarget.totalRowCount.toLocaleString()}
+                <span className="font-medium">Rows:</span>{" "}
+                {restoreTarget.totalRowCount.toLocaleString()}
               </p>
-              <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{restoreTarget.key}</p>
+              <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
+                {restoreTarget.key}
+              </p>
             </div>
           )}
           <AlertDialogFooter>

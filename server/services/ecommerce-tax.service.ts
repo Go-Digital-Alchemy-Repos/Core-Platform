@@ -41,13 +41,35 @@ export async function getEcommerceTaxSettings(): Promise<EcommerceTaxSettings> {
   });
 }
 
-export async function saveEcommerceTaxSettings(input: EcommerceTaxSettings): Promise<EcommerceTaxSettings> {
+export async function saveEcommerceTaxSettings(
+  input: EcommerceTaxSettings,
+): Promise<EcommerceTaxSettings> {
   const settings = ecommerceTaxSettingsSchema.parse(input);
   await Promise.all([
-    storage.settings.upsertSetting("ecommerce_tax_enabled", String(settings.enabled), TAX_CATEGORY, false),
-    storage.settings.upsertSetting("ecommerce_tax_manual_rate_bps", String(settings.manualRateBps), TAX_CATEGORY, false),
-    storage.settings.upsertSetting("ecommerce_tax_shipping", String(settings.taxShipping), TAX_CATEGORY, false),
-    storage.settings.upsertSetting("ecommerce_stripe_tax_enabled", String(settings.stripeTaxEnabled), TAX_CATEGORY, false),
+    storage.settings.upsertSetting(
+      "ecommerce_tax_enabled",
+      String(settings.enabled),
+      TAX_CATEGORY,
+      false,
+    ),
+    storage.settings.upsertSetting(
+      "ecommerce_tax_manual_rate_bps",
+      String(settings.manualRateBps),
+      TAX_CATEGORY,
+      false,
+    ),
+    storage.settings.upsertSetting(
+      "ecommerce_tax_shipping",
+      String(settings.taxShipping),
+      TAX_CATEGORY,
+      false,
+    ),
+    storage.settings.upsertSetting(
+      "ecommerce_stripe_tax_enabled",
+      String(settings.stripeTaxEnabled),
+      TAX_CATEGORY,
+      false,
+    ),
   ]);
   storage.settings.invalidateCategory(TAX_CATEGORY);
   return settings;
@@ -61,12 +83,19 @@ export async function calculateEcommerceTax(input: {
 }): Promise<EcommerceTaxCalculation> {
   const settings = await getEcommerceTaxSettings();
   if (!settings.enabled) {
-    return { taxAmount: 0, taxableAmount: 0, rateBps: 0, provider: "none", lineTaxAmounts: input.lines.map(() => 0) };
+    return {
+      taxAmount: 0,
+      taxableAmount: 0,
+      rateBps: 0,
+      provider: "none",
+      lineTaxAmounts: input.lines.map(() => 0),
+    };
   }
 
-  const discountRatio = input.subtotalAmount > 0
-    ? Math.min(1, Math.max(0, input.discountAmount / input.subtotalAmount))
-    : 0;
+  const discountRatio =
+    input.subtotalAmount > 0
+      ? Math.min(1, Math.max(0, input.discountAmount / input.subtotalAmount))
+      : 0;
   const lineTaxableAmounts = input.lines.map((line) =>
     line.taxable ? Math.max(0, Math.round(line.lineTotal * (1 - discountRatio))) : 0,
   );
@@ -77,7 +106,10 @@ export async function calculateEcommerceTax(input: {
   const taxAmount = Math.round((taxableAmount * rateBps) / 10000);
   const lineTaxTotal = Math.round((discountedTaxableSubtotal * rateBps) / 10000);
   let allocatedLineTax = 0;
-  const lastTaxableIndex = lineTaxableAmounts.reduce((last, amount, index) => (amount > 0 ? index : last), -1);
+  const lastTaxableIndex = lineTaxableAmounts.reduce(
+    (last, amount, index) => (amount > 0 ? index : last),
+    -1,
+  );
   const lineTaxAmounts = lineTaxableAmounts.map((amount, index) => {
     if (amount <= 0) return 0;
     if (index === lastTaxableIndex) return lineTaxTotal - allocatedLineTax;

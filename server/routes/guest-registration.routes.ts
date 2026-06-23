@@ -4,10 +4,7 @@ import { asyncHandler } from "../middleware/error-handler";
 import { paramString } from "../utils/params";
 import { logger } from "../utils/logger";
 import { z } from "zod";
-import {
-  sendRegistrationConfirmationEmail,
-  sendWaitlistEmail,
-} from "../services/email.service";
+import { sendRegistrationConfirmationEmail, sendWaitlistEmail } from "../services/email.service";
 import { submitManagedFormById } from "../services/forms.service";
 
 import type { Event } from "@shared/schema/events";
@@ -64,7 +61,10 @@ router.post(
       return res.status(400).json({ message: "Registration is not enabled for this event" });
     }
     if (event.registrationType !== "free") {
-      return res.status(400).json({ message: "Guest registration is only available for free events. Please log in to register for paid events." });
+      return res.status(400).json({
+        message:
+          "Guest registration is only available for free events. Please log in to register for paid events.",
+      });
     }
 
     const now = new Date();
@@ -78,7 +78,10 @@ router.post(
       return res.status(400).json({ message: "This event has already occurred" });
     }
 
-    const existing = await storage.eventRegistrations.getRegistrationByEventAndEmail(eventId, email);
+    const existing = await storage.eventRegistrations.getRegistrationByEventAndEmail(
+      eventId,
+      email,
+    );
     if (existing && existing.status !== "canceled") {
       return res.status(409).json({ message: "This email is already registered for this event" });
     }
@@ -122,21 +125,33 @@ router.post(
       });
     }
 
-    const eventLocation = event.locationName || event.location || (event.isVirtual ? "Virtual" : null);
+    const eventLocation =
+      event.locationName || event.location || (event.isVirtual ? "Virtual" : null);
     const eventDate = formatEventDate(event.date);
 
     if (status === "confirmed") {
-      sendRegistrationConfirmationEmail(email, firstName, event.title, eventDate, eventLocation, event).catch((err) => {
-        logger.email.warn("Failed to send guest registration confirmation", { error: err instanceof Error ? err.message : String(err) });
+      sendRegistrationConfirmationEmail(
+        email,
+        firstName,
+        event.title,
+        eventDate,
+        eventLocation,
+        event,
+      ).catch((err) => {
+        logger.email.warn("Failed to send guest registration confirmation", {
+          error: err instanceof Error ? err.message : String(err),
+        });
       });
     } else if (status === "waitlisted") {
       sendWaitlistEmail(email, firstName, event.title, eventDate, event).catch((err) => {
-        logger.email.warn("Failed to send guest waitlist email", { error: err instanceof Error ? err.message : String(err) });
+        logger.email.warn("Failed to send guest waitlist email", {
+          error: err instanceof Error ? err.message : String(err),
+        });
       });
     }
 
     res.status(201).json(registration);
-  })
+  }),
 );
 
 export default router;

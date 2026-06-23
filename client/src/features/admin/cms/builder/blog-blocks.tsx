@@ -541,4 +541,3 @@ export function StandardBlogPageBlock({ props }: { props: Record<string, unknown
     </div>
   );
 }
-

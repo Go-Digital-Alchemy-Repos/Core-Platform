@@ -54,13 +54,13 @@ export function useUnsavedChangesGuard({
       onProceed?.();
       return true;
     },
-    [message, shouldWarn]
+    [message, shouldWarn],
   );
 
   const confirmDiscardChanges = useCallback(
     (onDiscard?: () => void, overrideMessage?: string) =>
       confirmIfDirty(onDiscard, overrideMessage),
-    [confirmIfDirty]
+    [confirmIfDirty],
   );
 
   const dialog = useMemo(
@@ -84,10 +84,17 @@ export function useUnsavedChangesGuard({
               { className: "space-y-3 text-left" },
               React.createElement(
                 "div",
-                { className: "flex h-11 w-11 items-center justify-center rounded-full bg-amber-100 text-amber-700" },
+                {
+                  className:
+                    "flex h-11 w-11 items-center justify-center rounded-full bg-amber-100 text-amber-700",
+                },
                 React.createElement(AlertTriangle, { className: "h-5 w-5" }),
               ),
-              React.createElement(AlertDialogTitle, { className: "text-xl font-semibold text-slate-950" }, "Unsaved changes"),
+              React.createElement(
+                AlertDialogTitle,
+                { className: "text-xl font-semibold text-slate-950" },
+                "Unsaved changes",
+              ),
               React.createElement(
                 AlertDialogDescription,
                 { className: "text-sm leading-6 text-slate-600" },

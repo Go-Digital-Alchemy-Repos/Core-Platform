@@ -177,7 +177,14 @@ const orders = [
     shippingState: "NC",
     shippingZip: "28112",
     shippingCountry: "US",
-    items: [{ id: "item-1", productName: "Family Transition Conversation Cards", quantity: 1, lineTotal: 2900 }],
+    items: [
+      {
+        id: "item-1",
+        productName: "Family Transition Conversation Cards",
+        quantity: 1,
+        lineTotal: 2900,
+      },
+    ],
     shipments: [],
     fulfillments: [],
     internalNotes: [],
@@ -200,7 +207,17 @@ vi.mock("@/hooks/use-toast", () => ({
 }));
 
 vi.mock("@/features/admin/cms/components/cms-image-upload", () => ({
-  CmsImageUpload: ({ label, value, onChange, "data-testid": testId }: { label?: string; value: string; onChange: (value: string) => void; "data-testid"?: string }) =>
+  CmsImageUpload: ({
+    label,
+    value,
+    onChange,
+    "data-testid": testId,
+  }: {
+    label?: string;
+    value: string;
+    onChange: (value: string) => void;
+    "data-testid"?: string;
+  }) =>
     React.createElement(
       "div",
       { "data-testid": testId || "cms-image-upload" },
@@ -215,7 +232,15 @@ vi.mock("@/features/admin/cms/components/cms-image-upload", () => ({
 }));
 
 vi.mock("@/features/admin/cms/builder/cms-rich-text-editor", () => ({
-  CmsRichTextEditor: ({ value, onChange, "data-testid": testId }: { value: string; onChange: (value: string) => void; "data-testid"?: string }) =>
+  CmsRichTextEditor: ({
+    value,
+    onChange,
+    "data-testid": testId,
+  }: {
+    value: string;
+    onChange: (value: string) => void;
+    "data-testid"?: string;
+  }) =>
     React.createElement("textarea", {
       "data-testid": testId || "cms-rich-text-editor",
       value,
@@ -241,8 +266,12 @@ describe("Ecommerce IntegrationsTab", () => {
       mutateAsync: vi.fn(),
       isPending: false,
     });
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -268,8 +297,13 @@ describe("Ecommerce IntegrationsTab", () => {
     expect(container.querySelector('[data-testid="ecommerce-integrations-library"]')).toBeTruthy();
     expect(container.textContent).toContain("Payment Gateways");
     expect(container.textContent).toContain("Shipping & Fulfillment");
-    expect(container.querySelector('[data-testid="button-ecommerce-integration-stripe"]')).toBeTruthy();
-    expect(container.querySelector('[data-testid="badge-ecommerce-integration-status-stripe"]')?.textContent).toContain("Configured");
+    expect(
+      container.querySelector('[data-testid="button-ecommerce-integration-stripe"]'),
+    ).toBeTruthy();
+    expect(
+      container.querySelector('[data-testid="badge-ecommerce-integration-status-stripe"]')
+        ?.textContent,
+    ).toContain("Configured");
 
     const shippingFilter = container.querySelector(
       '[data-testid="button-ecommerce-integration-category-shipping-fulfillment"]',
@@ -278,8 +312,12 @@ describe("Ecommerce IntegrationsTab", () => {
       shippingFilter?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    expect(container.querySelector('[data-testid="button-ecommerce-integration-shipstation"]')).toBeTruthy();
-    expect(container.querySelector('[data-testid="button-ecommerce-integration-stripe"]')).toBeFalsy();
+    expect(
+      container.querySelector('[data-testid="button-ecommerce-integration-shipstation"]'),
+    ).toBeTruthy();
+    expect(
+      container.querySelector('[data-testid="button-ecommerce-integration-stripe"]'),
+    ).toBeFalsy();
 
     const searchInput = container.querySelector(
       '[data-testid="input-ecommerce-integration-search"]',
@@ -291,9 +329,13 @@ describe("Ecommerce IntegrationsTab", () => {
       }
     });
 
-    expect(container.querySelector('[data-testid="button-ecommerce-integration-easyship"]')).toBeTruthy();
+    expect(
+      container.querySelector('[data-testid="button-ecommerce-integration-easyship"]'),
+    ).toBeTruthy();
 
-    const easyshipTile = container.querySelector('[data-testid="button-ecommerce-integration-easyship"]');
+    const easyshipTile = container.querySelector(
+      '[data-testid="button-ecommerce-integration-easyship"]',
+    );
     act(() => {
       easyshipTile?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
@@ -322,8 +364,12 @@ describe("Ecommerce CategoriesTab", () => {
         unobserve() {}
       },
     );
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -352,7 +398,9 @@ describe("Ecommerce CategoriesTab", () => {
     expect(container.textContent).toContain("Guides & Workbooks");
     expect(container.textContent).toContain("Professional Training");
     expect(container.textContent).toContain("Family Resources");
-    expect(container.textContent).toContain("Edit existing categories or add child categories under any parent.");
+    expect(container.textContent).toContain(
+      "Edit existing categories or add child categories under any parent.",
+    );
     expect(container.textContent).toContain("Subcategories");
   });
 
@@ -415,12 +463,18 @@ describe("Ecommerce CategoriesTab", () => {
       root.render(React.createElement(ShippingTab));
     });
 
-    expect(container.textContent).toContain("Missing API key, API secret in encrypted credential storage.");
+    expect(container.textContent).toContain(
+      "Missing API key, API secret in encrypted credential storage.",
+    );
     const providerCards = Array.from(container.querySelectorAll(".rounded-lg.border.p-4"));
     const shipStationCard = providerCards.find((card) => card.textContent?.includes("ShipStation"));
     const easyPostCard = providerCards.find((card) => card.textContent?.includes("EasyPost"));
-    const shipStationEnabledSwitch = shipStationCard?.querySelector('[role="switch"]') as HTMLButtonElement | null;
-    const easyPostEnabledSwitch = easyPostCard?.querySelector('[role="switch"]') as HTMLButtonElement | null;
+    const shipStationEnabledSwitch = shipStationCard?.querySelector(
+      '[role="switch"]',
+    ) as HTMLButtonElement | null;
+    const easyPostEnabledSwitch = easyPostCard?.querySelector(
+      '[role="switch"]',
+    ) as HTMLButtonElement | null;
 
     expect(shipStationEnabledSwitch?.disabled).toBe(true);
     expect(easyPostEnabledSwitch?.disabled).toBe(false);
@@ -433,8 +487,10 @@ describe("Ecommerce ProductsTab", () => {
 
   beforeEach(() => {
     useQueryMock.mockImplementation((options: { queryKey?: string[] }) => {
-      if (options.queryKey?.[0] === "/api/admin/ecommerce/products") return { data: products, isLoading: false };
-      if (options.queryKey?.[0] === "/api/admin/ecommerce/categories") return { data: categories, isLoading: false };
+      if (options.queryKey?.[0] === "/api/admin/ecommerce/products")
+        return { data: products, isLoading: false };
+      if (options.queryKey?.[0] === "/api/admin/ecommerce/categories")
+        return { data: categories, isLoading: false };
       return { data: [], isLoading: false };
     });
     useMutationMock.mockReturnValue({
@@ -449,8 +505,12 @@ describe("Ecommerce ProductsTab", () => {
         unobserve() {}
       },
     );
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -473,8 +533,8 @@ describe("Ecommerce ProductsTab", () => {
       root.render(React.createElement(ProductsTab));
     });
 
-    const editButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent?.includes("Edit"),
+    const editButton = Array.from(container.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Edit"),
     );
 
     expect(editButton).toBeTruthy();
@@ -498,29 +558,35 @@ describe("Ecommerce ProductsTab", () => {
       root.render(React.createElement(ProductsTab));
     });
 
-    const editButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent?.includes("Edit"),
+    const editButton = Array.from(container.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Edit"),
     );
 
     act(() => {
       editButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    expect(document.body.querySelector('[data-testid="ecommerce-product-description-editor"]')).toBeTruthy();
+    expect(
+      document.body.querySelector('[data-testid="ecommerce-product-description-editor"]'),
+    ).toBeTruthy();
 
-    const mediaTab = Array.from(document.body.querySelectorAll('[role="tab"]')).find(
-      (button) => button.textContent?.includes("Media"),
+    const mediaTab = Array.from(document.body.querySelectorAll('[role="tab"]')).find((button) =>
+      button.textContent?.includes("Media"),
     );
     act(() => {
       mediaTab?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
       mediaTab?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    expect(document.body.querySelector('[data-testid="ecommerce-product-primary-image"]')).toBeTruthy();
-    expect(document.body.querySelector('[data-testid="ecommerce-product-gallery-image"]')).toBeTruthy();
+    expect(
+      document.body.querySelector('[data-testid="ecommerce-product-primary-image"]'),
+    ).toBeTruthy();
+    expect(
+      document.body.querySelector('[data-testid="ecommerce-product-gallery-image"]'),
+    ).toBeTruthy();
 
-    const seoTab = Array.from(document.body.querySelectorAll('[role="tab"]')).find(
-      (button) => button.textContent?.includes("SEO"),
+    const seoTab = Array.from(document.body.querySelectorAll('[role="tab"]')).find((button) =>
+      button.textContent?.includes("SEO"),
     );
     act(() => {
       seoTab?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
@@ -537,11 +603,13 @@ describe("Ecommerce OrdersTab", () => {
 
   beforeEach(() => {
     useQueryMock.mockImplementation((options: { queryKey?: string[] }) => {
-      if (options.queryKey?.[0] === "/api/admin/ecommerce/orders") return { data: orders, isLoading: false };
+      if (options.queryKey?.[0] === "/api/admin/ecommerce/orders")
+        return { data: orders, isLoading: false };
       if (options.queryKey?.[0] === "/api/admin/ecommerce/settings/store") {
         return { data: { storeTimezone: "America/New_York" }, isLoading: false };
       }
-      if (options.queryKey?.[0] === "/api/admin/ecommerce/shipping/locations") return { data: [], isLoading: false };
+      if (options.queryKey?.[0] === "/api/admin/ecommerce/shipping/locations")
+        return { data: [], isLoading: false };
       return { data: [], isLoading: false };
     });
     useMutationMock.mockReturnValue({
@@ -556,8 +624,12 @@ describe("Ecommerce OrdersTab", () => {
         unobserve() {}
       },
     );
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
   });

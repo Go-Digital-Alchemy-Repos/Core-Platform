@@ -25,7 +25,10 @@ export class TierStorage {
     return tier;
   }
 
-  async updateTier(id: string, data: Partial<InsertMembershipTier>): Promise<MembershipTier | undefined> {
+  async updateTier(
+    id: string,
+    data: Partial<InsertMembershipTier>,
+  ): Promise<MembershipTier | undefined> {
     const [tier] = await db
       .update(membershipTiers)
       .set({ ...data, updatedAt: new Date() })

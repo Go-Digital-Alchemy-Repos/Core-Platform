@@ -1,4 +1,9 @@
-import { type EditorLock, type EditorLockResourceType, type EditorLockResponse, User } from "@shared/schema";
+import {
+  type EditorLock,
+  type EditorLockResourceType,
+  type EditorLockResponse,
+  User,
+} from "@shared/schema";
 import { storage } from "../storage";
 
 export const EDITOR_LOCK_HEARTBEAT_MS = 30_000;

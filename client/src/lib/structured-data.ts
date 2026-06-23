@@ -7,7 +7,7 @@ export type JsonLdObject = Record<string, unknown>;
 
 function compactObject(obj: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(
-    Object.entries(obj).filter(([, v]) => v !== null && v !== undefined && v !== "")
+    Object.entries(obj).filter(([, v]) => v !== null && v !== undefined && v !== ""),
   );
 }
 
@@ -22,15 +22,14 @@ export function buildOrganizationLd(globalSeo: SeoSettings): JsonLdObject | null
   if (!globalSeo.organizationName && !globalSeo.siteName) return null;
 
   const name = globalSeo.organizationName || globalSeo.siteName || "Core Platform";
-  const siteUrl = globalSeo.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const siteUrl =
+    globalSeo.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
 
   const sameAs: string[] = [
     globalSeo.facebookUrl,
     globalSeo.linkedinUrl,
     globalSeo.instagramUrl,
-    globalSeo.twitterHandle
-      ? `https://x.com/${globalSeo.twitterHandle.replace(/^@/, "")}`
-      : null,
+    globalSeo.twitterHandle ? `https://x.com/${globalSeo.twitterHandle.replace(/^@/, "")}` : null,
   ].filter((url): url is string => !!url);
 
   return compactObject({
@@ -49,7 +48,8 @@ export function buildOrganizationLd(globalSeo: SeoSettings): JsonLdObject | null
 }
 
 export function buildWebSiteLd(globalSeo: SeoSettings): JsonLdObject | null {
-  const siteUrl = globalSeo.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const siteUrl =
+    globalSeo.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
   if (!siteUrl) return null;
 
   return compactObject({
@@ -60,9 +60,7 @@ export function buildWebSiteLd(globalSeo: SeoSettings): JsonLdObject | null {
   });
 }
 
-export function buildBreadcrumbLd(
-  items: Array<{ name: string; url: string }>
-): JsonLdObject {
+export function buildBreadcrumbLd(items: Array<{ name: string; url: string }>): JsonLdObject {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -99,18 +97,20 @@ export function buildProductLd(
 ): JsonLdObject | null {
   if (!product.name || !product.slug) return null;
 
-  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const siteUrl =
+    globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
   const productUrl = `${siteUrl}/products/${product.slug}`;
   const effectivePrice = product.salePrice ?? product.price;
   const images = [product.image, ...(product.gallery ?? [])]
     .filter((src): src is string => Boolean(src))
     .map((src) => absoluteUrl(src, siteUrl));
-  const categoryNames = (product.categories ?? []).map((category) =>
-    typeof category === "string" ? category : category.name,
-  ).filter(Boolean);
-  const availability = product.active === false || product.inventoryQuantity === 0
-    ? "https://schema.org/OutOfStock"
-    : "https://schema.org/InStock";
+  const categoryNames = (product.categories ?? [])
+    .map((category) => (typeof category === "string" ? category : category.name))
+    .filter(Boolean);
+  const availability =
+    product.active === false || product.inventoryQuantity === 0
+      ? "https://schema.org/OutOfStock"
+      : "https://schema.org/InStock";
 
   return compactObject({
     "@context": "https://schema.org",
@@ -126,7 +126,8 @@ export function buildProductLd(
     keywords: product.tags?.length ? product.tags.join(", ") : undefined,
     brand: compactObject({
       "@type": "Brand",
-      name: product.brandName || globalSeo?.organizationName || globalSeo?.siteName || "Core Platform",
+      name:
+        product.brandName || globalSeo?.organizationName || globalSeo?.siteName || "Core Platform",
     }),
     offers: compactObject({
       "@type": "Offer",
@@ -147,13 +148,15 @@ export function buildItemListLd(
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    itemListElement: items.map((item, index) => compactObject({
-      "@type": "ListItem",
-      position: index + 1,
-      name: item.name,
-      url: item.url,
-      image: item.image || undefined,
-    })),
+    itemListElement: items.map((item, index) =>
+      compactObject({
+        "@type": "ListItem",
+        position: index + 1,
+        name: item.name,
+        url: item.url,
+        image: item.image || undefined,
+      }),
+    ),
   };
 }
 
@@ -166,7 +169,8 @@ function getProviderDisplayName(profile: TherapistWithUser): string {
 }
 
 function buildProviderUrl(profile: TherapistWithUser, globalSeo?: SeoSettings | null): string {
-  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const siteUrl =
+    globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
   return `${siteUrl}/directory/${profile.id}`;
 }
 
@@ -190,7 +194,8 @@ export function buildProviderProfileLd(
   const name = getProviderDisplayName(profile);
   if (!profile.id || !name) return null;
 
-  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const siteUrl =
+    globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
   const url = buildProviderUrl(profile, globalSeo);
   const addressParts = [
     profile.addressLine1,
@@ -252,7 +257,8 @@ export function buildProviderProfileLd(
     address: addressParts.length
       ? compactObject({
           "@type": "PostalAddress",
-          streetAddress: [profile.addressLine1, profile.addressLine2].filter(Boolean).join(", ") || undefined,
+          streetAddress:
+            [profile.addressLine1, profile.addressLine2].filter(Boolean).join(", ") || undefined,
           addressLocality: profile.city || undefined,
           addressRegion: profile.state || undefined,
           postalCode: profile.zipCode || undefined,
@@ -264,11 +270,12 @@ export function buildProviderProfileLd(
 
 export function buildArticleLd(
   post: BlogPost,
-  globalSeo?: SeoSettings | null
+  globalSeo?: SeoSettings | null,
 ): JsonLdObject | null {
   if (!post.title) return null;
 
-  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const siteUrl =
+    globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
   const orgName = globalSeo?.organizationName || globalSeo?.siteName || "Core Platform";
   const postUrl = `${siteUrl}/insights/${post.slug}`;
 
@@ -303,13 +310,11 @@ export function buildArticleLd(
 
 export type EventMode = "Online" | "Offline" | "Mixed";
 
-export function buildEventLd(
-  event: Event,
-  globalSeo?: SeoSettings | null
-): JsonLdObject | null {
+export function buildEventLd(event: Event, globalSeo?: SeoSettings | null): JsonLdObject | null {
   if (!event.title || !event.date) return null;
 
-  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const siteUrl =
+    globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
   const orgName = globalSeo?.organizationName || globalSeo?.siteName || "Core Platform";
   const eventUrl = `${siteUrl}${getEventPath(event)}`;
 
@@ -334,19 +339,18 @@ export function buildEventLd(
       compactObject({
         "@type": "VirtualLocation",
         url: joinUrl || undefined,
-      })
+      }),
     );
   }
   if (!isVirtualOnly) {
-    const displayAddress =
-      event.locationAddress || event.locationName || event.location;
+    const displayAddress = event.locationAddress || event.locationName || event.location;
     if (displayAddress) {
       location.push(
         compactObject({
           "@type": "Place",
           name: event.locationName || event.location || undefined,
           address: displayAddress,
-        })
+        }),
       );
     }
   }
@@ -361,34 +365,31 @@ export function buildEventLd(
     eventStatus = "https://schema.org/EventScheduled";
   }
 
-  const offers: JsonLdObject | undefined =
-    event.registrationEnabled
-      ? compactObject({
-          "@type": "Offer",
-          price:
-            event.registrationType === "paid" && event.registrationFee != null
-              ? (event.registrationFee / 100).toFixed(2)
-              : "0",
-          priceCurrency: (event.registrationCurrency || "usd").toUpperCase(),
-          url: eventUrl,
-          availability:
-            event.status === "canceled"
-              ? "https://schema.org/Discontinued"
-              : "https://schema.org/InStock",
-          validFrom: event.registrationOpensAt
-            ? new Date(event.registrationOpensAt).toISOString()
-            : undefined,
-        })
-      : undefined;
+  const offers: JsonLdObject | undefined = event.registrationEnabled
+    ? compactObject({
+        "@type": "Offer",
+        price:
+          event.registrationType === "paid" && event.registrationFee != null
+            ? (event.registrationFee / 100).toFixed(2)
+            : "0",
+        priceCurrency: (event.registrationCurrency || "usd").toUpperCase(),
+        url: eventUrl,
+        availability:
+          event.status === "canceled"
+            ? "https://schema.org/Discontinued"
+            : "https://schema.org/InStock",
+        validFrom: event.registrationOpensAt
+          ? new Date(event.registrationOpensAt).toISOString()
+          : undefined,
+      })
+    : undefined;
 
   const performer: JsonLdObject | undefined = event.speakerName
     ? compactObject({
         "@type": "Person",
         name: event.speakerName,
         description: event.speakerBio || undefined,
-        image: event.speakerImageUrl
-          ? absoluteUrl(event.speakerImageUrl, siteUrl)
-          : undefined,
+        image: event.speakerImageUrl ? absoluteUrl(event.speakerImageUrl, siteUrl) : undefined,
       })
     : undefined;
 
@@ -416,12 +417,13 @@ export function buildEventLd(
 
 export function buildVideoObjectLd(
   event: Event,
-  globalSeo?: SeoSettings | null
+  globalSeo?: SeoSettings | null,
 ): JsonLdObject | null {
   if (!event.recordingUrl) return null;
   if (!event.title) return null;
 
-  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const siteUrl =
+    globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
 
   return compactObject({
     "@context": "https://schema.org",
@@ -442,23 +444,25 @@ export function buildJobPostingLd(
 ): JsonLdObject | null {
   if (!job.title || !job.slug) return null;
 
-  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const siteUrl =
+    globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
   const jobUrl = `${siteUrl}/careers/${job.slug}`;
   const orgName = globalSeo?.organizationName || globalSeo?.siteName || "Core Platform";
   const isRemote = job.workMode === "remote";
 
-  const baseSalary = job.salaryVisible && (job.salaryMin || job.salaryMax)
-    ? compactObject({
-        "@type": "MonetaryAmount",
-        currency: job.salaryCurrency || "USD",
-        value: compactObject({
-          "@type": "QuantitativeValue",
-          minValue: job.salaryMin ?? undefined,
-          maxValue: job.salaryMax ?? undefined,
-          unitText: (job.salaryPeriod || "year").toUpperCase(),
-        }),
-      })
-    : undefined;
+  const baseSalary =
+    job.salaryVisible && (job.salaryMin || job.salaryMax)
+      ? compactObject({
+          "@type": "MonetaryAmount",
+          currency: job.salaryCurrency || "USD",
+          value: compactObject({
+            "@type": "QuantitativeValue",
+            minValue: job.salaryMin ?? undefined,
+            maxValue: job.salaryMax ?? undefined,
+            unitText: (job.salaryPeriod || "year").toUpperCase(),
+          }),
+        })
+      : undefined;
 
   return compactObject({
     "@context": "https://schema.org",
@@ -478,18 +482,21 @@ export function buildJobPostingLd(
       "@type": "Organization",
       name: orgName,
       sameAs: siteUrl || undefined,
-      logo: globalSeo?.organizationLogoUrl ? absoluteUrl(globalSeo.organizationLogoUrl, siteUrl) : undefined,
+      logo: globalSeo?.organizationLogoUrl
+        ? absoluteUrl(globalSeo.organizationLogoUrl, siteUrl)
+        : undefined,
     }),
     jobLocationType: isRemote ? "TELECOMMUTE" : undefined,
     applicantLocationRequirements: isRemote
       ? compactObject({ "@type": "Country", name: "United States" })
       : undefined,
-    jobLocation: !isRemote && (job.location || job.locationAddress)
-      ? compactObject({
-          "@type": "Place",
-          address: job.locationAddress || job.location,
-        })
-      : undefined,
+    jobLocation:
+      !isRemote && (job.location || job.locationAddress)
+        ? compactObject({
+            "@type": "Place",
+            address: job.locationAddress || job.location,
+          })
+        : undefined,
     baseSalary,
     url: jobUrl,
   });

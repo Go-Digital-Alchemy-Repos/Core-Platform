@@ -239,7 +239,10 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
   const filteredEvents = useMemo(
     () =>
       eventList.filter((event) => {
-        if (normalizedSearchTerm && !getAdminEventSearchText(event).includes(normalizedSearchTerm)) {
+        if (
+          normalizedSearchTerm &&
+          !getAdminEventSearchText(event).includes(normalizedSearchTerm)
+        ) {
           return false;
         }
         if (eventTypeFilter !== "all" && event.eventType !== eventTypeFilter) {
@@ -552,7 +555,9 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
     form.setValue("deliveryMode", defaults.deliveryMode, { shouldDirty: true });
     form.setValue("isVirtual", defaults.deliveryMode !== "in_person", { shouldDirty: true });
     form.setValue("registrationEnabled", defaults.registrationEnabled, { shouldDirty: true });
-    form.setValue("registrationApprovalMode", defaults.registrationApprovalMode, { shouldDirty: true });
+    form.setValue("registrationApprovalMode", defaults.registrationApprovalMode, {
+      shouldDirty: true,
+    });
   }
 
   function formatVenueAddress(venue: EventVenue): string {
@@ -1221,7 +1226,8 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                 <div className="space-y-1">
                                   <p className="text-sm font-medium">Event Preset</p>
                                   <p className="text-xs text-muted-foreground">
-                                    Choose a services/education template to prefill the flexible event settings.
+                                    Choose a services/education template to prefill the flexible
+                                    event settings.
                                   </p>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1261,7 +1267,9 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                         <Select
                                           onValueChange={(value) => {
                                             field.onChange(value);
-                                            form.setValue("isVirtual", value !== "in_person", { shouldDirty: true });
+                                            form.setValue("isVirtual", value !== "in_person", {
+                                              shouldDirty: true,
+                                            });
                                           }}
                                           value={field.value || ""}
                                         >
@@ -1288,7 +1296,10 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                     render={({ field }) => (
                                       <FormItem>
                                         <FormLabel>Category</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                                        <Select
+                                          onValueChange={field.onChange}
+                                          value={field.value || ""}
+                                        >
                                           <FormControl>
                                             <SelectTrigger data-testid="select-event-category">
                                               <SelectValue placeholder="Select category" />
@@ -1312,7 +1323,10 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                     render={({ field }) => (
                                       <FormItem>
                                         <FormLabel>Audience</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                                        <Select
+                                          onValueChange={field.onChange}
+                                          value={field.value || ""}
+                                        >
                                           <FormControl>
                                             <SelectTrigger data-testid="select-event-audience">
                                               <SelectValue placeholder="Select audience" />
@@ -1336,7 +1350,10 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                     render={({ field }) => (
                                       <FormItem>
                                         <FormLabel>Format</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                                        <Select
+                                          onValueChange={field.onChange}
+                                          value={field.value || ""}
+                                        >
                                           <FormControl>
                                             <SelectTrigger data-testid="select-event-format">
                                               <SelectValue placeholder="Select format" />
@@ -1367,7 +1384,9 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                             data-testid="input-event-tags"
                                           />
                                         </FormControl>
-                                        <p className="text-xs text-muted-foreground">Separate tags with commas.</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          Separate tags with commas.
+                                        </p>
                                         <FormMessage />
                                       </FormItem>
                                     )}
@@ -1885,14 +1904,17 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                                 placeholder="400.00"
                                                 value={centsToDollarInput(field.value)}
                                                 onChange={(event) => {
-                                                  field.onChange(dollarInputToCents(event.target.value));
+                                                  field.onChange(
+                                                    dollarInputToCents(event.target.value),
+                                                  );
                                                 }}
                                                 data-testid="input-event-registration-fee"
                                               />
                                             </div>
                                           </FormControl>
                                           <p className="text-xs text-muted-foreground">
-                                            Enter the amount in dollars. Payments are processed in cents behind the scenes.
+                                            Enter the amount in dollars. Payments are processed in
+                                            cents behind the scenes.
                                           </p>
                                           <FormMessage />
                                         </FormItem>
@@ -2455,8 +2477,8 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                         </div>
                                       </FormControl>
                                       <p className="text-xs text-muted-foreground">
-                                        One-time purchase price. Verified providers will
-                                        pay via Stripe and have permanent access after purchase.
+                                        One-time purchase price. Verified providers will pay via
+                                        Stripe and have permanent access after purchase.
                                       </p>
                                       <FormMessage />
                                     </FormItem>
@@ -2469,8 +2491,8 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                 {watchRecordingAccess === "paid" ? (
                                   <ul className="text-xs text-muted-foreground space-y-1.5 list-disc pl-4">
                                     <li>
-                                      Verified providers see a "Purchase" button on the
-                                      Video Archives page
+                                      Verified providers see a "Purchase" button on the Video
+                                      Archives page
                                     </li>
                                     <li>
                                       They're redirected to Stripe Checkout to complete payment
@@ -2484,10 +2506,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                                   </ul>
                                 ) : (
                                   <ul className="text-xs text-muted-foreground space-y-1.5 list-disc pl-4">
-                                    <li>
-                                      All verified providers can view this recording for
-                                      free
-                                    </li>
+                                    <li>All verified providers can view this recording for free</li>
                                     <li>
                                       The recording will appear in the Video Archives with a "Free"
                                       badge
@@ -2789,11 +2808,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea
-                          {...field}
-                          rows={3}
-                          data-testid="textarea-venue-description"
-                        />
+                        <Textarea {...field} rows={3} data-testid="textarea-venue-description" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -2951,11 +2966,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                     <FormItem>
                       <FormLabel>Website</FormLabel>
                       <FormControl>
-                        <Input
-                          {...field}
-                          autoPrependHttps
-                          data-testid="input-venue-website-url"
-                        />
+                        <Input {...field} autoPrependHttps data-testid="input-venue-website-url" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -2985,11 +2996,7 @@ function EventsContent({ initialCreate = false }: AdminEventsPageProps) {
                     <FormItem>
                       <FormLabel>Accessibility</FormLabel>
                       <FormControl>
-                        <Textarea
-                          {...field}
-                          rows={3}
-                          data-testid="textarea-venue-accessibility"
-                        />
+                        <Textarea {...field} rows={3} data-testid="textarea-venue-accessibility" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

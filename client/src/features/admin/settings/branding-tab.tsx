@@ -1,15 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import {
-  Check,
-  ImageIcon,
-  Link2,
-  Loader2,
-  MapPin,
-  Palette,
-  Save,
-  Type,
-} from "lucide-react";
+import { Check, ImageIcon, Link2, Loader2, MapPin, Palette, Save, Type } from "lucide-react";
 
 import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
 import { SocialMediaLinks } from "@/components/shared/social-media-links";
@@ -187,8 +178,6 @@ const BRANDING_COLOR_FIELDS = [
   ...BRANDING_UI_TEXT_COLOR_FIELDS,
 ] as const;
 
-
-
 function BrandingImageCard({
   settingKey,
   title,
@@ -227,7 +216,11 @@ function BrandingImageCard({
     },
     onError: (error: Error) => {
       setDisplayUrl(currentUrl);
-      toast({ title: "Branding update failed", description: error.message, variant: "destructive" });
+      toast({
+        title: "Branding update failed",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -534,7 +527,8 @@ export function BrandingTab({
   const hasSocialChanges =
     socialIconStyle !== normalizeSocialIconStyle(brandingSettings.social_icon_style?.value) ||
     SOCIAL_MEDIA_PLATFORMS.some(
-      (platform) => socialUrls[platform.settingKey] !== (brandingSettings[platform.settingKey]?.value || ""),
+      (platform) =>
+        socialUrls[platform.settingKey] !== (brandingSettings[platform.settingKey]?.value || ""),
     );
 
   const socialPreviewLinks = getSocialMediaLinks(socialUrls);

@@ -31,7 +31,17 @@ import type { CmsSection } from "@shared/schema";
 import { format } from "date-fns";
 import { getBlockDef, type BlockInstance } from "./builder/block-registry";
 
-const CATEGORIES = ["all", "general", "hero", "cta", "testimonials", "faq", "features", "content", "team"];
+const CATEGORIES = [
+  "all",
+  "general",
+  "hero",
+  "cta",
+  "testimonials",
+  "faq",
+  "features",
+  "content",
+  "team",
+];
 const SYSTEM_SECTION_NAME_PREFIX = "Starter - ";
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -71,7 +81,12 @@ export default function CmsSectionsPage() {
   const restoreStartersMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/admin/cms/sections/system/starter-library");
-      return response.json() as Promise<{ created: number; updated: number; deleted: number; total: number }>;
+      return response.json() as Promise<{
+        created: number;
+        updated: number;
+        deleted: number;
+        total: number;
+      }>;
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/sections"] });
@@ -127,7 +142,9 @@ export default function CmsSectionsPage() {
               data-testid="button-restore-starter-sections"
             >
               <RefreshCcw className="h-4 w-4 mr-2" />
-              {restoreStartersMutation.isPending ? "Updating Starter Library..." : "Restore Starter Sections"}
+              {restoreStartersMutation.isPending
+                ? "Updating Starter Library..."
+                : "Restore Starter Sections"}
             </Button>
             <Button asChild data-testid="button-new-section">
               <Link href="/admin/cms/sections/new">
@@ -165,7 +182,9 @@ export default function CmsSectionsPage() {
 
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-36 rounded-xl" />)}
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-36 rounded-xl" />
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <Card>
@@ -174,7 +193,9 @@ export default function CmsSectionsPage() {
                 <Blocks className="h-8 w-8 text-violet-400" />
               </div>
               <h2 className="text-lg font-semibold mb-2">
-                {search || categoryFilter !== "all" ? "No sections match your filters" : "No reusable sections yet"}
+                {search || categoryFilter !== "all"
+                  ? "No sections match your filters"
+                  : "No reusable sections yet"}
               </h2>
               <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-5">
                 {search || categoryFilter !== "all"
@@ -190,7 +211,9 @@ export default function CmsSectionsPage() {
                     disabled={restoreStartersMutation.isPending}
                   >
                     <RefreshCcw className="h-4 w-4 mr-2" />
-                    {restoreStartersMutation.isPending ? "Updating Starter Library..." : "Restore Starter Sections"}
+                    {restoreStartersMutation.isPending
+                      ? "Updating Starter Library..."
+                      : "Restore Starter Sections"}
                   </Button>
                   <Button asChild variant="outline">
                     <Link href="/admin/cms/sections/new">
@@ -217,7 +240,10 @@ export default function CmsSectionsPage() {
                         <div className="h-7 w-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0">
                           <Layers className="h-3.5 w-3.5 text-violet-600" />
                         </div>
-                        <h3 className="text-sm font-semibold truncate" data-testid={`text-section-name-${section.id}`}>
+                        <h3
+                          className="text-sm font-semibold truncate"
+                          data-testid={`text-section-name-${section.id}`}
+                        >
                           {section.name}
                         </h3>
                       </div>
@@ -279,7 +305,8 @@ export default function CmsSectionsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this reusable section?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the saved section template. Pages that already inserted this section are not affected — their blocks remain unchanged.
+              This removes the saved section template. Pages that already inserted this section are
+              not affected — their blocks remain unchanged.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -68,11 +68,14 @@ describe("cookie consent utilities", () => {
   });
 
   it("writes consent, persists 60-day cookie state, and notifies subscribers", () => {
-    const record = buildCookieConsentRecord({
-      analytics: true,
-      marketing: false,
-      preferences: true,
-    }, new Date("2099-04-15T12:00:00.000Z"));
+    const record = buildCookieConsentRecord(
+      {
+        analytics: true,
+        marketing: false,
+        preferences: true,
+      },
+      new Date("2099-04-15T12:00:00.000Z"),
+    );
 
     const listener = vi.fn();
     const unsubscribe = subscribeToCookieConsent(listener);

@@ -11,13 +11,18 @@ describe("CreateUserSheet", () => {
   let root: Root | null = null;
 
   beforeEach(() => {
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-    (globalThis as typeof globalThis & { ResizeObserver?: typeof ResizeObserver }).ResizeObserver = class ResizeObserver {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    } as unknown as typeof ResizeObserver;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+    (globalThis as typeof globalThis & { ResizeObserver?: typeof ResizeObserver }).ResizeObserver =
+      class ResizeObserver {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      } as unknown as typeof ResizeObserver;
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -53,8 +58,12 @@ describe("CreateUserSheet", () => {
   it("shows both system roles and swaps dependent controls when the role changes", async () => {
     await renderSheet();
 
-    const adminButton = document.querySelector('[data-testid="create-role-admin"]') as HTMLButtonElement | null;
-    const editorButton = document.querySelector('[data-testid="create-role-editor"]') as HTMLButtonElement | null;
+    const adminButton = document.querySelector(
+      '[data-testid="create-role-admin"]',
+    ) as HTMLButtonElement | null;
+    const editorButton = document.querySelector(
+      '[data-testid="create-role-editor"]',
+    ) as HTMLButtonElement | null;
 
     expect(adminButton?.textContent).toContain("System Admin");
     expect(editorButton?.textContent).toContain("Editor");
@@ -64,7 +73,9 @@ describe("CreateUserSheet", () => {
       adminButton?.click();
     });
 
-    expect(document.body.textContent).toContain("System Admins can access every admin tool group, including System settings.");
+    expect(document.body.textContent).toContain(
+      "System Admins can access every admin tool group, including System settings.",
+    );
     expect(document.body.textContent).not.toContain("Editor Permissions");
 
     await act(async () => {

@@ -30,8 +30,19 @@ const MEDIA_ACCEPTED_TYPES = [
 ];
 const MEDIA_ACCEPTED_EXTENSIONS = [
   ...IMAGE_ACCEPTED_EXTENSIONS,
-  ".pdf", ".doc", ".docx", ".xls", ".xlsx",
-  ".ppt", ".pptx", ".csv", ".txt", ".rtf", ".odt", ".ods", ".odp",
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".ppt",
+  ".pptx",
+  ".csv",
+  ".txt",
+  ".rtf",
+  ".odt",
+  ".ods",
+  ".odp",
 ];
 const MAX_BYTES = 10 * 1024 * 1024;
 
@@ -47,7 +58,8 @@ function isAcceptedFile(file: File, acceptedMode: "images" | "all") {
   const extensionIndex = file.name.lastIndexOf(".");
   const extension = extensionIndex >= 0 ? file.name.slice(extensionIndex).toLowerCase() : "";
   const acceptedTypes = acceptedMode === "all" ? MEDIA_ACCEPTED_TYPES : IMAGE_ACCEPTED_TYPES;
-  const acceptedExtensions = acceptedMode === "all" ? MEDIA_ACCEPTED_EXTENSIONS : IMAGE_ACCEPTED_EXTENSIONS;
+  const acceptedExtensions =
+    acceptedMode === "all" ? MEDIA_ACCEPTED_EXTENSIONS : IMAGE_ACCEPTED_EXTENSIONS;
   return acceptedTypes.includes(file.type) || acceptedExtensions.includes(extension);
 }
 
@@ -84,11 +96,13 @@ export function CmsImageUpload({
         throw new Error(
           acceptedMode === "all"
             ? "Accepted file types: images, PDF, Word, Excel, PowerPoint, CSV, TXT, RTF, and OpenDocument files"
-            : "Only PNG, JPEG, WebP, and GIF files are accepted"
+            : "Only PNG, JPEG, WebP, and GIF files are accepted",
         );
       }
       if (file.size > MAX_BYTES) {
-        throw new Error(`File must be under 10 MB (this file is ${(file.size / (1024 * 1024)).toFixed(1)} MB)`);
+        throw new Error(
+          `File must be under 10 MB (this file is ${(file.size / (1024 * 1024)).toFixed(1)} MB)`,
+        );
       }
 
       const fd = new FormData();
@@ -139,7 +153,10 @@ export function CmsImageUpload({
       onChange(asset.url);
       setSelectedAsset(asset);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/media"] });
-      toast({ title: acceptedMode === "all" ? "File uploaded successfully" : "Image uploaded successfully" });
+      toast({
+        title:
+          acceptedMode === "all" ? "File uploaded successfully" : "Image uploaded successfully",
+      });
       setTimeout(() => setUploadProgress(0), 800);
     },
     onError: (err: Error) => {
@@ -152,7 +169,7 @@ export function CmsImageUpload({
     (file: File | undefined | null) => {
       if (file) uploadMutation.mutate(file);
     },
-    [uploadMutation]
+    [uploadMutation],
   );
 
   const handleDrop = useCallback(
@@ -162,7 +179,7 @@ export function CmsImageUpload({
       const file = e.dataTransfer.files[0];
       handleFile(file);
     },
-    [handleFile]
+    [handleFile],
   );
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -185,9 +202,7 @@ export function CmsImageUpload({
 
   return (
     <div className={cn("space-y-1.5", className)} data-testid={testId}>
-      {label && (
-        <p className="text-sm font-medium leading-none">{label}</p>
-      )}
+      {label && <p className="text-sm font-medium leading-none">{label}</p>}
 
       {value ? (
         <div className="relative group rounded-lg border bg-muted/20 overflow-hidden">
@@ -255,7 +270,7 @@ export function CmsImageUpload({
             "relative border-2 border-dashed rounded-lg transition-colors cursor-pointer",
             isDragging
               ? "border-violet-400 bg-violet-50 dark:bg-violet-950/20"
-              : "border-muted-foreground/25 hover:border-violet-300 bg-muted/10 hover:bg-muted/20"
+              : "border-muted-foreground/25 hover:border-violet-300 bg-muted/10 hover:bg-muted/20",
           )}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -280,7 +295,9 @@ export function CmsImageUpload({
               <div>
                 <p className="text-sm font-medium text-foreground/80">
                   Drop {acceptedMode === "all" ? "file" : "image"} here or{" "}
-                  <span className="text-violet-500 hover:text-violet-600 underline underline-offset-2">browse</span>
+                  <span className="text-violet-500 hover:text-violet-600 underline underline-offset-2">
+                    browse
+                  </span>
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {acceptedMode === "all"
@@ -320,9 +337,7 @@ export function CmsImageUpload({
         data-testid={testId ? `${testId}-file-input` : "cms-image-file-input"}
       />
 
-      {helpText && (
-        <p className="text-xs text-muted-foreground">{helpText}</p>
-      )}
+      {helpText && <p className="text-xs text-muted-foreground">{helpText}</p>}
 
       <MediaPickerDialog
         open={pickerOpen}

@@ -11,18 +11,15 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { Input } from "@/components/ui/input";
 import {
   ArrowRight,
   BookOpen,
   CalendarDays,
   Clock,
-  ExternalLink,
   Image,
   Loader2,
   Lock,
   Play,
-  Search,
   Send,
   UserCheck,
 } from "lucide-react";
@@ -46,11 +43,6 @@ import {
   normalizeHexColor,
 } from "./section-style";
 import { SectionHeading } from "./section-heading";
-import {
-  getPostCategories,
-  getPrimaryPostCategory,
-  postMatchesCategory,
-} from "@/lib/blog-post-categories";
 import { LucideIcon } from "./block-icons";
 import {
   CalloutBoxBlock,
@@ -85,11 +77,7 @@ import {
   StatsBarBlock,
   TrustBarBlock,
 } from "./conversion-blocks";
-import {
-  BlogFeaturedPostBlock,
-  BlogPostFeedBlock,
-  StandardBlogPageBlock,
-} from "./blog-blocks";
+import { BlogFeaturedPostBlock, BlogPostFeedBlock, StandardBlogPageBlock } from "./blog-blocks";
 import {
   arr,
   colorStyle,

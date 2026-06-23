@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { EcommerceProduct, SeoSettings } from "@shared/schema";
-import { buildProductFeedItems, buildProductFeedXml } from "../services/ecommerce-product-feed.service";
+import {
+  buildProductFeedItems,
+  buildProductFeedXml,
+} from "../services/ecommerce-product-feed.service";
 
 const seo = {
   siteUrl: "https://example.com",
@@ -54,7 +57,9 @@ describe("ecommerce product feed", () => {
 
   it("excludes non-storefront and archived products from public product feeds", () => {
     expect(buildProductFeedItems([{ ...baseProduct, visibility: "hidden" }], seo)).toHaveLength(0);
-    expect(buildProductFeedItems([{ ...baseProduct, archivedAt: new Date() }], seo)).toHaveLength(0);
+    expect(buildProductFeedItems([{ ...baseProduct, archivedAt: new Date() }], seo)).toHaveLength(
+      0,
+    );
   });
 
   it("renders escaped Google Merchant RSS XML", () => {

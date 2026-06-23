@@ -26,7 +26,10 @@ export function ProtectedRoute({ children, roles, adminPermissions }: ProtectedR
 
   if (roles && !roles.includes(user.role)) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4" data-testid="forbidden-page">
+      <div
+        className="flex flex-col items-center justify-center min-h-screen gap-4"
+        data-testid="forbidden-page"
+      >
         <h1 className="text-2xl font-bold">403 - Forbidden</h1>
         <p className="text-muted-foreground">You do not have permission to access this page.</p>
       </div>
@@ -34,10 +37,16 @@ export function ProtectedRoute({ children, roles, adminPermissions }: ProtectedR
   }
 
   if (adminPermissions && adminPermissions.length > 0) {
-    const allowed = user.role === "admin" || (user.role === "editor" && adminPermissions.some((permission) => hasAdminPermission(permission)));
+    const allowed =
+      user.role === "admin" ||
+      (user.role === "editor" &&
+        adminPermissions.some((permission) => hasAdminPermission(permission)));
     if (!allowed) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-4" data-testid="forbidden-page">
+        <div
+          className="flex flex-col items-center justify-center min-h-screen gap-4"
+          data-testid="forbidden-page"
+        >
           <h1 className="text-2xl font-bold">403 - Forbidden</h1>
           <p className="text-muted-foreground">You do not have permission to access this page.</p>
         </div>

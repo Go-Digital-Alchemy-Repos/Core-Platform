@@ -8,21 +8,79 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Bold, Italic, Underline as UnderlineIcon, Strikethrough,
-  List, ListOrdered, Link as LinkIcon, Image as ImageIcon,
-  Smile, Minus, Quote, Code2, Code,
-  Undo2, Redo2, X, Loader2,
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
+  Strikethrough,
+  List,
+  ListOrdered,
+  Link as LinkIcon,
+  Image as ImageIcon,
+  Smile,
+  Minus,
+  Quote,
+  Code2,
+  Code,
+  Undo2,
+  Redo2,
+  X,
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { createLinkExtension, createStarterKit } from "@/lib/tiptap";
 
 const EMOJI_LIST = [
-  "😀","😂","😊","😍","🥰","🤔","😢","😎","😤","🙏",
-  "👍","👋","👏","🤝","💪","✌️","🖐️","👌","🤞","❤️",
-  "🎉","✨","🔥","⭐","💡","📝","🗓️","⏰","🌟","💎",
-  "✅","❌","⚠️","ℹ️","📌","🔗","📊","📈","💬","🌍",
-  "🧠","💼","🏆","🎯","🚀","🌱","☀️","🌈","🎶","📚",
+  "😀",
+  "😂",
+  "😊",
+  "😍",
+  "🥰",
+  "🤔",
+  "😢",
+  "😎",
+  "😤",
+  "🙏",
+  "👍",
+  "👋",
+  "👏",
+  "🤝",
+  "💪",
+  "✌️",
+  "🖐️",
+  "👌",
+  "🤞",
+  "❤️",
+  "🎉",
+  "✨",
+  "🔥",
+  "⭐",
+  "💡",
+  "📝",
+  "🗓️",
+  "⏰",
+  "🌟",
+  "💎",
+  "✅",
+  "❌",
+  "⚠️",
+  "ℹ️",
+  "📌",
+  "🔗",
+  "📊",
+  "📈",
+  "💬",
+  "🌍",
+  "🧠",
+  "💼",
+  "🏆",
+  "🎯",
+  "🚀",
+  "🌱",
+  "☀️",
+  "🌈",
+  "🎶",
+  "📚",
 ];
 
 interface BlogEditorProps {
@@ -37,7 +95,11 @@ function ToolbarSep() {
 }
 
 function ToolbarBtn({
-  active, onClick, title, children, disabled,
+  active,
+  onClick,
+  title,
+  children,
+  disabled,
 }: {
   active?: boolean;
   onClick: () => void;
@@ -51,10 +113,7 @@ function ToolbarBtn({
       variant="ghost"
       size="sm"
       disabled={disabled}
-      className={cn(
-        "h-7 w-7 p-0 shrink-0",
-        active && "bg-accent text-accent-foreground"
-      )}
+      className={cn("h-7 w-7 p-0 shrink-0", active && "bg-accent text-accent-foreground")}
       onClick={onClick}
       title={title}
     >
@@ -63,7 +122,12 @@ function ToolbarBtn({
   );
 }
 
-export function BlogEditor({ value, onChange, placeholder, "data-testid": testId }: BlogEditorProps) {
+export function BlogEditor({
+  value,
+  onChange,
+  placeholder,
+  "data-testid": testId,
+}: BlogEditorProps) {
   const { toast } = useToast();
   const [showLinkPanel, setShowLinkPanel] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
@@ -97,7 +161,8 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
     },
     editorProps: {
       attributes: {
-        class: "outline-none min-h-[400px] prose prose-slate dark:prose-invert max-w-none px-4 py-3 text-sm leading-relaxed focus:outline-none",
+        class:
+          "outline-none min-h-[400px] prose prose-slate dark:prose-invert max-w-none px-4 py-3 text-sm leading-relaxed focus:outline-none",
       },
     },
   });
@@ -133,14 +198,16 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
         .insertContent({
           type: "text",
           text: linkText.trim(),
-          marks: [{
-            type: "link",
-            attrs: {
-              href: url,
-              target: linkOpenInNewTab ? "_blank" : null,
-              rel: linkOpenInNewTab ? "noopener noreferrer" : null,
+          marks: [
+            {
+              type: "link",
+              attrs: {
+                href: url,
+                target: linkOpenInNewTab ? "_blank" : null,
+                rel: linkOpenInNewTab ? "noopener noreferrer" : null,
+              },
             },
-          }],
+          ],
         })
         .run();
     } else {
@@ -169,7 +236,11 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
 
   const handleImageUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      toast({ title: "Images only", description: "Please select an image file.", variant: "destructive" });
+      toast({
+        title: "Images only",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
@@ -199,7 +270,10 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
   if (!editor) return null;
 
   return (
-    <div className="rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring" data-testid={testId}>
+    <div
+      className="rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring"
+      data-testid={testId}
+    >
       <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b bg-muted/30 rounded-t-lg">
         <ToolbarBtn
           onClick={() => editor.chain().focus().undo().run()}
@@ -316,7 +390,10 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
         <ToolbarBtn
           active={showLinkPanel}
           onClick={() => {
-            if (showLinkPanel) { setShowLinkPanel(false); return; }
+            if (showLinkPanel) {
+              setShowLinkPanel(false);
+              return;
+            }
             const existing = editor.getAttributes("link").href as string | undefined;
             const existingTarget = editor.getAttributes("link").target as string | undefined;
             if (existing) setLinkUrl(existing);
@@ -389,18 +466,30 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
               autoPrependHttps
               className="h-8 text-xs"
               autoFocus
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); insertLink(); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  insertLink();
+                }
+              }}
               data-testid="input-link-url"
             />
           </div>
           <div className="flex-1 min-w-[140px]">
-            <Label className="text-xs mb-1 block">Link text <span className="text-muted-foreground">(if no selection)</span></Label>
+            <Label className="text-xs mb-1 block">
+              Link text <span className="text-muted-foreground">(if no selection)</span>
+            </Label>
             <Input
               value={linkText}
               onChange={(e) => setLinkText(e.target.value)}
               placeholder="Click here"
               className="h-8 text-xs"
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); insertLink(); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  insertLink();
+                }
+              }}
               data-testid="input-link-text"
             />
           </div>
@@ -410,12 +499,22 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
               checked={linkOpenInNewTab}
               onCheckedChange={(checked) => setLinkOpenInNewTab(checked === true)}
             />
-            <Label htmlFor={`${testId ?? "blog-editor"}-link-new-tab`} className="text-xs font-normal">
+            <Label
+              htmlFor={`${testId ?? "blog-editor"}-link-new-tab`}
+              className="text-xs font-normal"
+            >
               Open in new tab
             </Label>
           </div>
           <div className="flex items-center gap-1.5 pb-0.5">
-            <Button type="button" size="sm" className="h-8 text-xs" onClick={insertLink} disabled={!linkUrl.trim()} data-testid="button-insert-link">
+            <Button
+              type="button"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={insertLink}
+              disabled={!linkUrl.trim()}
+              data-testid="button-insert-link"
+            >
               {editor.isActive("link") ? "Update" : "Insert"}
             </Button>
             {editor.isActive("link") && (
@@ -457,19 +556,38 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className={cn("text-xs px-2.5 py-1 rounded-full transition-colors", imageTab === "url" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+              className={cn(
+                "text-xs px-2.5 py-1 rounded-full transition-colors",
+                imageTab === "url"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
               onClick={() => setImageTab("url")}
             >
               From URL
             </button>
             <button
               type="button"
-              className={cn("text-xs px-2.5 py-1 rounded-full transition-colors", imageTab === "upload" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+              className={cn(
+                "text-xs px-2.5 py-1 rounded-full transition-colors",
+                imageTab === "upload"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
               onClick={() => setImageTab("upload")}
             >
               Upload
             </button>
-            <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0 ml-auto" onClick={() => { setShowImagePanel(false); setImageUrl(""); }}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 ml-auto"
+              onClick={() => {
+                setShowImagePanel(false);
+                setImageUrl("");
+              }}
+            >
               <X className="w-3.5 h-3.5" />
             </Button>
           </div>
@@ -482,10 +600,22 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
                 autoPrependHttps
                 className="h-8 text-xs flex-1"
                 autoFocus
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); insertImageUrl(); } }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    insertImageUrl();
+                  }
+                }}
                 data-testid="input-image-url"
               />
-              <Button type="button" size="sm" className="h-8 text-xs" onClick={insertImageUrl} disabled={!imageUrl.trim()} data-testid="button-insert-image-url">
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={insertImageUrl}
+                disabled={!imageUrl.trim()}
+                data-testid="button-insert-image-url"
+              >
                 Insert
               </Button>
             </div>
@@ -498,7 +628,11 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
                 disabled={uploading}
                 data-testid="button-upload-image"
               >
-                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                {uploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ImageIcon className="w-4 h-4" />
+                )}
                 {uploading ? "Uploading…" : "Click to choose an image (max 10 MB)"}
               </button>
               <input
@@ -517,7 +651,10 @@ export function BlogEditor({ value, onChange, placeholder, "data-testid": testId
         </div>
       )}
 
-      <EditorContent editor={editor} data-testid={testId ? `${testId}-content` : "blog-editor-content"} />
+      <EditorContent
+        editor={editor}
+        data-testid={testId ? `${testId}-content` : "blog-editor-content"}
+      />
     </div>
   );
 }

@@ -11,7 +11,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const tiers = await storage.tiers.getAllTiers();
     res.json(tiers);
-  })
+  }),
 );
 
 router.post(
@@ -19,7 +19,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const tier = await storage.tiers.createTier(req.body);
     res.status(201).json(tier);
-  })
+  }),
 );
 
 router.put(
@@ -31,7 +31,7 @@ router.put(
       return;
     }
     res.json(tier);
-  })
+  }),
 );
 
 export default router;

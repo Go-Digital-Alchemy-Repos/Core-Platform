@@ -8,6 +8,7 @@ import { ensureSystemForms } from "./system-forms.service";
 import { ensureSystemEcommerce } from "./system-ecommerce.service";
 import { ensureSystemCareers } from "./system-careers.service";
 import { ensureSystemPortfolio } from "./system-portfolio.service";
+import { ensureCarolinaCmsSite } from "./carolina-cms.service";
 import { seedBlogPosts } from "../scripts/seed-blog";
 
 export async function runSystemBootstrap() {
@@ -17,6 +18,7 @@ export async function runSystemBootstrap() {
   await ensureSystemCmsMenus();
   await ensureSystemCmsSections();
   await ensureSystemForms();
+  await ensureCarolinaCmsSite();
   await ensureSystemEcommerce();
   await ensureSystemCareers();
   await ensureSystemPortfolio();

@@ -22,14 +22,16 @@ describe("ecommerce invoice PDF service", () => {
       shippingState: "MI",
       shippingZip: "49503",
       shippingCountry: "US",
-      items: [{
-        id: "item-1",
-        productName: "Family Transition Conversation Cards",
-        variantTitle: "Default",
-        quantity: 1,
-        unitPrice: 2900,
-        lineTotal: 2900,
-      }],
+      items: [
+        {
+          id: "item-1",
+          productName: "Family Transition Conversation Cards",
+          variantTitle: "Default",
+          quantity: 1,
+          unitPrice: 2900,
+          lineTotal: 2900,
+        },
+      ],
       shipments: [],
     } as EcommerceOrderWithDetails);
 

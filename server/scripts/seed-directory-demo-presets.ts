@@ -4,10 +4,7 @@ import { db, pool } from "../db";
 import { storage } from "../storage";
 import { specializations } from "@shared/schema/specializations";
 import { therapistProfiles, users } from "@shared/schema";
-import {
-  DIRECTORY_LABEL_PRESETS,
-  type DirectoryMode,
-} from "@shared/types/directory-settings";
+import { DIRECTORY_LABEL_PRESETS, type DirectoryMode } from "@shared/types/directory-settings";
 
 type DemoListing = {
   mode: DirectoryMode;
@@ -514,7 +511,9 @@ async function applyPreset(mode: DirectoryMode) {
 }
 
 async function seedSpecializations() {
-  const categoryNames = Array.from(new Set(demoListings.flatMap((listing) => listing.specializations)));
+  const categoryNames = Array.from(
+    new Set(demoListings.flatMap((listing) => listing.specializations)),
+  );
   for (let i = 0; i < categoryNames.length; i += 1) {
     await db
       .insert(specializations)

@@ -85,7 +85,8 @@ function BlogContent() {
       resetForm();
       toast({ title: "Post created" });
     },
-    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+    onError: (err: Error) =>
+      toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
   const updateMutation = useMutation({
@@ -99,7 +100,8 @@ function BlogContent() {
       resetForm();
       toast({ title: "Post updated" });
     },
-    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+    onError: (err: Error) =>
+      toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
@@ -110,7 +112,8 @@ function BlogContent() {
       setDeleteId(null);
       toast({ title: "Post deleted" });
     },
-    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+    onError: (err: Error) =>
+      toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
   function resetForm() {
@@ -204,11 +207,17 @@ function BlogContent() {
               <CardContent className="p-4 flex items-center justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h3 className="font-semibold truncate" data-testid={`text-blog-admin-title-${post.id}`}>
+                    <h3
+                      className="font-semibold truncate"
+                      data-testid={`text-blog-admin-title-${post.id}`}
+                    >
                       {post.title}
                     </h3>
                     {post.isPublished ? (
-                      <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" data-testid={`badge-published-${post.id}`}>
+                      <Badge
+                        className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                        data-testid={`badge-published-${post.id}`}
+                      >
                         <Eye className="h-3 w-3 mr-1" />
                         Published
                       </Badge>
@@ -219,21 +228,42 @@ function BlogContent() {
                       </Badge>
                     )}
                     {post.category && (
-                      <Badge variant="secondary" className="text-xs">{post.category}</Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {post.category}
+                      </Badge>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
                     By {post.authorName}
                     {post.publishedAt && (
-                      <> · {new Date(post.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</>
+                      <>
+                        {" "}
+                        ·{" "}
+                        {new Date(post.publishedAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </>
                     )}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <Button variant="outline" size="sm" onClick={() => openEdit(post)} data-testid={`button-edit-post-${post.id}`}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openEdit(post)}
+                    data-testid={`button-edit-post-${post.id}`}
+                  >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm" className="text-destructive" onClick={() => setDeleteId(post.id)} data-testid={`button-delete-post-${post.id}`}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive"
+                    onClick={() => setDeleteId(post.id)}
+                    data-testid={`button-delete-post-${post.id}`}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -245,7 +275,9 @@ function BlogContent() {
         <div className="text-center py-16">
           <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium mb-2">No blog posts yet</h3>
-          <p className="text-sm text-muted-foreground mb-4">Create your first post to get started.</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            Create your first post to get started.
+          </p>
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4 mr-2" />
             Create Post
@@ -354,7 +386,11 @@ function BlogContent() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel-post">
+            <Button
+              variant="outline"
+              onClick={() => setDialogOpen(false)}
+              data-testid="button-cancel-post"
+            >
               Cancel
             </Button>
             <Button

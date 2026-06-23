@@ -1,16 +1,11 @@
 import { storage } from "../storage";
 
 const productImages = {
-  workbook:
-    "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1200&h=900&fit=crop",
-  course:
-    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=900&fit=crop",
-  cards:
-    "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=1200&h=900&fit=crop",
-  toolkit:
-    "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&h=900&fit=crop",
-  journal:
-    "https://images.unsplash.com/photo-1517842645767-c639042777db?w=1200&h=900&fit=crop",
+  workbook: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1200&h=900&fit=crop",
+  course: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=900&fit=crop",
+  cards: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=1200&h=900&fit=crop",
+  toolkit: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&h=900&fit=crop",
+  journal: "https://images.unsplash.com/photo-1517842645767-c639042777db?w=1200&h=900&fit=crop",
 };
 
 const seededCategories = [
@@ -46,11 +41,16 @@ const seededProducts = [
     urlSlug: "core-platform-identity-workbook",
     sku: "CP-WORKBOOK-001",
     tags: ["Featured", "Digital", "Identity", "Workbook"],
-    features: ["48-page downloadable workbook", "Transition mapping prompts", "Identity and belonging exercises"],
+    features: [
+      "48-page downloadable workbook",
+      "Transition mapping prompts",
+      "Identity and belonging exercises",
+    ],
     included: ["PDF workbook", "Printable worksheets", "Reflection guide"],
     categories: ["guides-workbooks"],
     metaTitle: "Core Platform Operations Workbook",
-    metaDescription: "A guided workbook for Core Platform operations, onboarding, and transition support.",
+    metaDescription:
+      "A guided workbook for Core Platform operations, onboarding, and transition support.",
   },
   {
     name: "Provider Mini-Course: platform-approved workflows",
@@ -78,7 +78,11 @@ const seededProducts = [
     urlSlug: "team-transition-conversation-cards",
     sku: "CP-CARDS-001",
     tags: ["Family", "Printable", "Transitions"],
-    features: ["60 conversation prompts", "Age-flexible discussion themes", "Move-ready printable format"],
+    features: [
+      "60 conversation prompts",
+      "Age-flexible discussion themes",
+      "Move-ready printable format",
+    ],
     included: ["Printable card deck", "Facilitator notes", "Family check-in template"],
     categories: ["family-resources", "guides-workbooks"],
     metaTitle: "Team Transition Conversation Cards",
@@ -98,7 +102,8 @@ const seededProducts = [
     included: ["Toolkit PDF", "Editable templates", "Implementation guide"],
     categories: ["professional-training", "family-resources"],
     metaTitle: "Organization Support Core Platform Toolkit",
-    metaDescription: "A toolkit for organization teams supporting international and transitioning students.",
+    metaDescription:
+      "A toolkit for organization teams supporting international and transitioning students.",
   },
   {
     name: "Launch Reflection Journal",
@@ -141,52 +146,59 @@ export async function ensureSystemEcommerce() {
       .filter((id): id is string => Boolean(id));
     const existingProduct = productBySku.get(product.sku);
     if (existingProduct) {
-      await storage.ecommerce.updateProduct(existingProduct.id, {
+      await storage.ecommerce.updateProduct(
+        existingProduct.id,
+        {
+          name: product.name,
+          tagline: product.tagline,
+          description: product.description,
+          price: product.price,
+          salePrice: product.salePrice,
+          primaryImage: product.primaryImage,
+          features: product.features,
+          included: product.included,
+          sku: product.sku,
+          tags: product.tags,
+          urlSlug: product.urlSlug,
+          metaTitle: product.metaTitle,
+          metaDescription: product.metaDescription,
+          metaKeywords: "Core Platform, ecommerce, digital resources",
+          ogTitle: product.metaTitle,
+          ogDescription: product.metaDescription,
+          ogImage: product.primaryImage,
+        },
+        categoryIds,
+      );
+      continue;
+    }
+    if (productSlugs.has(product.urlSlug)) continue;
+    await storage.ecommerce.createProduct(
+      {
         name: product.name,
         tagline: product.tagline,
         description: product.description,
         price: product.price,
         salePrice: product.salePrice,
         primaryImage: product.primaryImage,
+        secondaryImages: [],
         features: product.features,
         included: product.included,
+        active: true,
+        status: "published",
         sku: product.sku,
         tags: product.tags,
+        discountType: "NONE",
         urlSlug: product.urlSlug,
+        robotsIndex: true,
+        robotsFollow: true,
         metaTitle: product.metaTitle,
         metaDescription: product.metaDescription,
         metaKeywords: "Core Platform, ecommerce, digital resources",
         ogTitle: product.metaTitle,
         ogDescription: product.metaDescription,
         ogImage: product.primaryImage,
-      }, categoryIds);
-      continue;
-    }
-    if (productSlugs.has(product.urlSlug)) continue;
-    await storage.ecommerce.createProduct({
-      name: product.name,
-      tagline: product.tagline,
-      description: product.description,
-      price: product.price,
-      salePrice: product.salePrice,
-      primaryImage: product.primaryImage,
-      secondaryImages: [],
-      features: product.features,
-      included: product.included,
-      active: true,
-      status: "published",
-      sku: product.sku,
-      tags: product.tags,
-      discountType: "NONE",
-      urlSlug: product.urlSlug,
-      robotsIndex: true,
-      robotsFollow: true,
-      metaTitle: product.metaTitle,
-      metaDescription: product.metaDescription,
-      metaKeywords: "Core Platform, ecommerce, digital resources",
-      ogTitle: product.metaTitle,
-      ogDescription: product.metaDescription,
-      ogImage: product.primaryImage,
-    }, categoryIds);
+      },
+      categoryIds,
+    );
   }
 }

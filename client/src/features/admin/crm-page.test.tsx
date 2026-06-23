@@ -36,29 +36,31 @@ describe("AdminCrmPage", () => {
   let root: Root | null = null;
 
   beforeEach(() => {
-    useQueryMock.mockImplementation(({ queryKey, enabled = true }: { queryKey: unknown[]; enabled?: boolean }) => {
-      if (!enabled) return { data: undefined, isLoading: false };
-      if (queryKey[0] === "/api/admin/crm" && queryKey.length === 2) {
-        return {
-          data: [
-            {
-              id: "lead-1",
-              name: "Ada Lovelace",
-              email: "ada@example.com",
-              phone: null,
-              company: "Compiler Co",
-              stage: "new",
-              source: "manual",
-              nextFollowUpAt: null,
-              createdAt: new Date(),
-            },
-          ],
-          isLoading: false,
-        };
-      }
+    useQueryMock.mockImplementation(
+      ({ queryKey, enabled = true }: { queryKey: unknown[]; enabled?: boolean }) => {
+        if (!enabled) return { data: undefined, isLoading: false };
+        if (queryKey[0] === "/api/admin/crm" && queryKey.length === 2) {
+          return {
+            data: [
+              {
+                id: "lead-1",
+                name: "Ada Lovelace",
+                email: "ada@example.com",
+                phone: null,
+                company: "Compiler Co",
+                stage: "new",
+                source: "manual",
+                nextFollowUpAt: null,
+                createdAt: new Date(),
+              },
+            ],
+            isLoading: false,
+          };
+        }
 
-      return { data: undefined, isLoading: false };
-    });
+        return { data: undefined, isLoading: false };
+      },
+    );
     useMutationMock.mockReturnValue({
       mutate: vi.fn(),
       isPending: false,
@@ -71,8 +73,12 @@ describe("AdminCrmPage", () => {
         unobserve() {}
       },
     );
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
   });

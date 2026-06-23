@@ -10,7 +10,8 @@ type SeedEvent = EventInsert & { title: string; slug: string; date: Date };
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const timezone = "America/New_York";
-const eventImageUrl = "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1280&h=720&fit=crop";
+const eventImageUrl =
+  "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1280&h=720&fit=crop";
 const corePlatformAddress = "120 Monroe Center St NW, Grand Rapids, MI 49503";
 const corePlatformCoordinates = {
   latitude: "42.9657722",
@@ -103,7 +104,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Identity Mapping Workshop",
     slug: "calendar-seed-identity-mapping-workshop",
-    description: "A guided workshop for exploring belonging, transition stories, and personal identity anchors.",
+    description:
+      "A guided workshop for exploring belonging, transition stories, and personal identity anchors.",
     days: 2,
     startHour: 13,
     durationMinutes: 90,
@@ -137,7 +139,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Global Families Welcome Circle",
     slug: "calendar-seed-global-families-welcome-circle",
-    description: "A warm community gathering for customers and teams looking for connection and resources.",
+    description:
+      "A warm community gathering for customers and teams looking for connection and resources.",
     days: 6,
     startHour: 18,
     durationMinutes: 75,
@@ -155,7 +158,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Reverse Culture Shock Webinar",
     slug: "calendar-seed-reverse-culture-shock-webinar",
-    description: "Practical guidance for re-entry, grief of place, and reconnecting after a major move.",
+    description:
+      "Practical guidance for re-entry, grief of place, and reconnecting after a major move.",
     days: 8,
     startHour: 14,
     durationMinutes: 60,
@@ -172,7 +176,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Member Case Consultation Lab",
     slug: "calendar-seed-member-case-consultation-lab",
-    description: "A structured consultation session for member providers working with complex customer needs.",
+    description:
+      "A structured consultation session for member providers working with complex customer needs.",
     days: 10,
     startHour: 12,
     durationMinutes: 90,
@@ -191,7 +196,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Teen Belonging Skills Class",
     slug: "calendar-seed-teen-belonging-skills-class",
-    description: "A strengths-based class helping teens name transitions, friendships, and support systems.",
+    description:
+      "A strengths-based class helping teens name transitions, friendships, and support systems.",
     days: 12,
     startHour: 16,
     durationMinutes: 75,
@@ -209,7 +215,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Cross-Cultural Parenting Roundtable",
     slug: "calendar-seed-customer-programs-roundtable",
-    description: "A facilitated conversation on parenting across languages, schools, countries, and traditions.",
+    description:
+      "A facilitated conversation on parenting across languages, schools, countries, and traditions.",
     days: 14,
     startHour: 19,
     durationMinutes: 90,
@@ -228,7 +235,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Mindful Transitions Practice",
     slug: "calendar-seed-mindful-transitions-practice",
-    description: "A practical mindfulness session for grounding during moves, endings, and new beginnings.",
+    description:
+      "A practical mindfulness session for grounding during moves, endings, and new beginnings.",
     days: 16,
     startHour: 9,
     durationMinutes: 45,
@@ -264,7 +272,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Community Stories Night",
     slug: "calendar-seed-community-stories-night",
-    description: "An evening of short stories and facilitated reflection for adults shaped by global mobility.",
+    description:
+      "An evening of short stories and facilitated reflection for adults shaped by global mobility.",
     days: 20,
     startHour: 18,
     durationMinutes: 120,
@@ -282,7 +291,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "School Transition Planning Clinic",
     slug: "calendar-seed-school-transition-planning-clinic",
-    description: "A clinic for families preparing children for international school moves and re-entry.",
+    description:
+      "A clinic for families preparing children for international school moves and re-entry.",
     days: 22,
     startHour: 15,
     durationMinutes: 90,
@@ -299,7 +309,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Service Documentation for Events",
     slug: "calendar-seed-service-documentation-for-events",
-    description: "A provider training on documenting group events, registrations, and follow-up workflows.",
+    description:
+      "A provider training on documenting group events, registrations, and follow-up workflows.",
     days: 24,
     startHour: 13,
     durationMinutes: 75,
@@ -316,7 +327,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Portable Home Workshop",
     slug: "calendar-seed-portable-home-workshop",
-    description: "A creative workshop for building rituals, routines, and objects that help home travel with you.",
+    description:
+      "A creative workshop for building rituals, routines, and objects that help home travel with you.",
     days: 26,
     startHour: 17,
     durationMinutes: 90,
@@ -335,7 +347,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Global Mobility Burnout Webinar",
     slug: "calendar-seed-global-mobility-burnout-webinar",
-    description: "A focused webinar on burnout signals, prevention, and support for busy professionals.",
+    description:
+      "A focused webinar on burnout signals, prevention, and support for busy professionals.",
     days: 28,
     startHour: 12,
     durationMinutes: 60,
@@ -352,7 +365,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Provider Peer Learning Circle",
     slug: "calendar-seed-provider-peer-learning-circle",
-    description: "A peer learning circle for providers, coaches, and support professionals in the network.",
+    description:
+      "A peer learning circle for providers, coaches, and support professionals in the network.",
     days: 30,
     startHour: 11,
     durationMinutes: 90,
@@ -369,7 +383,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "College Launch Across Cultures",
     slug: "calendar-seed-college-launch-across-cultures",
-    description: "A session for students and families navigating college launch, transitions, and support planning.",
+    description:
+      "A session for students and families navigating college launch, transitions, and support planning.",
     days: 32,
     startHour: 19,
     durationMinutes: 75,
@@ -405,7 +420,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Cultural Grief Support Group",
     slug: "calendar-seed-cultural-grief-support-group",
-    description: "A supportive group session for naming and processing cultural grief and ambiguous loss.",
+    description:
+      "A supportive group session for naming and processing cultural grief and ambiguous loss.",
     days: 36,
     startHour: 18,
     durationMinutes: 90,
@@ -422,7 +438,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "School Transition Provider Roundtable",
     slug: "calendar-seed-school-transition-provider-roundtable",
-    description: "A roundtable for providers supporting students through transitions and planning stress.",
+    description:
+      "A roundtable for providers supporting students through transitions and planning stress.",
     days: 38,
     startHour: 10,
     durationMinutes: 75,
@@ -439,7 +456,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Family Systems Across Borders",
     slug: "calendar-seed-family-systems-across-borders",
-    description: "A training session on family systems considerations across relocation, distance, and culture.",
+    description:
+      "A training session on family systems considerations across relocation, distance, and culture.",
     days: 40,
     startHour: 13,
     durationMinutes: 120,
@@ -458,7 +476,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Newcomer Resource Fair",
     slug: "calendar-seed-newcomer-resource-fair",
-    description: "A resource fair connecting newcomers with support providers, community groups, and learning resources.",
+    description:
+      "A resource fair connecting newcomers with support providers, community groups, and learning resources.",
     days: 42,
     startHour: 15,
     durationMinutes: 180,
@@ -494,7 +513,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Young Adult Identity Lab",
     slug: "calendar-seed-young-adult-identity-lab",
-    description: "A practical lab for young adults making decisions about place, career, relationships, and belonging.",
+    description:
+      "A practical lab for young adults making decisions about place, career, relationships, and belonging.",
     days: 46,
     startHour: 18,
     durationMinutes: 90,
@@ -511,7 +531,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Executive Global Mobility Consultation Day",
     slug: "calendar-seed-executive-global-mobility-consultation-day",
-    description: "A limited consultation day for leaders designing support programs for mobile teams.",
+    description:
+      "A limited consultation day for leaders designing support programs for mobile teams.",
     days: 49,
     startHour: 9,
     durationMinutes: 240,
@@ -529,7 +550,8 @@ const seedEvents: SeedEvent[] = [
   event({
     title: "Summer Community Reflection Night",
     slug: "calendar-seed-summer-community-reflection-night",
-    description: "A seasonal reflection gathering with prompts, conversation, and next-step planning.",
+    description:
+      "A seasonal reflection gathering with prompts, conversation, and next-step planning.",
     days: 52,
     startHour: 18,
     durationMinutes: 120,
@@ -547,7 +569,11 @@ const seedEvents: SeedEvent[] = [
 ];
 
 async function upsertEvent(seedEvent: SeedEvent) {
-  const [existing] = await db.select({ id: events.id }).from(events).where(eq(events.slug, seedEvent.slug)).limit(1);
+  const [existing] = await db
+    .select({ id: events.id })
+    .from(events)
+    .where(eq(events.slug, seedEvent.slug))
+    .limit(1);
 
   if (existing) {
     await db.update(events).set(seedEvent).where(eq(events.id, existing.id));
@@ -568,7 +594,9 @@ async function main() {
     else updated += 1;
   }
 
-  console.log(`Seeded ${seedEvents.length} production calendar events (${inserted} inserted, ${updated} updated).`);
+  console.log(
+    `Seeded ${seedEvents.length} production calendar events (${inserted} inserted, ${updated} updated).`,
+  );
   console.log(`Seed slugs use the "calendar-seed-" prefix and tags include "calendar-seed".`);
 }
 

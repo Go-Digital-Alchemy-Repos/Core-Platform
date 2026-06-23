@@ -3,7 +3,7 @@ import { logger } from "./logger";
 export async function retryOnce<T>(
   fn: () => Promise<T>,
   label: string,
-  delayMs: number = 500
+  delayMs: number = 500,
 ): Promise<T> {
   try {
     return await fn();

@@ -54,7 +54,9 @@ async function getMailgunConfig(): Promise<MailgunConfig | null> {
     }
     mailgunConfigFetched = true;
   } catch (err) {
-    logger.email.warn("Failed to load Mailgun configuration", { error: err instanceof Error ? err.message : String(err) });
+    logger.email.warn("Failed to load Mailgun configuration", {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
   return cachedMailgunConfig;
 }
@@ -86,11 +88,7 @@ async function getEmailLogoUrl(): Promise<string | null> {
   return cachedEmailLogoUrl;
 }
 
-async function sendViaMailgun(
-  to: string,
-  subject: string,
-  html: string
-): Promise<boolean> {
+async function sendViaMailgun(to: string, subject: string, html: string): Promise<boolean> {
   const config = await getMailgunConfig();
   if (!config) return false;
 
@@ -113,11 +111,7 @@ async function sendViaMailgun(
   }
 }
 
-async function sendViaSmtp(
-  to: string,
-  subject: string,
-  html: string
-): Promise<boolean> {
+async function sendViaSmtp(to: string, subject: string, html: string): Promise<boolean> {
   if (!transporter) return false;
   try {
     await transporter.sendMail({ from: SMTP_FROM, to, subject, html });
@@ -129,7 +123,11 @@ async function sendViaSmtp(
   }
 }
 
-function baseTemplate(title: string, body: string, options: { logoUrl?: string | null } = {}): string {
+function baseTemplate(
+  title: string,
+  body: string,
+  options: { logoUrl?: string | null } = {},
+): string {
   const logoMarkup = options.logoUrl
     ? `<img src="${options.logoUrl}" alt="Core Platform" style="display:block;max-width:220px;max-height:52px;height:auto;width:auto;margin:0 auto;" />`
     : `<div style="color:#1e3a5f;font-size:22px;font-weight:600;text-align:center;">Core Platform</div>`;
@@ -173,7 +171,7 @@ function renderTemplate(template: string, vars: Record<string, string | null>): 
     } else {
       result = result.replace(
         new RegExp(`\\{\\{#${key}\\}\\}[\\s\\S]*?\\{\\{/${key}\\}\\}`, "g"),
-        ""
+        "",
       );
     }
   }
@@ -184,7 +182,7 @@ async function getTemplateHtml(
   slug: string,
   vars: Record<string, string | null>,
   fallbackTitle: string,
-  fallbackBody: string
+  fallbackBody: string,
 ): Promise<{ subject: string; html: string; isActive: boolean }> {
   try {
     const { storage } = await import("../storage/index");
@@ -199,7 +197,10 @@ async function getTemplateHtml(
       };
     }
   } catch (err) {
-    logger.email.warn("Failed to load email template, using fallback", { slug, error: err instanceof Error ? err.message : String(err) });
+    logger.email.warn("Failed to load email template, using fallback", {
+      slug,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
   return {
     subject: fallbackTitle,
@@ -208,11 +209,7 @@ async function getTemplateHtml(
   };
 }
 
-export async function sendEmail(
-  to: string,
-  subject: string,
-  html: string
-): Promise<boolean> {
+export async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
   const { recordEmailOutcome } = await import("../utils/metrics");
 
   const mailgunSent = await sendViaMailgun(to, subject, html);
@@ -235,14 +232,14 @@ export async function sendEmail(
 export async function sendApprovalEmail(
   email: string,
   firstName: string | null,
-  loginUrl: string
+  loginUrl: string,
 ): Promise<boolean> {
   const vars = { firstName: firstName || "there", loginUrl };
   const { subject, html, isActive } = await getTemplateHtml(
     "therapist-approval",
     vars,
     "Application Approved",
-    `<p>Hi ${vars.firstName}, your application has been approved!</p>`
+    `<p>Hi ${vars.firstName}, your application has been approved!</p>`,
   );
   if (!isActive) return false;
   return sendEmail(email, subject, html);
@@ -251,14 +248,14 @@ export async function sendApprovalEmail(
 export async function sendRejectionEmail(
   email: string,
   firstName: string | null,
-  reason: string | null
+  reason: string | null,
 ): Promise<boolean> {
   const vars = { firstName: firstName || "there", reason };
   const { subject, html, isActive } = await getTemplateHtml(
     "therapist-rejection",
     vars,
     "Application Update",
-    `<p>Hi ${vars.firstName}, your application was not approved at this time.</p>`
+    `<p>Hi ${vars.firstName}, your application was not approved at this time.</p>`,
   );
   if (!isActive) return false;
   return sendEmail(email, subject, html);
@@ -353,14 +350,14 @@ export async function sendMembershipReactivatedEmail(
 export async function sendPasswordResetEmail(
   email: string,
   firstName: string | null,
-  resetUrl: string
+  resetUrl: string,
 ): Promise<boolean> {
   const vars = { firstName: firstName || "there", resetUrl };
   const { subject, html, isActive } = await getTemplateHtml(
     "password-reset",
     vars,
     "Reset Your Password",
-    `<p>Hi ${vars.firstName}, click here to reset your password: ${resetUrl}</p>`
+    `<p>Hi ${vars.firstName}, click here to reset your password: ${resetUrl}</p>`,
   );
   if (!isActive) return false;
   return sendEmail(email, subject, html);
@@ -370,14 +367,14 @@ export async function sendWelcomeEmail(
   email: string,
   firstName: string | null,
   loginUrl: string,
-  tempPassword: string | null
+  tempPassword: string | null,
 ): Promise<boolean> {
   const vars = { firstName: firstName || "there", loginUrl, tempPassword };
   const { subject, html, isActive } = await getTemplateHtml(
     "welcome-new-user",
     vars,
     "Welcome to Core Platform!",
-    `<p>Hi ${vars.firstName}, an account has been created for you.</p>`
+    `<p>Hi ${vars.firstName}, an account has been created for you.</p>`,
   );
   if (!isActive) return false;
   return sendEmail(email, subject, html);
@@ -387,19 +384,22 @@ export async function sendNewTherapistRegistrationEmail(
   adminEmails: string[],
   therapistName: string,
   therapistEmail: string,
-  dashboardUrl: string
+  dashboardUrl: string,
 ): Promise<void> {
   const vars = { therapistName, therapistEmail, dashboardUrl };
   const { subject, html, isActive } = await getTemplateHtml(
     "new-therapist-registration",
     vars,
     `New Provider Registration: ${therapistName}`,
-    `<p>A new provider (${therapistName}, ${therapistEmail}) has registered.</p>`
+    `<p>A new provider (${therapistName}, ${therapistEmail}) has registered.</p>`,
   );
   if (!isActive) return;
   for (const email of adminEmails) {
     sendEmail(email, subject, html).catch((err) => {
-      logger.email.warn("Failed to notify admin of therapist registration", { adminEmail: email, error: err instanceof Error ? err.message : String(err) });
+      logger.email.warn("Failed to notify admin of therapist registration", {
+        adminEmail: email,
+        error: err instanceof Error ? err.message : String(err),
+      });
     });
   }
 }
@@ -408,19 +408,22 @@ export async function sendNewClientRegistrationEmail(
   adminEmails: string[],
   clientName: string,
   clientEmail: string,
-  dashboardUrl: string
+  dashboardUrl: string,
 ): Promise<void> {
   const vars = { clientName, clientEmail, dashboardUrl };
   const { subject, html, isActive } = await getTemplateHtml(
     "new-client-registration",
     vars,
     `New Member Registration: ${clientName}`,
-    `<p>A new member (${clientName}, ${clientEmail}) has registered.</p>`
+    `<p>A new member (${clientName}, ${clientEmail}) has registered.</p>`,
   );
   if (!isActive) return;
   for (const email of adminEmails) {
     sendEmail(email, subject, html).catch((err) => {
-      logger.email.warn("Failed to notify admin of client registration", { adminEmail: email, error: err instanceof Error ? err.message : String(err) });
+      logger.email.warn("Failed to notify admin of client registration", {
+        adminEmail: email,
+        error: err instanceof Error ? err.message : String(err),
+      });
     });
   }
 }
@@ -430,19 +433,22 @@ export async function sendContactFormEmail(
   senderName: string,
   senderEmail: string,
   messageBody: string,
-  dashboardUrl: string
+  dashboardUrl: string,
 ): Promise<void> {
   const vars = { senderName, senderEmail, messageBody, dashboardUrl };
   const { subject, html, isActive } = await getTemplateHtml(
     "contact-form-submission",
     vars,
     `New Contact Form: ${senderName}`,
-    `<p>New message from ${senderName} (${senderEmail}): ${messageBody}</p>`
+    `<p>New message from ${senderName} (${senderEmail}): ${messageBody}</p>`,
   );
   if (!isActive) return;
   for (const email of adminEmails) {
     sendEmail(email, subject, html).catch((err) => {
-      logger.email.warn("Failed to notify admin of contact form", { adminEmail: email, error: err instanceof Error ? err.message : String(err) });
+      logger.email.warn("Failed to notify admin of contact form", {
+        adminEmail: email,
+        error: err instanceof Error ? err.message : String(err),
+      });
     });
   }
 }
@@ -451,14 +457,14 @@ export async function sendManagedFormSubmissionEmail(
   recipientEmails: string[],
   formName: string,
   submissionSummary: string,
-  dashboardUrl: string
+  dashboardUrl: string,
 ): Promise<void> {
   const vars = { formName, submissionSummary, dashboardUrl };
   const { subject, html, isActive } = await getTemplateHtml(
     "managed-form-submission",
     vars,
     `New Form Submission: ${formName}`,
-    `<p>A new submission was received for ${formName}.</p><p>${submissionSummary}</p>`
+    `<p>A new submission was received for ${formName}.</p><p>${submissionSummary}</p>`,
   );
   if (!isActive) return;
 
@@ -499,7 +505,7 @@ export async function sendNewMessageEmail(
   to: string,
   recipientName: string | null,
   senderName: string,
-  loginUrl: string
+  loginUrl: string,
 ): Promise<boolean> {
   const firstName = recipientName || "there";
   const html = await renderEmailShell(
@@ -512,21 +518,36 @@ export async function sendNewMessageEmail(
         Go to Message Center
       </a>
     </p>
-    <p style="color:#6b7280;font-size:13px;">If you did not expect this message, you can safely ignore this email.</p>`
+    <p style="color:#6b7280;font-size:13px;">If you did not expect this message, you can safely ignore this email.</p>`,
   );
   return sendEmail(to, `New message from ${senderName} — Core Platform`, html);
 }
 
 function formatIcsDate(d: Date): string {
-  return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  return d
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
 }
 
-function buildCalendarUrls(event: { title: string; description?: string | null; date: Date | string; endDate?: Date | string | null; locationName?: string | null; location?: string | null; isVirtual?: boolean | null; virtualJoinUrl?: string | null; zoomLink?: string | null }) {
+function buildCalendarUrls(event: {
+  title: string;
+  description?: string | null;
+  date: Date | string;
+  endDate?: Date | string | null;
+  locationName?: string | null;
+  location?: string | null;
+  isVirtual?: boolean | null;
+  virtualJoinUrl?: string | null;
+  zoomLink?: string | null;
+}) {
   const start = new Date(event.date);
   const end = event.endDate ? new Date(event.endDate) : new Date(start.getTime() + 60 * 60 * 1000);
   const title = encodeURIComponent(event.title);
   const desc = encodeURIComponent(event.description || "");
-  const loc = encodeURIComponent(event.locationName || event.location || (event.isVirtual ? "Virtual" : ""));
+  const loc = encodeURIComponent(
+    event.locationName || event.location || (event.isVirtual ? "Virtual" : ""),
+  );
 
   const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatIcsDate(start)}/${formatIcsDate(end)}&details=${desc}&location=${loc}`;
 
@@ -555,7 +576,17 @@ export async function sendRegistrationConfirmationEmail(
   eventTitle: string,
   eventDate: string,
   eventLocation: string | null,
-  event?: { title: string; description?: string | null; date: Date | string; endDate?: Date | string | null; locationName?: string | null; location?: string | null; isVirtual?: boolean | null; virtualJoinUrl?: string | null; zoomLink?: string | null } | null
+  event?: {
+    title: string;
+    description?: string | null;
+    date: Date | string;
+    endDate?: Date | string | null;
+    locationName?: string | null;
+    location?: string | null;
+    isVirtual?: boolean | null;
+    virtualJoinUrl?: string | null;
+    zoomLink?: string | null;
+  } | null,
 ): Promise<boolean> {
   const calendarLinks = event ? buildCalendarUrls(event) : null;
   const vars: Record<string, string> = {
@@ -571,7 +602,7 @@ export async function sendRegistrationConfirmationEmail(
     "event-registration-confirmation",
     vars,
     `Registration Confirmed: ${eventTitle}`,
-    `<p>Hi ${vars.firstName}, you're registered for ${eventTitle} on ${eventDate}.</p>`
+    `<p>Hi ${vars.firstName}, you're registered for ${eventTitle} on ${eventDate}.</p>`,
   );
   if (!isActive) return false;
   return sendEmail(email, subject, html);
@@ -584,7 +615,7 @@ export async function sendPaymentConfirmationEmail(
   eventDate: string,
   eventLocation: string | null,
   amountPaid: number,
-  currency: string
+  currency: string,
 ): Promise<boolean> {
   const formattedAmount = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -608,7 +639,7 @@ export async function sendPaymentConfirmationEmail(
      <ul>
        <li>Date: ${eventDate}</li>
        <li>Location: ${vars.eventLocation}</li>
-     </ul>`
+     </ul>`,
   );
   if (!isActive) return false;
   return sendEmail(to, subject, html);
@@ -619,7 +650,17 @@ export async function sendWaitlistEmail(
   firstName: string | null,
   eventTitle: string,
   eventDate: string,
-  event?: { title: string; description?: string | null; date: Date | string; endDate?: Date | string | null; locationName?: string | null; location?: string | null; isVirtual?: boolean | null; virtualJoinUrl?: string | null; zoomLink?: string | null } | null
+  event?: {
+    title: string;
+    description?: string | null;
+    date: Date | string;
+    endDate?: Date | string | null;
+    locationName?: string | null;
+    location?: string | null;
+    isVirtual?: boolean | null;
+    virtualJoinUrl?: string | null;
+    zoomLink?: string | null;
+  } | null,
 ): Promise<boolean> {
   const calendarLinks = event ? buildCalendarUrls(event) : null;
   const vars: Record<string, string> = {
@@ -634,7 +675,7 @@ export async function sendWaitlistEmail(
     "event-registration-waitlisted",
     vars,
     `Waitlisted: ${eventTitle}`,
-    `<p>Hi ${vars.firstName}, you've been added to the waitlist for ${eventTitle}.</p>`
+    `<p>Hi ${vars.firstName}, you've been added to the waitlist for ${eventTitle}.</p>`,
   );
   if (!isActive) return false;
   return sendEmail(email, subject, html);
@@ -643,14 +684,14 @@ export async function sendWaitlistEmail(
 export async function sendRegistrationCanceledEmail(
   email: string,
   firstName: string | null,
-  eventTitle: string
+  eventTitle: string,
 ): Promise<boolean> {
   const vars = { firstName: firstName || "there", eventTitle };
   const { subject, html, isActive } = await getTemplateHtml(
     "event-registration-canceled",
     vars,
     `Registration Canceled: ${eventTitle}`,
-    `<p>Hi ${vars.firstName}, your registration for ${eventTitle} has been canceled.</p>`
+    `<p>Hi ${vars.firstName}, your registration for ${eventTitle} has been canceled.</p>`,
   );
   if (!isActive) return false;
   return sendEmail(email, subject, html);
@@ -662,7 +703,18 @@ export async function sendEventReminderEmail(
   eventTitle: string,
   eventDate: string,
   eventLocation: string | null,
-  event?: { title: string; description?: string | null; date: Date | string; endDate?: Date | string | null; locationName?: string | null; location?: string | null; locationAddress?: string | null; isVirtual?: boolean | null; virtualJoinUrl?: string | null; zoomLink?: string | null } | null
+  event?: {
+    title: string;
+    description?: string | null;
+    date: Date | string;
+    endDate?: Date | string | null;
+    locationName?: string | null;
+    location?: string | null;
+    locationAddress?: string | null;
+    isVirtual?: boolean | null;
+    virtualJoinUrl?: string | null;
+    zoomLink?: string | null;
+  } | null,
 ): Promise<boolean> {
   const calendarLinks = event ? buildCalendarUrls(event) : null;
   const joinUrl = event?.virtualJoinUrl || event?.zoomLink || "";
@@ -682,7 +734,7 @@ export async function sendEventReminderEmail(
     "event-reminder",
     vars,
     `Reminder: ${eventTitle} is coming up`,
-    `<p>Hi ${vars.firstName}, your event ${eventTitle} is coming up on ${eventDate} at ${vars.eventLocation}.</p>`
+    `<p>Hi ${vars.firstName}, your event ${eventTitle} is coming up on ${eventDate} at ${vars.eventLocation}.</p>`,
   );
   if (!isActive) return false;
   return sendEmail(to, subject, html);
@@ -692,14 +744,14 @@ export async function sendRecordingAvailableEmail(
   to: string,
   firstName: string | null,
   eventTitle: string,
-  recordingUrl: string
+  recordingUrl: string,
 ): Promise<boolean> {
   const vars = { firstName: firstName || "there", eventTitle, recordingUrl };
   const { subject, html, isActive } = await getTemplateHtml(
     "event-recording-available",
     vars,
     `Recording Available: ${eventTitle}`,
-    `<p>Hi ${vars.firstName}, the recording for ${eventTitle} is now available at ${recordingUrl}.</p>`
+    `<p>Hi ${vars.firstName}, the recording for ${eventTitle} is now available at ${recordingUrl}.</p>`,
   );
   if (!isActive) return false;
   return sendEmail(to, subject, html);
@@ -708,14 +760,14 @@ export async function sendRecordingAvailableEmail(
 export async function sendEventCanceledEmail(
   to: string,
   firstName: string | null,
-  eventTitle: string
+  eventTitle: string,
 ): Promise<boolean> {
   const vars = { firstName: firstName || "there", eventTitle };
   const { subject, html, isActive } = await getTemplateHtml(
     "event-canceled",
     vars,
     `Event Canceled: ${eventTitle}`,
-    `<p>Hi ${vars.firstName}, the event ${eventTitle} has been canceled.</p>`
+    `<p>Hi ${vars.firstName}, the event ${eventTitle} has been canceled.</p>`,
   );
   if (!isActive) return false;
   return sendEmail(to, subject, html);
@@ -725,7 +777,7 @@ export async function sendReferenceRequestEmail(
   to: string,
   refereeName: string,
   applicantName: string,
-  referenceUrl: string
+  referenceUrl: string,
 ): Promise<boolean> {
   const vars = { refereeName, applicantName, referenceUrl };
   const fallbackBody = `
@@ -745,7 +797,7 @@ export async function sendReferenceRequestEmail(
     "reference-request",
     vars,
     `Reference Request for ${applicantName} — Core Platform`,
-    fallbackBody
+    fallbackBody,
   );
   if (!isActive) return false;
   return sendEmail(to, subject, html);

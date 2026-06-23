@@ -209,4 +209,3 @@ export function CapacityBadge({ eventId, capacity }: { eventId: string; capacity
     </Badge>
   );
 }
-

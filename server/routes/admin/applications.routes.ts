@@ -30,7 +30,7 @@ router.get(
     const status = req.query.status as string | undefined;
     const applications = await storage.applications.getAll(status);
     res.json(applications);
-  })
+  }),
 );
 
 router.get(
@@ -38,7 +38,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const counts = await storage.applications.countByStatus();
     res.json(counts);
-  })
+  }),
 );
 
 router.get(
@@ -62,7 +62,7 @@ router.get(
       interview,
       decision,
     });
-  })
+  }),
 );
 
 router.patch(
@@ -80,7 +80,7 @@ router.patch(
     }
 
     res.json(result.application);
-  })
+  }),
 );
 
 router.post(
@@ -95,14 +95,12 @@ router.post(
     const applicantData = {
       applicationId: application.id,
       userId: application.userId,
-      ...(typeof application.formData === "object" && application.formData !== null ? application.formData as Record<string, unknown> : {}),
+      ...(typeof application.formData === "object" && application.formData !== null
+        ? (application.formData as Record<string, unknown>)
+        : {}),
     };
 
-    const check = await initiateBackgroundCheck(
-      application.id,
-      applicantData,
-      req.body.vendorName,
-    );
+    const check = await initiateBackgroundCheck(application.id, applicantData, req.body.vendorName);
 
     if (!check) {
       res.status(500).json({ message: "Failed to initiate background check" });
@@ -119,7 +117,7 @@ router.post(
     });
 
     res.status(201).json(check);
-  })
+  }),
 );
 
 router.post(
@@ -131,7 +129,7 @@ router.post(
       return;
     }
     res.json(check);
-  })
+  }),
 );
 
 router.post(
@@ -151,7 +149,7 @@ router.post(
     });
 
     res.json({ success: true });
-  })
+  }),
 );
 
 router.patch(
@@ -160,7 +158,10 @@ router.patch(
     const { status, notes, result, adminStatusDetails, vendorExternalId, reportUrl } = req.body;
 
     if (status && !BACKGROUND_CHECK_STATUSES.includes(status)) {
-      res.status(400).json({ message: "Invalid background check status", validStatuses: BACKGROUND_CHECK_STATUSES });
+      res.status(400).json({
+        message: "Invalid background check status",
+        validStatuses: BACKGROUND_CHECK_STATUSES,
+      });
       return;
     }
 
@@ -174,7 +175,11 @@ router.patch(
       return;
     }
 
-    if (adminStatusDetails && typeof adminStatusDetails === "string" && adminStatusDetails.length > 500) {
+    if (
+      adminStatusDetails &&
+      typeof adminStatusDetails === "string" &&
+      adminStatusDetails.length > 500
+    ) {
       res.status(400).json({ message: "Admin status details must be 500 characters or fewer" });
       return;
     }
@@ -201,7 +206,7 @@ router.patch(
     });
 
     res.json(updated);
-  })
+  }),
 );
 
 router.post(
@@ -221,17 +226,13 @@ router.post(
     }
 
     res.json({ success: true });
-  })
+  }),
 );
 
 router.post(
   "/:id/interview",
   asyncHandler(async (req, res) => {
-    const result = await scheduleInterview(
-      paramStr(req.params.id),
-      req.body,
-      req.user!.id,
-    );
+    const result = await scheduleInterview(paramStr(req.params.id), req.body, req.user!.id);
 
     if (!result.success) {
       res.status(result.status).json({
@@ -242,17 +243,13 @@ router.post(
     }
 
     res.status(201).json(result.interview);
-  })
+  }),
 );
 
 router.patch(
   "/:id/interview",
   asyncHandler(async (req, res) => {
-    const result = await updateInterview(
-      paramStr(req.params.id),
-      req.body,
-      req.user!.id,
-    );
+    const result = await updateInterview(paramStr(req.params.id), req.body, req.user!.id);
 
     if (!result.success) {
       res.status(result.status).json({
@@ -263,7 +260,7 @@ router.patch(
     }
 
     res.json(result.interview);
-  })
+  }),
 );
 
 router.post(
@@ -277,7 +274,7 @@ router.post(
     }
 
     res.status(201).json(result.entry);
-  })
+  }),
 );
 
 export default router;

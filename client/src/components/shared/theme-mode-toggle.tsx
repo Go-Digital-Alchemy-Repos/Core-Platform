@@ -28,7 +28,10 @@ export function ThemeModeToggle({ collapsed = false }: { collapsed?: boolean }) 
           type="button"
           variant="ghost"
           size="sm"
-          className={cn("w-full text-muted-foreground", collapsed ? "justify-center" : "justify-start")}
+          className={cn(
+            "w-full text-muted-foreground",
+            collapsed ? "justify-center" : "justify-start",
+          )}
           aria-label="Theme mode"
           data-testid="button-theme-mode"
         >

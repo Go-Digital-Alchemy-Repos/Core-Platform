@@ -1,20 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import {
-  Bookmark,
-  ListOrdered,
-  Monitor,
-  Plus,
-  Settings2,
-  Sparkles,
-} from "lucide-react";
+import { Bookmark, ListOrdered, Monitor, Plus, Settings2, Sparkles } from "lucide-react";
 import {
   ALL_BLOCKS,
   createBlock,
@@ -52,7 +40,9 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
   const [addContentSearch, setAddContentSearch] = useState("");
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
   const [draggedInsertPayload, setDraggedInsertPayload] = useState<InsertPayload | null>(null);
-  const [dropTarget, setDropTarget] = useState<{ id: string; position: "before" | "after" } | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ id: string; position: "before" | "after" } | null>(
+    null,
+  );
   const [canvasDropIndex, setCanvasDropIndex] = useState<number | null>(null);
   const [leftRailMode, setLeftRailMode] = useState<LeftRailMode>("structure");
   const [structurePanelOpen, setStructurePanelOpen] = useState(true);
@@ -100,10 +90,15 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
       const nodeRect = node.getBoundingClientRect();
       const highZoneThreshold = viewportRect.top + viewport.clientHeight * 0.14;
       const lowZoneThreshold = viewportRect.top + viewport.clientHeight * 0.68;
-      const bottomSafetyThreshold = viewportRect.bottom - Math.min(180, viewport.clientHeight * 0.18);
+      const bottomSafetyThreshold =
+        viewportRect.bottom - Math.min(180, viewport.clientHeight * 0.18);
       const desiredTop = viewportRect.top + Math.min(240, viewport.clientHeight * 0.34);
 
-      if (nodeRect.top < highZoneThreshold || nodeRect.top > lowZoneThreshold || nodeRect.bottom > bottomSafetyThreshold) {
+      if (
+        nodeRect.top < highZoneThreshold ||
+        nodeRect.top > lowZoneThreshold ||
+        nodeRect.bottom > bottomSafetyThreshold
+      ) {
         const nextScrollTop = viewport.scrollTop + (nodeRect.top - desiredTop);
         viewport.scrollTo({
           top: Math.max(0, nextScrollTop),
@@ -124,7 +119,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     (nextBlocks: BlockInstance[]) => {
       onChange({ ...content, blocks: nextBlocks });
     },
-    [content, onChange]
+    [content, onChange],
   );
 
   const visibleBlocks = useMemo(() => {
@@ -184,7 +179,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
 
     const selectedNode = blockRefs.current.get(selectedId);
     const canvasViewport = desktopCanvasPanelRef.current?.querySelector(
-      "[data-radix-scroll-area-viewport]"
+      "[data-radix-scroll-area-viewport]",
     ) as HTMLElement | null;
     const inspectorShell = desktopInspectorShellRef.current;
 
@@ -209,7 +204,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     const nextOffset = Math.max(0, Math.min(maxOffset, blockAnchorRelative - desiredTopAnchor));
 
     setDesktopInspectorOffset((current) =>
-      Math.abs(current - nextOffset) > 2 ? nextOffset : current
+      Math.abs(current - nextOffset) > 2 ? nextOffset : current,
     );
   }, [advancedInspectorOpen, selectedId]);
 
@@ -221,7 +216,7 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     if (!advancedInspectorOpen || !selectedId) return;
 
     const canvasViewport = desktopCanvasPanelRef.current?.querySelector(
-      "[data-radix-scroll-area-viewport]"
+      "[data-radix-scroll-area-viewport]",
     ) as HTMLElement | null;
 
     if (!canvasViewport) return;
@@ -253,124 +248,171 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     return blocks.length;
   }, [blocks, insertAtIndex, selectedId]);
 
-  const addBlockAtIndex = useCallback((type: string, index: number) => {
-    const block = createBlock(type);
-    const nextBlocks = [...blocks];
-    nextBlocks.splice(index, 0, block);
-    setBlocks(nextBlocks);
-    selectBlock(block.id);
-    setInsertAtIndex(null);
-    setLeftRailMode("structure");
-    setStructurePanelOpen(true);
-  }, [blocks, selectBlock, setBlocks]);
+  const addBlockAtIndex = useCallback(
+    (type: string, index: number) => {
+      const block = createBlock(type);
+      const nextBlocks = [...blocks];
+      nextBlocks.splice(index, 0, block);
+      setBlocks(nextBlocks);
+      selectBlock(block.id);
+      setInsertAtIndex(null);
+      setLeftRailMode("structure");
+      setStructurePanelOpen(true);
+    },
+    [blocks, selectBlock, setBlocks],
+  );
 
-  const addBlock = useCallback((type: string) => {
-    addBlockAtIndex(type, resolveInsertIndex());
-  }, [addBlockAtIndex, resolveInsertIndex]);
+  const addBlock = useCallback(
+    (type: string) => {
+      addBlockAtIndex(type, resolveInsertIndex());
+    },
+    [addBlockAtIndex, resolveInsertIndex],
+  );
 
-  const insertBlocksAtIndex = useCallback((insertedBlocks: BlockInstance[], index: number) => {
-    const nextBlocks = [...blocks];
-    nextBlocks.splice(index, 0, ...insertedBlocks);
-    setBlocks(nextBlocks);
-    selectBlock(insertedBlocks[0]?.id ?? null);
-    setInsertAtIndex(null);
-    setLeftRailMode("structure");
-    setStructurePanelOpen(true);
-  }, [blocks, selectBlock, setBlocks]);
+  const insertBlocksAtIndex = useCallback(
+    (insertedBlocks: BlockInstance[], index: number) => {
+      const nextBlocks = [...blocks];
+      nextBlocks.splice(index, 0, ...insertedBlocks);
+      setBlocks(nextBlocks);
+      selectBlock(insertedBlocks[0]?.id ?? null);
+      setInsertAtIndex(null);
+      setLeftRailMode("structure");
+      setStructurePanelOpen(true);
+    },
+    [blocks, selectBlock, setBlocks],
+  );
 
-  const insertBlocks = useCallback((insertedBlocks: BlockInstance[]) => {
-    insertBlocksAtIndex(insertedBlocks, resolveInsertIndex());
-  }, [insertBlocksAtIndex, resolveInsertIndex]);
+  const insertBlocks = useCallback(
+    (insertedBlocks: BlockInstance[]) => {
+      insertBlocksAtIndex(insertedBlocks, resolveInsertIndex());
+    },
+    [insertBlocksAtIndex, resolveInsertIndex],
+  );
 
-  const openAddBelow = useCallback((id: string) => {
-    const sourceIndex = blocks.findIndex((block) => block.id === id);
-    const nextIndex = sourceIndex < 0 ? blocks.length : sourceIndex + 1;
-    setInsertAtIndex(nextIndex);
-    setLeftRailMode("inserter");
-    setStructurePanelOpen(true);
-  }, [blocks]);
+  const openAddBelow = useCallback(
+    (id: string) => {
+      const sourceIndex = blocks.findIndex((block) => block.id === id);
+      const nextIndex = sourceIndex < 0 ? blocks.length : sourceIndex + 1;
+      setInsertAtIndex(nextIndex);
+      setLeftRailMode("inserter");
+      setStructurePanelOpen(true);
+    },
+    [blocks],
+  );
 
-  const updateBlockProps = useCallback((id: string, props: Record<string, unknown>) => {
-    setBlocks(blocks.map((block) => (block.id === id ? { ...block, props } : block)));
-  }, [blocks, setBlocks]);
+  const updateBlockProps = useCallback(
+    (id: string, props: Record<string, unknown>) => {
+      setBlocks(blocks.map((block) => (block.id === id ? { ...block, props } : block)));
+    },
+    [blocks, setBlocks],
+  );
 
-  const toggleBlockActive = useCallback((id: string) => {
-    setBlocks(
-      blocks.map((block) =>
-        block.id === id
-          ? {
-              ...block,
-              props: {
-                ...block.props,
-                isActive: block.props.isActive === false,
-              },
-            }
-          : block
-      )
-    );
-  }, [blocks, setBlocks]);
+  const toggleBlockActive = useCallback(
+    (id: string) => {
+      setBlocks(
+        blocks.map((block) =>
+          block.id === id
+            ? {
+                ...block,
+                props: {
+                  ...block.props,
+                  isActive: block.props.isActive === false,
+                },
+              }
+            : block,
+        ),
+      );
+    },
+    [blocks, setBlocks],
+  );
 
-  const removeBlock = useCallback((id: string) => {
-    if (selectedId === id) {
+  const removeBlock = useCallback(
+    (id: string) => {
+      if (selectedId === id) {
+        const currentIndex = blocks.findIndex((block) => block.id === id);
+        const fallbackSelection =
+          blocks[currentIndex + 1]?.id ?? blocks[currentIndex - 1]?.id ?? null;
+        selectBlock(fallbackSelection);
+      }
+      setBlocks(blocks.filter((block) => block.id !== id));
+    },
+    [blocks, selectBlock, selectedId, setBlocks],
+  );
+
+  const duplicateBlock = useCallback(
+    (id: string) => {
+      const sourceIndex = blocks.findIndex((block) => block.id === id);
+      if (sourceIndex < 0) return;
+      const copy = duplicateBlockInstance(blocks[sourceIndex]);
+      const nextBlocks = [...blocks];
+      nextBlocks.splice(sourceIndex + 1, 0, copy);
+      setBlocks(nextBlocks);
+      selectBlock(copy.id);
+    },
+    [blocks, selectBlock, setBlocks],
+  );
+
+  const moveBlock = useCallback(
+    (id: string, direction: "up" | "down") => {
       const currentIndex = blocks.findIndex((block) => block.id === id);
-      const fallbackSelection = blocks[currentIndex + 1]?.id ?? blocks[currentIndex - 1]?.id ?? null;
-      selectBlock(fallbackSelection);
-    }
-    setBlocks(blocks.filter((block) => block.id !== id));
-  }, [blocks, selectBlock, selectedId, setBlocks]);
+      if (currentIndex < 0) return;
 
-  const duplicateBlock = useCallback((id: string) => {
-    const sourceIndex = blocks.findIndex((block) => block.id === id);
-    if (sourceIndex < 0) return;
-    const copy = duplicateBlockInstance(blocks[sourceIndex]);
-    const nextBlocks = [...blocks];
-    nextBlocks.splice(sourceIndex + 1, 0, copy);
-    setBlocks(nextBlocks);
-    selectBlock(copy.id);
-  }, [blocks, selectBlock, setBlocks]);
+      const nextBlocks = [...blocks];
+      if (direction === "up" && currentIndex > 0) {
+        [nextBlocks[currentIndex - 1], nextBlocks[currentIndex]] = [
+          nextBlocks[currentIndex],
+          nextBlocks[currentIndex - 1],
+        ];
+      } else if (direction === "down" && currentIndex < nextBlocks.length - 1) {
+        [nextBlocks[currentIndex], nextBlocks[currentIndex + 1]] = [
+          nextBlocks[currentIndex + 1],
+          nextBlocks[currentIndex],
+        ];
+      } else {
+        return;
+      }
 
-  const moveBlock = useCallback((id: string, direction: "up" | "down") => {
-    const currentIndex = blocks.findIndex((block) => block.id === id);
-    if (currentIndex < 0) return;
+      setBlocks(nextBlocks);
+    },
+    [blocks, setBlocks],
+  );
 
-    const nextBlocks = [...blocks];
-    if (direction === "up" && currentIndex > 0) {
-      [nextBlocks[currentIndex - 1], nextBlocks[currentIndex]] = [nextBlocks[currentIndex], nextBlocks[currentIndex - 1]];
-    } else if (direction === "down" && currentIndex < nextBlocks.length - 1) {
-      [nextBlocks[currentIndex], nextBlocks[currentIndex + 1]] = [nextBlocks[currentIndex + 1], nextBlocks[currentIndex]];
-    } else {
-      return;
-    }
+  const reorderBlocks = useCallback(
+    (sourceId: string, targetId: string, position: "before" | "after") => {
+      if (sourceId === targetId) return;
 
-    setBlocks(nextBlocks);
-  }, [blocks, setBlocks]);
+      const sourceIndex = blocks.findIndex((block) => block.id === sourceId);
+      const targetIndex = blocks.findIndex((block) => block.id === targetId);
+      if (sourceIndex < 0 || targetIndex < 0) return;
 
-  const reorderBlocks = useCallback((sourceId: string, targetId: string, position: "before" | "after") => {
-    if (sourceId === targetId) return;
+      const nextBlocks = [...blocks];
+      const [movedBlock] = nextBlocks.splice(sourceIndex, 1);
+      const adjustedTargetIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      const insertIndex = position === "before" ? adjustedTargetIndex : adjustedTargetIndex + 1;
 
-    const sourceIndex = blocks.findIndex((block) => block.id === sourceId);
-    const targetIndex = blocks.findIndex((block) => block.id === targetId);
-    if (sourceIndex < 0 || targetIndex < 0) return;
+      nextBlocks.splice(insertIndex, 0, movedBlock);
+      setBlocks(nextBlocks);
+    },
+    [blocks, setBlocks],
+  );
 
-    const nextBlocks = [...blocks];
-    const [movedBlock] = nextBlocks.splice(sourceIndex, 1);
-    const adjustedTargetIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
-    const insertIndex = position === "before" ? adjustedTargetIndex : adjustedTargetIndex + 1;
+  const moveBlockToIndex = useCallback(
+    (sourceId: string, targetIndex: number) => {
+      const sourceIndex = blocks.findIndex((block) => block.id === sourceId);
+      if (sourceIndex < 0) return;
 
-    nextBlocks.splice(insertIndex, 0, movedBlock);
-    setBlocks(nextBlocks);
-  }, [blocks, setBlocks]);
-
-  const moveBlockToIndex = useCallback((sourceId: string, targetIndex: number) => {
-    const sourceIndex = blocks.findIndex((block) => block.id === sourceId);
-    if (sourceIndex < 0) return;
-
-    const nextBlocks = [...blocks];
-    const [movedBlock] = nextBlocks.splice(sourceIndex, 1);
-    const adjustedTargetIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
-    nextBlocks.splice(Math.max(0, Math.min(nextBlocks.length, adjustedTargetIndex)), 0, movedBlock);
-    setBlocks(nextBlocks);
-  }, [blocks, setBlocks]);
+      const nextBlocks = [...blocks];
+      const [movedBlock] = nextBlocks.splice(sourceIndex, 1);
+      const adjustedTargetIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      nextBlocks.splice(
+        Math.max(0, Math.min(nextBlocks.length, adjustedTargetIndex)),
+        0,
+        movedBlock,
+      );
+      setBlocks(nextBlocks);
+    },
+    [blocks, setBlocks],
+  );
 
   const clearDragState = useCallback(() => {
     setDraggedBlockId(null);
@@ -405,98 +447,124 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
     }
   }, []);
 
-  const handleDragOver = useCallback((event: DragEvent, targetId: string) => {
-    const hasExternalInsertPayload = Array.from(event.dataTransfer.types).includes("application/x-page-builder-insert");
-    if (!draggedBlockId && !draggedInsertPayload && !hasExternalInsertPayload) return;
-    if (draggedBlockId && draggedBlockId === targetId) return;
+  const handleDragOver = useCallback(
+    (event: DragEvent, targetId: string) => {
+      const hasExternalInsertPayload = Array.from(event.dataTransfer.types).includes(
+        "application/x-page-builder-insert",
+      );
+      if (!draggedBlockId && !draggedInsertPayload && !hasExternalInsertPayload) return;
+      if (draggedBlockId && draggedBlockId === targetId) return;
 
-    event.preventDefault();
-    event.dataTransfer.dropEffect = draggedInsertPayload || hasExternalInsertPayload ? "copy" : "move";
+      event.preventDefault();
+      event.dataTransfer.dropEffect =
+        draggedInsertPayload || hasExternalInsertPayload ? "copy" : "move";
 
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const offsetY = event.clientY - bounds.top;
-    const position = offsetY < bounds.height / 2 ? "before" : "after";
+      const bounds = event.currentTarget.getBoundingClientRect();
+      const offsetY = event.clientY - bounds.top;
+      const position = offsetY < bounds.height / 2 ? "before" : "after";
 
-    setDropTarget((current) => (
-      current?.id === targetId && current.position === position
-        ? current
-        : { id: targetId, position }
-    ));
-  }, [draggedBlockId, draggedInsertPayload]);
+      setDropTarget((current) =>
+        current?.id === targetId && current.position === position
+          ? current
+          : { id: targetId, position },
+      );
+    },
+    [draggedBlockId, draggedInsertPayload],
+  );
 
-  const handleDrop = useCallback((event: DragEvent, targetId: string) => {
-    event.preventDefault();
+  const handleDrop = useCallback(
+    (event: DragEvent, targetId: string) => {
+      event.preventDefault();
 
-    const sourceId = draggedBlockId ?? event.dataTransfer.getData("text/plain");
-    const rawInsertPayload = event.dataTransfer.getData("application/x-page-builder-insert");
-    let fallbackInsertPayload: InsertPayload | null = null;
-    if (rawInsertPayload) {
-      try {
-        fallbackInsertPayload = JSON.parse(rawInsertPayload) as InsertPayload;
-      } catch {
-        fallbackInsertPayload = null;
+      const sourceId = draggedBlockId ?? event.dataTransfer.getData("text/plain");
+      const rawInsertPayload = event.dataTransfer.getData("application/x-page-builder-insert");
+      let fallbackInsertPayload: InsertPayload | null = null;
+      if (rawInsertPayload) {
+        try {
+          fallbackInsertPayload = JSON.parse(rawInsertPayload) as InsertPayload;
+        } catch {
+          fallbackInsertPayload = null;
+        }
       }
-    }
-    const insertPayload = draggedInsertPayload ?? fallbackInsertPayload;
-    const position = dropTarget?.id === targetId ? dropTarget.position : "after";
-    const targetIndex = blocks.findIndex((block) => block.id === targetId);
-    const insertIndex = position === "before" ? targetIndex : targetIndex + 1;
+      const insertPayload = draggedInsertPayload ?? fallbackInsertPayload;
+      const position = dropTarget?.id === targetId ? dropTarget.position : "after";
+      const targetIndex = blocks.findIndex((block) => block.id === targetId);
+      const insertIndex = position === "before" ? targetIndex : targetIndex + 1;
 
-    if (insertPayload && targetIndex >= 0) {
-      if (insertPayload.kind === "block") {
-        addBlockAtIndex(insertPayload.type, insertIndex);
-      } else {
-        insertBlocksAtIndex(insertPayload.blocks, insertIndex);
+      if (insertPayload && targetIndex >= 0) {
+        if (insertPayload.kind === "block") {
+          addBlockAtIndex(insertPayload.type, insertIndex);
+        } else {
+          insertBlocksAtIndex(insertPayload.blocks, insertIndex);
+        }
+      } else if (sourceId && sourceId !== targetId) {
+        reorderBlocks(sourceId, targetId, position);
       }
-    } else if (sourceId && sourceId !== targetId) {
-      reorderBlocks(sourceId, targetId, position);
-    }
 
-    clearDragState();
-  }, [addBlockAtIndex, blocks, clearDragState, draggedBlockId, draggedInsertPayload, dropTarget, insertBlocksAtIndex, reorderBlocks]);
+      clearDragState();
+    },
+    [
+      addBlockAtIndex,
+      blocks,
+      clearDragState,
+      draggedBlockId,
+      draggedInsertPayload,
+      dropTarget,
+      insertBlocksAtIndex,
+      reorderBlocks,
+    ],
+  );
 
-  const handleCanvasDropZoneDragOver = useCallback((event: DragEvent, index: number) => {
-    const hasExternalInsertPayload = Array.from(event.dataTransfer.types).includes("application/x-page-builder-insert");
-    const hasPayload =
-      Boolean(draggedBlockId || draggedInsertPayload) ||
-      hasExternalInsertPayload;
-    if (!hasPayload) return;
+  const handleCanvasDropZoneDragOver = useCallback(
+    (event: DragEvent, index: number) => {
+      const hasExternalInsertPayload = Array.from(event.dataTransfer.types).includes(
+        "application/x-page-builder-insert",
+      );
+      const hasPayload =
+        Boolean(draggedBlockId || draggedInsertPayload) || hasExternalInsertPayload;
+      if (!hasPayload) return;
 
-    event.preventDefault();
-    event.dataTransfer.dropEffect = draggedInsertPayload || hasExternalInsertPayload ? "copy" : "move";
-    setDropTarget(null);
-    setCanvasDropIndex((current) => (current === index ? current : index));
-  }, [draggedBlockId, draggedInsertPayload]);
+      event.preventDefault();
+      event.dataTransfer.dropEffect =
+        draggedInsertPayload || hasExternalInsertPayload ? "copy" : "move";
+      setDropTarget(null);
+      setCanvasDropIndex((current) => (current === index ? current : index));
+    },
+    [draggedBlockId, draggedInsertPayload],
+  );
 
-  const handleCanvasDropZoneDrop = useCallback((event: DragEvent, index: number) => {
-    event.preventDefault();
+  const handleCanvasDropZoneDrop = useCallback(
+    (event: DragEvent, index: number) => {
+      event.preventDefault();
 
-    const insertPayload = draggedInsertPayload ?? parseInsertPayload(event);
-    const sourceId = draggedBlockId ?? event.dataTransfer.getData("text/plain");
+      const insertPayload = draggedInsertPayload ?? parseInsertPayload(event);
+      const sourceId = draggedBlockId ?? event.dataTransfer.getData("text/plain");
 
-    if (insertPayload) {
-      if (insertPayload.kind === "block") {
-        addBlockAtIndex(insertPayload.type, index);
-      } else {
-        insertBlocksAtIndex(insertPayload.blocks, index);
+      if (insertPayload) {
+        if (insertPayload.kind === "block") {
+          addBlockAtIndex(insertPayload.type, index);
+        } else {
+          insertBlocksAtIndex(insertPayload.blocks, index);
+        }
+      } else if (sourceId) {
+        moveBlockToIndex(sourceId, index);
       }
-    } else if (sourceId) {
-      moveBlockToIndex(sourceId, index);
-    }
 
-    clearDragState();
-  }, [
-    addBlockAtIndex,
-    clearDragState,
-    draggedBlockId,
-    draggedInsertPayload,
-    insertBlocksAtIndex,
-    moveBlockToIndex,
-    parseInsertPayload,
-  ]);
+      clearDragState();
+    },
+    [
+      addBlockAtIndex,
+      clearDragState,
+      draggedBlockId,
+      draggedInsertPayload,
+      insertBlocksAtIndex,
+      moveBlockToIndex,
+      parseInsertPayload,
+    ],
+  );
 
   const savingBlock = savingSectionBlockId
-    ? blocks.find((block) => block.id === savingSectionBlockId) ?? null
+    ? (blocks.find((block) => block.id === savingSectionBlockId) ?? null)
     : null;
 
   const structurePanel = (
@@ -589,10 +657,13 @@ export function PageBuilder({ content, onChange }: PageBuilderProps) {
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-violet-500" />
             <p className="text-sm font-semibold">Visual Builder</p>
-            <Badge variant="outline">{blocks.length} block{blocks.length !== 1 ? "s" : ""}</Badge>
+            <Badge variant="outline">
+              {blocks.length} block{blocks.length !== 1 ? "s" : ""}
+            </Badge>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Structure on the left, real page canvas in the center, a compact section toolbar on-canvas, and a docked inspector for full editing.
+            Structure on the left, real page canvas in the center, a compact section toolbar
+            on-canvas, and a docked inspector for full editing.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

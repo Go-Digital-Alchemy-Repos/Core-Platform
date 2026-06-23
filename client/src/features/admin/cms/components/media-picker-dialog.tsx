@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Image, Search, CheckCircle2, FileText } from "lucide-react";
@@ -79,12 +74,16 @@ export function MediaPickerDialog({
         <div className="flex-1 overflow-y-auto p-4">
           {isLoading ? (
             <div className="grid grid-cols-3 gap-3">
-              {[...Array(9)].map((_, i) => <Skeleton key={i} className="aspect-square rounded-lg" />)}
+              {[...Array(9)].map((_, i) => (
+                <Skeleton key={i} className="aspect-square rounded-lg" />
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-muted-foreground gap-2">
               <Image className="h-10 w-10 opacity-30" />
-              <p className="text-sm font-medium">{search ? `No ${libraryLabel} match your search` : "No media uploaded yet"}</p>
+              <p className="text-sm font-medium">
+                {search ? `No ${libraryLabel} match your search` : "No media uploaded yet"}
+              </p>
               <p className="text-xs">Upload media through the CMS builder or Media page</p>
             </div>
           ) : (
@@ -125,7 +124,9 @@ export function MediaPickerDialog({
                       <span className="text-white text-xs font-medium text-center line-clamp-2 leading-tight">
                         {asset.originalName}
                       </span>
-                      <span className="text-white/70 text-[10px]">{formatBytes(asset.fileSize)}</span>
+                      <span className="text-white/70 text-[10px]">
+                        {formatBytes(asset.fileSize)}
+                      </span>
                     </div>
                   )}
                 </button>
@@ -135,7 +136,9 @@ export function MediaPickerDialog({
         </div>
 
         <div className="px-6 py-3 border-t bg-muted/20 text-xs text-muted-foreground">
-          {filtered.length} {typeFilter === "all" ? "item" : typeFilter === "documents" ? "document" : "image"}{filtered.length !== 1 ? "s" : ""}
+          {filtered.length}{" "}
+          {typeFilter === "all" ? "item" : typeFilter === "documents" ? "document" : "image"}
+          {filtered.length !== 1 ? "s" : ""}
           {search ? " matching search" : " in library"}
         </div>
       </DialogContent>

@@ -1,18 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest, STALE_TIMES } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useLockConflictGuard } from "@/hooks/use-lock-conflict-guard";
-import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
-import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
 import { AdminSidebar } from "./admin-sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -29,7 +25,6 @@ import {
   SheetTitle,
   SheetDescription,
   SheetBody,
-  SheetFooter,
 } from "@/components/ui/sheet";
 import {
   CreditCard,
@@ -43,55 +38,19 @@ import {
   XCircle,
   Loader2,
   Send,
-  FileText,
-  Pencil,
   AlertCircle,
   Tag,
   Link2,
   ExternalLink,
-  RefreshCw,
   Search,
-  ImageIcon,
-  Type,
-  Check,
-  Palette,
-  MapPin,
   BarChart3,
-  Bold,
-  Italic,
-  Underline as UnderlineIcon,
-  List,
-  ListOrdered,
-  Heading2,
-  Pilcrow,
-  Eraser,
   Code2,
   Megaphone,
   Store,
   Truck,
   Settings,
 } from "lucide-react";
-import {
-  BRANDING_FONT_OPTIONS,
-  BRANDING_SANS_FONT_OPTIONS,
-  BRANDING_SERIF_FONT_OPTIONS,
-  fontFamilyForBrandingOption,
-  normalizeHexColor,
-  type BrandingFontOption,
-} from "@/lib/branding";
-import { SocialMediaLinks } from "@/components/shared/social-media-links";
 import { cn } from "@/lib/utils";
-import { useEditorLock } from "@/hooks/use-editor-lock";
-import {
-  DEFAULT_SITE_FEATURES,
-  type SiteFeatures,
-} from "@shared/site-features";
-import {
-  getSocialMediaLinks,
-  normalizeSocialIconStyle,
-  SOCIAL_MEDIA_PLATFORMS,
-  type SocialIconStyle,
-} from "@shared/social-media";
 import type { IconType } from "react-icons";
 import {
   SiAdyen,
@@ -1063,9 +1022,25 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     ],
     supportsConnectionTest: false,
     fields: [
-      { key: "klaviyo_private_api_key", label: "Private API Key", isSecret: true, placeholder: "pk_..." },
-      { key: "klaviyo_public_site_id", label: "Public Site ID", isSecret: false, placeholder: "ABC123" },
-      { key: "klaviyo_event_sync_enabled", label: "Event Sync Enabled", isSecret: false, placeholder: "false", type: "boolean" },
+      {
+        key: "klaviyo_private_api_key",
+        label: "Private API Key",
+        isSecret: true,
+        placeholder: "pk_...",
+      },
+      {
+        key: "klaviyo_public_site_id",
+        label: "Public Site ID",
+        isSecret: false,
+        placeholder: "ABC123",
+      },
+      {
+        key: "klaviyo_event_sync_enabled",
+        label: "Event Sync Enabled",
+        isSecret: false,
+        placeholder: "false",
+        type: "boolean",
+      },
     ],
   },
   {
@@ -1092,15 +1067,32 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     ],
     supportsConnectionTest: false,
     fields: [
-      { key: "omnisend_api_key", label: "API Key", isSecret: true, placeholder: "Omnisend API key" },
-      { key: "omnisend_brand_id", label: "Brand ID", isSecret: false, placeholder: "Optional brand ID" },
-      { key: "omnisend_event_sync_enabled", label: "Event Sync Enabled", isSecret: false, placeholder: "false", type: "boolean" },
+      {
+        key: "omnisend_api_key",
+        label: "API Key",
+        isSecret: true,
+        placeholder: "Omnisend API key",
+      },
+      {
+        key: "omnisend_brand_id",
+        label: "Brand ID",
+        isSecret: false,
+        placeholder: "Optional brand ID",
+      },
+      {
+        key: "omnisend_event_sync_enabled",
+        label: "Event Sync Enabled",
+        isSecret: false,
+        placeholder: "false",
+        type: "boolean",
+      },
     ],
   },
   {
     category: "google_ads_tag_manager",
     title: "Google Ads & Tag Manager",
-    description: "Google Ads conversion tracking, GTM container settings, and remarketing readiness",
+    description:
+      "Google Ads conversion tracking, GTM container settings, and remarketing readiness",
     group: "marketing",
     icon: Megaphone,
     brandIcon: SiGoogleads,
@@ -1121,10 +1113,31 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     ],
     supportsConnectionTest: false,
     fields: [
-      { key: "google_ads_conversion_id", label: "Conversion ID", isSecret: false, placeholder: "AW-123456789" },
-      { key: "google_ads_purchase_label", label: "Purchase Conversion Label", isSecret: false, placeholder: "AbCdEfGh..." },
-      { key: "google_tag_manager_container_id", label: "GTM Container ID", isSecret: false, placeholder: "GTM-XXXXXXX" },
-      { key: "google_ads_enhanced_conversions", label: "Enhanced Conversions Enabled", isSecret: false, placeholder: "false", type: "boolean" },
+      {
+        key: "google_ads_conversion_id",
+        label: "Conversion ID",
+        isSecret: false,
+        placeholder: "AW-123456789",
+      },
+      {
+        key: "google_ads_purchase_label",
+        label: "Purchase Conversion Label",
+        isSecret: false,
+        placeholder: "AbCdEfGh...",
+      },
+      {
+        key: "google_tag_manager_container_id",
+        label: "GTM Container ID",
+        isSecret: false,
+        placeholder: "GTM-XXXXXXX",
+      },
+      {
+        key: "google_ads_enhanced_conversions",
+        label: "Enhanced Conversions Enabled",
+        isSecret: false,
+        placeholder: "false",
+        type: "boolean",
+      },
     ],
   },
   {
@@ -1152,8 +1165,18 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     supportsConnectionTest: false,
     fields: [
       { key: "pinterest_tag_id", label: "Tag ID", isSecret: false, placeholder: "2612345678901" },
-      { key: "pinterest_access_token", label: "Conversions API Access Token", isSecret: true, placeholder: "pina_..." },
-      { key: "pinterest_ad_account_id", label: "Ad Account ID", isSecret: false, placeholder: "1234567890" },
+      {
+        key: "pinterest_access_token",
+        label: "Conversions API Access Token",
+        isSecret: true,
+        placeholder: "pina_...",
+      },
+      {
+        key: "pinterest_ad_account_id",
+        label: "Ad Account ID",
+        isSecret: false,
+        placeholder: "1234567890",
+      },
     ],
   },
   {
@@ -1180,10 +1203,31 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     ],
     supportsConnectionTest: false,
     fields: [
-      { key: "microsoft_ads_customer_id", label: "Customer ID", isSecret: false, placeholder: "123456789" },
-      { key: "microsoft_ads_account_id", label: "Account ID", isSecret: false, placeholder: "987654321" },
-      { key: "microsoft_uet_tag_id", label: "UET Tag ID", isSecret: false, placeholder: "12345678" },
-      { key: "microsoft_feed_enabled", label: "Product Feed Enabled", isSecret: false, placeholder: "false", type: "boolean" },
+      {
+        key: "microsoft_ads_customer_id",
+        label: "Customer ID",
+        isSecret: false,
+        placeholder: "123456789",
+      },
+      {
+        key: "microsoft_ads_account_id",
+        label: "Account ID",
+        isSecret: false,
+        placeholder: "987654321",
+      },
+      {
+        key: "microsoft_uet_tag_id",
+        label: "UET Tag ID",
+        isSecret: false,
+        placeholder: "12345678",
+      },
+      {
+        key: "microsoft_feed_enabled",
+        label: "Product Feed Enabled",
+        isSecret: false,
+        placeholder: "false",
+        type: "boolean",
+      },
     ],
   },
   {
@@ -1211,8 +1255,18 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     fields: [
       { key: "avalara_environment", label: "Environment", isSecret: false, placeholder: "sandbox" },
       { key: "avalara_account_id", label: "Account ID", isSecret: false, placeholder: "123456789" },
-      { key: "avalara_license_key", label: "License Key", isSecret: true, placeholder: "Avalara license key" },
-      { key: "avalara_company_code", label: "Company Code", isSecret: false, placeholder: "DEFAULT" },
+      {
+        key: "avalara_license_key",
+        label: "License Key",
+        isSecret: true,
+        placeholder: "Avalara license key",
+      },
+      {
+        key: "avalara_company_code",
+        label: "Company Code",
+        isSecret: false,
+        placeholder: "DEFAULT",
+      },
     ],
   },
   {
@@ -1238,9 +1292,25 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     ],
     supportsConnectionTest: false,
     fields: [
-      { key: "taxjar_api_token", label: "API Token", isSecret: true, placeholder: "TaxJar API token" },
-      { key: "taxjar_environment", label: "Environment", isSecret: false, placeholder: "production" },
-      { key: "taxjar_transaction_sync_enabled", label: "Transaction Sync Enabled", isSecret: false, placeholder: "false", type: "boolean" },
+      {
+        key: "taxjar_api_token",
+        label: "API Token",
+        isSecret: true,
+        placeholder: "TaxJar API token",
+      },
+      {
+        key: "taxjar_environment",
+        label: "Environment",
+        isSecret: false,
+        placeholder: "production",
+      },
+      {
+        key: "taxjar_transaction_sync_enabled",
+        label: "Transaction Sync Enabled",
+        isSecret: false,
+        placeholder: "false",
+        type: "boolean",
+      },
     ],
   },
   {
@@ -1326,7 +1396,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
   {
     category: "x_ads",
     title: "X Ads Website Tag",
-    description: "Consent-based website tag configuration for X campaign measurement and remarketing",
+    description:
+      "Consent-based website tag configuration for X campaign measurement and remarketing",
     group: "marketing",
     icon: Megaphone,
     brandIcon: SiX,
@@ -1334,7 +1405,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     libraryCategory: "Social Commerce",
     capabilities: ["Website tag", "Remarketing", "Campaign measurement"],
     accountUrl: "https://ads.x.com/conversion_tracking",
-    docsUrl: "https://business.x.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html",
+    docsUrl:
+      "https://business.x.com/en/help/campaign-measurement-and-analytics/conversion-tracking-for-websites.html",
     instructions: [
       "Open X Ads conversion tracking and create or select the website tag for this store.",
       "Copy the website tag ID into this card.",
@@ -1407,11 +1479,36 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     ],
     supportsConnectionTest: false,
     fields: [
-      { key: "amazon_spapi_marketplace_id", label: "Marketplace ID", isSecret: false, placeholder: "ATVPDKIKX0DER" },
-      { key: "amazon_spapi_seller_id", label: "Seller ID", isSecret: false, placeholder: "A1SELLERID" },
-      { key: "amazon_spapi_client_id", label: "Client ID", isSecret: true, placeholder: "SP-API client ID" },
-      { key: "amazon_spapi_client_secret", label: "Client Secret", isSecret: true, placeholder: "SP-API client secret" },
-      { key: "amazon_spapi_refresh_token", label: "Refresh Token", isSecret: true, placeholder: "Refresh token" },
+      {
+        key: "amazon_spapi_marketplace_id",
+        label: "Marketplace ID",
+        isSecret: false,
+        placeholder: "ATVPDKIKX0DER",
+      },
+      {
+        key: "amazon_spapi_seller_id",
+        label: "Seller ID",
+        isSecret: false,
+        placeholder: "A1SELLERID",
+      },
+      {
+        key: "amazon_spapi_client_id",
+        label: "Client ID",
+        isSecret: true,
+        placeholder: "SP-API client ID",
+      },
+      {
+        key: "amazon_spapi_client_secret",
+        label: "Client Secret",
+        isSecret: true,
+        placeholder: "SP-API client secret",
+      },
+      {
+        key: "amazon_spapi_refresh_token",
+        label: "Refresh Token",
+        isSecret: true,
+        placeholder: "Refresh token",
+      },
     ],
   },
   {
@@ -1437,16 +1534,38 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     ],
     supportsConnectionTest: false,
     fields: [
-      { key: "walmart_marketplace_client_id", label: "Client ID", isSecret: true, placeholder: "Walmart client ID" },
-      { key: "walmart_marketplace_client_secret", label: "Client Secret", isSecret: true, placeholder: "Walmart client secret" },
-      { key: "walmart_marketplace_channel_type", label: "Channel Type", isSecret: false, placeholder: "Marketplace" },
-      { key: "walmart_marketplace_sync_enabled", label: "Marketplace Sync Enabled", isSecret: false, placeholder: "false", type: "boolean" },
+      {
+        key: "walmart_marketplace_client_id",
+        label: "Client ID",
+        isSecret: true,
+        placeholder: "Walmart client ID",
+      },
+      {
+        key: "walmart_marketplace_client_secret",
+        label: "Client Secret",
+        isSecret: true,
+        placeholder: "Walmart client secret",
+      },
+      {
+        key: "walmart_marketplace_channel_type",
+        label: "Channel Type",
+        isSecret: false,
+        placeholder: "Marketplace",
+      },
+      {
+        key: "walmart_marketplace_sync_enabled",
+        label: "Marketplace Sync Enabled",
+        isSecret: false,
+        placeholder: "false",
+        type: "boolean",
+      },
     ],
   },
   {
     category: "crm",
     title: "CRM Inbound API",
-    description: "API key used by external lead sources like social ads, Zapier, and landing-page tools",
+    description:
+      "API key used by external lead sources like social ads, Zapier, and landing-page tools",
     group: "communications",
     icon: Plug,
     logoText: "CRM",
@@ -1491,16 +1610,38 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     ],
     supportsConnectionTest: false,
     fields: [
-      { key: "shipbob_api_token", label: "API Token", isSecret: true, placeholder: "ShipBob API token" },
-      { key: "shipbob_channel_id", label: "Channel ID", isSecret: false, placeholder: "Channel identifier" },
-      { key: "shipbob_default_fulfillment_center_id", label: "Default Fulfillment Center ID", isSecret: false, placeholder: "Optional center ID" },
-      { key: "shipbob_sync_enabled", label: "Fulfillment Sync Enabled", isSecret: false, placeholder: "false", type: "boolean" },
+      {
+        key: "shipbob_api_token",
+        label: "API Token",
+        isSecret: true,
+        placeholder: "ShipBob API token",
+      },
+      {
+        key: "shipbob_channel_id",
+        label: "Channel ID",
+        isSecret: false,
+        placeholder: "Channel identifier",
+      },
+      {
+        key: "shipbob_default_fulfillment_center_id",
+        label: "Default Fulfillment Center ID",
+        isSecret: false,
+        placeholder: "Optional center ID",
+      },
+      {
+        key: "shipbob_sync_enabled",
+        label: "Fulfillment Sync Enabled",
+        isSecret: false,
+        placeholder: "false",
+        type: "boolean",
+      },
     ],
   },
   {
     category: "easypost",
     title: "EasyPost",
-    description: "Aggregator-first live rates, labels, tracking, and address validation across major carriers",
+    description:
+      "Aggregator-first live rates, labels, tracking, and address validation across major carriers",
     group: "shipping",
     icon: Truck,
     logoText: "EasyPost",
@@ -1508,7 +1649,12 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     badge: "First operational live-rates path",
     libraryCategory: "Shipping & Fulfillment",
     capabilities: ["Live rates", "Labels", "Tracking", "Address validation", "Carrier aggregation"],
-    supportedCapabilities: ["shipping_rates", "label_purchase", "shipment_tracking", "address_validation"],
+    supportedCapabilities: [
+      "shipping_rates",
+      "label_purchase",
+      "shipment_tracking",
+      "address_validation",
+    ],
     configurable: true,
     operational: false,
     requiresAdapter: true,
@@ -1522,22 +1668,43 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     supportsConnectionTest: false,
     fields: [
       { key: "easypost_active_mode", label: "Active Mode", isSecret: false, placeholder: "test" },
-      { key: "easypost_test_api_key", label: "Test API Key", isSecret: true, placeholder: "EZTK..." },
-      { key: "easypost_live_api_key", label: "Live API Key", isSecret: true, placeholder: "EZAK..." },
-      { key: "easypost_webhook_secret", label: "Webhook Secret", isSecret: true, placeholder: "Optional webhook secret" },
+      {
+        key: "easypost_test_api_key",
+        label: "Test API Key",
+        isSecret: true,
+        placeholder: "EZTK...",
+      },
+      {
+        key: "easypost_live_api_key",
+        label: "Live API Key",
+        isSecret: true,
+        placeholder: "EZAK...",
+      },
+      {
+        key: "easypost_webhook_secret",
+        label: "Webhook Secret",
+        isSecret: true,
+        placeholder: "Optional webhook secret",
+      },
     ],
   },
   {
     category: "ups",
     title: "UPS",
-    description: "Direct UPS merchant account credentials for future live rates, labels, and tracking",
+    description:
+      "Direct UPS merchant account credentials for future live rates, labels, and tracking",
     group: "shipping",
     icon: Truck,
     logoText: "UPS",
     brandColor: "text-amber-900",
     libraryCategory: "Shipping & Fulfillment",
     capabilities: ["Direct carrier", "Live rates", "Labels", "Tracking", "International"],
-    supportedCapabilities: ["shipping_rates", "label_purchase", "shipment_tracking", "address_validation"],
+    supportedCapabilities: [
+      "shipping_rates",
+      "label_purchase",
+      "shipment_tracking",
+      "address_validation",
+    ],
     configurable: true,
     operational: false,
     requiresAdapter: true,
@@ -1551,14 +1718,25 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     supportsConnectionTest: false,
     fields: [
       { key: "ups_client_id", label: "Client ID", isSecret: true, placeholder: "UPS client ID" },
-      { key: "ups_client_secret", label: "Client Secret", isSecret: true, placeholder: "UPS client secret" },
-      { key: "ups_account_number", label: "Account Number", isSecret: true, placeholder: "UPS account number" },
+      {
+        key: "ups_client_secret",
+        label: "Client Secret",
+        isSecret: true,
+        placeholder: "UPS client secret",
+      },
+      {
+        key: "ups_account_number",
+        label: "Account Number",
+        isSecret: true,
+        placeholder: "UPS account number",
+      },
     ],
   },
   {
     category: "usps",
     title: "USPS",
-    description: "Direct USPS domestic shipping credentials for future live rates, labels, and tracking",
+    description:
+      "Direct USPS domestic shipping credentials for future live rates, labels, and tracking",
     group: "shipping",
     icon: Truck,
     logoText: "USPS",
@@ -1579,20 +1757,31 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     supportsConnectionTest: false,
     fields: [
       { key: "usps_api_key", label: "API Key", isSecret: true, placeholder: "USPS API key" },
-      { key: "usps_account_number", label: "Account Number", isSecret: true, placeholder: "Optional account number" },
+      {
+        key: "usps_account_number",
+        label: "Account Number",
+        isSecret: true,
+        placeholder: "Optional account number",
+      },
     ],
   },
   {
     category: "fedex",
     title: "FedEx",
-    description: "Direct FedEx merchant account credentials for future live rates, labels, and tracking",
+    description:
+      "Direct FedEx merchant account credentials for future live rates, labels, and tracking",
     group: "shipping",
     icon: Truck,
     logoText: "FedEx",
     brandColor: "text-purple-700",
     libraryCategory: "Shipping & Fulfillment",
     capabilities: ["Direct carrier", "Live rates", "Labels", "Tracking", "International"],
-    supportedCapabilities: ["shipping_rates", "label_purchase", "shipment_tracking", "address_validation"],
+    supportedCapabilities: [
+      "shipping_rates",
+      "label_purchase",
+      "shipment_tracking",
+      "address_validation",
+    ],
     configurable: true,
     operational: false,
     requiresAdapter: true,
@@ -1606,21 +1795,37 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     supportsConnectionTest: false,
     fields: [
       { key: "fedex_client_id", label: "API Key", isSecret: true, placeholder: "FedEx API key" },
-      { key: "fedex_client_secret", label: "Secret Key", isSecret: true, placeholder: "FedEx secret key" },
-      { key: "fedex_account_number", label: "Account Number", isSecret: true, placeholder: "FedEx account number" },
+      {
+        key: "fedex_client_secret",
+        label: "Secret Key",
+        isSecret: true,
+        placeholder: "FedEx secret key",
+      },
+      {
+        key: "fedex_account_number",
+        label: "Account Number",
+        isSecret: true,
+        placeholder: "FedEx account number",
+      },
     ],
   },
   {
     category: "dhl_express",
     title: "DHL Express",
-    description: "Direct DHL Express credentials for future international rates, labels, and tracking",
+    description:
+      "Direct DHL Express credentials for future international rates, labels, and tracking",
     group: "shipping",
     icon: Truck,
     brandIcon: SiDhl,
     brandColor: "text-[#D40511]",
     libraryCategory: "Shipping & Fulfillment",
     capabilities: ["Direct carrier", "International rates", "Labels", "Tracking"],
-    supportedCapabilities: ["shipping_rates", "label_purchase", "shipment_tracking", "international"],
+    supportedCapabilities: [
+      "shipping_rates",
+      "label_purchase",
+      "shipment_tracking",
+      "international",
+    ],
     configurable: true,
     operational: false,
     requiresAdapter: true,
@@ -1634,14 +1839,25 @@ export const INTEGRATIONS: IntegrationConfig[] = [
     supportsConnectionTest: false,
     fields: [
       { key: "dhl_express_api_key", label: "API Key", isSecret: true, placeholder: "DHL API key" },
-      { key: "dhl_express_api_secret", label: "API Secret", isSecret: true, placeholder: "DHL API secret" },
-      { key: "dhl_express_account_number", label: "Account Number", isSecret: true, placeholder: "DHL account number" },
+      {
+        key: "dhl_express_api_secret",
+        label: "API Secret",
+        isSecret: true,
+        placeholder: "DHL API secret",
+      },
+      {
+        key: "dhl_express_account_number",
+        label: "Account Number",
+        isSecret: true,
+        placeholder: "DHL account number",
+      },
     ],
   },
   {
     category: "shipstation",
     title: "ShipStation",
-    description: "Shipping label, fulfillment, and shipment sync configuration for ecommerce orders",
+    description:
+      "Shipping label, fulfillment, and shipment sync configuration for ecommerce orders",
     group: "shipping",
     icon: Truck,
     logoText: "ShipStation",
@@ -1687,7 +1903,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
   {
     category: "shippo",
     title: "Shippo",
-    description: "Carrier rates, label purchasing, address validation, and tracking through a developer-first shipping API",
+    description:
+      "Carrier rates, label purchasing, address validation, and tracking through a developer-first shipping API",
     group: "shipping",
     icon: Truck,
     logoText: "Shippo",
@@ -1733,7 +1950,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
   {
     category: "veeqo",
     title: "Veeqo",
-    description: "Inventory, warehouse, order, shipping, and marketplace operations for multi-channel ecommerce",
+    description:
+      "Inventory, warehouse, order, shipping, and marketplace operations for multi-channel ecommerce",
     group: "shipping",
     icon: Store,
     logoText: "Veeqo",
@@ -1779,7 +1997,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
   {
     category: "easyship",
     title: "Easyship",
-    description: "International shipping rates, duties, taxes, courier options, and cross-border delivery workflows",
+    description:
+      "International shipping rates, duties, taxes, courier options, and cross-border delivery workflows",
     group: "shipping",
     icon: Truck,
     logoText: "Easyship",
@@ -1825,7 +2044,8 @@ export const INTEGRATIONS: IntegrationConfig[] = [
   {
     category: "pirate_ship",
     title: "Pirate Ship",
-    description: "Simple manual shipping workflow using order exports and tracking imports instead of a public API",
+    description:
+      "Simple manual shipping workflow using order exports and tracking imports instead of a public API",
     group: "shipping",
     icon: Truck,
     logoText: "Pirate Ship",
@@ -2121,9 +2341,10 @@ export function IntegrationCard({
           const hasExisting = existing && existing.value && existing.value !== "";
           const currentVal = values[field.key] ?? "";
           const normalizedExisting = existing?.value?.trim().toLowerCase();
-          const isBooleanEnabled = values[field.key] !== undefined
-            ? values[field.key] === "true"
-            : ["true", "1", "yes", "on"].includes(normalizedExisting ?? "");
+          const isBooleanEnabled =
+            values[field.key] !== undefined
+              ? values[field.key] === "true"
+              : ["true", "1", "yes", "on"].includes(normalizedExisting ?? "");
           const isVisible = showSecrets[field.key];
           const shouldAutoPrependHttps =
             /url/i.test(field.label) ||
@@ -2335,9 +2556,7 @@ function IntegrationsTab({ settings }: { settings: SettingsData }) {
         </Select>
         <Select
           value={categoryFilter}
-          onValueChange={(value) =>
-            setCategoryFilter(value as IntegrationLibraryCategory | "all")
-          }
+          onValueChange={(value) => setCategoryFilter(value as IntegrationLibraryCategory | "all")}
         >
           <SelectTrigger className="w-[190px]" data-testid="select-integration-category-filter">
             <SelectValue placeholder="Category" />
@@ -2526,10 +2745,7 @@ export default function AdminSettingsPage() {
           Manage integrations, head markup, system configuration, and system email templates.
         </p>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => setLocation(`/admin/settings/${value}`)}
-        >
+        <Tabs value={activeTab} onValueChange={(value) => setLocation(`/admin/settings/${value}`)}>
           <TabsList data-testid="tabs-settings">
             <TabsTrigger value="integrations" data-testid="tab-integrations">
               <Plug className="mr-1.5 h-4 w-4 text-blue-600" />

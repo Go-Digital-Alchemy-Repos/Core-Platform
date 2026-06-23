@@ -68,7 +68,8 @@ export function SocialMediaLinks({
                 "text-[var(--social-color)] hover:bg-[var(--social-color)] hover:text-white",
               iconStyle === "outline" &&
                 "border border-border text-muted-foreground hover:border-foreground hover:text-foreground",
-              iconStyle === "solid" && "bg-foreground text-background hover:bg-primary hover:text-primary-foreground",
+              iconStyle === "solid" &&
+                "bg-foreground text-background hover:bg-primary hover:text-primary-foreground",
               iconStyle === "brand" ? "rounded-full" : "rounded-md",
               linkClassName,
             )}

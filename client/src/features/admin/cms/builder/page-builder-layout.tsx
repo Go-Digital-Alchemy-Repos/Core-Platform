@@ -1,10 +1,6 @@
 import type { ReactNode, Ref } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { ChevronLeft, ChevronRight, ListOrdered, Plus } from "lucide-react";
 import { VisualCanvas, type VisualCanvasProps } from "./page-builder-canvas";
 import { DesktopInspectorPanel } from "./page-builder-inspector";
@@ -84,12 +80,20 @@ function RailToggleButton({
       }}
       aria-label={label}
       title={label}
-      data-testid={side === "left" ? "button-toggle-structure-panel" : "button-toggle-inspector-panel"}
+      data-testid={
+        side === "left" ? "button-toggle-structure-panel" : "button-toggle-inspector-panel"
+      }
     >
       {side === "left" ? (
-        collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />
+        collapsed ? (
+          <ChevronRight className="h-4 w-4" />
+        ) : (
+          <ChevronLeft className="h-4 w-4" />
+        )
+      ) : collapsed ? (
+        <ChevronLeft className="h-4 w-4" />
       ) : (
-        collapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="h-4 w-4" />
       )}
     </button>
   );
@@ -202,14 +206,14 @@ export function DesktopBuilderLayout({
             <CanvasShell
               canvasPanelRef={canvasPanelRef}
               canvasProps={canvasProps}
-              rightToggle={(
+              rightToggle={
                 <RailToggleButton
                   side="right"
                   collapsed
                   onClick={() => onSetAdvancedInspectorOpen(true)}
                   label="Show inspector panel"
                 />
-              )}
+              }
             />
           </ResizablePanel>
         </ResizablePanelGroup>
@@ -223,14 +227,14 @@ export function DesktopBuilderLayout({
             <CanvasShell
               canvasPanelRef={canvasPanelRef}
               canvasProps={canvasProps}
-              leftToggle={(
+              leftToggle={
                 <RailToggleButton
                   side="left"
                   collapsed
                   onClick={() => onSetStructurePanelOpen(true)}
                   label="Show structure panel"
                 />
-              )}
+              }
             />
           </ResizablePanel>
           <ResizableHandle>
@@ -293,7 +297,9 @@ export function MobileBuilderLayout({
 }: MobileBuilderLayoutProps) {
   return (
     <div className="space-y-4 xl:hidden">
-      {structurePanelOpen ? leftRailPanel : (
+      {structurePanelOpen ? (
+        leftRailPanel
+      ) : (
         <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
           The left sidebar is hidden. Tap "Show Structure" to bring back the builder rail.
         </div>
@@ -301,9 +307,12 @@ export function MobileBuilderLayout({
       <div className="rounded-2xl border border-border/70 bg-background shadow-sm">
         <VisualCanvas {...canvasProps} />
       </div>
-      {advancedInspectorOpen ? inspectorPanel : (
+      {advancedInspectorOpen ? (
+        inspectorPanel
+      ) : (
         <div className="rounded-2xl border border-dashed border-border/70 bg-background/70 p-4 text-sm text-muted-foreground">
-          The docked inspector is hidden. Use the section toolbar to select content, then tap "Show Inspector" for the full editing form.
+          The docked inspector is hidden. Use the section toolbar to select content, then tap "Show
+          Inspector" for the full editing form.
         </div>
       )}
     </div>

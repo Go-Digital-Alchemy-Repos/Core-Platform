@@ -74,30 +74,34 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
   const isEnabled = Boolean(enabled && user && resourceId);
   const resolvedResourceId = resourceId ?? null;
 
-  const runAction = useCallback(async (action: LockAction | "status", options: RunActionOptions = {}) => {
-    if (!resolvedResourceId) return null;
-    if (!options.background) {
-      setIsLoading(true);
-    }
-    try {
-      const nextState = action === "status"
-        ? await getLockStatus(resourceType, resolvedResourceId)
-        : await postLockAction(action, resourceType, resolvedResourceId);
-      setLockState(nextState);
-      setHasLoaded(true);
-      setLostLock((current) => {
-        if (action === "acquire" && nextState.ownedByCurrentUser) return false;
-        if (nextState.status === "locked_by_other" && current) return true;
-        if (nextState.status === "acquired" && nextState.ownedByCurrentUser) return false;
-        return current;
-      });
-      return nextState;
-    } finally {
+  const runAction = useCallback(
+    async (action: LockAction | "status", options: RunActionOptions = {}) => {
+      if (!resolvedResourceId) return null;
       if (!options.background) {
-        setIsLoading(false);
+        setIsLoading(true);
       }
-    }
-  }, [resolvedResourceId, resourceType]);
+      try {
+        const nextState =
+          action === "status"
+            ? await getLockStatus(resourceType, resolvedResourceId)
+            : await postLockAction(action, resourceType, resolvedResourceId);
+        setLockState(nextState);
+        setHasLoaded(true);
+        setLostLock((current) => {
+          if (action === "acquire" && nextState.ownedByCurrentUser) return false;
+          if (nextState.status === "locked_by_other" && current) return true;
+          if (nextState.status === "acquired" && nextState.ownedByCurrentUser) return false;
+          return current;
+        });
+        return nextState;
+      } finally {
+        if (!options.background) {
+          setIsLoading(false);
+        }
+      }
+    },
+    [resolvedResourceId, resourceType],
+  );
 
   const acquire = useCallback(async () => {
     if (!isEnabled) return null;
@@ -173,7 +177,12 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
   }, [acquire, isEnabled, resourceType, resolvedResourceId]);
 
   useEffect(() => {
-    if (!isEnabled || !lockState?.ownedByCurrentUser || lockState.status !== "acquired" || !resolvedResourceId) {
+    if (
+      !isEnabled ||
+      !lockState?.ownedByCurrentUser ||
+      lockState.status !== "acquired" ||
+      !resolvedResourceId
+    ) {
       return;
     }
 
@@ -226,11 +235,20 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
     };
   }, [isEnabled, resourceType, resolvedResourceId]);
 
-  const isOwned = Boolean(lockState?.status === "acquired" && lockState.ownedByCurrentUser && !lostLock);
-  const isLockedByOther = Boolean(lockState?.status === "locked_by_other" && !lockState.ownedByCurrentUser);
+  const isOwned = Boolean(
+    lockState?.status === "acquired" && lockState.ownedByCurrentUser && !lostLock,
+  );
+  const isLockedByOther = Boolean(
+    lockState?.status === "locked_by_other" && !lockState.ownedByCurrentUser,
+  );
   const isReadOnly = Boolean(
     isEnabled &&
-    (!hasLoaded || isLoading || lostLock || !lockState || lockState.status !== "acquired" || !lockState.ownedByCurrentUser),
+    (!hasLoaded ||
+      isLoading ||
+      lostLock ||
+      !lockState ||
+      lockState.status !== "acquired" ||
+      !lockState.ownedByCurrentUser),
   );
 
   const summary = useMemo(() => {
@@ -239,7 +257,8 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
       return {
         variant: "lost-lock" as const,
         title: "Editing access changed",
-        description: "This editor lost its active lock, so we’ve switched it into read-only mode to protect your work. Refresh to continue.",
+        description:
+          "This editor lost its active lock, so we’ve switched it into read-only mode to protect your work. Refresh to continue.",
       };
     }
     if (!lockState) {
@@ -253,7 +272,8 @@ export function useEditorLock({ resourceType, resourceId, enabled = true }: UseE
       return {
         variant: "active-owned" as const,
         title: "You’re editing this item",
-        description: "Your edit lock is active and will keep refreshing while this editor stays open.",
+        description:
+          "Your edit lock is active and will keep refreshing while this editor stays open.",
       };
     }
     if (lockState.lock) {

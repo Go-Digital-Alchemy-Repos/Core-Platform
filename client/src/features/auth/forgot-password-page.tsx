@@ -41,11 +41,15 @@ export default function ForgotPasswordPage() {
             <Card>
               <CardContent className="py-12 text-center space-y-4">
                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
-                <h2 className="text-xl font-heading font-semibold" data-testid="text-forgot-success">
+                <h2
+                  className="text-xl font-heading font-semibold"
+                  data-testid="text-forgot-success"
+                >
                   Check Your Email
                 </h2>
                 <p className="text-muted-foreground" data-testid="text-forgot-success-message">
-                  If an account with that email exists, a password reset link has been sent. Please check your inbox and spam folder.
+                  If an account with that email exists, a password reset link has been sent. Please
+                  check your inbox and spam folder.
                 </p>
                 <div className="pt-2">
                   <Link href="/auth/login">
@@ -82,7 +86,9 @@ export default function ForgotPasswordPage() {
                 <Mail className="h-6 w-6 text-primary" />
               </div>
               <CardTitle className="font-heading">Reset Your Password</CardTitle>
-              <CardDescription>We'll email you a secure link to reset your password.</CardDescription>
+              <CardDescription>
+                We'll email you a secure link to reset your password.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -114,7 +120,11 @@ export default function ForgotPasswordPage() {
               </form>
 
               <div className="mt-4 text-center">
-                <Link href="/auth/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-back-to-login-form">
+                <Link
+                  href="/auth/login"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="link-back-to-login-form"
+                >
                   <span className="inline-flex items-center gap-1">
                     <ArrowLeft className="h-3 w-3" />
                     Back to Login

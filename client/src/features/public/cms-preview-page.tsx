@@ -8,7 +8,10 @@ import { CmsPageView } from "@/features/public/cms-hybrid-page";
 
 function CmsPreviewLoading() {
   return (
-    <div className="min-h-screen flex items-center justify-center" data-testid="cms-preview-loading">
+    <div
+      className="min-h-screen flex items-center justify-center"
+      data-testid="cms-preview-loading"
+    >
       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
     </div>
   );
@@ -16,11 +19,15 @@ function CmsPreviewLoading() {
 
 function CmsPreviewError() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 text-center" data-testid="cms-preview-error">
+    <div
+      className="min-h-screen flex items-center justify-center px-6 text-center"
+      data-testid="cms-preview-error"
+    >
       <div className="max-w-md space-y-3">
         <h1 className="text-2xl font-heading font-semibold">Preview unavailable</h1>
         <p className="text-muted-foreground">
-          This preview link is invalid, expired, or no longer matches the latest saved version of the page.
+          This preview link is invalid, expired, or no longer matches the latest saved version of
+          the page.
         </p>
       </div>
     </div>
@@ -31,12 +38,19 @@ export default function CmsPreviewPage() {
   const params = useParams<{ id: string }>();
   const token = useMemo(() => new URLSearchParams(window.location.search).get("token") ?? "", []);
 
-  const { data: page, isLoading, isError } = useQuery<CmsPage>({
+  const {
+    data: page,
+    isLoading,
+    isError,
+  } = useQuery<CmsPage>({
     queryKey: ["/api/cms/pages/preview", params?.id, token],
     queryFn: async () => {
-      const res = await fetch(`/api/cms/pages/preview/${params?.id}?token=${encodeURIComponent(token)}`, {
-        credentials: "include",
-      });
+      const res = await fetch(
+        `/api/cms/pages/preview/${params?.id}?token=${encodeURIComponent(token)}`,
+        {
+          credentials: "include",
+        },
+      );
       if (!res.ok) throw new Error("Preview unavailable");
       return res.json();
     },

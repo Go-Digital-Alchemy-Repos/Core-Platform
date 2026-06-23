@@ -1,7 +1,17 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
-import { ArrowLeft, CalendarDays, Copy, ExternalLink, FolderKanban, MapPin, Play, Quote, Share2 } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  Copy,
+  ExternalLink,
+  FolderKanban,
+  MapPin,
+  Play,
+  Quote,
+  Share2,
+} from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { JsonLd } from "@/components/shared/json-ld";
 import { Badge } from "@/components/ui/badge";
@@ -45,7 +55,10 @@ function videoEmbedUrl(url: string) {
 function ShareActions({ project, enabled }: { project: PortfolioProject; enabled?: boolean }) {
   const { toast } = useToast();
   if (!enabled) return null;
-  const url = typeof window !== "undefined" ? `${window.location.origin}/portfolio/${project.slug}` : `/portfolio/${project.slug}`;
+  const url =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/portfolio/${project.slug}`
+      : `/portfolio/${project.slug}`;
   const copy = async () => {
     await navigator.clipboard.writeText(url);
     toast({ title: "Project link copied" });
@@ -55,9 +68,15 @@ function ShareActions({ project, enabled }: { project: PortfolioProject; enabled
   };
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={copy}><Copy className="mr-2 h-4 w-4" />Copy</Button>
+      <Button variant="outline" size="sm" onClick={copy}>
+        <Copy className="mr-2 h-4 w-4" />
+        Copy
+      </Button>
       {typeof navigator !== "undefined" && "share" in navigator && (
-        <Button variant="outline" size="sm" onClick={nativeShare}><Share2 className="mr-2 h-4 w-4" />Share</Button>
+        <Button variant="outline" size="sm" onClick={nativeShare}>
+          <Share2 className="mr-2 h-4 w-4" />
+          Share
+        </Button>
       )}
     </div>
   );
@@ -65,7 +84,9 @@ function ShareActions({ project, enabled }: { project: PortfolioProject; enabled
 
 export default function PortfolioDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const { data: project, isLoading } = useQuery<PortfolioProject>({ queryKey: [`/api/portfolio/projects/${slug}`] });
+  const { data: project, isLoading } = useQuery<PortfolioProject>({
+    queryKey: [`/api/portfolio/projects/${slug}`],
+  });
   const { data: settings } = useQuery<PortfolioSettings>({ queryKey: ["/api/portfolio/settings"] });
   const { data: globalSeo } = useQuery<SeoSettings>({ queryKey: ["/api/seo/global"] });
   const completedAt = formatDate(project?.completedAt);
@@ -74,7 +95,10 @@ export default function PortfolioDetailPage() {
   useSeo({
     title: project ? `${project.metaTitle || project.title} | Portfolio` : "Portfolio",
     description: project?.metaDescription || project?.summary || undefined,
-    canonical: project && typeof window !== "undefined" ? `${window.location.origin}/portfolio/${project.slug}` : undefined,
+    canonical:
+      project && typeof window !== "undefined"
+        ? `${window.location.origin}/portfolio/${project.slug}`
+        : undefined,
     noindex: project?.noindex,
   });
 
@@ -87,9 +111,15 @@ export default function PortfolioDetailPage() {
         "@type": "CreativeWork",
         name: project.title,
         description: project.summary || project.metaDescription || undefined,
-        image: heroImage ? `${origin}${heroImage.startsWith("/") ? heroImage : `/${heroImage}`}` : undefined,
-        datePublished: project.publishedAt ? new Date(project.publishedAt).toISOString() : undefined,
-        provider: globalSeo?.organizationName ? { "@type": "Organization", name: globalSeo.organizationName } : undefined,
+        image: heroImage
+          ? `${origin}${heroImage.startsWith("/") ? heroImage : `/${heroImage}`}`
+          : undefined,
+        datePublished: project.publishedAt
+          ? new Date(project.publishedAt).toISOString()
+          : undefined,
+        provider: globalSeo?.organizationName
+          ? { "@type": "Organization", name: globalSeo.organizationName }
+          : undefined,
       },
       buildBreadcrumbLd([
         { name: "Portfolio", url: `${origin}/portfolio` },
@@ -99,18 +129,30 @@ export default function PortfolioDetailPage() {
   }, [project, heroImage, globalSeo]);
 
   if (isLoading) {
-    return <PageLayout><main className="container mx-auto px-4 py-10">Loading project...</main></PageLayout>;
+    return (
+      <PageLayout>
+        <main className="container mx-auto px-4 py-10">Loading project...</main>
+      </PageLayout>
+    );
   }
   if (!project) {
-    return <PageLayout><main className="container mx-auto px-4 py-10">Project not found.</main></PageLayout>;
+    return (
+      <PageLayout>
+        <main className="container mx-auto px-4 py-10">Project not found.</main>
+      </PageLayout>
+    );
   }
 
   return (
     <PageLayout>
       <JsonLd schemas={schemas} />
       <main className="container mx-auto space-y-10 px-4 py-10">
-        <Link href="/portfolio" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" />Back to portfolio
+        <Link
+          href="/portfolio"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to portfolio
         </Link>
         <header className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
           <section className="space-y-5">
@@ -121,17 +163,38 @@ export default function PortfolioDetailPage() {
             </div>
             <div className="space-y-3">
               <h1 className="text-4xl font-bold tracking-normal sm:text-5xl">{project.title}</h1>
-              {project.subtitle && <p className="text-xl text-muted-foreground">{project.subtitle}</p>}
+              {project.subtitle && (
+                <p className="text-xl text-muted-foreground">{project.subtitle}</p>
+              )}
             </div>
             <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-              {project.location && <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" />{project.location}</span>}
-              {completedAt && <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-4 w-4" />{completedAt}</span>}
-              {project.clientName && <span className="inline-flex items-center gap-1.5"><FolderKanban className="h-4 w-4" />{project.clientName}</span>}
+              {project.location && (
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4" />
+                  {project.location}
+                </span>
+              )}
+              {completedAt && (
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarDays className="h-4 w-4" />
+                  {completedAt}
+                </span>
+              )}
+              {project.clientName && (
+                <span className="inline-flex items-center gap-1.5">
+                  <FolderKanban className="h-4 w-4" />
+                  {project.clientName}
+                </span>
+              )}
             </div>
             <ShareActions project={project} enabled={settings?.sharingEnabled} />
           </section>
           {heroImage && (
-            <img src={heroImage} alt={project.heroImageAlt || project.title} className="aspect-[4/3] w-full rounded-md object-cover" />
+            <img
+              src={heroImage}
+              alt={project.heroImageAlt || project.title}
+              className="aspect-[4/3] w-full rounded-md object-cover"
+            />
           )}
         </header>
 
@@ -142,7 +205,9 @@ export default function PortfolioDetailPage() {
                 <CardContent className="space-y-1 p-5">
                   <p className="text-3xl font-bold">{metric.value}</p>
                   <p className="font-medium">{metric.label}</p>
-                  {metric.description && <p className="text-sm text-muted-foreground">{metric.description}</p>}
+                  {metric.description && (
+                    <p className="text-sm text-muted-foreground">{metric.description}</p>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -151,18 +216,30 @@ export default function PortfolioDetailPage() {
 
         <section className="grid gap-10 lg:grid-cols-[1fr_320px]">
           <article className="space-y-9">
-            {project.summary && <p className="text-lg leading-8 text-muted-foreground">{project.summary}</p>}
+            {project.summary && (
+              <p className="text-lg leading-8 text-muted-foreground">{project.summary}</p>
+            )}
             <RichSection title="Overview" html={project.description} />
             <RichSection title="Challenge" html={project.challenge} />
             <RichSection title="Solution" html={project.solution} />
             <RichSection title="Results" html={project.results} />
-            {project.sections?.map((section, index) => <RichSection key={`${section.title}-${index}`} title={section.title} html={section.body} />)}
+            {project.sections?.map((section, index) => (
+              <RichSection
+                key={`${section.title}-${index}`}
+                title={section.title}
+                html={section.body}
+              />
+            ))}
             {project.testimonial && (
               <Card>
                 <CardContent className="space-y-3 p-6">
                   <Quote className="h-6 w-6 text-primary" />
                   <blockquote className="text-lg leading-8">{project.testimonial}</blockquote>
-                  {project.testimonialAuthor && <p className="text-sm font-medium text-muted-foreground">{project.testimonialAuthor}</p>}
+                  {project.testimonialAuthor && (
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {project.testimonialAuthor}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -171,9 +248,24 @@ export default function PortfolioDetailPage() {
           <aside className="space-y-5 lg:sticky lg:top-6 lg:self-start">
             <Card>
               <CardContent className="space-y-4 p-5 text-sm">
-                {project.services?.length ? <div><p className="font-medium">Services</p><p className="text-muted-foreground">{project.services.join(", ")}</p></div> : null}
-                {project.technologies?.length ? <div><p className="font-medium">Technologies</p><p className="text-muted-foreground">{project.technologies.join(", ")}</p></div> : null}
-                {project.categories?.length ? <div><p className="font-medium">Categories</p><p className="text-muted-foreground">{project.categories.join(", ")}</p></div> : null}
+                {project.services?.length ? (
+                  <div>
+                    <p className="font-medium">Services</p>
+                    <p className="text-muted-foreground">{project.services.join(", ")}</p>
+                  </div>
+                ) : null}
+                {project.technologies?.length ? (
+                  <div>
+                    <p className="font-medium">Technologies</p>
+                    <p className="text-muted-foreground">{project.technologies.join(", ")}</p>
+                  </div>
+                ) : null}
+                {project.categories?.length ? (
+                  <div>
+                    <p className="font-medium">Categories</p>
+                    <p className="text-muted-foreground">{project.categories.join(", ")}</p>
+                  </div>
+                ) : null}
                 <Button asChild className="w-full">
                   <a href={project.ctaUrl || settings?.defaultCtaUrl || "/contact"}>
                     {project.ctaLabel || settings?.defaultCtaLabel || "Start a Project"}
@@ -191,8 +283,17 @@ export default function PortfolioDetailPage() {
             <div className="grid gap-4 md:grid-cols-2">
               {project.gallery.map((item, index) => (
                 <figure key={`${item.url}-${index}`} className="space-y-2">
-                  <img src={item.url} alt={item.alt || project.title} className="aspect-[4/3] w-full rounded-md object-cover" loading="lazy" />
-                  {item.caption && <figcaption className="text-sm text-muted-foreground">{item.caption}</figcaption>}
+                  <img
+                    src={item.url}
+                    alt={item.alt || project.title}
+                    className="aspect-[4/3] w-full rounded-md object-cover"
+                    loading="lazy"
+                  />
+                  {item.caption && (
+                    <figcaption className="text-sm text-muted-foreground">
+                      {item.caption}
+                    </figcaption>
+                  )}
                 </figure>
               ))}
             </div>
@@ -206,11 +307,21 @@ export default function PortfolioDetailPage() {
               {project.videos.map((video, index) => (
                 <Card key={`${video.url}-${index}`} className="overflow-hidden">
                   <div className="aspect-video bg-muted">
-                    <iframe src={videoEmbedUrl(video.url)} title={video.title || `Project video ${index + 1}`} className="h-full w-full" allowFullScreen />
+                    <iframe
+                      src={videoEmbedUrl(video.url)}
+                      title={video.title || `Project video ${index + 1}`}
+                      className="h-full w-full"
+                      allowFullScreen
+                    />
                   </div>
                   <CardContent className="space-y-1 p-4">
-                    <p className="inline-flex items-center gap-2 font-medium"><Play className="h-4 w-4" />{video.title || "Project video"}</p>
-                    {video.caption && <p className="text-sm text-muted-foreground">{video.caption}</p>}
+                    <p className="inline-flex items-center gap-2 font-medium">
+                      <Play className="h-4 w-4" />
+                      {video.title || "Project video"}
+                    </p>
+                    {video.caption && (
+                      <p className="text-sm text-muted-foreground">{video.caption}</p>
+                    )}
                   </CardContent>
                 </Card>
               ))}

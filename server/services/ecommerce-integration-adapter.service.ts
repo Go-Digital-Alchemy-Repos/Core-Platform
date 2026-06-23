@@ -75,7 +75,12 @@ export const ECOMMERCE_INTEGRATION_ADAPTER_REGISTRY: EcommerceIntegrationAdapter
     configurable: true,
     operational: false,
     requiresAdapter: true,
-    capabilities: ["tax_quote", "tax_transaction_commit", "tax_refund_adjustment", "address_validation"],
+    capabilities: [
+      "tax_quote",
+      "tax_transaction_commit",
+      "tax_refund_adjustment",
+      "address_validation",
+    ],
   },
   {
     provider: "taxjar",

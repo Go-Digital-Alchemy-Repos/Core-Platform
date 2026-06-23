@@ -7,7 +7,17 @@ type MockResponse = Pick<Response, "setHeader">;
 
 describe("logger", () => {
   it("exposes named child loggers with info/warn/error methods", () => {
-    const sources = ["http", "email", "r2", "stripe", "auth", "app", "db", "cms", "metrics"] as const;
+    const sources = [
+      "http",
+      "email",
+      "r2",
+      "stripe",
+      "auth",
+      "app",
+      "db",
+      "cms",
+      "metrics",
+    ] as const;
     for (const src of sources) {
       expect(logger[src]).toBeDefined();
       expect(typeof logger[src].info).toBe("function");

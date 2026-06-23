@@ -18,14 +18,20 @@ const STATUSES = ["draft", "published", "scheduled", "archived"] as const;
 
 const createPageSchema = insertCmsPageSchema.extend({
   title: z.string().min(1, "Title is required"),
-  slug: z.string().min(1, "Slug is required").regex(/^[a-z0-9-/]+$/, "Slug must be lowercase with hyphens only"),
+  slug: z
+    .string()
+    .min(1, "Slug is required")
+    .regex(/^[a-z0-9-/]+$/, "Slug must be lowercase with hyphens only"),
   pageType: z.enum(PAGE_TYPES).default("custom"),
   status: z.enum(STATUSES).default("draft"),
 });
 
 const updatePageSchema = createPageSchema.partial().extend({
   title: z.string().min(1).optional(),
-  slug: z.string().regex(/^[a-z0-9-/]+$/).optional(),
+  slug: z
+    .string()
+    .regex(/^[a-z0-9-/]+$/)
+    .optional(),
 });
 
 function normalizeSlug(slug: string): string {
@@ -50,7 +56,9 @@ router.post("/pages", async (req, res) => {
   try {
     const parsed = createPageSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0]?.message || "Validation failed" });
+      return res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message || "Validation failed" });
     }
 
     const data = parsed.data;
@@ -167,7 +175,9 @@ router.put("/pages/:id", async (req, res) => {
 
     const parsed = updatePageSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0]?.message || "Validation failed" });
+      return res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message || "Validation failed" });
     }
 
     const data = parsed.data;
@@ -214,14 +224,17 @@ router.delete("/pages/:id", async (req, res) => {
     const menuReferences = await getCmsPageMenuReferences(page);
     if (menuReferences.length > 0 && !force) {
       return res.status(409).json({
-        error: "This page is still used in navigation menus. Review linked references before deleting it.",
+        error:
+          "This page is still used in navigation menus. Review linked references before deleting it.",
         code: "CMS_PAGE_HAS_MENU_REFERENCES",
         menuReferences,
       });
     }
 
     if (page.status === "published" && !force) {
-      return res.status(400).json({ error: "Cannot delete a published page. Unpublish it first or use ?force=true" });
+      return res
+        .status(400)
+        .json({ error: "Cannot delete a published page. Unpublish it first or use ?force=true" });
     }
 
     await storage.cmsPages.deletePage(page.id);
@@ -280,7 +293,8 @@ router.post("/pages/:id/unpublish", async (req, res) => {
     const menuReferences = await getCmsPageMenuReferences(existingPage);
     if (menuReferences.length > 0 && !force) {
       return res.status(409).json({
-        error: "This page is still used in navigation menus. Review linked references before moving it to draft.",
+        error:
+          "This page is still used in navigation menus. Review linked references before moving it to draft.",
         code: "CMS_PAGE_HAS_MENU_REFERENCES",
         menuReferences,
       });

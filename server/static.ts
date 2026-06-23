@@ -62,32 +62,39 @@ export function serveStatic(app: Express) {
     return cachedIndexTemplate;
   }
 
-  app.use(express.static(distPath, {
-    index: false,
-    setHeaders: (res, filePath) => {
-      if (filePath.endsWith(".html")) {
-        res.setHeader("Cache-Control", "no-cache");
-        return;
-      }
+  app.use(
+    express.static(distPath, {
+      index: false,
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith(".html")) {
+          res.setHeader("Cache-Control", "no-cache");
+          return;
+        }
 
-      if (/\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|gif|webp|avif|ico)$/i.test(filePath)) {
-        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-      }
-    },
-  }));
+        if (/\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|gif|webp|avif|ico)$/i.test(filePath)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      },
+    }),
+  );
 
   // fall through to index.html if the file doesn't exist
   app.use("/{*path}", async (req, res) => {
     const template = await injectBrandingFavicon(await getIndexTemplate());
     const shouldInjectPublicPrerender = isPublicPrerenderPath(req.path);
     const snapshot = shouldInjectPublicPrerender
-      ? await getPublicHtmlSnapshot(req.path, req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "")
+      ? await getPublicHtmlSnapshot(
+          req.path,
+          req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "",
+        )
       : null;
     const customHeadHtml = shouldInjectPublicPrerender ? await getPublicHeadAdditions() : null;
 
     res.setHeader(
       "Cache-Control",
-      req.path.startsWith("/admin") || req.path.startsWith("/auth") || req.path.startsWith("/therapist")
+      req.path.startsWith("/admin") ||
+        req.path.startsWith("/auth") ||
+        req.path.startsWith("/therapist")
         ? "private, no-store, max-age=0"
         : "no-cache",
     );

@@ -143,7 +143,10 @@ export function NotificationBell({
                 </button>
               )}
               <button
-                onClick={() => { setOpen(false); setSettingsOpen(true); }}
+                onClick={() => {
+                  setOpen(false);
+                  setSettingsOpen(true);
+                }}
                 className="p-1.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                 data-testid="button-notification-settings"
                 title="Notification settings"
@@ -165,11 +168,7 @@ export function NotificationBell({
               </div>
             ) : (
               notifications.map((notif) => (
-                <NotifItem
-                  key={notif.id}
-                  notif={notif}
-                  onClick={handleNotifClick}
-                />
+                <NotifItem key={notif.id} notif={notif} onClick={handleNotifClick} />
               ))
             )}
           </div>
@@ -253,13 +252,17 @@ function NotifItem({
         <div className={`h-2 w-2 rounded-full ${notif.isRead ? "bg-transparent" : "bg-accent"}`} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className={`text-sm leading-snug ${notif.isRead ? "text-foreground/70" : "text-foreground font-medium"}`}>
+        <p
+          className={`text-sm leading-snug ${notif.isRead ? "text-foreground/70" : "text-foreground font-medium"}`}
+        >
           {notif.title}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{notif.body}</p>
         <p className="text-[10px] text-muted-foreground/70 mt-1">{timeAgo}</p>
       </div>
-      {notif.isRead && <Check className="h-3.5 w-3.5 text-muted-foreground/40 flex-shrink-0 mt-0.5" />}
+      {notif.isRead && (
+        <Check className="h-3.5 w-3.5 text-muted-foreground/40 flex-shrink-0 mt-0.5" />
+      )}
     </div>
   );
 

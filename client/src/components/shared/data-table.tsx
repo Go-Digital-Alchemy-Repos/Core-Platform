@@ -63,7 +63,10 @@ export function DataTable<T extends Record<string, unknown>>({
           <TableBody>
             {filteredData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="text-center text-muted-foreground py-8">
+                <TableCell
+                  colSpan={columns.length}
+                  className="text-center text-muted-foreground py-8"
+                >
                   No results found.
                 </TableCell>
               </TableRow>

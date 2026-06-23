@@ -1,6 +1,12 @@
 import { and, desc, eq, gte, or, sql } from "drizzle-orm";
 import { db } from "../db";
-import { blogComments, blogPosts, type BlogComment, type BlogCommentStatus, type InsertBlogComment } from "@shared/schema";
+import {
+  blogComments,
+  blogPosts,
+  type BlogComment,
+  type BlogCommentStatus,
+  type InsertBlogComment,
+} from "@shared/schema";
 
 export interface AdminBlogCommentRecord extends BlogComment {
   postTitle: string;
@@ -55,7 +61,11 @@ export class BlogCommentsStorage {
     return comment;
   }
 
-  async updateCommentStatus(id: string, status: BlogCommentStatus, moderationNote?: string | null): Promise<BlogComment | undefined> {
+  async updateCommentStatus(
+    id: string,
+    status: BlogCommentStatus,
+    moderationNote?: string | null,
+  ): Promise<BlogComment | undefined> {
     const [comment] = await db
       .update(blogComments)
       .set({
@@ -68,7 +78,10 @@ export class BlogCommentsStorage {
     return comment;
   }
 
-  async updateComment(id: string, updates: { body?: string; moderationNote?: string | null }): Promise<BlogComment | undefined> {
+  async updateComment(
+    id: string,
+    updates: { body?: string; moderationNote?: string | null },
+  ): Promise<BlogComment | undefined> {
     const nextValues: Partial<typeof blogComments.$inferInsert> = {
       updatedAt: new Date(),
     };

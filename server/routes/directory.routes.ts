@@ -9,7 +9,9 @@ import { getDirectoryExperienceMode } from "@shared/types/directory-settings";
 
 const router = Router();
 
-async function normalizeTherapistResult<T extends { user?: { profileImageUrl?: string | null } | null }>(item: T): Promise<T> {
+async function normalizeTherapistResult<
+  T extends { user?: { profileImageUrl?: string | null } | null },
+>(item: T): Promise<T> {
   if (!item.user) return item;
   return {
     ...item,
@@ -26,7 +28,9 @@ router.get(
     const parsed = therapistSearchSchema.safeParse(req.query);
 
     if (!parsed.success) {
-      res.status(400).json({ message: "Invalid query parameters", errors: parsed.error.flatten().fieldErrors });
+      res
+        .status(400)
+        .json({ message: "Invalid query parameters", errors: parsed.error.flatten().fieldErrors });
       return;
     }
 
@@ -71,7 +75,7 @@ router.get(
       ...result,
       items: await Promise.all(result.items.map(normalizeTherapistResult)),
     });
-  })
+  }),
 );
 
 router.get(
@@ -84,7 +88,7 @@ router.get(
       directoryMode,
     );
     res.json(options);
-  })
+  }),
 );
 
 router.get(
@@ -97,7 +101,7 @@ router.get(
       directoryMode,
     );
     res.json(await Promise.all(featured.map(normalizeTherapistResult)));
-  })
+  }),
 );
 
 router.get(
@@ -116,7 +120,7 @@ router.get(
       return;
     }
     res.json(await normalizeTherapistResult(profile));
-  })
+  }),
 );
 
 export default router;

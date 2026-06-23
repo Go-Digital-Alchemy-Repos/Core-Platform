@@ -3,8 +3,14 @@ import { requiresAtomicInventoryStockGuard } from "../services/ecommerce-invento
 
 describe("ecommerce inventory service", () => {
   it("requires an atomic stock guard only for tracked inventory without backorders", () => {
-    expect(requiresAtomicInventoryStockGuard({ trackInventory: true, allowBackorder: false })).toBe(true);
-    expect(requiresAtomicInventoryStockGuard({ trackInventory: true, allowBackorder: true })).toBe(false);
-    expect(requiresAtomicInventoryStockGuard({ trackInventory: false, allowBackorder: false })).toBe(false);
+    expect(requiresAtomicInventoryStockGuard({ trackInventory: true, allowBackorder: false })).toBe(
+      true,
+    );
+    expect(requiresAtomicInventoryStockGuard({ trackInventory: true, allowBackorder: true })).toBe(
+      false,
+    );
+    expect(
+      requiresAtomicInventoryStockGuard({ trackInventory: false, allowBackorder: false }),
+    ).toBe(false);
   });
 });

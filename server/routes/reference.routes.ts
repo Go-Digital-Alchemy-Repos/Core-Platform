@@ -20,7 +20,16 @@ router.get(
       return;
     }
 
-    const allowedAppStatuses = ["submitted", "awaiting_background_check", "background_check_in_progress", "awaiting_references", "references_in_progress", "ready_for_interview", "interview_scheduled", "interview_completed"];
+    const allowedAppStatuses = [
+      "submitted",
+      "awaiting_background_check",
+      "background_check_in_progress",
+      "awaiting_references",
+      "references_in_progress",
+      "ready_for_interview",
+      "interview_scheduled",
+      "interview_completed",
+    ];
     if (reference.applicationStatus && !allowedAppStatuses.includes(reference.applicationStatus)) {
       res.status(410).json({ message: "This reference request is no longer active" });
       return;
@@ -48,7 +57,7 @@ router.get(
       refereeName: reference.refereeName,
       relationship: reference.relationship,
     });
-  })
+  }),
 );
 
 router.post(
@@ -66,7 +75,16 @@ router.post(
       return;
     }
 
-    const allowedAppStatuses = ["submitted", "awaiting_background_check", "background_check_in_progress", "awaiting_references", "references_in_progress", "ready_for_interview", "interview_scheduled", "interview_completed"];
+    const allowedAppStatuses = [
+      "submitted",
+      "awaiting_background_check",
+      "background_check_in_progress",
+      "awaiting_references",
+      "references_in_progress",
+      "ready_for_interview",
+      "interview_scheduled",
+      "interview_completed",
+    ];
     if (reference.applicationStatus && !allowedAppStatuses.includes(reference.applicationStatus)) {
       res.status(410).json({ message: "This reference request is no longer active" });
       return;
@@ -94,22 +112,58 @@ router.post(
 
     const MAX_TEXT_LENGTH = 5000;
     const errors: string[] = [];
-    if (!firstName || typeof firstName !== "string" || !firstName.trim()) errors.push("Your first name is required");
-    if (typeof firstName === "string" && firstName.length > 200) errors.push("First name is too long");
-    if (!howKnown || typeof howKnown !== "string" || !howKnown.trim()) errors.push("How you know the applicant is required");
-    if (typeof howKnown === "string" && howKnown.length > MAX_TEXT_LENGTH) errors.push("Response is too long (max 5000 characters)");
-    if (!corePlatformObservation || typeof corePlatformObservation !== "string" || !corePlatformObservation.trim()) errors.push("Core Platform observation response is required");
-    if (typeof corePlatformObservation === "string" && corePlatformObservation.length > MAX_TEXT_LENGTH) errors.push("Response is too long (max 5000 characters)");
-    if (!corePlatformUnderstanding || typeof corePlatformUnderstanding !== "string" || !corePlatformUnderstanding.trim()) errors.push("Core Platform understanding response is required");
-    if (typeof corePlatformUnderstanding === "string" && corePlatformUnderstanding.length > MAX_TEXT_LENGTH) errors.push("Response is too long (max 5000 characters)");
-    if (!culturalConnection || typeof culturalConnection !== "string" || !culturalConnection.trim()) errors.push("Cultural connection response is required");
-    if (typeof culturalConnection === "string" && culturalConnection.length > MAX_TEXT_LENGTH) errors.push("Response is too long (max 5000 characters)");
-    if (!safetyConcern || !["yes", "no"].includes(safetyConcern)) errors.push("Safety concern answer is required (yes/no)");
-    if (typeof safetyConcernDetails === "string" && safetyConcernDetails.length > MAX_TEXT_LENGTH) errors.push("Details text is too long");
-    if (!professionalConcern || !["yes", "no"].includes(professionalConcern)) errors.push("Professional concern answer is required (yes/no)");
-    if (typeof professionalConcernDetails === "string" && professionalConcernDetails.length > MAX_TEXT_LENGTH) errors.push("Details text is too long");
-    if (!recommendation || !["yes", "no"].includes(recommendation)) errors.push("Recommendation answer is required (yes/no)");
-    if (typeof recommendationComments === "string" && recommendationComments.length > MAX_TEXT_LENGTH) errors.push("Comments are too long");
+    if (!firstName || typeof firstName !== "string" || !firstName.trim())
+      errors.push("Your first name is required");
+    if (typeof firstName === "string" && firstName.length > 200)
+      errors.push("First name is too long");
+    if (!howKnown || typeof howKnown !== "string" || !howKnown.trim())
+      errors.push("How you know the applicant is required");
+    if (typeof howKnown === "string" && howKnown.length > MAX_TEXT_LENGTH)
+      errors.push("Response is too long (max 5000 characters)");
+    if (
+      !corePlatformObservation ||
+      typeof corePlatformObservation !== "string" ||
+      !corePlatformObservation.trim()
+    )
+      errors.push("Core Platform observation response is required");
+    if (
+      typeof corePlatformObservation === "string" &&
+      corePlatformObservation.length > MAX_TEXT_LENGTH
+    )
+      errors.push("Response is too long (max 5000 characters)");
+    if (
+      !corePlatformUnderstanding ||
+      typeof corePlatformUnderstanding !== "string" ||
+      !corePlatformUnderstanding.trim()
+    )
+      errors.push("Core Platform understanding response is required");
+    if (
+      typeof corePlatformUnderstanding === "string" &&
+      corePlatformUnderstanding.length > MAX_TEXT_LENGTH
+    )
+      errors.push("Response is too long (max 5000 characters)");
+    if (!culturalConnection || typeof culturalConnection !== "string" || !culturalConnection.trim())
+      errors.push("Cultural connection response is required");
+    if (typeof culturalConnection === "string" && culturalConnection.length > MAX_TEXT_LENGTH)
+      errors.push("Response is too long (max 5000 characters)");
+    if (!safetyConcern || !["yes", "no"].includes(safetyConcern))
+      errors.push("Safety concern answer is required (yes/no)");
+    if (typeof safetyConcernDetails === "string" && safetyConcernDetails.length > MAX_TEXT_LENGTH)
+      errors.push("Details text is too long");
+    if (!professionalConcern || !["yes", "no"].includes(professionalConcern))
+      errors.push("Professional concern answer is required (yes/no)");
+    if (
+      typeof professionalConcernDetails === "string" &&
+      professionalConcernDetails.length > MAX_TEXT_LENGTH
+    )
+      errors.push("Details text is too long");
+    if (!recommendation || !["yes", "no"].includes(recommendation))
+      errors.push("Recommendation answer is required (yes/no)");
+    if (
+      typeof recommendationComments === "string" &&
+      recommendationComments.length > MAX_TEXT_LENGTH
+    )
+      errors.push("Comments are too long");
 
     if (errors.length > 0) {
       res.status(400).json({ message: errors[0] });
@@ -144,7 +198,9 @@ router.post(
       concernFlags: Object.keys(concernFlags).length > 0 ? concernFlags : null,
     });
 
-    const completedCount = await storage.applications.getCompletedReferenceCount(reference.applicationId);
+    const completedCount = await storage.applications.getCompletedReferenceCount(
+      reference.applicationId,
+    );
     const totalRefs = (await storage.applications.getReferences(reference.applicationId)).length;
 
     await storage.applications.addTimelineEntry({
@@ -172,7 +228,7 @@ router.post(
     });
 
     res.json({ success: true });
-  })
+  }),
 );
 
 export default router;

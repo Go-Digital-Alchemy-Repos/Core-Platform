@@ -42,8 +42,24 @@ const form = {
   kind: "custom",
   isActive: true,
   fields: [
-    { id: "name", key: "name", label: "Name", type: "text", required: true, options: [], config: {} },
-    { id: "email", key: "email", label: "Email", type: "email", required: true, options: [], config: {} },
+    {
+      id: "name",
+      key: "name",
+      label: "Name",
+      type: "text",
+      required: true,
+      options: [],
+      config: {},
+    },
+    {
+      id: "email",
+      key: "email",
+      label: "Email",
+      type: "email",
+      required: true,
+      options: [],
+      config: {},
+    },
   ],
   settings: {
     submitButtonText: "Submit",
@@ -57,7 +73,12 @@ describe("forms CRM ingestion", () => {
     vi.clearAllMocks();
     mockGetPublicBySlug.mockResolvedValue(form);
     mockGetPublicById.mockResolvedValue(form);
-    mockCreateSubmission.mockResolvedValue({ id: "submission-1", formId: "form-1", data: {}, source: "public" });
+    mockCreateSubmission.mockResolvedValue({
+      id: "submission-1",
+      formId: "form-1",
+      data: {},
+      source: "public",
+    });
   });
 
   it("creates a CRM lead when the form setting is enabled", async () => {
@@ -72,7 +93,10 @@ describe("forms CRM ingestion", () => {
   });
 
   it("does not create a CRM lead when the form setting is disabled", async () => {
-    mockGetPublicBySlug.mockResolvedValue({ ...form, settings: { ...form.settings, createCrmLead: false } });
+    mockGetPublicBySlug.mockResolvedValue({
+      ...form,
+      settings: { ...form.settings, createCrmLead: false },
+    });
 
     const { submitManagedFormBySlug } = await import("../services/forms.service");
     await submitManagedFormBySlug("lead-form", { name: "Lin", email: "lin@example.com" });

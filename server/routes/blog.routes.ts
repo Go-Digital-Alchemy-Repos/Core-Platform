@@ -5,7 +5,11 @@ import { asyncHandler } from "../middleware/error-handler";
 import { publicBlogCommentSubmissionSchema, type BlogPost } from "@shared/schema";
 import * as r2Service from "../services/r2.service";
 import { optionalAuth } from "../middleware/auth";
-import { countLinksInText, getBlogCommentSettings, textContainsLinks } from "../services/blog-comments.service";
+import {
+  countLinksInText,
+  getBlogCommentSettings,
+  textContainsLinks,
+} from "../services/blog-comments.service";
 import { canAccessResource } from "../services/membership-access.service";
 
 const router = Router();
@@ -35,7 +39,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const posts = await storage.blog.getPublishedPosts();
     res.json(await Promise.all(posts.map(normalizePostImages)));
-  })
+  }),
 );
 
 router.get(
@@ -65,7 +69,7 @@ router.get(
         createdAt: comment.createdAt,
       })),
     });
-  })
+  }),
 );
 
 router.post(
@@ -172,7 +176,7 @@ router.post(
         createdAt: createdComment.createdAt,
       },
     });
-  })
+  }),
 );
 
 router.get(
@@ -193,7 +197,7 @@ router.get(
       });
     }
     res.json(await normalizePostImages(post));
-  })
+  }),
 );
 
 export default router;

@@ -7,7 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSeo } from "@/hooks/use-seo";
 import { stripHtml } from "@/lib/html";
@@ -72,7 +78,11 @@ function JobCard({ job }: { job: CareerJob }) {
             </p>
           )}
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-            {salary ? <span className="font-medium">{salary}</span> : <span className="text-muted-foreground">Salary available during hiring process</span>}
+            {salary ? (
+              <span className="font-medium">{salary}</span>
+            ) : (
+              <span className="text-muted-foreground">Salary available during hiring process</span>
+            )}
             <Button size="sm">View Job</Button>
           </div>
         </CardContent>
@@ -87,15 +97,18 @@ export function CareerListingsSection({ props = {} }: { props?: Record<string, u
   const [employmentType, setEmploymentType] = useState("all");
   const [workMode, setWorkMode] = useState("all");
   const [location, setLocation] = useState("all");
-  const heading = typeof props.heading === "string" && props.heading.trim()
-    ? props.heading.trim()
-    : "Open Positions";
-  const subheading = typeof props.subheading === "string" && props.subheading.trim()
-    ? props.subheading.trim()
-    : "Browse current opportunities and apply directly through the Career Center.";
-  const eyebrow = typeof props.eyebrow === "string" && props.eyebrow.trim()
-    ? props.eyebrow.trim()
-    : "Career Center";
+  const heading =
+    typeof props.heading === "string" && props.heading.trim()
+      ? props.heading.trim()
+      : "Open Positions";
+  const subheading =
+    typeof props.subheading === "string" && props.subheading.trim()
+      ? props.subheading.trim()
+      : "Browse current opportunities and apply directly through the Career Center.";
+  const eyebrow =
+    typeof props.eyebrow === "string" && props.eyebrow.trim()
+      ? props.eyebrow.trim()
+      : "Career Center";
 
   const query = useMemo(() => {
     const params = new URLSearchParams();
@@ -120,74 +133,102 @@ export function CareerListingsSection({ props = {} }: { props?: Record<string, u
   };
 
   return (
-    <section className="container mx-auto px-4 py-10 space-y-8" data-testid="section-career-listings">
-        <section className="space-y-3">
-          <Badge variant="outline" className="gap-1.5">
-            <Briefcase className="h-3.5 w-3.5" />
-            {eyebrow}
-          </Badge>
-          <h1 className="text-3xl font-bold tracking-normal sm:text-4xl">{heading}</h1>
-          <p className="max-w-2xl text-muted-foreground">
-            {subheading}
-          </p>
-        </section>
-
-        <section className="grid gap-3 rounded-md border bg-card p-4 md:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_auto]">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Search jobs" className="pl-9" />
-          </div>
-          <Select value={department} onValueChange={setDepartment}>
-            <SelectTrigger><SelectValue placeholder="Department" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All departments</SelectItem>
-              {(filters?.departments ?? []).map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={employmentType} onValueChange={setEmploymentType}>
-            <SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              {Object.entries(CAREER_EMPLOYMENT_TYPE_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={workMode} onValueChange={setWorkMode}>
-            <SelectTrigger><SelectValue placeholder="Work mode" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All work modes</SelectItem>
-              {Object.entries(CAREER_WORK_MODE_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={location} onValueChange={setLocation}>
-            <SelectTrigger><SelectValue placeholder="Location" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All locations</SelectItem>
-              {(filters?.locations ?? []).map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Button variant="ghost" size="icon" onClick={clearFilters} aria-label="Clear filters">
-            <X className="h-4 w-4" />
-          </Button>
-        </section>
-
-        <section className="space-y-4">
-          {isLoading ? (
-            Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-44 w-full" />)
-          ) : jobs.length > 0 ? (
-            jobs.map((job) => <JobCard key={job.id} job={job} />)
-          ) : (
-            <Card>
-              <CardContent className="py-10 text-center text-muted-foreground">
-                No open roles match those filters.
-              </CardContent>
-            </Card>
-          )}
-        </section>
+    <section
+      className="container mx-auto px-4 py-10 space-y-8"
+      data-testid="section-career-listings"
+    >
+      <section className="space-y-3">
+        <Badge variant="outline" className="gap-1.5">
+          <Briefcase className="h-3.5 w-3.5" />
+          {eyebrow}
+        </Badge>
+        <h1 className="text-3xl font-bold tracking-normal sm:text-4xl">{heading}</h1>
+        <p className="max-w-2xl text-muted-foreground">{subheading}</p>
       </section>
+
+      <section className="grid gap-3 rounded-md border bg-card p-4 md:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_auto]">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={q}
+            onChange={(event) => setQ(event.target.value)}
+            placeholder="Search jobs"
+            className="pl-9"
+          />
+        </div>
+        <Select value={department} onValueChange={setDepartment}>
+          <SelectTrigger>
+            <SelectValue placeholder="Department" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All departments</SelectItem>
+            {(filters?.departments ?? []).map((item) => (
+              <SelectItem key={item} value={item}>
+                {item}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={employmentType} onValueChange={setEmploymentType}>
+          <SelectTrigger>
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All types</SelectItem>
+            {Object.entries(CAREER_EMPLOYMENT_TYPE_LABELS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={workMode} onValueChange={setWorkMode}>
+          <SelectTrigger>
+            <SelectValue placeholder="Work mode" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All work modes</SelectItem>
+            {Object.entries(CAREER_WORK_MODE_LABELS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={location} onValueChange={setLocation}>
+          <SelectTrigger>
+            <SelectValue placeholder="Location" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All locations</SelectItem>
+            {(filters?.locations ?? []).map((item) => (
+              <SelectItem key={item} value={item}>
+                {item}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button variant="ghost" size="icon" onClick={clearFilters} aria-label="Clear filters">
+          <X className="h-4 w-4" />
+        </Button>
+      </section>
+
+      <section className="space-y-4">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-44 w-full" />
+          ))
+        ) : jobs.length > 0 ? (
+          jobs.map((job) => <JobCard key={job.id} job={job} />)
+        ) : (
+          <Card>
+            <CardContent className="py-10 text-center text-muted-foreground">
+              No open roles match those filters.
+            </CardContent>
+          </Card>
+        )}
+      </section>
+    </section>
   );
 }
 

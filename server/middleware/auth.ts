@@ -2,7 +2,11 @@ import type { Request, Response, NextFunction, RequestHandler } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import type { User } from "@shared/schema";
-import { AdminPermission, type UserRole, type AdminPermission as AdminPermissionType } from "@shared/types";
+import {
+  AdminPermission,
+  type UserRole,
+  type AdminPermission as AdminPermissionType,
+} from "@shared/types";
 
 const isDev = process.env.NODE_ENV !== "production";
 const JWT_SECRET = process.env.SESSION_SECRET || (isDev ? "dev-secret-change-me" : "");
@@ -28,15 +32,19 @@ function normalizePermissions(user: User | undefined): AdminPermissionType[] {
 
   if (!Array.isArray(user.adminPermissions)) return [];
 
-  return user.adminPermissions.filter((permission): permission is AdminPermissionType =>
-    permission === AdminPermission.DIRECTORY ||
-    permission === AdminPermission.CONTENT ||
-    permission === AdminPermission.DESIGN ||
-    permission === AdminPermission.CRM
+  return user.adminPermissions.filter(
+    (permission): permission is AdminPermissionType =>
+      permission === AdminPermission.DIRECTORY ||
+      permission === AdminPermission.CONTENT ||
+      permission === AdminPermission.DESIGN ||
+      permission === AdminPermission.CRM,
   );
 }
 
-export function hasAdminPermission(user: User | undefined, permission: AdminPermissionType): boolean {
+export function hasAdminPermission(
+  user: User | undefined,
+  permission: AdminPermissionType,
+): boolean {
   if (!user) return false;
   if (user.role === "admin") return true;
   if (user.role !== "editor") return false;
@@ -82,7 +90,11 @@ export function clearTokenCookie(res: Response) {
   res.clearCookie(COOKIE_NAME, { path: "/" });
 }
 
-export const authenticateToken: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+export const authenticateToken: RequestHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const token = req.cookies?.[COOKIE_NAME];
   if (!token) {
     res.status(401).json({ message: "Unauthorized" });
@@ -104,7 +116,11 @@ export const authenticateToken: RequestHandler = async (req: Request, res: Respo
   }
 };
 
-export const optionalAuth: RequestHandler = async (req: Request, _res: Response, next: NextFunction) => {
+export const optionalAuth: RequestHandler = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) => {
   const token = req.cookies?.[COOKIE_NAME];
   if (!token) {
     next();
@@ -149,7 +165,10 @@ export function requireAdminPermission(...permissions: AdminPermissionType[]): R
       return;
     }
 
-    if (permissions.length === 0 || permissions.some((permission) => hasAdminPermission(req.user, permission))) {
+    if (
+      permissions.length === 0 ||
+      permissions.some((permission) => hasAdminPermission(req.user, permission))
+    ) {
       next();
       return;
     }

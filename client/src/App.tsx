@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
-import { Switch, Route, useLocation, Redirect } from "wouter";
+import { Switch, Route, useLocation, useParams, Redirect } from "wouter";
 import { queryClient, STALE_TIMES } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -31,7 +31,7 @@ const JoinNetworkPage = lazy(() => import("@/features/public/join-network-page")
 const CmsHybridPage = lazy(() =>
   import("@/features/public/cms-hybrid-page").then((module) => ({
     default: module.CmsHybridPage,
-  }))
+  })),
 );
 const CmsPreviewPage = lazy(() => import("@/features/public/cms-preview-page"));
 
@@ -164,6 +164,20 @@ function DirectoryApplicationRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function CarolinaCmsRoute({ slug }: { slug: string }) {
+  return <CmsHybridPage slug={slug} fallback={<NotFound />} enabled />;
+}
+
+function CarolinaServiceAreaRoute() {
+  const params = useParams<{ slug: string }>();
+  return <CarolinaCmsRoute slug={`service-areas/${params.slug}`} />;
+}
+
+function CarolinaBlogPostRoute() {
+  const params = useParams<{ slug: string }>();
+  return <CarolinaCmsRoute slug={`blog/${params.slug}`} />;
+}
+
 function Router() {
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
@@ -175,86 +189,348 @@ function Router() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Switch>
-        <Route path="/" component={() => <CmsHybridPage slug="home" fallback={<HomePage />} enabled={siteFeatures.cmsEnabled} />} />
-        <Route path="/about" component={() => <CmsHybridPage slug="about" fallback={<AboutPage />} enabled={siteFeatures.cmsEnabled} />} />
-        <Route path="/contact" component={() => <CmsHybridPage slug="contact" fallback={<ContactPage />} enabled={siteFeatures.cmsEnabled} />} />
-        <Route path="/preview/cms/:id" component={() => siteFeatures.cmsEnabled ? <CmsPreviewPage /> : <NotFound />} />
-        <Route path="/join" component={() => <CmsHybridPage slug="join" fallback={<JoinNetworkPage />} enabled={siteFeatures.cmsEnabled} />} />
-        <Route path="/events" component={() => siteFeatures.eventsEnabled ? <CmsHybridPage slug="events" fallback={<EventsPage />} enabled={siteFeatures.cmsEnabled} /> : <NotFound />} />
-        <Route path="/events/:id" component={() => siteFeatures.eventsEnabled ? <EventDetailPage /> : <NotFound />} />
-        <Route path="/careers" component={() => siteFeatures.careersEnabled ? <CmsHybridPage slug="careers" fallback={<CareersPage />} enabled={siteFeatures.cmsEnabled} /> : <NotFound />} />
-        <Route path="/careers/:slug" component={() => siteFeatures.careersEnabled ? <CareerJobDetailPage /> : <NotFound />} />
-        <Route path="/portfolio" component={() => siteFeatures.portfolioEnabled ? <CmsHybridPage slug="portfolio" fallback={<PortfolioPage />} enabled={siteFeatures.cmsEnabled} /> : <NotFound />} />
-        <Route path="/portfolio/:slug" component={() => siteFeatures.portfolioEnabled ? <PortfolioDetailPage /> : <NotFound />} />
-        <Route path="/recordings" component={() => <CmsHybridPage slug="recordings" fallback={<RecordingArchivesPage />} enabled={siteFeatures.cmsEnabled} />} />
+        <Route
+          path="/"
+          component={() => (
+            <CmsHybridPage slug="home" fallback={<HomePage />} enabled={siteFeatures.cmsEnabled} />
+          )}
+        />
+        <Route
+          path="/about"
+          component={() => (
+            <CmsHybridPage
+              slug="about"
+              fallback={<AboutPage />}
+              enabled={siteFeatures.cmsEnabled}
+            />
+          )}
+        />
+        <Route
+          path="/contact"
+          component={() => (
+            <CmsHybridPage
+              slug="contact"
+              fallback={<ContactPage />}
+              enabled={siteFeatures.cmsEnabled}
+            />
+          )}
+        />
+        <Route path="/get-a-quote" component={() => <CarolinaCmsRoute slug="get-a-quote" />} />
+        <Route
+          path="/commercial-quote"
+          component={() => <CarolinaCmsRoute slug="commercial-quote" />}
+        />
+        <Route
+          path="/residential-lawn-maintenance"
+          component={() => <CarolinaCmsRoute slug="residential-lawn-maintenance" />}
+        />
+        <Route
+          path="/residential-landscaping"
+          component={() => <CarolinaCmsRoute slug="residential-landscaping" />}
+        />
+        <Route
+          path="/residential-hardscape"
+          component={() => <CarolinaCmsRoute slug="residential-hardscape" />}
+        />
+        <Route
+          path="/mulching-and-planting"
+          component={() => <CarolinaCmsRoute slug="mulching-and-planting" />}
+        />
+        <Route
+          path="/drainage-solutions"
+          component={() => <CarolinaCmsRoute slug="drainage-solutions" />}
+        />
+        <Route path="/commercial" component={() => <CarolinaCmsRoute slug="commercial" />} />
+        <Route
+          path="/commercial-grounds-maintenance"
+          component={() => <CarolinaCmsRoute slug="commercial-grounds-maintenance" />}
+        />
+        <Route
+          path="/commercial-landscaping"
+          component={() => <CarolinaCmsRoute slug="commercial-landscaping" />}
+        />
+        <Route
+          path="/commercial-hardscape"
+          component={() => <CarolinaCmsRoute slug="commercial-hardscape" />}
+        />
+        <Route
+          path="/commercial-drainage"
+          component={() => <CarolinaCmsRoute slug="commercial-drainage" />}
+        />
+        <Route path="/hoa-services" component={() => <CarolinaCmsRoute slug="hoa-services" />} />
+        <Route path="/service-areas" component={() => <CarolinaCmsRoute slug="service-areas" />} />
+        <Route path="/service-areas/:slug" component={CarolinaServiceAreaRoute} />
+        <Route path="/gallery" component={() => <CarolinaCmsRoute slug="gallery" />} />
+        <Route
+          path="/commercial-portfolio"
+          component={() => <CarolinaCmsRoute slug="commercial-portfolio" />}
+        />
+        <Route path="/faq" component={() => <CarolinaCmsRoute slug="faq" />} />
+        <Route
+          path="/commercial-faq"
+          component={() => <CarolinaCmsRoute slug="commercial-faq" />}
+        />
+        <Route path="/blog" component={() => <CarolinaCmsRoute slug="blog" />} />
+        <Route path="/blog/:slug" component={CarolinaBlogPostRoute} />
+        <Route
+          path="/preview/cms/:id"
+          component={() => (siteFeatures.cmsEnabled ? <CmsPreviewPage /> : <NotFound />)}
+        />
+        <Route
+          path="/join"
+          component={() => (
+            <CmsHybridPage
+              slug="join"
+              fallback={<JoinNetworkPage />}
+              enabled={siteFeatures.cmsEnabled}
+            />
+          )}
+        />
+        <Route
+          path="/events"
+          component={() =>
+            siteFeatures.eventsEnabled ? (
+              <CmsHybridPage
+                slug="events"
+                fallback={<EventsPage />}
+                enabled={siteFeatures.cmsEnabled}
+              />
+            ) : (
+              <NotFound />
+            )
+          }
+        />
+        <Route
+          path="/events/:id"
+          component={() => (siteFeatures.eventsEnabled ? <EventDetailPage /> : <NotFound />)}
+        />
+        <Route
+          path="/careers"
+          component={() =>
+            siteFeatures.careersEnabled ? (
+              <CmsHybridPage
+                slug="careers"
+                fallback={<CareersPage />}
+                enabled={siteFeatures.cmsEnabled}
+              />
+            ) : (
+              <NotFound />
+            )
+          }
+        />
+        <Route
+          path="/careers/:slug"
+          component={() => (siteFeatures.careersEnabled ? <CareerJobDetailPage /> : <NotFound />)}
+        />
+        <Route
+          path="/portfolio"
+          component={() =>
+            siteFeatures.portfolioEnabled ? (
+              <CmsHybridPage
+                slug="portfolio"
+                fallback={<PortfolioPage />}
+                enabled={siteFeatures.cmsEnabled}
+              />
+            ) : (
+              <NotFound />
+            )
+          }
+        />
+        <Route
+          path="/portfolio/:slug"
+          component={() => (siteFeatures.portfolioEnabled ? <PortfolioDetailPage /> : <NotFound />)}
+        />
+        <Route
+          path="/recordings"
+          component={() => (
+            <CmsHybridPage
+              slug="recordings"
+              fallback={<RecordingArchivesPage />}
+              enabled={siteFeatures.cmsEnabled}
+            />
+          )}
+        />
         <Route path="/search" component={SearchResultsPage} />
-        <Route path="/shop" component={() => siteFeatures.ecommerceEnabled ? <ShopPage /> : <NotFound />} />
-        <Route path="/membership" component={() => siteFeatures.membershipEnabled ? <MembershipPage /> : <NotFound />} />
-        <Route path="/products/:slug" component={() => siteFeatures.ecommerceEnabled ? <ProductDetailPage /> : <NotFound />} />
-        <Route path="/cart" component={() => siteFeatures.ecommerceEnabled ? <CartPage /> : <NotFound />} />
-        <Route path="/checkout" component={() => siteFeatures.ecommerceEnabled ? <CheckoutPage /> : <NotFound />} />
-        <Route path="/order-success" component={() => siteFeatures.ecommerceEnabled ? <OrderSuccessPage /> : <NotFound />} />
-        <Route path="/orders/status" component={() => siteFeatures.ecommerceEnabled ? <OrderStatusPage /> : <NotFound />} />
+        <Route
+          path="/shop"
+          component={() => (siteFeatures.ecommerceEnabled ? <ShopPage /> : <NotFound />)}
+        />
+        <Route
+          path="/membership"
+          component={() => (siteFeatures.membershipEnabled ? <MembershipPage /> : <NotFound />)}
+        />
+        <Route
+          path="/products/:slug"
+          component={() => (siteFeatures.ecommerceEnabled ? <ProductDetailPage /> : <NotFound />)}
+        />
+        <Route
+          path="/cart"
+          component={() => (siteFeatures.ecommerceEnabled ? <CartPage /> : <NotFound />)}
+        />
+        <Route
+          path="/checkout"
+          component={() => (siteFeatures.ecommerceEnabled ? <CheckoutPage /> : <NotFound />)}
+        />
+        <Route
+          path="/order-success"
+          component={() => (siteFeatures.ecommerceEnabled ? <OrderSuccessPage /> : <NotFound />)}
+        />
+        <Route
+          path="/orders/status"
+          component={() => (siteFeatures.ecommerceEnabled ? <OrderStatusPage /> : <NotFound />)}
+        />
         <Route path="/account">
           {siteFeatures.ecommerceEnabled ? (
             <ProtectedRoute roles={customerAccountRoles}>
               <CustomerAccountPage view="dashboard" />
             </ProtectedRoute>
-          ) : <NotFound />}
+          ) : (
+            <NotFound />
+          )}
         </Route>
         <Route path="/account/orders">
           {siteFeatures.ecommerceEnabled ? (
             <ProtectedRoute roles={customerAccountRoles}>
               <CustomerAccountPage view="orders" />
             </ProtectedRoute>
-          ) : <NotFound />}
+          ) : (
+            <NotFound />
+          )}
         </Route>
         <Route path="/account/orders/:id">
           {siteFeatures.ecommerceEnabled ? (
             <ProtectedRoute roles={customerAccountRoles}>
               <CustomerAccountPage view="order" />
             </ProtectedRoute>
-          ) : <NotFound />}
+          ) : (
+            <NotFound />
+          )}
         </Route>
         <Route path="/account/profile">
           {siteFeatures.ecommerceEnabled ? (
             <ProtectedRoute roles={customerAccountRoles}>
               <CustomerAccountPage view="profile" />
             </ProtectedRoute>
-          ) : <NotFound />}
+          ) : (
+            <NotFound />
+          )}
         </Route>
         <Route path="/account/addresses">
           {siteFeatures.ecommerceEnabled ? (
             <ProtectedRoute roles={customerAccountRoles}>
               <CustomerAccountPage view="addresses" />
             </ProtectedRoute>
-          ) : <NotFound />}
+          ) : (
+            <NotFound />
+          )}
         </Route>
         <Route path="/account/security">
           {siteFeatures.ecommerceEnabled ? (
             <ProtectedRoute roles={customerAccountRoles}>
               <CustomerAccountPage view="security" />
             </ProtectedRoute>
-          ) : <NotFound />}
+          ) : (
+            <NotFound />
+          )}
         </Route>
         <Route path="/account/preferences">
           {siteFeatures.ecommerceEnabled ? (
             <ProtectedRoute roles={customerAccountRoles}>
               <CustomerAccountPage view="preferences" />
             </ProtectedRoute>
-          ) : <NotFound />}
+          ) : (
+            <NotFound />
+          )}
         </Route>
-        <Route path="/insights" component={() => siteFeatures.blogEnabled ? <CmsHybridPage slug="insights" fallback={<InsightsPage />} enabled={siteFeatures.cmsEnabled} /> : <NotFound />} />
-        <Route path="/insights/:slug" component={() => siteFeatures.blogEnabled ? <InsightsPostPage /> : <NotFound />} />
-        <Route path="/directory" component={() => siteFeatures.directoryEnabled ? <CmsHybridPage slug="directory" fallback={<DirectoryPage />} enabled={siteFeatures.cmsEnabled} /> : <NotFound />} />
-        <Route path="/privacy-policy" component={() => <CmsHybridPage slug="privacy-policy" fallback={<LegalFallbackPage title="Privacy Policy" subtitle="Review how Core Platform collects, uses, stores, and protects information across the website and related services." />} enabled={siteFeatures.cmsEnabled} />} />
-        <Route path="/terms-of-service" component={() => <CmsHybridPage slug="terms-of-service" fallback={<LegalFallbackPage title="Terms of Service" subtitle="Review the terms governing use of the Core Platform website, directory, events, and related services." />} enabled={siteFeatures.cmsEnabled} />} />
-        <Route path="/disclaimer" component={() => <CmsHybridPage slug="disclaimer" fallback={<LegalFallbackPage title="Disclaimer" subtitle="Review emergency guidance, directory vetting limitations, and important information about using the Core Platform directory and related services." />} enabled={siteFeatures.cmsEnabled} />} />
-        <Route path="/directory/:id" component={() => siteFeatures.directoryEnabled ? <TherapistProfilePage /> : <NotFound />} />
+        <Route
+          path="/insights"
+          component={() =>
+            siteFeatures.blogEnabled ? (
+              <CmsHybridPage
+                slug="insights"
+                fallback={<InsightsPage />}
+                enabled={siteFeatures.cmsEnabled}
+              />
+            ) : (
+              <NotFound />
+            )
+          }
+        />
+        <Route
+          path="/insights/:slug"
+          component={() => (siteFeatures.blogEnabled ? <InsightsPostPage /> : <NotFound />)}
+        />
+        <Route
+          path="/directory"
+          component={() =>
+            siteFeatures.directoryEnabled ? (
+              <CmsHybridPage
+                slug="directory"
+                fallback={<DirectoryPage />}
+                enabled={siteFeatures.cmsEnabled}
+              />
+            ) : (
+              <NotFound />
+            )
+          }
+        />
+        <Route
+          path="/privacy-policy"
+          component={() => (
+            <CmsHybridPage
+              slug="privacy-policy"
+              fallback={
+                <LegalFallbackPage
+                  title="Privacy Policy"
+                  subtitle="Review how Core Platform collects, uses, stores, and protects information across the website and related services."
+                />
+              }
+              enabled={siteFeatures.cmsEnabled}
+            />
+          )}
+        />
+        <Route
+          path="/terms-of-service"
+          component={() => (
+            <CmsHybridPage
+              slug="terms-of-service"
+              fallback={
+                <LegalFallbackPage
+                  title="Terms of Service"
+                  subtitle="Review the terms governing use of the Core Platform website, directory, events, and related services."
+                />
+              }
+              enabled={siteFeatures.cmsEnabled}
+            />
+          )}
+        />
+        <Route
+          path="/disclaimer"
+          component={() => (
+            <CmsHybridPage
+              slug="disclaimer"
+              fallback={
+                <LegalFallbackPage
+                  title="Disclaimer"
+                  subtitle="Review emergency guidance, directory vetting limitations, and important information about using the Core Platform directory and related services."
+                />
+              }
+              enabled={siteFeatures.cmsEnabled}
+            />
+          )}
+        />
+        <Route
+          path="/directory/:id"
+          component={() =>
+            siteFeatures.directoryEnabled ? <TherapistProfilePage /> : <NotFound />
+          }
+        />
         <Route path="/reference/:token" component={ReferenceFormPage} />
         <Route path="/forms/:slug" component={StandaloneFormPage} />
         <Route path="/auth/login" component={LoginPage} />
-        <Route path="/auth/register"><Redirect to="/join" replace /></Route>
+        <Route path="/auth/register">
+          <Redirect to="/join" replace />
+        </Route>
         <Route path="/auth/forgot-password" component={ForgotPasswordPage} />
         <Route path="/auth/reset-password" component={ResetPasswordPage} />
         <Route path="/setup" component={AdminSetupPage} />
@@ -280,7 +556,9 @@ function Router() {
               <DirectoryApplicationRoute>
                 <ApplicationPage />
               </DirectoryApplicationRoute>
-            ) : <NotFound />}
+            ) : (
+              <NotFound />
+            )}
           </ProtectedRoute>
         </Route>
         <Route path="/therapist/application/status">
@@ -289,7 +567,9 @@ function Router() {
               <DirectoryApplicationRoute>
                 <ApplicationStatusPage />
               </DirectoryApplicationRoute>
-            ) : <NotFound />}
+            ) : (
+              <NotFound />
+            )}
           </ProtectedRoute>
         </Route>
 
@@ -338,7 +618,11 @@ function Router() {
         </Route>
         <Route path="/admin/careers/settings">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
-            {siteFeatures.careersEnabled ? <AdminCareersPage initialTab="settings" /> : <NotFound />}
+            {siteFeatures.careersEnabled ? (
+              <AdminCareersPage initialTab="settings" />
+            ) : (
+              <NotFound />
+            )}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/careers">
@@ -557,16 +841,21 @@ function SetupGuard({ children }: { children: React.ReactNode }) {
   });
 
   const needsSetup = setupStatus?.needsSetup === true;
+  const setupProtectedPath =
+    location === "/setup" || location.startsWith("/admin") || location.startsWith("/auth");
 
   useEffect(() => {
-    if (needsSetup && location !== "/setup") {
+    if (needsSetup && setupProtectedPath && location !== "/setup") {
       setLocation("/setup");
     }
-  }, [needsSetup, location, setLocation]);
+  }, [needsSetup, setupProtectedPath, location, setLocation]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen" data-testid="setup-guard-loading">
+      <div
+        className="flex items-center justify-center min-h-screen"
+        data-testid="setup-guard-loading"
+      >
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );

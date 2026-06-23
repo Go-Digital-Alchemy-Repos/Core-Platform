@@ -49,7 +49,9 @@ router.post("/menus", async (req, res) => {
   try {
     const parsed = menuBodySchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0]?.message || "Validation failed" });
+      return res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message || "Validation failed" });
     }
     const data = parsed.data;
 
@@ -77,7 +79,9 @@ router.put("/menus/:id", async (req, res) => {
 
     const parsed = menuBodySchema.partial().safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0]?.message || "Validation failed" });
+      return res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message || "Validation failed" });
     }
     const data = parsed.data;
 

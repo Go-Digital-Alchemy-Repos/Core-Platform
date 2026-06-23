@@ -19,14 +19,16 @@ router.get(
       ...form,
       settings: {
         submitButtonText:
-          typeof form.settings?.submitButtonText === "string" ? form.settings.submitButtonText : "Submit",
+          typeof form.settings?.submitButtonText === "string"
+            ? form.settings.submitButtonText
+            : "Submit",
         successMessage:
           typeof form.settings?.successMessage === "string"
             ? form.settings.successMessage
             : "Thanks! Your submission has been received.",
       },
     });
-  })
+  }),
 );
 
 router.post(
@@ -38,7 +40,7 @@ router.post(
       source: "public",
     });
     res.status(201).json({ message: result.successMessage, submissionId: result.submission.id });
-  })
+  }),
 );
 
 export default router;

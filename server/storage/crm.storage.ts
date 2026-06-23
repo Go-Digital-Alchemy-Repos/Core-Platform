@@ -61,13 +61,15 @@ export class CrmStorage {
     const query = filters.query?.trim();
     if (query) {
       const pattern = `%${query}%`;
-      conditions.push(or(
-        ilike(crmLeads.name, pattern),
-        ilike(crmLeads.email, pattern),
-        ilike(crmLeads.phone, pattern),
-        ilike(crmLeads.company, pattern),
-        ilike(crmLeads.source, pattern),
-      ));
+      conditions.push(
+        or(
+          ilike(crmLeads.name, pattern),
+          ilike(crmLeads.email, pattern),
+          ilike(crmLeads.phone, pattern),
+          ilike(crmLeads.company, pattern),
+          ilike(crmLeads.source, pattern),
+        ),
+      );
     }
     if (isCrmLeadStage(filters.stage)) {
       conditions.push(eq(crmLeads.stage, filters.stage));
@@ -96,7 +98,9 @@ export class CrmStorage {
     return { ...lead, notes, tasks, client };
   }
 
-  async findDuplicateLead(data: Pick<InsertCrmLead, "email" | "phone">): Promise<CrmLead | undefined> {
+  async findDuplicateLead(
+    data: Pick<InsertCrmLead, "email" | "phone">,
+  ): Promise<CrmLead | undefined> {
     const email = typeof data.email === "string" ? data.email.trim().toLowerCase() : "";
     const phone = typeof data.phone === "string" ? data.phone.trim() : "";
     if (email) {
@@ -168,19 +172,21 @@ export class CrmStorage {
     const query = filters.query?.trim();
     if (query) {
       const pattern = `%${query}%`;
-      conditions.push(or(
-        ilike(crmClients.name, pattern),
-        ilike(crmClients.email, pattern),
-        ilike(crmClients.phone, pattern),
-        ilike(crmClients.company, pattern),
-        ilike(crmClients.primaryEmail, pattern),
-        ilike(crmClients.primaryPhone, pattern),
-        ilike(crmClients.companyName, pattern),
-        ilike(crmClients.website, pattern),
-        ilike(crmClients.city, pattern),
-        ilike(crmClients.region, pattern),
-        ilike(crmClients.source, pattern),
-      ));
+      conditions.push(
+        or(
+          ilike(crmClients.name, pattern),
+          ilike(crmClients.email, pattern),
+          ilike(crmClients.phone, pattern),
+          ilike(crmClients.company, pattern),
+          ilike(crmClients.primaryEmail, pattern),
+          ilike(crmClients.primaryPhone, pattern),
+          ilike(crmClients.companyName, pattern),
+          ilike(crmClients.website, pattern),
+          ilike(crmClients.city, pattern),
+          ilike(crmClients.region, pattern),
+          ilike(crmClients.source, pattern),
+        ),
+      );
     }
     if (isCrmClientStatus(filters.status)) {
       conditions.push(eq(crmClients.status, filters.status));
@@ -258,7 +264,10 @@ export class CrmStorage {
     return task;
   }
 
-  async updateClientTask(id: string, data: Partial<InsertCrmClientTask>): Promise<CrmClientTask | undefined> {
+  async updateClientTask(
+    id: string,
+    data: Partial<InsertCrmClientTask>,
+  ): Promise<CrmClientTask | undefined> {
     const [task] = await db
       .update(crmClientTasks)
       .set({ ...data, updatedAt: new Date() })

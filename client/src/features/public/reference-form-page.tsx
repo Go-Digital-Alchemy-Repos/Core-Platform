@@ -56,9 +56,12 @@ function YesNoField({
       <Label>{label}</Label>
       <div className="flex gap-4">
         {["yes", "no"].map((opt) => (
-          <label key={opt} className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
-            value === opt ? "border-primary bg-primary/5" : "hover:bg-muted/50"
-          }`}>
+          <label
+            key={opt}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
+              value === opt ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+            }`}
+          >
             <input
               type="radio"
               name={name}
@@ -133,7 +136,10 @@ export default function ReferenceFormPage() {
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(
-          (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
             ? payload.message
             : null) || "Failed to submit. Please try again.",
         );
@@ -144,7 +150,9 @@ export default function ReferenceFormPage() {
       setSubmitted(true);
     },
     onError: (err) => {
-      setValidationError(err instanceof Error ? err.message : "Failed to submit. Please try again.");
+      setValidationError(
+        err instanceof Error ? err.message : "Failed to submit. Please try again.",
+      );
     },
   });
 
@@ -206,7 +214,8 @@ export default function ReferenceFormPage() {
             <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
             <h2 className="text-xl font-semibold mb-2">Invalid Reference Link</h2>
             <p className="text-muted-foreground">
-              This reference link is invalid, has expired, or the application is no longer active. If you believe this is an error, please contact the applicant or specialized support.
+              This reference link is invalid, has expired, or the application is no longer active.
+              If you believe this is an error, please contact the applicant or specialized support.
             </p>
           </CardContent>
         </Card>
@@ -251,8 +260,10 @@ export default function ReferenceFormPage() {
               <div>
                 <p className="font-medium">Confidential Reference for {data.applicantName}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  <strong>{data.applicantName}</strong> has applied to join the Core Platform provider network and has listed you as a professional reference.
-                  Your responses are <strong>strictly confidential</strong> and will not be shared with the applicant. This form takes approximately 5–10 minutes to complete.
+                  <strong>{data.applicantName}</strong> has applied to join the Core Platform
+                  provider network and has listed you as a professional reference. Your responses
+                  are <strong>strictly confidential</strong> and will not be shared with the
+                  applicant. This form takes approximately 5–10 minutes to complete.
                 </p>
               </div>
             </div>
@@ -261,8 +272,12 @@ export default function ReferenceFormPage() {
 
         <Card className="mb-6 bg-muted/30">
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">What does "platform-approved" mean?</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">{CORE_PLATFORM_DEFINITION}</p>
+            <p className="text-xs text-muted-foreground font-medium mb-1">
+              What does "platform-approved" mean?
+            </p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {CORE_PLATFORM_DEFINITION}
+            </p>
           </CardContent>
         </Card>
 
@@ -308,7 +323,9 @@ export default function ReferenceFormPage() {
             </CardHeader>
             <CardContent className="space-y-5">
               <div>
-                <Label htmlFor="howKnown">How do you know the applicant, and how long have you known them? *</Label>
+                <Label htmlFor="howKnown">
+                  How do you know the applicant, and how long have you known them? *
+                </Label>
                 <Textarea
                   id="howKnown"
                   value={form.howKnown}
@@ -321,7 +338,10 @@ export default function ReferenceFormPage() {
               </div>
 
               <div>
-                <Label htmlFor="corePlatformObservation">In what contexts have you had the opportunity to observe the applicant interacting with members? *</Label>
+                <Label htmlFor="corePlatformObservation">
+                  In what contexts have you had the opportunity to observe the applicant interacting
+                  with members? *
+                </Label>
                 <Textarea
                   id="corePlatformObservation"
                   value={form.corePlatformObservation}
@@ -334,7 +354,10 @@ export default function ReferenceFormPage() {
               </div>
 
               <div>
-                <Label htmlFor="corePlatformUnderstanding">In your experience, how well does the applicant understand the unique experiences and challenges faced by members? *</Label>
+                <Label htmlFor="corePlatformUnderstanding">
+                  In your experience, how well does the applicant understand the unique experiences
+                  and challenges faced by members? *
+                </Label>
                 <Textarea
                   id="corePlatformUnderstanding"
                   value={form.corePlatformUnderstanding}
@@ -347,7 +370,10 @@ export default function ReferenceFormPage() {
               </div>
 
               <div>
-                <Label htmlFor="culturalConnection">How would you describe the applicant's ability to connect with children, teens, or families from culturally diverse or internationally mobile backgrounds? *</Label>
+                <Label htmlFor="culturalConnection">
+                  How would you describe the applicant's ability to connect with children, teens, or
+                  families from culturally diverse or internationally mobile backgrounds? *
+                </Label>
                 <Textarea
                   id="culturalConnection"
                   value={form.culturalConnection}
@@ -399,9 +425,14 @@ export default function ReferenceFormPage() {
                 <Label>Would you recommend the applicant as a platform-approved provider? *</Label>
                 <div className="flex gap-4 mt-2">
                   {["yes", "no"].map((opt) => (
-                    <label key={opt} className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
-                      form.recommendation === opt ? "border-primary bg-primary/5" : "hover:bg-muted/50"
-                    }`}>
+                    <label
+                      key={opt}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
+                        form.recommendation === opt
+                          ? "border-primary bg-primary/5"
+                          : "hover:bg-muted/50"
+                      }`}
+                    >
                       <input
                         type="radio"
                         name="recommendation"

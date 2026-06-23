@@ -9,7 +9,14 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { LogIn } from "lucide-react";
 
 const loginSchema = z.object({
@@ -120,7 +127,11 @@ export default function LoginPage() {
                   />
 
                   <div className="flex justify-end">
-                    <Link href="/auth/forgot-password" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-forgot-password">
+                    <Link
+                      href="/auth/forgot-password"
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      data-testid="link-forgot-password"
+                    >
                       Forgot your password?
                     </Link>
                   </div>
@@ -141,7 +152,10 @@ export default function LoginPage() {
                 </form>
               </Form>
 
-              <div className="mt-4 text-center text-sm text-muted-foreground" data-testid="text-applications-notice">
+              <div
+                className="mt-4 text-center text-sm text-muted-foreground"
+                data-testid="text-applications-notice"
+              >
                 Applications are currently closed.
               </div>
             </CardContent>
@@ -177,7 +191,9 @@ export default function LoginPage() {
                   }}
                 >
                   <span className="font-medium text-amber-800 dark:text-amber-300">Therapist</span>
-                  <span className="ml-2 text-muted-foreground">therapist@test.com / Therapist123!</span>
+                  <span className="ml-2 text-muted-foreground">
+                    therapist@test.com / Therapist123!
+                  </span>
                 </button>
                 <button
                   type="button"
@@ -189,7 +205,9 @@ export default function LoginPage() {
                   }}
                 >
                   <span className="font-medium text-amber-800 dark:text-amber-300">Admin</span>
-                  <span className="ml-2 text-muted-foreground">admin@coreplatform.com / Admin123!</span>
+                  <span className="ml-2 text-muted-foreground">
+                    admin@coreplatform.com / Admin123!
+                  </span>
                 </button>
               </CardContent>
             </Card>

@@ -31,12 +31,51 @@ export async function saveMembershipStripeSettings(input: {
   customerPortalEnabled?: boolean;
 }) {
   const writes = [];
-  if (input.mode) writes.push(storage.settings.upsertSetting("membership_stripe_mode", input.mode, SETTINGS_CATEGORY, false));
-  if (input.publishableKey !== undefined) writes.push(storage.settings.upsertSetting("membership_stripe_publishable_key", input.publishableKey, SETTINGS_CATEGORY, false));
-  if (input.secretKey !== undefined) writes.push(storage.settings.upsertSetting("membership_stripe_secret_key", input.secretKey, SETTINGS_CATEGORY, true));
-  if (input.webhookSecret !== undefined) writes.push(storage.settings.upsertSetting("membership_stripe_webhook_secret", input.webhookSecret, SETTINGS_CATEGORY, true));
+  if (input.mode)
+    writes.push(
+      storage.settings.upsertSetting(
+        "membership_stripe_mode",
+        input.mode,
+        SETTINGS_CATEGORY,
+        false,
+      ),
+    );
+  if (input.publishableKey !== undefined)
+    writes.push(
+      storage.settings.upsertSetting(
+        "membership_stripe_publishable_key",
+        input.publishableKey,
+        SETTINGS_CATEGORY,
+        false,
+      ),
+    );
+  if (input.secretKey !== undefined)
+    writes.push(
+      storage.settings.upsertSetting(
+        "membership_stripe_secret_key",
+        input.secretKey,
+        SETTINGS_CATEGORY,
+        true,
+      ),
+    );
+  if (input.webhookSecret !== undefined)
+    writes.push(
+      storage.settings.upsertSetting(
+        "membership_stripe_webhook_secret",
+        input.webhookSecret,
+        SETTINGS_CATEGORY,
+        true,
+      ),
+    );
   if (input.customerPortalEnabled !== undefined) {
-    writes.push(storage.settings.upsertSetting("membership_stripe_customer_portal_enabled", String(input.customerPortalEnabled), SETTINGS_CATEGORY, false));
+    writes.push(
+      storage.settings.upsertSetting(
+        "membership_stripe_customer_portal_enabled",
+        String(input.customerPortalEnabled),
+        SETTINGS_CATEGORY,
+        false,
+      ),
+    );
   }
   await Promise.all(writes);
   return getMaskedMembershipStripeStatus();
@@ -55,7 +94,10 @@ export async function getMaskedMembershipStripeStatus() {
 
 export async function getMembershipStripeClient(): Promise<Stripe> {
   const settings = await getMembershipStripeSettings();
-  if (!settings.secretKey) throw Object.assign(new Error("Membership Stripe secret key is not configured"), { statusCode: 400 });
+  if (!settings.secretKey)
+    throw Object.assign(new Error("Membership Stripe secret key is not configured"), {
+      statusCode: 400,
+    });
   return new Stripe(settings.secretKey);
 }
 
@@ -87,8 +129,10 @@ export async function createMembershipCheckoutSession(params: {
     storage.membership.getPlan(params.planId),
     storage.membership.getPrice(params.priceId),
   ]);
-  if (!plan || plan.status !== "active") throw Object.assign(new Error("Membership plan is not available"), { statusCode: 400 });
-  if (!price || price.planId !== plan.id || !price.active) throw Object.assign(new Error("Membership price is not available"), { statusCode: 400 });
+  if (!plan || plan.status !== "active")
+    throw Object.assign(new Error("Membership plan is not available"), { statusCode: 400 });
+  if (!price || price.planId !== plan.id || !price.active)
+    throw Object.assign(new Error("Membership price is not available"), { statusCode: 400 });
 
   if (plan.isFree || price.amount === 0) {
     const subscription = await storage.membership.upsertSubscriptionForUser(params.userId, {
@@ -107,7 +151,10 @@ export async function createMembershipCheckoutSession(params: {
     return { free: true, subscription, url: params.successUrl };
   }
 
-  if (!price.stripePriceId) throw Object.assign(new Error("This membership price is missing a Stripe price ID"), { statusCode: 400 });
+  if (!price.stripePriceId)
+    throw Object.assign(new Error("This membership price is missing a Stripe price ID"), {
+      statusCode: 400,
+    });
   const stripe = await getMembershipStripeClient();
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -139,18 +186,22 @@ export async function createMembershipCheckoutSession(params: {
     providerCustomerId: typeof session.customer === "string" ? session.customer : null,
     providerCheckoutSessionId: session.id,
   });
-  logger.stripe.info("Membership checkout session created", { sessionId: session.id, subscriptionId: subscription.id });
+  logger.stripe.info("Membership checkout session created", {
+    sessionId: session.id,
+    subscriptionId: subscription.id,
+  });
   return { free: false, sessionId: session.id, url: session.url };
 }
 
-export async function createMembershipPortalSession(params: {
-  userId: string;
-  returnUrl: string;
-}) {
+export async function createMembershipPortalSession(params: { userId: string; returnUrl: string }) {
   const settings = await getMembershipStripeSettings();
-  if (!settings.customerPortalEnabled) throw Object.assign(new Error("Membership customer portal is disabled"), { statusCode: 400 });
+  if (!settings.customerPortalEnabled)
+    throw Object.assign(new Error("Membership customer portal is disabled"), { statusCode: 400 });
   const subscription = await storage.membership.getActiveSubscriptionForUser(params.userId);
-  if (!subscription?.providerCustomerId) throw Object.assign(new Error("No Stripe customer is linked to this membership"), { statusCode: 400 });
+  if (!subscription?.providerCustomerId)
+    throw Object.assign(new Error("No Stripe customer is linked to this membership"), {
+      statusCode: 400,
+    });
   const stripe = await getMembershipStripeClient();
   return stripe.billingPortal.sessions.create({
     customer: subscription.providerCustomerId,

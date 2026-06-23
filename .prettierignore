@@ -2,3 +2,7 @@ node_modules
 dist
 build
 migrations
+.git
+uploads
+cms-export.sql
+.DS_Store

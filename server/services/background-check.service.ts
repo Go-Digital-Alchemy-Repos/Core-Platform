@@ -56,8 +56,16 @@ export function isActionRequiredStatus(status: BackgroundCheckStatus): boolean {
 }
 
 export interface BackgroundCheckVendor {
-  createOrder(applicationId: string, applicantData: Record<string, unknown>): Promise<{ externalId: string; status: BackgroundCheckStatus }>;
-  syncStatus(externalId: string): Promise<{ status: BackgroundCheckStatus; result?: string; reportUrl?: string; details?: string }>;
+  createOrder(
+    applicationId: string,
+    applicantData: Record<string, unknown>,
+  ): Promise<{ externalId: string; status: BackgroundCheckStatus }>;
+  syncStatus(externalId: string): Promise<{
+    status: BackgroundCheckStatus;
+    result?: string;
+    reportUrl?: string;
+    details?: string;
+  }>;
   resendInvite(externalId: string): Promise<boolean>;
 }
 
@@ -204,9 +212,7 @@ export async function syncBackgroundCheckStatus(
   }
 }
 
-export async function resendBackgroundCheckInvite(
-  applicationId: string,
-): Promise<boolean> {
+export async function resendBackgroundCheckInvite(applicationId: string): Promise<boolean> {
   const check = await storage.applications.getBackgroundCheck(applicationId);
   if (!check || !check.vendorName || !check.vendorExternalId) {
     return false;
@@ -260,7 +266,8 @@ export async function adminUpdateBackgroundCheck(
 
   if (data.notes !== undefined) updateData.notes = data.notes;
   if (data.result !== undefined) updateData.result = data.result;
-  if (data.adminStatusDetails !== undefined) updateData.adminStatusDetails = data.adminStatusDetails;
+  if (data.adminStatusDetails !== undefined)
+    updateData.adminStatusDetails = data.adminStatusDetails;
   if (data.vendorExternalId !== undefined) updateData.vendorExternalId = data.vendorExternalId;
   if (data.reportUrl !== undefined) updateData.reportUrl = data.reportUrl;
 

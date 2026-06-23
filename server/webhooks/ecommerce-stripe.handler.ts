@@ -1,8 +1,14 @@
 import type Stripe from "stripe";
 import { storage } from "../storage/index";
 import { logger } from "../utils/logger";
-import { getEcommerceStripeClient, getEcommerceStripeWebhookSecret } from "../services/ecommerce-stripe.service";
-import { markEcommerceOrderPaid, reconcileEcommercePaymentRequestSession } from "../services/ecommerce-order.service";
+import {
+  getEcommerceStripeClient,
+  getEcommerceStripeWebhookSecret,
+} from "../services/ecommerce-stripe.service";
+import {
+  markEcommerceOrderPaid,
+  reconcileEcommercePaymentRequestSession,
+} from "../services/ecommerce-order.service";
 import { recordStripeRefundWebhook } from "../services/ecommerce-refund.service";
 
 export async function processEcommerceStripeWebhook(payload: Buffer, signature?: string) {
@@ -20,7 +26,10 @@ export async function processEcommerceStripeWebhook(payload: Buffer, signature?:
   }
 
   if (await storage.ecommerce.hasProcessedWebhook("stripe", event.id)) {
-    logger.stripe.info("Duplicate ecommerce webhook already reconciled", { eventId: event.id, eventType: event.type });
+    logger.stripe.info("Duplicate ecommerce webhook already reconciled", {
+      eventId: event.id,
+      eventType: event.type,
+    });
     return;
   }
 
@@ -48,22 +57,39 @@ export async function processEcommerceStripeWebhook(payload: Buffer, signature?:
       return;
     }
     await markEcommerceOrderPaid(orderId, intent.id);
-    const firstProcessing = await storage.ecommerce.markWebhookProcessed("stripe", event.id, event.type);
+    const firstProcessing = await storage.ecommerce.markWebhookProcessed(
+      "stripe",
+      event.id,
+      event.type,
+    );
     if (!firstProcessing) {
-      logger.stripe.info("Duplicate ecommerce webhook already reconciled", { eventId: event.id, eventType: event.type });
+      logger.stripe.info("Duplicate ecommerce webhook already reconciled", {
+        eventId: event.id,
+        eventType: event.type,
+      });
     }
     return;
   }
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
+    const paymentIntentId =
+      typeof session.payment_intent === "string"
+        ? session.payment_intent
+        : session.payment_intent?.id;
     if (session.id) {
       await reconcileEcommercePaymentRequestSession(session.id, paymentIntentId);
     }
-    const firstProcessing = await storage.ecommerce.markWebhookProcessed("stripe", event.id, event.type);
+    const firstProcessing = await storage.ecommerce.markWebhookProcessed(
+      "stripe",
+      event.id,
+      event.type,
+    );
     if (!firstProcessing) {
-      logger.stripe.info("Duplicate ecommerce webhook already reconciled", { eventId: event.id, eventType: event.type });
+      logger.stripe.info("Duplicate ecommerce webhook already reconciled", {
+        eventId: event.id,
+        eventType: event.type,
+      });
     }
     return;
   }
@@ -76,11 +102,21 @@ export async function processEcommerceStripeWebhook(payload: Buffer, signature?:
       amount: refund.amount,
       status: refund.status,
     });
-    const firstProcessing = await storage.ecommerce.markWebhookProcessed("stripe", event.id, event.type);
+    const firstProcessing = await storage.ecommerce.markWebhookProcessed(
+      "stripe",
+      event.id,
+      event.type,
+    );
     if (!firstProcessing) {
-      logger.stripe.info("Duplicate ecommerce webhook already reconciled", { eventId: event.id, eventType: event.type });
+      logger.stripe.info("Duplicate ecommerce webhook already reconciled", {
+        eventId: event.id,
+        eventType: event.type,
+      });
       return;
     }
-    logger.stripe.info("Ecommerce refund webhook processed", { eventId: event.id, eventType: event.type });
+    logger.stripe.info("Ecommerce refund webhook processed", {
+      eventId: event.id,
+      eventType: event.type,
+    });
   }
 }

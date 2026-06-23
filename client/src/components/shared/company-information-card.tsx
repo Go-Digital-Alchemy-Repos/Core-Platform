@@ -28,7 +28,9 @@ export function CompanyInformationCard({
     .filter(Boolean);
   const socialLinks = branding.socialLinks;
 
-  const hasCompanyInfo = Boolean(companyName || companyAddress || phoneNumbers.length || socialLinks.length);
+  const hasCompanyInfo = Boolean(
+    companyName || companyAddress || phoneNumbers.length || socialLinks.length,
+  );
 
   return (
     <Card data-testid="card-contact-location">
@@ -39,14 +41,21 @@ export function CompanyInformationCard({
             <div>
               {hasCompanyInfo ? (
                 <div className={cn("space-y-1 text-sm text-muted-foreground", bodyClassName)}>
-                  {companyName ? <p className={cn("font-medium text-foreground", titleClassName)}>{companyName}</p> : null}
+                  {companyName ? (
+                    <p className={cn("font-medium text-foreground", titleClassName)}>
+                      {companyName}
+                    </p>
+                  ) : null}
                   {companyAddress ? (
                     companyGoogleBusinessUrl ? (
                       <a
                         href={companyGoogleBusinessUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className={cn("block whitespace-pre-line underline-offset-4 hover:underline", linkClassName)}
+                        className={cn(
+                          "block whitespace-pre-line underline-offset-4 hover:underline",
+                          linkClassName,
+                        )}
                       >
                         {companyAddress}
                       </a>
@@ -56,7 +65,9 @@ export function CompanyInformationCard({
                   ) : null}
                 </div>
               ) : (
-                <p className={cn("text-sm text-muted-foreground", bodyClassName)}>Global — serving Core Platforms worldwide</p>
+                <p className={cn("text-sm text-muted-foreground", bodyClassName)}>
+                  Global — serving Core Platforms worldwide
+                </p>
               )}
             </div>
 
@@ -65,10 +76,19 @@ export function CompanyInformationCard({
                 {phoneNumbers.map((phone) => {
                   const href = normalizePhoneHref(phone);
                   return (
-                    <div key={phone} className={cn("flex items-start gap-2 text-sm text-muted-foreground", bodyClassName)}>
+                    <div
+                      key={phone}
+                      className={cn(
+                        "flex items-start gap-2 text-sm text-muted-foreground",
+                        bodyClassName,
+                      )}
+                    >
                       <Phone className="mt-0.5 h-3.5 w-3.5" />
                       {href ? (
-                        <a href={href} className={cn("underline-offset-4 hover:underline", linkClassName)}>
+                        <a
+                          href={href}
+                          className={cn("underline-offset-4 hover:underline", linkClassName)}
+                        >
                           {phone}
                         </a>
                       ) : (

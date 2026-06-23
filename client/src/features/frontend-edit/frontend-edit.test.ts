@@ -43,8 +43,12 @@ describe("frontend edit helpers", () => {
       expect(decodeURIComponent(href)).toContain("returnTo=/insights/example-post?ref=nav");
     }
 
-    expect(buildFrontendEditHref({ kind: "event", id: "event-1", label: "Edit Event" }, returnTo)).toContain("edit=event-1");
-    expect(buildFrontendEditHref({ kind: "career-job", id: "job-1", label: "Edit Job" }, returnTo)).toContain("tab=jobs");
+    expect(
+      buildFrontendEditHref({ kind: "event", id: "event-1", label: "Edit Event" }, returnTo),
+    ).toContain("edit=event-1");
+    expect(
+      buildFrontendEditHref({ kind: "career-job", id: "job-1", label: "Edit Job" }, returnTo),
+    ).toContain("tab=jobs");
   });
 
   it("enforces admin and editor permissions per target type", () => {
@@ -53,13 +57,43 @@ describe("frontend edit helpers", () => {
     const admin = user("admin");
     const therapist = user("therapist");
 
-    expect(canUseFrontendEditTarget(admin, [], { kind: "product", id: "product-1", label: "Product" })).toBe(true);
-    expect(canUseFrontendEditTarget(contentEditor, ["content"], { kind: "blog-post", id: "post-1", label: "Post" })).toBe(true);
-    expect(canUseFrontendEditTarget(contentEditor, ["content"], { kind: "directory-listing", id: "profile-1", label: "Listing" })).toBe(false);
-    expect(canUseFrontendEditTarget(directoryEditor, ["directory"], { kind: "directory-listing", id: "profile-1", label: "Listing" })).toBe(true);
-    expect(canUseFrontendEditTarget(directoryEditor, ["directory"], { kind: "product", id: "product-1", label: "Product" })).toBe(false);
-    expect(canUseFrontendEditTarget(therapist, [], { kind: "cms-page", id: "page-1", label: "Page" })).toBe(false);
-    expect(canUseFrontendEditTarget(null, [], { kind: "cms-page", id: "page-1", label: "Page" })).toBe(false);
+    expect(
+      canUseFrontendEditTarget(admin, [], { kind: "product", id: "product-1", label: "Product" }),
+    ).toBe(true);
+    expect(
+      canUseFrontendEditTarget(contentEditor, ["content"], {
+        kind: "blog-post",
+        id: "post-1",
+        label: "Post",
+      }),
+    ).toBe(true);
+    expect(
+      canUseFrontendEditTarget(contentEditor, ["content"], {
+        kind: "directory-listing",
+        id: "profile-1",
+        label: "Listing",
+      }),
+    ).toBe(false);
+    expect(
+      canUseFrontendEditTarget(directoryEditor, ["directory"], {
+        kind: "directory-listing",
+        id: "profile-1",
+        label: "Listing",
+      }),
+    ).toBe(true);
+    expect(
+      canUseFrontendEditTarget(directoryEditor, ["directory"], {
+        kind: "product",
+        id: "product-1",
+        label: "Product",
+      }),
+    ).toBe(false);
+    expect(
+      canUseFrontendEditTarget(therapist, [], { kind: "cms-page", id: "page-1", label: "Page" }),
+    ).toBe(false);
+    expect(
+      canUseFrontendEditTarget(null, [], { kind: "cms-page", id: "page-1", label: "Page" }),
+    ).toBe(false);
   });
 
   it("hides the floating edit button on non-public routes", () => {
@@ -76,7 +110,9 @@ describe("frontend edit helpers", () => {
 
     expect(getFrontendEditQueryParam("edit", search)).toBe("job-1");
     expect(getFrontendEditQueryParam("tab", search)).toBe("jobs");
-    expect(getFrontendEditQueryParam("returnTo", search)).toBe("/careers/clinical-director?src=site");
+    expect(getFrontendEditQueryParam("returnTo", search)).toBe(
+      "/careers/clinical-director?src=site",
+    );
     expect(getFrontendEditQueryParam("missing", search)).toBeNull();
   });
 });

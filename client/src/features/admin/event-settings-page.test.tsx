@@ -78,25 +78,29 @@ describe("AdminEventSettingsPage", () => {
 
   beforeEach(() => {
     useQueryMock.mockImplementation(() => ({ data: mockVenues, isLoading: false }));
-    useMutationMock.mockImplementation((options: {
-      mutationFn: (variables: unknown) => Promise<unknown>;
-      onSuccess?: () => void;
-      onError?: (error: Error) => void;
-    }) => ({
-      isPending: false,
-      mutate: vi.fn(async (variables: unknown) => {
-        try {
-          await options.mutationFn(variables);
-          options.onSuccess?.();
-        } catch (error) {
-          options.onError?.(error as Error);
-        }
+    useMutationMock.mockImplementation(
+      (options: {
+        mutationFn: (variables: unknown) => Promise<unknown>;
+        onSuccess?: () => void;
+        onError?: (error: Error) => void;
+      }) => ({
+        isPending: false,
+        mutate: vi.fn(async (variables: unknown) => {
+          try {
+            await options.mutationFn(variables);
+            options.onSuccess?.();
+          } catch (error) {
+            options.onError?.(error as Error);
+          }
+        }),
       }),
-    }));
+    );
     apiRequestMock.mockResolvedValue(new Response("{}"));
     invalidateQueriesMock.mockReset();
     toastMock.mockReset();
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -140,24 +144,74 @@ describe("AdminEventSettingsPage", () => {
     await renderPage();
 
     await act(async () => {
-      (document.body.querySelector('[data-testid="button-create-saved-venue"]') as HTMLButtonElement).click();
+      (
+        document.body.querySelector(
+          '[data-testid="button-create-saved-venue"]',
+        ) as HTMLButtonElement
+      ).click();
     });
 
     await act(async () => {
-      setControlValue(document.body.querySelector('[data-testid="input-saved-venue-name"]') as HTMLInputElement, "North Studio");
-      setControlValue(document.body.querySelector('[data-testid="input-saved-venue-address"]') as HTMLInputElement, "10 Market Ave");
-      setControlValue(document.body.querySelector('[data-testid="input-saved-venue-city"]') as HTMLInputElement, "Grand Rapids");
-      setControlValue(document.body.querySelector('[data-testid="input-saved-venue-region"]') as HTMLInputElement, "MI");
-      setControlValue(document.body.querySelector('[data-testid="input-saved-venue-postal-code"]') as HTMLInputElement, "49503");
-      setControlValue(document.body.querySelector('[data-testid="input-saved-venue-country"]') as HTMLInputElement, "US");
-      setControlValue(document.body.querySelector('[data-testid="input-saved-venue-latitude"]') as HTMLInputElement, "42.9634");
-      setControlValue(document.body.querySelector('[data-testid="input-saved-venue-longitude"]') as HTMLInputElement, "-85.6681");
-      setControlValue(document.body.querySelector('[data-testid="input-saved-venue-phone"]') as HTMLInputElement, "+1 (616) 555-0100");
-      setControlValue(document.body.querySelector('[data-testid="input-saved-venue-website"]') as HTMLInputElement, "https://example.com");
+      setControlValue(
+        document.body.querySelector('[data-testid="input-saved-venue-name"]') as HTMLInputElement,
+        "North Studio",
+      );
+      setControlValue(
+        document.body.querySelector(
+          '[data-testid="input-saved-venue-address"]',
+        ) as HTMLInputElement,
+        "10 Market Ave",
+      );
+      setControlValue(
+        document.body.querySelector('[data-testid="input-saved-venue-city"]') as HTMLInputElement,
+        "Grand Rapids",
+      );
+      setControlValue(
+        document.body.querySelector('[data-testid="input-saved-venue-region"]') as HTMLInputElement,
+        "MI",
+      );
+      setControlValue(
+        document.body.querySelector(
+          '[data-testid="input-saved-venue-postal-code"]',
+        ) as HTMLInputElement,
+        "49503",
+      );
+      setControlValue(
+        document.body.querySelector(
+          '[data-testid="input-saved-venue-country"]',
+        ) as HTMLInputElement,
+        "US",
+      );
+      setControlValue(
+        document.body.querySelector(
+          '[data-testid="input-saved-venue-latitude"]',
+        ) as HTMLInputElement,
+        "42.9634",
+      );
+      setControlValue(
+        document.body.querySelector(
+          '[data-testid="input-saved-venue-longitude"]',
+        ) as HTMLInputElement,
+        "-85.6681",
+      );
+      setControlValue(
+        document.body.querySelector('[data-testid="input-saved-venue-phone"]') as HTMLInputElement,
+        "+1 (616) 555-0100",
+      );
+      setControlValue(
+        document.body.querySelector(
+          '[data-testid="input-saved-venue-website"]',
+        ) as HTMLInputElement,
+        "https://example.com",
+      );
     });
 
     await act(async () => {
-      (document.body.querySelector('[data-testid="button-submit-saved-venue"]') as HTMLButtonElement).click();
+      (
+        document.body.querySelector(
+          '[data-testid="button-submit-saved-venue"]',
+        ) as HTMLButtonElement
+      ).click();
       await Promise.resolve();
     });
 
@@ -179,15 +233,26 @@ describe("AdminEventSettingsPage", () => {
     await renderPage();
 
     await act(async () => {
-      (document.body.querySelector('[data-testid="button-edit-saved-venue-venue-a"]') as HTMLButtonElement).click();
+      (
+        document.body.querySelector(
+          '[data-testid="button-edit-saved-venue-venue-a"]',
+        ) as HTMLButtonElement
+      ).click();
     });
 
     await act(async () => {
-      setControlValue(document.body.querySelector('[data-testid="input-saved-venue-phone"]') as HTMLInputElement, "+1 (616) 555-0199");
+      setControlValue(
+        document.body.querySelector('[data-testid="input-saved-venue-phone"]') as HTMLInputElement,
+        "+1 (616) 555-0199",
+      );
     });
 
     await act(async () => {
-      (document.body.querySelector('[data-testid="button-submit-saved-venue"]') as HTMLButtonElement).click();
+      (
+        document.body.querySelector(
+          '[data-testid="button-submit-saved-venue"]',
+        ) as HTMLButtonElement
+      ).click();
       await Promise.resolve();
     });
 
@@ -205,13 +270,21 @@ describe("AdminEventSettingsPage", () => {
     await renderPage();
 
     await act(async () => {
-      (document.body.querySelector('[data-testid="button-delete-saved-venue-venue-a"]') as HTMLButtonElement).click();
+      (
+        document.body.querySelector(
+          '[data-testid="button-delete-saved-venue-venue-a"]',
+        ) as HTMLButtonElement
+      ).click();
     });
 
     expect(document.body.textContent).toContain("will no longer be linked to this saved venue");
 
     await act(async () => {
-      (document.body.querySelector('[data-testid="button-confirm-delete-saved-venue"]') as HTMLButtonElement).click();
+      (
+        document.body.querySelector(
+          '[data-testid="button-confirm-delete-saved-venue"]',
+        ) as HTMLButtonElement
+      ).click();
       await Promise.resolve();
     });
 

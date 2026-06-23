@@ -142,8 +142,7 @@ function buildPortfolioContent() {
         props: {
           eyebrow: "Featured Case Study",
           heading: "Featured Portfolio Project",
-          subheading:
-            "A closer look at selected work, project context, and measurable outcomes.",
+          subheading: "A closer look at selected work, project context, and measurable outcomes.",
           layout: "list",
           featuredOnly: true,
           excludeFeatured: false,
@@ -232,8 +231,7 @@ function buildDirectoryContent() {
         type: "text-image",
         props: {
           heading: "Why Platform Approved?",
-          body:
-            "Traditional support models were developed within a single cultural framework. When members bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A verified provider understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.",
+          body: "Traditional support models were developed within a single cultural framework. When members bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A verified provider understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges — and they know how to work with both.",
           imageUrl:
             "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1200&h=1200&fit=crop&crop=faces",
           imageAlt: "platform-approved support",
@@ -245,7 +243,7 @@ function buildDirectoryContent() {
         type: "rich-text",
         props: {
           title: 'What does it mean to be "vetted"?',
-          subtitle: 'And just as importantly, what it does not mean.',
+          subtitle: "And just as importantly, what it does not mean.",
           content:
             "<h3>What does it mean to be &ldquo;vetted&rdquo;?</h3><ul><li>Every verified provider completes a detailed application process</li><li>Credentials and licensure are verified</li><li>Training or lived experience with member and relevant communities is required</li><li>Profiles are reviewed by our team before being published</li></ul><h3>What does it NOT mean to be &ldquo;vetted&rdquo;?</h3><ul><li>We are not a licensing or credentialing body</li><li>We do not provide operational supervision</li><li>Listing does not constitute an endorsement of specific service outcomes</li><li>We do not guarantee a service match, but we make finding one easier</li></ul>",
           alignment: "left",
@@ -266,8 +264,7 @@ function buildAboutContent() {
         type: "text-image",
         props: {
           heading: "History",
-          body:
-            'Core Platform was born from the lived experience of growing up between cultures. Our founders, adult members and community advocates, experienced firsthand how difficult it is to find a verified provider who truly understands what it means to call multiple countries "home." In 2024, they set out to build a bridge between members of member communities and the culturally competent professionals who serve them.',
+          body: 'Core Platform was born from the lived experience of growing up between cultures. Our founders, adult members and community advocates, experienced firsthand how difficult it is to find a verified provider who truly understands what it means to call multiple countries "home." In 2024, they set out to build a bridge between members of member communities and the culturally competent professionals who serve them.',
           imageUrl:
             "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1200&h=1200&fit=crop&crop=faces",
           imageAlt: "platform community",
@@ -289,8 +286,7 @@ function buildAboutContent() {
         type: "cards-grid",
         props: {
           title: "The Stats Speak for Themselves",
-          subtitle:
-            "According to internal platform research across member communities:",
+          subtitle: "According to internal platform research across member communities:",
           columns: "3",
           cards: [
             {
@@ -325,8 +321,7 @@ function buildAboutContent() {
         type: "text-image",
         props: {
           heading: "Why Platform Approved?",
-          body:
-            "Traditional support models were developed within a single cultural framework. When members bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A verified provider understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges, and they know how to work with both.",
+          body: "Traditional support models were developed within a single cultural framework. When members bring their experiences to these frameworks, important aspects of their story can be misunderstood or pathologized. A verified provider understands concepts like ambiguous loss, hidden immigrants, cultural marginality, and grief of place. They recognize that growing up across cultures creates both remarkable strengths and unique challenges, and they know how to work with both.",
           imageUrl:
             "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1200&h=1200&fit=crop&crop=faces",
           imageAlt: "platform-approved support",
@@ -338,7 +333,7 @@ function buildAboutContent() {
         type: "rich-text",
         props: {
           title: 'What does it mean to be "vetted"?',
-          subtitle: 'And just as importantly, what it does not mean.',
+          subtitle: "And just as importantly, what it does not mean.",
           content:
             "<h3>What does it mean to be &ldquo;vetted&rdquo;?</h3><ul><li>Every verified provider completes a detailed application process</li><li>Credentials and licensure are verified</li><li>Training or lived experience with member and relevant communities is required</li><li>Profiles are reviewed by our team before being published</li></ul><h3>What does it NOT mean to be &ldquo;vetted&rdquo;?</h3><ul><li>We are not a licensing or credentialing body</li><li>We do not provide operational supervision</li><li>Listing does not constitute an endorsement of specific service outcomes</li><li>We do not guarantee a service match, but we make finding one easier</li></ul>",
           alignment: "left",
@@ -667,8 +662,7 @@ export async function ensureSystemCmsPages() {
       status: "published",
       content: buildCareersContent(),
       seoTitle: "Careers | Core Platform",
-      seoDescription:
-        "Explore open roles and apply to join the Core Platform team.",
+      seoDescription: "Explore open roles and apply to join the Core Platform team.",
       seoKeywords: "Core Platform careers, jobs, hiring, open roles",
       ogImageUrl: "",
       canonicalUrl: "",
@@ -691,8 +685,7 @@ export async function ensureSystemCmsPages() {
       status: "published",
       content: buildPortfolioContent(),
       seoTitle: "Portfolio | Core Platform",
-      seoDescription:
-        "Explore selected portfolio projects, case studies, and project outcomes.",
+      seoDescription: "Explore selected portfolio projects, case studies, and project outcomes.",
       seoKeywords: "portfolio, case studies, project outcomes, selected work",
       ogImageUrl: "",
       canonicalUrl: "",
@@ -746,7 +739,8 @@ export async function ensureSystemCmsPages() {
       seoTitle: "Shop Core Platform Resources | Core Platform",
       seoDescription:
         "Browse Core Platform resources, digital workbooks, family tools, and provider training products.",
-      seoKeywords: "Core Platform shop, digital resources, provider training, family transition tools",
+      seoKeywords:
+        "Core Platform shop, digital resources, provider training, family transition tools",
       ogImageUrl: "",
       canonicalUrl: "",
       noindex: false,
@@ -804,7 +798,8 @@ export async function ensureSystemCmsPages() {
       seoTitle: "About | Core Platform",
       seoDescription:
         "Learn about Core Platform, our mission, and how we connect members of member communities with verified listing owners.",
-      seoKeywords: "about Core Platform, members of member communities, culturally informed care, verified provider directory",
+      seoKeywords:
+        "about Core Platform, members of member communities, culturally informed care, verified provider directory",
       ogImageUrl: "",
       canonicalUrl: "",
       noindex: false,
@@ -826,7 +821,8 @@ export async function ensureSystemCmsPages() {
       status: "published",
       content: buildPrivacyPolicyContent(),
       seoTitle: "Privacy Policy | Core Platform",
-      seoDescription: "Review the Core Platform privacy policy and how personal information is collected, used, and protected.",
+      seoDescription:
+        "Review the Core Platform privacy policy and how personal information is collected, used, and protected.",
       seoKeywords: "privacy policy, data privacy, Core Platform privacy",
       ogImageUrl: "",
       canonicalUrl: "",
@@ -849,7 +845,8 @@ export async function ensureSystemCmsPages() {
       status: "published",
       content: buildTermsOfServiceContent(),
       seoTitle: "Terms of Service | Core Platform",
-      seoDescription: "Review the Core Platform terms of service for use of the website, directory, events, and related services.",
+      seoDescription:
+        "Review the Core Platform terms of service for use of the website, directory, events, and related services.",
       seoKeywords: "terms of service, terms and conditions, Core Platform terms",
       ogImageUrl: "",
       canonicalUrl: "",
@@ -872,7 +869,8 @@ export async function ensureSystemCmsPages() {
       status: "published",
       content: buildDisclaimerContent(),
       seoTitle: "Disclaimer | Core Platform",
-      seoDescription: "Review emergency guidance, directory vetting limitations, and important information about using the Core Platform platform.",
+      seoDescription:
+        "Review emergency guidance, directory vetting limitations, and important information about using the Core Platform platform.",
       seoKeywords: "disclaimer, emergency guidance, directory disclaimer, Core Platform disclaimer",
       ogImageUrl: "",
       canonicalUrl: "",

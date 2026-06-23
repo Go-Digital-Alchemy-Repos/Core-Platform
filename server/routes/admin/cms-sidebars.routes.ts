@@ -40,7 +40,9 @@ router.post("/sidebars", async (req, res) => {
   try {
     const parsed = sidebarBodySchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0]?.message || "Validation failed" });
+      return res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message || "Validation failed" });
     }
     const sidebar = await storage.cmsSidebars.create(parsed.data);
     res.status(201).json(sidebar);
@@ -58,7 +60,9 @@ router.put("/sidebars/:id", async (req, res) => {
 
     const parsed = sidebarBodySchema.partial().safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0]?.message || "Validation failed" });
+      return res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message || "Validation failed" });
     }
 
     const updated = await storage.cmsSidebars.update(id, parsed.data);

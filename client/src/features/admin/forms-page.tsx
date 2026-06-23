@@ -83,27 +83,153 @@ type FieldLibraryItem = {
 };
 
 const FIELD_LIBRARY: FieldLibraryItem[] = [
-  { type: "text", label: "Single Line Text", description: "Names, titles, and short answers.", icon: Type, group: "standard" },
-  { type: "textarea", label: "Paragraph Text", description: "Longer written responses.", icon: Pilcrow, group: "standard" },
-  { type: "select", label: "Drop Down", description: "One choice from a menu.", icon: ChevronDown, group: "standard" },
-  { type: "number", label: "Number", description: "Numeric values and counts.", icon: Hash, group: "standard" },
-  { type: "checkbox", label: "Checkboxes", description: "Multiple selectable choices.", icon: CheckSquare, group: "standard" },
-  { type: "radio", label: "Radio Buttons", description: "Choose one option from a list.", icon: CircleDot, group: "standard" },
-  { type: "hidden", label: "Hidden", description: "Pass along hidden values in the submission.", icon: EyeOff, group: "standard" },
-  { type: "html", label: "HTML / Embed", description: "Raw HTML, widget embeds, or iframe code.", icon: Code2, group: "standard" },
-  { type: "section", label: "Section", description: "Break the form into titled sections with dividers.", icon: SeparatorHorizontal, group: "standard" },
-  { type: "page", label: "Page", description: "Create multi-step forms with progress.", icon: FileStack, group: "standard" },
-  { type: "image-choice", label: "Image Choice", description: "Visual choices with images.", icon: Image, group: "standard" },
-  { type: "name", label: "Name", description: "Full name or split first and last name.", icon: UserRound, group: "advanced" },
-  { type: "date", label: "Date", description: "Date picker style field.", icon: CalendarDays, group: "advanced" },
-  { type: "time", label: "Time", description: "Time-specific input.", icon: Clock3, group: "advanced" },
-  { type: "tel", label: "Phone", description: "Phone or WhatsApp number.", icon: Phone, group: "advanced" },
-  { type: "address", label: "Address", description: "Street, city, state, postal code, and country.", icon: MapPin, group: "advanced" },
-  { type: "website", label: "Website", description: "URL field for websites or social links.", icon: Link2, group: "advanced" },
-  { type: "email", label: "Email", description: "Validated email address.", icon: Mail, group: "advanced" },
-  { type: "multiselect", label: "Multi Select", description: "Select multiple options from one field.", icon: ListChecks, group: "advanced" },
-  { type: "consent", label: "Consent", description: "Agreement checkbox with supporting copy.", icon: ShieldCheck, group: "advanced" },
-  { type: "list", label: "List", description: "Repeatable rows with one or more columns.", icon: LayoutTemplate, group: "advanced" },
+  {
+    type: "text",
+    label: "Single Line Text",
+    description: "Names, titles, and short answers.",
+    icon: Type,
+    group: "standard",
+  },
+  {
+    type: "textarea",
+    label: "Paragraph Text",
+    description: "Longer written responses.",
+    icon: Pilcrow,
+    group: "standard",
+  },
+  {
+    type: "select",
+    label: "Drop Down",
+    description: "One choice from a menu.",
+    icon: ChevronDown,
+    group: "standard",
+  },
+  {
+    type: "number",
+    label: "Number",
+    description: "Numeric values and counts.",
+    icon: Hash,
+    group: "standard",
+  },
+  {
+    type: "checkbox",
+    label: "Checkboxes",
+    description: "Multiple selectable choices.",
+    icon: CheckSquare,
+    group: "standard",
+  },
+  {
+    type: "radio",
+    label: "Radio Buttons",
+    description: "Choose one option from a list.",
+    icon: CircleDot,
+    group: "standard",
+  },
+  {
+    type: "hidden",
+    label: "Hidden",
+    description: "Pass along hidden values in the submission.",
+    icon: EyeOff,
+    group: "standard",
+  },
+  {
+    type: "html",
+    label: "HTML / Embed",
+    description: "Raw HTML, widget embeds, or iframe code.",
+    icon: Code2,
+    group: "standard",
+  },
+  {
+    type: "section",
+    label: "Section",
+    description: "Break the form into titled sections with dividers.",
+    icon: SeparatorHorizontal,
+    group: "standard",
+  },
+  {
+    type: "page",
+    label: "Page",
+    description: "Create multi-step forms with progress.",
+    icon: FileStack,
+    group: "standard",
+  },
+  {
+    type: "image-choice",
+    label: "Image Choice",
+    description: "Visual choices with images.",
+    icon: Image,
+    group: "standard",
+  },
+  {
+    type: "name",
+    label: "Name",
+    description: "Full name or split first and last name.",
+    icon: UserRound,
+    group: "advanced",
+  },
+  {
+    type: "date",
+    label: "Date",
+    description: "Date picker style field.",
+    icon: CalendarDays,
+    group: "advanced",
+  },
+  {
+    type: "time",
+    label: "Time",
+    description: "Time-specific input.",
+    icon: Clock3,
+    group: "advanced",
+  },
+  {
+    type: "tel",
+    label: "Phone",
+    description: "Phone or WhatsApp number.",
+    icon: Phone,
+    group: "advanced",
+  },
+  {
+    type: "address",
+    label: "Address",
+    description: "Street, city, state, postal code, and country.",
+    icon: MapPin,
+    group: "advanced",
+  },
+  {
+    type: "website",
+    label: "Website",
+    description: "URL field for websites or social links.",
+    icon: Link2,
+    group: "advanced",
+  },
+  {
+    type: "email",
+    label: "Email",
+    description: "Validated email address.",
+    icon: Mail,
+    group: "advanced",
+  },
+  {
+    type: "multiselect",
+    label: "Multi Select",
+    description: "Select multiple options from one field.",
+    icon: ListChecks,
+    group: "advanced",
+  },
+  {
+    type: "consent",
+    label: "Consent",
+    description: "Agreement checkbox with supporting copy.",
+    icon: ShieldCheck,
+    group: "advanced",
+  },
+  {
+    type: "list",
+    label: "List",
+    description: "Repeatable rows with one or more columns.",
+    icon: LayoutTemplate,
+    group: "advanced",
+  },
 ];
 
 const FIELD_LIBRARY_GROUPS: Array<{ key: "standard" | "advanced"; label: string }> = [
@@ -151,7 +277,16 @@ function isStructuralField(type: CmsFormFieldType) {
 }
 
 function isFullWidthField(type: CmsFormFieldType) {
-  return ["textarea", "html", "section", "page", "address", "consent", "list", "image-choice"].includes(type);
+  return [
+    "textarea",
+    "html",
+    "section",
+    "page",
+    "address",
+    "consent",
+    "list",
+    "image-choice",
+  ].includes(type);
 }
 
 function createDefaultOptions(type: CmsFormFieldType): CmsFormFieldOption[] {
@@ -163,9 +298,7 @@ function createDefaultOptions(type: CmsFormFieldType): CmsFormFieldOption[] {
 }
 
 function createDefaultListColumns(): CmsFormListColumn[] {
-  return [
-    { id: generateId(), label: "Item", placeholder: "" },
-  ];
+  return [{ id: generateId(), label: "Item", placeholder: "" }];
 }
 
 function createDefaultConfig(type: CmsFormFieldType): Partial<CmsFormFieldConfig> {
@@ -238,11 +371,13 @@ function normalizeField(field: CmsFormField): CmsFormField {
     helpText: field.helpText ?? "",
     required: Boolean(field.required),
     width: field.width ?? (isFullWidthField(field.type) ? "full" : "half"),
-    options: Array.isArray(field.options) ? field.options.map((option) => ({
-      label: option.label,
-      value: option.value,
-      imageUrl: option.imageUrl ?? "",
-    })) : createDefaultOptions(field.type),
+    options: Array.isArray(field.options)
+      ? field.options.map((option) => ({
+          label: option.label,
+          value: option.value,
+          imageUrl: option.imageUrl ?? "",
+        }))
+      : createDefaultOptions(field.type),
     config: cmsFormFieldConfigSchema.parse({
       ...createDefaultConfig(field.type),
       ...(typeof field.config === "object" && field.config ? field.config : {}),
@@ -304,13 +439,16 @@ function normalizeEditableForm(form: CmsForm): EditableForm {
     fields: Array.isArray(form.fields) ? form.fields.map(normalizeField) : [],
     settings: {
       submitButtonText:
-        typeof form.settings?.submitButtonText === "string" ? form.settings.submitButtonText : "Submit",
+        typeof form.settings?.submitButtonText === "string"
+          ? form.settings.submitButtonText
+          : "Submit",
       successMessage:
         typeof form.settings?.successMessage === "string"
           ? form.settings.successMessage
           : "Thanks! Your submission has been received.",
       mailchimpEnabled: Boolean(form.settings?.mailchimpEnabled),
-      mailchimpTag: typeof form.settings?.mailchimpTag === "string" ? form.settings.mailchimpTag : "",
+      mailchimpTag:
+        typeof form.settings?.mailchimpTag === "string" ? form.settings.mailchimpTag : "",
       notifyAdmins: Boolean(form.settings?.notifyAdmins),
       storeAsContactMessage: Boolean(form.settings?.storeAsContactMessage),
       createCrmLead: Boolean(form.settings?.createCrmLead),
@@ -348,7 +486,10 @@ function fieldSubtitle(field: CmsFormField) {
 function stringifySubmissionValue(value: unknown): string {
   if (value == null) return "";
   if (Array.isArray(value)) {
-    return value.map((entry) => stringifySubmissionValue(entry)).filter(Boolean).join(", ");
+    return value
+      .map((entry) => stringifySubmissionValue(entry))
+      .filter(Boolean)
+      .join(", ");
   }
   if (typeof value === "object") {
     const record = value as Record<string, unknown>;
@@ -385,7 +526,11 @@ function formatSubmissionDate(value: string | Date | null | undefined) {
 
 function buildSubmissionCsv(submissions: CmsFormSubmission[]) {
   const fieldKeys = Array.from(
-    new Set(submissions.flatMap((submission) => Object.keys((submission.data ?? {}) as Record<string, unknown>)))
+    new Set(
+      submissions.flatMap((submission) =>
+        Object.keys((submission.data ?? {}) as Record<string, unknown>),
+      ),
+    ),
   );
   const headers = ["Submission ID", "Submitted At", "Source", ...fieldKeys];
   const escapeCsv = (value: string) => `"${value.replace(/"/g, '""')}"`;
@@ -404,7 +549,7 @@ function buildSubmissionCsv(submissions: CmsFormSubmission[]) {
 function findSubmissionValue(
   data: Record<string, unknown>,
   preferredKeys: string[],
-  matcher?: (key: string, value: unknown) => boolean
+  matcher?: (key: string, value: unknown) => boolean,
 ) {
   for (const key of preferredKeys) {
     const value = data[key];
@@ -443,7 +588,7 @@ function getSubmissionDisplayName(submission: CmsFormSubmission) {
           value !== null &&
           ("full" in (value as Record<string, unknown>) ||
             "first" in (value as Record<string, unknown>) ||
-            "last" in (value as Record<string, unknown>)))
+            "last" in (value as Record<string, unknown>))),
     ) || "Unknown submitter"
   );
 }
@@ -454,7 +599,7 @@ function getSubmissionEmail(submission: CmsFormSubmission) {
     findSubmissionValue(
       data,
       ["email", "senderEmail", "emailAddress"],
-      (key, value) => /email/i.test(key) || (typeof value === "string" && value.includes("@"))
+      (key, value) => /email/i.test(key) || (typeof value === "string" && value.includes("@")),
     ) || "No email provided"
   );
 }
@@ -465,7 +610,7 @@ function getSubmissionMessageExcerpt(submission: CmsFormSubmission) {
     findSubmissionValue(
       data,
       ["message", "messageBody", "body", "comments", "comment", "details", "notes", "subject"],
-      (key) => /message|comment|detail|note|subject/i.test(key)
+      (key) => /message|comment|detail|note|subject/i.test(key),
     ) || "No message preview available";
 
   return raw.length > 140 ? `${raw.slice(0, 137).trimEnd()}...` : raw;
@@ -527,7 +672,11 @@ function ToggleCardGroup({
         className="flex w-full items-center justify-between text-left"
       >
         <h3 className="text-base font-semibold">{title}</h3>
-        {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        {open ? (
+          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        )}
       </button>
       {open ? children : null}
     </div>
@@ -572,24 +721,23 @@ function FormsPageContent() {
     staleTime: STALE_TIMES.LIVE,
   });
 
-  const activeForms = useMemo(
-    () => forms.filter((form) => form.isActive),
-    [forms]
-  );
+  const activeForms = useMemo(() => forms.filter((form) => form.isActive), [forms]);
 
-  const { data: submissions = [], isLoading: isSubmissionsLoading } = useQuery<CmsFormSubmission[]>({
-    queryKey: ["/api/admin/forms", selectedEntriesFormId, "submissions"],
-    enabled: Boolean(selectedEntriesFormId),
-    queryFn: async () => {
-      const response = await fetch(`/api/admin/forms/${selectedEntriesFormId}/submissions`, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error("Failed to load form entries.");
-      }
-      return response.json();
+  const { data: submissions = [], isLoading: isSubmissionsLoading } = useQuery<CmsFormSubmission[]>(
+    {
+      queryKey: ["/api/admin/forms", selectedEntriesFormId, "submissions"],
+      enabled: Boolean(selectedEntriesFormId),
+      queryFn: async () => {
+        const response = await fetch(`/api/admin/forms/${selectedEntriesFormId}/submissions`, {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          throw new Error("Failed to load form entries.");
+        }
+        return response.json();
+      },
     },
-  });
+  );
 
   useEffect(() => {
     if (draft) return;
@@ -713,7 +861,9 @@ function FormsPageContent() {
       await apiRequest("DELETE", `/api/admin/forms/${formId}/submissions/${submissionId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/forms", selectedEntriesFormId, "submissions"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/admin/forms", selectedEntriesFormId, "submissions"],
+      });
       toast({ title: "Entry deleted" });
     },
     onError: (error: Error) => {
@@ -727,7 +877,7 @@ function FormsPageContent() {
 
   const selectedField = useMemo(
     () => draft?.fields.find((field) => field.id === selectedFieldId) ?? null,
-    [draft?.fields, selectedFieldId]
+    [draft?.fields, selectedFieldId],
   );
 
   const groupedFieldLibrary = useMemo(
@@ -736,13 +886,13 @@ function FormsPageContent() {
         ...group,
         items: FIELD_LIBRARY.filter((item) => item.group === group.key),
       })),
-    []
+    [],
   );
 
   const selectedFieldLibraryItem = selectedField ? getFieldLibraryItem(selectedField.type) : null;
   const selectedSubmission = useMemo(
     () => submissions.find((submission) => submission.id === selectedEntryId) ?? null,
-    [selectedEntryId, submissions]
+    [selectedEntryId, submissions],
   );
 
   const publicFormLink =
@@ -752,13 +902,15 @@ function FormsPageContent() {
 
   const editorLock = useEditorLock({
     resourceType: "form",
-    resourceId: activeTab === "builder" && draft && !draft.id.startsWith("draft-") ? draft.id : null,
-    enabled: activeTab === "builder" && Boolean(draft) && !(draft?.id.startsWith("draft-")),
+    resourceId:
+      activeTab === "builder" && draft && !draft.id.startsWith("draft-") ? draft.id : null,
+    enabled: activeTab === "builder" && Boolean(draft) && !draft?.id.startsWith("draft-"),
   });
 
   useLockConflictGuard({
-    active: activeTab === "builder" && Boolean(draft?.id) && !(draft?.id?.startsWith("draft-")),
-    resourceId: activeTab === "builder" && draft && !draft.id.startsWith("draft-") ? draft.id : null,
+    active: activeTab === "builder" && Boolean(draft?.id) && !draft?.id?.startsWith("draft-"),
+    resourceId:
+      activeTab === "builder" && draft && !draft.id.startsWith("draft-") ? draft.id : null,
     resourceLabel: "form",
     editorLock,
     onConflict: () => {
@@ -779,7 +931,7 @@ function FormsPageContent() {
     updateDraft((current) => ({
       ...current,
       fields: current.fields.map((field) =>
-        field.id === fieldId ? normalizeField({ ...field, ...updates }) : field
+        field.id === fieldId ? normalizeField({ ...field, ...updates }) : field,
       ),
     }));
   };
@@ -793,7 +945,7 @@ function FormsPageContent() {
               ...field,
               config: { ...(field.config ?? {}), ...updates },
             })
-          : field
+          : field,
       ),
     }));
   };
@@ -811,7 +963,7 @@ function FormsPageContent() {
               width: isFullWidthField(type) ? "full" : "half",
               required: !isStructuralField(type) && type !== "hidden" ? field.required : false,
             })
-          : field
+          : field,
       ),
     }));
   };
@@ -837,7 +989,11 @@ function FormsPageContent() {
     }
   };
 
-  const updateChoice = (fieldId: string, optionId: string, updates: Partial<CmsFormFieldOption>) => {
+  const updateChoice = (
+    fieldId: string,
+    optionId: string,
+    updates: Partial<CmsFormFieldOption>,
+  ) => {
     updateDraft((current) => ({
       ...current,
       fields: current.fields.map((field) =>
@@ -845,10 +1001,10 @@ function FormsPageContent() {
           ? normalizeField({
               ...field,
               options: (field.options ?? []).map((option) =>
-                option.value === optionId ? { ...option, ...updates } : option
+                option.value === optionId ? { ...option, ...updates } : option,
               ),
             })
-          : field
+          : field,
       ),
     }));
   };
@@ -862,10 +1018,14 @@ function FormsPageContent() {
               ...field,
               options: [
                 ...(field.options ?? []),
-                { label: "New Option", value: slugify(`new-option-${generateId().slice(0, 4)}`), imageUrl: "" },
+                {
+                  label: "New Option",
+                  value: slugify(`new-option-${generateId().slice(0, 4)}`),
+                  imageUrl: "",
+                },
               ],
             })
-          : field
+          : field,
       ),
     }));
   };
@@ -879,7 +1039,7 @@ function FormsPageContent() {
               ...field,
               options: (field.options ?? []).filter((option) => option.value !== optionId),
             })
-          : field
+          : field,
       ),
     }));
   };
@@ -890,19 +1050,31 @@ function FormsPageContent() {
       label: "Column",
       placeholder: "",
     };
-    const listColumns = Array.isArray(selectedField?.config?.listColumns) ? selectedField.config.listColumns : [];
+    const listColumns = Array.isArray(selectedField?.config?.listColumns)
+      ? selectedField.config.listColumns
+      : [];
     updateFieldConfig(fieldId, { listColumns: [...listColumns, nextColumn] });
   };
 
-  const updateListColumn = (fieldId: string, columnId: string, updates: Partial<CmsFormListColumn>) => {
-    const listColumns = Array.isArray(selectedField?.config?.listColumns) ? selectedField.config.listColumns : [];
+  const updateListColumn = (
+    fieldId: string,
+    columnId: string,
+    updates: Partial<CmsFormListColumn>,
+  ) => {
+    const listColumns = Array.isArray(selectedField?.config?.listColumns)
+      ? selectedField.config.listColumns
+      : [];
     updateFieldConfig(fieldId, {
-      listColumns: listColumns.map((column) => (column.id === columnId ? { ...column, ...updates } : column)),
+      listColumns: listColumns.map((column) =>
+        column.id === columnId ? { ...column, ...updates } : column,
+      ),
     });
   };
 
   const removeListColumn = (fieldId: string, columnId: string) => {
-    const listColumns = Array.isArray(selectedField?.config?.listColumns) ? selectedField.config.listColumns : [];
+    const listColumns = Array.isArray(selectedField?.config?.listColumns)
+      ? selectedField.config.listColumns
+      : [];
     updateFieldConfig(fieldId, {
       listColumns: listColumns.filter((column) => column.id !== columnId),
     });
@@ -980,23 +1152,24 @@ function FormsPageContent() {
             Forms
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Build reusable forms, wire them to Mailchimp tags, and assign them to blocks, widgets, and system workflows.
+            Build reusable forms, wire them to Mailchimp tags, and assign them to blocks, widgets,
+            and system workflows.
           </p>
         </div>
         <div className="flex items-center gap-2">
           {activeTab === "builder" && draft ? (
             <>
               <EditorSaveIndicator state={saveState.state} />
-              <Button onClick={() => saveMutation.mutate(draft)} disabled={saveMutation.isPending || editorLock.isReadOnly}>
+              <Button
+                onClick={() => saveMutation.mutate(draft)}
+                disabled={saveMutation.isPending || editorLock.isReadOnly}
+              >
                 <Save className="mr-2 h-4 w-4" />
                 {saveMutation.isPending ? "Saving…" : "Save Form"}
               </Button>
             </>
           ) : null}
-          <Button
-            onClick={handleCreateForm}
-            data-testid="button-create-form"
-          >
+          <Button onClick={handleCreateForm} data-testid="button-create-form">
             <Plus className="mr-2 h-4 w-4" />
             New Form
           </Button>
@@ -1016,785 +1189,183 @@ function FormsPageContent() {
         </TabsList>
 
         <TabsContent value="builder" className="mt-0">
-          <div className={cn("grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]", editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle className="text-base">Form Library</CardTitle>
-            <CardDescription>System forms, newsletter forms, and reusable embeds all live here.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading forms…</p>
-            ) : (
-              forms.map((form) => {
-                const active = selectedFormId === form.id;
-                return (
-                  <button
-                    key={form.id}
-                    type="button"
-                    onClick={() => handleSelectForm(form)}
-                    className={cn(
-                      "w-full rounded-lg border px-3 py-3 text-left transition-colors",
-                      active ? "border-primary bg-primary/5" : "hover:bg-muted/40"
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium">{form.name}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{form.slug}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        {form.isSystem ? <Badge variant="secondary">System</Badge> : null}
-                        <Badge variant={form.isActive ? "default" : "outline"}>{form.isActive ? "Active" : "Inactive"}</Badge>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })
+          <div
+            className={cn(
+              "grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]",
+              editorLock.hasLocking &&
+                editorLock.isReadOnly &&
+                "pointer-events-none select-none opacity-70",
             )}
-          </CardContent>
-        </Card>
-
-        {draft ? (
-          <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_380px]">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader className="flex flex-row items-start justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-base">Form Settings</CardTitle>
-                    <CardDescription>Control the form identity, success behavior, and Mailchimp mapping.</CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={async () => {
-                        if (!draft.isActive || !publicFormLink) return;
-                        try {
-                          await navigator.clipboard.writeText(publicFormLink);
-                          toast({ title: "Form link copied" });
-                        } catch {
-                          toast({
-                            title: "Unable to copy link",
-                            description: "Please copy the public form URL manually.",
-                            variant: "destructive",
-                          });
-                        }
-                      }}
-                      disabled={!draft.isActive || !publicFormLink}
-                    >
-                      <Copy className="mr-2 h-4 w-4" />
-                      Copy Form Link
-                    </Button>
-                    {!draft.isSystem ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="text-destructive"
-                        onClick={() => deleteMutation.mutate(draft.id)}
-                        disabled={deleteMutation.isPending || draft.id.startsWith("draft-") || editorLock.isReadOnly}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </Button>
-                    ) : null}
-                    <Button type="button" variant="outline" size="icon" onClick={() => setFormSettingsOpen((current) => !current)}>
-                      {formSettingsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </CardHeader>
-                {formSettingsOpen ? <CardContent className="space-y-5">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label>Name</Label>
-                      <Input
-                        value={draft.name}
-                        onChange={(event) =>
-                          updateDraft((current) => ({
-                            ...current,
-                            name: event.target.value,
-                            slug:
-                              current.id.startsWith("draft-") && (!current.slug || current.slug.startsWith("form-"))
-                                ? slugify(event.target.value)
-                                : current.slug,
-                          }))
-                        }
-                      />
-                    </div>
-                  <div className="space-y-1.5">
-                    <Label>Slug</Label>
-                    <Input
-                      value={draft.slug}
-                      onChange={(event) => updateDraft((current) => ({ ...current, slug: slugify(event.target.value) }))}
-                    />
-                  </div>
-                </div>
-
-                  <div className="space-y-1.5">
-                    <Label>Public Form Link</Label>
-                    <Input
-                      value={draft.isActive ? publicFormLink : "Activate this form to generate a shareable public link."}
-                      readOnly
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Shared links open a minimal standalone form page with the company logo and no site navigation.
-                    </p>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label>Form Type</Label>
-                      <Select value={draft.kind} onValueChange={(value: CmsFormKind) => updateDraft((current) => ({ ...current, kind: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {KIND_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Active</Label>
-                      <div className="flex h-10 items-center rounded-md border px-3">
-                        <Switch
-                          checked={draft.isActive}
-                          onCheckedChange={(checked) => updateDraft((current) => ({ ...current, isActive: checked }))}
-                        />
-                        <span className="ml-3 text-sm text-muted-foreground">
-                          {draft.isActive ? "Form is live and embeddable" : "Form is hidden from public usage"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label>Description</Label>
-                    <Textarea
-                      rows={3}
-                      value={draft.description ?? ""}
-                      onChange={(event) => updateDraft((current) => ({ ...current, description: event.target.value }))}
-                    />
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label>Submit Button Text</Label>
-                      <Input
-                        value={String(draft.settings.submitButtonText ?? "Submit")}
-                        onChange={(event) =>
-                          updateDraft((current) => ({
-                            ...current,
-                            settings: { ...current.settings, submitButtonText: event.target.value },
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Success Message</Label>
-                      <Textarea
-                        rows={2}
-                        value={String(draft.settings.successMessage ?? "")}
-                        onChange={(event) =>
-                          updateDraft((current) => ({
-                            ...current,
-                            settings: { ...current.settings, successMessage: event.target.value },
-                          }))
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-primary" />
-                      <div>
-                        <p className="text-sm font-semibold">Mailchimp Routing</p>
-                        <p className="text-xs text-muted-foreground">Each form owns its own Mailchimp tag. Credentials stay in Integrations.</p>
-                      </div>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <Label>Mailchimp Enabled</Label>
-                        <div className="flex h-10 items-center rounded-md border px-3">
-                          <Switch
-                            checked={Boolean(draft.settings.mailchimpEnabled)}
-                            onCheckedChange={(checked) =>
-                              updateDraft((current) => ({
-                                ...current,
-                                settings: { ...current.settings, mailchimpEnabled: checked },
-                              }))
-                            }
-                          />
-                          <span className="ml-3 text-sm text-muted-foreground">Sync submissions to Mailchimp</span>
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Mailchimp Tag</Label>
-                        <Input
-                          value={String(draft.settings.mailchimpTag ?? "")}
-                          onChange={(event) =>
-                            updateDraft((current) => ({
-                              ...current,
-                              settings: { ...current.settings, mailchimpTag: event.target.value },
-                            }))
-                          }
-                          placeholder="Core Platform Newsletter"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="flex h-10 items-center rounded-md border px-3">
-                        <Switch
-                          checked={Boolean(draft.settings.notifyAdmins)}
-                          onCheckedChange={(checked) =>
-                            updateDraft((current) => ({
-                              ...current,
-                              settings: { ...current.settings, notifyAdmins: checked },
-                            }))
-                          }
-                        />
-                        <span className="ml-3 text-sm text-muted-foreground">Email admins on submission</span>
-                      </div>
-                      <div className="flex h-10 items-center rounded-md border px-3">
-                        <Switch
-                          checked={Boolean(draft.settings.storeAsContactMessage)}
-                          onCheckedChange={(checked) =>
-                            updateDraft((current) => ({
-                              ...current,
-                              settings: { ...current.settings, storeAsContactMessage: checked },
-                            }))
-                          }
-                        />
-                        <span className="ml-3 text-sm text-muted-foreground">Store in contact inbox</span>
-                      </div>
-                      <div className="flex h-10 items-center rounded-md border px-3">
-                        <Switch
-                          checked={Boolean(draft.settings.createCrmLead)}
-                          onCheckedChange={(checked) =>
-                            updateDraft((current) => ({
-                              ...current,
-                              settings: { ...current.settings, createCrmLead: checked },
-                            }))
-                          }
-                        />
-                        <span className="ml-3 text-sm text-muted-foreground">Create CRM lead</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent> : null}
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Form Canvas</CardTitle>
-                  <CardDescription>
-                    Drag fields into order here. Select a field to edit its settings in the right sidebar.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div
-                    className="rounded-xl border bg-muted/10 p-4"
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      if (draft.fields.length > 0 && dropIndex === null) {
-                        setDropIndex(draft.fields.length);
-                      }
-                    }}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      onDropFieldAtIndex(dropIndex ?? draft.fields.length);
-                    }}
-                  >
-                    {draft.fields.length === 0 ? (
-                      <div
-                        className="rounded-lg border border-dashed px-6 py-12 text-center text-sm text-muted-foreground"
-                        onDragOver={(event) => {
-                          event.preventDefault();
-                          setDropIndex(0);
-                        }}
-                        onDrop={(event) => {
-                          event.preventDefault();
-                          onDropFieldAtIndex(0);
-                        }}
-                      >
-                        Drag a field from the right sidebar or click one there to start building this form.
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {draft.fields.map((field, index) => {
-                          const libraryItem = getFieldLibraryItem(field.type);
-                          const Icon = libraryItem?.icon ?? PanelTopOpen;
-
-                          return (
-                            <div key={field.id} className="space-y-3">
-                              <div
-                                className={cn("h-2 rounded-full transition-colors", dropIndex === index ? "bg-primary/40" : "bg-transparent")}
-                                onDragOver={(event) => {
-                                  event.preventDefault();
-                                  setDropIndex(index);
-                                }}
-                                onDrop={(event) => {
-                                  event.preventDefault();
-                                  onDropFieldAtIndex(index);
-                                }}
-                              />
-                              <div
-                                draggable
-                                onDragStart={(event) => {
-                                  event.dataTransfer.effectAllowed = "move";
-                                  event.dataTransfer.setData("text/plain", field.id);
-                                  setDraggingFieldId(field.id);
-                                }}
-                                onDragEnd={() => {
-                                  setDraggingFieldId(null);
-                                  setDropIndex(null);
-                                }}
-                                onDragOver={(event) => {
-                                  event.preventDefault();
-                                  setDropIndex(index);
-                                }}
-                                onDrop={(event) => {
-                                  event.preventDefault();
-                                  onDropFieldAtIndex(index);
-                                }}
-                                onClick={() => setSelectedFieldId(field.id)}
-                                className={cn(
-                                  "rounded-xl border bg-background p-4 transition-colors",
-                                  selectedFieldId === field.id ? "border-primary ring-2 ring-primary/10" : "hover:bg-muted/20"
-                                )}
-                              >
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="flex items-start gap-3">
-                                    <GripVertical className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                      <Icon className="h-4 w-4" />
-                                    </div>
-                                    <div>
-                                      <div className="flex flex-wrap items-center gap-2">
-                                        <p className="text-sm font-semibold">{field.label || "Untitled Field"}</p>
-                                        <Badge variant="outline" className="text-[10px] uppercase">{field.type}</Badge>
-                                      </div>
-                                      <p className="mt-1 text-xs text-muted-foreground">
-                                        {fieldSubtitle(field)} • {field.width === "half" ? "Half width" : "Full width"}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      removeField(field.id);
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                        <div
-                          className={cn(
-                            "h-2 rounded-full transition-colors",
-                            dropIndex === draft.fields.length ? "bg-primary/40" : "bg-transparent"
-                          )}
-                          onDragOver={(event) => {
-                            event.preventDefault();
-                            setDropIndex(draft.fields.length);
-                          }}
-                          onDrop={(event) => {
-                            event.preventDefault();
-                            onDropFieldAtIndex(draft.fields.length);
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="h-fit 2xl:sticky 2xl:top-24">
+          >
+            <Card className="h-fit">
               <CardHeader>
-                <CardTitle className="text-base">{selectedField ? "Field Settings" : "Add Fields"}</CardTitle>
+                <CardTitle className="text-base">Form Library</CardTitle>
                 <CardDescription>
-                  {selectedField
-                    ? "Update the selected field’s labels, behavior, and advanced configuration here."
-                    : "Standard and advanced fields live here. Click or drag them into the form canvas."}
+                  System forms, newsletter forms, and reusable embeds all live here.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {selectedField ? (
-                  <>
-                    <Button type="button" variant="outline" className="w-full justify-center" onClick={() => setSelectedFieldId(null)}>
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to Fields
-                    </Button>
-                    <div className="flex items-start gap-3 rounded-xl border bg-muted/20 p-3">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                          {selectedFieldLibraryItem ? <selectedFieldLibraryItem.icon className="h-4.5 w-4.5" /> : <PanelTopOpen className="h-4.5 w-4.5" />}
+              <CardContent className="space-y-3">
+                {isLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading forms…</p>
+                ) : (
+                  forms.map((form) => {
+                    const active = selectedFormId === form.id;
+                    return (
+                      <button
+                        key={form.id}
+                        type="button"
+                        onClick={() => handleSelectForm(form)}
+                        className={cn(
+                          "w-full rounded-lg border px-3 py-3 text-left transition-colors",
+                          active ? "border-primary bg-primary/5" : "hover:bg-muted/40",
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-medium">{form.name}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">{form.slug}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            {form.isSystem ? <Badge variant="secondary">System</Badge> : null}
+                            <Badge variant={form.isActive ? "default" : "outline"}>
+                              {form.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-semibold leading-tight">{selectedField.label || "Untitled Field"}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">{selectedFieldLibraryItem?.label ?? selectedField.type}</p>
-                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </CardContent>
+            </Card>
+
+            {draft ? (
+              <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_380px]">
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-start justify-between gap-4">
+                      <div>
+                        <CardTitle className="text-base">Form Settings</CardTitle>
+                        <CardDescription>
+                          Control the form identity, success behavior, and Mailchimp mapping.
+                        </CardDescription>
                       </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Label</Label>
-                      <Input value={selectedField.label} onChange={(event) => updateField(selectedField.id, { label: event.target.value })} />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label>Field Key</Label>
-                      <Input
-                        value={selectedField.key}
-                        onChange={(event) => updateField(selectedField.id, { key: slugify(event.target.value) || selectedField.key })}
-                      />
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <Label>Field Type</Label>
-                        <Select value={selectedField.type} onValueChange={(value: CmsFormFieldType) => replaceFieldType(selectedField.id, value)}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {FIELD_TYPE_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {!isStructuralField(selectedField.type) && selectedField.type !== "hidden" ? (
-                        <div className="space-y-1.5">
-                          <Label>Width</Label>
-                          <Select value={selectedField.width} onValueChange={(value: "full" | "half") => updateField(selectedField.id, { width: value })}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="full">Full Width</SelectItem>
-                              <SelectItem value="half">Half Width</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    {!["section", "page", "html", "consent", "hidden", "checkbox", "radio", "select", "multiselect", "image-choice", "list"].includes(selectedField.type) ? (
-                      <div className="space-y-1.5">
-                        <Label>Placeholder</Label>
-                        <Input
-                          value={selectedField.placeholder ?? ""}
-                          onChange={(event) => updateField(selectedField.id, { placeholder: event.target.value })}
-                        />
-                      </div>
-                    ) : null}
-
-                    {!["html", "section", "page", "hidden"].includes(selectedField.type) ? (
-                      <div className="space-y-1.5">
-                        <Label>Help Text</Label>
-                        <Textarea
-                          rows={2}
-                          value={selectedField.helpText ?? ""}
-                          onChange={(event) => updateField(selectedField.id, { helpText: event.target.value })}
-                        />
-                      </div>
-                    ) : null}
-
-                    {!isStructuralField(selectedField.type) && selectedField.type !== "hidden" ? (
-                      <div className="flex h-10 items-center rounded-md border px-3">
-                        <Switch
-                          checked={Boolean(selectedField.required)}
-                          onCheckedChange={(checked) => updateField(selectedField.id, { required: checked })}
-                        />
-                        <span className="ml-3 text-sm text-muted-foreground">Required field</span>
-                      </div>
-                    ) : null}
-
-                    {selectedField.type === "name" ? (
-                      <div className="space-y-1.5">
-                        <Label>Name Format</Label>
-                        <Select
-                          value={selectedField.config?.nameFormat === "split" ? "split" : "full"}
-                          onValueChange={(value: "full" | "split") => updateFieldConfig(selectedField.id, { nameFormat: value })}
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={async () => {
+                            if (!draft.isActive || !publicFormLink) return;
+                            try {
+                              await navigator.clipboard.writeText(publicFormLink);
+                              toast({ title: "Form link copied" });
+                            } catch {
+                              toast({
+                                title: "Unable to copy link",
+                                description: "Please copy the public form URL manually.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          disabled={!draft.isActive || !publicFormLink}
                         >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="full">Full Name</SelectItem>
-                            <SelectItem value="split">First + Last Name</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Copy Form Link
+                        </Button>
+                        {!draft.isSystem ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="text-destructive"
+                            onClick={() => deleteMutation.mutate(draft.id)}
+                            disabled={
+                              deleteMutation.isPending ||
+                              draft.id.startsWith("draft-") ||
+                              editorLock.isReadOnly
+                            }
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </Button>
+                        ) : null}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setFormSettingsOpen((current) => !current)}
+                        >
+                          {formSettingsOpen ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
                       </div>
-                    ) : null}
-
-                    {selectedField.type === "section" ? (
-                      <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
-                        <div className="space-y-1.5">
-                          <Label>Section Title</Label>
-                          <Input
-                            value={String(selectedField.config?.sectionTitle ?? "")}
-                            onChange={(event) => updateFieldConfig(selectedField.id, { sectionTitle: event.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label>Section Subtitle</Label>
-                          <Textarea
-                            rows={2}
-                            value={String(selectedField.config?.sectionSubtitle ?? "")}
-                            onChange={(event) => updateFieldConfig(selectedField.id, { sectionSubtitle: event.target.value })}
-                          />
-                        </div>
-                        <div className="flex h-10 items-center rounded-md border px-3">
-                          <Switch
-                            checked={Boolean(selectedField.config?.showDivider)}
-                            onCheckedChange={(checked) => updateFieldConfig(selectedField.id, { showDivider: checked })}
-                          />
-                          <span className="ml-3 text-sm text-muted-foreground">Show horizontal rule</span>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label>Divider Color</Label>
-                          <Input
-                            type="color"
-                            value={String(selectedField.config?.dividerColor ?? "#e2e8f0")}
-                            onChange={(event) => updateFieldConfig(selectedField.id, { dividerColor: event.target.value })}
-                          />
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {selectedField.type === "html" ? (
-                      <div className="space-y-1.5 rounded-xl border bg-muted/20 p-4">
-                        <Label>HTML / Embed Code</Label>
-                        <Textarea
-                          rows={8}
-                          value={String(selectedField.config?.htmlContent ?? "")}
-                          onChange={(event) => updateFieldConfig(selectedField.id, { htmlContent: event.target.value })}
-                          placeholder="<iframe ...></iframe>"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Use this for custom instructions, trusted 3rd-party embeds, or raw HTML snippets inside a form.
-                        </p>
-                      </div>
-                    ) : null}
-
-                    {selectedField.type === "page" ? (
-                      <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
-                        <div className="space-y-1.5">
-                          <Label>Page Title</Label>
-                          <Input
-                            value={String(selectedField.config?.pageTitle ?? "")}
-                            onChange={(event) => updateFieldConfig(selectedField.id, { pageTitle: event.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label>Page Description</Label>
-                          <Textarea
-                            rows={2}
-                            value={String(selectedField.config?.pageDescription ?? "")}
-                            onChange={(event) => updateFieldConfig(selectedField.id, { pageDescription: event.target.value })}
-                          />
-                        </div>
+                    </CardHeader>
+                    {formSettingsOpen ? (
+                      <CardContent className="space-y-5">
                         <div className="grid gap-4 md:grid-cols-2">
                           <div className="space-y-1.5">
-                            <Label>Next Button Text</Label>
+                            <Label>Name</Label>
                             <Input
-                              value={String(selectedField.config?.nextButtonText ?? "Next")}
-                              onChange={(event) => updateFieldConfig(selectedField.id, { nextButtonText: event.target.value })}
+                              value={draft.name}
+                              onChange={(event) =>
+                                updateDraft((current) => ({
+                                  ...current,
+                                  name: event.target.value,
+                                  slug:
+                                    current.id.startsWith("draft-") &&
+                                    (!current.slug || current.slug.startsWith("form-"))
+                                      ? slugify(event.target.value)
+                                      : current.slug,
+                                }))
+                              }
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <Label>Previous Button Text</Label>
+                            <Label>Slug</Label>
                             <Input
-                              value={String(selectedField.config?.previousButtonText ?? "Previous")}
-                              onChange={(event) => updateFieldConfig(selectedField.id, { previousButtonText: event.target.value })}
+                              value={draft.slug}
+                              onChange={(event) =>
+                                updateDraft((current) => ({
+                                  ...current,
+                                  slug: slugify(event.target.value),
+                                }))
+                              }
                             />
                           </div>
                         </div>
-                      </div>
-                    ) : null}
 
-                    {selectedField.type === "hidden" ? (
-                      <div className="space-y-1.5 rounded-xl border bg-muted/20 p-4">
-                        <Label>Default Value</Label>
-                        <Input
-                          value={String(selectedField.config?.defaultValue ?? "")}
-                          onChange={(event) => updateFieldConfig(selectedField.id, { defaultValue: event.target.value })}
-                        />
-                      </div>
-                    ) : null}
-
-                    {selectedField.type === "consent" ? (
-                      <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
                         <div className="space-y-1.5">
-                          <Label>Consent Label</Label>
+                          <Label>Public Form Link</Label>
                           <Input
-                            value={String(selectedField.config?.consentCheckboxLabel ?? "")}
-                            onChange={(event) => updateFieldConfig(selectedField.id, { consentCheckboxLabel: event.target.value })}
+                            value={
+                              draft.isActive
+                                ? publicFormLink
+                                : "Activate this form to generate a shareable public link."
+                            }
+                            readOnly
                           />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label>Consent Description</Label>
-                          <Textarea
-                            rows={3}
-                            value={String(selectedField.config?.consentDescription ?? "")}
-                            onChange={(event) => updateFieldConfig(selectedField.id, { consentDescription: event.target.value })}
-                          />
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {selectedField.type === "time" ? (
-                      <div className="space-y-1.5">
-                        <Label>Time Format</Label>
-                        <Select
-                          value={selectedField.config?.timeFormat === "24" ? "24" : "12"}
-                          onValueChange={(value: "12" | "24") => updateFieldConfig(selectedField.id, { timeFormat: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="12">12-hour</SelectItem>
-                            <SelectItem value="24">24-hour</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ) : null}
-
-                    {selectedField.type === "address" ? (
-                      <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
-                        <div className="flex h-10 items-center rounded-md border px-3">
-                          <Switch
-                            checked={Boolean(selectedField.config?.showStreet2)}
-                            onCheckedChange={(checked) => updateFieldConfig(selectedField.id, { showStreet2: checked })}
-                          />
-                          <span className="ml-3 text-sm text-muted-foreground">Include Street Address 2</span>
-                        </div>
-                        <div className="flex h-10 items-center rounded-md border px-3">
-                          <Switch
-                            checked={Boolean(selectedField.config?.showCountry)}
-                            onCheckedChange={(checked) => updateFieldConfig(selectedField.id, { showCountry: checked })}
-                          />
-                          <span className="ml-3 text-sm text-muted-foreground">Include Country field</span>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label>Address Layout</Label>
-                          <Select
-                            value={selectedField.config?.addressLayout === "compact" ? "compact" : "stacked"}
-                            onValueChange={(value: "stacked" | "compact") => updateFieldConfig(selectedField.id, { addressLayout: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="stacked">Stacked</SelectItem>
-                              <SelectItem value="compact">Compact Grid</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {selectedField.type === "list" ? (
-                      <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
-                        <div className="flex items-center justify-between">
-                          <Label>List Columns</Label>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addListColumn(selectedField.id)}>
-                            <Plus className="mr-1.5 h-3.5 w-3.5" />
-                            Add Column
-                          </Button>
-                        </div>
-                        <div className="space-y-3">
-                          {(selectedField.config?.listColumns ?? []).map((column) => (
-                            <div key={column.id} className="rounded-lg border bg-background p-3">
-                              <div className="grid gap-3">
-                                <div className="space-y-1.5">
-                                  <Label>Column Label</Label>
-                                  <Input
-                                    value={column.label}
-                                    onChange={(event) => updateListColumn(selectedField.id, column.id, { label: event.target.value })}
-                                  />
-                                </div>
-                                <div className="space-y-1.5">
-                                  <Label>Placeholder</Label>
-                                  <Input
-                                    value={column.placeholder ?? ""}
-                                    onChange={(event) => updateListColumn(selectedField.id, column.id, { placeholder: event.target.value })}
-                                  />
-                                </div>
-                                <Button type="button" variant="ghost" size="sm" className="justify-start text-destructive" onClick={() => removeListColumn(selectedField.id, column.id)}>
-                                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                                  Remove Column
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label>Max Rows</Label>
-                          <Input
-                            type="number"
-                            min={1}
-                            value={String(selectedField.config?.maxRows ?? 10)}
-                            onChange={(event) => updateFieldConfig(selectedField.id, { maxRows: Number(event.target.value) || 10 })}
-                          />
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {supportsChoices(selectedField.type) ? (
-                      <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
-                        <div className="flex items-center justify-between">
-                          <Label>Choices</Label>
-                          <Button type="button" size="sm" variant="outline" onClick={() => addChoice(selectedField.id)}>
-                            <Plus className="mr-1.5 h-3.5 w-3.5" />
-                            Add Choice
-                          </Button>
+                          <p className="text-xs text-muted-foreground">
+                            Shared links open a minimal standalone form page with the company logo
+                            and no site navigation.
+                          </p>
                         </div>
 
-                        {selectedField.type === "image-choice" ? (
+                        <div className="grid gap-4 md:grid-cols-2">
                           <div className="space-y-1.5">
-                            <Label>Selection Mode</Label>
+                            <Label>Form Type</Label>
                             <Select
-                              value={selectedField.config?.selectionMode === "multiple" ? "multiple" : "single"}
-                              onValueChange={(value: "single" | "multiple") => updateFieldConfig(selectedField.id, { selectionMode: value })}
+                              value={draft.kind}
+                              onValueChange={(value: CmsFormKind) =>
+                                updateDraft((current) => ({ ...current, kind: value }))
+                              }
                             >
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="single">Single Choice</SelectItem>
-                                <SelectItem value="multiple">Multiple Choice</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        ) : null}
-
-                        {selectedField.type !== "select" && selectedField.type !== "multiselect" ? (
-                          <div className="space-y-1.5">
-                            <Label>Choice Layout</Label>
-                            <Select
-                              value={selectedField.config?.choiceLayout === "grid" ? "grid" : selectedField.config?.choiceLayout === "inline" ? "inline" : "stacked"}
-                              onValueChange={(value: "stacked" | "inline" | "grid") => updateFieldConfig(selectedField.id, { choiceLayout: value })}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {CHOICE_LAYOUT_OPTIONS.map((option) => (
+                                {KIND_OPTIONS.map((option) => (
                                   <SelectItem key={option.value} value={option.value}>
                                     {option.label}
                                   </SelectItem>
@@ -1802,84 +1373,978 @@ function FormsPageContent() {
                               </SelectContent>
                             </Select>
                           </div>
-                        ) : null}
+                          <div className="space-y-1.5">
+                            <Label>Active</Label>
+                            <div className="flex h-10 items-center rounded-md border px-3">
+                              <Switch
+                                checked={draft.isActive}
+                                onCheckedChange={(checked) =>
+                                  updateDraft((current) => ({ ...current, isActive: checked }))
+                                }
+                              />
+                              <span className="ml-3 text-sm text-muted-foreground">
+                                {draft.isActive
+                                  ? "Form is live and embeddable"
+                                  : "Form is hidden from public usage"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
 
-                        <div className="space-y-3">
-                          {(selectedField.options ?? []).map((option, index) => (
-                            <div key={`${option.value}-${index}`} className="rounded-lg border bg-background p-3">
-                              <div className="grid gap-3">
-                                <div className="space-y-1.5">
-                                  <Label>Choice Label</Label>
-                                  <Input
-                                    value={option.label}
-                                    onChange={(event) => updateChoice(selectedField.id, option.value, { label: event.target.value })}
-                                  />
-                                </div>
-                                <div className="space-y-1.5">
-                                  <Label>Stored Value</Label>
-                                  <Input
-                                    value={option.value}
-                                    onChange={(event) => updateChoice(selectedField.id, option.value, { value: slugify(event.target.value) || option.value })}
-                                  />
-                                </div>
-                                {selectedField.type === "image-choice" ? (
-                                  <div className="space-y-1.5">
-                                    <Label>Choice Image</Label>
-                                    <CmsImageUpload
-                                      value={option.imageUrl ?? ""}
-                                      onChange={(value) => updateChoice(selectedField.id, option.value, { imageUrl: value ?? "" })}
-                                      label="Choice image"
-                                    />
-                                  </div>
-                                ) : null}
-                                <Button type="button" variant="ghost" size="sm" className="justify-start text-destructive" onClick={() => removeChoice(selectedField.id, option.value)}>
-                                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                                  Remove Choice
-                                </Button>
+                        <div className="space-y-1.5">
+                          <Label>Description</Label>
+                          <Textarea
+                            rows={3}
+                            value={draft.description ?? ""}
+                            onChange={(event) =>
+                              updateDraft((current) => ({
+                                ...current,
+                                description: event.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-1.5">
+                            <Label>Submit Button Text</Label>
+                            <Input
+                              value={String(draft.settings.submitButtonText ?? "Submit")}
+                              onChange={(event) =>
+                                updateDraft((current) => ({
+                                  ...current,
+                                  settings: {
+                                    ...current.settings,
+                                    submitButtonText: event.target.value,
+                                  },
+                                }))
+                              }
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label>Success Message</Label>
+                            <Textarea
+                              rows={2}
+                              value={String(draft.settings.successMessage ?? "")}
+                              onChange={(event) =>
+                                updateDraft((current) => ({
+                                  ...current,
+                                  settings: {
+                                    ...current.settings,
+                                    successMessage: event.target.value,
+                                  },
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-primary" />
+                            <div>
+                              <p className="text-sm font-semibold">Mailchimp Routing</p>
+                              <p className="text-xs text-muted-foreground">
+                                Each form owns its own Mailchimp tag. Credentials stay in
+                                Integrations.
+                              </p>
+                            </div>
+                          </div>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-1.5">
+                              <Label>Mailchimp Enabled</Label>
+                              <div className="flex h-10 items-center rounded-md border px-3">
+                                <Switch
+                                  checked={Boolean(draft.settings.mailchimpEnabled)}
+                                  onCheckedChange={(checked) =>
+                                    updateDraft((current) => ({
+                                      ...current,
+                                      settings: { ...current.settings, mailchimpEnabled: checked },
+                                    }))
+                                  }
+                                />
+                                <span className="ml-3 text-sm text-muted-foreground">
+                                  Sync submissions to Mailchimp
+                                </span>
                               </div>
                             </div>
-                          ))}
+                            <div className="space-y-1.5">
+                              <Label>Mailchimp Tag</Label>
+                              <Input
+                                value={String(draft.settings.mailchimpTag ?? "")}
+                                onChange={(event) =>
+                                  updateDraft((current) => ({
+                                    ...current,
+                                    settings: {
+                                      ...current.settings,
+                                      mailchimpTag: event.target.value,
+                                    },
+                                  }))
+                                }
+                                placeholder="Core Platform Newsletter"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div className="flex h-10 items-center rounded-md border px-3">
+                              <Switch
+                                checked={Boolean(draft.settings.notifyAdmins)}
+                                onCheckedChange={(checked) =>
+                                  updateDraft((current) => ({
+                                    ...current,
+                                    settings: { ...current.settings, notifyAdmins: checked },
+                                  }))
+                                }
+                              />
+                              <span className="ml-3 text-sm text-muted-foreground">
+                                Email admins on submission
+                              </span>
+                            </div>
+                            <div className="flex h-10 items-center rounded-md border px-3">
+                              <Switch
+                                checked={Boolean(draft.settings.storeAsContactMessage)}
+                                onCheckedChange={(checked) =>
+                                  updateDraft((current) => ({
+                                    ...current,
+                                    settings: {
+                                      ...current.settings,
+                                      storeAsContactMessage: checked,
+                                    },
+                                  }))
+                                }
+                              />
+                              <span className="ml-3 text-sm text-muted-foreground">
+                                Store in contact inbox
+                              </span>
+                            </div>
+                            <div className="flex h-10 items-center rounded-md border px-3">
+                              <Switch
+                                checked={Boolean(draft.settings.createCrmLead)}
+                                onCheckedChange={(checked) =>
+                                  updateDraft((current) => ({
+                                    ...current,
+                                    settings: { ...current.settings, createCrmLead: checked },
+                                  }))
+                                }
+                              />
+                              <span className="ml-3 text-sm text-muted-foreground">
+                                Create CRM lead
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      </CardContent>
                     ) : null}
-                  </>
-                ) : (
-                  <div className="space-y-5">
-                    {groupedFieldLibrary.map((group) => (
-                      <ToggleCardGroup
-                        key={group.key}
-                        title={group.label}
-                        open={openGroups[group.key]}
-                        onToggle={() => setOpenGroups((current) => ({ ...current, [group.key]: !current[group.key] }))}
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Form Canvas</CardTitle>
+                      <CardDescription>
+                        Drag fields into order here. Select a field to edit its settings in the
+                        right sidebar.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div
+                        className="rounded-xl border bg-muted/10 p-4"
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          if (draft.fields.length > 0 && dropIndex === null) {
+                            setDropIndex(draft.fields.length);
+                          }
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          onDropFieldAtIndex(dropIndex ?? draft.fields.length);
+                        }}
                       >
-                        <div className="space-y-2">
-                          {group.items.map((item) => (
-                            <FieldLibraryCard
-                              key={item.type}
-                              item={item}
-                              onAdd={addField}
-                              onDragStart={setDraggingFieldType}
-                              onDragEnd={() => {
-                                setDraggingFieldType(null);
-                                setDropIndex(null);
+                        {draft.fields.length === 0 ? (
+                          <div
+                            className="rounded-lg border border-dashed px-6 py-12 text-center text-sm text-muted-foreground"
+                            onDragOver={(event) => {
+                              event.preventDefault();
+                              setDropIndex(0);
+                            }}
+                            onDrop={(event) => {
+                              event.preventDefault();
+                              onDropFieldAtIndex(0);
+                            }}
+                          >
+                            Drag a field from the right sidebar or click one there to start building
+                            this form.
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {draft.fields.map((field, index) => {
+                              const libraryItem = getFieldLibraryItem(field.type);
+                              const Icon = libraryItem?.icon ?? PanelTopOpen;
+
+                              return (
+                                <div key={field.id} className="space-y-3">
+                                  <div
+                                    className={cn(
+                                      "h-2 rounded-full transition-colors",
+                                      dropIndex === index ? "bg-primary/40" : "bg-transparent",
+                                    )}
+                                    onDragOver={(event) => {
+                                      event.preventDefault();
+                                      setDropIndex(index);
+                                    }}
+                                    onDrop={(event) => {
+                                      event.preventDefault();
+                                      onDropFieldAtIndex(index);
+                                    }}
+                                  />
+                                  <div
+                                    draggable
+                                    onDragStart={(event) => {
+                                      event.dataTransfer.effectAllowed = "move";
+                                      event.dataTransfer.setData("text/plain", field.id);
+                                      setDraggingFieldId(field.id);
+                                    }}
+                                    onDragEnd={() => {
+                                      setDraggingFieldId(null);
+                                      setDropIndex(null);
+                                    }}
+                                    onDragOver={(event) => {
+                                      event.preventDefault();
+                                      setDropIndex(index);
+                                    }}
+                                    onDrop={(event) => {
+                                      event.preventDefault();
+                                      onDropFieldAtIndex(index);
+                                    }}
+                                    onClick={() => setSelectedFieldId(field.id)}
+                                    className={cn(
+                                      "rounded-xl border bg-background p-4 transition-colors",
+                                      selectedFieldId === field.id
+                                        ? "border-primary ring-2 ring-primary/10"
+                                        : "hover:bg-muted/20",
+                                    )}
+                                  >
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="flex items-start gap-3">
+                                        <GripVertical className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                          <Icon className="h-4 w-4" />
+                                        </div>
+                                        <div>
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <p className="text-sm font-semibold">
+                                              {field.label || "Untitled Field"}
+                                            </p>
+                                            <Badge
+                                              variant="outline"
+                                              className="text-[10px] uppercase"
+                                            >
+                                              {field.type}
+                                            </Badge>
+                                          </div>
+                                          <p className="mt-1 text-xs text-muted-foreground">
+                                            {fieldSubtitle(field)} •{" "}
+                                            {field.width === "half" ? "Half width" : "Full width"}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          removeField(field.id);
+                                        }}
+                                      >
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            <div
+                              className={cn(
+                                "h-2 rounded-full transition-colors",
+                                dropIndex === draft.fields.length
+                                  ? "bg-primary/40"
+                                  : "bg-transparent",
+                              )}
+                              onDragOver={(event) => {
+                                event.preventDefault();
+                                setDropIndex(draft.fields.length);
+                              }}
+                              onDrop={(event) => {
+                                event.preventDefault();
+                                onDropFieldAtIndex(draft.fields.length);
                               }}
                             />
-                          ))}
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card className="h-fit 2xl:sticky 2xl:top-24">
+                  <CardHeader>
+                    <CardTitle className="text-base">
+                      {selectedField ? "Field Settings" : "Add Fields"}
+                    </CardTitle>
+                    <CardDescription>
+                      {selectedField
+                        ? "Update the selected field’s labels, behavior, and advanced configuration here."
+                        : "Standard and advanced fields live here. Click or drag them into the form canvas."}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {selectedField ? (
+                      <>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full justify-center"
+                          onClick={() => setSelectedFieldId(null)}
+                        >
+                          <ArrowLeft className="mr-2 h-4 w-4" />
+                          Back to Fields
+                        </Button>
+                        <div className="flex items-start gap-3 rounded-xl border bg-muted/20 p-3">
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                              {selectedFieldLibraryItem ? (
+                                <selectedFieldLibraryItem.icon className="h-4.5 w-4.5" />
+                              ) : (
+                                <PanelTopOpen className="h-4.5 w-4.5" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold leading-tight">
+                                {selectedField.label || "Untitled Field"}
+                              </p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {selectedFieldLibraryItem?.label ?? selectedField.type}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                      </ToggleCardGroup>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="py-12 text-center text-sm text-muted-foreground">
-              Select a form from the library or create a new one to start building.
-            </CardContent>
-          </Card>
-        )}
+                        <div className="space-y-1.5">
+                          <Label>Label</Label>
+                          <Input
+                            value={selectedField.label}
+                            onChange={(event) =>
+                              updateField(selectedField.id, { label: event.target.value })
+                            }
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label>Field Key</Label>
+                          <Input
+                            value={selectedField.key}
+                            onChange={(event) =>
+                              updateField(selectedField.id, {
+                                key: slugify(event.target.value) || selectedField.key,
+                              })
+                            }
+                          />
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-1.5">
+                            <Label>Field Type</Label>
+                            <Select
+                              value={selectedField.type}
+                              onValueChange={(value: CmsFormFieldType) =>
+                                replaceFieldType(selectedField.id, value)
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {FIELD_TYPE_OPTIONS.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {!isStructuralField(selectedField.type) &&
+                          selectedField.type !== "hidden" ? (
+                            <div className="space-y-1.5">
+                              <Label>Width</Label>
+                              <Select
+                                value={selectedField.width}
+                                onValueChange={(value: "full" | "half") =>
+                                  updateField(selectedField.id, { width: value })
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="full">Full Width</SelectItem>
+                                  <SelectItem value="half">Half Width</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ) : null}
+                        </div>
+
+                        {![
+                          "section",
+                          "page",
+                          "html",
+                          "consent",
+                          "hidden",
+                          "checkbox",
+                          "radio",
+                          "select",
+                          "multiselect",
+                          "image-choice",
+                          "list",
+                        ].includes(selectedField.type) ? (
+                          <div className="space-y-1.5">
+                            <Label>Placeholder</Label>
+                            <Input
+                              value={selectedField.placeholder ?? ""}
+                              onChange={(event) =>
+                                updateField(selectedField.id, { placeholder: event.target.value })
+                              }
+                            />
+                          </div>
+                        ) : null}
+
+                        {!["html", "section", "page", "hidden"].includes(selectedField.type) ? (
+                          <div className="space-y-1.5">
+                            <Label>Help Text</Label>
+                            <Textarea
+                              rows={2}
+                              value={selectedField.helpText ?? ""}
+                              onChange={(event) =>
+                                updateField(selectedField.id, { helpText: event.target.value })
+                              }
+                            />
+                          </div>
+                        ) : null}
+
+                        {!isStructuralField(selectedField.type) &&
+                        selectedField.type !== "hidden" ? (
+                          <div className="flex h-10 items-center rounded-md border px-3">
+                            <Switch
+                              checked={Boolean(selectedField.required)}
+                              onCheckedChange={(checked) =>
+                                updateField(selectedField.id, { required: checked })
+                              }
+                            />
+                            <span className="ml-3 text-sm text-muted-foreground">
+                              Required field
+                            </span>
+                          </div>
+                        ) : null}
+
+                        {selectedField.type === "name" ? (
+                          <div className="space-y-1.5">
+                            <Label>Name Format</Label>
+                            <Select
+                              value={
+                                selectedField.config?.nameFormat === "split" ? "split" : "full"
+                              }
+                              onValueChange={(value: "full" | "split") =>
+                                updateFieldConfig(selectedField.id, { nameFormat: value })
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="full">Full Name</SelectItem>
+                                <SelectItem value="split">First + Last Name</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ) : null}
+
+                        {selectedField.type === "section" ? (
+                          <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
+                            <div className="space-y-1.5">
+                              <Label>Section Title</Label>
+                              <Input
+                                value={String(selectedField.config?.sectionTitle ?? "")}
+                                onChange={(event) =>
+                                  updateFieldConfig(selectedField.id, {
+                                    sectionTitle: event.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label>Section Subtitle</Label>
+                              <Textarea
+                                rows={2}
+                                value={String(selectedField.config?.sectionSubtitle ?? "")}
+                                onChange={(event) =>
+                                  updateFieldConfig(selectedField.id, {
+                                    sectionSubtitle: event.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="flex h-10 items-center rounded-md border px-3">
+                              <Switch
+                                checked={Boolean(selectedField.config?.showDivider)}
+                                onCheckedChange={(checked) =>
+                                  updateFieldConfig(selectedField.id, { showDivider: checked })
+                                }
+                              />
+                              <span className="ml-3 text-sm text-muted-foreground">
+                                Show horizontal rule
+                              </span>
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label>Divider Color</Label>
+                              <Input
+                                type="color"
+                                value={String(selectedField.config?.dividerColor ?? "#e2e8f0")}
+                                onChange={(event) =>
+                                  updateFieldConfig(selectedField.id, {
+                                    dividerColor: event.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {selectedField.type === "html" ? (
+                          <div className="space-y-1.5 rounded-xl border bg-muted/20 p-4">
+                            <Label>HTML / Embed Code</Label>
+                            <Textarea
+                              rows={8}
+                              value={String(selectedField.config?.htmlContent ?? "")}
+                              onChange={(event) =>
+                                updateFieldConfig(selectedField.id, {
+                                  htmlContent: event.target.value,
+                                })
+                              }
+                              placeholder="<iframe ...></iframe>"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Use this for custom instructions, trusted 3rd-party embeds, or raw
+                              HTML snippets inside a form.
+                            </p>
+                          </div>
+                        ) : null}
+
+                        {selectedField.type === "page" ? (
+                          <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
+                            <div className="space-y-1.5">
+                              <Label>Page Title</Label>
+                              <Input
+                                value={String(selectedField.config?.pageTitle ?? "")}
+                                onChange={(event) =>
+                                  updateFieldConfig(selectedField.id, {
+                                    pageTitle: event.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label>Page Description</Label>
+                              <Textarea
+                                rows={2}
+                                value={String(selectedField.config?.pageDescription ?? "")}
+                                onChange={(event) =>
+                                  updateFieldConfig(selectedField.id, {
+                                    pageDescription: event.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <div className="space-y-1.5">
+                                <Label>Next Button Text</Label>
+                                <Input
+                                  value={String(selectedField.config?.nextButtonText ?? "Next")}
+                                  onChange={(event) =>
+                                    updateFieldConfig(selectedField.id, {
+                                      nextButtonText: event.target.value,
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label>Previous Button Text</Label>
+                                <Input
+                                  value={String(
+                                    selectedField.config?.previousButtonText ?? "Previous",
+                                  )}
+                                  onChange={(event) =>
+                                    updateFieldConfig(selectedField.id, {
+                                      previousButtonText: event.target.value,
+                                    })
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {selectedField.type === "hidden" ? (
+                          <div className="space-y-1.5 rounded-xl border bg-muted/20 p-4">
+                            <Label>Default Value</Label>
+                            <Input
+                              value={String(selectedField.config?.defaultValue ?? "")}
+                              onChange={(event) =>
+                                updateFieldConfig(selectedField.id, {
+                                  defaultValue: event.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                        ) : null}
+
+                        {selectedField.type === "consent" ? (
+                          <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
+                            <div className="space-y-1.5">
+                              <Label>Consent Label</Label>
+                              <Input
+                                value={String(selectedField.config?.consentCheckboxLabel ?? "")}
+                                onChange={(event) =>
+                                  updateFieldConfig(selectedField.id, {
+                                    consentCheckboxLabel: event.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label>Consent Description</Label>
+                              <Textarea
+                                rows={3}
+                                value={String(selectedField.config?.consentDescription ?? "")}
+                                onChange={(event) =>
+                                  updateFieldConfig(selectedField.id, {
+                                    consentDescription: event.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {selectedField.type === "time" ? (
+                          <div className="space-y-1.5">
+                            <Label>Time Format</Label>
+                            <Select
+                              value={selectedField.config?.timeFormat === "24" ? "24" : "12"}
+                              onValueChange={(value: "12" | "24") =>
+                                updateFieldConfig(selectedField.id, { timeFormat: value })
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="12">12-hour</SelectItem>
+                                <SelectItem value="24">24-hour</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ) : null}
+
+                        {selectedField.type === "address" ? (
+                          <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
+                            <div className="flex h-10 items-center rounded-md border px-3">
+                              <Switch
+                                checked={Boolean(selectedField.config?.showStreet2)}
+                                onCheckedChange={(checked) =>
+                                  updateFieldConfig(selectedField.id, { showStreet2: checked })
+                                }
+                              />
+                              <span className="ml-3 text-sm text-muted-foreground">
+                                Include Street Address 2
+                              </span>
+                            </div>
+                            <div className="flex h-10 items-center rounded-md border px-3">
+                              <Switch
+                                checked={Boolean(selectedField.config?.showCountry)}
+                                onCheckedChange={(checked) =>
+                                  updateFieldConfig(selectedField.id, { showCountry: checked })
+                                }
+                              />
+                              <span className="ml-3 text-sm text-muted-foreground">
+                                Include Country field
+                              </span>
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label>Address Layout</Label>
+                              <Select
+                                value={
+                                  selectedField.config?.addressLayout === "compact"
+                                    ? "compact"
+                                    : "stacked"
+                                }
+                                onValueChange={(value: "stacked" | "compact") =>
+                                  updateFieldConfig(selectedField.id, { addressLayout: value })
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="stacked">Stacked</SelectItem>
+                                  <SelectItem value="compact">Compact Grid</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {selectedField.type === "list" ? (
+                          <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
+                            <div className="flex items-center justify-between">
+                              <Label>List Columns</Label>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => addListColumn(selectedField.id)}
+                              >
+                                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                                Add Column
+                              </Button>
+                            </div>
+                            <div className="space-y-3">
+                              {(selectedField.config?.listColumns ?? []).map((column) => (
+                                <div
+                                  key={column.id}
+                                  className="rounded-lg border bg-background p-3"
+                                >
+                                  <div className="grid gap-3">
+                                    <div className="space-y-1.5">
+                                      <Label>Column Label</Label>
+                                      <Input
+                                        value={column.label}
+                                        onChange={(event) =>
+                                          updateListColumn(selectedField.id, column.id, {
+                                            label: event.target.value,
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <Label>Placeholder</Label>
+                                      <Input
+                                        value={column.placeholder ?? ""}
+                                        onChange={(event) =>
+                                          updateListColumn(selectedField.id, column.id, {
+                                            placeholder: event.target.value,
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="justify-start text-destructive"
+                                      onClick={() => removeListColumn(selectedField.id, column.id)}
+                                    >
+                                      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                                      Remove Column
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label>Max Rows</Label>
+                              <Input
+                                type="number"
+                                min={1}
+                                value={String(selectedField.config?.maxRows ?? 10)}
+                                onChange={(event) =>
+                                  updateFieldConfig(selectedField.id, {
+                                    maxRows: Number(event.target.value) || 10,
+                                  })
+                                }
+                              />
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {supportsChoices(selectedField.type) ? (
+                          <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
+                            <div className="flex items-center justify-between">
+                              <Label>Choices</Label>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => addChoice(selectedField.id)}
+                              >
+                                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                                Add Choice
+                              </Button>
+                            </div>
+
+                            {selectedField.type === "image-choice" ? (
+                              <div className="space-y-1.5">
+                                <Label>Selection Mode</Label>
+                                <Select
+                                  value={
+                                    selectedField.config?.selectionMode === "multiple"
+                                      ? "multiple"
+                                      : "single"
+                                  }
+                                  onValueChange={(value: "single" | "multiple") =>
+                                    updateFieldConfig(selectedField.id, { selectionMode: value })
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="single">Single Choice</SelectItem>
+                                    <SelectItem value="multiple">Multiple Choice</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            ) : null}
+
+                            {selectedField.type !== "select" &&
+                            selectedField.type !== "multiselect" ? (
+                              <div className="space-y-1.5">
+                                <Label>Choice Layout</Label>
+                                <Select
+                                  value={
+                                    selectedField.config?.choiceLayout === "grid"
+                                      ? "grid"
+                                      : selectedField.config?.choiceLayout === "inline"
+                                        ? "inline"
+                                        : "stacked"
+                                  }
+                                  onValueChange={(value: "stacked" | "inline" | "grid") =>
+                                    updateFieldConfig(selectedField.id, { choiceLayout: value })
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {CHOICE_LAYOUT_OPTIONS.map((option) => (
+                                      <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            ) : null}
+
+                            <div className="space-y-3">
+                              {(selectedField.options ?? []).map((option, index) => (
+                                <div
+                                  key={`${option.value}-${index}`}
+                                  className="rounded-lg border bg-background p-3"
+                                >
+                                  <div className="grid gap-3">
+                                    <div className="space-y-1.5">
+                                      <Label>Choice Label</Label>
+                                      <Input
+                                        value={option.label}
+                                        onChange={(event) =>
+                                          updateChoice(selectedField.id, option.value, {
+                                            label: event.target.value,
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <Label>Stored Value</Label>
+                                      <Input
+                                        value={option.value}
+                                        onChange={(event) =>
+                                          updateChoice(selectedField.id, option.value, {
+                                            value: slugify(event.target.value) || option.value,
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                    {selectedField.type === "image-choice" ? (
+                                      <div className="space-y-1.5">
+                                        <Label>Choice Image</Label>
+                                        <CmsImageUpload
+                                          value={option.imageUrl ?? ""}
+                                          onChange={(value) =>
+                                            updateChoice(selectedField.id, option.value, {
+                                              imageUrl: value ?? "",
+                                            })
+                                          }
+                                          label="Choice image"
+                                        />
+                                      </div>
+                                    ) : null}
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="justify-start text-destructive"
+                                      onClick={() => removeChoice(selectedField.id, option.value)}
+                                    >
+                                      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                                      Remove Choice
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </>
+                    ) : (
+                      <div className="space-y-5">
+                        {groupedFieldLibrary.map((group) => (
+                          <ToggleCardGroup
+                            key={group.key}
+                            title={group.label}
+                            open={openGroups[group.key]}
+                            onToggle={() =>
+                              setOpenGroups((current) => ({
+                                ...current,
+                                [group.key]: !current[group.key],
+                              }))
+                            }
+                          >
+                            <div className="space-y-2">
+                              {group.items.map((item) => (
+                                <FieldLibraryCard
+                                  key={item.type}
+                                  item={item}
+                                  onAdd={addField}
+                                  onDragStart={setDraggingFieldType}
+                                  onDragEnd={() => {
+                                    setDraggingFieldType(null);
+                                    setDropIndex(null);
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </ToggleCardGroup>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center text-sm text-muted-foreground">
+                  Select a form from the library or create a new one to start building.
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 
@@ -1905,7 +2370,9 @@ function FormsPageContent() {
                       onClick={() => setSelectedEntriesFormId(form.id)}
                       className={cn(
                         "w-full rounded-lg border px-3 py-3 text-left transition-colors",
-                        selectedEntriesFormId === form.id ? "border-primary bg-primary/5" : "hover:bg-muted/40"
+                        selectedEntriesFormId === form.id
+                          ? "border-primary bg-primary/5"
+                          : "hover:bg-muted/40",
                       )}
                       data-testid={`button-select-form-entries-${form.id}`}
                     >
@@ -1939,7 +2406,9 @@ function FormsPageContent() {
                     variant="outline"
                     onClick={() => {
                       if (!selectedEntriesFormId || submissions.length === 0) return;
-                      const selectedForm = activeForms.find((form) => form.id === selectedEntriesFormId);
+                      const selectedForm = activeForms.find(
+                        (form) => form.id === selectedEntriesFormId,
+                      );
                       const csv = buildSubmissionCsv(submissions);
                       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
                       const url = URL.createObjectURL(blob);
@@ -1964,7 +2433,11 @@ function FormsPageContent() {
                   </div>
                 ) : isSubmissionsLoading ? (
                   <div className="space-y-3">
-                    <Card className="border-dashed"><CardContent className="py-8 text-center text-sm text-muted-foreground">Loading form entries…</CardContent></Card>
+                    <Card className="border-dashed">
+                      <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                        Loading form entries…
+                      </CardContent>
+                    </Card>
                   </div>
                 ) : submissions.length === 0 ? (
                   <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
@@ -1985,18 +2458,31 @@ function FormsPageContent() {
                           Back to Form Entries
                         </Button>
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold">{getSubmissionDisplayName(selectedSubmission)}</p>
-                          <Badge variant="outline">{formatSubmissionDate(selectedSubmission.createdAt)}</Badge>
-                          {selectedSubmission.source ? <Badge variant="secondary">{selectedSubmission.source}</Badge> : null}
+                          <p className="font-semibold">
+                            {getSubmissionDisplayName(selectedSubmission)}
+                          </p>
+                          <Badge variant="outline">
+                            {formatSubmissionDate(selectedSubmission.createdAt)}
+                          </Badge>
+                          {selectedSubmission.source ? (
+                            <Badge variant="secondary">{selectedSubmission.source}</Badge>
+                          ) : null}
                         </div>
-                        <p className="text-sm text-muted-foreground">{getSubmissionEmail(selectedSubmission)}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {getSubmissionEmail(selectedSubmission)}
+                        </p>
                       </div>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => deleteSubmissionMutation.mutate({ formId: selectedEntriesFormId, submissionId: selectedSubmission.id })}
+                        onClick={() =>
+                          deleteSubmissionMutation.mutate({
+                            formId: selectedEntriesFormId,
+                            submissionId: selectedSubmission.id,
+                          })
+                        }
                         disabled={deleteSubmissionMutation.isPending}
                         data-testid={`button-delete-form-entry-${selectedSubmission.id}`}
                       >
@@ -2006,10 +2492,16 @@ function FormsPageContent() {
                     </div>
 
                     <div className="grid gap-3 md:grid-cols-2">
-                      {Object.entries((selectedSubmission.data ?? {}) as Record<string, unknown>).map(([key, value]) => (
+                      {Object.entries(
+                        (selectedSubmission.data ?? {}) as Record<string, unknown>,
+                      ).map(([key, value]) => (
                         <div key={key} className="rounded-lg border bg-muted/10 p-3">
-                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</p>
-                          <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/90">{stringifySubmissionValue(value) || "—"}</p>
+                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            {key}
+                          </p>
+                          <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/90">
+                            {stringifySubmissionValue(value) || "—"}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -2028,11 +2520,19 @@ function FormsPageContent() {
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="font-medium">{getSubmissionDisplayName(submission)}</p>
-                              <Badge variant="outline">{formatSubmissionDate(submission.createdAt)}</Badge>
-                              {submission.source ? <Badge variant="secondary">{submission.source}</Badge> : null}
+                              <Badge variant="outline">
+                                {formatSubmissionDate(submission.createdAt)}
+                              </Badge>
+                              {submission.source ? (
+                                <Badge variant="secondary">{submission.source}</Badge>
+                              ) : null}
                             </div>
-                            <p className="mt-1 text-sm text-muted-foreground">{getSubmissionEmail(submission)}</p>
-                            <p className="mt-3 text-sm text-foreground/85">{getSubmissionMessageExcerpt(submission)}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              {getSubmissionEmail(submission)}
+                            </p>
+                            <p className="mt-3 text-sm text-foreground/85">
+                              {getSubmissionMessageExcerpt(submission)}
+                            </p>
                           </div>
                           <span className="text-xs font-medium text-primary">Open</span>
                         </div>

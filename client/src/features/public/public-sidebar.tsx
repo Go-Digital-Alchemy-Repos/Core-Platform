@@ -47,7 +47,7 @@ function RecentPostsWidget({ widget }: { widget: SidebarWidget }) {
         {visiblePosts.length === 0 ? (
           <p className="text-sm public-helper-text">Recent posts will appear here.</p>
         ) : (
-          visiblePosts.map((post) => (
+          visiblePosts.map((post) =>
             post.postType === "external" && post.externalUrl ? (
               <a
                 key={post.id}
@@ -68,8 +68,8 @@ function RecentPostsWidget({ widget }: { widget: SidebarWidget }) {
                   {post.title}
                 </span>
               </Link>
-            )
-          ))
+            ),
+          )
         )}
       </div>
     </WidgetCard>
@@ -80,7 +80,7 @@ function NewsletterWidget({ widget }: { widget: SidebarWidget }) {
   const heading = widget.title || "Stay Connected";
   const description = text(
     widget.settings.description,
-    "Get platform-approved articles, events, and resources in your inbox."
+    "Get platform-approved articles, events, and resources in your inbox.",
   );
   const buttonText = text(widget.settings.buttonText, "Sign Up");
   const formSlug = text(widget.settings.formSlug, "newsletter-signup");
@@ -120,7 +120,10 @@ function FormWidget({ widget }: { widget: SidebarWidget }) {
 }
 
 function CalloutWidget({ widget }: { widget: SidebarWidget }) {
-  const body = text(widget.settings.body, "Add a short message, promotion, or supporting note here.");
+  const body = text(
+    widget.settings.body,
+    "Add a short message, promotion, or supporting note here.",
+  );
   const buttonText = text(widget.settings.buttonText);
   const buttonUrl = text(widget.settings.buttonUrl, "#");
 
@@ -155,7 +158,11 @@ function SearchWidget({ widget }: { widget: SidebarWidget }) {
         }}
         data-testid="sidebar-search-form"
       >
-        <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search articles and site content..." />
+        <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search articles and site content..."
+        />
         <Button type="submit" size="icon" aria-label="Search">
           <Search className="h-4 w-4" />
         </Button>
@@ -182,7 +189,9 @@ function CategoriesWidget({ widget }: { widget: SidebarWidget }) {
     <WidgetCard title={widget.title || "Categories"}>
       <div className="space-y-2">
         {categories.length === 0 ? (
-          <p className="text-sm public-helper-text">Categories will appear as posts are published.</p>
+          <p className="text-sm public-helper-text">
+            Categories will appear as posts are published.
+          </p>
         ) : (
           categories.map(([category, count]) => (
             <Link key={category} href={`/insights?category=${encodeURIComponent(category)}`}>

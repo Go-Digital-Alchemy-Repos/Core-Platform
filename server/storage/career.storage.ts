@@ -35,15 +35,21 @@ export class CareerStorage {
     if (filters.publicOnly) {
       conditions.push(eq(careerJobs.status, "published"));
       conditions.push(eq(careerJobs.visibility, "public"));
-      conditions.push(or(sql`${careerJobs.publishedAt} IS NULL`, lte(careerJobs.publishedAt, new Date())));
-      conditions.push(or(sql`${careerJobs.closesAt} IS NULL`, sql`${careerJobs.closesAt} >= NOW()`));
+      conditions.push(
+        or(sql`${careerJobs.publishedAt} IS NULL`, lte(careerJobs.publishedAt, new Date())),
+      );
+      conditions.push(
+        or(sql`${careerJobs.closesAt} IS NULL`, sql`${careerJobs.closesAt} >= NOW()`),
+      );
       conditions.push(eq(careerJobs.noindex, false));
     }
     if (filters.department && filters.department !== "all") {
       conditions.push(eq(careerJobs.department, filters.department));
     }
     if (filters.employmentType && filters.employmentType !== "all") {
-      conditions.push(eq(careerJobs.employmentType, filters.employmentType as CareerJob["employmentType"]));
+      conditions.push(
+        eq(careerJobs.employmentType, filters.employmentType as CareerJob["employmentType"]),
+      );
     }
     if (filters.workMode && filters.workMode !== "all") {
       conditions.push(eq(careerJobs.workMode, filters.workMode as CareerJob["workMode"]));
@@ -53,13 +59,15 @@ export class CareerStorage {
     }
     if (filters.q?.trim()) {
       const term = `%${filters.q.trim()}%`;
-      conditions.push(or(
-        ilike(careerJobs.title, term),
-        ilike(careerJobs.department, term),
-        ilike(careerJobs.location, term),
-        ilike(careerJobs.summary, term),
-        ilike(careerJobs.description, term),
-      ));
+      conditions.push(
+        or(
+          ilike(careerJobs.title, term),
+          ilike(careerJobs.department, term),
+          ilike(careerJobs.location, term),
+          ilike(careerJobs.summary, term),
+          ilike(careerJobs.description, term),
+        ),
+      );
     }
 
     return db
@@ -83,13 +91,15 @@ export class CareerStorage {
     const [job] = await db
       .select()
       .from(careerJobs)
-      .where(and(
-        eq(careerJobs.slug, slug),
-        eq(careerJobs.status, "published"),
-        eq(careerJobs.visibility, "public"),
-        or(sql`${careerJobs.publishedAt} IS NULL`, lte(careerJobs.publishedAt, new Date())),
-        or(sql`${careerJobs.closesAt} IS NULL`, sql`${careerJobs.closesAt} >= NOW()`),
-      ))
+      .where(
+        and(
+          eq(careerJobs.slug, slug),
+          eq(careerJobs.status, "published"),
+          eq(careerJobs.visibility, "public"),
+          or(sql`${careerJobs.publishedAt} IS NULL`, lte(careerJobs.publishedAt, new Date())),
+          or(sql`${careerJobs.closesAt} IS NULL`, sql`${careerJobs.closesAt} >= NOW()`),
+        ),
+      )
       .limit(1);
     return job;
   }
@@ -99,7 +109,10 @@ export class CareerStorage {
   }
 
   async createJob(data: InsertCareerJob): Promise<CareerJob> {
-    const [job] = await db.insert(careerJobs).values(data as CareerJobInsert).returning();
+    const [job] = await db
+      .insert(careerJobs)
+      .values(data as CareerJobInsert)
+      .returning();
     return job;
   }
 
@@ -145,11 +158,17 @@ export class CareerStorage {
   }
 
   async createApplication(data: InsertCareerApplication): Promise<CareerApplication> {
-    const [application] = await db.insert(careerApplications).values(data as CareerApplicationInsert).returning();
+    const [application] = await db
+      .insert(careerApplications)
+      .values(data as CareerApplicationInsert)
+      .returning();
     return application;
   }
 
-  async updateApplication(id: string, data: Partial<InsertCareerApplication>): Promise<CareerApplication | undefined> {
+  async updateApplication(
+    id: string,
+    data: Partial<InsertCareerApplication>,
+  ): Promise<CareerApplication | undefined> {
     const [application] = await db
       .update(careerApplications)
       .set({ ...data, updatedAt: new Date() } as Partial<CareerApplicationInsert>)
@@ -167,7 +186,10 @@ export class CareerStorage {
   }
 
   async createApplicationNote(data: InsertCareerApplicationNote): Promise<CareerApplicationNote> {
-    const [note] = await db.insert(careerApplicationNotes).values(data as CareerApplicationNoteInsert).returning();
+    const [note] = await db
+      .insert(careerApplicationNotes)
+      .values(data as CareerApplicationNoteInsert)
+      .returning();
     return note;
   }
 
@@ -177,8 +199,14 @@ export class CareerStorage {
   }> {
     const jobs = await this.getJobs({ publicOnly: true });
     return {
-      departments: Array.from(new Set(jobs.map((job) => job.department).filter((value): value is string => Boolean(value)))).sort(),
-      locations: Array.from(new Set(jobs.map((job) => job.location).filter((value): value is string => Boolean(value)))).sort(),
+      departments: Array.from(
+        new Set(
+          jobs.map((job) => job.department).filter((value): value is string => Boolean(value)),
+        ),
+      ).sort(),
+      locations: Array.from(
+        new Set(jobs.map((job) => job.location).filter((value): value is string => Boolean(value))),
+      ).sort(),
     };
   }
 }

@@ -70,11 +70,13 @@ export const menuItemSchema: z.ZodType<MenuItem> = z.lazy(() =>
     modalTitle: z.string().nullable().optional(),
     modalDescription: z.string().nullable().optional(),
     children: z.preprocess((v) => v ?? [], z.array(menuItemSchema)),
-  })
+  }),
 ) as z.ZodType<MenuItem>;
 
 export const cmsMenus = pgTable("cms_menus", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   location: text("location").notNull().default("unassigned"),
   items: jsonb("items").default([]),

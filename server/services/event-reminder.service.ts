@@ -25,7 +25,8 @@ export function startEventReminderService() {
       if (upcomingEvents.length === 0) return;
 
       const eventIds = upcomingEvents.map((e) => e.id);
-      const registrations = await storage.eventRegistrations.getConfirmedRegistrationsNeedingReminder(eventIds);
+      const registrations =
+        await storage.eventRegistrations.getConfirmedRegistrationsNeedingReminder(eventIds);
       if (registrations.length === 0) return;
 
       const eventMap = new Map(upcomingEvents.map((e) => [e.id, e]));
@@ -35,7 +36,8 @@ export function startEventReminderService() {
         const event = eventMap.get(reg.eventId);
         if (!event) continue;
 
-        const eventLocation = event.locationName || event.location || (event.isVirtual ? "Virtual" : null);
+        const eventLocation =
+          event.locationName || event.location || (event.isVirtual ? "Virtual" : null);
         const eventDate = formatEventDate(event.date);
         const firstName = reg.fullName.split(" ")[0];
 
@@ -46,7 +48,7 @@ export function startEventReminderService() {
             event.title,
             eventDate,
             eventLocation,
-            event
+            event,
           );
           if (sent) {
             sentIds.push(reg.id);
@@ -65,7 +67,9 @@ export function startEventReminderService() {
 
       if (sentIds.length > 0) {
         await storage.eventRegistrations.markReminderSent(sentIds);
-        logger.app.info(`[event-reminder] Sent ${sentIds.length} reminder(s) for ${upcomingEvents.length} event(s)`);
+        logger.app.info(
+          `[event-reminder] Sent ${sentIds.length} reminder(s) for ${upcomingEvents.length} event(s)`,
+        );
       }
     } catch (err) {
       logger.app.error("[event-reminder] Failed to process event reminders:", err);

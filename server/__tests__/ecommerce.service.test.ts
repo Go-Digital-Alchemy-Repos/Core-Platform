@@ -81,10 +81,18 @@ vi.mock("../storage/index", () => ({
       invalidateCategory: mockInvalidateCategory,
     },
     ecommerce: {
-      getProductsByIds: vi.fn(async (ids: string[]) => mockProducts.filter((product) => ids.includes(product.id))),
-      getProductVariant: vi.fn(async (id: string) => mockVariants.find((variant) => variant.id === id)),
-      getDefaultProductVariant: vi.fn(async (productId: string) => mockVariants.find((variant) => variant.productId === productId && variant.isDefault)),
-      getCouponByCode: vi.fn(async (code: string) => mockCoupons.find((coupon) => coupon.code === code.toUpperCase())),
+      getProductsByIds: vi.fn(async (ids: string[]) =>
+        mockProducts.filter((product) => ids.includes(product.id)),
+      ),
+      getProductVariant: vi.fn(async (id: string) =>
+        mockVariants.find((variant) => variant.id === id),
+      ),
+      getDefaultProductVariant: vi.fn(async (productId: string) =>
+        mockVariants.find((variant) => variant.productId === productId && variant.isDefault),
+      ),
+      getCouponByCode: vi.fn(async (code: string) =>
+        mockCoupons.find((coupon) => coupon.code === code.toUpperCase()),
+      ),
       getProductCategories: mockGetProductCategories,
       getShippingZones: vi.fn(async () => mockShippingZones),
       getShippingRates: vi.fn(async (_zoneId?: string) => mockShippingRates),
@@ -267,7 +275,8 @@ describe("ecommerce services", () => {
   });
 
   it("caps public cart pricing requests to a reasonable number of line items", async () => {
-    const { MAX_ECOMMERCE_CART_LINES, priceCartSchema } = await import("../services/ecommerce-pricing.service");
+    const { MAX_ECOMMERCE_CART_LINES, priceCartSchema } =
+      await import("../services/ecommerce-pricing.service");
     const tooManyItems = Array.from({ length: MAX_ECOMMERCE_CART_LINES + 1 }, (_, index) => ({
       productId: `product-${index}`,
       quantity: 1,
@@ -277,16 +286,19 @@ describe("ecommerce services", () => {
   });
 
   it("trims and bounds public cart pricing identifiers", async () => {
-    const { MAX_ECOMMERCE_COUPON_CODE_LENGTH, MAX_ECOMMERCE_LOOKUP_ID_LENGTH, priceCartSchema } = await import("../services/ecommerce-pricing.service");
+    const { MAX_ECOMMERCE_COUPON_CODE_LENGTH, MAX_ECOMMERCE_LOOKUP_ID_LENGTH, priceCartSchema } =
+      await import("../services/ecommerce-pricing.service");
 
-    expect(priceCartSchema.parse({
-      items: [{ productId: " product-1 ", variantId: " variant-1 ", quantity: 1 }],
-      couponCode: " SAVE20 ",
-      customerEmail: " Buyer@Example.com ",
-      customerId: " customer-1 ",
-      shippingRateId: " shipping-rate-1 ",
-      shippingAddress: { country: " US ", state: " NY " },
-    })).toMatchObject({
+    expect(
+      priceCartSchema.parse({
+        items: [{ productId: " product-1 ", variantId: " variant-1 ", quantity: 1 }],
+        couponCode: " SAVE20 ",
+        customerEmail: " Buyer@Example.com ",
+        customerId: " customer-1 ",
+        shippingRateId: " shipping-rate-1 ",
+        shippingAddress: { country: " US ", state: " NY " },
+      }),
+    ).toMatchObject({
       items: [{ productId: "product-1", variantId: "variant-1", quantity: 1 }],
       couponCode: "SAVE20",
       customerEmail: "Buyer@Example.com",
@@ -295,30 +307,39 @@ describe("ecommerce services", () => {
       shippingAddress: { country: "US", state: "NY" },
     });
 
-    expect(() => priceCartSchema.parse({
-      items: [{ productId: "p".repeat(MAX_ECOMMERCE_LOOKUP_ID_LENGTH + 1), quantity: 1 }],
-    })).toThrow();
-    expect(() => priceCartSchema.parse({
-      items: [{ productId: "product-1", quantity: 1 }],
-      couponCode: "C".repeat(MAX_ECOMMERCE_COUPON_CODE_LENGTH + 1),
-    })).toThrow();
+    expect(() =>
+      priceCartSchema.parse({
+        items: [{ productId: "p".repeat(MAX_ECOMMERCE_LOOKUP_ID_LENGTH + 1), quantity: 1 }],
+      }),
+    ).toThrow();
+    expect(() =>
+      priceCartSchema.parse({
+        items: [{ productId: "product-1", quantity: 1 }],
+        couponCode: "C".repeat(MAX_ECOMMERCE_COUPON_CODE_LENGTH + 1),
+      }),
+    ).toThrow();
   });
 
   it("trims and bounds public coupon validation requests", async () => {
-    const { MAX_ECOMMERCE_COUPON_CODE_LENGTH, couponValidationRequestSchema } = await import("../services/ecommerce-pricing.service");
+    const { MAX_ECOMMERCE_COUPON_CODE_LENGTH, couponValidationRequestSchema } =
+      await import("../services/ecommerce-pricing.service");
 
-    expect(couponValidationRequestSchema.parse({
-      code: " SAVE20 ",
-      customerEmail: " Buyer@Example.com ",
-      items: [{ productId: " product-1 ", quantity: 1 }],
-    })).toEqual({
+    expect(
+      couponValidationRequestSchema.parse({
+        code: " SAVE20 ",
+        customerEmail: " Buyer@Example.com ",
+        items: [{ productId: " product-1 ", quantity: 1 }],
+      }),
+    ).toEqual({
       code: "SAVE20",
       customerEmail: "Buyer@Example.com",
       items: [{ productId: "product-1", quantity: 1 }],
     });
-    expect(() => couponValidationRequestSchema.parse({
-      code: "C".repeat(MAX_ECOMMERCE_COUPON_CODE_LENGTH + 1),
-    })).toThrow();
+    expect(() =>
+      couponValidationRequestSchema.parse({
+        code: "C".repeat(MAX_ECOMMERCE_COUPON_CODE_LENGTH + 1),
+      }),
+    ).toThrow();
   });
 
   it("trims and bounds public checkout payment intent requests", async () => {
@@ -376,34 +397,40 @@ describe("ecommerce services", () => {
         userAgent: "Mozilla/5.0",
       },
     });
-    expect(() => checkoutSchema.parse({
-      ...validCheckout,
-      customer: { ...validCheckout.customer, name: "B".repeat(161) },
-    })).toThrow();
-    expect(() => checkoutSchema.parse({
-      ...validCheckout,
-      metaTracking: { eventSourceUrl: "not-a-url" },
-    })).toThrow();
+    expect(() =>
+      checkoutSchema.parse({
+        ...validCheckout,
+        customer: { ...validCheckout.customer, name: "B".repeat(161) },
+      }),
+    ).toThrow();
+    expect(() =>
+      checkoutSchema.parse({
+        ...validCheckout,
+        metaTracking: { eventSourceUrl: "not-a-url" },
+      }),
+    ).toThrow();
   });
 
   it("rejects guest checkout when customer accounts are required", async () => {
     const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
     mockGetSetting.mockResolvedValue("required");
 
-    await expect(createEcommercePaymentIntent({
-      items: [{ productId: "p-required-account", quantity: 1 }],
-      customer: { email: "buyer@example.com", name: "Buyer" },
-      shippingAddress: {
-        name: "Buyer",
-        address: "123 Main",
-        city: "Austin",
-        state: "TX",
-        zip: "78701",
-        country: "US",
-      },
-      billingSameAsShipping: true,
-      account: { mode: "guest" },
-    })).rejects.toMatchObject({
+    await expect(
+      createEcommercePaymentIntent({
+        items: [{ productId: "p-required-account", quantity: 1 }],
+        customer: { email: "buyer@example.com", name: "Buyer" },
+        shippingAddress: {
+          name: "Buyer",
+          address: "123 Main",
+          city: "Austin",
+          state: "TX",
+          zip: "78701",
+          country: "US",
+        },
+        billingSameAsShipping: true,
+        account: { mode: "guest" },
+      }),
+    ).rejects.toMatchObject({
       message: "Create or sign in to an account before checkout.",
       statusCode: 400,
     });
@@ -569,7 +596,10 @@ describe("ecommerce services", () => {
       updatedAt: new Date(),
     });
 
-    const priced = await priceCart({ items: [{ productId: "p1", quantity: 1 }], couponCode: "save20" });
+    const priced = await priceCart({
+      items: [{ productId: "p1", quantity: 1 }],
+      couponCode: "save20",
+    });
     expect(priced.discountAmount).toBe(2000);
     expect(priced.totalAmount).toBe(8000);
     expect(priced.coupon?.code).toBe("SAVE20");
@@ -637,10 +667,18 @@ describe("ecommerce services", () => {
       updatedAt: new Date(),
     });
 
-    const priced = await priceCart({ items: [{ productId: "p1", variantId: "v-red", quantity: 1 }] });
+    const priced = await priceCart({
+      items: [{ productId: "p1", variantId: "v-red", quantity: 1 }],
+    });
     expect(priced.totalAmount).toBe(12000);
-    expect(priced.lines[0]).toMatchObject({ variantId: "v-red", sku: "RED-1", variantTitle: "Red" });
-    await expect(priceCart({ items: [{ productId: "p1", variantId: "v-red", quantity: 2 }] })).rejects.toMatchObject({
+    expect(priced.lines[0]).toMatchObject({
+      variantId: "v-red",
+      sku: "RED-1",
+      variantTitle: "Red",
+    });
+    await expect(
+      priceCart({ items: [{ productId: "p1", variantId: "v-red", quantity: 2 }] }),
+    ).rejects.toMatchObject({
       message: "One or more product variants do not have enough inventory",
       statusCode: 400,
     });
@@ -708,19 +746,22 @@ describe("ecommerce services", () => {
       updatedAt: new Date(),
     });
 
-    await expect(priceCart({
-      items: [
-        { productId: "p1", variantId: "v-limited", quantity: 1 },
-        { productId: "p1", variantId: "v-limited", quantity: 1 },
-      ],
-    })).rejects.toMatchObject({
+    await expect(
+      priceCart({
+        items: [
+          { productId: "p1", variantId: "v-limited", quantity: 1 },
+          { productId: "p1", variantId: "v-limited", quantity: 1 },
+        ],
+      }),
+    ).rejects.toMatchObject({
       message: "One or more product variants do not have enough inventory",
       statusCode: 400,
     });
   });
 
   it("uses server-side shipping rates selected by id", async () => {
-    const { getShippingRateOptions, priceCart } = await import("../services/ecommerce-pricing.service");
+    const { getShippingRateOptions, priceCart } =
+      await import("../services/ecommerce-pricing.service");
     mockProducts.push({
       id: "p1",
       name: "Shippable Product",
@@ -823,7 +864,10 @@ describe("ecommerce services", () => {
       updatedAt: new Date(),
     });
 
-    const options = await getShippingRateOptions({ subtotalAmount: 10000, address: { country: "US", state: "MI" } });
+    const options = await getShippingRateOptions({
+      subtotalAmount: 10000,
+      address: { country: "US", state: "MI" },
+    });
     expect(options).toEqual([expect.objectContaining({ id: "rate-standard", amount: 995 })]);
 
     const priced = await priceCart({
@@ -833,11 +877,13 @@ describe("ecommerce services", () => {
     });
     expect(priced.shippingAmount).toBe(995);
     expect(priced.totalAmount).toBe(10995);
-    await expect(priceCart({
-      items: [{ productId: "p1", quantity: 1 }],
-      shippingRateId: "rate-california",
-      shippingAddress: { country: "US", state: "MI" },
-    })).rejects.toMatchObject({
+    await expect(
+      priceCart({
+        items: [{ productId: "p1", quantity: 1 }],
+        shippingRateId: "rate-california",
+        shippingAddress: { country: "US", state: "MI" },
+      }),
+    ).rejects.toMatchObject({
       message: "Selected shipping rate is unavailable",
       statusCode: 400,
     });
@@ -975,19 +1021,21 @@ describe("ecommerce services", () => {
       optionValues: {},
     } as EcommerceProductVariant);
 
-    await expect(createEcommercePaymentIntent({
-      items: [{ productId: "p-free", quantity: 1 }],
-      customer: { email: "buyer@example.com", name: "Buyer" },
-      shippingAddress: {
-        name: "Buyer",
-        address: "123 Main St",
-        city: "Detroit",
-        state: "MI",
-        zip: "48201",
-        country: "US",
-      },
-      billingSameAsShipping: true,
-    })).rejects.toMatchObject({
+    await expect(
+      createEcommercePaymentIntent({
+        items: [{ productId: "p-free", quantity: 1 }],
+        customer: { email: "buyer@example.com", name: "Buyer" },
+        shippingAddress: {
+          name: "Buyer",
+          address: "123 Main St",
+          city: "Detroit",
+          state: "MI",
+          zip: "48201",
+          country: "US",
+        },
+        billingSameAsShipping: true,
+      }),
+    ).rejects.toMatchObject({
       message: "Order total must be greater than zero",
       statusCode: 400,
     });
@@ -996,10 +1044,11 @@ describe("ecommerce services", () => {
 
   it("does not create an order when Stripe checkout is not configured", async () => {
     const { createEcommercePaymentIntent } = await import("../services/ecommerce-order.service");
-    mockGetEcommerceStripeClient.mockRejectedValueOnce(Object.assign(
-      new Error("Ecommerce Stripe secret key is not configured"),
-      { statusCode: 409 },
-    ));
+    mockGetEcommerceStripeClient.mockRejectedValueOnce(
+      Object.assign(new Error("Ecommerce Stripe secret key is not configured"), {
+        statusCode: 409,
+      }),
+    );
     mockProducts.push({
       id: "p-digital",
       name: "Digital Guide",
@@ -1026,19 +1075,21 @@ describe("ecommerce services", () => {
       optionValues: {},
     } as EcommerceProductVariant);
 
-    await expect(createEcommercePaymentIntent({
-      items: [{ productId: "p-digital", quantity: 1 }],
-      customer: { email: "buyer@example.com", name: "Buyer" },
-      shippingAddress: {
-        name: "Buyer",
-        address: "123 Main St",
-        city: "Detroit",
-        state: "MI",
-        zip: "48201",
-        country: "US",
-      },
-      billingSameAsShipping: true,
-    })).rejects.toMatchObject({
+    await expect(
+      createEcommercePaymentIntent({
+        items: [{ productId: "p-digital", quantity: 1 }],
+        customer: { email: "buyer@example.com", name: "Buyer" },
+        shippingAddress: {
+          name: "Buyer",
+          address: "123 Main St",
+          city: "Detroit",
+          state: "MI",
+          zip: "48201",
+          country: "US",
+        },
+        billingSameAsShipping: true,
+      }),
+    ).rejects.toMatchObject({
       message: "Ecommerce Stripe secret key is not configured",
       statusCode: 409,
     });
@@ -1148,26 +1199,31 @@ describe("ecommerce services", () => {
       updatedAt: new Date(),
     });
 
-    await expect(createEcommercePaymentIntent({
-      items: [{ productId: "p-digital", quantity: 1 }],
-      customer: { email: customer.email, name: customer.name },
-      shippingAddress: {
-        name: "Buyer",
-        address: "123 Main St",
-        city: "Detroit",
-        state: "MI",
-        zip: "48201",
-        country: "US",
-      },
-      billingSameAsShipping: true,
-    })).rejects.toThrow(/Stripe is unavailable/);
+    await expect(
+      createEcommercePaymentIntent({
+        items: [{ productId: "p-digital", quantity: 1 }],
+        customer: { email: customer.email, name: customer.name },
+        shippingAddress: {
+          name: "Buyer",
+          address: "123 Main St",
+          city: "Detroit",
+          state: "MI",
+          zip: "48201",
+          country: "US",
+        },
+        billingSameAsShipping: true,
+      }),
+    ).rejects.toThrow(/Stripe is unavailable/);
 
     expect(mockCreateOrder).toHaveBeenCalled();
-    expect(mockUpdateOrder).toHaveBeenCalledWith(order.id, expect.objectContaining({
-      status: "cancelled",
-      paymentStatus: "failed",
-      notes: expect.stringContaining("Stripe is unavailable"),
-    }));
+    expect(mockUpdateOrder).toHaveBeenCalledWith(
+      order.id,
+      expect.objectContaining({
+        status: "cancelled",
+        paymentStatus: "failed",
+        notes: expect.stringContaining("Stripe is unavailable"),
+      }),
+    );
   });
 
   it("creates checkout PaymentIntents with a deterministic Stripe idempotency key", async () => {
@@ -1398,19 +1454,21 @@ describe("ecommerce services", () => {
       updatedAt: new Date(),
     });
 
-    await expect(createEcommercePaymentIntent({
-      items: [{ productId: "p-digital", quantity: 1 }],
-      customer: { email: customer.email, name: customer.name },
-      shippingAddress: {
-        name: "Buyer",
-        address: "123 Main St",
-        city: "Detroit",
-        state: "MI",
-        zip: "48201",
-        country: "US",
-      },
-      billingSameAsShipping: true,
-    })).rejects.toThrow(/database write failed/);
+    await expect(
+      createEcommercePaymentIntent({
+        items: [{ productId: "p-digital", quantity: 1 }],
+        customer: { email: customer.email, name: customer.name },
+        shippingAddress: {
+          name: "Buyer",
+          address: "123 Main St",
+          city: "Detroit",
+          state: "MI",
+          zip: "48201",
+          country: "US",
+        },
+        billingSameAsShipping: true,
+      }),
+    ).rejects.toThrow(/database write failed/);
 
     expect(mockStripePaymentIntentCreate).toHaveBeenCalled();
     expect(mockStripePaymentIntentCancel).toHaveBeenCalledWith("pi_test");
@@ -1433,7 +1491,10 @@ describe("ecommerce services", () => {
     } as EcommerceOrder;
     mockFindOrCreateCustomer.mockResolvedValue(customer);
     mockCreateOrder.mockResolvedValue(order);
-    mockStripePaymentIntentCreate.mockResolvedValueOnce({ id: "pi_missing_secret", client_secret: null });
+    mockStripePaymentIntentCreate.mockResolvedValueOnce({
+      id: "pi_missing_secret",
+      client_secret: null,
+    });
     mockProducts.push({
       id: "p-digital",
       name: "Digital Guide",
@@ -1460,26 +1521,31 @@ describe("ecommerce services", () => {
       optionValues: {},
     } as EcommerceProductVariant);
 
-    await expect(createEcommercePaymentIntent({
-      items: [{ productId: "p-digital", quantity: 1 }],
-      customer: { email: customer.email, name: customer.name },
-      shippingAddress: {
-        name: "Buyer",
-        address: "123 Main St",
-        city: "Detroit",
-        state: "MI",
-        zip: "48201",
-        country: "US",
-      },
-      billingSameAsShipping: true,
-    })).rejects.toThrow(/client secret/);
+    await expect(
+      createEcommercePaymentIntent({
+        items: [{ productId: "p-digital", quantity: 1 }],
+        customer: { email: customer.email, name: customer.name },
+        shippingAddress: {
+          name: "Buyer",
+          address: "123 Main St",
+          city: "Detroit",
+          state: "MI",
+          zip: "48201",
+          country: "US",
+        },
+        billingSameAsShipping: true,
+      }),
+    ).rejects.toThrow(/client secret/);
 
     expect(mockStripePaymentIntentCancel).toHaveBeenCalledWith("pi_missing_secret");
-    expect(mockUpdateOrder).toHaveBeenCalledWith(order.id, expect.objectContaining({
-      status: "cancelled",
-      paymentStatus: "failed",
-      notes: expect.stringContaining("client secret"),
-    }));
+    expect(mockUpdateOrder).toHaveBeenCalledWith(
+      order.id,
+      expect.objectContaining({
+        status: "cancelled",
+        paymentStatus: "failed",
+        notes: expect.stringContaining("client secret"),
+      }),
+    );
   });
 
   it("calculates manual tax server-side after discounts and optional shipping tax", async () => {
@@ -1673,11 +1739,8 @@ describe("ecommerce services", () => {
   });
 
   it("sanitizes public coupon validation payloads", async () => {
-    const {
-      toPublicCouponValidationResult,
-      toPublicPricedCart,
-      validateCouponForCart,
-    } = await import("../services/ecommerce-pricing.service");
+    const { toPublicCouponValidationResult, toPublicPricedCart, validateCouponForCart } =
+      await import("../services/ecommerce-pricing.service");
     mockCoupons.push({
       id: "c-public",
       code: "SAVE10",
@@ -1750,26 +1813,28 @@ describe("ecommerce services", () => {
     expect(publicResult?.coupon).not.toHaveProperty("minMarginPercent");
 
     const publicPriced = toPublicPricedCart({
-      lines: [{
-        productId: "p1",
-        variantId: "v1",
-        name: "Guide",
-        variantTitle: null,
-        sku: "GUIDE",
-        optionsSnapshot: null,
-        slug: "guide",
-        quantity: 1,
-        unitPrice: 5000,
-        lineTotal: 5000,
-        image: null,
-        categoryIds: ["cat1"],
-        taxable: true,
-        taxCategory: "internal-tax-code",
-        taxAmount: 0,
-        requiresShipping: false,
-        fulfillmentType: "digital",
-        productSnapshot: { internal: "snapshot" },
-      }],
+      lines: [
+        {
+          productId: "p1",
+          variantId: "v1",
+          name: "Guide",
+          variantTitle: null,
+          sku: "GUIDE",
+          optionsSnapshot: null,
+          slug: "guide",
+          quantity: 1,
+          unitPrice: 5000,
+          lineTotal: 5000,
+          image: null,
+          categoryIds: ["cat1"],
+          taxable: true,
+          taxCategory: "internal-tax-code",
+          taxAmount: 0,
+          requiresShipping: false,
+          fulfillmentType: "digital",
+          productSnapshot: { internal: "snapshot" },
+        },
+      ],
       subtotalAmount: 5000,
       discountAmount: 1000,
       shippingAmount: 0,
@@ -1808,14 +1873,18 @@ describe("ecommerce services", () => {
     expect(validateStripeKeyMode("test", "pk_test_123", "sk_test_123")).toBeNull();
     expect(validateStripeKeyMode("test", "pk_live_123", "sk_test_123")).toMatch(/Test mode/);
     expect(validateStripeKeyMode("live", "pk_live_123", "sk_test_123")).toMatch(/Live mode/);
-    expect(validateStripeSettingsKeyModes({
-      testPublishableKey: "pk_live_123",
-      livePublishableKey: "pk_live_456",
-    })).toMatch(/Test mode/);
-    expect(validateStripeSettingsKeyModes({
-      testPublishableKey: "pk_test_123",
-      liveSecretKey: "sk_test_456",
-    })).toMatch(/Live mode/);
+    expect(
+      validateStripeSettingsKeyModes({
+        testPublishableKey: "pk_live_123",
+        livePublishableKey: "pk_live_456",
+      }),
+    ).toMatch(/Test mode/);
+    expect(
+      validateStripeSettingsKeyModes({
+        testPublishableKey: "pk_test_123",
+        liveSecretKey: "sk_test_456",
+      }),
+    ).toMatch(/Live mode/);
 
     mockGetDecryptedCategory.mockResolvedValue({
       active_mode: "live",
@@ -1847,11 +1916,13 @@ describe("ecommerce services", () => {
 
   it("computes pending and processed refunds against refundable balance", async () => {
     const { computeRefundedAmount } = await import("../services/ecommerce-refund.service");
-    expect(computeRefundedAmount([
-      { amount: 1000, status: "processed" },
-      { amount: 500, status: "pending" },
-      { amount: 200, status: "failed" },
-    ])).toBe(1500);
+    expect(
+      computeRefundedAmount([
+        { amount: 1000, status: "processed" },
+        { amount: 500, status: "pending" },
+        { amount: 200, status: "failed" },
+      ]),
+    ).toBe(1500);
   });
 
   it("blocks manual refunds before payment capture or after full refund", async () => {
@@ -1865,11 +1936,13 @@ describe("ecommerce services", () => {
       refunds: [],
     });
 
-    await expect(createEcommerceRefund({
-      orderId: "order-unpaid",
-      amount: 1000,
-      source: "manual",
-    })).rejects.toThrow(/not been captured/);
+    await expect(
+      createEcommerceRefund({
+        orderId: "order-unpaid",
+        amount: 1000,
+        source: "manual",
+      }),
+    ).rejects.toThrow(/not been captured/);
     expect(mockCreateRefund).not.toHaveBeenCalled();
 
     mockGetOrderWithDetails.mockResolvedValueOnce({
@@ -1881,11 +1954,13 @@ describe("ecommerce services", () => {
       refunds: [{ amount: 5000, status: "processed" }],
     });
 
-    await expect(createEcommerceRefund({
-      orderId: "order-refunded",
-      amount: 1000,
-      source: "manual",
-    })).rejects.toThrow(/fully refunded/);
+    await expect(
+      createEcommerceRefund({
+        orderId: "order-refunded",
+        amount: 1000,
+        source: "manual",
+      }),
+    ).rejects.toThrow(/fully refunded/);
     expect(mockCreateRefund).not.toHaveBeenCalled();
   });
 
@@ -1900,11 +1975,13 @@ describe("ecommerce services", () => {
       refunds: [{ amount: 1500, status: "processed" }],
     });
 
-    await expect(createEcommerceRefund({
-      orderId: "order-paid",
-      amount: 4000,
-      source: "manual",
-    })).rejects.toThrow(/exceeds refundable balance/);
+    await expect(
+      createEcommerceRefund({
+        orderId: "order-paid",
+        amount: 4000,
+        source: "manual",
+      }),
+    ).rejects.toThrow(/exceeds refundable balance/);
     expect(mockCreateRefund).not.toHaveBeenCalled();
   });
 
@@ -1917,21 +1994,23 @@ describe("ecommerce services", () => {
       status: "processed",
     };
     mockCreateRefund.mockResolvedValue(createdRefund);
-    mockGetOrderWithDetails.mockResolvedValueOnce({
-      id: "order-partial-refund",
-      status: "paid",
-      paymentStatus: "paid",
-      totalAmount: 5000,
-      stripePaymentIntentId: null,
-      refunds: [],
-    }).mockResolvedValueOnce({
-      id: "order-partial-refund",
-      status: "paid",
-      paymentStatus: "paid",
-      totalAmount: 5000,
-      stripePaymentIntentId: null,
-      refunds: [createdRefund],
-    });
+    mockGetOrderWithDetails
+      .mockResolvedValueOnce({
+        id: "order-partial-refund",
+        status: "paid",
+        paymentStatus: "paid",
+        totalAmount: 5000,
+        stripePaymentIntentId: null,
+        refunds: [],
+      })
+      .mockResolvedValueOnce({
+        id: "order-partial-refund",
+        status: "paid",
+        paymentStatus: "paid",
+        totalAmount: 5000,
+        stripePaymentIntentId: null,
+        refunds: [createdRefund],
+      });
 
     await createEcommerceRefund({
       orderId: "order-partial-refund",
@@ -1959,7 +2038,13 @@ describe("ecommerce services", () => {
     } as EcommerceOrder;
     mockGetOrder.mockResolvedValueOnce(pendingOrder).mockResolvedValueOnce(paidOrder);
     mockMarkOrderPaidIfUnpaid.mockResolvedValueOnce(paidOrder);
-    mockGetOrderWithDetails.mockResolvedValue({ ...paidOrder, customer: null, items: [], refunds: [], shipments: [] });
+    mockGetOrderWithDetails.mockResolvedValue({
+      ...paidOrder,
+      customer: null,
+      items: [],
+      refunds: [],
+      shipments: [],
+    });
 
     await markEcommerceOrderPaid("order-1", "pi_123");
     await markEcommerceOrderPaid("order-1", "pi_123");
@@ -1986,7 +2071,13 @@ describe("ecommerce services", () => {
     } as EcommerceOrder;
     mockGetOrder.mockResolvedValue(pendingOrder);
     mockMarkOrderPaidIfUnpaid.mockResolvedValue(undefined);
-    mockGetOrderWithDetails.mockResolvedValue({ ...paidOrder, customer: null, items: [], refunds: [], shipments: [] });
+    mockGetOrderWithDetails.mockResolvedValue({
+      ...paidOrder,
+      customer: null,
+      items: [],
+      refunds: [],
+      shipments: [],
+    });
 
     await markEcommerceOrderPaid("order-1", "pi_123");
 
@@ -2064,7 +2155,11 @@ describe("ecommerce services", () => {
     mockGetOrder.mockResolvedValue(paidOrder);
     mockUpdateOrder.mockResolvedValue(paidOrder);
 
-    await updateAdminEcommerceOrder("order-admin-2", { status: "paid", notes: "Already handled" }, { id: "admin-1" });
+    await updateAdminEcommerceOrder(
+      "order-admin-2",
+      { status: "paid", notes: "Already handled" },
+      { id: "admin-1" },
+    );
 
     expect(mockUpdateOrder).toHaveBeenCalledWith("order-admin-2", {
       status: "paid",
@@ -2089,10 +2184,12 @@ describe("ecommerce services", () => {
       paymentStatus: "unpaid",
     } as EcommerceOrder);
 
-    await expect(updateAdminEcommerceOrder("order-admin-unpaid", { status: "shipped" }))
-      .rejects.toThrow(/Only paid orders/);
-    await expect(updateAdminEcommerceOrder("order-admin-unpaid", { status: "delivered" }))
-      .rejects.toThrow(/Only paid orders/);
+    await expect(
+      updateAdminEcommerceOrder("order-admin-unpaid", { status: "shipped" }),
+    ).rejects.toThrow(/Only paid orders/);
+    await expect(
+      updateAdminEcommerceOrder("order-admin-unpaid", { status: "delivered" }),
+    ).rejects.toThrow(/Only paid orders/);
     expect(mockUpdateOrder).not.toHaveBeenCalled();
   });
 
@@ -2104,12 +2201,15 @@ describe("ecommerce services", () => {
       paymentStatus: "paid",
     } as EcommerceOrder);
 
-    await expect(updateAdminEcommerceOrder("order-admin-cancelled", { status: "shipped" }))
-      .rejects.toThrow(/Cancelled/);
-    await expect(updateAdminEcommerceOrder("order-admin-cancelled", { status: "delivered" }))
-      .rejects.toThrow(/Cancelled/);
-    await expect(updateAdminEcommerceOrder("order-admin-cancelled", { status: "paid" }))
-      .rejects.toThrow(/Cancelled/);
+    await expect(
+      updateAdminEcommerceOrder("order-admin-cancelled", { status: "shipped" }),
+    ).rejects.toThrow(/Cancelled/);
+    await expect(
+      updateAdminEcommerceOrder("order-admin-cancelled", { status: "delivered" }),
+    ).rejects.toThrow(/Cancelled/);
+    await expect(
+      updateAdminEcommerceOrder("order-admin-cancelled", { status: "paid" }),
+    ).rejects.toThrow(/Cancelled/);
     expect(mockUpdateOrder).not.toHaveBeenCalled();
   });
 
@@ -2132,12 +2232,15 @@ describe("ecommerce services", () => {
         paymentStatus: "paid",
       } as EcommerceOrder);
 
-    await expect(updateAdminEcommerceOrder("order-admin-paid", { status: "pending" }))
-      .rejects.toThrow(/Paid orders/);
-    await expect(updateAdminEcommerceOrder("order-admin-shipped", { status: "paid" }))
-      .rejects.toThrow(/Shipped orders/);
-    await expect(updateAdminEcommerceOrder("order-admin-delivered", { status: "shipped" }))
-      .rejects.toThrow(/Delivered orders/);
+    await expect(
+      updateAdminEcommerceOrder("order-admin-paid", { status: "pending" }),
+    ).rejects.toThrow(/Paid orders/);
+    await expect(
+      updateAdminEcommerceOrder("order-admin-shipped", { status: "paid" }),
+    ).rejects.toThrow(/Shipped orders/);
+    await expect(
+      updateAdminEcommerceOrder("order-admin-delivered", { status: "shipped" }),
+    ).rejects.toThrow(/Delivered orders/);
     expect(mockUpdateOrder).not.toHaveBeenCalled();
   });
 
@@ -2154,8 +2257,9 @@ describe("ecommerce services", () => {
       paymentStatus: "paid",
     } as EcommerceOrder);
 
-    await expect(updateAdminEcommerceOrder("order-admin-shippable", { status: "shipped" }))
-      .resolves.toMatchObject({ status: "shipped" });
+    await expect(
+      updateAdminEcommerceOrder("order-admin-shippable", { status: "shipped" }),
+    ).resolves.toMatchObject({ status: "shipped" });
     expect(mockUpdateOrder).toHaveBeenCalledWith("order-admin-shippable", {
       status: "shipped",
       paymentStatus: undefined,
@@ -2170,14 +2274,18 @@ describe("ecommerce services", () => {
       status: "paid",
       paymentStatus: "paid",
     } as EcommerceOrder);
-    await expect(assertEcommerceOrderCanShip("order-ship-1")).resolves.toMatchObject({ id: "order-ship-1" });
+    await expect(assertEcommerceOrderCanShip("order-ship-1")).resolves.toMatchObject({
+      id: "order-ship-1",
+    });
 
     mockGetOrder.mockResolvedValueOnce({
       id: "order-ship-2",
       status: "paid",
       paymentStatus: "partially_refunded",
     } as EcommerceOrder);
-    await expect(assertEcommerceOrderCanShip("order-ship-2")).resolves.toMatchObject({ id: "order-ship-2" });
+    await expect(assertEcommerceOrderCanShip("order-ship-2")).resolves.toMatchObject({
+      id: "order-ship-2",
+    });
   });
 
   it("blocks shipments for unpaid, cancelled, delivered, or missing ecommerce orders", async () => {
@@ -2209,7 +2317,8 @@ describe("ecommerce services", () => {
   });
 
   it("validates fulfillment items against the target order before creation", async () => {
-    const { assertEcommerceFulfillmentRequest } = await import("../services/ecommerce-order.service");
+    const { assertEcommerceFulfillmentRequest } =
+      await import("../services/ecommerce-order.service");
     mockGetOrder.mockResolvedValue({
       id: "order-fulfill-1",
       status: "paid",
@@ -2227,17 +2336,20 @@ describe("ecommerce services", () => {
       fulfillments: [],
     });
 
-    await expect(assertEcommerceFulfillmentRequest("order-fulfill-1", [
-      { orderItemId: "item-1", quantity: 2 },
-      { orderItemId: "item-2", quantity: 1 },
-    ])).resolves.toEqual([
+    await expect(
+      assertEcommerceFulfillmentRequest("order-fulfill-1", [
+        { orderItemId: "item-1", quantity: 2 },
+        { orderItemId: "item-2", quantity: 1 },
+      ]),
+    ).resolves.toEqual([
       { orderItemId: "item-1", quantity: 2 },
       { orderItemId: "item-2", quantity: 1 },
     ]);
   });
 
   it("blocks fulfillment items that are not on the order or exceed ordered quantity", async () => {
-    const { assertEcommerceFulfillmentRequest } = await import("../services/ecommerce-order.service");
+    const { assertEcommerceFulfillmentRequest } =
+      await import("../services/ecommerce-order.service");
     mockGetOrder.mockResolvedValue({
       id: "order-fulfill-2",
       status: "paid",
@@ -2252,17 +2364,22 @@ describe("ecommerce services", () => {
       fulfillments: [],
     });
 
-    await expect(assertEcommerceFulfillmentRequest("order-fulfill-2", [
-      { orderItemId: "item-missing", quantity: 1 },
-    ])).rejects.toThrow(/does not belong/);
+    await expect(
+      assertEcommerceFulfillmentRequest("order-fulfill-2", [
+        { orderItemId: "item-missing", quantity: 1 },
+      ]),
+    ).rejects.toThrow(/does not belong/);
 
-    await expect(assertEcommerceFulfillmentRequest("order-fulfill-2", [
-      { orderItemId: "item-1", quantity: 3 },
-    ])).rejects.toThrow(/exceed/);
+    await expect(
+      assertEcommerceFulfillmentRequest("order-fulfill-2", [
+        { orderItemId: "item-1", quantity: 3 },
+      ]),
+    ).rejects.toThrow(/exceed/);
   });
 
   it("blocks fulfillment quantities that exceed the remaining unfulfilled quantity", async () => {
-    const { assertEcommerceFulfillmentRequest } = await import("../services/ecommerce-order.service");
+    const { assertEcommerceFulfillmentRequest } =
+      await import("../services/ecommerce-order.service");
     mockGetOrder.mockResolvedValue({
       id: "order-fulfill-3",
       status: "paid",
@@ -2284,13 +2401,16 @@ describe("ecommerce services", () => {
       },
     ]);
 
-    await expect(assertEcommerceFulfillmentRequest("order-fulfill-3", [
-      { orderItemId: "item-1", quantity: 2 },
-    ])).rejects.toThrow(/remaining ordered quantity/);
+    await expect(
+      assertEcommerceFulfillmentRequest("order-fulfill-3", [
+        { orderItemId: "item-1", quantity: 2 },
+      ]),
+    ).rejects.toThrow(/remaining ordered quantity/);
   });
 
   it("aggregates duplicate fulfillment request lines before validating quantity", async () => {
-    const { assertEcommerceFulfillmentRequest } = await import("../services/ecommerce-order.service");
+    const { assertEcommerceFulfillmentRequest } =
+      await import("../services/ecommerce-order.service");
     mockGetOrder.mockResolvedValue({
       id: "order-fulfill-4",
       status: "paid",
@@ -2305,14 +2425,17 @@ describe("ecommerce services", () => {
       fulfillments: [],
     });
 
-    await expect(assertEcommerceFulfillmentRequest("order-fulfill-4", [
-      { orderItemId: "item-1", quantity: 2 },
-      { orderItemId: "item-1", quantity: 2 },
-    ])).rejects.toThrow(/remaining ordered quantity/);
+    await expect(
+      assertEcommerceFulfillmentRequest("order-fulfill-4", [
+        { orderItemId: "item-1", quantity: 2 },
+        { orderItemId: "item-1", quantity: 2 },
+      ]),
+    ).rejects.toThrow(/remaining ordered quantity/);
   });
 
   it("ignores failed or cancelled fulfillments when checking remaining quantity", async () => {
-    const { assertEcommerceFulfillmentRequest } = await import("../services/ecommerce-order.service");
+    const { assertEcommerceFulfillmentRequest } =
+      await import("../services/ecommerce-order.service");
     mockGetOrder.mockResolvedValue({
       id: "order-fulfill-5",
       status: "paid",
@@ -2339,9 +2462,11 @@ describe("ecommerce services", () => {
       },
     ]);
 
-    await expect(assertEcommerceFulfillmentRequest("order-fulfill-5", [
-      { orderItemId: "item-1", quantity: 3 },
-    ])).resolves.toEqual([{ orderItemId: "item-1", quantity: 3 }]);
+    await expect(
+      assertEcommerceFulfillmentRequest("order-fulfill-5", [
+        { orderItemId: "item-1", quantity: 3 },
+      ]),
+    ).resolves.toEqual([{ orderItemId: "item-1", quantity: 3 }]);
   });
 
   it("creates manual paid orders through server-side pricing and inventory deduction", async () => {
@@ -2356,8 +2481,22 @@ describe("ecommerce services", () => {
       lookupToken: "lookup-token",
     } as EcommerceOrder;
     mockGetCustomer.mockResolvedValue(customer);
-    mockCreateOrder.mockResolvedValue({ ...createdOrder, customer, items: [], refunds: [], shipments: [], fulfillments: [] });
-    mockGetOrderWithDetails.mockResolvedValue({ ...createdOrder, customer, items: [], refunds: [], shipments: [], fulfillments: [] });
+    mockCreateOrder.mockResolvedValue({
+      ...createdOrder,
+      customer,
+      items: [],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+    });
+    mockGetOrderWithDetails.mockResolvedValue({
+      ...createdOrder,
+      customer,
+      items: [],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+    });
     mockProducts.push({
       id: "p-manual",
       name: "Manual Product",
@@ -2459,14 +2598,16 @@ describe("ecommerce services", () => {
         isManualOrder: true,
         notes: "Counter sale",
       }),
-      [expect.objectContaining({
-        productId: "p-manual",
-        variantId: "v-manual",
-        sku: "SKU-MANUAL",
-        quantity: 2,
-        unitPrice: 2500,
-        lineTotal: 5000,
-      })],
+      [
+        expect.objectContaining({
+          productId: "p-manual",
+          variantId: "v-manual",
+          sku: "SKU-MANUAL",
+          quantity: 2,
+          unitPrice: 2500,
+          lineTotal: 5000,
+        }),
+      ],
     );
     expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledWith("order-manual-1");
     expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledWith("order-manual-1");
@@ -2476,10 +2617,12 @@ describe("ecommerce services", () => {
     const { createManualEcommerceOrder } = await import("../services/ecommerce-order.service");
     mockGetCustomer.mockResolvedValue(undefined);
 
-    await expect(createManualEcommerceOrder({
-      customerId: "missing-customer",
-      items: [{ productId: "p1", quantity: 1 }],
-    })).rejects.toThrow(/Customer not found/);
+    await expect(
+      createManualEcommerceOrder({
+        customerId: "missing-customer",
+        items: [{ productId: "p1", quantity: 1 }],
+      }),
+    ).rejects.toThrow(/Customer not found/);
 
     expect(mockCreateOrder).not.toHaveBeenCalled();
     expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
@@ -2498,8 +2641,22 @@ describe("ecommerce services", () => {
     } as EcommerceOrder;
     seedManualOrderProduct();
     mockGetCustomer.mockResolvedValue(customer);
-    mockCreateOrder.mockResolvedValue({ ...createdOrder, customer, items: [], refunds: [], shipments: [], fulfillments: [] });
-    mockGetOrderWithDetails.mockResolvedValue({ ...createdOrder, customer, items: [], refunds: [], shipments: [], fulfillments: [] });
+    mockCreateOrder.mockResolvedValue({
+      ...createdOrder,
+      customer,
+      items: [],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+    });
+    mockGetOrderWithDetails.mockResolvedValue({
+      ...createdOrder,
+      customer,
+      items: [],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+    });
 
     await createManualEcommerceOrderDraft({
       customerId: customer.id,
@@ -2533,8 +2690,22 @@ describe("ecommerce services", () => {
     } as unknown as EcommerceOrder;
     seedManualOrderProduct();
     mockGetCustomer.mockResolvedValue(customer);
-    mockCreateOrder.mockResolvedValue({ ...createdOrder, customer, items: [{ productName: "Manual Product", quantity: 1 }], refunds: [], shipments: [], fulfillments: [] });
-    mockGetOrderWithDetails.mockResolvedValue({ ...createdOrder, customer, items: [{ productName: "Manual Product", quantity: 1 }], refunds: [], shipments: [], fulfillments: [] });
+    mockCreateOrder.mockResolvedValue({
+      ...createdOrder,
+      customer,
+      items: [{ productName: "Manual Product", quantity: 1 }],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+    });
+    mockGetOrderWithDetails.mockResolvedValue({
+      ...createdOrder,
+      customer,
+      items: [{ productName: "Manual Product", quantity: 1 }],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+    });
 
     await createManualEcommerceOrderDraft({
       customerId: customer.id,
@@ -2543,18 +2714,23 @@ describe("ecommerce services", () => {
       customReason: "Phone order",
     });
 
-    expect(mockCreatePaymentRequest).toHaveBeenCalledWith(expect.objectContaining({
-      orderId: "order-link-1",
-      customerEmail: "buyer@example.com",
-      amount: 2500,
-      reason: "Phone order",
-    }));
+    expect(mockCreatePaymentRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: "order-link-1",
+        customerEmail: "buyer@example.com",
+        amount: 2500,
+        reason: "Phone order",
+      }),
+    );
     expect(mockStripeCheckoutSessionCreate).toHaveBeenCalled();
-    expect(mockUpdateOrder).toHaveBeenCalledWith("order-link-1", expect.objectContaining({
-      paymentStatus: "pending_payment",
-      stripeSessionId: "cs_test",
-      manualPaymentMethod: "payment_link",
-    }));
+    expect(mockUpdateOrder).toHaveBeenCalledWith(
+      "order-link-1",
+      expect.objectContaining({
+        paymentStatus: "pending_payment",
+        stripeSessionId: "cs_test",
+        manualPaymentMethod: "payment_link",
+      }),
+    );
     expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
   });
 
@@ -2566,34 +2742,52 @@ describe("ecommerce services", () => {
       paymentStatus: "paid",
     } as EcommerceOrder;
     mockUpdateOrder.mockResolvedValue(paidOrder);
-    mockGetOrderWithDetails.mockResolvedValue({ ...paidOrder, customer: null, items: [], refunds: [], shipments: [], fulfillments: [] });
+    mockGetOrderWithDetails.mockResolvedValue({
+      ...paidOrder,
+      customer: null,
+      items: [],
+      refunds: [],
+      shipments: [],
+      fulfillments: [],
+    });
 
-    await markManualEcommerceOrderPaid("order-manual-paid", {
-      method: "cash",
-      reference: "receipt-12",
-      notes: "Paid at counter",
-    }, { id: "admin-1" });
+    await markManualEcommerceOrderPaid(
+      "order-manual-paid",
+      {
+        method: "cash",
+        reference: "receipt-12",
+        notes: "Paid at counter",
+      },
+      { id: "admin-1" },
+    );
 
-    expect(mockUpdateOrder).toHaveBeenCalledWith("order-manual-paid", expect.objectContaining({
-      status: "paid",
-      paymentStatus: "paid",
-      manualPaymentMethod: "cash",
-      manualPaymentReference: "receipt-12",
-      manualPaymentMarkedBy: "admin-1",
-    }));
-    expect(mockCreateOrderNote).toHaveBeenCalledWith(expect.objectContaining({ body: "Paid at counter" }));
+    expect(mockUpdateOrder).toHaveBeenCalledWith(
+      "order-manual-paid",
+      expect.objectContaining({
+        status: "paid",
+        paymentStatus: "paid",
+        manualPaymentMethod: "cash",
+        manualPaymentReference: "receipt-12",
+        manualPaymentMarkedBy: "admin-1",
+      }),
+    );
+    expect(mockCreateOrderNote).toHaveBeenCalledWith(
+      expect.objectContaining({ body: "Paid at counter" }),
+    );
     expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledWith("order-manual-paid");
   });
 
   it("requires a reason for standalone custom payment requests", async () => {
     const { createStandalonePaymentRequest } = await import("../services/ecommerce-order.service");
 
-    await expect(createStandalonePaymentRequest({
-      customer: { email: "buyer@example.com", name: "Buyer" },
-      title: "Custom charge",
-      amount: 5000,
-      reason: "",
-    })).rejects.toThrow();
+    await expect(
+      createStandalonePaymentRequest({
+        customer: { email: "buyer@example.com", name: "Buyer" },
+        title: "Custom charge",
+        amount: 5000,
+        reason: "",
+      }),
+    ).rejects.toThrow();
 
     expect(mockCreatePaymentRequest).not.toHaveBeenCalled();
   });
@@ -2621,19 +2815,21 @@ describe("ecommerce services", () => {
       amount: 5000,
       status: "processed",
     });
-    mockGetOrderWithDetails.mockResolvedValueOnce({
-      id: "order-1",
-      totalAmount: 5000,
-      status: "paid",
-      paymentStatus: "paid",
-      refunds: [],
-    }).mockResolvedValueOnce({
-      id: "order-1",
-      totalAmount: 5000,
-      status: "paid",
-      paymentStatus: "paid",
-      refunds: [{ amount: 5000, status: "processed" }],
-    });
+    mockGetOrderWithDetails
+      .mockResolvedValueOnce({
+        id: "order-1",
+        totalAmount: 5000,
+        status: "paid",
+        paymentStatus: "paid",
+        refunds: [],
+      })
+      .mockResolvedValueOnce({
+        id: "order-1",
+        totalAmount: 5000,
+        status: "paid",
+        paymentStatus: "paid",
+        refunds: [{ amount: 5000, status: "processed" }],
+      });
 
     await recordStripeRefundWebhook({
       stripeRefundId: "re_123",
@@ -2642,12 +2838,14 @@ describe("ecommerce services", () => {
       status: "succeeded",
     });
 
-    expect(mockCreateRefund).toHaveBeenCalledWith(expect.objectContaining({
-      orderId: "order-1",
-      stripeRefundId: "re_123",
-      status: "processed",
-      type: "full",
-    }));
+    expect(mockCreateRefund).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: "order-1",
+        stripeRefundId: "re_123",
+        status: "processed",
+        type: "full",
+      }),
+    );
     expect(mockUpdateOrder).toHaveBeenCalledWith("order-1", { paymentStatus: "refunded" });
   });
 
@@ -2660,19 +2858,21 @@ describe("ecommerce services", () => {
       amount: 2500,
       status: "pending",
     });
-    mockGetOrderWithDetails.mockResolvedValueOnce({
-      id: "order-pending-refund",
-      totalAmount: 5000,
-      status: "paid",
-      paymentStatus: "paid",
-      refunds: [],
-    }).mockResolvedValueOnce({
-      id: "order-pending-refund",
-      totalAmount: 5000,
-      status: "paid",
-      paymentStatus: "paid",
-      refunds: [{ amount: 2500, status: "pending" }],
-    });
+    mockGetOrderWithDetails
+      .mockResolvedValueOnce({
+        id: "order-pending-refund",
+        totalAmount: 5000,
+        status: "paid",
+        paymentStatus: "paid",
+        refunds: [],
+      })
+      .mockResolvedValueOnce({
+        id: "order-pending-refund",
+        totalAmount: 5000,
+        status: "paid",
+        paymentStatus: "paid",
+        refunds: [{ amount: 2500, status: "pending" }],
+      });
 
     await recordStripeRefundWebhook({
       stripeRefundId: "re_pending",
@@ -2681,12 +2881,16 @@ describe("ecommerce services", () => {
       status: "pending",
     });
 
-    expect(mockCreateRefund).toHaveBeenCalledWith(expect.objectContaining({
-      orderId: "order-pending-refund",
-      status: "pending",
-      type: "partial",
-    }));
-    expect(mockUpdateOrder).toHaveBeenCalledWith("order-pending-refund", { paymentStatus: "refund_pending" });
+    expect(mockCreateRefund).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: "order-pending-refund",
+        status: "pending",
+        type: "partial",
+      }),
+    );
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-pending-refund", {
+      paymentStatus: "refund_pending",
+    });
   });
 
   it("marks orders refund_failed when Stripe reports a failed refund and no amount was processed", async () => {
@@ -2716,10 +2920,15 @@ describe("ecommerce services", () => {
       status: "failed",
     });
 
-    expect(mockUpdateRefund).toHaveBeenCalledWith("refund-failed", expect.objectContaining({
-      status: "failed",
-    }));
-    expect(mockUpdateOrder).toHaveBeenCalledWith("order-failed-refund", { paymentStatus: "refund_failed" });
+    expect(mockUpdateRefund).toHaveBeenCalledWith(
+      "refund-failed",
+      expect.objectContaining({
+        status: "failed",
+      }),
+    );
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-failed-refund", {
+      paymentStatus: "refund_failed",
+    });
   });
 
   it("ignores Stripe refund webhooks that exceed the remaining refundable balance", async () => {
@@ -2733,12 +2942,14 @@ describe("ecommerce services", () => {
       refunds: [{ amount: 4000, status: "processed" }],
     });
 
-    await expect(recordStripeRefundWebhook({
-      stripeRefundId: "re_over",
-      orderId: "order-2",
-      amount: 1500,
-      status: "succeeded",
-    })).resolves.toBeUndefined();
+    await expect(
+      recordStripeRefundWebhook({
+        stripeRefundId: "re_over",
+        orderId: "order-2",
+        amount: 1500,
+        status: "succeeded",
+      }),
+    ).resolves.toBeUndefined();
 
     expect(mockCreateRefund).not.toHaveBeenCalled();
     expect(mockUpdateOrder).not.toHaveBeenCalled();
@@ -2755,12 +2966,14 @@ describe("ecommerce services", () => {
       refunds: [],
     });
 
-    await expect(recordStripeRefundWebhook({
-      stripeRefundId: "re_unpaid",
-      orderId: "order-3",
-      amount: 1000,
-      status: "succeeded",
-    })).resolves.toBeUndefined();
+    await expect(
+      recordStripeRefundWebhook({
+        stripeRefundId: "re_unpaid",
+        orderId: "order-3",
+        amount: 1000,
+        status: "succeeded",
+      }),
+    ).resolves.toBeUndefined();
 
     expect(mockCreateRefund).not.toHaveBeenCalled();
     expect(mockUpdateOrder).not.toHaveBeenCalled();

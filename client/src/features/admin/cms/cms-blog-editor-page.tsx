@@ -49,11 +49,7 @@ import {
   Settings2,
   LayoutTemplate,
 } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
@@ -192,7 +188,11 @@ export default function CmsBlogEditorPage() {
         title: post.title,
         slug: post.slug,
         authorName: post.authorName,
-        categories: post.categories?.length ? post.categories : post.category ? [post.category] : [],
+        categories: post.categories?.length
+          ? post.categories
+          : post.category
+            ? [post.category]
+            : [],
         tags: post.tags ?? [],
         excerpt: post.excerpt ?? "",
         content: post.content,
@@ -236,11 +236,11 @@ export default function CmsBlogEditorPage() {
 
   const categories = useMemo(
     () => taxonomies.filter((item) => item.type === "category"),
-    [taxonomies]
+    [taxonomies],
   );
   const availableTags = useMemo(
     () => taxonomies.filter((item) => item.type === "tag"),
-    [taxonomies]
+    [taxonomies],
   );
 
   const buildPayload = (data: PostForm) => {
@@ -328,7 +328,10 @@ export default function CmsBlogEditorPage() {
     onSuccess: (taxonomy) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/blog/settings/taxonomies"] });
       if (taxonomy.type === "category") {
-        const nextCategories = dedupeValues([...(form.getValues("categories") ?? []), taxonomy.name]);
+        const nextCategories = dedupeValues([
+          ...(form.getValues("categories") ?? []),
+          taxonomy.name,
+        ]);
         form.setValue("categories", nextCategories, { shouldDirty: true });
         setNewCategoryName("");
         toast({ title: "Category added to blog settings" });
@@ -339,7 +342,8 @@ export default function CmsBlogEditorPage() {
         toast({ title: "Tag added to blog settings" });
       }
     },
-    onError: (error: Error) => toast({ title: error.message || "Failed to add taxonomy", variant: "destructive" }),
+    onError: (error: Error) =>
+      toast({ title: error.message || "Failed to add taxonomy", variant: "destructive" }),
   });
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
@@ -355,7 +359,7 @@ export default function CmsBlogEditorPage() {
   const confirmSavedPostAction = (actionLabel: string, onProceed: () => void) =>
     unsavedChangesGuard.confirmIfDirty(
       onProceed,
-      `You have unsaved changes to this post. ${actionLabel} will use the last saved version, not your in-progress edits. Continue?`
+      `You have unsaved changes to this post. ${actionLabel} will use the last saved version, not your in-progress edits. Continue?`,
     );
   const isPublished = form.watch("isPublished");
   const watchPostType = form.watch("postType");
@@ -385,13 +389,13 @@ export default function CmsBlogEditorPage() {
     <AdminSidebar>
       <div className="p-6 max-w-4xl mx-auto space-y-6">
         {editorLock.summary ? (
-            <EditorLockBanner
-              variant={editorLock.summary.variant}
-              title={editorLock.summary.title}
-              description={editorLock.summary.description}
-              isLoading={editorLock.isLoading}
-              onRefresh={editorLock.acquire}
-            />
+          <EditorLockBanner
+            variant={editorLock.summary.variant}
+            title={editorLock.summary.title}
+            description={editorLock.summary.description}
+            isLoading={editorLock.isLoading}
+            onRefresh={editorLock.acquire}
+          />
         ) : null}
 
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -409,17 +413,26 @@ export default function CmsBlogEditorPage() {
             </Button>
             <div className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-orange-500" />
-              <h1 className="text-xl font-heading font-semibold" data-testid="text-blog-editor-title">
-                {isNew ? "New Post" : (form.watch("title") || "Edit Post")}
+              <h1
+                className="text-xl font-heading font-semibold"
+                data-testid="text-blog-editor-title"
+              >
+                {isNew ? "New Post" : form.watch("title") || "Edit Post"}
               </h1>
-              {!isNew && (
-                isPublished ? (
-                  <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" data-testid="badge-post-published">
+              {!isNew &&
+                (isPublished ? (
+                  <Badge
+                    className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                    data-testid="badge-post-published"
+                  >
                     <Eye className="h-3 w-3 mr-1" />
                     Published
                   </Badge>
                 ) : post?.scheduledAt ? (
-                  <Badge className="bg-blue-600 text-white" data-testid="badge-post-scheduled-header">
+                  <Badge
+                    className="bg-blue-600 text-white"
+                    data-testid="badge-post-scheduled-header"
+                  >
                     <CalendarClock className="h-3 w-3 mr-1" />
                     Scheduled — {format(new Date(post.scheduledAt), "MMM d, h:mm a")}
                   </Badge>
@@ -428,28 +441,37 @@ export default function CmsBlogEditorPage() {
                     <EyeOff className="h-3 w-3 mr-1" />
                     Draft
                   </Badge>
-                )
-              )}
+                ))}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!isNew && isPublished && (
-              watchPostType === "external" && form.watch("externalUrl") ? (
+            {!isNew &&
+              isPublished &&
+              (watchPostType === "external" && form.watch("externalUrl") ? (
                 <Button variant="outline" size="sm" asChild>
-                  <a href={form.watch("externalUrl")} target="_blank" rel="noopener noreferrer" data-testid="button-view-live">
+                  <a
+                    href={form.watch("externalUrl")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid="button-view-live"
+                  >
                     <Link2 className="h-4 w-4 mr-1.5" />
                     View External
                   </a>
                 </Button>
               ) : (
                 <Button variant="outline" size="sm" asChild>
-                  <a href={`/insights/${currentSlug}`} target="_blank" rel="noopener noreferrer" data-testid="button-view-live">
+                  <a
+                    href={`/insights/${currentSlug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid="button-view-live"
+                  >
                     <ExternalLink className="h-4 w-4 mr-1.5" />
                     View Live
                   </a>
                 </Button>
-              )
-            )}
+              ))}
             <AdminSaveBar
               state={saveState.state}
               type="button"
@@ -462,804 +484,935 @@ export default function CmsBlogEditorPage() {
           </div>
         </div>
 
-        <div className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
-        <Form {...form}>
-          <form onSubmit={(e) => { e.preventDefault(); onSave(); }}>
-            <Tabs defaultValue="content" className="space-y-4">
-              <div className="flex items-center gap-4 flex-wrap">
-                <TabsList>
-                  <TabsTrigger value="content" data-testid="tab-content">
-                    <BookOpen className="h-4 w-4 mr-1.5 text-blue-600" />
-                    Content
-                  </TabsTrigger>
-                  <TabsTrigger value="layout" data-testid="tab-layout">
-                    <LayoutTemplate className="h-4 w-4 mr-1.5 text-indigo-600" />
-                    Layout
-                  </TabsTrigger>
-                  <TabsTrigger value="seo" data-testid="tab-seo">
-                    <Globe className="h-4 w-4 mr-1.5 text-blue-600" />
-                    SEO
-                  </TabsTrigger>
-                </TabsList>
-                <FormField
-                  control={form.control}
-                  name="postType"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center gap-2 space-y-0">
-                      <FormLabel className="text-xs text-muted-foreground whitespace-nowrap">Post Type:</FormLabel>
-                      <Select value={field.value || "article"} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger className="h-9 w-[180px]" data-testid="select-post-type">
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="article">
-                            <span className="flex items-center gap-2">
-                              <FileText className="h-3.5 w-3.5" />
-                              Article
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="podcast">
-                            <span className="flex items-center gap-2">
-                              <Headphones className="h-3.5 w-3.5" />
-                              Podcast
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="external">
-                            <span className="flex items-center gap-2">
-                              <Link2 className="h-3.5 w-3.5" />
-                              External Article
-                            </span>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <TabsContent value="content" className="space-y-4 mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm text-muted-foreground font-medium">Post Details</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Title</FormLabel>
+        <div
+          className={cn(
+            editorLock.hasLocking &&
+              editorLock.isReadOnly &&
+              "pointer-events-none select-none opacity-70",
+          )}
+        >
+          <Form {...form}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                onSave();
+              }}
+            >
+              <Tabs defaultValue="content" className="space-y-4">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <TabsList>
+                    <TabsTrigger value="content" data-testid="tab-content">
+                      <BookOpen className="h-4 w-4 mr-1.5 text-blue-600" />
+                      Content
+                    </TabsTrigger>
+                    <TabsTrigger value="layout" data-testid="tab-layout">
+                      <LayoutTemplate className="h-4 w-4 mr-1.5 text-indigo-600" />
+                      Layout
+                    </TabsTrigger>
+                    <TabsTrigger value="seo" data-testid="tab-seo">
+                      <Globe className="h-4 w-4 mr-1.5 text-blue-600" />
+                      SEO
+                    </TabsTrigger>
+                  </TabsList>
+                  <FormField
+                    control={form.control}
+                    name="postType"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center gap-2 space-y-0">
+                        <FormLabel className="text-xs text-muted-foreground whitespace-nowrap">
+                          Post Type:
+                        </FormLabel>
+                        <Select value={field.value || "article"} onValueChange={field.onChange}>
                           <FormControl>
-                            <Input placeholder="Post title" {...field} data-testid="input-post-title" />
+                            <SelectTrigger className="h-9 w-[180px]" data-testid="select-post-type">
+                              <SelectValue />
+                            </SelectTrigger>
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="slug"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>URL Slug</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="post-url-slug"
-                              {...field}
-                              onChange={(e) => {
-                                slugManuallyEdited.current = true;
-                                field.onChange(e);
-                              }}
-                              className="font-mono text-sm"
-                              data-testid="input-post-slug"
-                            />
-                          </FormControl>
-                          <FormDescription className="text-xs">
-                            Public URL: /insights/<span className="font-mono">{currentSlug || "…"}</span>
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="authorName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Author Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} data-testid="input-post-author" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="categories"
-                        render={({ field }) => {
-                          const selectedCategories = field.value ?? [];
-                          return (
-                            <FormItem>
-                              <FormLabel>Categories</FormLabel>
-                              <Card className="border-dashed">
-                                <CardContent className="p-4 space-y-4">
-                                  <div className="max-h-60 overflow-y-auto rounded-md border">
-                                    {categories.length > 0 ? (
-                                      <div className="divide-y">
-                                        {categories.map((category) => {
-                                          const checked = selectedCategories.some(
-                                            (value) => value.toLowerCase() === category.name.toLowerCase()
-                                          );
-                                          return (
-                                            <label
-                                              key={category.id}
-                                              className="flex items-start gap-3 px-3 py-2 cursor-pointer hover:bg-muted/40"
-                                            >
-                                              <Checkbox
-                                                checked={checked}
-                                                onCheckedChange={(value) => {
-                                                  const nextCategories = value
-                                                    ? dedupeValues([...selectedCategories, category.name])
-                                                    : selectedCategories.filter(
-                                                        (item) => item.toLowerCase() !== category.name.toLowerCase()
-                                                      );
-                                                  field.onChange(nextCategories);
-                                                }}
-                                                data-testid={`checkbox-post-category-${category.slug}`}
-                                              />
-                                              <div className="space-y-0.5">
-                                                <div className="text-sm font-medium leading-none">
-                                                  {buildCategoryPath(category, categories)}
-                                                </div>
-                                                {category.parentId && (
-                                                  <p className="text-xs text-muted-foreground">
-                                                    Nested category
-                                                  </p>
-                                                )}
-                                              </div>
-                                            </label>
-                                          );
-                                        })}
-                                      </div>
-                                    ) : (
-                                      <div className="px-3 py-6 text-sm text-muted-foreground">
-                                        No categories yet. Add one below.
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex flex-wrap gap-2">
-                                    {selectedCategories.length > 0 ? (
-                                      selectedCategories.map((category) => (
-                                        <Badge key={category} variant="secondary">
-                                          {category}
-                                        </Badge>
-                                      ))
-                                    ) : (
-                                      <p className="text-sm text-muted-foreground">No categories selected.</p>
-                                    )}
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Input
-                                      value={newCategoryName}
-                                      onChange={(e) => setNewCategoryName(e.target.value)}
-                                      placeholder="Add a new category"
-                                      data-testid="input-post-category-new"
-                                    />
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      onClick={() => createTaxonomyMutation.mutate({ name: newCategoryName.trim(), type: "category" })}
-                                      disabled={!newCategoryName.trim() || createTaxonomyMutation.isPending}
-                                      data-testid="button-post-category-add"
-                                    >
-                                      <Plus className="h-4 w-4 mr-1.5" />
-                                      Add
-                                    </Button>
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Need subcategories or bulk cleanup? Use <Link href="/admin/cms/blog/settings"><span className="underline cursor-pointer">Blog Settings</span></Link>.
-                                  </p>
-                                </CardContent>
-                              </Card>
-                              <FormMessage />
-                            </FormItem>
-                          );
-                        }}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="tags"
-                        render={({ field }) => {
-                          const selectedTags = field.value ?? [];
-                          return (
-                            <FormItem>
-                              <FormLabel>Tags</FormLabel>
-                              <Card className="border-dashed">
-                                <CardContent className="p-4 space-y-4">
-                                  <div className="max-h-60 overflow-y-auto rounded-md border">
-                                    {availableTags.length > 0 ? (
-                                      <div className="divide-y">
-                                        {availableTags.map((tag) => {
-                                          const checked = selectedTags.some(
-                                            (value) => value.toLowerCase() === tag.name.toLowerCase()
-                                          );
-                                          return (
-                                            <label
-                                              key={tag.id}
-                                              className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/40"
-                                            >
-                                              <Checkbox
-                                                checked={checked}
-                                                onCheckedChange={(value) => {
-                                                  const nextTags = value
-                                                    ? dedupeValues([...selectedTags, tag.name])
-                                                    : selectedTags.filter(
-                                                        (item) => item.toLowerCase() !== tag.name.toLowerCase()
-                                                      );
-                                                  field.onChange(nextTags);
-                                                }}
-                                                data-testid={`checkbox-post-tag-${tag.slug}`}
-                                              />
-                                              <span className="text-sm font-medium">{tag.name}</span>
-                                            </label>
-                                          );
-                                        })}
-                                      </div>
-                                    ) : (
-                                      <div className="px-3 py-6 text-sm text-muted-foreground">
-                                        No tags yet. Add one below.
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex flex-wrap gap-2">
-                                    {selectedTags.length > 0 ? (
-                                      selectedTags.map((tag) => (
-                                        <Badge key={tag} variant="secondary">
-                                          {tag}
-                                        </Badge>
-                                      ))
-                                    ) : (
-                                      <p className="text-sm text-muted-foreground">No tags selected.</p>
-                                    )}
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Input
-                                      value={newTagName}
-                                      onChange={(e) => setNewTagName(e.target.value)}
-                                      placeholder="Create a new tag"
-                                      data-testid="input-post-tag-new"
-                                    />
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      onClick={() => createTaxonomyMutation.mutate({ name: newTagName.trim(), type: "tag" })}
-                                      disabled={!newTagName.trim() || createTaxonomyMutation.isPending}
-                                      data-testid="button-post-tag-add"
-                                    >
-                                      <Plus className="h-4 w-4 mr-1.5" />
-                                      Add
-                                    </Button>
-                                  </div>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    asChild
-                                    data-testid="button-blog-settings-inline"
-                                  >
-                                    <Link href="/admin/cms/blog/settings">
-                                      <Settings2 className="h-4 w-4 mr-1.5" />
-                                      Manage Tags & Categories
-                                    </Link>
-                                  </Button>
-                                </CardContent>
-                              </Card>
-                              <FormMessage />
-                            </FormItem>
-                          );
-                        }}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {watchPostType === "podcast" && (
-                  <Card className="border-purple-200 dark:border-purple-800/50 bg-purple-50/30 dark:bg-purple-950/10">
-                    <CardHeader>
-                      <CardTitle className="text-sm font-medium flex items-center gap-2">
-                        <Headphones className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                        Podcast Audio
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <FormField
-                        control={form.control}
-                        name="podcastUrl"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Podcast URL</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="https://podcasts.apple.com/... or https://open.spotify.com/episode/..."
-                                autoPrependHttps
-                                {...field}
-                                data-testid="input-podcast-url"
-                              />
-                            </FormControl>
-                            <FormDescription className="text-xs">
-                              Link to the podcast episode on any platform (Spotify, Apple Podcasts, SoundCloud, etc.).
-                              An audio player will be displayed at the top of the blog post.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </CardContent>
-                  </Card>
-                )}
-
-                {watchPostType === "external" && (
-                  <Card className="border-blue-200 dark:border-blue-800/50 bg-blue-50/30 dark:bg-blue-950/10">
-                    <CardHeader>
-                      <CardTitle className="text-sm font-medium flex items-center gap-2">
-                        <Link2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        External Article
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <FormField
-                        control={form.control}
-                        name="externalUrl"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>External URL</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="https://example.com/article-title"
-                                autoPrependHttps
-                                {...field}
-                                data-testid="input-external-url"
-                              />
-                            </FormControl>
-                            <FormDescription className="text-xs">
-                              Clicking this post from the blog grid will open this URL in a new tab.
-                              You can still add an excerpt, cover image, and other details for the card.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </CardContent>
-                  </Card>
-                )}
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm text-muted-foreground font-medium">Cover Image</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="coverImageUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <CmsImageUpload
-                              value={field.value ?? ""}
-                              onChange={field.onChange}
-                              helpText="Displayed at the top of the article. Recommended: 1200 × 630 px."
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    {watchCoverImageUrl && (
-                      <ImagePositionPicker
-                        imageUrl={watchCoverImageUrl}
-                        positionX={watchCoverImagePositionX ?? 50}
-                        positionY={watchCoverImagePositionY ?? 50}
-                        onPositionChange={(x, y) => {
-                          form.setValue("coverImagePositionX", x, { shouldDirty: true });
-                          form.setValue("coverImagePositionY", y, { shouldDirty: true });
-                        }}
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm text-muted-foreground font-medium">Content</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="excerpt"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Excerpt
-                            <span className="text-muted-foreground font-normal text-xs ml-1">
-                              {watchPostType === "external" ? "(shown on blog card)" : "(optional)"}
-                            </span>
-                          </FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Brief summary for listing cards…"
-                              rows={2}
-                              {...field}
-                              data-testid="input-post-excerpt"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="content"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Body Content
-                            {watchPostType === "external" && (
-                              <span className="text-muted-foreground font-normal text-xs ml-1">(optional)</span>
-                            )}
-                          </FormLabel>
-                          <FormControl>
-                            <BlogEditor
-                              value={field.value ?? ""}
-                              onChange={field.onChange}
-                              placeholder={watchPostType === "podcast"
-                                ? "Write show notes, a transcript, or additional context…"
-                                : watchPostType === "external"
-                                  ? "Optionally add your own commentary or notes…"
-                                  : "Write your article here…"}
-                              data-testid="input-post-content"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="pt-5 space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="isPublished"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex items-center gap-3">
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={(checked) => {
-                                  field.onChange(checked);
-                                  if (checked) {
-                                    setBlogScheduleDate("");
-                                  }
-                                }}
-                                data-testid="switch-post-published"
-                              />
-                            </FormControl>
-                            <div>
-                              <FormLabel className="cursor-pointer">Publish this post</FormLabel>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {field.value
-                                  ? "Post is visible to the public at /insights/"
-                                  : "Post is saved as a draft and not visible publicly"}
-                              </p>
-                            </div>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                    {!isPublished && (
-                      <div className="border-t pt-4">
-                        {post?.scheduledAt ? (
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Badge className="bg-blue-600 text-white" data-testid="badge-post-scheduled">
-                                <CalendarClock className="h-3 w-3 mr-1" />
-                                Scheduled
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {format(new Date(post.scheduledAt), "MMM d, yyyy 'at' h:mm a")}
+                          <SelectContent>
+                            <SelectItem value="article">
+                              <span className="flex items-center gap-2">
+                                <FileText className="h-3.5 w-3.5" />
+                                Article
                               </span>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                confirmSavedPostAction("Canceling this schedule", async () => {
-                                  try {
-                                    await apiRequest("PUT", `/api/admin/blog/${id}`, { scheduledAt: null });
-                                    queryClient.invalidateQueries({ queryKey: ["/api/admin/blog", id] });
-                                    toast({ title: "Schedule cancelled" });
-                                  } catch {
-                                    toast({ title: "Failed to cancel schedule", variant: "destructive" });
-                                  }
-                                })
-                              }
-                              data-testid="button-cancel-blog-schedule"
-                            >
-                              Cancel Schedule
-                            </Button>
-                          </div>
-                        ) : (
-                          <Popover open={blogScheduleOpen} onOpenChange={setBlogScheduleOpen}>
-                            <PopoverTrigger asChild>
-                              <Button variant="outline" size="sm" data-testid="button-open-blog-schedule">
-                                <CalendarClock className="h-4 w-4 mr-1.5" />
-                                Schedule Publishing
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-72" align="start">
-                              <div className="space-y-3">
-                                <p className="text-sm font-medium">Schedule Publishing</p>
-                                <p className="text-xs text-muted-foreground">
-                                  Choose a future date and time for this post to go live automatically.
-                                </p>
-                                <input
-                                  type="datetime-local"
-                                  value={blogScheduleDate}
-                                  onChange={(e) => setBlogScheduleDate(e.target.value)}
-                                  min={new Date().toISOString().slice(0, 16)}
-                                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                  data-testid="input-blog-schedule-date"
-                                />
-                                <Button
-                                  className="w-full"
-                                  size="sm"
-                                  disabled={!blogScheduleDate || updateMutation.isPending || createMutation.isPending}
-                                  onClick={() =>
-                                    confirmSavedPostAction("Scheduling this post", async () => {
-                                      const scheduledIso = new Date(blogScheduleDate).toISOString();
-                                      if (isNew) {
-                                        form.handleSubmit(async (data) => {
-                                          try {
-                                            const res = await apiRequest("POST", "/api/admin/blog", buildPayload(data));
-                                            const created: BlogPost = await res.json();
-                                            await apiRequest("PUT", `/api/admin/blog/${created.id}`, { scheduledAt: scheduledIso });
-                                            queryClient.invalidateQueries({ queryKey: ["/api/admin/blog"] });
-                                            setBlogScheduleOpen(false);
-                                            setBlogScheduleDate("");
-                                            toast({ title: "Post created and scheduled" });
-                                            navigate(`/admin/cms/blog/${created.id}`);
-                                          } catch {
-                                            toast({ title: "Failed to schedule post", variant: "destructive" });
-                                          }
-                                        })();
-                                      } else {
-                                        try {
-                                          await apiRequest("PUT", `/api/admin/blog/${id}`, { scheduledAt: scheduledIso });
-                                          queryClient.invalidateQueries({ queryKey: ["/api/admin/blog", id] });
-                                          setBlogScheduleOpen(false);
-                                          setBlogScheduleDate("");
-                                          toast({ title: "Post scheduled for publishing" });
-                                        } catch {
-                                          toast({ title: "Failed to schedule post", variant: "destructive" });
+                            </SelectItem>
+                            <SelectItem value="podcast">
+                              <span className="flex items-center gap-2">
+                                <Headphones className="h-3.5 w-3.5" />
+                                Podcast
+                              </span>
+                            </SelectItem>
+                            <SelectItem value="external">
+                              <span className="flex items-center gap-2">
+                                <Link2 className="h-3.5 w-3.5" />
+                                External Article
+                              </span>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <TabsContent value="content" className="space-y-4 mt-0">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm text-muted-foreground font-medium">
+                        Post Details
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Title</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Post title"
+                                {...field}
+                                data-testid="input-post-title"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="slug"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>URL Slug</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="post-url-slug"
+                                {...field}
+                                onChange={(e) => {
+                                  slugManuallyEdited.current = true;
+                                  field.onChange(e);
+                                }}
+                                className="font-mono text-sm"
+                                data-testid="input-post-slug"
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs">
+                              Public URL: /insights/
+                              <span className="font-mono">{currentSlug || "…"}</span>
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="authorName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Author Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} data-testid="input-post-author" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="categories"
+                          render={({ field }) => {
+                            const selectedCategories = field.value ?? [];
+                            return (
+                              <FormItem>
+                                <FormLabel>Categories</FormLabel>
+                                <Card className="border-dashed">
+                                  <CardContent className="p-4 space-y-4">
+                                    <div className="max-h-60 overflow-y-auto rounded-md border">
+                                      {categories.length > 0 ? (
+                                        <div className="divide-y">
+                                          {categories.map((category) => {
+                                            const checked = selectedCategories.some(
+                                              (value) =>
+                                                value.toLowerCase() === category.name.toLowerCase(),
+                                            );
+                                            return (
+                                              <label
+                                                key={category.id}
+                                                className="flex items-start gap-3 px-3 py-2 cursor-pointer hover:bg-muted/40"
+                                              >
+                                                <Checkbox
+                                                  checked={checked}
+                                                  onCheckedChange={(value) => {
+                                                    const nextCategories = value
+                                                      ? dedupeValues([
+                                                          ...selectedCategories,
+                                                          category.name,
+                                                        ])
+                                                      : selectedCategories.filter(
+                                                          (item) =>
+                                                            item.toLowerCase() !==
+                                                            category.name.toLowerCase(),
+                                                        );
+                                                    field.onChange(nextCategories);
+                                                  }}
+                                                  data-testid={`checkbox-post-category-${category.slug}`}
+                                                />
+                                                <div className="space-y-0.5">
+                                                  <div className="text-sm font-medium leading-none">
+                                                    {buildCategoryPath(category, categories)}
+                                                  </div>
+                                                  {category.parentId && (
+                                                    <p className="text-xs text-muted-foreground">
+                                                      Nested category
+                                                    </p>
+                                                  )}
+                                                </div>
+                                              </label>
+                                            );
+                                          })}
+                                        </div>
+                                      ) : (
+                                        <div className="px-3 py-6 text-sm text-muted-foreground">
+                                          No categories yet. Add one below.
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {selectedCategories.length > 0 ? (
+                                        selectedCategories.map((category) => (
+                                          <Badge key={category} variant="secondary">
+                                            {category}
+                                          </Badge>
+                                        ))
+                                      ) : (
+                                        <p className="text-sm text-muted-foreground">
+                                          No categories selected.
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Input
+                                        value={newCategoryName}
+                                        onChange={(e) => setNewCategoryName(e.target.value)}
+                                        placeholder="Add a new category"
+                                        data-testid="input-post-category-new"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() =>
+                                          createTaxonomyMutation.mutate({
+                                            name: newCategoryName.trim(),
+                                            type: "category",
+                                          })
                                         }
-                                      }
-                                    })
-                                  }
-                                  data-testid="button-confirm-blog-schedule"
+                                        disabled={
+                                          !newCategoryName.trim() ||
+                                          createTaxonomyMutation.isPending
+                                        }
+                                        data-testid="button-post-category-add"
+                                      >
+                                        <Plus className="h-4 w-4 mr-1.5" />
+                                        Add
+                                      </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                      Need subcategories or bulk cleanup? Use{" "}
+                                      <Link href="/admin/cms/blog/settings">
+                                        <span className="underline cursor-pointer">
+                                          Blog Settings
+                                        </span>
+                                      </Link>
+                                      .
+                                    </p>
+                                  </CardContent>
+                                </Card>
+                                <FormMessage />
+                              </FormItem>
+                            );
+                          }}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="tags"
+                          render={({ field }) => {
+                            const selectedTags = field.value ?? [];
+                            return (
+                              <FormItem>
+                                <FormLabel>Tags</FormLabel>
+                                <Card className="border-dashed">
+                                  <CardContent className="p-4 space-y-4">
+                                    <div className="max-h-60 overflow-y-auto rounded-md border">
+                                      {availableTags.length > 0 ? (
+                                        <div className="divide-y">
+                                          {availableTags.map((tag) => {
+                                            const checked = selectedTags.some(
+                                              (value) =>
+                                                value.toLowerCase() === tag.name.toLowerCase(),
+                                            );
+                                            return (
+                                              <label
+                                                key={tag.id}
+                                                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/40"
+                                              >
+                                                <Checkbox
+                                                  checked={checked}
+                                                  onCheckedChange={(value) => {
+                                                    const nextTags = value
+                                                      ? dedupeValues([...selectedTags, tag.name])
+                                                      : selectedTags.filter(
+                                                          (item) =>
+                                                            item.toLowerCase() !==
+                                                            tag.name.toLowerCase(),
+                                                        );
+                                                    field.onChange(nextTags);
+                                                  }}
+                                                  data-testid={`checkbox-post-tag-${tag.slug}`}
+                                                />
+                                                <span className="text-sm font-medium">
+                                                  {tag.name}
+                                                </span>
+                                              </label>
+                                            );
+                                          })}
+                                        </div>
+                                      ) : (
+                                        <div className="px-3 py-6 text-sm text-muted-foreground">
+                                          No tags yet. Add one below.
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {selectedTags.length > 0 ? (
+                                        selectedTags.map((tag) => (
+                                          <Badge key={tag} variant="secondary">
+                                            {tag}
+                                          </Badge>
+                                        ))
+                                      ) : (
+                                        <p className="text-sm text-muted-foreground">
+                                          No tags selected.
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Input
+                                        value={newTagName}
+                                        onChange={(e) => setNewTagName(e.target.value)}
+                                        placeholder="Create a new tag"
+                                        data-testid="input-post-tag-new"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() =>
+                                          createTaxonomyMutation.mutate({
+                                            name: newTagName.trim(),
+                                            type: "tag",
+                                          })
+                                        }
+                                        disabled={
+                                          !newTagName.trim() || createTaxonomyMutation.isPending
+                                        }
+                                        data-testid="button-post-tag-add"
+                                      >
+                                        <Plus className="h-4 w-4 mr-1.5" />
+                                        Add
+                                      </Button>
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      asChild
+                                      data-testid="button-blog-settings-inline"
+                                    >
+                                      <Link href="/admin/cms/blog/settings">
+                                        <Settings2 className="h-4 w-4 mr-1.5" />
+                                        Manage Tags & Categories
+                                      </Link>
+                                    </Button>
+                                  </CardContent>
+                                </Card>
+                                <FormMessage />
+                              </FormItem>
+                            );
+                          }}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {watchPostType === "podcast" && (
+                    <Card className="border-purple-200 dark:border-purple-800/50 bg-purple-50/30 dark:bg-purple-950/10">
+                      <CardHeader>
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                          <Headphones className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                          Podcast Audio
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <FormField
+                          control={form.control}
+                          name="podcastUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Podcast URL</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="https://podcasts.apple.com/... or https://open.spotify.com/episode/..."
+                                  autoPrependHttps
+                                  {...field}
+                                  data-testid="input-podcast-url"
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs">
+                                Link to the podcast episode on any platform (Spotify, Apple
+                                Podcasts, SoundCloud, etc.). An audio player will be displayed at
+                                the top of the blog post.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {watchPostType === "external" && (
+                    <Card className="border-blue-200 dark:border-blue-800/50 bg-blue-50/30 dark:bg-blue-950/10">
+                      <CardHeader>
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                          <Link2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          External Article
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <FormField
+                          control={form.control}
+                          name="externalUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>External URL</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="https://example.com/article-title"
+                                  autoPrependHttps
+                                  {...field}
+                                  data-testid="input-external-url"
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs">
+                                Clicking this post from the blog grid will open this URL in a new
+                                tab. You can still add an excerpt, cover image, and other details
+                                for the card.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm text-muted-foreground font-medium">
+                        Cover Image
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="coverImageUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <CmsImageUpload
+                                value={field.value ?? ""}
+                                onChange={field.onChange}
+                                helpText="Displayed at the top of the article. Recommended: 1200 × 630 px."
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {watchCoverImageUrl && (
+                        <ImagePositionPicker
+                          imageUrl={watchCoverImageUrl}
+                          positionX={watchCoverImagePositionX ?? 50}
+                          positionY={watchCoverImagePositionY ?? 50}
+                          onPositionChange={(x, y) => {
+                            form.setValue("coverImagePositionX", x, { shouldDirty: true });
+                            form.setValue("coverImagePositionY", y, { shouldDirty: true });
+                          }}
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm text-muted-foreground font-medium">
+                        Content
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="excerpt"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              Excerpt
+                              <span className="text-muted-foreground font-normal text-xs ml-1">
+                                {watchPostType === "external"
+                                  ? "(shown on blog card)"
+                                  : "(optional)"}
+                              </span>
+                            </FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Brief summary for listing cards…"
+                                rows={2}
+                                {...field}
+                                data-testid="input-post-excerpt"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="content"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              Body Content
+                              {watchPostType === "external" && (
+                                <span className="text-muted-foreground font-normal text-xs ml-1">
+                                  (optional)
+                                </span>
+                              )}
+                            </FormLabel>
+                            <FormControl>
+                              <BlogEditor
+                                value={field.value ?? ""}
+                                onChange={field.onChange}
+                                placeholder={
+                                  watchPostType === "podcast"
+                                    ? "Write show notes, a transcript, or additional context…"
+                                    : watchPostType === "external"
+                                      ? "Optionally add your own commentary or notes…"
+                                      : "Write your article here…"
+                                }
+                                data-testid="input-post-content"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="pt-5 space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="isPublished"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center gap-3">
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={(checked) => {
+                                    field.onChange(checked);
+                                    if (checked) {
+                                      setBlogScheduleDate("");
+                                    }
+                                  }}
+                                  data-testid="switch-post-published"
+                                />
+                              </FormControl>
+                              <div>
+                                <FormLabel className="cursor-pointer">Publish this post</FormLabel>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {field.value
+                                    ? "Post is visible to the public at /insights/"
+                                    : "Post is saved as a draft and not visible publicly"}
+                                </p>
+                              </div>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      {!isPublished && (
+                        <div className="border-t pt-4">
+                          {post?.scheduledAt ? (
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  className="bg-blue-600 text-white"
+                                  data-testid="badge-post-scheduled"
+                                >
+                                  <CalendarClock className="h-3 w-3 mr-1" />
+                                  Scheduled
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(post.scheduledAt), "MMM d, yyyy 'at' h:mm a")}
+                                </span>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  confirmSavedPostAction("Canceling this schedule", async () => {
+                                    try {
+                                      await apiRequest("PUT", `/api/admin/blog/${id}`, {
+                                        scheduledAt: null,
+                                      });
+                                      queryClient.invalidateQueries({
+                                        queryKey: ["/api/admin/blog", id],
+                                      });
+                                      toast({ title: "Schedule cancelled" });
+                                    } catch {
+                                      toast({
+                                        title: "Failed to cancel schedule",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  })
+                                }
+                                data-testid="button-cancel-blog-schedule"
+                              >
+                                Cancel Schedule
+                              </Button>
+                            </div>
+                          ) : (
+                            <Popover open={blogScheduleOpen} onOpenChange={setBlogScheduleOpen}>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  data-testid="button-open-blog-schedule"
                                 >
                                   <CalendarClock className="h-4 w-4 mr-1.5" />
-                                  Confirm Schedule
+                                  Schedule Publishing
                                 </Button>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        )}
+                              </PopoverTrigger>
+                              <PopoverContent className="w-72" align="start">
+                                <div className="space-y-3">
+                                  <p className="text-sm font-medium">Schedule Publishing</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Choose a future date and time for this post to go live
+                                    automatically.
+                                  </p>
+                                  <input
+                                    type="datetime-local"
+                                    value={blogScheduleDate}
+                                    onChange={(e) => setBlogScheduleDate(e.target.value)}
+                                    min={new Date().toISOString().slice(0, 16)}
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    data-testid="input-blog-schedule-date"
+                                  />
+                                  <Button
+                                    className="w-full"
+                                    size="sm"
+                                    disabled={
+                                      !blogScheduleDate ||
+                                      updateMutation.isPending ||
+                                      createMutation.isPending
+                                    }
+                                    onClick={() =>
+                                      confirmSavedPostAction("Scheduling this post", async () => {
+                                        const scheduledIso = new Date(
+                                          blogScheduleDate,
+                                        ).toISOString();
+                                        if (isNew) {
+                                          form.handleSubmit(async (data) => {
+                                            try {
+                                              const res = await apiRequest(
+                                                "POST",
+                                                "/api/admin/blog",
+                                                buildPayload(data),
+                                              );
+                                              const created: BlogPost = await res.json();
+                                              await apiRequest(
+                                                "PUT",
+                                                `/api/admin/blog/${created.id}`,
+                                                { scheduledAt: scheduledIso },
+                                              );
+                                              queryClient.invalidateQueries({
+                                                queryKey: ["/api/admin/blog"],
+                                              });
+                                              setBlogScheduleOpen(false);
+                                              setBlogScheduleDate("");
+                                              toast({ title: "Post created and scheduled" });
+                                              navigate(`/admin/cms/blog/${created.id}`);
+                                            } catch {
+                                              toast({
+                                                title: "Failed to schedule post",
+                                                variant: "destructive",
+                                              });
+                                            }
+                                          })();
+                                        } else {
+                                          try {
+                                            await apiRequest("PUT", `/api/admin/blog/${id}`, {
+                                              scheduledAt: scheduledIso,
+                                            });
+                                            queryClient.invalidateQueries({
+                                              queryKey: ["/api/admin/blog", id],
+                                            });
+                                            setBlogScheduleOpen(false);
+                                            setBlogScheduleDate("");
+                                            toast({ title: "Post scheduled for publishing" });
+                                          } catch {
+                                            toast({
+                                              title: "Failed to schedule post",
+                                              variant: "destructive",
+                                            });
+                                          }
+                                        }
+                                      })
+                                    }
+                                    data-testid="button-confirm-blog-schedule"
+                                  >
+                                    <CalendarClock className="h-4 w-4 mr-1.5" />
+                                    Confirm Schedule
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                  <MembershipAccessRuleCard
+                    resourceType="blog_post"
+                    resourceId={isNew ? undefined : id}
+                    disabled={editorLock.isReadOnly}
+                  />
+                </TabsContent>
+
+                <TabsContent value="layout" className="mt-0 space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Sidebar Layout</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="rounded-lg border px-4 py-3 bg-muted/20">
+                        <p className="text-sm font-medium">
+                          Blog posts always include a right sidebar.
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Leave this on the default option to use the system-wide default blog
+                          sidebar, or choose a specific sidebar for this post.
+                        </p>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-                <MembershipAccessRuleCard
-                  resourceType="blog_post"
-                  resourceId={isNew ? undefined : id}
-                  disabled={editorLock.isReadOnly}
-                />
-              </TabsContent>
+                      <FormField
+                        control={form.control}
+                        name="sidebarId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Sidebar Selection</FormLabel>
+                            <Select
+                              onValueChange={(value) =>
+                                field.onChange(value === "default" ? "" : value)
+                              }
+                              value={field.value || "default"}
+                            >
+                              <FormControl>
+                                <SelectTrigger data-testid="select-blog-sidebar">
+                                  <SelectValue placeholder="Select sidebar" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="default">Use Default Blog Sidebar</SelectItem>
+                                {sidebars.map((sidebar) => (
+                                  <SelectItem key={sidebar.id} value={sidebar.id}>
+                                    {sidebar.name}
+                                    {sidebar.isDefault ? " (Default Blog)" : ""}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormDescription className="text-xs">
+                              Build reusable sidebars in Admin &gt; CMS &gt; Sidebars & Widgets.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
 
-              <TabsContent value="layout" className="mt-0 space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Sidebar Layout</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="rounded-lg border px-4 py-3 bg-muted/20">
-                      <p className="text-sm font-medium">Blog posts always include a right sidebar.</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Leave this on the default option to use the system-wide default blog sidebar, or choose a specific sidebar for this post.
-                      </p>
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="sidebarId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Sidebar Selection</FormLabel>
-                          <Select onValueChange={(value) => field.onChange(value === "default" ? "" : value)} value={field.value || "default"}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-blog-sidebar">
-                                <SelectValue placeholder="Select sidebar" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="default">Use Default Blog Sidebar</SelectItem>
-                              {sidebars.map((sidebar) => (
-                                <SelectItem key={sidebar.id} value={sidebar.id}>
-                                  {sidebar.name}
-                                  {sidebar.isDefault ? " (Default Blog)" : ""}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormDescription className="text-xs">
-                            Build reusable sidebars in Admin &gt; CMS &gt; Sidebars & Widgets.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="seo" className="mt-0 space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      Search Engine
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="seoTitle"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex items-center justify-between">
-                            <FormLabel>SEO Title <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
-                            {(field.value ?? "").length > 0 && (
-                              <span className={`text-xs ${(field.value ?? "").length > 60 ? "text-amber-500" : (field.value ?? "").length < 20 ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400"}`}>
-                                {(field.value ?? "").length}/60
-                              </span>
-                            )}
-                          </div>
-                          <FormControl>
-                            <Input
-                              placeholder="Overrides post title in search results"
-                              {...field}
-                              data-testid="input-seo-title"
-                            />
-                          </FormControl>
-                          <FormDescription className="text-xs">
-                            If blank, the post title is used. Aim for 30–60 characters.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="seoDescription"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Meta Description
-                            <span className={`ml-2 text-xs font-normal ${(field.value ?? "").length > 130 ? "text-amber-500" : "text-muted-foreground"}`}>
-                              ({(field.value ?? "").length}/160)
-                            </span>
-                          </FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Brief description for search engine results (max 160 chars)"
-                              rows={3}
-                              {...field}
-                              data-testid="textarea-seo-description"
-                            />
-                          </FormControl>
-                          <FormDescription className="text-xs">
-                            If blank, the post excerpt is used.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="noindex"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex items-center justify-between rounded-lg border px-4 py-3">
-                            <div>
-                              <FormLabel className="text-sm font-medium cursor-pointer">
-                                Hide from search engines
+                <TabsContent value="seo" className="mt-0 space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                        Search Engine
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="seoTitle"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center justify-between">
+                              <FormLabel>
+                                SEO Title{" "}
+                                <span className="text-muted-foreground font-normal text-xs">
+                                  (optional)
+                                </span>
                               </FormLabel>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                Sets noindex,nofollow. Use for drafts or unlisted posts.
-                              </p>
+                              {(field.value ?? "").length > 0 && (
+                                <span
+                                  className={`text-xs ${(field.value ?? "").length > 60 ? "text-amber-500" : (field.value ?? "").length < 20 ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400"}`}
+                                >
+                                  {(field.value ?? "").length}/60
+                                </span>
+                              )}
                             </div>
                             <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                data-testid="switch-noindex"
+                              <Input
+                                placeholder="Overrides post title in search results"
+                                {...field}
+                                data-testid="input-seo-title"
                               />
                             </FormControl>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
+                            <FormDescription className="text-xs">
+                              If blank, the post title is used. Aim for 30–60 characters.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="seoDescription"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              Meta Description
+                              <span
+                                className={`ml-2 text-xs font-normal ${(field.value ?? "").length > 130 ? "text-amber-500" : "text-muted-foreground"}`}
+                              >
+                                ({(field.value ?? "").length}/160)
+                              </span>
+                            </FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Brief description for search engine results (max 160 chars)"
+                                rows={3}
+                                {...field}
+                                data-testid="textarea-seo-description"
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs">
+                              If blank, the post excerpt is used.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="noindex"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+                              <div>
+                                <FormLabel className="text-sm font-medium cursor-pointer">
+                                  Hide from search engines
+                                </FormLabel>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  Sets noindex,nofollow. Use for drafts or unlisted posts.
+                                </p>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  data-testid="switch-noindex"
+                                />
+                              </FormControl>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      Social / Open Graph
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <FormField
-                      control={form.control}
-                      name="ogImageUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Open Graph / Social Share Image <span className="text-muted-foreground font-normal text-xs">(optional)</span></FormLabel>
-                          <FormControl>
-                            <CmsImageUpload
-                              value={field.value ?? ""}
-                              onChange={field.onChange}
-                              helpText="Shown when the article is shared on social media. Recommended: 1200 × 630 px. Defaults to cover image, then global OG image."
-                              data-testid="og-image-upload"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                        Social / Open Graph
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <FormField
+                        control={form.control}
+                        name="ogImageUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              Open Graph / Social Share Image{" "}
+                              <span className="text-muted-foreground font-normal text-xs">
+                                (optional)
+                              </span>
+                            </FormLabel>
+                            <FormControl>
+                              <CmsImageUpload
+                                value={field.value ?? ""}
+                                onChange={field.onChange}
+                                helpText="Shown when the article is shared on social media. Recommended: 1200 × 630 px. Defaults to cover image, then global OG image."
+                                data-testid="og-image-upload"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
 
-                <SeoPreview
-                  title={watchSeoTitle || watchBlogTitle || ""}
-                  description={watchSeoDescription || ""}
-                  url={`${typeof window !== "undefined" ? window.location.origin : ""}/insights/${currentSlug || ""}`}
-                  ogImage={watchOgImageUrl || watchCoverImageUrl || ""}
-                  source="post"
-                  data-testid="seo-preview-panel"
-                />
+                  <SeoPreview
+                    title={watchSeoTitle || watchBlogTitle || ""}
+                    description={watchSeoDescription || ""}
+                    url={`${typeof window !== "undefined" ? window.location.origin : ""}/insights/${currentSlug || ""}`}
+                    ogImage={watchOgImageUrl || watchCoverImageUrl || ""}
+                    source="post"
+                    data-testid="seo-preview-panel"
+                  />
 
-                <StructuredDataStatus
-                  contentType="post"
-                  fields={{
-                    hasTitle: !!(watchSeoTitle || watchBlogTitle),
-                    hasDescription: !!watchSeoDescription,
-                    hasImage: !!(watchOgImageUrl || watchCoverImageUrl),
-                    hasAuthor: !!watchAuthorName,
-                    hasDate: !!isPublished,
-                    noindex: !!watchNoindex,
-                    isPublished: !!isPublished,
-                  }}
-                  data-testid="structured-data-status"
-                />
-              </TabsContent>
-            </Tabs>
-          </form>
-        </Form>
+                  <StructuredDataStatus
+                    contentType="post"
+                    fields={{
+                      hasTitle: !!(watchSeoTitle || watchBlogTitle),
+                      hasDescription: !!watchSeoDescription,
+                      hasImage: !!(watchOgImageUrl || watchCoverImageUrl),
+                      hasAuthor: !!watchAuthorName,
+                      hasDate: !!isPublished,
+                      noindex: !!watchNoindex,
+                      isPublished: !!isPublished,
+                    }}
+                    data-testid="structured-data-status"
+                  />
+                </TabsContent>
+              </Tabs>
+            </form>
+          </Form>
         </div>
 
         <div className="flex justify-end pb-8">

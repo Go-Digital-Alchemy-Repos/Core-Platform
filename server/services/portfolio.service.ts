@@ -24,16 +24,30 @@ export async function getPortfolioSettings(): Promise<PortfolioSettings> {
     projectsLabel: settings.projects_label ?? DEFAULT_PORTFOLIO_SETTINGS.projectsLabel,
     projectLabel: settings.project_label ?? DEFAULT_PORTFOLIO_SETTINGS.projectLabel,
     showSearch: normalizeBoolean(settings.show_search, DEFAULT_PORTFOLIO_SETTINGS.showSearch),
-    showIndustryFilter: normalizeBoolean(settings.show_industry_filter, DEFAULT_PORTFOLIO_SETTINGS.showIndustryFilter),
-    showCategoryFilter: normalizeBoolean(settings.show_category_filter, DEFAULT_PORTFOLIO_SETTINGS.showCategoryFilter),
-    showLocationFilter: normalizeBoolean(settings.show_location_filter, DEFAULT_PORTFOLIO_SETTINGS.showLocationFilter),
-    sharingEnabled: normalizeBoolean(settings.sharing_enabled, DEFAULT_PORTFOLIO_SETTINGS.sharingEnabled),
+    showIndustryFilter: normalizeBoolean(
+      settings.show_industry_filter,
+      DEFAULT_PORTFOLIO_SETTINGS.showIndustryFilter,
+    ),
+    showCategoryFilter: normalizeBoolean(
+      settings.show_category_filter,
+      DEFAULT_PORTFOLIO_SETTINGS.showCategoryFilter,
+    ),
+    showLocationFilter: normalizeBoolean(
+      settings.show_location_filter,
+      DEFAULT_PORTFOLIO_SETTINGS.showLocationFilter,
+    ),
+    sharingEnabled: normalizeBoolean(
+      settings.sharing_enabled,
+      DEFAULT_PORTFOLIO_SETTINGS.sharingEnabled,
+    ),
     defaultCtaLabel: settings.default_cta_label ?? DEFAULT_PORTFOLIO_SETTINGS.defaultCtaLabel,
     defaultCtaUrl: settings.default_cta_url ?? DEFAULT_PORTFOLIO_SETTINGS.defaultCtaUrl,
   });
 }
 
-export async function savePortfolioSettings(settings: PortfolioSettings): Promise<PortfolioSettings> {
+export async function savePortfolioSettings(
+  settings: PortfolioSettings,
+): Promise<PortfolioSettings> {
   const parsed = portfolioSettingsSchema.parse(settings);
   const values: Record<string, string> = {
     industry_preset: parsed.industryPreset,

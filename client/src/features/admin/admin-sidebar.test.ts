@@ -66,7 +66,8 @@ describe("buildNavGroups", () => {
     );
 
     const membershipGroup = groups.find((group) => group.label === "Membership");
-    const membershipChildren = membershipGroup?.items.find((item) => item.title === "Membership")?.children ?? [];
+    const membershipChildren =
+      membershipGroup?.items.find((item) => item.title === "Membership")?.children ?? [];
 
     expect(membershipChildren.map((item) => ({ title: item.title, href: item.href }))).toEqual([
       { title: "Plans", href: "/admin/membership" },
@@ -84,7 +85,8 @@ describe("buildNavGroups", () => {
     );
 
     const portfolioGroup = groups.find((group) => group.label === "Portfolio");
-    const portfolioChildren = portfolioGroup?.items.find((item) => item.title === "Portfolio")?.children ?? [];
+    const portfolioChildren =
+      portfolioGroup?.items.find((item) => item.title === "Portfolio")?.children ?? [];
 
     expect(portfolioChildren.map((item) => ({ title: item.title, href: item.href }))).toEqual([
       { title: "Add New", href: "/admin/portfolio/new" },
@@ -101,7 +103,8 @@ describe("buildNavGroups", () => {
     );
 
     const careersGroup = groups.find((group) => group.label === "Career Center");
-    const careersChildren = careersGroup?.items.find((item) => item.title === "Careers")?.children ?? [];
+    const careersChildren =
+      careersGroup?.items.find((item) => item.title === "Careers")?.children ?? [];
 
     expect(careersChildren.map((item) => ({ title: item.title, href: item.href }))).toEqual([
       { title: "Add New", href: "/admin/careers/new" },

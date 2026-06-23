@@ -4,7 +4,9 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const seoSettings = pgTable("seo_settings", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   siteName: text("site_name").default("Core Platform"),
   titleSuffix: text("title_suffix").default(" | Core Platform"),
   defaultMetaDescription: text("default_meta_description"),

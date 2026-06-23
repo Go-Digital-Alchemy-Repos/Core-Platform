@@ -1,4 +1,7 @@
-import { getShippingProviderDefinition, type EcommerceShippingProviderCapability } from "./ecommerce-shipping-provider.service";
+import {
+  getShippingProviderDefinition,
+  type EcommerceShippingProviderCapability,
+} from "./ecommerce-shipping-provider.service";
 
 export interface ShippingProviderAddress {
   name?: string;
@@ -133,7 +136,8 @@ export class EasyPostShippingProviderClient extends UnsupportedShippingProviderC
 
   async purchaseLabel(request: ShippingLabelPurchaseRequest): Promise<ShippingLabelPurchase> {
     this.assertConfigured();
-    if (!request.providerRateId) throw new Error("EasyPost rate id is required to purchase a label");
+    if (!request.providerRateId)
+      throw new Error("EasyPost rate id is required to purchase a label");
     throw new Error("EasyPost label purchase transport is not connected yet");
   }
 
@@ -142,7 +146,10 @@ export class EasyPostShippingProviderClient extends UnsupportedShippingProviderC
   }
 }
 
-export function createShippingProviderClient(provider: string, credentials: Record<string, string> = {}): ShippingProviderClient {
+export function createShippingProviderClient(
+  provider: string,
+  credentials: Record<string, string> = {},
+): ShippingProviderClient {
   if (provider === "easypost") return new EasyPostShippingProviderClient(credentials);
   return new UnsupportedShippingProviderClient(provider);
 }
@@ -182,7 +189,12 @@ export function inferCarrierTrackingUrl(params: {
 }
 
 function normalizeCarrier(carrier?: string | null): string {
-  return carrier?.trim().toLowerCase().replace(/[^a-z0-9]+/g, " ") ?? "";
+  return (
+    carrier
+      ?.trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ") ?? ""
+  );
 }
 
 function toEasyPostAddress(address: ShippingProviderAddress) {

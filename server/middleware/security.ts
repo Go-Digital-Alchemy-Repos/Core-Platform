@@ -4,10 +4,7 @@ import rateLimit from "express-rate-limit";
 import { logger } from "../utils/logger";
 
 const isDev = process.env.NODE_ENV !== "production";
-const originCheckExemptPaths = new Set([
-  "/api/stripe/webhook",
-  "/api/ecommerce/webhook/stripe",
-]);
+const originCheckExemptPaths = new Set(["/api/stripe/webhook", "/api/ecommerce/webhook/stripe"]);
 
 export function enforceRequiredSecrets() {
   if (isDev) return;
@@ -47,7 +44,12 @@ export function securityHeaders(): RequestHandler {
           "https://analytics.tiktok.com",
           "https://static.ads-twitter.com",
         ],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com"],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://fonts.googleapis.com",
+          "https://unpkg.com",
+        ],
         fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
         imgSrc: [
           "'self'",
@@ -85,12 +87,7 @@ export function securityHeaders(): RequestHandler {
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
         formAction: ["'self'"],
-        mediaSrc: [
-          "'self'",
-          "blob:",
-          "https://*.r2.cloudflarestorage.com",
-          "https://*.r2.dev",
-        ],
+        mediaSrc: ["'self'", "blob:", "https://*.r2.cloudflarestorage.com", "https://*.r2.dev"],
         workerSrc: ["'self'", "blob:"],
       },
     },

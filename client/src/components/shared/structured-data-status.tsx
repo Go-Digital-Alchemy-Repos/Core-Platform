@@ -28,7 +28,10 @@ interface StructuredDataStatusProps {
   className?: string;
 }
 
-function buildChecks(contentType: ContentType, fields: StructuredDataStatusProps["fields"]): SchemaCheck[] {
+function buildChecks(
+  contentType: ContentType,
+  fields: StructuredDataStatusProps["fields"],
+): SchemaCheck[] {
   const checks: SchemaCheck[] = [];
 
   checks.push({
@@ -95,7 +98,9 @@ function buildChecks(contentType: ContentType, fields: StructuredDataStatusProps
       type: "FAQPage",
       label: "FAQPage",
       applies: !!fields.hasFaqBlocks,
-      condition: fields.hasFaqBlocks ? undefined : "Only emitted when the page contains a FAQ block",
+      condition: fields.hasFaqBlocks
+        ? undefined
+        : "Only emitted when the page contains a FAQ block",
       missingFields: [],
     });
   }
@@ -119,10 +124,12 @@ function SchemaRow({ check }: { check: SchemaCheck }) {
         )}
       </div>
       <div className="min-w-0">
-        <span className={cn(
-          "text-xs font-medium",
-          isConditionallyOff ? "text-muted-foreground/60" : "text-foreground"
-        )}>
+        <span
+          className={cn(
+            "text-xs font-medium",
+            isConditionallyOff ? "text-muted-foreground/60" : "text-foreground",
+          )}
+        >
           {check.label}
         </span>
         {check.condition && (
@@ -179,7 +186,8 @@ export function StructuredDataStatus({
         <div className="mt-3 flex items-start gap-1.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded px-2 py-1.5">
           <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
           <span>
-            <strong>Noindex is on.</strong> Search engines won't crawl this content, and structured data won't contribute to rich results.
+            <strong>Noindex is on.</strong> Search engines won't crawl this content, and structured
+            data won't contribute to rich results.
           </span>
         </div>
       )}
@@ -187,7 +195,9 @@ export function StructuredDataStatus({
       {unpublishedWarning && (
         <div className="mt-3 flex items-start gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/20 rounded px-2 py-1.5">
           <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
-          <span>Content is not yet published. Structured data won't be active until published.</span>
+          <span>
+            Content is not yet published. Structured data won't be active until published.
+          </span>
         </div>
       )}
     </div>

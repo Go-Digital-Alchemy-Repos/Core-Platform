@@ -94,5 +94,14 @@ export function useSeo({
         removeMeta(meta.name, meta.property);
       }
     };
-  }, [title, description, ogImage, canonical, noindex, ogType, twitterCard, JSON.stringify(extraMeta)]);
+  }, [
+    title,
+    description,
+    ogImage,
+    canonical,
+    noindex,
+    ogType,
+    twitterCard,
+    JSON.stringify(extraMeta),
+  ]);
 }

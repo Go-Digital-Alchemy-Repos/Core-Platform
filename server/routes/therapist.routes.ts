@@ -20,7 +20,7 @@ router.get(
       return;
     }
     res.json(profile);
-  })
+  }),
 );
 
 router.put(
@@ -37,7 +37,7 @@ router.put(
     const updated = await storage.therapists.updateProfile(profile.id, enrichedData);
     await storage.activity.log(req.user!.id, "profile_update", "Profile updated by provider");
     res.json(updated);
-  })
+  }),
 );
 
 router.get(
@@ -45,7 +45,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const subscription = await storage.subscriptions.getSubscriptionByTherapist(req.user!.id);
     res.json(subscription || null);
-  })
+  }),
 );
 
 export default router;

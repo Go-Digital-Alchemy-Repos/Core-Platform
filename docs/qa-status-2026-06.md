@@ -1,6 +1,6 @@
 # QA Status - June 2026
 
-Current as of June 18, 2026 after the production reconciliation, branch cleanup, and lint cleanup passes.
+Current as of June 23, 2026 after the handoff cleanup pass.
 
 ## Release State
 
@@ -8,8 +8,8 @@ Current as of June 18, 2026 after the production reconciliation, branch cleanup,
 - `main`, `origin/main`, and the local checkout are expected to stay aligned after each release push.
 - Latest release gates passed before deployment:
   - `npm run check`
-  - `npm run lint -- --quiet`
-  - `npm test` with 359 passing tests
+  - `npm run lint`
+  - `npm test` with 361 passing tests
   - `npm run build`
   - `npm run budget`
 

@@ -117,16 +117,17 @@ describe("AdminFormsPage", () => {
         unobserve() {}
       },
     );
-    vi.stubGlobal(
-      "navigator",
-      {
-        clipboard: {
-          writeText: vi.fn(),
-        },
-      } as unknown as Navigator,
-    );
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    vi.stubGlobal("navigator", {
+      clipboard: {
+        writeText: vi.fn(),
+      },
+    } as unknown as Navigator);
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -176,7 +177,7 @@ describe("AdminFormsPage", () => {
     });
 
     const saveButton = Array.from(document.body.querySelectorAll("button")).find((button) =>
-      button.textContent?.includes("Save Form")
+      button.textContent?.includes("Save Form"),
     ) as HTMLButtonElement | undefined;
     expect(saveButton).toBeTruthy();
 
@@ -190,7 +191,7 @@ describe("AdminFormsPage", () => {
         id: "form-1",
         name: "Contact Form",
         slug: "contact-form",
-      })
+      }),
     );
   });
 });

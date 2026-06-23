@@ -87,7 +87,12 @@ export function LoginDialog({
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="you@example.com" data-testid="input-login-email" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      data-testid="input-login-email"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -100,13 +105,23 @@ export function LoginDialog({
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Enter your password" data-testid="input-login-password" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="Enter your password"
+                      data-testid="input-login-password"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isPending} data-testid="button-login-submit">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isPending}
+              data-testid="button-login-submit"
+            >
               {isPending ? (
                 <LoadingSpinner className="h-4 w-4 mr-2" />
               ) : (
