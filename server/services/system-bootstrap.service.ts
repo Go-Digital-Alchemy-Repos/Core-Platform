@@ -13,6 +13,7 @@ import { seedBlogPosts } from "../scripts/seed-blog";
 import { storage } from "../storage";
 
 const CAROLINA_DEFAULT_LOGO_URL = "/carolina/logo-full.png";
+const CAROLINA_DEFAULT_FAVICON_URL = "/carolina/logo-icon.png";
 
 async function ensureCarolinaBrandingDefaults() {
   const currentLogo = await storage.settings.getSetting("frontend_logo_url");
@@ -20,6 +21,16 @@ async function ensureCarolinaBrandingDefaults() {
     await storage.settings.upsertSetting(
       "frontend_logo_url",
       CAROLINA_DEFAULT_LOGO_URL,
+      "branding",
+      false,
+    );
+  }
+
+  const currentFavicon = await storage.settings.getSetting("favicon_url");
+  if (!currentFavicon) {
+    await storage.settings.upsertSetting(
+      "favicon_url",
+      CAROLINA_DEFAULT_FAVICON_URL,
       "branding",
       false,
     );
