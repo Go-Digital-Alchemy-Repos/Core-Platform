@@ -13,6 +13,21 @@ import {
 import { CAROLINA_BRAND, blogImagePath, imagePath } from "@shared/carolina-site";
 
 type Props = Record<string, unknown>;
+type RichContentNode = {
+  tag: "p" | "h2" | "h3" | "ul" | "ol";
+  text: string;
+  html: string;
+};
+
+type RichContentSection = {
+  heading?: RichContentNode;
+  children: RichContentNode[];
+};
+
+type TopicCard = {
+  title: string;
+  bodyHtml: string;
+};
 
 function str(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
@@ -28,6 +43,159 @@ function bool(value: unknown, fallback = false) {
 
 function html(value: unknown) {
   return { __html: str(value) };
+}
+
+function parseRichContentSections(content: string): RichContentSection[] | null {
+  if (!content || typeof window === "undefined" || typeof window.DOMParser === "undefined") {
+    return null;
+  }
+
+  const doc = new window.DOMParser().parseFromString(`<div>${content}</div>`, "text/html");
+  const root = doc.body.firstElementChild;
+  if (!root) return null;
+
+  const nodes = Array.from(root.children)
+    .map((element) => {
+      const tag = element.tagName.toLowerCase();
+      if (!["p", "h2", "h3", "ul", "ol"].includes(tag)) return null;
+      return {
+        tag: tag as RichContentNode["tag"],
+        text: element.textContent?.replace(/\s+/g, " ").trim() ?? "",
+        html: element.innerHTML,
+      };
+    })
+    .filter((node): node is RichContentNode => Boolean(node && node.text));
+
+  if (nodes.length === 0) return null;
+
+  const sections: RichContentSection[] = [{ children: [] }];
+  for (const node of nodes) {
+    if (node.tag === "h2") {
+      sections.push({ heading: node, children: [] });
+      continue;
+    }
+    sections[sections.length - 1].children.push(node);
+  }
+
+  return sections.filter((section) => section.heading || section.children.length > 0);
+}
+
+function richNodesHtml(nodes: RichContentNode[]) {
+  return nodes.map((node) => `<${node.tag}>${node.html}</${node.tag}>`).join("");
+}
+
+function groupHeadingCards(nodes: RichContentNode[]): {
+  lead: RichContentNode[];
+  cards: TopicCard[];
+} {
+  const lead: RichContentNode[] = [];
+  const cards: TopicCard[] = [];
+  let current: { title: string; nodes: RichContentNode[] } | null = null;
+
+  for (const node of nodes) {
+    if (node.tag === "h3") {
+      if (current) cards.push({ title: current.title, bodyHtml: richNodesHtml(current.nodes) });
+      current = { title: node.text, nodes: [] };
+      continue;
+    }
+
+    if (current) {
+      current.nodes.push(node);
+    } else {
+      lead.push(node);
+    }
+  }
+
+  if (current) cards.push({ title: current.title, bodyHtml: richNodesHtml(current.nodes) });
+  return { lead, cards };
+}
+
+function labeledParagraphCards(nodes: RichContentNode[]) {
+  const paragraphNodes = nodes.filter((node) => node.tag === "p");
+  if (paragraphNodes.length < 2) return [];
+
+  const cards = paragraphNodes
+    .map((node) => {
+      const match = node.text.match(/^([^:]{3,70}):\s+(.+)$/);
+      if (!match) return null;
+      return {
+        title: match[1].trim(),
+        bodyHtml: node.html.replace(/^([^:]{3,70}):\s*/, ""),
+      };
+    })
+    .filter((card): card is TopicCard => Boolean(card));
+
+  return cards.length === paragraphNodes.length ? cards : [];
+}
+
+function getTopicImage(title: string, index = 0) {
+  const normalized = title.toLowerCase();
+  const matches: Array<[string[], string]> = [
+    [["custom landscape", "landscape design", "design plan"], "gallery-res-2.png"],
+    [["sod", "turf", "grass variety"], "hero-home.png"],
+    [["seasonal", "color", "flower", "annual"], "gallery-res-3.png"],
+    [["consultation", "assessment", "walkthrough"], "gallery-res-1.png"],
+    [["installation", "plant sourcing", "plant selection"], "hero-mulch.png"],
+    [
+      ["drain", "french", "basin", "downspout", "standing water", "erosion", "swale"],
+      "hero-drainage.png",
+    ],
+    [
+      [
+        "hardscape",
+        "patio",
+        "walkway",
+        "pathway",
+        "retaining",
+        "wall",
+        "step",
+        "stair",
+        "paver",
+        "stone",
+        "brick",
+        "concrete",
+      ],
+      "hero-hardscape.png",
+    ],
+    [["mulch", "plant", "shrub", "bed", "tree"], "hero-mulch.png"],
+    [
+      ["commercial", "parking", "tenant", "hoa", "community", "grounds", "property manager"],
+      "hero-commercial.png",
+    ],
+    [
+      [
+        "mow",
+        "edging",
+        "blowing",
+        "weed",
+        "fertil",
+        "insect",
+        "lime",
+        "leaf",
+        "pruning",
+        "contract",
+        "lawn",
+      ],
+      "hero-home.png",
+    ],
+  ];
+
+  const match = matches.find(([keywords]) =>
+    keywords.some((keyword) => normalized.includes(keyword)),
+  );
+  if (match) return imagePath(match[1]);
+
+  const fallbackImages = [
+    "gallery-res-1.png",
+    "gallery-res-2.png",
+    "gallery-res-3.png",
+    "hero-home.png",
+    "hero-hardscape.png",
+    "hero-mulch.png",
+    "hero-drainage.png",
+    "hero-commercial.png",
+  ];
+  return imagePath(fallbackImages[index % fallbackImages.length]);
 }
 
 export function CarolinaHeroBlock({ props }: { props: Props }) {
@@ -99,6 +267,8 @@ export function CarolinaIntroHeroBlock({ props }: { props: Props }) {
 }
 
 export function CarolinaRichContentBlock({ props }: { props: Props }) {
+  const sections = useMemo(() => parseRichContentSections(str(props.content)), [props.content]);
+
   return (
     <section className="bg-background">
       <div className="max-w-7xl mx-auto px-4 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
@@ -107,10 +277,14 @@ export function CarolinaRichContentBlock({ props }: { props: Props }) {
             bool(props.showSidebar, false) ? "lg:col-span-8" : "lg:col-span-10 lg:col-start-2"
           }
         >
-          <div
-            className="prose prose-stone lg:prose-lg max-w-none prose-headings:font-extrabold prose-h2:text-3xl prose-h2:mt-14 prose-h2:mb-5 prose-h3:text-xl prose-p:font-medium prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:font-medium prose-li:text-muted-foreground"
-            dangerouslySetInnerHTML={html(props.content)}
-          />
+          {sections ? (
+            <VisualRichContent sections={sections} />
+          ) : (
+            <div
+              className="prose prose-stone lg:prose-lg max-w-none prose-headings:font-extrabold prose-h2:text-3xl prose-h2:mt-14 prose-h2:mb-5 prose-h3:text-xl prose-p:font-medium prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:font-medium prose-li:text-muted-foreground"
+              dangerouslySetInnerHTML={html(props.content)}
+            />
+          )}
           {arr<{ question: string; answer: string }>(props.faqs).length > 0 ? (
             <FaqAccordion items={arr(props.faqs)} />
           ) : null}
@@ -137,6 +311,137 @@ export function CarolinaRichContentBlock({ props }: { props: Props }) {
         ) : null}
       </div>
     </section>
+  );
+}
+
+function VisualRichContent({ sections }: { sections: RichContentSection[] }) {
+  return (
+    <div className="space-y-14">
+      {sections.map((section, index) => (
+        <VisualRichContentSection
+          key={`${section.heading?.text ?? "intro"}-${index}`}
+          section={section}
+          index={index}
+        />
+      ))}
+    </div>
+  );
+}
+
+function VisualRichContentSection({
+  section,
+  index,
+}: {
+  section: RichContentSection;
+  index: number;
+}) {
+  const { lead, cards } = groupHeadingCards(section.children);
+  const labeledCards = cards.length === 0 ? labeledParagraphCards(section.children) : [];
+  const sectionCards = cards.length >= 2 ? cards : labeledCards;
+  const sectionLead = cards.length >= 2 ? lead : [];
+  const hasHeading = Boolean(section.heading);
+
+  if (!hasHeading) {
+    return (
+      <section className="overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-sm">
+        <div className="aspect-[16/7] bg-muted">
+          <img
+            src={getTopicImage(section.children.map((node) => node.text).join(" "), index)}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        </div>
+        <div
+          className="prose prose-stone max-w-none p-6 prose-p:font-medium prose-p:text-muted-foreground prose-p:leading-relaxed md:p-8 lg:prose-lg"
+          dangerouslySetInnerHTML={{ __html: richNodesHtml(section.children) }}
+        />
+      </section>
+    );
+  }
+
+  if (sectionCards.length >= 2) {
+    return (
+      <section>
+        <div className="mb-8 max-w-3xl">
+          <h2 className="text-3xl md:text-4xl font-extrabold leading-tight">
+            {section.heading?.text}
+          </h2>
+          {sectionLead.length > 0 ? (
+            <div
+              className="prose prose-stone mt-4 max-w-none prose-p:text-muted-foreground prose-p:font-medium prose-p:leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: richNodesHtml(sectionLead) }}
+            />
+          ) : null}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {sectionCards.map((card, cardIndex) => (
+            <TopicImageCard
+              key={`${section.heading?.text}-${card.title}`}
+              title={card.title}
+              bodyHtml={card.bodyHtml}
+              imageUrl={getTopicImage(card.title, index + cardIndex)}
+            />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      className={`grid grid-cols-1 overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-sm lg:grid-cols-2 ${
+        index % 2 === 0 ? "" : "lg:[&_.visual-section-image]:order-2"
+      }`}
+    >
+      <div className="visual-section-image min-h-64 bg-muted">
+        <img
+          src={getTopicImage(section.heading?.text ?? "", index)}
+          alt=""
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      </div>
+      <div className="p-6 md:p-8 lg:p-10">
+        <h2 className="text-2xl md:text-3xl font-extrabold leading-tight">
+          {section.heading?.text}
+        </h2>
+        <div
+          className="prose prose-stone mt-5 max-w-none prose-p:text-muted-foreground prose-p:font-medium prose-p:leading-relaxed prose-li:text-muted-foreground prose-li:font-medium"
+          dangerouslySetInnerHTML={{ __html: richNodesHtml(section.children) }}
+        />
+      </div>
+    </section>
+  );
+}
+
+function TopicImageCard({
+  title,
+  bodyHtml,
+  imageUrl,
+}: {
+  title: string;
+  bodyHtml: string;
+  imageUrl: string;
+}) {
+  return (
+    <article className="group h-full overflow-hidden rounded-[1.25rem] border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
+      <div className="aspect-[16/10] overflow-hidden bg-muted">
+        <img
+          src={imageUrl}
+          alt=""
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+        />
+      </div>
+      <div className="p-6">
+        <h3 className="text-xl font-extrabold leading-tight">{title}</h3>
+        <div
+          className="prose prose-stone mt-4 max-w-none prose-p:text-sm prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground prose-li:text-sm prose-li:text-muted-foreground"
+          dangerouslySetInnerHTML={{ __html: bodyHtml }}
+        />
+      </div>
+    </article>
   );
 }
 
