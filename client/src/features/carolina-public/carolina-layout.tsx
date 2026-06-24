@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { ArrowRight, ChevronDown, Mail, MapPin, Menu, Phone, X } from "lucide-react";
+import { useBranding } from "@/components/shared/branding-provider";
 import { Button } from "@/components/ui/button";
 import {
   CAROLINA_BRAND,
@@ -13,9 +14,11 @@ import {
 const logoFull = imagePath("logo-full.png");
 
 export function CarolinaLayout({ children }: { children: ReactNode }) {
+  const { frontendLogoUrl } = useBranding();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
+  const brandLogo = frontendLogoUrl || logoFull;
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -57,7 +60,7 @@ export function CarolinaLayout({ children }: { children: ReactNode }) {
         <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
           <Link href="/" className="flex items-center group z-50">
             <img
-              src={logoFull}
+              src={brandLogo}
               alt={CAROLINA_BRAND.name}
               className="h-9 md:h-11 w-auto group-hover:scale-105 transition-transform"
             />
@@ -196,7 +199,7 @@ export function CarolinaLayout({ children }: { children: ReactNode }) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             <div className="space-y-6">
               <img
-                src={logoFull}
+                src={brandLogo}
                 alt={CAROLINA_BRAND.name}
                 className="h-10 w-auto brightness-0 invert"
               />
