@@ -215,11 +215,15 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
   const bgPosY = Math.max(0, Math.min(100, num(props.backgroundPositionY as number, 50)));
   const isSplit = layout === "split";
   const overlayStrength = Math.max(0, Math.min(opacity, 100)) / 100;
+  const useRoundedCarolinaHeroImage = Boolean(bg && bg.includes("/carolina/") && !videoBg);
   const sectionStyleConfig = getSectionStyleConfig(props, {
     resolveAssetUrl: resolveCmsAssetUrl,
   });
   const overlayStyle = {
-    backgroundColor: hexToRgba(overlayColor, overlayStrength),
+    backgroundColor: hexToRgba(
+      overlayColor,
+      useRoundedCarolinaHeroImage ? Math.min(overlayStrength, 0.35) : overlayStrength,
+    ),
   };
   const headingTextStyle = colorStyle(props.headingColor);
   const accentHeadingTextStyle = colorStyle(props.accentHeadingColor);
@@ -227,13 +231,13 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
 
   return (
     <section
-      className={`relative flex items-center overflow-hidden ${isSplit ? "justify-start text-left" : "justify-center text-center"}`}
+      className={`relative flex items-center overflow-hidden ${useRoundedCarolinaHeroImage ? "bg-background py-4 md:py-6" : ""} ${isSplit ? "justify-start text-left" : "justify-center text-center"}`}
       style={{
         minHeight: minHeightStyle,
         ...(sectionStyleConfig.backgroundColor
           ? { backgroundColor: sectionStyleConfig.backgroundColor }
           : {}),
-        ...(bg && !videoBg
+        ...(bg && !videoBg && !useRoundedCarolinaHeroImage
           ? {
               backgroundImage: `url(${bg})`,
               backgroundSize: "cover",
@@ -244,6 +248,17 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
             : {}),
       }}
     >
+      {useRoundedCarolinaHeroImage && (
+        <div className="absolute inset-4 z-0 overflow-hidden rounded-[1.75rem] shadow-2xl md:inset-6">
+          <img
+            src={bg}
+            alt=""
+            className="h-full w-full object-cover"
+            style={{ objectPosition: `${bgPosX}% ${bgPosY}%` }}
+          />
+          <div className="absolute inset-0" style={overlayStyle} />
+        </div>
+      )}
       {videoBg && (
         <video
           autoPlay
@@ -255,7 +270,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
           <source src={videoBg} type="video/mp4" />
         </video>
       )}
-      <div className="absolute inset-0" style={overlayStyle} />
+      {!useRoundedCarolinaHeroImage && <div className="absolute inset-0" style={overlayStyle} />}
       <div className={`relative z-10 px-8 py-16 ${isSplit ? "max-w-2xl" : "max-w-3xl mx-auto"}`}>
         {badge && (
           <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-semibold mb-4 border border-accent/30">

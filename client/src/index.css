@@ -287,6 +287,12 @@
   letter-spacing: 0;
 }
 
+.carolina-theme main .prose img,
+.carolina-theme main .public-prose img {
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-md);
+}
+
 :root.dark.admin-mode {
   --background: 222 47% 8%;
   --foreground: 210 40% 96%;

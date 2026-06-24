@@ -37,26 +37,27 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
 
   return (
     <section
-      className={`relative w-full ${minHeight} flex items-center bg-foreground overflow-hidden`}
+      className={`relative w-full ${minHeight} flex items-center bg-background overflow-hidden py-4 md:py-6`}
     >
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-4 z-0 overflow-hidden rounded-[1.75rem] shadow-2xl md:inset-6">
         <img
           src={str(props.imageUrl, imagePath("hero-home.png"))}
           alt={str(props.imageAlt, str(props.heading, CAROLINA_BRAND.name))}
-          className="w-full h-full object-cover opacity-40 mix-blend-overlay"
+          className="w-full h-full object-cover opacity-85"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-foreground via-foreground/80 to-transparent" />
+        <div className="absolute inset-0 bg-foreground/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-foreground/70 via-foreground/25 to-transparent" />
       </div>
       <div
         className={`relative z-10 max-w-7xl mx-auto px-4 w-full pt-20 ${align === "center" ? "text-center" : ""}`}
       >
         <div className={align === "center" ? "max-w-4xl mx-auto" : "max-w-3xl"}>
           {str(props.badge) ? (
-            <span className="inline-block py-1 px-3 rounded-sm bg-primary/20 text-primary font-bold tracking-widest text-sm mb-6 border border-primary/30 uppercase">
+            <span className="inline-block py-1 px-3 rounded-md bg-white/15 text-white font-bold tracking-widest text-sm mb-6 border border-white/25 uppercase backdrop-blur-sm">
               {str(props.badge)}
             </span>
           ) : null}
-          <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 leading-[1.1] tracking-normal">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-6 leading-[1.08] tracking-normal">
             {str(props.heading)}
           </h1>
           {str(props.subheading) ? (
@@ -205,7 +206,7 @@ export function CarolinaGalleryGridBlock({ props }: { props: Props }) {
           {arr<{ src: string; alt: string }>(props.images).map((image) => (
             <div
               key={image.src}
-              className={`${str(props.aspect, "square") === "video" ? "aspect-video" : "aspect-square"} rounded-xl overflow-hidden border border-border shadow-sm group`}
+              className={`${str(props.aspect, "square") === "video" ? "aspect-video" : "aspect-square"} overflow-hidden rounded-[1.5rem] border border-border shadow-md group`}
             >
               <img
                 src={image.src}
@@ -257,8 +258,8 @@ export function CarolinaBlogIndexBlock({ props }: { props: Props }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {visiblePosts.map((post) => (
             <Link key={post.slug} href={`/blog/${post.slug}`}>
-              <article className="h-full bg-card border border-border rounded-lg hover:border-muted-foreground/40 transition-colors cursor-pointer group flex flex-col overflow-hidden">
-                <div className="relative aspect-[16/9] overflow-hidden bg-muted">
+              <article className="h-full bg-card border border-border rounded-[1.25rem] hover:border-muted-foreground/40 transition-colors cursor-pointer group flex flex-col overflow-hidden">
+                <div className="relative m-3 mb-0 aspect-[16/9] overflow-hidden rounded-[1rem] bg-muted">
                   <img
                     src={blogImagePath(post.image)}
                     alt={post.h1}
