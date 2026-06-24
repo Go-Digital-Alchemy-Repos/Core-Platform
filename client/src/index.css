@@ -250,22 +250,22 @@
 }
 
 .carolina-theme {
-  --background: 0 0% 96%;
+  --background: 42 26% 96%;
   --foreground: 153 55% 15%;
-  --border: 0 0% 85%;
-  --input: 0 0% 85%;
+  --border: 92 14% 82%;
+  --input: 92 14% 82%;
   --ring: 153 55% 15%;
   --card: 0 0% 100%;
   --card-foreground: 153 55% 15%;
-  --card-border: 0 0% 90%;
+  --card-border: 92 14% 86%;
   --popover: 0 0% 100%;
   --popover-foreground: 153 55% 15%;
-  --popover-border: 0 0% 90%;
+  --popover-border: 92 14% 86%;
   --primary: 92 38% 36%;
   --primary-foreground: 0 0% 100%;
   --secondary: 153 55% 15%;
   --secondary-foreground: 0 0% 100%;
-  --muted: 0 0% 90%;
+  --muted: 86 22% 90%;
   --muted-foreground: 0 0% 40%;
   --accent: 38 36% 68%;
   --accent-foreground: 153 55% 15%;
@@ -291,6 +291,18 @@
 .carolina-theme main .public-prose img {
   border-radius: 1.25rem;
   box-shadow: var(--shadow-md);
+}
+
+.carolina-theme .carolina-eyebrow {
+  color: hsl(var(--primary));
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.carolina-theme .carolina-section-band {
+  background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.45) 100%);
 }
 
 :root.dark.admin-mode {

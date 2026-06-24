@@ -33,7 +33,7 @@ export function CarolinaLayout({ children }: { children: ReactNode }) {
   }, [location]);
 
   return (
-    <div className="carolina-theme min-h-screen flex flex-col font-sans bg-background text-foreground">
+    <div className="carolina-theme min-h-screen flex flex-col overflow-x-hidden font-sans bg-background text-foreground">
       <div className="bg-primary text-primary-foreground py-2 px-4 hidden md:block text-sm font-medium tracking-wide">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-6">
