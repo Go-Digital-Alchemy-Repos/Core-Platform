@@ -47,6 +47,42 @@ const RATIO_CLASS = {
   "16/9": "aspect-video",
 };
 
+const GRID_COLUMN_CLASS: {
+  mobile: Record<number, string>;
+  tablet: Record<number, string>;
+  desktop: Record<number, string>;
+} = {
+  mobile: {
+    1: "grid-cols-1",
+    2: "grid-cols-2",
+  },
+  tablet: {
+    1: "sm:grid-cols-1",
+    2: "sm:grid-cols-2",
+    3: "sm:grid-cols-3",
+    4: "sm:grid-cols-4",
+  },
+  desktop: {
+    1: "lg:grid-cols-1",
+    2: "lg:grid-cols-2",
+    3: "lg:grid-cols-3",
+    4: "lg:grid-cols-4",
+    5: "lg:grid-cols-5",
+    6: "lg:grid-cols-6",
+  },
+};
+
+function getCarouselItemVisibilityClass(
+  offset: number,
+  settings: CmsGallerySettings,
+) {
+  return cn(
+    offset >= settings.columnsMobile && "hidden",
+    offset < settings.columnsTablet ? "sm:block" : "sm:hidden",
+    offset < settings.columnsDesktop ? "lg:block" : "lg:hidden",
+  );
+}
+
 interface GalleryRendererProps {
   gallery?: CmsGalleryWithItems | null;
   galleryId?: string | null;
@@ -177,6 +213,16 @@ export function GalleryRenderer({
     if (nextIndex === slideIndex) return;
     setGallerySlide(nextIndex, nextIndex > slideIndex ? "next" : "previous");
   };
+  const carouselVisibleCount = Math.min(Math.max(settings.columnsDesktop, 1), items.length);
+  const carouselItems = Array.from({ length: carouselVisibleCount }, (_, offset) => {
+    const itemIndex = (slideIndex + offset) % items.length;
+    return { item: items[itemIndex], itemIndex, offset };
+  });
+  const carouselSmallestVisibleCount = Math.min(
+    settings.columnsMobile,
+    settings.columnsTablet,
+    settings.columnsDesktop,
+  );
   const transitionClass =
     settings.transitionEffect === "fade"
       ? "cms-gallery-transition-fade"
@@ -200,7 +246,88 @@ export function GalleryRenderer({
       data-testid="cms-gallery-renderer"
       data-gallery-id={gallery.id}
     >
-      {layout === "carousel" || layout === "slider" || layout === "featured" ? (
+      {layout === "carousel" ? (
+        <div className="space-y-4">
+          <div className="relative">
+            <div
+              key={`${slideIndex}-${settings.transitionEffect}-${slideDirection}`}
+              className={cn(
+                "grid",
+                GAP_CLASS[settings.spacing],
+                GRID_COLUMN_CLASS.mobile[settings.columnsMobile],
+                GRID_COLUMN_CLASS.tablet[settings.columnsTablet],
+                GRID_COLUMN_CLASS.desktop[settings.columnsDesktop],
+                transitionClass,
+              )}
+            >
+              {carouselItems.map(({ item, itemIndex, offset }) => (
+                <figure
+                  key={`${item.id ?? item.imageUrl}-${itemIndex}`}
+                  className={cn("group min-w-0", getCarouselItemVisibilityClass(offset, settings))}
+                >
+                  <button
+                    type="button"
+                    className={cn(
+                      "relative block w-full overflow-hidden bg-muted text-left",
+                      slideImageRatioClass,
+                      RADIUS_CLASS[settings.borderRadius],
+                      settings.lightbox && "cursor-zoom-in",
+                    )}
+                    onClick={() => openLightbox(itemIndex)}
+                  >
+                    <img
+                      src={item.imageUrl}
+                      alt={item.alt || item.title || gallery.title}
+                      loading="lazy"
+                      className={cn(
+                        "h-full w-full transition duration-300",
+                        settings.cropMode === "contain" ? "object-contain" : "object-cover",
+                        settings.hoverEffect === "zoom" && "group-hover:scale-105",
+                        settings.hoverEffect === "fade" && "group-hover:opacity-80",
+                        settings.imageRatio === "auto" && "h-auto",
+                      )}
+                    />
+                  </button>
+                  {showInlineMeta &&
+                  ((settings.showTitle && item.title) || (settings.showCaptions && item.caption)) ? (
+                    <figcaption className="mt-2 text-sm text-muted-foreground">
+                      {settings.showTitle && item.title ? (
+                        <span className="font-medium text-foreground">{item.title}</span>
+                      ) : null}
+                      {settings.showTitle && item.title && settings.showCaptions && item.caption ? (
+                        <span> — </span>
+                      ) : null}
+                      {settings.showCaptions ? item.caption : null}
+                    </figcaption>
+                  ) : null}
+                </figure>
+              ))}
+            </div>
+            {items.length > carouselSmallestVisibleCount ? (
+              <>
+                <button
+                  type="button"
+                  className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring md:-left-5"
+                  style={controlStyle}
+                  onClick={previousSlide}
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring md:-right-5"
+                  style={controlStyle}
+                  onClick={nextSlide}
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      ) : layout === "slider" || layout === "featured" ? (
         <div className="space-y-4">
           <div className="relative">
             <img
@@ -278,21 +405,9 @@ export function GalleryRenderer({
           className={cn(
             "grid",
             GAP_CLASS[settings.spacing],
-            settings.columnsMobile === 2 ? "grid-cols-2" : "grid-cols-1",
-            settings.columnsTablet === 3
-              ? "sm:grid-cols-3"
-              : settings.columnsTablet === 4
-                ? "sm:grid-cols-4"
-                : "sm:grid-cols-2",
-            settings.columnsDesktop === 2
-              ? "lg:grid-cols-2"
-              : settings.columnsDesktop === 4
-                ? "lg:grid-cols-4"
-                : settings.columnsDesktop === 5
-                  ? "lg:grid-cols-5"
-                  : settings.columnsDesktop === 6
-                    ? "lg:grid-cols-6"
-                    : "lg:grid-cols-3",
+            GRID_COLUMN_CLASS.mobile[settings.columnsMobile],
+            GRID_COLUMN_CLASS.tablet[settings.columnsTablet],
+            GRID_COLUMN_CLASS.desktop[settings.columnsDesktop],
             layout === "masonry" && "items-start",
           )}
         >

@@ -110,7 +110,7 @@ export default function CmsGalleryEditorPage() {
   const [items, setItems] = useState<GalleryItemForm[]>([]);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const usesGridSettings = layout === "grid" || layout === "masonry";
+  const usesGridSettings = layout === "grid" || layout === "masonry" || layout === "carousel";
   const usesSlideSettings = layout === "carousel" || layout === "slider" || layout === "featured";
   const showsControlColors = usesSlideSettings || settings.lightbox;
 
@@ -464,15 +464,15 @@ export default function CmsGalleryEditorPage() {
                   <>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="grid gap-1.5">
-                        <Label>Desktop</Label>
+                        <Label>{layout === "carousel" ? "Desktop shown" : "Desktop"}</Label>
                         <Input type="number" min={1} max={6} value={settings.columnsDesktop} onChange={(event) => setSetting("columnsDesktop", Number(event.target.value))} />
                       </div>
                       <div className="grid gap-1.5">
-                        <Label>Tablet</Label>
+                        <Label>{layout === "carousel" ? "Tablet shown" : "Tablet"}</Label>
                         <Input type="number" min={1} max={4} value={settings.columnsTablet} onChange={(event) => setSetting("columnsTablet", Number(event.target.value))} />
                       </div>
                       <div className="grid gap-1.5">
-                        <Label>Mobile</Label>
+                        <Label>{layout === "carousel" ? "Mobile shown" : "Mobile"}</Label>
                         <Input type="number" min={1} max={2} value={settings.columnsMobile} onChange={(event) => setSetting("columnsMobile", Number(event.target.value))} />
                       </div>
                     </div>
