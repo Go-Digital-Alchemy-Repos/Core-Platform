@@ -173,37 +173,36 @@ export function GalleryRenderer({
     >
       {layout === "carousel" || layout === "slider" || layout === "featured" ? (
         <div className="space-y-4">
-          <div className={cn("relative overflow-hidden bg-muted", RADIUS_CLASS[settings.borderRadius])}>
+          <div className="relative">
             <img
               src={items[slideIndex]?.imageUrl}
               alt={items[slideIndex]?.alt || items[slideIndex]?.title || gallery.title}
               className={cn(
-                "w-full",
+                "w-full bg-muted",
                 layout === "featured" ? "aspect-[16/9]" : "aspect-[4/3]",
                 settings.cropMode === "contain" ? "object-contain" : "object-cover",
+                RADIUS_CLASS[settings.borderRadius],
               )}
               onClick={() => openLightbox(slideIndex)}
             />
             {items.length > 1 ? (
               <>
-                <Button
+                <button
                   type="button"
-                  size="icon"
-                  variant="secondary"
-                  className="absolute left-3 top-1/2 h-9 w-9 -translate-y-1/2"
+                  className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg transition hover:bg-background focus:outline-none focus:ring-2 focus:ring-ring md:-left-5"
                   onClick={previousSlide}
+                  aria-label="Previous image"
                 >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
                   type="button"
-                  size="icon"
-                  variant="secondary"
-                  className="absolute right-3 top-1/2 h-9 w-9 -translate-y-1/2"
+                  className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg transition hover:bg-background focus:outline-none focus:ring-2 focus:ring-ring md:-right-5"
                   onClick={nextSlide}
+                  aria-label="Next image"
                 >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+                  <ChevronRight className="h-5 w-5" />
+                </button>
               </>
             ) : null}
           </div>
