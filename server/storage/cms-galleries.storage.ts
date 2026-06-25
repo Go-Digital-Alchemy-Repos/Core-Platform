@@ -76,6 +76,11 @@ export class CmsGalleriesStorage {
     return gallery?.status === "published" ? gallery : undefined;
   }
 
+  async getPublishedByIdOrSlug(identifier: string): Promise<CmsGalleryWithItems | undefined> {
+    const gallery = await this.getByIdOrSlug(identifier);
+    return gallery?.status === "published" ? gallery : undefined;
+  }
+
   async create(data: InsertCmsGallery, items: InsertCmsGalleryItem[]): Promise<CmsGalleryWithItems> {
     const [gallery] = await db.insert(cmsGalleries).values(data).returning();
     await this.replaceItems(gallery.id, items);

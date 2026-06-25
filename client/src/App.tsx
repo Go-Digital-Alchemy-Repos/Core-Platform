@@ -34,6 +34,7 @@ const CmsHybridPage = lazy(() =>
   })),
 );
 const CmsPreviewPage = lazy(() => import("@/features/public/cms-preview-page"));
+const PublicGalleryPage = lazy(() => import("@/features/public/gallery-page"));
 
 const LoginPage = lazy(() => import("@/features/auth/login-page"));
 const ForgotPasswordPage = lazy(() => import("@/features/auth/forgot-password-page"));
@@ -174,7 +175,11 @@ function CmsDynamicPageRoute({ enabled }: { enabled: boolean }) {
     return <NotFound />;
   }
 
-  return <CmsHybridPage slug={slug} fallback={<NotFound />} enabled={enabled} />;
+  if (!enabled) {
+    return <NotFound />;
+  }
+
+  return <CmsHybridPage slug={slug} fallback={<PublicGalleryPage slug={slug} />} enabled={enabled} />;
 }
 
 function Router() {

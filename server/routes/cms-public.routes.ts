@@ -49,7 +49,7 @@ router.get(
   "/galleries/:id",
   asyncHandler(async (req, res) => {
     const id = paramString(req.params.id);
-    const gallery = await storage.cmsGalleries.getPublishedById(id);
+    const gallery = await storage.cmsGalleries.getPublishedByIdOrSlug(id);
     if (!gallery) {
       return res.status(404).json({ error: "Gallery not found" });
     }
