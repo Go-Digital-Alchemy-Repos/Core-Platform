@@ -18,18 +18,37 @@ const STATUSES = ["draft", "published", "scheduled", "archived"] as const;
 
 const createPageSchema = insertCmsPageSchema.extend({
   title: z.string().min(1, "Title is required"),
-  slug: z.string().min(1, "Slug is required").regex(/^[a-z0-9-/]+$/, "Slug must be lowercase with hyphens only"),
+  slug: z
+    .string()
+    .min(1, "Slug is required")
+    .regex(/^[a-z0-9-/]+$/, "Slug must be lowercase with hyphens only"),
   pageType: z.enum(PAGE_TYPES).default("custom"),
   status: z.enum(STATUSES).default("draft"),
 });
 
 const updatePageSchema = createPageSchema.partial().extend({
   title: z.string().min(1).optional(),
-  slug: z.string().regex(/^[a-z0-9-/]+$/).optional(),
+  slug: z
+    .string()
+    .regex(/^[a-z0-9-/]+$/)
+    .optional(),
 });
 
 function normalizeSlug(slug: string): string {
   return slug.toLowerCase().trim().replace(/\s+/g, "-");
+}
+
+async function getUniqueCopySlug(slug: string): Promise<string> {
+  const baseSlug = normalizeSlug(`${slug.replace(/\/+$/, "")}-copy`);
+  let candidate = baseSlug;
+  let copyNumber = 2;
+
+  while (await storage.cmsPages.getPageBySlug(candidate)) {
+    candidate = `${baseSlug}-${copyNumber}`;
+    copyNumber += 1;
+  }
+
+  return candidate;
 }
 
 async function resolvePage(identifier: string) {
@@ -50,7 +69,9 @@ router.post("/pages", async (req, res) => {
   try {
     const parsed = createPageSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0]?.message || "Validation failed" });
+      return res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message || "Validation failed" });
     }
 
     const data = parsed.data;
@@ -159,6 +180,56 @@ router.get("/pages/:id/preview-link", async (req, res) => {
   }
 });
 
+router.post("/pages/:id/duplicate", async (req, res) => {
+  try {
+    const id = paramString(req.params.id);
+    const page = await resolvePage(id);
+    if (!page) return res.status(404).json({ error: "Page not found" });
+
+    const adminId = req.user!.id;
+    const copyTitle = `${page.title} Copy`;
+    const copySlug = await getUniqueCopySlug(page.slug);
+    const copyContent =
+      page.content == null
+        ? {}
+        : (JSON.parse(JSON.stringify(page.content)) as Record<string, unknown>);
+
+    const duplicate = await storage.cmsPages.createPage({
+      title: copyTitle,
+      slug: copySlug,
+      status: "draft",
+      pageType: page.pageType,
+      template: page.template,
+      sidebarId: page.sidebarId,
+      content: copyContent,
+      seoTitle: page.seoTitle ? `${page.seoTitle} Copy` : null,
+      seoDescription: page.seoDescription,
+      seoKeywords: page.seoKeywords,
+      ogImageUrl: page.ogImageUrl,
+      canonicalUrl: null,
+      noindex: page.noindex,
+      createdBy: adminId,
+      updatedBy: adminId,
+      scheduledAt: null,
+      publishedAt: null,
+    });
+
+    await storage.cmsPageRevisions.createRevision({
+      pageId: duplicate.id,
+      title: duplicate.title,
+      content: duplicate.content as Record<string, unknown>,
+      status: duplicate.status,
+      changedBy: adminId,
+      changeNote: `Duplicated from ${page.title}`,
+    });
+
+    res.status(201).json(duplicate);
+  } catch (error) {
+    logger.cms.error("Failed to duplicate page", error, { requestId: req.requestId });
+    res.status(500).json({ error: "Failed to duplicate CMS page" });
+  }
+});
+
 router.put("/pages/:id", async (req, res) => {
   try {
     const id = paramString(req.params.id);
@@ -167,7 +238,9 @@ router.put("/pages/:id", async (req, res) => {
 
     const parsed = updatePageSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0]?.message || "Validation failed" });
+      return res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message || "Validation failed" });
     }
 
     const data = parsed.data;
@@ -214,14 +287,17 @@ router.delete("/pages/:id", async (req, res) => {
     const menuReferences = await getCmsPageMenuReferences(page);
     if (menuReferences.length > 0 && !force) {
       return res.status(409).json({
-        error: "This page is still used in navigation menus. Review linked references before deleting it.",
+        error:
+          "This page is still used in navigation menus. Review linked references before deleting it.",
         code: "CMS_PAGE_HAS_MENU_REFERENCES",
         menuReferences,
       });
     }
 
     if (page.status === "published" && !force) {
-      return res.status(400).json({ error: "Cannot delete a published page. Unpublish it first or use ?force=true" });
+      return res
+        .status(400)
+        .json({ error: "Cannot delete a published page. Unpublish it first or use ?force=true" });
     }
 
     await storage.cmsPages.deletePage(page.id);
@@ -280,7 +356,8 @@ router.post("/pages/:id/unpublish", async (req, res) => {
     const menuReferences = await getCmsPageMenuReferences(existingPage);
     if (menuReferences.length > 0 && !force) {
       return res.status(409).json({
-        error: "This page is still used in navigation menus. Review linked references before moving it to draft.",
+        error:
+          "This page is still used in navigation menus. Review linked references before moving it to draft.",
         code: "CMS_PAGE_HAS_MENU_REFERENCES",
         menuReferences,
       });
