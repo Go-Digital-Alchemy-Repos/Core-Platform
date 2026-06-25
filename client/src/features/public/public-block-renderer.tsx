@@ -138,9 +138,9 @@ function GalleryBlock({ props }: { props: Record<string, unknown> }) {
             | "zoom",
           arrowIconColor: str(props.arrowIconColor) || undefined,
           arrowBackgroundColor: str(props.arrowBackgroundColor) || undefined,
-          showTitle: props.showTitle !== false,
-          showCaptions: props.showCaptions !== false,
-          lightbox: props.lightbox !== false,
+          showTitle: props.showTitle === false ? false : undefined,
+          showCaptions: props.showCaptions === false ? false : undefined,
+          lightbox: props.lightbox === false ? false : undefined,
         }}
       />
     </div>
