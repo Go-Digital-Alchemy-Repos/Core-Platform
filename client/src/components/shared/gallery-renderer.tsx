@@ -191,6 +191,8 @@ export function GalleryRenderer({
     backgroundColor: settings.arrowBackgroundColor,
     color: settings.arrowIconColor,
   };
+  const slideImageRatioClass =
+    RATIO_CLASS[settings.imageRatio] || (layout === "featured" ? "aspect-[16/9]" : "aspect-[4/3]");
 
   return (
     <section
@@ -207,7 +209,7 @@ export function GalleryRenderer({
               alt={items[slideIndex]?.alt || items[slideIndex]?.title || gallery.title}
               className={cn(
                 "w-full bg-muted",
-                layout === "featured" ? "aspect-[16/9]" : "aspect-[4/3]",
+                slideImageRatioClass,
                 settings.cropMode === "contain" ? "object-contain" : "object-cover",
                 RADIUS_CLASS[settings.borderRadius],
                 transitionClass,

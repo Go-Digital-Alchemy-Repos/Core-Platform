@@ -110,6 +110,9 @@ export default function CmsGalleryEditorPage() {
   const [items, setItems] = useState<GalleryItemForm[]>([]);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const usesGridSettings = layout === "grid" || layout === "masonry";
+  const usesSlideSettings = layout === "carousel" || layout === "slider" || layout === "featured";
+  const showsControlColors = usesSlideSettings || settings.lightbox;
 
   useEffect(() => {
     if (!gallery) return;
@@ -457,32 +460,36 @@ export default function CmsGalleryEditorPage() {
                 <CardTitle className="text-sm">Display Settings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="grid gap-1.5">
-                    <Label>Desktop</Label>
-                    <Input type="number" min={1} max={6} value={settings.columnsDesktop} onChange={(event) => setSetting("columnsDesktop", Number(event.target.value))} />
-                  </div>
-                  <div className="grid gap-1.5">
-                    <Label>Tablet</Label>
-                    <Input type="number" min={1} max={4} value={settings.columnsTablet} onChange={(event) => setSetting("columnsTablet", Number(event.target.value))} />
-                  </div>
-                  <div className="grid gap-1.5">
-                    <Label>Mobile</Label>
-                    <Input type="number" min={1} max={2} value={settings.columnsMobile} onChange={(event) => setSetting("columnsMobile", Number(event.target.value))} />
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label>Spacing</Label>
-                  <Select value={settings.spacing} onValueChange={(value) => setSetting("spacing", value as CmsGallerySettings["spacing"])}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectItem value="sm">Small</SelectItem>
-                      <SelectItem value="md">Medium</SelectItem>
-                      <SelectItem value="lg">Large</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {usesGridSettings ? (
+                  <>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="grid gap-1.5">
+                        <Label>Desktop</Label>
+                        <Input type="number" min={1} max={6} value={settings.columnsDesktop} onChange={(event) => setSetting("columnsDesktop", Number(event.target.value))} />
+                      </div>
+                      <div className="grid gap-1.5">
+                        <Label>Tablet</Label>
+                        <Input type="number" min={1} max={4} value={settings.columnsTablet} onChange={(event) => setSetting("columnsTablet", Number(event.target.value))} />
+                      </div>
+                      <div className="grid gap-1.5">
+                        <Label>Mobile</Label>
+                        <Input type="number" min={1} max={2} value={settings.columnsMobile} onChange={(event) => setSetting("columnsMobile", Number(event.target.value))} />
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Spacing</Label>
+                      <Select value={settings.spacing} onValueChange={(value) => setSetting("spacing", value as CmsGallerySettings["spacing"])}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          <SelectItem value="sm">Small</SelectItem>
+                          <SelectItem value="md">Medium</SelectItem>
+                          <SelectItem value="lg">Large</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                ) : null}
                 <div className="grid gap-2">
                   <Label>Image ratio</Label>
                   <Select value={settings.imageRatio} onValueChange={(value) => setSetting("imageRatio", value as CmsGallerySettings["imageRatio"])}>
@@ -496,38 +503,42 @@ export default function CmsGalleryEditorPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid gap-2">
-                  <Label>Transition effect</Label>
-                  <Select value={settings.transitionEffect} onValueChange={(value) => setSetting("transitionEffect", value as CmsGallerySettings["transitionEffect"])}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No transition effect</SelectItem>
-                      <SelectItem value="fade">Fade</SelectItem>
-                      <SelectItem value="slide">Slide left/right</SelectItem>
-                      <SelectItem value="zoom">Zoom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
+                {usesSlideSettings ? (
                   <div className="grid gap-2">
-                    <Label>Arrow color</Label>
-                    <Input
-                      type="color"
-                      value={settings.arrowIconColor}
-                      onChange={(event) => setSetting("arrowIconColor", event.target.value)}
-                      className="h-10 w-full cursor-pointer p-1"
-                    />
+                    <Label>Transition effect</Label>
+                    <Select value={settings.transitionEffect} onValueChange={(value) => setSetting("transitionEffect", value as CmsGallerySettings["transitionEffect"])}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No transition effect</SelectItem>
+                        <SelectItem value="fade">Fade</SelectItem>
+                        <SelectItem value="slide">Slide left/right</SelectItem>
+                        <SelectItem value="zoom">Zoom</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="grid gap-2">
-                    <Label>Arrow background</Label>
-                    <Input
-                      type="color"
-                      value={settings.arrowBackgroundColor}
-                      onChange={(event) => setSetting("arrowBackgroundColor", event.target.value)}
-                      className="h-10 w-full cursor-pointer p-1"
-                    />
+                ) : null}
+                {showsControlColors ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="grid gap-2">
+                      <Label>Arrow color</Label>
+                      <Input
+                        type="color"
+                        value={settings.arrowIconColor}
+                        onChange={(event) => setSetting("arrowIconColor", event.target.value)}
+                        className="h-10 w-full cursor-pointer p-1"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Arrow background</Label>
+                      <Input
+                        type="color"
+                        value={settings.arrowBackgroundColor}
+                        onChange={(event) => setSetting("arrowBackgroundColor", event.target.value)}
+                        className="h-10 w-full cursor-pointer p-1"
+                      />
+                    </div>
                   </div>
-                </div>
+                ) : null}
                 <div className="grid gap-2">
                   <Label>Caption position</Label>
                   <Select value={settings.captionPosition} onValueChange={(value) => setSetting("captionPosition", value as CmsGallerySettings["captionPosition"])}>
