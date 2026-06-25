@@ -33,10 +33,12 @@ import { useToast } from "@/hooks/use-toast";
 import {
   DIRECTORY_LABEL_PRESETS,
   DIRECTORY_PRIMARY_CTA_TYPES,
+  normalizeDirectoryMode as normalizeDirectoryModeValue,
   type DirectoryMode,
   type DirectoryPrimaryCtaType,
 } from "@shared/types/directory-settings";
 import { useDirectorySettings } from "@/hooks/use-directory-settings";
+import type { SiteFeatures } from "@shared/site-features";
 
 type SettingsData = Record<string, Record<string, { value: string; isSecret: boolean }>>;
 
@@ -107,63 +109,64 @@ type DirectorySettingsValues = {
   directory_requires_application_process: boolean;
   directory_requires_approved_application: boolean;
   directory_requires_active_subscription: boolean;
+  directory_show_location_jobs: boolean;
 };
 
 const DEFAULT_VALUES: DirectorySettingsValues = {
-  directory_mode: "therapists",
-  directory_label_singular: DIRECTORY_LABEL_PRESETS.therapists.directoryLabelSingular,
-  directory_label_plural: DIRECTORY_LABEL_PRESETS.therapists.directoryLabelPlural,
-  listing_label_singular: DIRECTORY_LABEL_PRESETS.therapists.listingLabelSingular,
-  listing_label_plural: DIRECTORY_LABEL_PRESETS.therapists.listingLabelPlural,
-  participant_label_singular: DIRECTORY_LABEL_PRESETS.therapists.participantLabelSingular,
-  participant_label_plural: DIRECTORY_LABEL_PRESETS.therapists.participantLabelPlural,
-  specialty_label_plural: DIRECTORY_LABEL_PRESETS.therapists.specialtyLabelPlural,
-  profile_title_label: DIRECTORY_LABEL_PRESETS.therapists.profileTitleLabel,
-  profile_title_placeholder: DIRECTORY_LABEL_PRESETS.therapists.profileTitlePlaceholder,
-  profile_bio_label: DIRECTORY_LABEL_PRESETS.therapists.profileBioLabel,
-  profile_bio_placeholder: DIRECTORY_LABEL_PRESETS.therapists.profileBioPlaceholder,
-  credentials_label: DIRECTORY_LABEL_PRESETS.therapists.credentialsLabel,
-  credentials_placeholder: DIRECTORY_LABEL_PRESETS.therapists.credentialsPlaceholder,
-  license_number_label: DIRECTORY_LABEL_PRESETS.therapists.licenseNumberLabel,
-  license_number_placeholder: DIRECTORY_LABEL_PRESETS.therapists.licenseNumberPlaceholder,
-  practice_details_label: DIRECTORY_LABEL_PRESETS.therapists.practiceDetailsLabel,
-  practice_mode_label: DIRECTORY_LABEL_PRESETS.therapists.practiceModeLabel,
-  accepting_clients_label: DIRECTORY_LABEL_PRESETS.therapists.acceptingClientsLabel,
-  accepting_clients_help_text: DIRECTORY_LABEL_PRESETS.therapists.acceptingClientsHelpText,
-  willing_to_travel_label: DIRECTORY_LABEL_PRESETS.therapists.willingToTravelLabel,
-  willing_to_travel_help_text: DIRECTORY_LABEL_PRESETS.therapists.willingToTravelHelpText,
-  location_contact_label: DIRECTORY_LABEL_PRESETS.therapists.locationContactLabel,
-  primary_cta_type: DIRECTORY_LABEL_PRESETS.therapists.primaryCtaType,
-  primary_cta_label: DIRECTORY_LABEL_PRESETS.therapists.primaryCtaLabel,
-  show_profile_title: DIRECTORY_LABEL_PRESETS.therapists.showProfileTitle,
-  require_profile_title: DIRECTORY_LABEL_PRESETS.therapists.requireProfileTitle,
-  show_profile_bio: DIRECTORY_LABEL_PRESETS.therapists.showProfileBio,
-  require_profile_bio: DIRECTORY_LABEL_PRESETS.therapists.requireProfileBio,
-  show_specialties: DIRECTORY_LABEL_PRESETS.therapists.showSpecialties,
-  require_specialties: DIRECTORY_LABEL_PRESETS.therapists.requireSpecialties,
-  show_languages: DIRECTORY_LABEL_PRESETS.therapists.showLanguages,
-  require_languages: DIRECTORY_LABEL_PRESETS.therapists.requireLanguages,
-  show_credentials: DIRECTORY_LABEL_PRESETS.therapists.showCredentials,
-  require_credentials: DIRECTORY_LABEL_PRESETS.therapists.requireCredentials,
-  show_license_number: DIRECTORY_LABEL_PRESETS.therapists.showLicenseNumber,
-  require_license_number: DIRECTORY_LABEL_PRESETS.therapists.requireLicenseNumber,
-  show_practice_mode: DIRECTORY_LABEL_PRESETS.therapists.showPracticeMode,
-  require_practice_mode: DIRECTORY_LABEL_PRESETS.therapists.requirePracticeMode,
-  show_availability_status: DIRECTORY_LABEL_PRESETS.therapists.showAvailabilityStatus,
-  show_travel_option: DIRECTORY_LABEL_PRESETS.therapists.showTravelOption,
-  show_location_fields: DIRECTORY_LABEL_PRESETS.therapists.showLocationFields,
-  require_location_fields: DIRECTORY_LABEL_PRESETS.therapists.requireLocationFields,
-  show_phone: DIRECTORY_LABEL_PRESETS.therapists.showPhone,
-  require_phone: DIRECTORY_LABEL_PRESETS.therapists.requirePhone,
-  show_website: DIRECTORY_LABEL_PRESETS.therapists.showWebsite,
-  require_website: DIRECTORY_LABEL_PRESETS.therapists.requireWebsite,
-  show_social_links: DIRECTORY_LABEL_PRESETS.therapists.showSocialLinks,
-  show_gallery: DIRECTORY_LABEL_PRESETS.therapists.showGallery,
-  require_gallery: DIRECTORY_LABEL_PRESETS.therapists.requireGallery,
-  gallery_label: DIRECTORY_LABEL_PRESETS.therapists.galleryLabel,
-  gallery_help_text: DIRECTORY_LABEL_PRESETS.therapists.galleryHelpText,
-  gallery_min_images: String(DIRECTORY_LABEL_PRESETS.therapists.galleryMinImages),
-  gallery_max_images: String(DIRECTORY_LABEL_PRESETS.therapists.galleryMaxImages),
+  directory_mode: "service_provider",
+  directory_label_singular: DIRECTORY_LABEL_PRESETS.service_provider.directoryLabelSingular,
+  directory_label_plural: DIRECTORY_LABEL_PRESETS.service_provider.directoryLabelPlural,
+  listing_label_singular: DIRECTORY_LABEL_PRESETS.service_provider.listingLabelSingular,
+  listing_label_plural: DIRECTORY_LABEL_PRESETS.service_provider.listingLabelPlural,
+  participant_label_singular: DIRECTORY_LABEL_PRESETS.service_provider.participantLabelSingular,
+  participant_label_plural: DIRECTORY_LABEL_PRESETS.service_provider.participantLabelPlural,
+  specialty_label_plural: DIRECTORY_LABEL_PRESETS.service_provider.specialtyLabelPlural,
+  profile_title_label: DIRECTORY_LABEL_PRESETS.service_provider.profileTitleLabel,
+  profile_title_placeholder: DIRECTORY_LABEL_PRESETS.service_provider.profileTitlePlaceholder,
+  profile_bio_label: DIRECTORY_LABEL_PRESETS.service_provider.profileBioLabel,
+  profile_bio_placeholder: DIRECTORY_LABEL_PRESETS.service_provider.profileBioPlaceholder,
+  credentials_label: DIRECTORY_LABEL_PRESETS.service_provider.credentialsLabel,
+  credentials_placeholder: DIRECTORY_LABEL_PRESETS.service_provider.credentialsPlaceholder,
+  license_number_label: DIRECTORY_LABEL_PRESETS.service_provider.licenseNumberLabel,
+  license_number_placeholder: DIRECTORY_LABEL_PRESETS.service_provider.licenseNumberPlaceholder,
+  practice_details_label: DIRECTORY_LABEL_PRESETS.service_provider.practiceDetailsLabel,
+  practice_mode_label: DIRECTORY_LABEL_PRESETS.service_provider.practiceModeLabel,
+  accepting_clients_label: DIRECTORY_LABEL_PRESETS.service_provider.acceptingClientsLabel,
+  accepting_clients_help_text: DIRECTORY_LABEL_PRESETS.service_provider.acceptingClientsHelpText,
+  willing_to_travel_label: DIRECTORY_LABEL_PRESETS.service_provider.willingToTravelLabel,
+  willing_to_travel_help_text: DIRECTORY_LABEL_PRESETS.service_provider.willingToTravelHelpText,
+  location_contact_label: DIRECTORY_LABEL_PRESETS.service_provider.locationContactLabel,
+  primary_cta_type: DIRECTORY_LABEL_PRESETS.service_provider.primaryCtaType,
+  primary_cta_label: DIRECTORY_LABEL_PRESETS.service_provider.primaryCtaLabel,
+  show_profile_title: DIRECTORY_LABEL_PRESETS.service_provider.showProfileTitle,
+  require_profile_title: DIRECTORY_LABEL_PRESETS.service_provider.requireProfileTitle,
+  show_profile_bio: DIRECTORY_LABEL_PRESETS.service_provider.showProfileBio,
+  require_profile_bio: DIRECTORY_LABEL_PRESETS.service_provider.requireProfileBio,
+  show_specialties: DIRECTORY_LABEL_PRESETS.service_provider.showSpecialties,
+  require_specialties: DIRECTORY_LABEL_PRESETS.service_provider.requireSpecialties,
+  show_languages: DIRECTORY_LABEL_PRESETS.service_provider.showLanguages,
+  require_languages: DIRECTORY_LABEL_PRESETS.service_provider.requireLanguages,
+  show_credentials: DIRECTORY_LABEL_PRESETS.service_provider.showCredentials,
+  require_credentials: DIRECTORY_LABEL_PRESETS.service_provider.requireCredentials,
+  show_license_number: DIRECTORY_LABEL_PRESETS.service_provider.showLicenseNumber,
+  require_license_number: DIRECTORY_LABEL_PRESETS.service_provider.requireLicenseNumber,
+  show_practice_mode: DIRECTORY_LABEL_PRESETS.service_provider.showPracticeMode,
+  require_practice_mode: DIRECTORY_LABEL_PRESETS.service_provider.requirePracticeMode,
+  show_availability_status: DIRECTORY_LABEL_PRESETS.service_provider.showAvailabilityStatus,
+  show_travel_option: DIRECTORY_LABEL_PRESETS.service_provider.showTravelOption,
+  show_location_fields: DIRECTORY_LABEL_PRESETS.service_provider.showLocationFields,
+  require_location_fields: DIRECTORY_LABEL_PRESETS.service_provider.requireLocationFields,
+  show_phone: DIRECTORY_LABEL_PRESETS.service_provider.showPhone,
+  require_phone: DIRECTORY_LABEL_PRESETS.service_provider.requirePhone,
+  show_website: DIRECTORY_LABEL_PRESETS.service_provider.showWebsite,
+  require_website: DIRECTORY_LABEL_PRESETS.service_provider.requireWebsite,
+  show_social_links: DIRECTORY_LABEL_PRESETS.service_provider.showSocialLinks,
+  show_gallery: DIRECTORY_LABEL_PRESETS.service_provider.showGallery,
+  require_gallery: DIRECTORY_LABEL_PRESETS.service_provider.requireGallery,
+  gallery_label: DIRECTORY_LABEL_PRESETS.service_provider.galleryLabel,
+  gallery_help_text: DIRECTORY_LABEL_PRESETS.service_provider.galleryHelpText,
+  gallery_min_images: String(DIRECTORY_LABEL_PRESETS.service_provider.galleryMinImages),
+  gallery_max_images: String(DIRECTORY_LABEL_PRESETS.service_provider.galleryMaxImages),
   application_fee_amount_usd: "150.00",
   application_fee_notice_title: "Application Fee",
   application_fee_notice_body:
@@ -178,6 +181,7 @@ const DEFAULT_VALUES: DirectorySettingsValues = {
   directory_requires_application_process: true,
   directory_requires_approved_application: true,
   directory_requires_active_subscription: true,
+  directory_show_location_jobs: false,
 };
 
 function normalizeBoolean(value: string | undefined, fallback: boolean) {
@@ -189,9 +193,7 @@ function normalizeBoolean(value: string | undefined, fallback: boolean) {
 }
 
 function normalizeDirectoryMode(value: string | undefined): DirectoryMode {
-  return value && value in DIRECTORY_LABEL_PRESETS
-    ? (value as DirectoryMode)
-    : DEFAULT_VALUES.directory_mode;
+  return normalizeDirectoryModeValue(value);
 }
 
 function normalizePrimaryCtaType(value: string | undefined, fallback: DirectoryPrimaryCtaType) {
@@ -320,6 +322,9 @@ function DirectoryApplicationSettingsTab() {
   const { toast } = useToast();
   const { data: settings } = useQuery<SettingsData>({
     queryKey: ["/api/admin/settings"],
+  });
+  const { data: siteFeatures } = useQuery<SiteFeatures>({
+    queryKey: ["/api/site-config"],
   });
 
   const stored = settings?.directory_settings || {};
@@ -479,6 +484,10 @@ function DirectoryApplicationSettingsTab() {
         stored.directory_requires_active_subscription?.value,
         DEFAULT_VALUES.directory_requires_active_subscription,
       ),
+      directory_show_location_jobs: normalizeBoolean(
+        stored.directory_show_location_jobs?.value,
+        DEFAULT_VALUES.directory_show_location_jobs,
+      ),
     };
   }, [stored]);
 
@@ -580,6 +589,10 @@ function DirectoryApplicationSettingsTab() {
         {
           key: "directory_requires_active_subscription",
           value: values.directory_requires_active_subscription ? "true" : "false",
+        },
+        {
+          key: "directory_show_location_jobs",
+          value: values.directory_show_location_jobs ? "true" : "false",
         },
       ];
 
@@ -764,13 +777,13 @@ function DirectoryApplicationSettingsTab() {
             Directory Identity
           </CardTitle>
           <CardDescription>
-            Choose a preset and customize the visible language used for this directory experience.
+            Choose a format and customize the visible language used for this directory experience.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="directory_mode">Directory Type</Label>
+              <Label htmlFor="directory_mode">Directory Format</Label>
               <div className="flex gap-2">
                 <Select
                   value={values.directory_mode}
@@ -779,7 +792,11 @@ function DirectoryApplicationSettingsTab() {
                     setValues((current) => ({
                       ...current,
                       directory_mode: nextMode,
-                      ...(nextMode === "custom" ? {} : presetToStoredValues(nextMode)),
+                      ...presetToStoredValues(nextMode),
+                      directory_show_location_jobs:
+                        nextMode === "store_locator"
+                          ? current.directory_show_location_jobs
+                          : false,
                     }));
                   }}
                 >
@@ -787,34 +804,57 @@ function DirectoryApplicationSettingsTab() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="therapists">Therapists</SelectItem>
-                    <SelectItem value="locations">Locations</SelectItem>
-                    <SelectItem value="service_providers">Service Providers</SelectItem>
-                    <SelectItem value="real_estate">Real Estate Listings</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
+                    <SelectItem value="service_provider">Service Provider Directory</SelectItem>
+                    <SelectItem value="store_locator">Store Locator</SelectItem>
                   </SelectContent>
                 </Select>
-                {values.directory_mode !== "custom" && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      setValues((current) => ({
-                        ...current,
-                        ...presetToStoredValues(current.directory_mode),
-                      }))
-                    }
-                    data-testid="button-apply-directory-preset"
-                  >
-                    Apply Preset
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    setValues((current) => ({
+                      ...current,
+                      ...presetToStoredValues(current.directory_mode),
+                    }))
+                  }
+                  data-testid="button-apply-directory-preset"
+                >
+                  Apply Defaults
+                </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Choosing a preset updates the labels and profile field settings below. Save to
-                publish the changes.
+                Choosing a format seeds the labels and profile field settings below. You can still
+                edit the labels and visible fields before saving.
               </p>
             </div>
+            {values.directory_mode === "store_locator" && (
+              <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                <div className="space-y-1">
+                  <Label htmlFor="directory_show_location_jobs">Show careers on locations</Label>
+                  <p className="text-sm text-muted-foreground">
+                    When enabled, published jobs linked to a location appear on that location detail
+                    page.
+                  </p>
+                  {siteFeatures?.careersEnabled === false && (
+                    <p className="text-xs text-muted-foreground">
+                      Careers is currently disabled in System Configuration.
+                    </p>
+                  )}
+                </div>
+                <Switch
+                  id="directory_show_location_jobs"
+                  checked={values.directory_show_location_jobs}
+                  disabled={siteFeatures?.careersEnabled === false}
+                  onCheckedChange={(checked) =>
+                    setValues((current) => ({
+                      ...current,
+                      directory_show_location_jobs: checked,
+                    }))
+                  }
+                  data-testid="switch-directory-show-location-jobs"
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -827,7 +867,6 @@ function DirectoryApplicationSettingsTab() {
                   onChange={(event) =>
                     setValues((current) => ({
                       ...current,
-                      directory_mode: "custom",
                       [field.key]: event.target.value,
                     }))
                   }
@@ -880,7 +919,6 @@ function DirectoryApplicationSettingsTab() {
                 onChange={(event) =>
                   setValues((current) => ({
                     ...current,
-                    directory_mode: "custom",
                     gallery_label: event.target.value,
                   }))
                 }
@@ -894,7 +932,6 @@ function DirectoryApplicationSettingsTab() {
                 onChange={(event) =>
                   setValues((current) => ({
                     ...current,
-                    directory_mode: "custom",
                     gallery_help_text: event.target.value,
                   }))
                 }
@@ -963,7 +1000,6 @@ function DirectoryApplicationSettingsTab() {
                   onChange={(event) =>
                     setValues((current) => ({
                       ...current,
-                      directory_mode: "custom",
                       [field.key]: event.target.value,
                     }))
                   }
@@ -982,7 +1018,6 @@ function DirectoryApplicationSettingsTab() {
                   onChange={(event) =>
                     setValues((current) => ({
                       ...current,
-                      directory_mode: "custom",
                       [field.key]: event.target.value,
                     }))
                   }
@@ -1343,81 +1378,34 @@ type TemplateFixture = {
 };
 
 const TEMPLATE_FIXTURES: Record<DirectoryMode, TemplateFixture> = {
-  therapists: {
-    mode: "therapists",
+  service_provider: {
+    mode: "service_provider",
     title: "Dr. Amara Olsen",
     subtitle: "Licensed Clinical Psychologist",
     location: "Amsterdam, Netherlands",
     meta: ["Virtual & in-person", "English, Dutch", "Accepting new clients"],
     details: ["PhD, Licensed Psychologist", "Identity, belonging, anxiety"],
     tags: ["Identity & Belonging", "Cross-Cultural", "Anxiety"],
-    cta: "Contact Provider",
+    cta: "Request Information",
     gallery: [
       "https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=900&h=650&fit=crop",
       "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=900&h=650&fit=crop",
       "https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=900&h=650&fit=crop",
     ],
   },
-  locations: {
-    mode: "locations",
-    title: "Downtown Wellness Studio",
-    subtitle: "Flagship location with group rooms and private consult suites",
+  store_locator: {
+    mode: "store_locator",
+    title: "Downtown Flagship Store",
+    subtitle: "Retail location with pickup, service appointments, and local support",
     location: "Austin, Texas",
-    meta: ["Open to visitors", "Mobile services available", "Curbside pickup"],
-    details: ["Showroom, repairs, consultations", "Parking, accessible entrance"],
-    tags: ["Consultations", "Repairs", "Showroom"],
+    meta: ["Open to customers", "Service area available", "Curbside pickup"],
+    details: ["Showroom, repairs, consultations", "Parking, wheelchair accessible entrance"],
+    tags: ["Retail Pickup", "Repairs", "Showroom"],
     cta: "Get Directions",
     gallery: [
       "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=900&h=650&fit=crop",
       "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=900&h=650&fit=crop",
       "https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=900&h=650&fit=crop",
-    ],
-  },
-  service_providers: {
-    mode: "service_providers",
-    title: "Atlas Relocation Partners",
-    subtitle: "Certified relocation consultants for globally mobile teams",
-    location: "Remote, North America & Europe",
-    meta: ["Taking new projects", "Virtual delivery", "Enterprise ready"],
-    details: ["Certified relocation consultants", "Corporate moves, family transitions"],
-    tags: ["Relocation", "Consulting", "Global Mobility"],
-    cta: "Request Information",
-    gallery: [
-      "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=900&h=650&fit=crop",
-      "https://images.unsplash.com/photo-1552664730-d307ca884978?w=900&h=650&fit=crop",
-      "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=900&h=650&fit=crop",
-    ],
-  },
-  real_estate: {
-    mode: "real_estate",
-    title: "Modern Hillside Residence",
-    subtitle: "4 bed, 3.5 bath home with renovated kitchen and mountain views",
-    location: "Boulder, Colorado",
-    price: "$1,275,000",
-    meta: ["For sale", "4 beds", "3.5 baths", "3,240 sq ft"],
-    details: ["0.42 acre lot", "Built 2018", "MLS-2048127"],
-    tags: ["Mountain View", "Garage", "Renovated Kitchen", "Open House"],
-    cta: "Schedule Showing",
-    gallery: [
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900&h=650&fit=crop",
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=900&h=650&fit=crop",
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=900&h=650&fit=crop",
-      "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=900&h=650&fit=crop",
-    ],
-  },
-  custom: {
-    mode: "custom",
-    title: "Featured Community Resource",
-    subtitle: "A flexible listing with neutral fields and configurable actions",
-    location: "Global",
-    meta: ["Active listing", "Approved", "Featured"],
-    details: ["Category-driven", "Generic contact flow"],
-    tags: ["Resource", "Featured", "Flexible"],
-    cta: "Contact",
-    gallery: [
-      "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=900&h=650&fit=crop",
-      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&h=650&fit=crop",
-      "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=900&h=650&fit=crop",
     ],
   },
 };
@@ -1455,7 +1443,7 @@ function TemplatePreviewCard({ fixture }: { fixture: TemplateFixture }) {
           {fixture.price ? <p className="shrink-0 text-sm font-semibold">{fixture.price}</p> : null}
         </div>
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          {fixture.mode === "real_estate" ? (
+          {fixture.mode === "store_locator" ? (
             <Home className="h-4 w-4" />
           ) : (
             <MapPin className="h-4 w-4" />
@@ -1481,7 +1469,7 @@ function TemplatePreviewCard({ fixture }: { fixture: TemplateFixture }) {
             </Badge>
           ))}
         </div>
-        <Button className="w-full" variant={fixture.mode === "real_estate" ? "default" : "outline"}>
+        <Button className="w-full" variant={fixture.mode === "store_locator" ? "default" : "outline"}>
           {fixture.cta}
         </Button>
       </CardContent>
@@ -1491,7 +1479,7 @@ function TemplatePreviewCard({ fixture }: { fixture: TemplateFixture }) {
 
 function DirectoryTemplateLabTab() {
   const modes = Object.keys(DIRECTORY_LABEL_PRESETS) as DirectoryMode[];
-  const [selectedMode, setSelectedMode] = useState<DirectoryMode>("real_estate");
+  const [selectedMode, setSelectedMode] = useState<DirectoryMode>("store_locator");
   const fixture = TEMPLATE_FIXTURES[selectedMode];
   const preset = DIRECTORY_LABEL_PRESETS[selectedMode];
 
@@ -1505,7 +1493,7 @@ function DirectoryTemplateLabTab() {
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-5">
+      <div className="grid gap-3 md:grid-cols-2">
         {modes.map((mode) => {
           const item = DIRECTORY_LABEL_PRESETS[mode];
           return (

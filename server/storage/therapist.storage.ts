@@ -19,6 +19,11 @@ import type {
   DirectoryFilterOptions,
   SortOption,
 } from "@shared/types/directory";
+import {
+  DIRECTORY_MODE_PROFILE_ALIASES,
+  normalizeDirectoryMode,
+  type DirectoryMode,
+} from "@shared/types/directory-settings";
 
 interface InternalSearchParams {
   search?: string;
@@ -49,7 +54,7 @@ function buildFilterConditions(params: InternalSearchParams): SQL[] {
   }
 
   if (params.directoryMode) {
-    conditions.push(eq(therapistProfiles.directoryMode, params.directoryMode));
+    conditions.push(directoryModeCondition(params.directoryMode));
   }
 
   if (params.practiceMode) {
@@ -113,6 +118,22 @@ function buildFilterConditions(params: InternalSearchParams): SQL[] {
   }
 
   return conditions;
+}
+
+function directoryModeAliases(mode?: string): string[] {
+  if (!mode) return [];
+  const canonical = normalizeDirectoryMode(mode);
+  return DIRECTORY_MODE_PROFILE_ALIASES[canonical as DirectoryMode] ?? [canonical];
+}
+
+function directoryModeCondition(mode: string): SQL {
+  const aliases = directoryModeAliases(mode);
+  return sql`${therapistProfiles.directoryMode} = ANY(${aliases})`;
+}
+
+function directoryModeSql(mode?: string): SQL {
+  const aliases = directoryModeAliases(mode);
+  return aliases.length ? sql`AND ${therapistProfiles.directoryMode} = ANY(${aliases})` : sql``;
 }
 
 function buildOrderBy(sort: SortOption = "name", _latitude?: number, _longitude?: number) {
@@ -240,9 +261,7 @@ export class TherapistStorage {
     const approvalSql = requireApprovedApplication
       ? sql`AND ${therapistProfiles.isApproved} = true`
       : sql``;
-    const directoryModeSql = directoryMode
-      ? sql`AND ${therapistProfiles.directoryMode} = ${directoryMode}`
-      : sql``;
+    const modeSql = directoryModeSql(directoryMode);
 
     const langResult = await db.execute(
       sql`SELECT DISTINCT unnest(${therapistProfiles.languages}) AS lang
@@ -251,7 +270,7 @@ export class TherapistStorage {
           WHERE ${therapistProfiles.isActive} = true
             AND ${users.isSuspended} = false
             ${approvalSql}
-            ${directoryModeSql}
+            ${modeSql}
           ORDER BY lang`,
     );
 
@@ -262,7 +281,7 @@ export class TherapistStorage {
           WHERE ${therapistProfiles.isActive} = true
             AND ${users.isSuspended} = false
             ${approvalSql}
-            ${directoryModeSql}
+            ${modeSql}
             AND ${therapistProfiles.country} IS NOT NULL
           ORDER BY country`,
     );
@@ -340,7 +359,7 @@ export class TherapistStorage {
     }
 
     if (directoryMode) {
-      conditions.push(eq(therapistProfiles.directoryMode, directoryMode));
+      conditions.push(directoryModeCondition(directoryMode));
     }
 
     const results = await db

@@ -52,12 +52,13 @@ vi.mock("@/components/directory/map-view", () => ({
   MapView: () => React.createElement("div", { "data-testid": "mock-map" }, "Map"),
 }));
 
-const realEstateSettings = {
-  directoryMode: "real_estate",
-  ...DIRECTORY_LABEL_PRESETS.real_estate,
+const storeLocatorSettings = {
+  directoryMode: "store_locator",
+  ...DIRECTORY_LABEL_PRESETS.store_locator,
   directoryRequiresApplicationProcess: true,
   directoryRequiresApprovedApplication: true,
   directoryRequiresActiveSubscription: true,
+  directoryShowLocationJobs: false,
 };
 
 function createQueryClient() {
@@ -67,7 +68,7 @@ function createQueryClient() {
         retry: false,
         queryFn: async ({ queryKey }) => {
           const key = String(queryKey[0]);
-          if (key === "/api/directory-settings") return realEstateSettings;
+          if (key === "/api/directory-settings") return storeLocatorSettings;
           if (key === "/api/site-config") return { ...DEFAULT_SITE_FEATURES, cmsEnabled: false };
           if (key === "/api/cms/menus") return null;
           if (key === "/api/therapists/filters") return { languages: [], countries: [] };
@@ -107,7 +108,7 @@ describe("directory shell language", () => {
     document.body.innerHTML = "";
   });
 
-  it("uses real estate labels across the public shell and directory browser", async () => {
+  it("uses store locator labels across the public shell and directory browser", async () => {
     root = createRoot(container);
 
     await act(async () => {
@@ -130,11 +131,11 @@ describe("directory shell language", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(container.textContent).toContain("Find Property Listings");
+    expect(container.textContent).toContain("Find Location");
     expect(container.textContent).toContain(
-      "Search by name, property features, location, or listing type",
+      "Search by name, categories, address, phone, or service area",
     );
-    expect(container.textContent).toContain("Connecting people with trusted property listings");
+    expect(container.textContent).toContain("Connecting people with trusted locations");
     expect(container.textContent?.toLowerCase()).not.toContain("mental health professional");
   });
 });

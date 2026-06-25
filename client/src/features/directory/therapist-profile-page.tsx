@@ -15,6 +15,7 @@ import {
   Send,
   ExternalLink,
   Navigation,
+  Briefcase,
 } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
@@ -34,11 +35,10 @@ import { useGlobalSeo } from "@/hooks/use-global-seo";
 import { useSeo } from "@/hooks/use-seo";
 import { useFrontendEditTarget } from "@/features/frontend-edit/frontend-edit";
 import { stripHtml } from "@/lib/html";
-import {
-  buildBreadcrumbLd,
-  buildProviderProfileLd,
-} from "@/lib/structured-data";
+import { buildBreadcrumbLd, buildProviderProfileLd } from "@/lib/structured-data";
 import type { TherapistWithUser } from "@shared/types/directory";
+import type { CareerJob } from "@shared/schema";
+import { getDirectoryExperienceMode } from "@shared/types/directory-settings";
 import { SiInstagram, SiFacebook, SiX, SiLinkedin, SiYoutube, SiTiktok } from "react-icons/si";
 
 function getSessionFormatLabel(mode: string | null) {
@@ -62,16 +62,45 @@ export default function TherapistProfilePage() {
   const { settings: directorySettings } = useDirectorySettings();
   const { data: globalSeo } = useGlobalSeo();
 
-  const [contactForm, setContactForm] = useState({ name: "", email: "", message: "", preferredContact: "email" as "email" | "phone" | "text", phone: "" });
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    message: "",
+    preferredContact: "email" as "email" | "phone" | "text",
+    phone: "",
+  });
   const [showContactForm, setShowContactForm] = useState(false);
 
-  const { data: therapist, isLoading, error } = useQuery<TherapistWithUser>({
+  const {
+    data: therapist,
+    isLoading,
+    error,
+  } = useQuery<TherapistWithUser>({
     queryKey: ["/api/therapists", id],
     enabled: !!id,
   });
+  const directoryMode = getDirectoryExperienceMode(directorySettings);
+  const shouldLoadLocationJobs =
+    directoryMode === "store_locator" && directorySettings.directoryShowLocationJobs && !!id;
+  const { data: locationJobs = [] } = useQuery<CareerJob[]>({
+    queryKey: ["/api/therapists", id, "jobs"],
+    queryFn: async () => {
+      const res = await fetch(`/api/therapists/${id}/jobs`);
+      if (!res.ok) throw new Error("Failed to load location jobs");
+      return res.json();
+    },
+    enabled: shouldLoadLocationJobs,
+  });
 
   const sendEmailMutation = useMutation({
-    mutationFn: async (data: { professionalUserId: string; senderName: string; senderEmail: string; message: string; preferredContact: string; phone?: string }) => {
+    mutationFn: async (data: {
+      professionalUserId: string;
+      senderName: string;
+      senderEmail: string;
+      message: string;
+      preferredContact: string;
+      phone?: string;
+    }) => {
       const res = await fetch("/api/contact-professional", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,7 +110,10 @@ export default function TherapistProfilePage() {
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(
-          (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
             ? payload.message
             : null) || "Something went wrong. Please try again.",
         );
@@ -89,7 +121,10 @@ export default function TherapistProfilePage() {
       return payload;
     },
     onSuccess: () => {
-      toast({ title: "Message sent", description: `Your message has been emailed to this ${directorySettings.participantLabelSingular.toLowerCase()}.` });
+      toast({
+        title: "Message sent",
+        description: `Your message has been emailed to this ${directorySettings.participantLabelSingular.toLowerCase()}.`,
+      });
       setContactForm({ name: "", email: "", message: "", preferredContact: "email", phone: "" });
       setShowContactForm(false);
     },
@@ -105,7 +140,14 @@ export default function TherapistProfilePage() {
   const handleSendEmail = (e: React.FormEvent) => {
     e.preventDefault();
     if (!therapist?.userId) return;
-    const payload: { professionalUserId: string; senderName: string; senderEmail: string; message: string; preferredContact: string; phone?: string } = {
+    const payload: {
+      professionalUserId: string;
+      senderName: string;
+      senderEmail: string;
+      message: string;
+      preferredContact: string;
+      phone?: string;
+    } = {
       professionalUserId: therapist.userId,
       senderName: contactForm.name,
       senderEmail: contactForm.email,
@@ -120,14 +162,19 @@ export default function TherapistProfilePage() {
 
   const isSelf = user && therapist?.userId === user.id;
   const editLabel = therapist
-    ? [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") || directorySettings.participantLabelSingular
+    ? [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") ||
+      directorySettings.participantLabelSingular
     : "";
 
-  useFrontendEditTarget(therapist ? {
-    kind: "directory-listing",
-    id: therapist.id,
-    label: `Edit ${editLabel}`,
-  } : null);
+  useFrontendEditTarget(
+    therapist
+      ? {
+          kind: "directory-listing",
+          id: therapist.id,
+          label: `Edit ${editLabel}`,
+        }
+      : null,
+  );
 
   const baseUrl =
     globalSeo?.siteUrl?.replace(/\/$/, "") ||
@@ -183,15 +230,31 @@ export default function TherapistProfilePage() {
     );
   }
 
-  const displayName = [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") || directorySettings.participantLabelSingular;
-  const initials = [therapist.user?.firstName?.[0], therapist.user?.lastName?.[0]].filter(Boolean).join("").toUpperCase() || "?";
-  const addressParts = [therapist.addressLine1, therapist.addressLine2, therapist.city, therapist.state, therapist.zipCode, therapist.country].filter(Boolean);
+  const displayName =
+    [therapist.user?.firstName, therapist.user?.lastName].filter(Boolean).join(" ") ||
+    directorySettings.participantLabelSingular;
+  const initials =
+    [therapist.user?.firstName?.[0], therapist.user?.lastName?.[0]]
+      .filter(Boolean)
+      .join("")
+      .toUpperCase() || "?";
+  const addressParts = [
+    therapist.addressLine1,
+    therapist.addressLine2,
+    therapist.city,
+    therapist.state,
+    therapist.zipCode,
+    therapist.country,
+  ].filter(Boolean);
   const visibleAddressParts = directorySettings.showLocationFields ? addressParts : [];
   const hasContact =
     visibleAddressParts.length > 0 ||
     (directorySettings.showPhone && therapist.phone) ||
     (directorySettings.showWebsite && therapist.website);
-  const showMap = directorySettings.showLocationFields && therapist.latitude != null && therapist.longitude != null;
+  const showMap =
+    directorySettings.showLocationFields &&
+    therapist.latitude != null &&
+    therapist.longitude != null;
   const directionsUrl =
     visibleAddressParts.length > 0
       ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(visibleAddressParts.join(", "))}`
@@ -218,12 +281,48 @@ export default function TherapistProfilePage() {
   }
 
   const socialLinks = [
-    { key: "instagram", url: socialUrl("instagram", therapist.instagramHandle), icon: SiInstagram, color: "text-pink-600", label: "Instagram" },
-    { key: "facebook", url: socialUrl("facebook", therapist.facebookHandle), icon: SiFacebook, color: "text-blue-600", label: "Facebook" },
-    { key: "twitter", url: socialUrl("twitter", therapist.twitterHandle), icon: SiX, color: "text-foreground", label: "X (Twitter)" },
-    { key: "linkedin", url: socialUrl("linkedin", therapist.linkedinHandle), icon: SiLinkedin, color: "text-blue-700", label: "LinkedIn" },
-    { key: "youtube", url: socialUrl("youtube", therapist.youtubeHandle), icon: SiYoutube, color: "text-red-600", label: "YouTube" },
-    { key: "tiktok", url: socialUrl("tiktok", therapist.tiktokHandle), icon: SiTiktok, color: "text-foreground", label: "TikTok" },
+    {
+      key: "instagram",
+      url: socialUrl("instagram", therapist.instagramHandle),
+      icon: SiInstagram,
+      color: "text-pink-600",
+      label: "Instagram",
+    },
+    {
+      key: "facebook",
+      url: socialUrl("facebook", therapist.facebookHandle),
+      icon: SiFacebook,
+      color: "text-blue-600",
+      label: "Facebook",
+    },
+    {
+      key: "twitter",
+      url: socialUrl("twitter", therapist.twitterHandle),
+      icon: SiX,
+      color: "text-foreground",
+      label: "X (Twitter)",
+    },
+    {
+      key: "linkedin",
+      url: socialUrl("linkedin", therapist.linkedinHandle),
+      icon: SiLinkedin,
+      color: "text-blue-700",
+      label: "LinkedIn",
+    },
+    {
+      key: "youtube",
+      url: socialUrl("youtube", therapist.youtubeHandle),
+      icon: SiYoutube,
+      color: "text-red-600",
+      label: "YouTube",
+    },
+    {
+      key: "tiktok",
+      url: socialUrl("tiktok", therapist.tiktokHandle),
+      icon: SiTiktok,
+      color: "text-foreground",
+      label: "TikTok",
+    },
   ].filter((s) => s.url);
   const hasSocial = directorySettings.showSocialLinks && socialLinks.length > 0;
   const primaryCta = (() => {
@@ -239,7 +338,9 @@ export default function TherapistProfilePage() {
           ? { type: "link" as const, href: `tel:${therapist.phone}`, icon: Phone, label }
           : null;
       case "directions":
-        return directionsUrl ? { type: "link" as const, href: directionsUrl, icon: Navigation, label } : null;
+        return directionsUrl
+          ? { type: "link" as const, href: directionsUrl, icon: Navigation, label }
+          : null;
       case "contact_form":
       default:
         return { type: "contact_form" as const, icon: Mail, label };
@@ -248,7 +349,10 @@ export default function TherapistProfilePage() {
   const profileSchema = buildProviderProfileLd(therapist, globalSeo);
   const breadcrumbSchema = buildBreadcrumbLd([
     { name: "Home", url: baseUrl || "/" },
-    { name: directorySettings.directoryLabelSingular || "Directory", url: baseUrl ? `${baseUrl}/directory` : "/directory" },
+    {
+      name: directorySettings.directoryLabelSingular || "Directory",
+      url: baseUrl ? `${baseUrl}/directory` : "/directory",
+    },
     { name: displayName, url: canonicalUrl || `/directory/${therapist.id}` },
   ]);
 
@@ -269,45 +373,64 @@ export default function TherapistProfilePage() {
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row gap-5 items-start">
                   <Avatar className="h-24 w-24 shrink-0 border">
-                    <AvatarImage src={therapist.user?.profileImageUrl ?? undefined} alt={displayName} />
+                    <AvatarImage
+                      src={therapist.user?.profileImageUrl ?? undefined}
+                      alt={displayName}
+                    />
                     <AvatarFallback className="text-xl">{initials}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <h1 className="text-2xl font-bold tracking-tight" data-testid="text-professional-name">
+                    <h1
+                      className="text-2xl font-bold tracking-tight"
+                      data-testid="text-professional-name"
+                    >
                       {displayName}
                     </h1>
                     {directorySettings.showProfileTitle && therapist.title && (
-                      <p className="text-muted-foreground mt-1" data-testid="text-title">{therapist.title}</p>
+                      <p className="text-muted-foreground mt-1" data-testid="text-title">
+                        {therapist.title}
+                      </p>
                     )}
                     <div className="flex flex-wrap items-center gap-2 mt-3">
                       {directorySettings.showPracticeMode && (
-                      <Badge variant="secondary" data-testid="badge-session-format">
-                        {therapist.practiceMode === "virtual" ? (
-                          <Monitor className="h-3 w-3 mr-1" />
-                        ) : (
-                          <Building2 className="h-3 w-3 mr-1" />
-                        )}
-                        {getSessionFormatLabel(therapist.practiceMode)}
-                      </Badge>
+                        <Badge variant="secondary" data-testid="badge-session-format">
+                          {therapist.practiceMode === "virtual" ? (
+                            <Monitor className="h-3 w-3 mr-1" />
+                          ) : (
+                            <Building2 className="h-3 w-3 mr-1" />
+                          )}
+                          {getSessionFormatLabel(therapist.practiceMode)}
+                        </Badge>
                       )}
-                      {directorySettings.showAvailabilityStatus && (therapist.acceptingClients ? (
-                        <Badge variant="outline" className="text-green-700 border-green-300" data-testid="badge-accepting">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          {directorySettings.acceptingClientsLabel}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-red-700 border-red-300" data-testid="badge-not-accepting">
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Not {directorySettings.acceptingClientsLabel.toLowerCase()}
-                        </Badge>
-                      ))}
+                      {directorySettings.showAvailabilityStatus &&
+                        (therapist.acceptingClients ? (
+                          <Badge
+                            variant="outline"
+                            className="text-green-700 border-green-300"
+                            data-testid="badge-accepting"
+                          >
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            {directorySettings.acceptingClientsLabel}
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="text-red-700 border-red-300"
+                            data-testid="badge-not-accepting"
+                          >
+                            <XCircle className="h-3 w-3 mr-1" />
+                            Not {directorySettings.acceptingClientsLabel.toLowerCase()}
+                          </Badge>
+                        ))}
                     </div>
                   </div>
                 </div>
 
                 {directorySettings.showProfileBio && therapist.bio && (
                   <div className="mt-8 pt-8 border-t" data-testid="card-bio">
-                    <h2 className="text-lg font-semibold mb-4">{directorySettings.profileBioLabel}</h2>
+                    <h2 className="text-lg font-semibold mb-4">
+                      {directorySettings.profileBioLabel}
+                    </h2>
                     <div
                       className="prose prose-sm max-w-none text-muted-foreground leading-relaxed"
                       data-testid="text-bio"
@@ -318,15 +441,20 @@ export default function TherapistProfilePage() {
               </CardContent>
             </Card>
 
-            {directorySettings.showSpecialties && (therapist.specializations as string[] | null)?.length ? (
+            {directorySettings.showSpecialties &&
+            (therapist.specializations as string[] | null)?.length ? (
               <Card data-testid="card-specializations">
                 <CardHeader>
-                  <h2 className="text-lg font-semibold">{directorySettings.specialtyLabelPlural}</h2>
+                  <h2 className="text-lg font-semibold">
+                    {directorySettings.specialtyLabelPlural}
+                  </h2>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {(therapist.specializations as string[]).map((s) => (
-                      <Badge key={s} variant="secondary" data-testid={`badge-specialization-${s}`}>{s}</Badge>
+                      <Badge key={s} variant="secondary" data-testid={`badge-specialization-${s}`}>
+                        {s}
+                      </Badge>
                     ))}
                   </div>
                 </CardContent>
@@ -341,7 +469,9 @@ export default function TherapistProfilePage() {
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {(therapist.languages as string[]).map((l) => (
-                      <Badge key={l} variant="outline" data-testid={`badge-language-${l}`}>{l}</Badge>
+                      <Badge key={l} variant="outline" data-testid={`badge-language-${l}`}>
+                        {l}
+                      </Badge>
                     ))}
                   </div>
                 </CardContent>
@@ -354,7 +484,10 @@ export default function TherapistProfilePage() {
                   <h2 className="text-lg font-semibold">{directorySettings.credentialsLabel}</h2>
                 </CardHeader>
                 <CardContent>
-                  <p className="whitespace-pre-wrap text-muted-foreground" data-testid="text-credentials">
+                  <p
+                    className="whitespace-pre-wrap text-muted-foreground"
+                    data-testid="text-credentials"
+                  >
                     {therapist.credentials}
                   </p>
                 </CardContent>
@@ -367,8 +500,16 @@ export default function TherapistProfilePage() {
               <Card data-testid="card-contact-form">
                 <CardContent className="pt-6">
                   {primaryCta.type === "link" ? (
-                    <Button asChild className="w-full bg-accent text-accent-foreground border-accent-border" size="lg">
-                      <a href={primaryCta.href} target={primaryCta.href.startsWith("tel:") ? undefined : "_blank"} rel="noopener noreferrer">
+                    <Button
+                      asChild
+                      className="w-full bg-accent text-accent-foreground border-accent-border"
+                      size="lg"
+                    >
+                      <a
+                        href={primaryCta.href}
+                        target={primaryCta.href.startsWith("tel:") ? undefined : "_blank"}
+                        rel="noopener noreferrer"
+                      >
                         <primaryCta.icon className="h-4 w-4 mr-2" />
                         {primaryCta.label}
                       </a>
@@ -421,11 +562,13 @@ export default function TherapistProfilePage() {
                       <div className="space-y-2">
                         <Label>Preferred Method of Contact</Label>
                         <div className="flex flex-col gap-2">
-                          {([
-                            { value: "email", label: "Email" },
-                            { value: "phone", label: "Phone Call" },
-                            { value: "text", label: "Text Message" },
-                          ] as const).map((option) => (
+                          {(
+                            [
+                              { value: "email", label: "Email" },
+                              { value: "phone", label: "Phone Call" },
+                              { value: "text", label: "Text Message" },
+                            ] as const
+                          ).map((option) => (
                             <label
                               key={option.value}
                               className="flex items-center gap-2 cursor-pointer text-sm"
@@ -436,7 +579,9 @@ export default function TherapistProfilePage() {
                                 name="preferredContact"
                                 value={option.value}
                                 checked={contactForm.preferredContact === option.value}
-                                onChange={() => setContactForm((f) => ({ ...f, preferredContact: option.value }))}
+                                onChange={() =>
+                                  setContactForm((f) => ({ ...f, preferredContact: option.value }))
+                                }
                                 className="accent-primary h-4 w-4"
                               />
                               {option.label}
@@ -444,14 +589,17 @@ export default function TherapistProfilePage() {
                           ))}
                         </div>
                       </div>
-                      {(contactForm.preferredContact === "phone" || contactForm.preferredContact === "text") && (
+                      {(contactForm.preferredContact === "phone" ||
+                        contactForm.preferredContact === "text") && (
                         <div className="space-y-1.5">
                           <Label htmlFor="sender-phone">Your Phone Number</Label>
                           <Input
                             id="sender-phone"
                             type="tel"
                             value={contactForm.phone}
-                            onChange={(e) => setContactForm((f) => ({ ...f, phone: e.target.value }))}
+                            onChange={(e) =>
+                              setContactForm((f) => ({ ...f, phone: e.target.value }))
+                            }
                             required
                             maxLength={30}
                             placeholder="(555) 123-4567"
@@ -464,7 +612,9 @@ export default function TherapistProfilePage() {
                         <Textarea
                           id="sender-message"
                           value={contactForm.message}
-                          onChange={(e) => setContactForm((f) => ({ ...f, message: e.target.value }))}
+                          onChange={(e) =>
+                            setContactForm((f) => ({ ...f, message: e.target.value }))
+                          }
                           required
                           minLength={10}
                           maxLength={5000}
@@ -498,7 +648,9 @@ export default function TherapistProfilePage() {
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Your message will be emailed directly to this {directorySettings.participantLabelSingular.toLowerCase()}. They will reply to you at the email address you provide.
+                        Your message will be emailed directly to this{" "}
+                        {directorySettings.participantLabelSingular.toLowerCase()}. They will reply
+                        to you at the email address you provide.
                       </p>
                     </form>
                   )}
@@ -548,7 +700,10 @@ export default function TherapistProfilePage() {
                     {directorySettings.showPhone && therapist.phone && (
                       <div className="flex items-center gap-3" data-testid="text-phone">
                         <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <a href={`tel:${therapist.phone}`} className="hover:underline break-all min-w-0">
+                        <a
+                          href={`tel:${therapist.phone}`}
+                          className="hover:underline break-all min-w-0"
+                        >
                           {therapist.phone}
                         </a>
                       </div>
@@ -571,19 +726,49 @@ export default function TherapistProfilePage() {
               </Card>
             )}
 
-            {!showMap && directorySettings.showPracticeMode && therapist.practiceMode === "virtual" && (
-              <Card data-testid="card-virtual-notice">
-                <CardContent className="pt-6 text-center">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mb-3">
-                    <Video className="h-6 w-6" />
+            {shouldLoadLocationJobs && locationJobs.length > 0 && (
+              <Card data-testid="card-location-jobs">
+                <CardContent className="pt-6">
+                  <h3 className="mb-4 flex items-center gap-2 font-semibold">
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    Jobs at this location
+                  </h3>
+                  <div className="space-y-3">
+                    {locationJobs.map((job) => (
+                      <a
+                        key={job.id}
+                        href={`/careers/${job.slug}`}
+                        className="block rounded-lg border p-3 transition-colors hover:bg-muted/40"
+                        data-testid={`link-location-job-${job.slug}`}
+                      >
+                        <p className="font-medium">{job.title}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {[job.department, job.location].filter(Boolean).join(" · ") ||
+                            "Career opportunity"}
+                        </p>
+                      </a>
+                    ))}
                   </div>
-                  <p className="text-sm font-medium">Virtual Practice</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    This {directorySettings.participantLabelSingular.toLowerCase()} offers services online and is available worldwide.
-                  </p>
                 </CardContent>
               </Card>
             )}
+
+            {!showMap &&
+              directorySettings.showPracticeMode &&
+              therapist.practiceMode === "virtual" && (
+                <Card data-testid="card-virtual-notice">
+                  <CardContent className="pt-6 text-center">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mb-3">
+                      <Video className="h-6 w-6" />
+                    </div>
+                    <p className="text-sm font-medium">Virtual Practice</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This {directorySettings.participantLabelSingular.toLowerCase()} offers
+                      services online and is available worldwide.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
             {hasSocial && (
               <Card data-testid="card-social">

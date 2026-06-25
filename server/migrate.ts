@@ -487,6 +487,14 @@ async function ensureCmsGalleryTables(migrationsFolder: string) {
   }
 }
 
+async function ensureCareerDirectoryLocations(migrationsFolder: string) {
+  const hasCareerDirectoryProfile = await columnExists("career_jobs", "directory_profile_id");
+  if (!hasCareerDirectoryProfile) {
+    logger.app.info("Applying career directory location migration for linked store jobs");
+    await runSqlMigrationFile(migrationsFolder, "0042_career_directory_locations.sql");
+  }
+}
+
 export async function runMigrations() {
   const migrationsFolder = path.resolve(
     process.env.NODE_ENV === "production" ? __dirname : process.cwd(),
@@ -505,6 +513,7 @@ export async function runMigrations() {
     await ensureDirectoryProfileMediaTable(migrationsFolder);
     await ensureDirectoryProfileModes(migrationsFolder);
     await ensureCmsGalleryTables(migrationsFolder);
+    await ensureCareerDirectoryLocations(migrationsFolder);
   }
 
   if (!bootstrapState.hasJournal && bootstrapState.publicTableCount > 0) {

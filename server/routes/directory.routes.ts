@@ -5,11 +5,17 @@ import { paramString } from "../utils/params";
 import { therapistSearchSchema } from "@shared/types/directory";
 import * as r2Service from "../services/r2.service";
 import { getDirectorySettings } from "../services/directory-settings.service";
-import { getDirectoryExperienceMode } from "@shared/types/directory-settings";
+import { getSiteFeatures } from "../services/site-features.service";
+import {
+  DIRECTORY_MODE_PROFILE_ALIASES,
+  getDirectoryExperienceMode,
+} from "@shared/types/directory-settings";
 
 const router = Router();
 
-async function normalizeTherapistResult<T extends { user?: { profileImageUrl?: string | null } | null }>(item: T): Promise<T> {
+async function normalizeTherapistResult<
+  T extends { user?: { profileImageUrl?: string | null } | null },
+>(item: T): Promise<T> {
   if (!item.user) return item;
   return {
     ...item,
@@ -26,7 +32,9 @@ router.get(
     const parsed = therapistSearchSchema.safeParse(req.query);
 
     if (!parsed.success) {
-      res.status(400).json({ message: "Invalid query parameters", errors: parsed.error.flatten().fieldErrors });
+      res
+        .status(400)
+        .json({ message: "Invalid query parameters", errors: parsed.error.flatten().fieldErrors });
       return;
     }
 
@@ -71,7 +79,7 @@ router.get(
       ...result,
       items: await Promise.all(result.items.map(normalizeTherapistResult)),
     });
-  })
+  }),
 );
 
 router.get(
@@ -84,7 +92,7 @@ router.get(
       directoryMode,
     );
     res.json(options);
-  })
+  }),
 );
 
 router.get(
@@ -97,7 +105,44 @@ router.get(
       directoryMode,
     );
     res.json(await Promise.all(featured.map(normalizeTherapistResult)));
-  })
+  }),
+);
+
+router.get(
+  "/:id/jobs",
+  asyncHandler(async (req, res) => {
+    const directorySettings = await getDirectorySettings();
+    const directoryMode = getDirectoryExperienceMode(directorySettings);
+    const siteFeatures = await getSiteFeatures();
+
+    if (
+      directoryMode !== "store_locator" ||
+      !directorySettings.directoryShowLocationJobs ||
+      !siteFeatures.careersEnabled
+    ) {
+      res.json([]);
+      return;
+    }
+
+    const profileId = paramString(req.params.id);
+    const profile = await storage.therapists.getProfileWithUser(profileId);
+    if (
+      !profile ||
+      !profile.isActive ||
+      !DIRECTORY_MODE_PROFILE_ALIASES[directoryMode].includes(profile.directoryMode) ||
+      (directorySettings.directoryRequiresApprovedApplication && !profile.isApproved)
+    ) {
+      res.status(404).json({ message: "Location not found" });
+      return;
+    }
+
+    res.json(
+      await storage.careers.getJobs({
+        publicOnly: true,
+        directoryProfileId: profileId,
+      }),
+    );
+  }),
 );
 
 router.get(
@@ -109,14 +154,14 @@ router.get(
     if (
       !profile ||
       !profile.isActive ||
-      profile.directoryMode !== directoryMode ||
+      !DIRECTORY_MODE_PROFILE_ALIASES[directoryMode].includes(profile.directoryMode) ||
       (directorySettings.directoryRequiresApprovedApplication && !profile.isApproved)
     ) {
       res.status(404).json({ message: "Therapist not found" });
       return;
     }
     res.json(await normalizeTherapistResult(profile));
-  })
+  }),
 );
 
 export default router;

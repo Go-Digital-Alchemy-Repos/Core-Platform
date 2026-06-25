@@ -6,8 +6,8 @@ import {
 } from "@shared/types/directory-settings";
 
 export const DEFAULT_PUBLIC_DIRECTORY_SETTINGS: PublicDirectorySettings = {
-  directoryMode: "service_providers",
-  ...DIRECTORY_LABEL_PRESETS.service_providers,
+  directoryMode: "service_provider",
+  ...DIRECTORY_LABEL_PRESETS.service_provider,
   applicationFeeAmountCents: 15000,
   applicationFeeNoticeTitle: "Application Fee",
   applicationFeeNoticeBody:
@@ -22,6 +22,7 @@ export const DEFAULT_PUBLIC_DIRECTORY_SETTINGS: PublicDirectorySettings = {
   directoryRequiresApplicationProcess: true,
   directoryRequiresApprovedApplication: true,
   directoryRequiresActiveSubscription: true,
+  directoryShowLocationJobs: false,
 };
 
 export function useDirectorySettings() {

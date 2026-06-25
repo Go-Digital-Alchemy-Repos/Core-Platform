@@ -146,22 +146,18 @@ export function Footer() {
   const { settings: directorySettings } = useDirectorySettings();
   const directoryExperience = getDirectoryExperienceMode(directorySettings);
   const directoryPlural =
-    directoryExperience === "real_estate"
+    directoryExperience === "store_locator"
       ? directorySettings.listingLabelPlural || directorySettings.directoryLabelPlural || "Listings"
       : directorySettings.participantLabelPlural ||
         directorySettings.listingLabelPlural ||
         "Listings";
-  const directoryLinkLabel =
-    directoryExperience === "therapists" &&
-    directorySettings.participantLabelPlural === "Therapists"
-      ? "Find a Provider"
-      : `Find ${directoryPlural}`;
+  const directoryLinkLabel = `Find ${directoryPlural}`;
   const professionalColumnTitle =
-    directoryExperience === "therapists" ? "For Professionals" : "For Listing Owners";
+    directoryExperience === "service_provider" ? "For Professionals" : "For Location Owners";
   const professionalLoginLabel =
-    directoryExperience === "therapists" ? "Professional Login" : "Listing Owner Login";
+    directoryExperience === "service_provider" ? "Professional Login" : "Location Owner Login";
   const brandBlurb =
-    directoryExperience === "therapists"
+    directoryExperience === "service_provider"
       ? "Connecting members with trusted providers through a flexible, searchable directory."
       : `Connecting people with trusted ${directoryPlural.toLowerCase()} through a flexible, searchable directory.`;
   const defaultPlatformLinks = [

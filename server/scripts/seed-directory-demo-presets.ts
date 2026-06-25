@@ -4,10 +4,7 @@ import { db, pool } from "../db";
 import { storage } from "../storage";
 import { specializations } from "@shared/schema/specializations";
 import { therapistProfiles, users } from "@shared/schema";
-import {
-  DIRECTORY_LABEL_PRESETS,
-  type DirectoryMode,
-} from "@shared/types/directory-settings";
+import { DIRECTORY_LABEL_PRESETS, type DirectoryMode } from "@shared/types/directory-settings";
 
 type DemoListing = {
   mode: DirectoryMode;
@@ -34,7 +31,7 @@ type DemoListing = {
 
 const demoListings: DemoListing[] = [
   {
-    mode: "real_estate",
+    mode: "store_locator",
     firstName: "Avery",
     lastName: "Morgan",
     title: "Residential Real Estate Advisor",
@@ -56,7 +53,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-01.webp",
   },
   {
-    mode: "real_estate",
+    mode: "store_locator",
     firstName: "Elena",
     lastName: "Santos",
     title: "Relocation Services Advisor",
@@ -78,7 +75,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-03.webp",
   },
   {
-    mode: "real_estate",
+    mode: "store_locator",
     firstName: "Jordan",
     lastName: "Lee",
     title: "Commercial Property Specialist",
@@ -100,7 +97,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-05.webp",
   },
   {
-    mode: "real_estate",
+    mode: "store_locator",
     firstName: "Maya",
     lastName: "Patel",
     title: "Luxury Leasing Consultant",
@@ -122,7 +119,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-07.webp",
   },
   {
-    mode: "real_estate",
+    mode: "store_locator",
     firstName: "Noah",
     lastName: "Bennett",
     title: "Investment Property Advisor",
@@ -144,7 +141,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-08.webp",
   },
   {
-    mode: "real_estate",
+    mode: "store_locator",
     firstName: "Camila",
     lastName: "Rossi",
     title: "New Development Specialist",
@@ -166,7 +163,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-10.webp",
   },
   {
-    mode: "real_estate",
+    mode: "store_locator",
     firstName: "Ethan",
     lastName: "Brooks",
     title: "Vacation Home Consultant",
@@ -188,7 +185,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-12.webp",
   },
   {
-    mode: "real_estate",
+    mode: "store_locator",
     firstName: "Lina",
     lastName: "Kowalski",
     title: "Urban Leasing Advisor",
@@ -210,7 +207,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-14.webp",
   },
   {
-    mode: "real_estate",
+    mode: "store_locator",
     firstName: "Owen",
     lastName: "Price",
     title: "Land and Estate Broker",
@@ -232,7 +229,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-16.webp",
   },
   {
-    mode: "real_estate",
+    mode: "store_locator",
     firstName: "Zara",
     lastName: "Hassan",
     title: "International Buyer Agent",
@@ -254,7 +251,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-18.webp",
   },
   {
-    mode: "real_estate",
+    mode: "store_locator",
     firstName: "Henry",
     lastName: "Walsh",
     title: "Historic Homes Specialist",
@@ -276,7 +273,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-20.webp",
   },
   {
-    mode: "real_estate",
+    mode: "store_locator",
     firstName: "Iris",
     lastName: "Tan",
     title: "Condo Market Advisor",
@@ -298,7 +295,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-22.webp",
   },
   {
-    mode: "locations",
+    mode: "store_locator",
     firstName: "Brookside",
     lastName: "Flagship",
     title: "Retail Store Location",
@@ -320,7 +317,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-09.webp",
   },
   {
-    mode: "locations",
+    mode: "store_locator",
     firstName: "Harbor",
     lastName: "Clinic",
     title: "Wellness Service Location",
@@ -342,7 +339,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-11.webp",
   },
   {
-    mode: "locations",
+    mode: "store_locator",
     firstName: "Northstar",
     lastName: "Depot",
     title: "Service Branch",
@@ -364,7 +361,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-13.webp",
   },
   {
-    mode: "service_providers",
+    mode: "service_provider",
     firstName: "Priya",
     lastName: "Nair",
     title: "Executive Coach",
@@ -386,7 +383,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-15.webp",
   },
   {
-    mode: "service_providers",
+    mode: "service_provider",
     firstName: "Marcus",
     lastName: "Reed",
     title: "Implementation Consultant",
@@ -408,7 +405,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-17.webp",
   },
   {
-    mode: "service_providers",
+    mode: "service_provider",
     firstName: "Sofia",
     lastName: "Klein",
     title: "Brand Strategy Partner",
@@ -430,7 +427,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-19.webp",
   },
   {
-    mode: "therapists",
+    mode: "service_provider",
     firstName: "Sarah",
     lastName: "Chen",
     title: "Cross-Cultural Support Professional",
@@ -452,7 +449,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-21.webp",
   },
   {
-    mode: "therapists",
+    mode: "service_provider",
     firstName: "James",
     lastName: "Okonkwo",
     title: "Family Support Specialist",
@@ -474,7 +471,7 @@ const demoListings: DemoListing[] = [
     profileImageUrl: "/avatars/avatar-23.webp",
   },
   {
-    mode: "therapists",
+    mode: "service_provider",
     firstName: "Maria",
     lastName: "Gonzalez",
     title: "Community Wellness Professional",
@@ -514,7 +511,9 @@ async function applyPreset(mode: DirectoryMode) {
 }
 
 async function seedSpecializations() {
-  const categoryNames = Array.from(new Set(demoListings.flatMap((listing) => listing.specializations)));
+  const categoryNames = Array.from(
+    new Set(demoListings.flatMap((listing) => listing.specializations)),
+  );
   for (let i = 0; i < categoryNames.length; i += 1) {
     await db
       .insert(specializations)

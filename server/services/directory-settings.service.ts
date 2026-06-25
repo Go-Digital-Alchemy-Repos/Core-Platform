@@ -1,8 +1,8 @@
 import { storage } from "../storage";
 import {
   DIRECTORY_LABEL_PRESETS,
-  DIRECTORY_MODES,
   DIRECTORY_PRIMARY_CTA_TYPES,
+  normalizeDirectoryMode,
   type DirectoryMode,
   type DirectoryPrimaryCtaType,
   type PublicDirectorySettings,
@@ -29,9 +29,7 @@ function parseMoneyToCents(value: string | undefined, fallbackCents: number): nu
 }
 
 function parseDirectoryMode(value: string | undefined): DirectoryMode {
-  return DIRECTORY_MODES.includes(value as DirectoryMode)
-    ? (value as DirectoryMode)
-    : "service_providers";
+  return normalizeDirectoryMode(value);
 }
 
 function parsePrimaryCtaType(
@@ -49,8 +47,8 @@ function parseLabel(value: string | undefined, fallback: string): string {
 }
 
 export const DEFAULT_DIRECTORY_SETTINGS: PublicDirectorySettings = {
-  directoryMode: "service_providers",
-  ...DIRECTORY_LABEL_PRESETS.service_providers,
+  directoryMode: "service_provider",
+  ...DIRECTORY_LABEL_PRESETS.service_provider,
   applicationFeeAmountCents: 15000,
   applicationFeeNoticeTitle: "Application Fee",
   applicationFeeNoticeBody:
@@ -65,6 +63,7 @@ export const DEFAULT_DIRECTORY_SETTINGS: PublicDirectorySettings = {
   directoryRequiresApplicationProcess: true,
   directoryRequiresApprovedApplication: true,
   directoryRequiresActiveSubscription: true,
+  directoryShowLocationJobs: false,
 };
 
 export type DirectorySettings = PublicDirectorySettings;
@@ -249,6 +248,10 @@ export async function getDirectorySettings(): Promise<DirectorySettings> {
     directoryRequiresActiveSubscription: parseBoolean(
       settings.directory_requires_active_subscription,
       DEFAULT_DIRECTORY_SETTINGS.directoryRequiresActiveSubscription,
+    ),
+    directoryShowLocationJobs: parseBoolean(
+      settings.directory_show_location_jobs,
+      DEFAULT_DIRECTORY_SETTINGS.directoryShowLocationJobs,
     ),
   };
 }

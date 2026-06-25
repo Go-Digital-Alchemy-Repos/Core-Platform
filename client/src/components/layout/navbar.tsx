@@ -235,16 +235,12 @@ export function Navbar() {
   const { settings: directorySettings } = useDirectorySettings();
   const directoryExperience = getDirectoryExperienceMode(directorySettings);
   const directoryPrimaryPlural =
-    directoryExperience === "real_estate"
+    directoryExperience === "store_locator"
       ? directorySettings.listingLabelPlural || directorySettings.directoryLabelPlural
       : directorySettings.participantLabelPlural || directorySettings.listingLabelPlural;
-  const directoryNavLabel =
-    directoryExperience === "therapists" &&
-    directorySettings.participantLabelPlural === "Therapists"
-      ? "Find a Provider"
-      : `Find ${directoryPrimaryPlural || "Listings"}`;
+  const directoryNavLabel = `Find ${directoryPrimaryPlural || "Listings"}`;
   const dashboardLabel =
-    directoryExperience === "therapists" ? "Professional Dashboard" : "Listing Dashboard";
+    directoryExperience === "service_provider" ? "Professional Dashboard" : "Listing Dashboard";
   const defaultNavLinks = [
     { label: "About", href: "/about" },
     { label: directoryNavLabel, href: "/directory" },
