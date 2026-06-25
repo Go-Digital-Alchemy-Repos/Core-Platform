@@ -131,6 +131,11 @@ function GalleryBlock({ props }: { props: Record<string, unknown> }) {
           columnsTablet: Number(props.columnsTablet ?? 2),
           columnsMobile: Number(props.columnsMobile ?? 1),
           spacing: (str(props.spacing) || "md") as "none" | "sm" | "md" | "lg",
+          transitionEffect: (str(props.transitionEffect) || "none") as
+            | "none"
+            | "fade"
+            | "slide"
+            | "zoom",
           showTitle: props.showTitle !== false,
           showCaptions: props.showCaptions !== false,
           lightbox: props.lightbox !== false,

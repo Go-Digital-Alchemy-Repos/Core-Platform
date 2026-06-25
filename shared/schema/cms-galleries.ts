@@ -80,6 +80,7 @@ export const cmsGallerySettingsSchema = z.object({
   imageRatio: z.enum(["auto", "1/1", "4/3", "3/2", "16/9"]).default("4/3"),
   cropMode: z.enum(["cover", "contain"]).default("cover"),
   borderRadius: z.enum(["none", "sm", "md", "lg"]).default("md"),
+  transitionEffect: z.enum(["none", "fade", "slide", "zoom"]).default("none"),
   showTitle: z.boolean().default(true),
   showCaptions: z.boolean().default(true),
   captionPosition: z.enum(["below", "overlay"]).default("below"),

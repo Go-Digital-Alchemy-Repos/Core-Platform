@@ -62,6 +62,7 @@ const DEFAULT_SETTINGS: CmsGallerySettings = {
   imageRatio: "4/3",
   cropMode: "cover",
   borderRadius: "md",
+  transitionEffect: "none",
   showTitle: true,
   showCaptions: true,
   captionPosition: "below",
@@ -490,6 +491,18 @@ export default function CmsGalleryEditorPage() {
                       <SelectItem value="4/3">4:3</SelectItem>
                       <SelectItem value="3/2">3:2</SelectItem>
                       <SelectItem value="16/9">16:9</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Transition effect</Label>
+                  <Select value={settings.transitionEffect} onValueChange={(value) => setSetting("transitionEffect", value as CmsGallerySettings["transitionEffect"])}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No transition effect</SelectItem>
+                      <SelectItem value="fade">Fade</SelectItem>
+                      <SelectItem value="slide">Slide left/right</SelectItem>
+                      <SelectItem value="zoom">Zoom</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS: CmsGallerySettings = {
   imageRatio: "4/3",
   cropMode: "cover",
   borderRadius: "md",
+  transitionEffect: "none",
   showTitle: true,
   showCaptions: true,
   captionPosition: "below",
@@ -66,6 +67,7 @@ export function GalleryRenderer({
   const gallery = providedGallery ?? fetchedGallery;
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [slideIndex, setSlideIndex] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<"next" | "previous">("next");
 
   const settings = { ...DEFAULT_SETTINGS, ...(gallery?.settings ?? {}), ...(overrides ?? {}) };
   const layout = String(overrides?.layout || gallery?.layout || "grid");
@@ -162,8 +164,27 @@ export function GalleryRenderer({
     </figure>
   );
 
-  const nextSlide = () => setSlideIndex((current) => (current + 1) % items.length);
-  const previousSlide = () => setSlideIndex((current) => (current - 1 + items.length) % items.length);
+  const setGallerySlide = (nextIndex: number, direction: "next" | "previous") => {
+    setSlideDirection(direction);
+    setSlideIndex(nextIndex);
+  };
+  const nextSlide = () => setGallerySlide((slideIndex + 1) % items.length, "next");
+  const previousSlide = () =>
+    setGallerySlide((slideIndex - 1 + items.length) % items.length, "previous");
+  const selectSlide = (nextIndex: number) => {
+    if (nextIndex === slideIndex) return;
+    setGallerySlide(nextIndex, nextIndex > slideIndex ? "next" : "previous");
+  };
+  const transitionClass =
+    settings.transitionEffect === "fade"
+      ? "cms-gallery-transition-fade"
+      : settings.transitionEffect === "slide"
+        ? slideDirection === "previous"
+          ? "cms-gallery-transition-slide-right"
+          : "cms-gallery-transition-slide-left"
+        : settings.transitionEffect === "zoom"
+          ? "cms-gallery-transition-zoom"
+          : "";
 
   return (
     <section
@@ -175,6 +196,7 @@ export function GalleryRenderer({
         <div className="space-y-4">
           <div className="relative">
             <img
+              key={`${items[slideIndex]?.id ?? slideIndex}-${settings.transitionEffect}-${slideDirection}`}
               src={items[slideIndex]?.imageUrl}
               alt={items[slideIndex]?.alt || items[slideIndex]?.title || gallery.title}
               className={cn(
@@ -182,6 +204,7 @@ export function GalleryRenderer({
                 layout === "featured" ? "aspect-[16/9]" : "aspect-[4/3]",
                 settings.cropMode === "contain" ? "object-contain" : "object-cover",
                 RADIUS_CLASS[settings.borderRadius],
+                transitionClass,
               )}
               onClick={() => openLightbox(slideIndex)}
             />
@@ -232,7 +255,7 @@ export function GalleryRenderer({
                     "aspect-square overflow-hidden rounded border",
                     index === slideIndex && "ring-2 ring-primary",
                   )}
-                  onClick={() => setSlideIndex(index)}
+                  onClick={() => selectSlide(index)}
                 >
                   <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
                 </button>
