@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS: CmsGallerySettings = {
   imageRatio: "4/3",
   cropMode: "cover",
   borderRadius: "md",
+  showTitle: true,
   showCaptions: true,
   captionPosition: "below",
   lightbox: true,
@@ -106,7 +107,8 @@ export function GalleryRenderer({
   const openLightbox = (index: number) => {
     if (settings.lightbox) setActiveIndex(index);
   };
-  const showInlineCaptions = settings.showCaptions && settings.captionPosition === "below";
+  const showInlineMeta =
+    settings.captionPosition === "below" && (settings.showTitle || settings.showCaptions);
 
   const renderImage = (item: (typeof items)[number], index: number) => (
     <figure key={item.id ?? `${item.imageUrl}-${index}`} className="group min-w-0">
@@ -132,17 +134,29 @@ export function GalleryRenderer({
             settings.imageRatio === "auto" && "h-auto",
           )}
         />
-        {settings.showCaptions && settings.captionPosition === "overlay" && item.caption ? (
+        {settings.captionPosition === "overlay" &&
+        ((settings.showTitle && item.title) || (settings.showCaptions && item.caption)) ? (
           <figcaption className="absolute inset-x-0 bottom-0 bg-black/60 px-3 py-2 text-sm text-white">
-            {item.caption}
+            {settings.showTitle && item.title ? (
+              <span className="font-medium">{item.title}</span>
+            ) : null}
+            {settings.showTitle && item.title && settings.showCaptions && item.caption ? (
+              <span> — </span>
+            ) : null}
+            {settings.showCaptions ? item.caption : null}
           </figcaption>
         ) : null}
       </button>
-      {showInlineCaptions && (item.title || item.caption) ? (
+      {showInlineMeta &&
+      ((settings.showTitle && item.title) || (settings.showCaptions && item.caption)) ? (
         <figcaption className="mt-2 text-sm text-muted-foreground">
-          {item.title ? <span className="font-medium text-foreground">{item.title}</span> : null}
-          {item.title && item.caption ? <span> — </span> : null}
-          {item.caption}
+          {settings.showTitle && item.title ? (
+            <span className="font-medium text-foreground">{item.title}</span>
+          ) : null}
+          {settings.showTitle && item.title && settings.showCaptions && item.caption ? (
+            <span> — </span>
+          ) : null}
+          {settings.showCaptions ? item.caption : null}
         </figcaption>
       ) : null}
     </figure>
@@ -193,13 +207,20 @@ export function GalleryRenderer({
               </>
             ) : null}
           </div>
-          {showInlineCaptions && (items[slideIndex]?.title || items[slideIndex]?.caption) ? (
+          {showInlineMeta &&
+          ((settings.showTitle && items[slideIndex]?.title) ||
+            (settings.showCaptions && items[slideIndex]?.caption)) ? (
             <p className="text-sm text-muted-foreground">
-              {items[slideIndex]?.title ? (
+              {settings.showTitle && items[slideIndex]?.title ? (
                 <span className="font-medium text-foreground">{items[slideIndex]?.title}</span>
               ) : null}
-              {items[slideIndex]?.title && items[slideIndex]?.caption ? <span> — </span> : null}
-              {items[slideIndex]?.caption}
+              {settings.showTitle &&
+              items[slideIndex]?.title &&
+              settings.showCaptions &&
+              items[slideIndex]?.caption ? (
+                <span> — </span>
+              ) : null}
+              {settings.showCaptions ? items[slideIndex]?.caption : null}
             </p>
           ) : null}
           {layout === "featured" && items.length > 1 ? (

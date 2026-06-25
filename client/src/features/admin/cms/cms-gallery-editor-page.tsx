@@ -62,6 +62,7 @@ const DEFAULT_SETTINGS: CmsGallerySettings = {
   imageRatio: "4/3",
   cropMode: "cover",
   borderRadius: "md",
+  showTitle: true,
   showCaptions: true,
   captionPosition: "below",
   lightbox: true,
@@ -501,6 +502,10 @@ export default function CmsGalleryEditorPage() {
                       <SelectItem value="overlay">Overlay</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="flex items-center justify-between rounded-md border p-3">
+                  <Label>Show title</Label>
+                  <Switch checked={settings.showTitle} onCheckedChange={(value) => setSetting("showTitle", value)} />
                 </div>
                 <div className="flex items-center justify-between rounded-md border p-3">
                   <Label>Show captions</Label>
