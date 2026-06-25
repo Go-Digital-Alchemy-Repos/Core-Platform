@@ -1,7 +1,6 @@
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { CmsGallerySettings, CmsGalleryWithItems } from "@shared/schema";
 
@@ -147,11 +146,75 @@ export function GalleryRenderer({
   const openLightbox = (index: number) => {
     if (settings.lightbox) setActiveIndex(index);
   };
+  const hasMeta = (item: (typeof items)[number]) =>
+    (settings.showTitle && item.title) || (settings.showCaptions && item.caption);
+  const hasAction = (item: (typeof items)[number]) => item.linkUrl && item.ctaText;
   const showInlineMeta =
     settings.captionPosition === "below" && (settings.showTitle || settings.showCaptions);
+  const renderCaptionContent = (item: (typeof items)[number], renderActionLink = true) => (
+    <>
+      {settings.showTitle && item.title ? <span className="font-medium">{item.title}</span> : null}
+      {settings.showTitle && item.title && settings.showCaptions && item.caption ? (
+        <span> — </span>
+      ) : null}
+      {settings.showCaptions ? item.caption : null}
+      {hasAction(item) ? (
+        <>
+          {(settings.showTitle && item.title) || (settings.showCaptions && item.caption) ? (
+            <span> </span>
+          ) : null}
+          {renderActionLink ? (
+            <a
+              href={item.linkUrl ?? undefined}
+              className="font-medium underline underline-offset-2"
+              onClick={(event) => event.stopPropagation()}
+            >
+              {item.ctaText}
+            </a>
+          ) : (
+            <span className="font-medium underline underline-offset-2">{item.ctaText}</span>
+          )}
+        </>
+      ) : null}
+    </>
+  );
+  const renderInlineCaption = (item: (typeof items)[number]) =>
+    showInlineMeta && (hasMeta(item) || hasAction(item)) ? (
+      <figcaption className="mt-2 text-sm text-muted-foreground">
+        {settings.showTitle && item.title ? (
+          <span className="text-foreground">{item.title}</span>
+        ) : null}
+        {settings.showTitle && item.title && settings.showCaptions && item.caption ? (
+          <span> — </span>
+        ) : null}
+        {settings.showCaptions ? item.caption : null}
+        {hasAction(item) ? (
+          <>
+            {(settings.showTitle && item.title) || (settings.showCaptions && item.caption) ? (
+              <span> </span>
+            ) : null}
+            <a
+              href={item.linkUrl ?? undefined}
+              className="font-medium text-primary underline underline-offset-2"
+            >
+              {item.ctaText}
+            </a>
+          </>
+        ) : null}
+      </figcaption>
+    ) : null;
+  const renderOverlayCaption = (item: (typeof items)[number], renderActionLink = false) =>
+    settings.captionPosition === "overlay" && (hasMeta(item) || hasAction(item)) ? (
+      <figcaption className="absolute inset-x-0 bottom-0 bg-black/60 px-3 py-2 text-sm text-white">
+        {renderCaptionContent(item, renderActionLink)}
+      </figcaption>
+    ) : null;
 
   const renderImage = (item: (typeof items)[number], index: number) => (
-    <figure key={item.id ?? `${item.imageUrl}-${index}`} className="group min-w-0">
+    <figure
+      key={item.id ?? `${item.imageUrl}-${index}`}
+      className={cn("group min-w-0", layout === "masonry" && "mb-4 break-inside-avoid")}
+    >
       <button
         type="button"
         className={cn(
@@ -174,31 +237,9 @@ export function GalleryRenderer({
             settings.imageRatio === "auto" && "h-auto",
           )}
         />
-        {settings.captionPosition === "overlay" &&
-        ((settings.showTitle && item.title) || (settings.showCaptions && item.caption)) ? (
-          <figcaption className="absolute inset-x-0 bottom-0 bg-black/60 px-3 py-2 text-sm text-white">
-            {settings.showTitle && item.title ? (
-              <span className="font-medium">{item.title}</span>
-            ) : null}
-            {settings.showTitle && item.title && settings.showCaptions && item.caption ? (
-              <span> — </span>
-            ) : null}
-            {settings.showCaptions ? item.caption : null}
-          </figcaption>
-        ) : null}
+        {renderOverlayCaption(item)}
       </button>
-      {showInlineMeta &&
-      ((settings.showTitle && item.title) || (settings.showCaptions && item.caption)) ? (
-        <figcaption className="mt-2 text-sm text-muted-foreground">
-          {settings.showTitle && item.title ? (
-            <span className="font-medium text-foreground">{item.title}</span>
-          ) : null}
-          {settings.showTitle && item.title && settings.showCaptions && item.caption ? (
-            <span> — </span>
-          ) : null}
-          {settings.showCaptions ? item.caption : null}
-        </figcaption>
-      ) : null}
+      {renderInlineCaption(item)}
     </figure>
   );
 
@@ -287,19 +328,9 @@ export function GalleryRenderer({
                         settings.imageRatio === "auto" && "h-auto",
                       )}
                     />
+                    {renderOverlayCaption(item)}
                   </button>
-                  {showInlineMeta &&
-                  ((settings.showTitle && item.title) || (settings.showCaptions && item.caption)) ? (
-                    <figcaption className="mt-2 text-sm text-muted-foreground">
-                      {settings.showTitle && item.title ? (
-                        <span className="font-medium text-foreground">{item.title}</span>
-                      ) : null}
-                      {settings.showTitle && item.title && settings.showCaptions && item.caption ? (
-                        <span> — </span>
-                      ) : null}
-                      {settings.showCaptions ? item.caption : null}
-                    </figcaption>
-                  ) : null}
+                  {renderInlineCaption(item)}
                 </figure>
               ))}
             </div>
@@ -343,6 +374,7 @@ export function GalleryRenderer({
               )}
               onClick={() => openLightbox(slideIndex)}
             />
+            {renderOverlayCaption(items[slideIndex], true)}
             {items.length > 1 ? (
               <>
                 <button
@@ -366,21 +398,23 @@ export function GalleryRenderer({
               </>
             ) : null}
           </div>
-          {showInlineMeta &&
-          ((settings.showTitle && items[slideIndex]?.title) ||
-            (settings.showCaptions && items[slideIndex]?.caption)) ? (
-            <p className="text-sm text-muted-foreground">
-              {settings.showTitle && items[slideIndex]?.title ? (
-                <span className="font-medium text-foreground">{items[slideIndex]?.title}</span>
-              ) : null}
-              {settings.showTitle &&
-              items[slideIndex]?.title &&
-              settings.showCaptions &&
-              items[slideIndex]?.caption ? (
-                <span> — </span>
-              ) : null}
-              {settings.showCaptions ? items[slideIndex]?.caption : null}
-            </p>
+          {renderInlineCaption(items[slideIndex])}
+          {layout === "slider" && items.length > 1 ? (
+            <div className="flex items-center justify-center gap-2" aria-label="Gallery slides">
+              {items.map((item, index) => (
+                <button
+                  key={item.id ?? index}
+                  type="button"
+                  className={cn(
+                    "h-2.5 w-2.5 rounded-full bg-muted-foreground/30 transition",
+                    index === slideIndex && "w-6 bg-primary",
+                  )}
+                  onClick={() => selectSlide(index)}
+                  aria-label={`Show image ${index + 1}`}
+                  aria-current={index === slideIndex ? "true" : undefined}
+                />
+              ))}
+            </div>
           ) : null}
           {layout === "featured" && items.length > 1 ? (
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
@@ -403,12 +437,35 @@ export function GalleryRenderer({
       ) : (
         <div
           className={cn(
-            "grid",
+            layout === "masonry" ? "columns-1" : "grid",
             GAP_CLASS[settings.spacing],
-            GRID_COLUMN_CLASS.mobile[settings.columnsMobile],
-            GRID_COLUMN_CLASS.tablet[settings.columnsTablet],
-            GRID_COLUMN_CLASS.desktop[settings.columnsDesktop],
-            layout === "masonry" && "items-start",
+            layout === "masonry"
+              ? [
+                  settings.columnsMobile === 2 ? "columns-2" : "columns-1",
+                  settings.columnsTablet === 1
+                    ? "sm:columns-1"
+                    : settings.columnsTablet === 3
+                      ? "sm:columns-3"
+                      : settings.columnsTablet === 4
+                        ? "sm:columns-4"
+                        : "sm:columns-2",
+                  settings.columnsDesktop === 1
+                    ? "lg:columns-1"
+                    : settings.columnsDesktop === 2
+                      ? "lg:columns-2"
+                      : settings.columnsDesktop === 4
+                        ? "lg:columns-4"
+                        : settings.columnsDesktop === 5
+                          ? "lg:columns-5"
+                          : settings.columnsDesktop === 6
+                            ? "lg:columns-6"
+                            : "lg:columns-3",
+                ]
+              : [
+                  GRID_COLUMN_CLASS.mobile[settings.columnsMobile],
+                  GRID_COLUMN_CLASS.tablet[settings.columnsTablet],
+                  GRID_COLUMN_CLASS.desktop[settings.columnsDesktop],
+                ],
           )}
         >
           {items.map(renderImage)}

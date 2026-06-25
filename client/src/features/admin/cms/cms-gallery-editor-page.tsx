@@ -503,6 +503,49 @@ export default function CmsGalleryEditorPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="grid gap-2">
+                  <Label>Image fit</Label>
+                  <Select value={settings.cropMode} onValueChange={(value) => setSetting("cropMode", value as CmsGallerySettings["cropMode"])}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cover">Crop to fill</SelectItem>
+                      <SelectItem value="contain">Fit full image</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Corner radius</Label>
+                  <Select value={settings.borderRadius} onValueChange={(value) => setSetting("borderRadius", value as CmsGallerySettings["borderRadius"])}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="sm">Small</SelectItem>
+                      <SelectItem value="md">Medium</SelectItem>
+                      <SelectItem value="lg">Large</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Hover effect</Label>
+                  <Select value={settings.hoverEffect} onValueChange={(value) => setSetting("hoverEffect", value as CmsGallerySettings["hoverEffect"])}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="zoom">Zoom</SelectItem>
+                      <SelectItem value="fade">Fade</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Image limit</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={200}
+                    value={settings.maxImages}
+                    onChange={(event) => setSetting("maxImages", Number(event.target.value))}
+                  />
+                </div>
                 {usesSlideSettings ? (
                   <div className="grid gap-2">
                     <Label>Transition effect</Label>
