@@ -22,6 +22,7 @@ import { CmsPagesStorage } from "./cms-pages.storage";
 import { CmsPageRevisionsStorage } from "./cms-page-revisions.storage";
 import { CmsMediaStorage } from "./cms-media.storage";
 import { CmsSectionsStorage } from "./cms-sections.storage";
+import { CmsGalleriesStorage } from "./cms-galleries.storage";
 import { SeoSettingsStorage } from "./seo-settings.storage";
 import { RedirectsStorage } from "./redirects.storage";
 import { RecordingPurchaseStorage } from "./recording-purchase.storage";
@@ -61,6 +62,7 @@ export const storage = {
   cmsPageRevisions: new CmsPageRevisionsStorage(),
   cmsMedia: new CmsMediaStorage(),
   cmsSections: new CmsSectionsStorage(),
+  cmsGalleries: new CmsGalleriesStorage(),
   seoSettings: new SeoSettingsStorage(),
   redirects: new RedirectsStorage(),
   recordingPurchases: new RecordingPurchaseStorage(),
@@ -76,4 +78,9 @@ export const storage = {
   portfolio: new PortfolioStorage(),
 };
 
-export type { TherapistWithUser, PaginatedTherapists, DirectoryFilterOptions, TherapistSearchParams } from "@shared/types/directory";
+export type {
+  TherapistWithUser,
+  PaginatedTherapists,
+  DirectoryFilterOptions,
+  TherapistSearchParams,
+} from "@shared/types/directory";

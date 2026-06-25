@@ -27,7 +27,7 @@ router.get(
       });
     }
     res.json(page);
-  })
+  }),
 );
 
 router.get(
@@ -42,7 +42,19 @@ router.get(
     }
 
     res.json(page);
-  })
+  }),
+);
+
+router.get(
+  "/galleries/:id",
+  asyncHandler(async (req, res) => {
+    const id = paramString(req.params.id);
+    const gallery = await storage.cmsGalleries.getPublishedById(id);
+    if (!gallery) {
+      return res.status(404).json({ error: "Gallery not found" });
+    }
+    res.json(gallery);
+  }),
 );
 
 router.get(
@@ -53,7 +65,7 @@ router.get(
       return res.status(404).json({ error: "No default sidebar configured" });
     }
     res.json(sidebar);
-  })
+  }),
 );
 
 router.get(
@@ -65,7 +77,7 @@ router.get(
       return res.status(404).json({ error: "Sidebar not found" });
     }
     res.json(sidebar);
-  })
+  }),
 );
 
 router.get(
@@ -81,7 +93,7 @@ router.get(
       menuMap[location] = menu;
     }
     res.json(menuMap);
-  })
+  }),
 );
 
 router.get(
@@ -96,7 +108,7 @@ router.get(
       return res.status(404).json({ error: "No menu configured for this location" });
     }
     res.json(menu);
-  })
+  }),
 );
 
 export default router;

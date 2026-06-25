@@ -20,7 +20,7 @@ import type { BlockDef, PropDef } from "./block-registry";
 import { CmsImageUpload } from "../components/cms-image-upload";
 import { ImagePositionPicker } from "../components/image-position-picker";
 import { CmsRichTextEditor } from "./cms-rich-text-editor";
-import type { CmsForm, CmsPage } from "@shared/schema";
+import type { CmsForm, CmsGalleryWithItems, CmsPage } from "@shared/schema";
 
 interface BlockEditorProps {
   blockDef: BlockDef;
@@ -141,7 +141,8 @@ const GROUP_METADATA: Record<InspectorGroup, { label: string; description: strin
   },
   settings: {
     label: "Settings",
-    description: "Section backgrounds, overlays, styles, visibility toggles, and appearance controls.",
+    description:
+      "Section backgrounds, overlays, styles, visibility toggles, and appearance controls.",
   },
 };
 
@@ -230,9 +231,7 @@ const CONTEXTUAL_PRIORITY: Record<string, number> = {
 };
 
 function humanizeBlockType(type: string) {
-  return type
-    .replace(/[-_]+/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+  return type.replace(/[-_]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function inferFallbackPropDef(key: string, value: unknown): PropDef | null {
@@ -252,7 +251,11 @@ function inferFallbackPropDef(key: string, value: unknown): PropDef | null {
       return { key, label, type: "image-url", placeholder: "Upload or select image" };
     }
 
-    if (normalizedKey.endsWith("link") || normalizedKey.endsWith("url") || normalizedKey.includes("link")) {
+    if (
+      normalizedKey.endsWith("link") ||
+      normalizedKey.endsWith("url") ||
+      normalizedKey.includes("link")
+    ) {
       return { key, label, type: "url", placeholder: "Enter a link" };
     }
 
@@ -266,7 +269,10 @@ function inferFallbackPropDef(key: string, value: unknown): PropDef | null {
   return null;
 }
 
-export function createFallbackBlockDef(blockType: string, values: Record<string, unknown>): BlockDef {
+export function createFallbackBlockDef(
+  blockType: string,
+  values: Record<string, unknown>,
+): BlockDef {
   const propDefs = Object.entries(values)
     .map(([key, value]) => inferFallbackPropDef(key, value))
     .filter((propDef): propDef is PropDef => Boolean(propDef));
@@ -275,7 +281,8 @@ export function createFallbackBlockDef(blockType: string, values: Record<string,
     type: blockType,
     label: `${humanizeBlockType(blockType)} (Compatibility Mode)`,
     iconName: "Settings2",
-    description: "This block is using a compatibility editor because its normal inspector fields could not be loaded.",
+    description:
+      "This block is using a compatibility editor because its normal inspector fields could not be loaded.",
     category: "content",
     defaultProps: values,
     propDefs,
@@ -331,7 +338,10 @@ function isButtonLinkFieldKey(key: string) {
   return key === "link" || key.endsWith("Link");
 }
 
-function getDynamicPropLabel(propDef: Pick<PropDef, "key" | "label">, values: Record<string, unknown>) {
+function getDynamicPropLabel(
+  propDef: Pick<PropDef, "key" | "label">,
+  values: Record<string, unknown>,
+) {
   if (isButtonLinkFieldKey(propDef.key)) {
     const actionValue = normalizeButtonActionValue(propDef.key, values);
     if (actionValue === "internal-link") {
@@ -407,7 +417,8 @@ function inferInspectorGroup(propDef: PropDef): InspectorGroup {
   if (POSITION_PICKER_KEYS.has(propDef.key)) return "media";
   if (MEDIA_KEY_FRAGMENTS.some((fragment) => normalizedKey.includes(fragment))) return "media";
   if (LAYOUT_KEYS.has(propDef.key)) return "layout";
-  if (SETTINGS_KEY_FRAGMENTS.some((fragment) => normalizedKey.includes(fragment))) return "settings";
+  if (SETTINGS_KEY_FRAGMENTS.some((fragment) => normalizedKey.includes(fragment)))
+    return "settings";
   if (propDef.type === "color" || propDef.type === "boolean") return "settings";
 
   return "content";
@@ -491,9 +502,7 @@ function ArrayItemsField({
   };
 
   const updateItem = (idx: number, key: string, val: unknown) => {
-    const next = value.map((item, i) =>
-      i === idx ? { ...item, [key]: val } : item
-    );
+    const next = value.map((item, i) => (i === idx ? { ...item, [key]: val } : item));
     onChange(next);
   };
 
@@ -518,111 +527,122 @@ function ArrayItemsField({
           </div>
           {schema.map((field) =>
             shouldRenderConditionalField(field, item) ? (
-            <div key={field.key} className="space-y-1">
-              <Label className="text-[11px] text-muted-foreground">{getDynamicPropLabel(field, item)}</Label>
-              {field.type === "boolean" ? (
-                <div className="flex items-center gap-2 pt-1">
-                  <Switch
-                    checked={Boolean(item[field.key])}
-                    onCheckedChange={(checked) => updateItem(idx, field.key, checked)}
+              <div key={field.key} className="space-y-1">
+                <Label className="text-[11px] text-muted-foreground">
+                  {getDynamicPropLabel(field, item)}
+                </Label>
+                {field.type === "boolean" ? (
+                  <div className="flex items-center gap-2 pt-1">
+                    <Switch
+                      checked={Boolean(item[field.key])}
+                      onCheckedChange={(checked) => updateItem(idx, field.key, checked)}
+                      data-testid={`array-item-${idx}-${field.key}`}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {item[field.key] ? "Yes" : "No"}
+                    </span>
+                  </div>
+                ) : field.type === "image-url" ? (
+                  <CmsImageUpload
+                    value={String(item[field.key] ?? "")}
+                    onChange={(url) => updateItem(idx, field.key, url)}
                     data-testid={`array-item-${idx}-${field.key}`}
                   />
-                  <span className="text-xs text-muted-foreground">{item[field.key] ? "Yes" : "No"}</span>
-                </div>
-              ) : field.type === "image-url" ? (
-                <CmsImageUpload
-                  value={String(item[field.key] ?? "")}
-                  onChange={(url) => updateItem(idx, field.key, url)}
-                  data-testid={`array-item-${idx}-${field.key}`}
-                />
-              ) : field.type === "textarea" ? (
-                shouldUseRichTextEditor(field) ? (
+                ) : field.type === "textarea" ? (
+                  shouldUseRichTextEditor(field) ? (
+                    <CmsRichTextEditor
+                      value={String(item[field.key] ?? "")}
+                      onChange={(val) => updateItem(idx, field.key, val)}
+                      placeholder={field.placeholder}
+                      data-testid={`array-item-${idx}-${field.key}-richtext`}
+                    />
+                  ) : (
+                    <Textarea
+                      value={String(item[field.key] ?? "")}
+                      onChange={(e) => updateItem(idx, field.key, e.target.value)}
+                      placeholder={field.placeholder}
+                      rows={2}
+                      className="text-xs"
+                    />
+                  )
+                ) : field.type === "richtext" ? (
                   <CmsRichTextEditor
                     value={String(item[field.key] ?? "")}
                     onChange={(val) => updateItem(idx, field.key, val)}
                     placeholder={field.placeholder}
                     data-testid={`array-item-${idx}-${field.key}-richtext`}
                   />
+                ) : field.type === "select" ? (
+                  <Select
+                    value={
+                      field.key === "action" || field.key.endsWith("Action")
+                        ? normalizeButtonActionValue(field.key, item)
+                        : String(item[field.key] ?? "")
+                    }
+                    onValueChange={(val) => updateItem(idx, field.key, val)}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(field.options ?? []).map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : field.type === "form-select" ? (
+                  <Select
+                    value={String(item[field.key] ?? "")}
+                    onValueChange={(val) => updateItem(idx, field.key, val)}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Select form…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {forms
+                        .filter((form) => form.kind !== "application")
+                        .map((form) => (
+                          <SelectItem key={form.slug} value={form.slug} className="text-xs">
+                            {form.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                ) : field.type === "url" &&
+                  isButtonLinkFieldKey(field.key) &&
+                  normalizeButtonActionValue(field.key, item) === "internal-link" ? (
+                  <Select
+                    value={String(item[field.key] ?? "")}
+                    onValueChange={(val) => updateItem(idx, field.key, val)}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Select internal page…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pages.map((page) => {
+                        const path =
+                          page.slug === "home" || page.slug === "" ? "/" : `/${page.slug}`;
+                        return (
+                          <SelectItem key={page.id} value={path} className="text-xs">
+                            {page.title}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
                 ) : (
-                  <Textarea
+                  <Input
                     value={String(item[field.key] ?? "")}
                     onChange={(e) => updateItem(idx, field.key, e.target.value)}
                     placeholder={field.placeholder}
-                    rows={2}
-                    className="text-xs"
+                    autoPrependHttps={field.type === "url"}
+                    className="h-8 text-xs"
                   />
-                )
-              ) : field.type === "richtext" ? (
-                <CmsRichTextEditor
-                  value={String(item[field.key] ?? "")}
-                  onChange={(val) => updateItem(idx, field.key, val)}
-                  placeholder={field.placeholder}
-                  data-testid={`array-item-${idx}-${field.key}-richtext`}
-                />
-              ) : field.type === "select" ? (
-                <Select
-                  value={field.key === "action" || field.key.endsWith("Action") ? normalizeButtonActionValue(field.key, item) : String(item[field.key] ?? "")}
-                  onValueChange={(val) => updateItem(idx, field.key, val)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(field.options ?? []).map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : field.type === "form-select" ? (
-                <Select
-                  value={String(item[field.key] ?? "")}
-                  onValueChange={(val) => updateItem(idx, field.key, val)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="Select form…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {forms
-                      .filter((form) => form.kind !== "application")
-                      .map((form) => (
-                        <SelectItem key={form.slug} value={form.slug} className="text-xs">
-                          {form.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              ) : field.type === "url" && isButtonLinkFieldKey(field.key) && normalizeButtonActionValue(field.key, item) === "internal-link" ? (
-                <Select
-                  value={String(item[field.key] ?? "")}
-                  onValueChange={(val) => updateItem(idx, field.key, val)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="Select internal page…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {pages.map((page) => {
-                      const path = page.slug === "home" || page.slug === "" ? "/" : `/${page.slug}`;
-                      return (
-                        <SelectItem key={page.id} value={path} className="text-xs">
-                          {page.title}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  value={String(item[field.key] ?? "")}
-                  onChange={(e) => updateItem(idx, field.key, e.target.value)}
-                  placeholder={field.placeholder}
-                  autoPrependHttps={field.type === "url"}
-                  className="h-8 text-xs"
-                />
-              )}
-            </div>
-            ) : null
+                )}
+              </div>
+            ) : null,
           )}
         </div>
       ))}
@@ -662,6 +682,11 @@ function PropField({
     staleTime: STALE_TIMES.LIVE,
     enabled: propDef.type === "url" && isButtonLinkFieldKey(propDef.key),
   });
+  const { data: galleries = [] } = useQuery<CmsGalleryWithItems[]>({
+    queryKey: ["/api/admin/cms/galleries"],
+    staleTime: STALE_TIMES.LIVE,
+    enabled: propDef.type === "gallery-select",
+  });
   const strVal = String(value ?? "");
   const numVal = Number(value ?? 0);
   const boolVal = propDef.key === "isActive" ? value !== false : Boolean(value);
@@ -681,9 +706,17 @@ function PropField({
           />
         );
       }
-      if (propDef.type === "url" && isButtonLinkFieldKey(propDef.key) && actionValue === "internal-link") {
+      if (
+        propDef.type === "url" &&
+        isButtonLinkFieldKey(propDef.key) &&
+        actionValue === "internal-link"
+      ) {
         return (
-          <Select value={strVal} onValueChange={onChange} data-testid={`prop-page-select-${propDef.key}`}>
+          <Select
+            value={strVal}
+            onValueChange={onChange}
+            data-testid={`prop-page-select-${propDef.key}`}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select internal page…" />
             </SelectTrigger>
@@ -748,11 +781,32 @@ function PropField({
           data-testid={`prop-image-${propDef.key}`}
         />
       );
+    case "gallery-select":
+      return (
+        <Select value={strVal} onValueChange={onChange} data-testid={`prop-gallery-${propDef.key}`}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select gallery…" />
+          </SelectTrigger>
+          <SelectContent>
+            {galleries
+              .filter((gallery) => gallery.status === "published")
+              .map((gallery) => (
+                <SelectItem key={gallery.id} value={gallery.id}>
+                  {gallery.title} ({gallery.imageCount})
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+      );
     case "select":
     case "form-select":
       return (
         <Select
-          value={propDef.key.endsWith("Action") ? normalizeButtonActionValue(propDef.key, values) : strVal}
+          value={
+            propDef.key.endsWith("Action")
+              ? normalizeButtonActionValue(propDef.key, values)
+              : strVal
+          }
           onValueChange={onChange}
           data-testid={`prop-select-${propDef.key}`}
         >
@@ -764,7 +818,7 @@ function PropField({
               ? forms
                   .filter((form) => form.kind !== "application")
                   .map((form) => ({ label: form.name, value: form.slug }))
-              : propDef.options ?? []
+              : (propDef.options ?? [])
             ).map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
@@ -865,10 +919,13 @@ export function BlockEditor({
   }, [orderedPropDefs]);
 
   const availableGroups = (Object.keys(groupedPropDefs) as InspectorGroup[]).filter(
-    (group) => groupedPropDefs[group].length > 0
+    (group) => groupedPropDefs[group].length > 0,
   );
   const defaultGroup = availableGroups[0] ?? "content";
-  const contextualPropDefs = useMemo(() => getContextualPropDefs(orderedPropDefs), [orderedPropDefs]);
+  const contextualPropDefs = useMemo(
+    () => getContextualPropDefs(orderedPropDefs),
+    [orderedPropDefs],
+  );
   const contextualGroups = useMemo(() => {
     const groups: Record<InspectorGroup, PropDef[]> = {
       content: [],
@@ -881,10 +938,12 @@ export function BlockEditor({
       groups[inferInspectorGroup(propDef)].push(propDef);
     }
 
-    return (Object.keys(groups) as InspectorGroup[]).filter((group) => groups[group].length > 0).map((group) => ({
-      group,
-      propDefs: groups[group],
-    }));
+    return (Object.keys(groups) as InspectorGroup[])
+      .filter((group) => groups[group].length > 0)
+      .map((group) => ({
+        group,
+        propDefs: groups[group],
+      }));
   }, [contextualPropDefs]);
 
   const renderPropList = (propDefs: PropDef[]) =>
@@ -893,7 +952,7 @@ export function BlockEditor({
       if (POSITION_PICKER_KEYS.has(propDef.key)) return null;
 
       const imagePositionFieldGroup = IMAGE_POSITION_FIELD_GROUPS.find(
-        (group) => group.imageKey === propDef.key
+        (group) => group.imageKey === propDef.key,
       );
       const backgroundImageUrl = imagePositionFieldGroup
         ? String(props[imagePositionFieldGroup.imageKey] ?? "")
@@ -954,14 +1013,17 @@ export function BlockEditor({
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {GROUP_METADATA[group].label}
                   </p>
-                  <p className="text-xs text-muted-foreground">{GROUP_METADATA[group].description}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {GROUP_METADATA[group].description}
+                  </p>
                 </div>
                 {renderPropList(propDefs)}
               </div>
             ))
           ) : (
             <p className="text-sm text-muted-foreground">
-              This section does not have common inline controls yet. Use advanced settings for full editing.
+              This section does not have common inline controls yet. Use advanced settings for full
+              editing.
             </p>
           )}
 
@@ -982,9 +1044,7 @@ export function BlockEditor({
           <div className="sticky top-0 z-10 -mx-4 border-b border-border/70 bg-background/95 px-4 pb-3 pt-1 backdrop-blur">
             {editorIntro}
           </div>
-          <div className="px-0 pb-8">
-            {renderPropList(groupedPropDefs[defaultGroup])}
-          </div>
+          <div className="px-0 pb-8">{renderPropList(groupedPropDefs[defaultGroup])}</div>
         </div>
       ) : (
         <Tabs defaultValue={defaultGroup} className="space-y-4">
@@ -1072,7 +1132,8 @@ export function ResilientBlockEditor({
   const fallbackEditor = (
     <div className="space-y-4">
       <div className="rounded-xl border border-amber-300/70 bg-amber-50/70 px-3 py-3 text-sm text-amber-900">
-        Some inspector controls for this block could not be loaded, so we’ve switched to compatibility mode for this section.
+        Some inspector controls for this block could not be loaded, so we’ve switched to
+        compatibility mode for this section.
       </div>
       <BlockEditor
         blockDef={fallbackDef}
@@ -1086,7 +1147,10 @@ export function ResilientBlockEditor({
   );
 
   return (
-    <BlockEditorBoundary blockKey={`${resolvedBlockType}:${Object.keys(props).join("|")}`} fallback={fallbackEditor}>
+    <BlockEditorBoundary
+      blockKey={`${resolvedBlockType}:${Object.keys(props).join("|")}`}
+      fallback={fallbackEditor}
+    >
       <BlockEditor
         blockDef={blockDef}
         blockType={resolvedBlockType}

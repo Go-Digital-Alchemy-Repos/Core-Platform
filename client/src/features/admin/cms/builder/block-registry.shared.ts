@@ -5,6 +5,7 @@ export type PropType =
   | "image-url"
   | "url"
   | "page-select"
+  | "gallery-select"
   | "select"
   | "form-select"
   | "boolean"

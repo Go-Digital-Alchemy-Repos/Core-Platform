@@ -1,0 +1,487 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useParams } from "wouter";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  Eye,
+  EyeOff,
+  ImagePlus,
+  Loader2,
+  Trash2,
+} from "lucide-react";
+import { AdminSidebar } from "@/features/admin/admin-sidebar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CmsImageUpload } from "./components/cms-image-upload";
+import { GalleryRenderer } from "@/components/shared/gallery-renderer";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { CmsGallerySettings, CmsGalleryWithItems } from "@shared/schema";
+
+type GalleryItemForm = {
+  id?: string;
+  mediaId?: string | null;
+  imageUrl: string;
+  alt: string;
+  title: string;
+  caption: string;
+  linkUrl: string;
+  ctaText: string;
+  tags: string[];
+};
+
+const DEFAULT_SETTINGS: CmsGallerySettings = {
+  columnsDesktop: 3,
+  columnsTablet: 2,
+  columnsMobile: 1,
+  spacing: "md",
+  imageRatio: "4/3",
+  cropMode: "cover",
+  borderRadius: "md",
+  showCaptions: true,
+  captionPosition: "below",
+  lightbox: true,
+  hoverEffect: "zoom",
+  maxImages: 0,
+  customClassName: "",
+};
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-/]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export default function CmsGalleryEditorPage() {
+  const { id } = useParams<{ id: string }>();
+  const isNew = !id || id === "new";
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const slugEdited = useRef(false);
+
+  const { data: gallery, isLoading } = useQuery<CmsGalleryWithItems>({
+    queryKey: ["/api/admin/cms/galleries", id],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/cms/galleries/${id}`, { credentials: "include" });
+      if (!response.ok) throw new Error("Gallery not found");
+      return response.json();
+    },
+    enabled: !isNew,
+  });
+
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+  const [description, setDescription] = useState("");
+  const [status, setStatus] = useState("draft");
+  const [layout, setLayout] = useState("grid");
+  const [settings, setSettings] = useState<CmsGallerySettings>(DEFAULT_SETTINGS);
+  const [items, setItems] = useState<GalleryItemForm[]>([]);
+
+  useEffect(() => {
+    if (!gallery) return;
+    setTitle(gallery.title);
+    setSlug(gallery.slug);
+    setDescription(gallery.description ?? "");
+    setStatus(gallery.status);
+    setLayout(gallery.layout);
+    setSettings({ ...DEFAULT_SETTINGS, ...(gallery.settings ?? {}) });
+    setItems(
+      gallery.items.map((item) => ({
+        id: item.id,
+        mediaId: item.mediaId,
+        imageUrl: item.imageUrl,
+        alt: item.alt ?? "",
+        title: item.title ?? "",
+        caption: item.caption ?? "",
+        linkUrl: item.linkUrl ?? "",
+        ctaText: item.ctaText ?? "",
+        tags: item.tags ?? [],
+      })),
+    );
+    slugEdited.current = true;
+  }, [gallery]);
+
+  const previewGallery = useMemo<CmsGalleryWithItems>(
+    () => ({
+      id: gallery?.id ?? "preview",
+      title: title || "Gallery preview",
+      slug,
+      description,
+      status,
+      layout,
+      settings,
+      createdBy: gallery?.createdBy ?? null,
+      updatedBy: gallery?.updatedBy ?? null,
+      publishedAt: gallery?.publishedAt ?? null,
+      createdAt: gallery?.createdAt ?? null,
+      updatedAt: gallery?.updatedAt ?? null,
+      imageCount: items.filter((item) => item.imageUrl).length,
+      items: items
+        .filter((item) => item.imageUrl)
+        .map((item, index) => ({
+          id: item.id ?? `preview-${index}`,
+          galleryId: gallery?.id ?? "preview",
+          mediaId: item.mediaId ?? null,
+          imageUrl: item.imageUrl,
+          alt: item.alt || null,
+          title: item.title || null,
+          caption: item.caption || null,
+          linkUrl: item.linkUrl || null,
+          ctaText: item.ctaText || null,
+          tags: item.tags,
+          sortOrder: index,
+          createdAt: null,
+          updatedAt: null,
+        })),
+    }),
+    [description, gallery, items, layout, settings, slug, status, title],
+  );
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        title,
+        slug: slug || slugify(title),
+        description: description || null,
+        status,
+        layout,
+        settings,
+        items: items
+          .filter((item) => item.imageUrl)
+          .map((item, index) => ({
+            ...item,
+            sortOrder: index,
+            alt: item.alt || null,
+            title: item.title || null,
+            caption: item.caption || null,
+            linkUrl: item.linkUrl || null,
+            ctaText: item.ctaText || null,
+          })),
+      };
+      const response = await apiRequest(
+        isNew ? "POST" : "PUT",
+        isNew ? "/api/admin/cms/galleries" : `/api/admin/cms/galleries/${id}`,
+        payload,
+      );
+      return response.json() as Promise<CmsGalleryWithItems>;
+    },
+    onSuccess: (saved) => {
+      queryClient.invalidateQueries({
+        predicate: (query) => String(query.queryKey[0]).startsWith("/api/admin/cms/galleries"),
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/cms/galleries", saved.id] });
+      toast({ title: isNew ? "Gallery created" : "Gallery saved" });
+      if (isNew) navigate(`/admin/cms/galleries/${saved.id}`);
+    },
+    onError: (error: Error) =>
+      toast({ title: "Failed to save gallery", description: error.message, variant: "destructive" }),
+  });
+
+  const setSetting = <K extends keyof CmsGallerySettings>(key: K, value: CmsGallerySettings[K]) => {
+    setSettings((current) => ({ ...current, [key]: value }));
+  };
+
+  const updateItem = (index: number, patch: Partial<GalleryItemForm>) => {
+    setItems((current) => current.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  };
+
+  const moveItem = (index: number, direction: -1 | 1) => {
+    setItems((current) => {
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= current.length) return current;
+      const next = [...current];
+      const [item] = next.splice(index, 1);
+      next.splice(nextIndex, 0, item);
+      return next;
+    });
+  };
+
+  if (!isNew && isLoading) {
+    return (
+      <AdminSidebar>
+        <div className="mx-auto max-w-6xl space-y-4 p-6">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-96 w-full" />
+        </div>
+      </AdminSidebar>
+    );
+  }
+
+  return (
+    <AdminSidebar>
+      <div className="mx-auto max-w-6xl space-y-6 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/cms/galleries")}>
+              <ArrowLeft className="mr-1.5 h-4 w-4" />
+              Galleries
+            </Button>
+            <div>
+              <h1 className="text-xl font-heading font-semibold">
+                {isNew ? "New Gallery" : title || "Edit Gallery"}
+              </h1>
+              <Badge variant={status === "published" ? "default" : "outline"} className="mt-1">
+                {status === "published" ? <Eye className="mr-1 h-3 w-3" /> : <EyeOff className="mr-1 h-3 w-3" />}
+                {status}
+              </Badge>
+            </div>
+          </div>
+          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !title.trim()}>
+            {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Save Gallery
+          </Button>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Gallery Details</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="gallery-title">Title</Label>
+                  <Input
+                    id="gallery-title"
+                    value={title}
+                    onChange={(event) => {
+                      setTitle(event.target.value);
+                      if (!slugEdited.current) setSlug(slugify(event.target.value));
+                    }}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="gallery-slug">Slug</Label>
+                  <Input
+                    id="gallery-slug"
+                    value={slug}
+                    onChange={(event) => {
+                      slugEdited.current = true;
+                      setSlug(slugify(event.target.value));
+                    }}
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="gallery-description">Description</Label>
+                  <Textarea
+                    id="gallery-description"
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label>Status</Label>
+                    <Select value={status} onValueChange={setStatus}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="published">Published</SelectItem>
+                        <SelectItem value="archived">Archived</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Layout</Label>
+                    <Select value={layout} onValueChange={setLayout}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="grid">Grid</SelectItem>
+                        <SelectItem value="masonry">Masonry</SelectItem>
+                        <SelectItem value="carousel">Carousel</SelectItem>
+                        <SelectItem value="slider">Slider</SelectItem>
+                        <SelectItem value="featured">Featured + thumbnails</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-sm">Images</CardTitle>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setItems((current) => [
+                      ...current,
+                      { imageUrl: "", alt: "", title: "", caption: "", linkUrl: "", ctaText: "", tags: [] },
+                    ])
+                  }
+                >
+                  <ImagePlus className="mr-2 h-4 w-4" />
+                  Add Image
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {items.length === 0 ? (
+                  <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
+                    Add images to build this gallery.
+                  </div>
+                ) : (
+                  items.map((item, index) => (
+                    <div key={item.id ?? index} className="rounded-md border p-4">
+                      <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
+                        <CmsImageUpload
+                          value={item.imageUrl}
+                          onChange={(url) => updateItem(index, { imageUrl: url })}
+                          data-testid={`gallery-image-${index}`}
+                        />
+                        <div className="grid gap-3">
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="grid gap-1.5">
+                              <Label>Title</Label>
+                              <Input value={item.title} onChange={(event) => updateItem(index, { title: event.target.value })} />
+                            </div>
+                            <div className="grid gap-1.5">
+                              <Label>Alt text</Label>
+                              <Input value={item.alt} onChange={(event) => updateItem(index, { alt: event.target.value })} />
+                            </div>
+                          </div>
+                          <div className="grid gap-1.5">
+                            <Label>Caption</Label>
+                            <Textarea value={item.caption} onChange={(event) => updateItem(index, { caption: event.target.value })} rows={2} />
+                          </div>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="grid gap-1.5">
+                              <Label>Link URL</Label>
+                              <Input value={item.linkUrl} onChange={(event) => updateItem(index, { linkUrl: event.target.value })} />
+                            </div>
+                            <div className="grid gap-1.5">
+                              <Label>CTA text</Label>
+                              <Input value={item.ctaText} onChange={(event) => updateItem(index, { ctaText: event.target.value })} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex justify-end gap-1">
+                        <Button type="button" variant="ghost" size="icon" onClick={() => moveItem(index, -1)} disabled={index === 0}>
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => moveItem(index, 1)} disabled={index === items.length - 1}>
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setItems((current) => current.filter((_, i) => i !== index))}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Display Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="grid gap-1.5">
+                    <Label>Desktop</Label>
+                    <Input type="number" min={1} max={6} value={settings.columnsDesktop} onChange={(event) => setSetting("columnsDesktop", Number(event.target.value))} />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Tablet</Label>
+                    <Input type="number" min={1} max={4} value={settings.columnsTablet} onChange={(event) => setSetting("columnsTablet", Number(event.target.value))} />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Mobile</Label>
+                    <Input type="number" min={1} max={2} value={settings.columnsMobile} onChange={(event) => setSetting("columnsMobile", Number(event.target.value))} />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Spacing</Label>
+                  <Select value={settings.spacing} onValueChange={(value) => setSetting("spacing", value as CmsGallerySettings["spacing"])}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="sm">Small</SelectItem>
+                      <SelectItem value="md">Medium</SelectItem>
+                      <SelectItem value="lg">Large</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Image ratio</Label>
+                  <Select value={settings.imageRatio} onValueChange={(value) => setSetting("imageRatio", value as CmsGallerySettings["imageRatio"])}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto">Natural</SelectItem>
+                      <SelectItem value="1/1">Square</SelectItem>
+                      <SelectItem value="4/3">4:3</SelectItem>
+                      <SelectItem value="3/2">3:2</SelectItem>
+                      <SelectItem value="16/9">16:9</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Caption position</Label>
+                  <Select value={settings.captionPosition} onValueChange={(value) => setSetting("captionPosition", value as CmsGallerySettings["captionPosition"])}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="below">Below image</SelectItem>
+                      <SelectItem value="overlay">Overlay</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center justify-between rounded-md border p-3">
+                  <Label>Show captions</Label>
+                  <Switch checked={settings.showCaptions} onCheckedChange={(value) => setSetting("showCaptions", value)} />
+                </div>
+                <div className="flex items-center justify-between rounded-md border p-3">
+                  <Label>Lightbox</Label>
+                  <Switch checked={settings.lightbox} onCheckedChange={(value) => setSetting("lightbox", value)} />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Preview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <GalleryRenderer gallery={previewGallery} preview />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </AdminSidebar>
+  );
+}

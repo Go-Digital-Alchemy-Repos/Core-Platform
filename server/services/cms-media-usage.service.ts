@@ -6,6 +6,7 @@ import type {
   CmsMediaUsageReference,
   DirectoryProfileMedia,
   CmsPage,
+  CmsGalleryWithItems,
   EcommerceCategory,
   EcommerceProduct,
   EcommerceProductMedia,
@@ -206,6 +207,10 @@ function directoryGalleryStatusLabel(media: DirectoryProfileMedia) {
   return media.primary ? "Primary directory gallery image" : "Directory gallery image";
 }
 
+function cmsGalleryStatusLabel(gallery: CmsGalleryWithItems) {
+  return gallery.status === "published" ? "Published gallery" : `${gallery.status} gallery`;
+}
+
 export async function buildCmsMediaLibraryAssets(
   assets: CmsMediaAsset[],
 ): Promise<CmsMediaLibraryAsset[]> {
@@ -220,6 +225,7 @@ export async function buildCmsMediaLibraryAssets(
     products,
     categories,
     directoryGalleryMedia,
+    galleries,
   ] = await Promise.all([
     storage.cmsPages.getAllPages(),
     storage.blog.getAllPosts(),
@@ -231,6 +237,11 @@ export async function buildCmsMediaLibraryAssets(
     storage.ecommerce.getProducts({ includeArchived: true }),
     storage.ecommerce.getCategories(false),
     storage.therapists?.getProfileMediaUsage?.() ?? Promise.resolve([]),
+    (
+      storage as typeof storage & {
+        cmsGalleries?: { getAll: () => Promise<CmsGalleryWithItems[]> };
+      }
+    ).cmsGalleries?.getAll?.() ?? Promise.resolve([]),
   ]);
 
   const usageMap = new Map<string, CmsMediaUsageReference[]>();
@@ -264,6 +275,40 @@ export async function buildCmsMediaLibraryAssets(
       isLive,
       pageStatusLabel(page),
     );
+  }
+
+  for (const gallery of galleries) {
+    const fullGallery = await storage.cmsGalleries.getById(gallery.id);
+    if (!fullGallery) continue;
+    const path = `/admin/cms/galleries/${fullGallery.id}`;
+    for (const item of fullGallery.items) {
+      const label = cmsGalleryStatusLabel(fullGallery);
+      addAssetIdUsage(
+        usageMap,
+        dedupe,
+        fullGallery,
+        "cms_gallery",
+        fullGallery.title,
+        path,
+        "items.mediaId",
+        item.mediaId,
+        fullGallery.status === "published",
+        label,
+      );
+      addDirectFieldUsage(
+        assets,
+        usageMap,
+        dedupe,
+        fullGallery,
+        "cms_gallery",
+        fullGallery.title,
+        path,
+        "items.imageUrl",
+        item.imageUrl,
+        fullGallery.status === "published",
+        label,
+      );
+    }
   }
 
   for (const post of posts) {

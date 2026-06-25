@@ -11,18 +11,15 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { Input } from "@/components/ui/input";
 import {
   ArrowRight,
   BookOpen,
   CalendarDays,
   Clock,
-  ExternalLink,
   Image,
   Loader2,
   Lock,
   Play,
-  Search,
   Send,
   UserCheck,
 } from "lucide-react";
@@ -46,11 +43,7 @@ import {
   normalizeHexColor,
 } from "./section-style";
 import { SectionHeading } from "./section-heading";
-import {
-  getPostCategories,
-  getPrimaryPostCategory,
-  postMatchesCategory,
-} from "@/lib/blog-post-categories";
+import { GalleryRenderer } from "@/components/shared/gallery-renderer";
 import { LucideIcon } from "./block-icons";
 import {
   CalloutBoxBlock,
@@ -85,11 +78,7 @@ import {
   StatsBarBlock,
   TrustBarBlock,
 } from "./conversion-blocks";
-import {
-  BlogFeaturedPostBlock,
-  BlogPostFeedBlock,
-  StandardBlogPageBlock,
-} from "./blog-blocks";
+import { BlogFeaturedPostBlock, BlogPostFeedBlock, StandardBlogPageBlock } from "./blog-blocks";
 import {
   arr,
   colorStyle,
@@ -105,6 +94,28 @@ import {
 type DirectoryProvider = TherapistProfile & {
   user?: Pick<AppUser, "firstName" | "lastName"> & { profileImageUrl?: string | null };
 };
+
+function GalleryBlock({ props }: { props: Record<string, unknown> }) {
+  const galleryId = str(props.galleryId);
+  const layout = str(props.layout) || "inherit";
+  return (
+    <div className="py-4" data-testid="block-gallery">
+      <GalleryRenderer
+        galleryId={galleryId}
+        preview
+        overrides={{
+          layout: layout === "inherit" ? undefined : layout,
+          columnsDesktop: Number(props.columnsDesktop ?? 3),
+          columnsTablet: Number(props.columnsTablet ?? 2),
+          columnsMobile: Number(props.columnsMobile ?? 1),
+          spacing: (str(props.spacing) || "md") as "none" | "sm" | "md" | "lg",
+          showCaptions: props.showCaptions !== false,
+          lightbox: props.lightbox !== false,
+        }}
+      />
+    </div>
+  );
+}
 
 interface DirectoryProvidersResponse {
   items: DirectoryProvider[];
@@ -953,6 +964,7 @@ const RENDERERS: Record<string, React.ComponentType<{ props: Record<string, unkn
   "press-mentions": PressMentionsBlock,
   "social-proof-stats": SocialProofStatsBlock,
   "image-grid": ImageGridBlock,
+  gallery: GalleryBlock,
   slider: SliderBlock,
   "stats-bar": StatsBarBlock,
   "icon-grid": IconGridBlock,

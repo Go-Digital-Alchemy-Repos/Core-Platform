@@ -20,6 +20,7 @@ import {
   Globe,
   FileCode,
   Image,
+  Images,
   SearchIcon,
   SquarePen,
   Blocks,
@@ -377,6 +378,12 @@ export function buildNavGroups(
                       icon: BookOpen,
                       iconColor: "text-purple-600",
                     } satisfies NavItem,
+                    {
+                      title: "Galleries",
+                      href: "/admin/cms/galleries",
+                      icon: Images,
+                      iconColor: "text-fuchsia-600",
+                    } satisfies NavItem,
                   ]
                 : []),
               ...(siteFeatures.cmsEnabled
@@ -522,11 +529,10 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
     setOpenGroup(open ? label : null);
   };
   const exactOnlyRoutes = ["/admin", "/admin/cms", "/admin/crm", "/admin/membership"];
-  const isRouteActive = (href?: string) => Boolean(
-    href &&
-      (location === href ||
-        (!exactOnlyRoutes.includes(href) && location.startsWith(href))),
-  );
+  const isRouteActive = (href?: string) =>
+    Boolean(
+      href && (location === href || (!exactOnlyRoutes.includes(href) && location.startsWith(href))),
+    );
   const isChildRouteActive = (child: NavItem) => {
     if (!child.href) return false;
     if (child.href === "/admin/cms/blog") {
@@ -540,9 +546,8 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
   };
   const isNavItemActive = (item: NavItem) =>
     isRouteActive(item.href) || Boolean(item.children?.some(isChildRouteActive));
-  const activeGroupLabel = navGroups.find((group) =>
-    group.label && group.items.some(isNavItemActive)
-  )?.label ?? null;
+  const activeGroupLabel =
+    navGroups.find((group) => group.label && group.items.some(isNavItemActive))?.label ?? null;
   const commandItems = useMemo(() => buildAdminCommandItems(navGroups), [navGroups]);
 
   useEffect(() => {
@@ -661,7 +666,10 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                 type="button"
                 variant="outline"
                 size="sm"
-                className={cn("mt-4 w-full justify-start text-muted-foreground", collapsed && "justify-center px-0")}
+                className={cn(
+                  "mt-4 w-full justify-start text-muted-foreground",
+                  collapsed && "justify-center px-0",
+                )}
                 onClick={() => setCommandOpen(true)}
                 data-testid="button-admin-command-search"
               >

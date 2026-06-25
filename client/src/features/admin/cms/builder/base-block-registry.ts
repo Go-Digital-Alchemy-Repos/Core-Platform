@@ -1205,6 +1205,55 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
     ],
   },
   {
+    type: "gallery",
+    label: "Gallery",
+    iconName: "Images",
+    description: "Reusable CMS photo gallery with display controls",
+    category: "media",
+    defaultProps: {
+      galleryId: "",
+      layout: "inherit",
+      columnsDesktop: 3,
+      columnsTablet: 2,
+      columnsMobile: 1,
+      spacing: "md",
+      showCaptions: true,
+      lightbox: true,
+    },
+    propDefs: [
+      { key: "galleryId", label: "Gallery", type: "gallery-select" },
+      {
+        key: "layout",
+        label: "Layout Override",
+        type: "select",
+        options: [
+          { label: "Use gallery default", value: "inherit" },
+          { label: "Grid", value: "grid" },
+          { label: "Masonry", value: "masonry" },
+          { label: "Carousel", value: "carousel" },
+          { label: "Slider", value: "slider" },
+          { label: "Featured + thumbnails", value: "featured" },
+        ],
+      },
+      { key: "columnsDesktop", label: "Desktop Columns", type: "number", min: 1, max: 6 },
+      { key: "columnsTablet", label: "Tablet Columns", type: "number", min: 1, max: 4 },
+      { key: "columnsMobile", label: "Mobile Columns", type: "number", min: 1, max: 2 },
+      {
+        key: "spacing",
+        label: "Spacing",
+        type: "select",
+        options: [
+          { label: "None", value: "none" },
+          { label: "Small", value: "sm" },
+          { label: "Medium", value: "md" },
+          { label: "Large", value: "lg" },
+        ],
+      },
+      { key: "showCaptions", label: "Show Captions", type: "boolean" },
+      { key: "lightbox", label: "Lightbox", type: "boolean" },
+    ],
+  },
+  {
     type: "image-grid",
     label: "Image Grid",
     iconName: "Grid3X3",
@@ -1554,8 +1603,7 @@ export const BASE_BLOCK_REGISTRY: BlockDef[] = [
       personas: [
         {
           title: "Members",
-          description:
-            "People looking for trusted providers, resources, events, and next steps.",
+          description: "People looking for trusted providers, resources, events, and next steps.",
           icon: "User",
         },
         {

@@ -210,6 +210,23 @@ export {
   type CmsSection,
 } from "./cms-sections";
 export {
+  CMS_GALLERY_LAYOUTS,
+  CMS_GALLERY_STATUSES,
+  cmsGalleries,
+  cmsGalleryItems,
+  cmsGallerySettingsSchema,
+  insertCmsGalleryItemSchema,
+  insertCmsGallerySchema,
+  type CmsGallery,
+  type CmsGalleryItem,
+  type CmsGalleryLayout,
+  type CmsGallerySettings,
+  type CmsGalleryStatus,
+  type CmsGalleryWithItems,
+  type InsertCmsGallery,
+  type InsertCmsGalleryItem,
+} from "./cms-galleries";
+export {
   editorLocks,
   EDITOR_LOCK_RESOURCE_TYPES,
   EDITOR_LOCK_STATUSES,
