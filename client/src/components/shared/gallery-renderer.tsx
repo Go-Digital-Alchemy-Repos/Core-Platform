@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ const DEFAULT_SETTINGS: CmsGallerySettings = {
   cropMode: "cover",
   borderRadius: "md",
   transitionEffect: "none",
+  arrowIconColor: "#ffffff",
+  arrowBackgroundColor: "#6b7280",
   showTitle: true,
   showCaptions: true,
   captionPosition: "below",
@@ -185,6 +187,10 @@ export function GalleryRenderer({
         : settings.transitionEffect === "zoom"
           ? "cms-gallery-transition-zoom"
           : "";
+  const controlStyle: CSSProperties = {
+    backgroundColor: settings.arrowBackgroundColor,
+    color: settings.arrowIconColor,
+  };
 
   return (
     <section
@@ -212,7 +218,8 @@ export function GalleryRenderer({
               <>
                 <button
                   type="button"
-                  className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg transition hover:bg-background focus:outline-none focus:ring-2 focus:ring-ring md:-left-5"
+                  className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring md:-left-5"
+                  style={controlStyle}
                   onClick={previousSlide}
                   aria-label="Previous image"
                 >
@@ -220,7 +227,8 @@ export function GalleryRenderer({
                 </button>
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg transition hover:bg-background focus:outline-none focus:ring-2 focus:ring-ring md:-right-5"
+                  className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring md:-right-5"
+                  style={controlStyle}
                   onClick={nextSlide}
                   aria-label="Next image"
                 >
@@ -300,7 +308,8 @@ export function GalleryRenderer({
             />
             <button
               type="button"
-              className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg transition hover:bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring"
+              style={controlStyle}
               onClick={() => setActiveIndex(null)}
               aria-label="Close gallery lightbox"
             >
@@ -310,7 +319,8 @@ export function GalleryRenderer({
               <>
                 <button
                   type="button"
-                  className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg transition hover:bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring"
+                  style={controlStyle}
                   onClick={previousLightboxImage}
                   aria-label="Previous image"
                 >
@@ -318,7 +328,8 @@ export function GalleryRenderer({
                 </button>
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg transition hover:bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring"
+                  style={controlStyle}
                   onClick={nextLightboxImage}
                   aria-label="Next image"
                 >

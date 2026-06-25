@@ -114,6 +114,8 @@ function GalleryBlock({ props }: { props: Record<string, unknown> }) {
             | "fade"
             | "slide"
             | "zoom",
+          arrowIconColor: str(props.arrowIconColor) || undefined,
+          arrowBackgroundColor: str(props.arrowBackgroundColor) || undefined,
           showTitle: props.showTitle !== false,
           showCaptions: props.showCaptions !== false,
           lightbox: props.lightbox !== false,

@@ -63,6 +63,8 @@ const DEFAULT_SETTINGS: CmsGallerySettings = {
   cropMode: "cover",
   borderRadius: "md",
   transitionEffect: "none",
+  arrowIconColor: "#ffffff",
+  arrowBackgroundColor: "#6b7280",
   showTitle: true,
   showCaptions: true,
   captionPosition: "below",
@@ -505,6 +507,26 @@ export default function CmsGalleryEditorPage() {
                       <SelectItem value="zoom">Zoom</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-2">
+                    <Label>Arrow color</Label>
+                    <Input
+                      type="color"
+                      value={settings.arrowIconColor}
+                      onChange={(event) => setSetting("arrowIconColor", event.target.value)}
+                      className="h-10 w-full cursor-pointer p-1"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Arrow background</Label>
+                    <Input
+                      type="color"
+                      value={settings.arrowBackgroundColor}
+                      onChange={(event) => setSetting("arrowBackgroundColor", event.target.value)}
+                      className="h-10 w-full cursor-pointer p-1"
+                    />
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <Label>Caption position</Label>

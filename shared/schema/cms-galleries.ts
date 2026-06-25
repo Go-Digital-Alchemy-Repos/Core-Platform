@@ -81,6 +81,8 @@ export const cmsGallerySettingsSchema = z.object({
   cropMode: z.enum(["cover", "contain"]).default("cover"),
   borderRadius: z.enum(["none", "sm", "md", "lg"]).default("md"),
   transitionEffect: z.enum(["none", "fade", "slide", "zoom"]).default("none"),
+  arrowIconColor: z.string().max(32).default("#ffffff"),
+  arrowBackgroundColor: z.string().max(32).default("#6b7280"),
   showTitle: z.boolean().default(true),
   showCaptions: z.boolean().default(true),
   captionPosition: z.enum(["below", "overlay"]).default("below"),
