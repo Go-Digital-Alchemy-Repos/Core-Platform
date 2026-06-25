@@ -249,44 +249,41 @@ export function GalleryRenderer({
 
       {activeLightboxItem ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
-          <Button
-            type="button"
-            size="icon"
-            variant="secondary"
-            className="absolute right-4 top-4"
-            onClick={() => setActiveIndex(null)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-          {items.length > 1 ? (
-            <>
-              <Button
-                type="button"
-                size="icon"
-                variant="secondary"
-                className="absolute left-4 top-1/2 h-11 w-11 -translate-y-1/2"
-                onClick={previousLightboxImage}
-                aria-label="Previous image"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="secondary"
-                className="absolute right-4 top-1/2 h-11 w-11 -translate-y-1/2"
-                onClick={nextLightboxImage}
-                aria-label="Next image"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </>
-          ) : null}
-          <img
-            src={activeLightboxItem.imageUrl}
-            alt={activeLightboxItem.alt || activeLightboxItem.title || gallery.title}
-            className="max-h-[85vh] max-w-[92vw] object-contain"
-          />
+          <div className="relative inline-flex max-h-[90vh] max-w-[94vw] items-center justify-center">
+            <img
+              src={activeLightboxItem.imageUrl}
+              alt={activeLightboxItem.alt || activeLightboxItem.title || gallery.title}
+              className="block max-h-[85vh] max-w-[92vw] object-contain"
+            />
+            <button
+              type="button"
+              className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg transition hover:bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              onClick={() => setActiveIndex(null)}
+              aria-label="Close gallery lightbox"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            {items.length > 1 ? (
+              <>
+                <button
+                  type="button"
+                  className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg transition hover:bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  onClick={previousLightboxImage}
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg transition hover:bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  onClick={nextLightboxImage}
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </>
+            ) : null}
+          </div>
         </div>
       ) : null}
     </section>
