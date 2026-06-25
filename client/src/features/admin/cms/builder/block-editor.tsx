@@ -455,6 +455,36 @@ function getContextualPropDefs(propDefs: PropDef[]) {
   return propDefs.filter((propDef) => !SECTION_SETTING_KEYS.has(propDef.key)).slice(0, 6);
 }
 
+function getLayoutAwarePropDefs(
+  blockType: string,
+  props: Record<string, unknown>,
+  propDefs: PropDef[],
+) {
+  if (blockType !== "gallery") return propDefs;
+
+  const layout = String(props.layout ?? "inherit");
+  if (layout === "inherit") return propDefs;
+
+  const usesVisibleCount = layout === "grid" || layout === "masonry" || layout === "carousel";
+  const usesTransition = layout === "carousel" || layout === "slider" || layout === "featured";
+  const showsControlColors = usesTransition || props.lightbox !== false;
+  const countAndSpacingKeys = new Set([
+    "columnsDesktop",
+    "columnsTablet",
+    "columnsMobile",
+    "spacing",
+  ]);
+  const transitionKeys = new Set(["transitionEffect"]);
+  const controlColorKeys = new Set(["arrowIconColor", "arrowBackgroundColor"]);
+
+  return propDefs.filter((propDef) => {
+    if (countAndSpacingKeys.has(propDef.key)) return usesVisibleCount;
+    if (transitionKeys.has(propDef.key)) return usesTransition;
+    if (controlColorKeys.has(propDef.key)) return showsControlColors;
+    return true;
+  });
+}
+
 function shouldUseRichTextEditor(propDef: Pick<PropDef, "type" | "key">) {
   return (
     propDef.type === "richtext" ||
@@ -902,7 +932,10 @@ export function BlockEditor({
   const setProp = (key: string, val: unknown) => {
     onChange({ ...props, [key]: val });
   };
-  const orderedPropDefs = orderPropDefs(blockDef.propDefs);
+  const orderedPropDefs = useMemo(
+    () => orderPropDefs(getLayoutAwarePropDefs(blockDef.type, props, blockDef.propDefs)),
+    [blockDef.propDefs, blockDef.type, props],
+  );
   const groupedPropDefs = useMemo(() => {
     const groups: Record<InspectorGroup, PropDef[]> = {
       content: [],
