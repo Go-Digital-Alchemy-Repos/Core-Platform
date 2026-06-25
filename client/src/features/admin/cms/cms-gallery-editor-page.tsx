@@ -391,13 +391,13 @@ export default function CmsGalleryEditorPage() {
                 ) : (
                   items.map((item, index) => (
                     <div key={item.id ?? index} className="rounded-md border p-4">
-                      <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
+                      <div className="grid gap-4 xl:grid-cols-[minmax(220px,320px)_minmax(360px,1fr)]">
                         <CmsImageUpload
                           value={item.imageUrl}
                           onChange={(url) => updateItem(index, { imageUrl: url })}
                           data-testid={`gallery-image-${index}`}
                         />
-                        <div className="grid gap-3">
+                        <div className="grid min-w-0 gap-3">
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div className="grid gap-1.5">
                               <Label>Title</Label>
