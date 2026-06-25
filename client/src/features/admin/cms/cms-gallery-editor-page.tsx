@@ -9,11 +9,19 @@ import {
   EyeOff,
   ImagePlus,
   Loader2,
+  Monitor,
   Trash2,
 } from "lucide-react";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -28,10 +36,11 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CmsImageUpload } from "./components/cms-image-upload";
+import { MediaPickerDialog } from "./components/media-picker-dialog";
 import { GalleryRenderer } from "@/components/shared/gallery-renderer";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { CmsGallerySettings, CmsGalleryWithItems } from "@shared/schema";
+import type { CmsGallerySettings, CmsGalleryWithItems, CmsMediaLibraryAsset } from "@shared/schema";
 
 type GalleryItemForm = {
   id?: string;
@@ -95,6 +104,8 @@ export default function CmsGalleryEditorPage() {
   const [layout, setLayout] = useState("grid");
   const [settings, setSettings] = useState<CmsGallerySettings>(DEFAULT_SETTINGS);
   const [items, setItems] = useState<GalleryItemForm[]>([]);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     if (!gallery) return;
@@ -204,6 +215,23 @@ export default function CmsGalleryEditorPage() {
     setItems((current) => current.map((item, i) => (i === index ? { ...item, ...patch } : item)));
   };
 
+  const appendMediaAssets = (assets: CmsMediaLibraryAsset[]) => {
+    if (assets.length === 0) return;
+    setItems((current) => [
+      ...current,
+      ...assets.map((asset) => ({
+        mediaId: asset.id,
+        imageUrl: asset.url,
+        alt: asset.alt ?? asset.title ?? asset.originalName,
+        title: asset.title ?? "",
+        caption: asset.caption ?? "",
+        linkUrl: "",
+        ctaText: "",
+        tags: [],
+      })),
+    ]);
+  };
+
   const moveItem = (index: number, direction: -1 | 1) => {
     setItems((current) => {
       const nextIndex = index + direction;
@@ -245,10 +273,22 @@ export default function CmsGalleryEditorPage() {
               </Badge>
             </div>
           </div>
-          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !title.trim()}>
-            {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Save Gallery
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPreviewOpen(true)}
+              disabled={previewGallery.items.length === 0}
+              data-testid="button-preview-gallery"
+            >
+              <Monitor className="mr-2 h-4 w-4" />
+              Preview Gallery
+            </Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !title.trim()}>
+              {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Save Gallery
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -330,18 +370,20 @@ export default function CmsGalleryEditorPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    setItems((current) => [
-                      ...current,
-                      { imageUrl: "", alt: "", title: "", caption: "", linkUrl: "", ctaText: "", tags: [] },
-                    ])
-                  }
+                  onClick={() => setMediaPickerOpen(true)}
                 >
                   <ImagePlus className="mr-2 h-4 w-4" />
-                  Add Image
+                  Add Images
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
+                <CmsImageUpload
+                  value=""
+                  onChange={() => undefined}
+                  onChangeMany={appendMediaAssets}
+                  multiple
+                  data-testid="gallery-bulk-image-upload"
+                />
                 {items.length === 0 ? (
                   <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
                     Add images to build this gallery.
@@ -481,6 +523,42 @@ export default function CmsGalleryEditorPage() {
             </Card>
           </div>
         </div>
+        <MediaPickerDialog
+          open={mediaPickerOpen}
+          onOpenChange={setMediaPickerOpen}
+          onSelect={(_, asset) => appendMediaAssets([asset])}
+          onSelectMany={appendMediaAssets}
+          multiple
+          typeFilter="images"
+        />
+        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+          <DialogContent className="flex h-[calc(100vh-2rem)] w-[min(1180px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] flex-col overflow-hidden p-0">
+            <DialogHeader className="border-b px-6 py-4">
+              <DialogTitle>Gallery Preview</DialogTitle>
+              <DialogDescription>
+                Previewing the current gallery draft as it would appear inside page or post content.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto bg-muted/30 px-4 py-6 sm:px-8">
+              <article className="mx-auto max-w-4xl rounded-lg border bg-background px-5 py-6 shadow-sm sm:px-8 sm:py-8">
+                <header className="mb-6 border-b pb-5">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    Content Preview
+                  </p>
+                  <h2 className="text-2xl font-heading font-semibold text-foreground">
+                    {title || "Gallery preview"}
+                  </h2>
+                  {description ? (
+                    <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
+                      {description}
+                    </p>
+                  ) : null}
+                </header>
+                <GalleryRenderer gallery={previewGallery} preview />
+              </article>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminSidebar>
   );

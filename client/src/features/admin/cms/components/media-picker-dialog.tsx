@@ -1,11 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Image, Search, CheckCircle2, FileText } from "lucide-react";
@@ -15,6 +11,8 @@ interface MediaPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (url: string, asset: CmsMediaLibraryAsset) => void;
+  onSelectMany?: (assets: CmsMediaLibraryAsset[]) => void;
+  multiple?: boolean;
   typeFilter?: "images" | "documents" | "all";
 }
 
@@ -22,10 +20,13 @@ export function MediaPickerDialog({
   open,
   onOpenChange,
   onSelect,
+  onSelectMany,
+  multiple = false,
   typeFilter = "images",
 }: MediaPickerDialogProps) {
   const [search, setSearch] = useState("");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const { data: assets = [], isLoading } = useQuery<CmsMediaLibraryAsset[]>({
     queryKey: ["/api/admin/cms/media"],
@@ -55,6 +56,13 @@ export function MediaPickerDialog({
 
   const libraryLabel =
     typeFilter === "all" ? "media items" : typeFilter === "documents" ? "documents" : "images";
+  const selectedAssets = selectedIds
+    .map((selectedId) => assets.find((asset) => asset.id === selectedId))
+    .filter((asset): asset is CmsMediaLibraryAsset => Boolean(asset));
+
+  useEffect(() => {
+    if (!open) setSelectedIds([]);
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -79,12 +87,16 @@ export function MediaPickerDialog({
         <div className="flex-1 overflow-y-auto p-4">
           {isLoading ? (
             <div className="grid grid-cols-3 gap-3">
-              {[...Array(9)].map((_, i) => <Skeleton key={i} className="aspect-square rounded-lg" />)}
+              {[...Array(9)].map((_, i) => (
+                <Skeleton key={i} className="aspect-square rounded-lg" />
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-muted-foreground gap-2">
               <Image className="h-10 w-10 opacity-30" />
-              <p className="text-sm font-medium">{search ? `No ${libraryLabel} match your search` : "No media uploaded yet"}</p>
+              <p className="text-sm font-medium">
+                {search ? `No ${libraryLabel} match your search` : "No media uploaded yet"}
+              </p>
               <p className="text-xs">Upload media through the CMS builder or Media page</p>
             </div>
           ) : (
@@ -92,10 +104,20 @@ export function MediaPickerDialog({
               {filtered.map((asset) => (
                 <button
                   key={asset.id}
-                  className="relative group rounded-lg border-2 overflow-hidden aspect-square transition-all hover:border-violet-400 focus:outline-none focus:border-violet-500 border-transparent bg-muted/30"
+                  className={`relative group rounded-lg border-2 overflow-hidden aspect-square transition-all hover:border-violet-400 focus:outline-none focus:border-violet-500 bg-muted/30 ${
+                    selectedIds.includes(asset.id) ? "border-violet-500" : "border-transparent"
+                  }`}
                   onClick={() => {
-                    onSelect(asset.url, asset);
-                    onOpenChange(false);
+                    if (multiple) {
+                      setSelectedIds((current) =>
+                        current.includes(asset.id)
+                          ? current.filter((selectedId) => selectedId !== asset.id)
+                          : [...current, asset.id],
+                      );
+                    } else {
+                      onSelect(asset.url, asset);
+                      onOpenChange(false);
+                    }
                   }}
                   onMouseEnter={() => setHoveredId(asset.id)}
                   onMouseLeave={() => setHoveredId(null)}
@@ -125,8 +147,15 @@ export function MediaPickerDialog({
                       <span className="text-white text-xs font-medium text-center line-clamp-2 leading-tight">
                         {asset.originalName}
                       </span>
-                      <span className="text-white/70 text-[10px]">{formatBytes(asset.fileSize)}</span>
+                      <span className="text-white/70 text-[10px]">
+                        {formatBytes(asset.fileSize)}
+                      </span>
                     </div>
+                  )}
+                  {selectedIds.includes(asset.id) && (
+                    <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-white shadow">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </span>
                   )}
                 </button>
               ))}
@@ -134,9 +163,39 @@ export function MediaPickerDialog({
           )}
         </div>
 
-        <div className="px-6 py-3 border-t bg-muted/20 text-xs text-muted-foreground">
-          {filtered.length} {typeFilter === "all" ? "item" : typeFilter === "documents" ? "document" : "image"}{filtered.length !== 1 ? "s" : ""}
-          {search ? " matching search" : " in library"}
+        <div className="flex items-center justify-between gap-3 border-t bg-muted/20 px-6 py-3">
+          <div className="text-xs text-muted-foreground">
+            {filtered.length}{" "}
+            {typeFilter === "all" ? "item" : typeFilter === "documents" ? "document" : "image"}
+            {filtered.length !== 1 ? "s" : ""}
+            {search ? " matching search" : " in library"}
+            {multiple && selectedIds.length > 0 ? ` · ${selectedIds.length} selected` : ""}
+          </div>
+          {multiple ? (
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={selectedAssets.length === 0}
+                onClick={() => {
+                  onSelectMany?.(selectedAssets);
+                  onOpenChange(false);
+                }}
+              >
+                {selectedAssets.length > 0 ? `Add ${selectedAssets.length}` : "Add"}{" "}
+                {typeFilter === "documents"
+                  ? selectedAssets.length === 1
+                    ? "Document"
+                    : "Documents"
+                  : selectedAssets.length === 1
+                    ? "Image"
+                    : "Images"}
+              </Button>
+            </div>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

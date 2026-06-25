@@ -30,8 +30,19 @@ const MEDIA_ACCEPTED_TYPES = [
 ];
 const MEDIA_ACCEPTED_EXTENSIONS = [
   ...IMAGE_ACCEPTED_EXTENSIONS,
-  ".pdf", ".doc", ".docx", ".xls", ".xlsx",
-  ".ppt", ".pptx", ".csv", ".txt", ".rtf", ".odt", ".ods", ".odp",
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".ppt",
+  ".pptx",
+  ".csv",
+  ".txt",
+  ".rtf",
+  ".odt",
+  ".ods",
+  ".odp",
 ];
 const MAX_BYTES = 10 * 1024 * 1024;
 
@@ -47,13 +58,16 @@ function isAcceptedFile(file: File, acceptedMode: "images" | "all") {
   const extensionIndex = file.name.lastIndexOf(".");
   const extension = extensionIndex >= 0 ? file.name.slice(extensionIndex).toLowerCase() : "";
   const acceptedTypes = acceptedMode === "all" ? MEDIA_ACCEPTED_TYPES : IMAGE_ACCEPTED_TYPES;
-  const acceptedExtensions = acceptedMode === "all" ? MEDIA_ACCEPTED_EXTENSIONS : IMAGE_ACCEPTED_EXTENSIONS;
+  const acceptedExtensions =
+    acceptedMode === "all" ? MEDIA_ACCEPTED_EXTENSIONS : IMAGE_ACCEPTED_EXTENSIONS;
   return acceptedTypes.includes(file.type) || acceptedExtensions.includes(extension);
 }
 
 export interface CmsImageUploadProps {
   value: string;
   onChange: (url: string) => void;
+  onChangeMany?: (assets: CmsMediaLibraryAsset[]) => void;
+  multiple?: boolean;
   label?: string;
   helpText?: string;
   className?: string;
@@ -64,6 +78,8 @@ export interface CmsImageUploadProps {
 export function CmsImageUpload({
   value,
   onChange,
+  onChangeMany,
+  multiple = false,
   label,
   helpText,
   className,
@@ -78,17 +94,19 @@ export function CmsImageUpload({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<CmsMediaLibraryAsset | null>(null);
 
-  const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
+  const uploadFile = useCallback(
+    (file: File, onProgress?: (progress: number) => void) => {
       if (!isAcceptedFile(file, acceptedMode)) {
         throw new Error(
           acceptedMode === "all"
             ? "Accepted file types: images, PDF, Word, Excel, PowerPoint, CSV, TXT, RTF, and OpenDocument files"
-            : "Only PNG, JPEG, WebP, and GIF files are accepted"
+            : "Only PNG, JPEG, WebP, and GIF files are accepted",
         );
       }
       if (file.size > MAX_BYTES) {
-        throw new Error(`File must be under 10 MB (this file is ${(file.size / (1024 * 1024)).toFixed(1)} MB)`);
+        throw new Error(
+          `File must be under 10 MB (this file is ${(file.size / (1024 * 1024)).toFixed(1)} MB)`,
+        );
       }
 
       const fd = new FormData();
@@ -100,13 +118,11 @@ export function CmsImageUpload({
         xhr.withCredentials = true;
 
         xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            setUploadProgress(Math.round((e.loaded / e.total) * 90));
-          }
+          if (e.lengthComputable) onProgress?.(Math.round((e.loaded / e.total) * 90));
         };
 
         xhr.onload = () => {
-          setUploadProgress(100);
+          onProgress?.(100);
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
               const asset = JSON.parse(xhr.responseText) as CmsMediaAsset;
@@ -135,11 +151,36 @@ export function CmsImageUpload({
         xhr.send(fd);
       });
     },
-    onSuccess: (asset) => {
-      onChange(asset.url);
-      setSelectedAsset(asset);
+    [acceptedMode],
+  );
+
+  const uploadMutation = useMutation({
+    mutationFn: async (files: File[]) => {
+      const uploaded: CmsMediaLibraryAsset[] = [];
+      for (let index = 0; index < files.length; index += 1) {
+        const asset = await uploadFile(files[index], (progress) => {
+          const totalProgress = ((index + progress / 100) / files.length) * 100;
+          setUploadProgress(Math.min(100, Math.round(totalProgress)));
+        });
+        uploaded.push(asset);
+      }
+      return uploaded;
+    },
+    onSuccess: (assets) => {
+      const [firstAsset] = assets;
+      if (!firstAsset) return;
+      if (multiple && onChangeMany) {
+        onChangeMany(assets);
+      } else {
+        onChange(firstAsset.url);
+      }
+      setSelectedAsset(firstAsset);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/media"] });
-      toast({ title: acceptedMode === "all" ? "File uploaded successfully" : "Image uploaded successfully" });
+      toast({
+        title: `${assets.length} ${
+          acceptedMode === "all" ? "file" : "image"
+        }${assets.length === 1 ? "" : "s"} uploaded successfully`,
+      });
       setTimeout(() => setUploadProgress(0), 800);
     },
     onError: (err: Error) => {
@@ -148,21 +189,22 @@ export function CmsImageUpload({
     },
   });
 
-  const handleFile = useCallback(
-    (file: File | undefined | null) => {
-      if (file) uploadMutation.mutate(file);
+  const handleFiles = useCallback(
+    (files: FileList | File[] | undefined | null) => {
+      const selectedFiles = Array.from(files ?? []);
+      if (selectedFiles.length === 0) return;
+      uploadMutation.mutate(multiple ? selectedFiles : selectedFiles.slice(0, 1));
     },
-    [uploadMutation]
+    [multiple, uploadMutation],
   );
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
-      const file = e.dataTransfer.files[0];
-      handleFile(file);
+      handleFiles(e.dataTransfer.files);
     },
-    [handleFile]
+    [handleFiles],
   );
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -185,9 +227,7 @@ export function CmsImageUpload({
 
   return (
     <div className={cn("space-y-1.5", className)} data-testid={testId}>
-      {label && (
-        <p className="text-sm font-medium leading-none">{label}</p>
-      )}
+      {label && <p className="text-sm font-medium leading-none">{label}</p>}
 
       {value ? (
         <div className="relative group rounded-lg border bg-muted/20 overflow-hidden">
@@ -255,7 +295,7 @@ export function CmsImageUpload({
             "relative border-2 border-dashed rounded-lg transition-colors cursor-pointer",
             isDragging
               ? "border-violet-400 bg-violet-50 dark:bg-violet-950/20"
-              : "border-muted-foreground/25 hover:border-violet-300 bg-muted/10 hover:bg-muted/20"
+              : "border-muted-foreground/25 hover:border-violet-300 bg-muted/10 hover:bg-muted/20",
           )}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -279,8 +319,10 @@ export function CmsImageUpload({
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground/80">
-                  Drop {acceptedMode === "all" ? "file" : "image"} here or{" "}
-                  <span className="text-violet-500 hover:text-violet-600 underline underline-offset-2">browse</span>
+                  Drop {multiple ? "files" : acceptedMode === "all" ? "file" : "image"} here or{" "}
+                  <span className="text-violet-500 hover:text-violet-600 underline underline-offset-2">
+                    browse
+                  </span>
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {acceptedMode === "all"
@@ -311,23 +353,23 @@ export function CmsImageUpload({
         ref={fileInputRef}
         type="file"
         accept={acceptAttr}
+        multiple={multiple}
         className="hidden"
         onChange={(e) => {
-          const file = e.target.files?.[0];
-          handleFile(file);
+          handleFiles(e.target.files);
           e.target.value = "";
         }}
         data-testid={testId ? `${testId}-file-input` : "cms-image-file-input"}
       />
 
-      {helpText && (
-        <p className="text-xs text-muted-foreground">{helpText}</p>
-      )}
+      {helpText && <p className="text-xs text-muted-foreground">{helpText}</p>}
 
       <MediaPickerDialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         typeFilter={acceptedMode === "all" ? "all" : "images"}
+        multiple={multiple}
+        onSelectMany={onChangeMany}
         onSelect={(url, asset) => {
           setSelectedAsset(asset);
           onChange(url);

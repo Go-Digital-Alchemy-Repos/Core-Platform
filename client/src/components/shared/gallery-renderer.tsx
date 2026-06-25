@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -72,6 +72,24 @@ export function GalleryRenderer({
     const source = gallery?.items ?? [];
     return settings.maxImages > 0 ? source.slice(0, settings.maxImages) : source;
   }, [gallery?.items, settings.maxImages]);
+  const nextLightboxImage = () =>
+    setActiveIndex((current) => (current === null ? current : (current + 1) % items.length));
+  const previousLightboxImage = () =>
+    setActiveIndex((current) =>
+      current === null ? current : (current - 1 + items.length) % items.length,
+    );
+  const activeLightboxItem = activeIndex !== null ? items[activeIndex] : null;
+
+  useEffect(() => {
+    if (!activeLightboxItem) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveIndex(null);
+      if (items.length > 1 && event.key === "ArrowRight") nextLightboxImage();
+      if (items.length > 1 && event.key === "ArrowLeft") previousLightboxImage();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeLightboxItem, items.length]);
 
   if (isLoading) {
     return <div className="h-40 animate-pulse rounded-md bg-muted" data-testid="gallery-loading" />;
@@ -132,7 +150,6 @@ export function GalleryRenderer({
 
   const nextSlide = () => setSlideIndex((current) => (current + 1) % items.length);
   const previousSlide = () => setSlideIndex((current) => (current - 1 + items.length) % items.length);
-  const activeLightboxItem = activeIndex !== null ? items[activeIndex] : null;
 
   return (
     <section
@@ -241,6 +258,30 @@ export function GalleryRenderer({
           >
             <X className="h-4 w-4" />
           </Button>
+          {items.length > 1 ? (
+            <>
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="absolute left-4 top-1/2 h-11 w-11 -translate-y-1/2"
+                onClick={previousLightboxImage}
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="absolute right-4 top-1/2 h-11 w-11 -translate-y-1/2"
+                onClick={nextLightboxImage}
+                aria-label="Next image"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </>
+          ) : null}
           <img
             src={activeLightboxItem.imageUrl}
             alt={activeLightboxItem.alt || activeLightboxItem.title || gallery.title}

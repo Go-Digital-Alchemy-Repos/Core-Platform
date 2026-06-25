@@ -166,6 +166,17 @@ function DirectoryApplicationRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function CmsDynamicPageRoute({ enabled }: { enabled: boolean }) {
+  const [location] = useLocation();
+  const slug = location.replace(/^\/+|\/+$/g, "");
+
+  if (!slug || slug.includes("/")) {
+    return <NotFound />;
+  }
+
+  return <CmsHybridPage slug={slug} fallback={<NotFound />} enabled={enabled} />;
+}
+
 function Router() {
   const { data: siteFeaturesData } = useQuery<SiteFeatures>({
     queryKey: ["/api/site-config"],
@@ -771,6 +782,10 @@ function Router() {
             {siteFeatures.cmsEnabled ? <CmsSidebarsPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
+        <Route
+          path="/:slug"
+          component={() => <CmsDynamicPageRoute enabled={siteFeatures.cmsEnabled} />}
+        />
 
         <Route component={NotFound} />
       </Switch>
