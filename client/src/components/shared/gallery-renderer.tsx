@@ -82,6 +82,13 @@ function getCarouselItemVisibilityClass(
   );
 }
 
+function withoutUndefined<T extends Record<string, unknown>>(value?: T | null): Partial<T> {
+  if (!value) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entryValue]) => entryValue !== undefined),
+  ) as Partial<T>;
+}
+
 interface GalleryRendererProps {
   gallery?: CmsGalleryWithItems | null;
   galleryId?: string | null;
@@ -106,7 +113,11 @@ export function GalleryRenderer({
   const [slideIndex, setSlideIndex] = useState(0);
   const [slideDirection, setSlideDirection] = useState<"next" | "previous">("next");
 
-  const settings = { ...DEFAULT_SETTINGS, ...(gallery?.settings ?? {}), ...(overrides ?? {}) };
+  const settings = {
+    ...DEFAULT_SETTINGS,
+    ...withoutUndefined(gallery?.settings ?? {}),
+    ...withoutUndefined(overrides ?? {}),
+  };
   const layout = String(overrides?.layout || gallery?.layout || "grid");
   const items = useMemo(() => {
     const source = gallery?.items ?? [];
@@ -278,6 +289,10 @@ export function GalleryRenderer({
     backgroundColor: settings.arrowBackgroundColor,
     color: settings.arrowIconColor,
   };
+  const controlButtonClass =
+    "absolute top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 shadow-xl ring-1 ring-black/10 transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring";
+  const lightboxControlButtonClass =
+    "absolute top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 shadow-xl ring-1 ring-black/10 transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring";
   const slideImageRatioClass =
     RATIO_CLASS[settings.imageRatio] || (layout === "featured" ? "aspect-[16/9]" : "aspect-[4/3]");
 
@@ -338,7 +353,7 @@ export function GalleryRenderer({
               <>
                 <button
                   type="button"
-                  className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring md:-left-5"
+                  className={cn(controlButtonClass, "left-4")}
                   style={controlStyle}
                   onClick={previousSlide}
                   aria-label="Previous image"
@@ -347,7 +362,7 @@ export function GalleryRenderer({
                 </button>
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring md:-right-5"
+                  className={cn(controlButtonClass, "right-4")}
                   style={controlStyle}
                   onClick={nextSlide}
                   aria-label="Next image"
@@ -379,7 +394,7 @@ export function GalleryRenderer({
               <>
                 <button
                   type="button"
-                  className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring md:-left-5"
+                  className={cn(controlButtonClass, "left-4")}
                   style={controlStyle}
                   onClick={previousSlide}
                   aria-label="Previous image"
@@ -388,7 +403,7 @@ export function GalleryRenderer({
                 </button>
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring md:-right-5"
+                  className={cn(controlButtonClass, "right-4")}
                   style={controlStyle}
                   onClick={nextSlide}
                   aria-label="Next image"
@@ -482,7 +497,7 @@ export function GalleryRenderer({
             />
             <button
               type="button"
-              className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring"
+              className="absolute right-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-white/70 shadow-xl ring-1 ring-black/10 transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring"
               style={controlStyle}
               onClick={() => setActiveIndex(null)}
               aria-label="Close gallery lightbox"
@@ -493,7 +508,7 @@ export function GalleryRenderer({
               <>
                 <button
                   type="button"
-                  className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring"
+                  className={cn(lightboxControlButtonClass, "left-3")}
                   style={controlStyle}
                   onClick={previousLightboxImage}
                   aria-label="Previous image"
@@ -502,7 +517,7 @@ export function GalleryRenderer({
                 </button>
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring"
+                  className={cn(lightboxControlButtonClass, "right-3")}
                   style={controlStyle}
                   onClick={nextLightboxImage}
                   aria-label="Next image"
