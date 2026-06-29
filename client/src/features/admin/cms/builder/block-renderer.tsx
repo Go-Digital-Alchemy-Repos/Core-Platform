@@ -164,6 +164,7 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
       useRoundedCarolinaHeroImage ? Math.min(overlayStrength, 0.35) : overlayStrength,
     ),
   };
+  const carolinaHeroTextStyle = useRoundedCarolinaHeroImage ? { color: "#ffffff" } : undefined;
   const headingTextStyle = colorStyle(props.headingColor);
   const accentHeadingTextStyle = colorStyle(props.accentHeadingColor);
   const subheadingTextStyle = colorStyle(props.subheadingColor);
@@ -196,6 +197,8 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
             style={{ objectPosition: `${bgPosX}% ${bgPosY}%` }}
           />
           <div className="absolute inset-0" style={overlayStyle} />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/78 via-black/42 to-black/10" />
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/74 via-black/36 to-transparent" />
         </div>
       )}
       {videoBg && (
@@ -212,19 +215,19 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
       {!useRoundedCarolinaHeroImage && <div className="absolute inset-0" style={overlayStyle} />}
       <div className={`relative z-10 px-8 py-16 ${isSplit ? "max-w-2xl" : "max-w-3xl mx-auto"}`}>
         {badge && (
-          <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-semibold mb-4 border border-accent/30">
+          <span className="inline-block px-3 py-1 rounded-full bg-black/28 text-white text-xs font-semibold mb-4 border border-white/35 shadow-sm backdrop-blur-sm">
             {badge}
           </span>
         )}
         <h1
-          className="text-4xl md:text-5xl font-heading font-bold text-white mb-4 leading-tight"
-          style={headingTextStyle}
+          className="text-4xl md:text-5xl font-heading font-bold text-white mb-4 leading-tight drop-shadow-[0_3px_18px_rgba(0,0,0,0.55)]"
+          style={{ ...headingTextStyle, ...carolinaHeroTextStyle }}
         >
           {str(props.heading) || "Hero Heading"}
           {accentHeading && (
             <>
               {" "}
-              <span className="text-accent" style={accentHeadingTextStyle}>
+              <span className="text-white" style={{ ...accentHeadingTextStyle, ...carolinaHeroTextStyle }}>
                 {accentHeading}
               </span>
             </>
@@ -232,8 +235,8 @@ function HeroBlock({ props }: { props: Record<string, unknown> }) {
         </h1>
         {str(props.subheading) && (
           <div
-            className={`text-lg text-white/80 mb-8 [&_a]:text-white [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-white/80 [&_p]:m-0 ${isSplit ? "" : "max-w-xl mx-auto"}`}
-            style={subheadingTextStyle}
+            className={`text-lg font-semibold text-white mb-8 drop-shadow-[0_2px_12px_rgba(0,0,0,0.65)] [&_a]:text-white [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-white/80 [&_p]:m-0 ${isSplit ? "" : "max-w-xl mx-auto"}`}
+            style={{ ...subheadingTextStyle, ...carolinaHeroTextStyle }}
             dangerouslySetInnerHTML={{ __html: str(props.subheading) }}
           />
         )}

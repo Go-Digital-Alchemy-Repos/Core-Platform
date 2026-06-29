@@ -301,9 +301,9 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
           alt={str(props.imageAlt, str(props.heading, CAROLINA_BRAND.name))}
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-foreground/20" />
-        <div className="absolute inset-0 bg-gradient-to-r from-foreground/72 via-foreground/26 to-foreground/5" />
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-foreground/45 to-transparent" />
+        <div className="absolute inset-0 bg-black/25" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/82 via-black/44 to-black/10" />
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/76 via-black/38 to-transparent" />
       </div>
       <div
         className={`relative z-10 mx-auto flex w-full max-w-7xl flex-col justify-end px-4 pb-8 pt-28 md:px-8 md:pb-12 ${
@@ -311,14 +311,14 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
         }`}
       >
         <div className={align === "center" ? "max-w-4xl" : "max-w-3xl"}>
-          <span className="mb-5 inline-flex items-center rounded-full border border-white/25 bg-white/12 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-white backdrop-blur-sm">
+          <span className="mb-5 inline-flex items-center rounded-full border border-white/35 bg-black/28 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-white shadow-sm backdrop-blur-sm">
             {eyebrow}
           </span>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 leading-[1.02] tracking-normal">
+          <h1 className="mb-6 text-4xl font-extrabold leading-[1.02] tracking-normal text-white drop-shadow-[0_3px_18px_rgba(0,0,0,0.55)] sm:text-5xl md:text-6xl lg:text-7xl">
             {str(props.heading)}
           </h1>
           {str(props.subheading) ? (
-            <p className="text-lg md:text-xl text-white/86 font-semibold mb-8 leading-relaxed max-w-2xl">
+            <p className="mb-8 max-w-2xl text-lg font-bold leading-relaxed text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.65)] md:text-xl">
               {str(props.subheading)}
             </p>
           ) : null}
@@ -331,7 +331,7 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
               ).map((label) => (
                 <div
                   key={label}
-                  className="flex items-center gap-2 rounded-full border border-white/20 bg-white/12 px-4 py-2 text-sm font-extrabold text-white/86 backdrop-blur-sm"
+                  className="flex items-center gap-2 rounded-full border border-white/30 bg-black/28 px-4 py-2 text-sm font-extrabold text-white shadow-sm backdrop-blur-sm"
                 >
                   <CheckCircle2 className="h-4 w-4 text-accent" /> {label}
                 </div>
