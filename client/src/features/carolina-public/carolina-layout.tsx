@@ -33,164 +33,166 @@ export function CarolinaLayout({ children }: { children: ReactNode }) {
   }, [location]);
 
   return (
-    <div className="carolina-theme min-h-screen flex flex-col overflow-x-hidden font-sans bg-background text-foreground">
-      <div className="bg-primary text-primary-foreground py-2 px-4 hidden md:block text-sm font-medium tracking-wide">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-6">
-            <span className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-accent" />
-              Serving {CAROLINA_BRAND.region}
-            </span>
-            <span className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-accent" />
-              <a href={`mailto:${CAROLINA_BRAND.email}`} className="hover:text-accent">
-                {CAROLINA_BRAND.email}
-              </a>
-            </span>
+    <div className="carolina-theme min-h-screen flex flex-col overflow-x-clip font-sans bg-background text-foreground">
+      <div className="sticky top-0 z-50 w-full">
+        <div className="bg-primary text-primary-foreground py-2 px-4 hidden md:block text-sm font-medium tracking-wide">
+          <div className="max-w-7xl mx-auto flex justify-between items-center">
+            <div className="flex items-center gap-6">
+              <span className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-accent" />
+                Serving {CAROLINA_BRAND.region}
+              </span>
+              <span className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-accent" />
+                <a href={`mailto:${CAROLINA_BRAND.email}`} className="hover:text-accent">
+                  {CAROLINA_BRAND.email}
+                </a>
+              </span>
+            </div>
+            <span>{CAROLINA_BRAND.founded}</span>
           </div>
-          <span>{CAROLINA_BRAND.founded}</span>
-        </div>
-      </div>
-
-      <header
-        className={`sticky top-0 z-50 w-full transition-all duration-300 ${
-          isScrolled ? "bg-background/95 backdrop-blur-md shadow-sm py-2" : "bg-background py-4"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center group z-50">
-            <img
-              src={brandLogo}
-              alt={CAROLINA_BRAND.name}
-              className="h-9 md:h-11 w-auto group-hover:scale-105 transition-transform"
-            />
-          </Link>
-
-          <nav className="hidden lg:flex items-center gap-8 font-bold text-sm text-foreground/80">
-            <Link href="/" className="hover:text-primary transition-colors">
-              Home
-            </Link>
-            <MenuGroup label="Residential">
-              {RESIDENTIAL_SERVICES.map((service) => (
-                <Link
-                  key={service.slug}
-                  href={`/${service.slug}`}
-                  className="p-3 hover:bg-muted rounded-sm transition-colors text-sm"
-                >
-                  {service.name}
-                </Link>
-              ))}
-              <div className="h-px bg-border my-1" />
-              <Link
-                href="/gallery"
-                className="p-3 hover:bg-muted rounded-sm transition-colors text-sm text-primary"
-              >
-                View Gallery
-              </Link>
-            </MenuGroup>
-            <MenuGroup label="Commercial">
-              <Link
-                href="/commercial"
-                className="p-3 hover:bg-muted rounded-sm transition-colors text-sm font-extrabold"
-              >
-                Commercial Hub
-              </Link>
-              {COMMERCIAL_SERVICES.map((service) => (
-                <Link
-                  key={service.slug}
-                  href={`/${service.slug}`}
-                  className="p-3 hover:bg-muted rounded-sm transition-colors text-sm"
-                >
-                  {service.name}
-                </Link>
-              ))}
-              <div className="h-px bg-border my-1" />
-              <Link
-                href="/commercial-portfolio"
-                className="p-3 hover:bg-muted rounded-sm transition-colors text-sm text-primary"
-              >
-                View Portfolio
-              </Link>
-            </MenuGroup>
-            <Link href="/about" className="hover:text-primary transition-colors">
-              About
-            </Link>
-            <Link href="/blog" className="hover:text-primary transition-colors">
-              Blog
-            </Link>
-          </nav>
-
-          <div className="hidden lg:flex items-center gap-4">
-            <a
-              href={`tel:${CAROLINA_BRAND.phoneTel}`}
-              className="flex items-center gap-2 font-extrabold text-foreground hover:text-primary"
-            >
-              <Phone className="h-5 w-5 text-primary" />
-              {CAROLINA_BRAND.phoneDisplay}
-            </a>
-            <Link href="/get-a-quote">
-              <Button className="font-extrabold tracking-wide">GET A QUOTE</Button>
-            </Link>
-          </div>
-
-          <button
-            className="lg:hidden p-2 text-foreground z-50 relative"
-            onClick={() => setMobileMenuOpen((open) => !open)}
-            aria-label="Toggle navigation menu"
-          >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
         </div>
 
-        <div
-          className={`fixed inset-0 bg-background z-40 transition-transform duration-300 pt-24 px-6 overflow-y-auto ${
-            mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+        <header
+          className={`w-full transition-all duration-300 ${
+            isScrolled ? "bg-background/95 backdrop-blur-md shadow-sm py-2" : "bg-background py-4"
           }`}
         >
-          <div className="flex flex-col gap-6 font-extrabold text-2xl">
-            <Link href="/">Home</Link>
-            <Link href="/about">About Us</Link>
-            <MobileMenuSection title="Residential">
-              {RESIDENTIAL_SERVICES.map((service) => (
-                <Link key={service.slug} href={`/${service.slug}`}>
-                  {service.name}
-                </Link>
-              ))}
-              <Link href="/gallery" className="text-primary">
-                Gallery
+          <div className="max-w-7xl mx-auto px-4 flex justify-between items-center">
+            <Link href="/" className="flex items-center group z-50">
+              <img
+                src={brandLogo}
+                alt={CAROLINA_BRAND.name}
+                className="h-9 md:h-11 w-auto group-hover:scale-105 transition-transform"
+              />
+            </Link>
+
+            <nav className="hidden lg:flex items-center gap-8 font-bold text-sm text-foreground/80">
+              <Link href="/" className="hover:text-primary transition-colors">
+                Home
               </Link>
-            </MobileMenuSection>
-            <MobileMenuSection title="Commercial">
-              <Link href="/commercial">Commercial Services Hub</Link>
-              {COMMERCIAL_SERVICES.map((service) => (
-                <Link key={service.slug} href={`/${service.slug}`}>
-                  {service.name}
+              <MenuGroup label="Residential">
+                {RESIDENTIAL_SERVICES.map((service) => (
+                  <Link
+                    key={service.slug}
+                    href={`/${service.slug}`}
+                    className="p-3 hover:bg-muted rounded-sm transition-colors text-sm"
+                  >
+                    {service.name}
+                  </Link>
+                ))}
+                <div className="h-px bg-border my-1" />
+                <Link
+                  href="/gallery"
+                  className="p-3 hover:bg-muted rounded-sm transition-colors text-sm text-primary"
+                >
+                  View Gallery
                 </Link>
-              ))}
-              <Link href="/commercial-portfolio" className="text-primary">
-                Portfolio
+              </MenuGroup>
+              <MenuGroup label="Commercial">
+                <Link
+                  href="/commercial"
+                  className="p-3 hover:bg-muted rounded-sm transition-colors text-sm font-extrabold"
+                >
+                  Commercial Hub
+                </Link>
+                {COMMERCIAL_SERVICES.map((service) => (
+                  <Link
+                    key={service.slug}
+                    href={`/${service.slug}`}
+                    className="p-3 hover:bg-muted rounded-sm transition-colors text-sm"
+                  >
+                    {service.name}
+                  </Link>
+                ))}
+                <div className="h-px bg-border my-1" />
+                <Link
+                  href="/commercial-portfolio"
+                  className="p-3 hover:bg-muted rounded-sm transition-colors text-sm text-primary"
+                >
+                  View Portfolio
+                </Link>
+              </MenuGroup>
+              <Link href="/about" className="hover:text-primary transition-colors">
+                About
               </Link>
-            </MobileMenuSection>
-            <Link href="/service-areas">Service Areas</Link>
-            <Link href="/blog">Blog</Link>
-            <Link href="/faq">FAQ</Link>
-            <div className="mt-8 flex flex-col gap-4">
+              <Link href="/blog" className="hover:text-primary transition-colors">
+                Blog
+              </Link>
+            </nav>
+
+            <div className="hidden lg:flex items-center gap-4">
               <a
                 href={`tel:${CAROLINA_BRAND.phoneTel}`}
-                className="flex items-center justify-center gap-2 font-extrabold bg-muted p-4 rounded-md"
+                className="flex items-center gap-2 font-extrabold text-foreground hover:text-primary"
               >
                 <Phone className="h-5 w-5 text-primary" />
                 {CAROLINA_BRAND.phoneDisplay}
               </a>
               <Link href="/get-a-quote">
-                <Button size="lg" className="w-full text-lg h-14">
-                  GET A QUOTE
-                </Button>
+                <Button className="font-extrabold tracking-wide">GET A QUOTE</Button>
               </Link>
             </div>
+
+            <button
+              className="lg:hidden p-2 text-foreground z-50 relative"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
-        </div>
-      </header>
+
+          <div
+            className={`fixed inset-0 bg-background z-40 transition-transform duration-300 pt-24 px-6 overflow-y-auto ${
+              mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+            }`}
+          >
+            <div className="flex flex-col gap-6 font-extrabold text-2xl">
+              <Link href="/">Home</Link>
+              <Link href="/about">About Us</Link>
+              <MobileMenuSection title="Residential">
+                {RESIDENTIAL_SERVICES.map((service) => (
+                  <Link key={service.slug} href={`/${service.slug}`}>
+                    {service.name}
+                  </Link>
+                ))}
+                <Link href="/gallery" className="text-primary">
+                  Gallery
+                </Link>
+              </MobileMenuSection>
+              <MobileMenuSection title="Commercial">
+                <Link href="/commercial">Commercial Services Hub</Link>
+                {COMMERCIAL_SERVICES.map((service) => (
+                  <Link key={service.slug} href={`/${service.slug}`}>
+                    {service.name}
+                  </Link>
+                ))}
+                <Link href="/commercial-portfolio" className="text-primary">
+                  Portfolio
+                </Link>
+              </MobileMenuSection>
+              <Link href="/service-areas">Service Areas</Link>
+              <Link href="/blog">Blog</Link>
+              <Link href="/faq">FAQ</Link>
+              <div className="mt-8 flex flex-col gap-4">
+                <a
+                  href={`tel:${CAROLINA_BRAND.phoneTel}`}
+                  className="flex items-center justify-center gap-2 font-extrabold bg-muted p-4 rounded-md"
+                >
+                  <Phone className="h-5 w-5 text-primary" />
+                  {CAROLINA_BRAND.phoneDisplay}
+                </a>
+                <Link href="/get-a-quote">
+                  <Button size="lg" className="w-full text-lg h-14">
+                    GET A QUOTE
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </header>
+      </div>
 
       <main className="flex-1 w-full">{children}</main>
 
