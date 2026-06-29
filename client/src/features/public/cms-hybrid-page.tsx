@@ -13,6 +13,7 @@ import type { BlockInstance, BuilderContent } from "@/features/admin/cms/builder
 import type { CmsPage, SeoSettings } from "@shared/schema";
 import { JsonLd } from "@/components/shared/json-ld";
 import { CarolinaLayout } from "@/features/carolina-public/carolina-layout";
+import { CarolinaBlogSidebar } from "@/features/carolina-public/carolina-cms-blocks";
 import {
   buildOrganizationLd,
   buildBreadcrumbLd,
@@ -216,11 +217,14 @@ export function CmsPageView({ page, globalSeo, previewLabel }: CmsPageViewProps)
   });
 
   const blocks = parseCmsContent(page.content);
+  const isCarolinaBlogPost = page.template === "carolina" && page.slug.startsWith("blog/");
   const showSidebar =
-    page.template === "with-sidebar" && Boolean(page.sidebarId || page.slug === "insights");
+    isCarolinaBlogPost ||
+    (page.template === "with-sidebar" && Boolean(page.sidebarId || page.slug === "insights"));
   const useDefaultSidebar = !page.sidebarId && page.slug === "insights";
   const heroBlocks = showSidebar && blocks[0] && /hero/i.test(blocks[0].type) ? [blocks[0]] : [];
   const contentBlocks = heroBlocks.length > 0 ? blocks.slice(1) : blocks;
+  const currentBlogSlug = isCarolinaBlogPost ? page.slug.replace(/^blog\//, "") : undefined;
 
   const LayoutComponent = page.template === "carolina" ? CarolinaLayout : DefaultCmsLayout;
 
@@ -243,7 +247,11 @@ export function CmsPageView({ page, globalSeo, previewLabel }: CmsPageViewProps)
                     <PublicBlockRenderer key={block.id} block={block} />
                   ))}
                 </div>
-                <PublicSidebar sidebarId={page.sidebarId} useDefault={useDefaultSidebar} />
+                {isCarolinaBlogPost ? (
+                  <CarolinaBlogSidebar currentSlug={currentBlogSlug} />
+                ) : (
+                  <PublicSidebar sidebarId={page.sidebarId} useDefault={useDefaultSidebar} />
+                )}
               </div>
             </div>
           </>

@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { Link } from "wouter";
-import { ArrowRight, Calendar, CheckCircle2, Clock, MapPin } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { ArrowRight, Calendar, CheckCircle2, Clock, MapPin, Search, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
 import {
   Accordion,
@@ -16,6 +17,7 @@ import {
   blogImagePath,
   imagePath,
 } from "@shared/carolina-site";
+import { carolinaBlogPosts } from "@shared/carolina-content";
 
 type Props = Record<string, unknown>;
 type RichContentNode = {
@@ -48,6 +50,35 @@ function arr<T = Record<string, unknown>>(value: unknown): T[] {
 
 function bool(value: unknown, fallback = false) {
   return typeof value === "boolean" ? value : fallback;
+}
+
+function normalizeTopicTag(value: string) {
+  return value
+    .replace(/\b(monroe|charlotte|waxhaw|weddington|indian trail|union county|north carolina|nc)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function getCarolinaBlogTags(post: {
+  slug?: string;
+  category?: string;
+  secondaryKeywords?: string[];
+  primaryKeyword?: string;
+}) {
+  const fullPost = post.slug ? carolinaBlogPosts.find((item) => item.slug === post.slug) : null;
+  const tags = [
+    fullPost?.category ?? post.category,
+    fullPost?.primaryKeyword ?? post.primaryKeyword,
+    ...(Array.isArray(fullPost?.secondaryKeywords ?? post.secondaryKeywords)
+      ? (fullPost?.secondaryKeywords ?? post.secondaryKeywords ?? []).slice(0, 2)
+      : []),
+  ]
+    .filter((tag): tag is string => Boolean(tag))
+    .map(normalizeTopicTag)
+    .filter(Boolean);
+
+  return Array.from(new Set(tags)).slice(0, 4);
 }
 
 function html(value: unknown) {
@@ -811,6 +842,104 @@ export function CarolinaGalleryGridBlock({ props }: { props: Props }) {
   );
 }
 
+export function CarolinaBlogSidebar({ currentSlug }: { currentSlug?: string }) {
+  const [, navigate] = useLocation();
+  const [query, setQuery] = useState("");
+  const publishedPosts = useMemo(
+    () =>
+      [...carolinaBlogPosts].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      ),
+    [],
+  );
+  const recentPosts = publishedPosts.filter((post) => post.slug !== currentSlug).slice(0, 5);
+  const categories = useMemo(() => {
+    const counts = new Map<string, number>();
+    publishedPosts.forEach((post) => {
+      counts.set(post.category, (counts.get(post.category) ?? 0) + 1);
+    });
+    return Array.from(counts.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [publishedPosts]);
+  const tags = useMemo(() => {
+    const counts = new Map<string, number>();
+    publishedPosts.forEach((post) => {
+      getCarolinaBlogTags(post).forEach((tag) => counts.set(tag, (counts.get(tag) ?? 0) + 1));
+    });
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  }, [publishedPosts]);
+
+  return (
+    <aside className="space-y-5 lg:sticky lg:top-28" data-testid="carolina-blog-sidebar">
+      <div className="rounded-[1.25rem] border border-border bg-card p-5 shadow-sm">
+        <h2 className="mb-4 text-base font-extrabold">Search</h2>
+        <form
+          className="flex gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const trimmed = query.trim();
+            navigate(trimmed ? `/blog?search=${encodeURIComponent(trimmed)}` : "/blog");
+          }}
+          data-testid="carolina-blog-sidebar-search"
+        >
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search articles..."
+            className="h-11"
+          />
+          <Button type="submit" size="icon" aria-label="Search blog" className="h-11 w-11">
+            <Search className="h-4 w-4" />
+          </Button>
+        </form>
+      </div>
+
+      <div className="rounded-[1.25rem] border border-border bg-card p-5 shadow-sm">
+        <h2 className="mb-4 text-base font-extrabold">Recent Posts</h2>
+        <div className="space-y-4">
+          {recentPosts.map((post) => (
+            <Link key={post.slug} href={`/blog/${post.slug}`}>
+              <span className="block text-sm font-bold leading-relaxed text-foreground transition-colors hover:text-primary">
+                {post.h1}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-[1.25rem] border border-border bg-card p-5 shadow-sm">
+        <h2 className="mb-4 text-base font-extrabold">Categories</h2>
+        <div className="space-y-2">
+          {categories.map(([category, count]) => (
+            <Link key={category} href={`/blog?category=${encodeURIComponent(category)}`}>
+              <span className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-bold text-foreground transition-colors hover:bg-muted/70 hover:text-primary">
+                <span>{category[0].toUpperCase() + category.slice(1)}</span>
+                <Badge variant="secondary">{count}</Badge>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-[1.25rem] border border-border bg-card p-5 shadow-sm">
+        <h2 className="mb-4 text-base font-extrabold">Tag Cloud</h2>
+        <div className="flex flex-wrap gap-2">
+          {tags.slice(0, 18).map(([tag]) => (
+            <Link key={tag} href={`/blog?tag=${encodeURIComponent(tag)}`}>
+              <Badge
+                variant="outline"
+                className="cursor-pointer rounded-full border-primary/25 px-3 py-1.5 text-xs font-bold text-foreground hover:border-primary hover:text-primary"
+              >
+                <Tag className="mr-1 h-3 w-3" />
+                {tag}
+              </Badge>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 export function CarolinaBlogIndexBlock({ props }: { props: Props }) {
   const posts = arr<{
     slug: string;
@@ -821,11 +950,27 @@ export function CarolinaBlogIndexBlock({ props }: { props: Props }) {
     readMinutes: number;
     image: string;
   }>(props.posts);
-  const [filter, setFilter] = useState("all");
-  const visiblePosts = useMemo(
-    () => posts.filter((post) => filter === "all" || post.category === filter),
-    [filter, posts],
-  );
+  const [location, navigate] = useLocation();
+  const params = useMemo(() => {
+    if (typeof window === "undefined") return new URLSearchParams();
+    return new URLSearchParams(window.location.search);
+  }, [location]);
+  const categoryFilter = params.get("category") ?? "all";
+  const tagFilter = params.get("tag") ?? "";
+  const searchFilter = params.get("search") ?? "";
+  const isAllFilter = categoryFilter === "all" && !tagFilter && !searchFilter;
+  const visiblePosts = useMemo(() => {
+    const normalizedSearch = searchFilter.toLowerCase();
+    return posts.filter((post) => {
+      if (categoryFilter !== "all" && post.category !== categoryFilter) return false;
+      if (tagFilter && !getCarolinaBlogTags(post).includes(tagFilter)) return false;
+      if (!normalizedSearch) return true;
+      return [post.h1, post.excerpt, post.category, ...getCarolinaBlogTags(post)]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedSearch);
+    });
+  }, [categoryFilter, posts, searchFilter, tagFilter]);
 
   return (
     <section className="py-16 md:py-24 bg-background">
@@ -834,9 +979,9 @@ export function CarolinaBlogIndexBlock({ props }: { props: Props }) {
           {["all", "residential", "commercial"].map((option) => (
             <button
               key={option}
-              onClick={() => setFilter(option)}
+              onClick={() => navigate(option === "all" ? "/blog" : `/blog?category=${option}`)}
               className={`px-6 py-2 rounded-full font-bold text-sm transition-colors border ${
-                filter === option
+                (option === "all" && isAllFilter) || categoryFilter === option
                   ? "bg-primary text-white border-primary"
                   : "bg-transparent text-foreground border-border hover:border-primary"
               }`}
@@ -845,6 +990,19 @@ export function CarolinaBlogIndexBlock({ props }: { props: Props }) {
             </button>
           ))}
         </div>
+        {!isAllFilter ? (
+          <div className="mx-auto mb-10 flex max-w-3xl flex-wrap items-center justify-center gap-3 text-center">
+            <p className="text-sm font-bold text-muted-foreground">
+              Showing articles
+              {searchFilter ? ` matching "${searchFilter}"` : ""}
+              {tagFilter ? ` tagged "${tagFilter}"` : ""}
+              {categoryFilter !== "all" ? ` in ${categoryFilter}` : ""}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => navigate("/blog")}>
+              Clear filters
+            </Button>
+          </div>
+        ) : null}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {visiblePosts.map((post) => (
             <Link key={post.slug} href={`/blog/${post.slug}`}>
