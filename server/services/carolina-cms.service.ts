@@ -15,6 +15,7 @@ import {
   type CarolinaBlock,
   type CarolinaPageContent,
 } from "@shared/carolina-content";
+import { CAROLINA_SALES_PAGE_DESIGN } from "@shared/carolina-site";
 import type { InsertCmsPage } from "@shared/schema";
 
 type CmsBlock = { id: string; type: string; props: Record<string, unknown> };
@@ -95,17 +96,34 @@ const SERVICE_HERO_IMAGES: Record<string, string> = {
 
 function contentBlock(
   page: CarolinaPageContent,
-  options: { sidebar?: boolean; commercial?: boolean } = {},
+  options: { articleMode?: boolean; commercial?: boolean; inlineCta?: boolean } = {},
 ) {
   const { content, faqs } = splitFaqs(page.blocks);
+  const design = CAROLINA_SALES_PAGE_DESIGN[page.slug];
+  const quoteLink =
+    design?.quoteLink ?? (options.commercial ? "/commercial-quote" : "/get-a-quote");
+  const quoteLabel =
+    design?.quoteLabel ?? (options.commercial ? "REQUEST PROPOSAL" : "GET A QUOTE");
   return block("carolina-rich-content", {
+    pageSlug: page.slug,
     content: pageBlocksToHtml(content),
     faqs,
-    showSidebar: options.sidebar ?? false,
-    sidebarHeading: "Ready to start?",
-    sidebarText: "Contact us today for a free, no-obligation estimate for your property.",
-    sidebarButtonText: "REQUEST A QUOTE",
-    sidebarButtonLink: options.commercial ? "/commercial-quote" : "/get-a-quote",
+    showSidebar: false,
+    articleMode: options.articleMode ?? false,
+    showInlineCta: options.inlineCta ?? true,
+    quoteLink,
+    quoteLabel,
+  });
+}
+
+function pageIntro(page: CarolinaPageContent) {
+  const firstParagraph = page.blocks.find((item) => item.type === "p")?.text;
+  const design = CAROLINA_SALES_PAGE_DESIGN[page.slug];
+  return block("carolina-page-intro", {
+    pageSlug: page.slug,
+    intro: design?.intro ?? firstParagraph ?? "",
+    quoteLink: design?.quoteLink ?? "/get-a-quote",
+    quoteLabel: design?.quoteLabel ?? "GET A QUOTE",
   });
 }
 
@@ -184,6 +202,7 @@ function buildHomeBlocks(page: CarolinaPageContent) {
         { label: "Reliable Schedules" },
       ],
     }),
+    pageIntro(page),
     contentBlock(page),
     block("carolina-card-grid", {
       heading: "Residential Services",
@@ -210,6 +229,7 @@ function buildHomeBlocks(page: CarolinaPageContent) {
       primaryLink: "/get-a-quote",
       secondaryText: "",
       secondaryLink: "",
+      pageSlug: page.slug,
     }),
   ];
 }
@@ -217,6 +237,7 @@ function buildHomeBlocks(page: CarolinaPageContent) {
 function buildAboutBlocks(page: CarolinaPageContent) {
   return [
     introHero(page, CAROLINA_BRAND.tagline),
+    pageIntro(page),
     contentBlock(page),
     block("carolina-card-grid", {
       heading: "Our Values",
@@ -235,6 +256,7 @@ function buildAboutBlocks(page: CarolinaPageContent) {
       primaryLink: "/get-a-quote",
       secondaryText: "",
       secondaryLink: "",
+      pageSlug: page.slug,
     }),
   ];
 }
@@ -243,7 +265,25 @@ function buildServiceBlocks(page: CarolinaPageContent) {
   const isCommercial = page.slug.includes("commercial") || page.slug === "hoa-services";
   return [
     imageHero(page, SERVICE_HERO_IMAGES[page.slug] ?? imagePath("hero-home.png")),
-    contentBlock(page, { sidebar: true, commercial: isCommercial }),
+    pageIntro(page),
+    contentBlock(page, { commercial: isCommercial }),
+    block("carolina-cta", {
+      heading: isCommercial
+        ? "Ready for a clearer commercial landscape plan?"
+        : "Ready to improve your property?",
+      subheading: isCommercial
+        ? "Request a commercial assessment and proposal tailored to your site, schedule, and property goals."
+        : "Tell us what you need, and Carolina Exterior will follow up with a practical next step for your property.",
+      primaryText:
+        CAROLINA_SALES_PAGE_DESIGN[page.slug]?.quoteLabel ??
+        (isCommercial ? "REQUEST PROPOSAL" : "GET A QUOTE"),
+      primaryLink:
+        CAROLINA_SALES_PAGE_DESIGN[page.slug]?.quoteLink ??
+        (isCommercial ? "/commercial-quote" : "/get-a-quote"),
+      secondaryText: "",
+      secondaryLink: "",
+      pageSlug: page.slug,
+    }),
   ];
 }
 
@@ -254,6 +294,7 @@ function buildServiceAreasBlocks(page: CarolinaPageContent) {
       imagePath("hero-home.png"),
       `Serving ${CAROLINA_BRAND.county} and the greater Charlotte region.`,
     ),
+    pageIntro(page),
     contentBlock(page),
     block("carolina-location-grid", {
       heading: "",
@@ -272,6 +313,7 @@ function buildQuoteBlocks(page: CarolinaPageContent, formSlug: string) {
     page.blocks.find((item) => item.type === "p")?.text ?? "Request a free estimate.";
   return [
     introHero(page, firstParagraph),
+    pageIntro(page),
     block("carolina-quote-form", {
       formSlug,
       buttonText:
@@ -288,6 +330,7 @@ function buildGalleryBlocks(page: CarolinaPageContent, commercial = false) {
         ? "Professional grounds maintenance, landscape design, and hardscape for businesses and HOAs."
         : "A showcase of our recent landscape and hardscape projects in the Carolina Piedmont.",
     ),
+    pageIntro(page),
     block("carolina-gallery-grid", {
       heading: "",
       subheading: "",
@@ -363,6 +406,7 @@ function buildFaqPageBlocks(page: CarolinaPageContent, commercial = false) {
         ? "Answers to common questions about commercial landscaping, HOA care, and site work."
         : "Answers to common questions about our lawn care, landscaping, and hardscape services.",
     ),
+    pageIntro(page),
     block("carolina-faq", {
       heading: "",
       subheading: "",
@@ -401,7 +445,7 @@ function buildBlogPostBlocks(
 ) {
   return [
     imageHero(post, blogImagePath(post.image), `${post.readMinutes} min read`),
-    contentBlock(post, { sidebar: true }),
+    contentBlock(post, { articleMode: true, inlineCta: false }),
   ];
 }
 
@@ -524,7 +568,7 @@ function buildCarolinaPages() {
             imagePath("hero-home.png"),
             `Landscaping services in ${location.city}, ${location.state}.`,
           ),
-          contentBlock(location, { sidebar: true }),
+          contentBlock(location, { inlineCta: false }),
         ],
       ),
     );

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
-import { ArrowRight, Calendar, CheckCircle2, Clock, MapPin, ShieldCheck } from "lucide-react";
+import { ArrowRight, Calendar, CheckCircle2, Clock, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
@@ -10,7 +10,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { CAROLINA_BRAND, blogImagePath, imagePath } from "@shared/carolina-site";
+import {
+  CAROLINA_BRAND,
+  CAROLINA_SALES_PAGE_DESIGN,
+  blogImagePath,
+  imagePath,
+} from "@shared/carolina-site";
 
 type Props = Record<string, unknown>;
 type RichContentNode = {
@@ -28,6 +33,8 @@ type TopicCard = {
   title: string;
   bodyHtml: string;
 };
+
+type SectionMode = "feature" | "grid" | "process" | "problem-solution" | "split";
 
 const TRUST_SIGNALS = ["Locally owned", "Licensed & insured", "Union County specialists"];
 
@@ -200,6 +207,82 @@ function getTopicImage(title: string, index = 0) {
   return imagePath(fallbackImages[index % fallbackImages.length]);
 }
 
+function normalizeKey(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function getSectionKey(title: string) {
+  const normalized = normalizeKey(title);
+  if (/included|include|provided|offer|services|serve|property types/.test(normalized)) {
+    return "services";
+  }
+  if (/assessment/.test(normalized)) return "assessment";
+  if (/solution/.test(normalized)) return "solutions";
+  if (/process|estimate/.test(normalized)) return "process";
+  if (/problem|standing water|drainage/.test(normalized)) return "problems";
+  if (/material/.test(normalized)) return "materials";
+  if (/contract|option|program/.test(normalized)) return "contract";
+  if (/community|area|territory|location|monroe|waxhaw|marvin|charlotte/.test(normalized)) {
+    return "areas";
+  }
+  if (/why|choose|different|trusted|value/.test(normalized)) return "why";
+  if (/story/.test(normalized)) return "story";
+  if (/mission/.test(normalized)) return "mission";
+  if (/board|hoa/.test(normalized)) return "boards";
+  return "default";
+}
+
+function getSalesDesign(pageSlug: string) {
+  return CAROLINA_SALES_PAGE_DESIGN[pageSlug];
+}
+
+function getDesignedImage(pageSlug: string, title: string, index = 0, useDefault = true) {
+  const design = getSalesDesign(pageSlug);
+  const sectionKey = getSectionKey(title);
+  const filename =
+    (sectionKey !== "default" ? design?.sectionImages[sectionKey] : undefined) ??
+    design?.sectionImages[normalizeKey(title)] ??
+    (useDefault ? design?.sectionImages.default : undefined);
+  return filename ? imagePath(filename) : getTopicImage(title, index);
+}
+
+function getSectionMode(
+  section: RichContentSection,
+  index: number,
+  cardCount: number,
+): SectionMode {
+  const title = section.heading?.text ?? "";
+  const normalized = normalizeKey(title);
+  if (index === 0) return "feature";
+  if (/process|assessment|estimate|how to|get service/.test(normalized)) return "process";
+  if (/problem|must be fixed|why.*matter|why.*must/.test(normalized)) return "problem-solution";
+  if (cardCount >= 3 || /included|services|types|materials|areas|properties/.test(normalized)) {
+    return "grid";
+  }
+  return index % 2 === 0 ? "split" : "feature";
+}
+
+function getSectionBandClasses(index: number, mode: SectionMode) {
+  if (mode === "problem-solution") return "bg-secondary text-secondary-foreground";
+  const bands = ["bg-card", "bg-muted/55", "bg-[#eef1e7]", "bg-background"];
+  return bands[index % bands.length];
+}
+
+function getCtaCopy(pageSlug: string) {
+  const isCommercial = pageSlug.includes("commercial") || pageSlug === "hoa-services";
+  return {
+    heading: isCommercial
+      ? "Need a site-specific proposal?"
+      : "Want a property-specific recommendation?",
+    text: isCommercial
+      ? "Tell us what you manage and what needs attention. We will help you shape the right scope before the work starts."
+      : "Share what you are seeing on your property, and we will recommend the right next step without overcomplicating the process.",
+  };
+}
+
 export function CarolinaHeroBlock({ props }: { props: Props }) {
   const minHeight =
     str(props.minHeight, "standard") === "home"
@@ -278,19 +361,51 @@ export function CarolinaIntroHeroBlock({ props }: { props: Props }) {
   );
 }
 
+export function CarolinaPageIntroBlock({ props }: { props: Props }) {
+  const pageSlug = str(props.pageSlug);
+  const design = getSalesDesign(pageSlug);
+  const intro = str(props.intro, design?.intro ?? "");
+
+  if (!intro) return null;
+
+  return (
+    <section className="bg-background px-4 py-10 md:py-14">
+      <div className="mx-auto max-w-5xl rounded-[1.5rem] border border-border/70 bg-card p-6 text-center shadow-sm md:p-8">
+        <p className="carolina-eyebrow mb-3">How We Help</p>
+        <p className="text-xl font-extrabold leading-relaxed text-foreground md:text-2xl">
+          {intro}
+        </p>
+      </div>
+    </section>
+  );
+}
+
 export function CarolinaRichContentBlock({ props }: { props: Props }) {
   const sections = useMemo(() => parseRichContentSections(str(props.content)), [props.content]);
+  const pageSlug = str(props.pageSlug);
+  const design = getSalesDesign(pageSlug);
+  const quoteLink = str(props.quoteLink, design?.quoteLink ?? "/get-a-quote");
+  const quoteLabel = str(props.quoteLabel, design?.quoteLabel ?? "GET A QUOTE");
+  const showInlineCta = bool(props.showInlineCta, true);
+  const articleMode = bool(props.articleMode, false);
 
   return (
     <section className="bg-background">
-      <div className="max-w-7xl mx-auto px-4 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
-        <article
-          className={
-            bool(props.showSidebar, false) ? "lg:col-span-8" : "lg:col-span-10 lg:col-start-2"
-          }
-        >
-          {sections ? (
-            <VisualRichContent sections={sections} />
+      <div className="mx-auto max-w-7xl px-4 py-8 md:py-14">
+        <article>
+          {articleMode ? (
+            <div
+              className="prose prose-stone mx-auto max-w-3xl lg:prose-lg prose-headings:font-extrabold prose-h2:text-3xl prose-h2:mt-14 prose-h2:mb-5 prose-h3:text-xl prose-p:font-medium prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:font-medium prose-li:text-muted-foreground"
+              dangerouslySetInnerHTML={html(props.content)}
+            />
+          ) : sections ? (
+            <VisualRichContent
+              pageSlug={pageSlug}
+              sections={sections}
+              quoteLink={quoteLink}
+              quoteLabel={quoteLabel}
+              showInlineCta={showInlineCta}
+            />
           ) : (
             <div
               className="prose prose-stone lg:prose-lg max-w-none prose-headings:font-extrabold prose-h2:text-3xl prose-h2:mt-14 prose-h2:mb-5 prose-h3:text-xl prose-p:font-medium prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:font-medium prose-li:text-muted-foreground"
@@ -301,76 +416,85 @@ export function CarolinaRichContentBlock({ props }: { props: Props }) {
             <FaqAccordion items={arr(props.faqs)} />
           ) : null}
         </article>
-        {bool(props.showSidebar, false) ? (
-          <aside className="lg:col-span-4">
-            <div className="sticky top-32 bg-muted p-8 rounded-xl border border-border">
-              <h3 className="text-2xl font-extrabold mb-4">
-                {str(props.sidebarHeading, "Ready to start?")}
-              </h3>
-              <p className="text-muted-foreground font-medium mb-8">
-                {str(
-                  props.sidebarText,
-                  "Contact us today for a free, no-obligation estimate for your property.",
-                )}
-              </p>
-              <Link href={str(props.sidebarButtonLink, "/get-a-quote")}>
-                <Button size="lg" className="w-full font-bold h-12">
-                  {str(props.sidebarButtonText, "REQUEST A QUOTE")}
-                </Button>
-              </Link>
-            </div>
-          </aside>
-        ) : null}
       </div>
     </section>
   );
 }
 
-function VisualRichContent({ sections }: { sections: RichContentSection[] }) {
+function VisualRichContent({
+  pageSlug,
+  sections,
+  quoteLink,
+  quoteLabel,
+  showInlineCta,
+}: {
+  pageSlug: string;
+  sections: RichContentSection[];
+  quoteLink: string;
+  quoteLabel: string;
+  showInlineCta: boolean;
+}) {
+  const hasIntroSection = sections[0] && !sections[0].heading;
   return (
-    <div className="space-y-16 md:space-y-20">
-      {sections.map((section, index) => (
-        <VisualRichContentSection
-          key={`${section.heading?.text ?? "intro"}-${index}`}
-          section={section}
-          index={index}
-        />
-      ))}
-      <ProjectProofPanel />
+    <div className="space-y-8 md:space-y-10">
+      {sections.map((section, index) => {
+        const visualIndex = hasIntroSection ? index - 1 : index;
+        const shouldShowCta =
+          showInlineCta &&
+          visualIndex === 1 &&
+          Boolean(section.heading) &&
+          !pageSlug.includes("quote");
+        return (
+          <div key={`${section.heading?.text ?? "intro"}-${index}`} className="space-y-8">
+            <VisualRichContentSection pageSlug={pageSlug} section={section} index={index} />
+            {shouldShowCta ? (
+              <InlineQuoteCta pageSlug={pageSlug} quoteLink={quoteLink} quoteLabel={quoteLabel} />
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 function VisualRichContentSection({
+  pageSlug,
   section,
   index,
 }: {
+  pageSlug: string;
   section: RichContentSection;
   index: number;
 }) {
   const { lead, cards } = groupHeadingCards(section.children);
   const labeledCards = cards.length === 0 ? labeledParagraphCards(section.children) : [];
   const sectionCards = cards.length >= 2 ? cards : labeledCards;
-  const sectionLead = cards.length >= 2 ? lead : [];
+  const sectionLead = sectionCards.length >= 2 ? lead : [];
   const hasHeading = Boolean(section.heading);
+  const title = section.heading?.text ?? "Built around your property, not a template.";
+  const mode = getSectionMode(section, index, sectionCards.length);
+  const band = getSectionBandClasses(index, mode);
+  const imageUrl = getDesignedImage(pageSlug, title, index);
 
   if (!hasHeading) {
     return (
-      <section className="overflow-hidden rounded-[1.5rem] border border-border/80 bg-card shadow-md md:rounded-[2rem]">
-        <div className="aspect-[16/8] bg-muted md:aspect-[16/6]">
+      <section className="grid overflow-hidden rounded-[1.5rem] border border-border/80 bg-card shadow-sm md:rounded-[2rem] lg:grid-cols-[0.8fr_1.2fr]">
+        <div className="min-h-72 bg-muted">
           <img
-            src={getTopicImage(section.children.map((node) => node.text).join(" "), index)}
+            src={getDesignedImage(
+              pageSlug,
+              section.children.map((node) => node.text).join(" "),
+              index,
+            )}
             alt=""
             className="h-full w-full object-cover"
           />
         </div>
-        <div className="grid gap-6 p-6 md:grid-cols-[0.72fr_1fr] md:p-8">
-          <div>
-            <p className="carolina-eyebrow mb-3">Local Landscape Care</p>
-            <h2 className="text-2xl font-extrabold leading-tight md:text-3xl">
-              Built around your property, not a template.
-            </h2>
-          </div>
+        <div className="p-6 md:p-8 lg:p-10">
+          <p className="carolina-eyebrow mb-3">Local Landscape Care</p>
+          <h2 className="mb-5 text-2xl font-extrabold leading-tight md:text-3xl">
+            Built around your property, not a template.
+          </h2>
           <div
             className="prose prose-stone max-w-none prose-p:font-medium prose-p:text-muted-foreground prose-p:leading-relaxed lg:prose-lg"
             dangerouslySetInnerHTML={{ __html: richNodesHtml(section.children) }}
@@ -381,36 +505,36 @@ function VisualRichContentSection({
   }
 
   if (sectionCards.length >= 2) {
-    const [featuredCard, ...supportCards] = sectionCards;
     return (
-      <section>
-        <div className="mb-8 max-w-4xl">
-          <p className="carolina-eyebrow mb-3">What to Expect</p>
-          <h2 className="text-3xl md:text-5xl font-extrabold leading-tight">
-            {section.heading?.text}
-          </h2>
-          {sectionLead.length > 0 ? (
-            <div
-              className="prose prose-stone mt-4 max-w-none prose-p:text-muted-foreground prose-p:font-medium prose-p:leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: richNodesHtml(sectionLead) }}
-            />
-          ) : null}
-        </div>
-        <div className="space-y-5">
-          <FeaturedTopicCard
-            title={featuredCard.title}
-            bodyHtml={featuredCard.bodyHtml}
-            imageUrl={getTopicImage(featuredCard.title, index)}
-          />
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            {supportCards.map((card, cardIndex) => (
-              <TopicImageCard
-                key={`${section.heading?.text}-${card.title}`}
-                title={card.title}
-                bodyHtml={card.bodyHtml}
-                imageUrl={getTopicImage(card.title, index + cardIndex + 1)}
+      <section
+        className={`overflow-hidden rounded-[1.5rem] border border-border/70 ${band} shadow-sm md:rounded-[2rem]`}
+      >
+        <div className="grid gap-0 lg:grid-cols-[0.78fr_1.22fr]">
+          <div className="min-h-80 bg-muted lg:min-h-full">
+            <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          </div>
+          <div className="p-6 md:p-8 lg:p-10">
+            <p className="carolina-eyebrow mb-3">
+              {mode === "process"
+                ? "Our Process"
+                : mode === "problem-solution"
+                  ? "What We Solve"
+                  : "Service Details"}
+            </p>
+            <h2 className="text-3xl font-extrabold leading-tight md:text-5xl">{title}</h2>
+            {sectionLead.length > 0 ? (
+              <div
+                className="prose prose-stone mt-5 max-w-none prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground"
+                dangerouslySetInnerHTML={{ __html: richNodesHtml(sectionLead) }}
               />
-            ))}
+            ) : null}
+            <TopicCardGrid
+              pageSlug={pageSlug}
+              title={title}
+              cards={sectionCards}
+              mode={mode}
+              startIndex={index}
+            />
           </div>
         </div>
       </section>
@@ -419,22 +543,18 @@ function VisualRichContentSection({
 
   return (
     <section
-      className={`grid grid-cols-1 overflow-hidden rounded-[1.5rem] border border-border/80 bg-card shadow-md md:rounded-[2rem] lg:grid-cols-2 ${
+      className={`grid grid-cols-1 overflow-hidden rounded-[1.5rem] border border-border/70 ${band} shadow-sm md:rounded-[2rem] lg:grid-cols-2 ${
         index % 2 === 0 ? "" : "lg:[&_.visual-section-image]:order-2"
       }`}
     >
       <div className="visual-section-image min-h-72 bg-muted lg:min-h-[30rem]">
-        <img
-          src={getTopicImage(section.heading?.text ?? "", index)}
-          alt=""
-          className="h-full w-full object-cover"
-        />
+        <img src={imageUrl} alt="" className="h-full w-full object-cover" />
       </div>
       <div className="p-6 md:p-8 lg:p-12">
-        <p className="carolina-eyebrow mb-3">Local Proof</p>
-        <h2 className="text-2xl md:text-4xl font-extrabold leading-tight">
-          {section.heading?.text}
-        </h2>
+        <p className="carolina-eyebrow mb-3">
+          {mode === "process" ? "How It Works" : "Local Proof"}
+        </p>
+        <h2 className="text-2xl md:text-4xl font-extrabold leading-tight">{title}</h2>
         <div
           className="prose prose-stone mt-5 max-w-none prose-p:text-muted-foreground prose-p:font-medium prose-p:leading-relaxed prose-li:text-muted-foreground prose-li:font-medium"
           dangerouslySetInnerHTML={{ __html: richNodesHtml(section.children) }}
@@ -444,90 +564,79 @@ function VisualRichContentSection({
   );
 }
 
-function FeaturedTopicCard({
+function TopicCardGrid({
+  pageSlug,
   title,
-  bodyHtml,
-  imageUrl,
+  cards,
+  mode,
+  startIndex,
 }: {
+  pageSlug: string;
   title: string;
-  bodyHtml: string;
-  imageUrl: string;
+  cards: TopicCard[];
+  mode: SectionMode;
+  startIndex: number;
 }) {
+  const compact = mode === "process" || mode === "problem-solution";
   return (
-    <article className="group grid overflow-hidden rounded-[1.5rem] border border-border/80 bg-card shadow-md md:rounded-[2rem] lg:grid-cols-[0.92fr_1.08fr]">
-      <div className="min-h-72 overflow-hidden bg-muted">
-        <img
-          src={imageUrl}
-          alt=""
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-      </div>
-      <div className="flex flex-col justify-center p-6 md:p-8">
-        <p className="carolina-eyebrow mb-3">Start Here</p>
-        <h3 className="text-2xl font-extrabold leading-tight md:text-3xl">{title}</h3>
-        <div
-          className="prose prose-stone mt-4 max-w-none prose-p:text-sm prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground prose-li:text-sm prose-li:text-muted-foreground"
-          dangerouslySetInnerHTML={{ __html: bodyHtml }}
-        />
-      </div>
-    </article>
-  );
-}
-
-function TopicImageCard({
-  title,
-  bodyHtml,
-  imageUrl,
-}: {
-  title: string;
-  bodyHtml: string;
-  imageUrl: string;
-}) {
-  return (
-    <article className="group h-full overflow-hidden rounded-[1.25rem] border border-border/80 bg-card shadow-sm transition-shadow hover:shadow-md">
-      <div className="aspect-[16/9] overflow-hidden bg-muted">
-        <img
-          src={imageUrl}
-          alt=""
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-      </div>
-      <div className="p-5 md:p-6">
-        <h3 className="text-xl font-extrabold leading-tight">{title}</h3>
-        <div
-          className="prose prose-stone mt-4 max-w-none prose-p:text-sm prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground prose-li:text-sm prose-li:text-muted-foreground"
-          dangerouslySetInnerHTML={{ __html: bodyHtml }}
-        />
-      </div>
-    </article>
-  );
-}
-
-function ProjectProofPanel() {
-  return (
-    <section className="grid overflow-hidden rounded-[1.5rem] border border-primary/15 bg-secondary text-secondary-foreground shadow-lg md:rounded-[2rem] lg:grid-cols-[0.85fr_1.15fr]">
-      <div className="min-h-72 bg-muted lg:min-h-[34rem]">
-        <img src={imagePath("hero-hardscape.png")} alt="" className="h-full w-full object-cover" />
-      </div>
-      <div className="flex flex-col justify-center p-6 md:p-10 lg:p-12">
-        <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.16em] text-accent">
-          Project-Minded Process
-        </p>
-        <h2 className="text-3xl font-extrabold leading-tight text-white md:text-5xl">
-          Clear scope, durable materials, and a property that looks finished.
-        </h2>
-        <p className="mt-5 max-w-2xl text-base font-medium leading-relaxed text-white/78 md:text-lg">
-          From drainage corrections to planting plans and hardscape details, Carolina Exterior plans
-          each project around the way water moves, how the space will be used, and what will hold up
-          in the Piedmont Carolina climate.
-        </p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          {["Site-first assessment", "Clean installation", "Local follow-through"].map((item) => (
-            <div key={item} className="rounded-xl border border-white/15 bg-white/8 p-4">
-              <ShieldCheck className="mb-3 h-5 w-5 text-accent" />
-              <p className="text-sm font-extrabold text-white">{item}</p>
+    <div
+      className={`mt-8 grid gap-4 ${compact ? "md:grid-cols-2" : "md:grid-cols-2 xl:grid-cols-3"}`}
+    >
+      {cards.map((card, cardIndex) => (
+        <article
+          key={`${title}-${card.title}`}
+          className="group overflow-hidden rounded-xl border border-border/70 bg-white/85 shadow-sm transition-shadow hover:shadow-md"
+        >
+          {!compact ? (
+            <div className="aspect-[16/9] overflow-hidden bg-muted">
+              <img
+                src={getDesignedImage(pageSlug, card.title, startIndex + cardIndex + 1, false)}
+                alt=""
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
             </div>
-          ))}
+          ) : null}
+          <div className="p-5">
+            <h3 className="text-lg font-extrabold leading-tight">{card.title}</h3>
+            <div
+              className="prose prose-stone mt-3 max-w-none prose-p:text-sm prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground prose-li:text-sm prose-li:text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: card.bodyHtml }}
+            />
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function InlineQuoteCta({
+  pageSlug,
+  quoteLink,
+  quoteLabel,
+}: {
+  pageSlug: string;
+  quoteLink: string;
+  quoteLabel: string;
+}) {
+  const copy = getCtaCopy(pageSlug);
+  return (
+    <section className="overflow-hidden rounded-[1.5rem] border border-primary/15 bg-primary text-primary-foreground shadow-md md:rounded-[2rem]">
+      <div className="grid gap-0 md:grid-cols-[1fr_auto] md:items-center">
+        <div className="p-6 md:p-8">
+          <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.16em] text-white/70">
+            Ready When You Are
+          </p>
+          <h2 className="text-2xl font-extrabold leading-tight md:text-3xl">{copy.heading}</h2>
+          <p className="mt-3 max-w-3xl text-sm font-semibold leading-relaxed text-white/78 md:text-base">
+            {copy.text}
+          </p>
+        </div>
+        <div className="px-6 pb-6 md:p-8">
+          <Link href={quoteLink}>
+            <Button className="h-12 w-full bg-accent px-6 font-extrabold text-accent-foreground hover:bg-accent/90 md:w-auto">
+              {quoteLabel}
+            </Button>
+          </Link>
         </div>
       </div>
     </section>
@@ -787,6 +896,8 @@ export function CarolinaQuoteFormBlock({ props }: { props: Props }) {
 }
 
 export function CarolinaCtaBlock({ props }: { props: Props }) {
+  const pageSlug = str(props.pageSlug);
+  const imageUrl = getDesignedImage(pageSlug, str(props.heading, "quote"), 2);
   return (
     <section className="bg-background px-4 py-16 md:py-24">
       <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[1.5rem] border border-border/80 bg-accent shadow-lg md:rounded-[2rem] lg:grid-cols-[1.1fr_0.9fr]">
@@ -803,7 +914,7 @@ export function CarolinaCtaBlock({ props }: { props: Props }) {
           <ButtonRow props={props} />
         </div>
         <div className="min-h-72 bg-muted lg:min-h-full">
-          <img src={imagePath("gallery-res-3.png")} alt="" className="h-full w-full object-cover" />
+          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
         </div>
       </div>
     </section>
