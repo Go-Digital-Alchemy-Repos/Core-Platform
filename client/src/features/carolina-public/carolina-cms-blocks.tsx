@@ -505,6 +505,32 @@ function VisualRichContentSection({
   }
 
   if (sectionCards.length >= 2) {
+    if (mode === "grid") {
+      return (
+        <section
+          className={`overflow-hidden rounded-[1.5rem] border border-border/70 ${band} p-6 shadow-sm md:rounded-[2rem] md:p-8 lg:p-10`}
+        >
+          <div className="mb-8 max-w-5xl">
+            <p className="carolina-eyebrow mb-3">Service Details</p>
+            <h2 className="text-3xl font-extrabold leading-tight md:text-5xl">{title}</h2>
+            {sectionLead.length > 0 ? (
+              <div
+                className="prose prose-stone mt-5 max-w-none prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground"
+                dangerouslySetInnerHTML={{ __html: richNodesHtml(sectionLead) }}
+              />
+            ) : null}
+          </div>
+          <TopicCardGrid
+            pageSlug={pageSlug}
+            title={title}
+            cards={sectionCards}
+            mode={mode}
+            startIndex={index}
+          />
+        </section>
+      );
+    }
+
     return (
       <section
         className={`overflow-hidden rounded-[1.5rem] border border-border/70 ${band} shadow-sm md:rounded-[2rem]`}
