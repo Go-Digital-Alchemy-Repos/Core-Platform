@@ -401,9 +401,9 @@ export function CarolinaPageIntroBlock({ props }: { props: Props }) {
 
   return (
     <section className="bg-background px-4 py-10 md:py-14">
-      <div className="mx-auto max-w-7xl">
-        <p className="carolina-eyebrow mb-3 text-center md:text-left">How We Help</p>
-        <p className="max-w-5xl text-lg font-medium leading-relaxed text-muted-foreground md:text-xl">
+      <div className="mx-auto max-w-7xl text-center">
+        <p className="carolina-eyebrow mb-3">How We Help</p>
+        <p className="mx-auto max-w-5xl text-lg font-medium leading-relaxed text-muted-foreground md:text-xl">
           {intro}
         </p>
       </div>
