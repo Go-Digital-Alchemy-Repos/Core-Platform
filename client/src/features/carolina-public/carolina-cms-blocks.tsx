@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/accordion";
 import {
   CAROLINA_BRAND,
+  CAROLINA_LOCATION_IMAGES,
   CAROLINA_SALES_PAGE_DESIGN,
   blogImagePath,
   imagePath,
@@ -39,8 +40,11 @@ type TopicCard = {
 type SectionMode = "feature" | "grid" | "process" | "problem-solution" | "split";
 
 const TRUST_SIGNALS = ["Locally owned", "Licensed & insured", "Union County specialists"];
-const CAROLINA_DRAINAGE_IMAGE_VERSION = "773cf2c";
-const VERSIONED_CAROLINA_IMAGES = new Set(["hero-drainage.png", "card-commercial-drainage.png"]);
+const CAROLINA_IMAGE_VERSION = "20260701";
+const VERSIONED_CAROLINA_IMAGES = new Set([
+  "hero-drainage.png",
+  "card-commercial-drainage.png",
+]);
 
 function str(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
@@ -93,7 +97,7 @@ function carolinaImageSrc(src: string) {
     return src;
   }
 
-  return `${src}${src.includes("?") ? "&" : "?"}v=${CAROLINA_DRAINAGE_IMAGE_VERSION}`;
+  return `${src}${src.includes("?") ? "&" : "?"}v=${CAROLINA_IMAGE_VERSION}`;
 }
 
 function parseRichContentSections(content: string): RichContentSection[] | null {
@@ -281,7 +285,21 @@ function getSalesDesign(pageSlug: string) {
   return CAROLINA_SALES_PAGE_DESIGN[pageSlug];
 }
 
+function getLocationImageFilename(pageSlug: string, title: string) {
+  if (CAROLINA_LOCATION_IMAGES[pageSlug]) return CAROLINA_LOCATION_IMAGES[pageSlug];
+
+  const normalized = normalizeKey(title);
+  if (normalized === "monroe" || normalized === "monroe nc") {
+    return CAROLINA_LOCATION_IMAGES["monroe-nc"];
+  }
+
+  return undefined;
+}
+
 function getDesignedImage(pageSlug: string, title: string, index = 0, useDefault = true) {
+  const locationFilename = getLocationImageFilename(pageSlug, title);
+  if (locationFilename) return carolinaImageSrc(imagePath(locationFilename));
+
   const design = getSalesDesign(pageSlug);
   const sectionKey = getSectionKey(title);
   const filename =
@@ -326,12 +344,20 @@ function getCtaCopy(pageSlug: string) {
 }
 
 export function CarolinaHeroBlock({ props }: { props: Props }) {
+  const [location] = useLocation();
   const minHeight =
     str(props.minHeight, "standard") === "home"
       ? "min-h-[76vh] md:min-h-[82vh]"
       : "min-h-[460px] md:min-h-[560px]";
   const align = str(props.align, "left");
   const eyebrow = str(props.badge) || CAROLINA_BRAND.tagline;
+  const locationFilename =
+    location === "/service-areas/monroe-nc"
+      ? CAROLINA_LOCATION_IMAGES["monroe-nc"]
+      : getLocationImageFilename(str(props.pageSlug), str(props.heading));
+  const imageUrl = locationFilename
+    ? imagePath(locationFilename)
+    : str(props.imageUrl, imagePath("hero-home.png"));
 
   return (
     <section
@@ -339,7 +365,7 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
     >
       <div className="absolute inset-3 z-0 overflow-hidden rounded-[1.5rem] shadow-2xl md:inset-6 md:rounded-[2rem]">
         <img
-          src={carolinaImageSrc(str(props.imageUrl, imagePath("hero-home.png")))}
+          src={carolinaImageSrc(imageUrl)}
           alt={str(props.imageAlt, str(props.heading, CAROLINA_BRAND.name))}
           className="w-full h-full object-cover"
         />

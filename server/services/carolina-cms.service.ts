@@ -15,7 +15,7 @@ import {
   type CarolinaBlock,
   type CarolinaPageContent,
 } from "@shared/carolina-content";
-import { CAROLINA_SALES_PAGE_DESIGN } from "@shared/carolina-site";
+import { CAROLINA_LOCATION_IMAGES, CAROLINA_SALES_PAGE_DESIGN } from "@shared/carolina-site";
 import type { InsertCmsPage } from "@shared/schema";
 
 type CmsBlock = { id: string; type: string; props: Record<string, unknown> };
@@ -93,6 +93,11 @@ const SERVICE_HERO_IMAGES: Record<string, string> = {
   "commercial-drainage": imagePath("hero-drainage.png"),
   "hoa-services": imagePath("hero-commercial.png"),
 };
+
+function locationImagePath(slug: string) {
+  const filename = CAROLINA_LOCATION_IMAGES[slug];
+  return filename ? imagePath(filename) : imagePath("hero-home.png");
+}
 
 function contentBlock(
   page: CarolinaPageContent,
@@ -565,7 +570,7 @@ function buildCarolinaPages() {
         [
           imageHero(
             location,
-            imagePath("hero-home.png"),
+            locationImagePath(location.slug),
             `Landscaping services in ${location.city}, ${location.state}.`,
           ),
           contentBlock(location, { inlineCta: false }),

@@ -97,6 +97,10 @@ export const SERVICE_AREAS = [
   { slug: "weddington-nc", city: "Weddington", state: "NC" },
 ] as const;
 
+export const CAROLINA_LOCATION_IMAGES: Record<string, string> = {
+  "monroe-nc": "location-monroe-nc.png",
+};
+
 export const VALUE_PROPS = [
   {
     title: "Rooted in Carolina",
