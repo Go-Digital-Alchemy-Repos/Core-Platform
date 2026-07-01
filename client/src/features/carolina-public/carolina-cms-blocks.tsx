@@ -682,8 +682,11 @@ function TopicCardGrid({
   mode: SectionMode;
   startIndex: number;
 }) {
+  const gridColumns =
+    cards.length === 4 ? "md:grid-cols-2 xl:grid-cols-4" : "md:grid-cols-2 xl:grid-cols-3";
+
   return (
-    <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className={`mt-8 grid gap-4 ${gridColumns}`}>
       {cards.map((card, cardIndex) => (
         <article
           key={`${title}-${card.title}`}
