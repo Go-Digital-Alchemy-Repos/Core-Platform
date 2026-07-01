@@ -1146,7 +1146,7 @@ export function CarolinaCtaBlock({ props }: { props: Props }) {
   const imageUrl = getDesignedImage(pageSlug, str(props.heading, "quote"), 2);
   return (
     <section className="bg-background px-4 py-16 md:py-24">
-      <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[1.5rem] border border-border/80 bg-accent shadow-lg md:rounded-[2rem] lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[1.5rem] border border-border/80 bg-[#e5dcc8] shadow-lg md:rounded-[2rem] lg:grid-cols-[1.1fr_0.9fr]">
         <div className="p-8 md:p-12 lg:p-16">
           <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.16em] text-foreground/65">
             Ready When You Are
