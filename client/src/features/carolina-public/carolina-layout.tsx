@@ -116,6 +116,9 @@ export function CarolinaLayout({ children }: { children: ReactNode }) {
               <Link href="/about" className="hover:text-primary transition-colors">
                 About
               </Link>
+              <Link href="/service-areas" className="hover:text-primary transition-colors">
+                Service Areas
+              </Link>
               <Link href="/blog" className="hover:text-primary transition-colors">
                 Blog
               </Link>

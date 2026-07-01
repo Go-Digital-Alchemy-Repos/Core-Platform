@@ -15,6 +15,7 @@ import {
   CAROLINA_BRAND,
   CAROLINA_LOCATION_IMAGES,
   CAROLINA_SALES_PAGE_DESIGN,
+  SERVICE_AREAS,
   blogImagePath,
   imagePath,
 } from "@shared/carolina-site";
@@ -289,8 +290,11 @@ function getLocationImageFilename(pageSlug: string, title: string) {
   if (CAROLINA_LOCATION_IMAGES[pageSlug]) return CAROLINA_LOCATION_IMAGES[pageSlug];
 
   const normalized = normalizeKey(title);
-  if (normalized === "monroe" || normalized === "monroe nc") {
-    return CAROLINA_LOCATION_IMAGES["monroe-nc"];
+  for (const [slug, filename] of Object.entries(CAROLINA_LOCATION_IMAGES)) {
+    const cityKey = slug.replace(/-[a-z]{2}$/i, "");
+    if (normalized === cityKey || normalized === cityKey.replace(/-/g, " ")) {
+      return filename;
+    }
   }
 
   return undefined;
@@ -351,10 +355,10 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
       : "min-h-[460px] md:min-h-[560px]";
   const align = str(props.align, "left");
   const eyebrow = str(props.badge) || CAROLINA_BRAND.tagline;
+  const serviceAreaSlug = location.match(/^\/service-areas\/([^/?#]+)/)?.[1] ?? "";
   const locationFilename =
-    location === "/service-areas/monroe-nc"
-      ? CAROLINA_LOCATION_IMAGES["monroe-nc"]
-      : getLocationImageFilename(str(props.pageSlug), str(props.heading));
+    CAROLINA_LOCATION_IMAGES[serviceAreaSlug] ??
+    getLocationImageFilename(str(props.pageSlug), str(props.heading));
   const imageUrl = locationFilename
     ? imagePath(locationFilename)
     : str(props.imageUrl, imagePath("hero-home.png"));
@@ -835,12 +839,22 @@ function CompactServiceCard({
 }
 
 export function CarolinaLocationGridBlock({ props }: { props: Props }) {
+  const existingItems = arr<{ city: string; state: string; href: string }>(props.items);
+  const itemsByHref = new Map(existingItems.map((item) => [item.href, item]));
+  for (const area of SERVICE_AREAS) {
+    const href = `/service-areas/${area.slug}`;
+    if (!itemsByHref.has(href)) {
+      itemsByHref.set(href, { city: area.city, state: area.state, href });
+    }
+  }
+  const items = Array.from(itemsByHref.values());
+
   return (
     <section className="py-12 md:py-20 bg-background">
       <div className="max-w-6xl mx-auto px-4">
         <SectionHeading props={props} />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {arr<{ city: string; state: string; href: string }>(props.items).map((area) => (
+          {items.map((area) => (
             <Link key={area.href} href={area.href}>
               <div className="group border border-border/80 bg-card hover:border-primary/50 p-5 rounded-xl shadow-sm hover:shadow-md transition-all flex items-center justify-between">
                 <div className="flex items-center gap-3">

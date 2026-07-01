@@ -92,12 +92,14 @@ export const SERVICE_AREAS = [
   { slug: "monroe-nc", city: "Monroe", state: "NC" },
   { slug: "indian-trail-nc", city: "Indian Trail", state: "NC" },
   { slug: "charlotte-nc", city: "Charlotte", state: "NC" },
+  { slug: "matthews-nc", city: "Matthews", state: "NC" },
   { slug: "lancaster-sc", city: "Lancaster", state: "SC" },
   { slug: "mineral-springs-nc", city: "Mineral Springs", state: "NC" },
   { slug: "weddington-nc", city: "Weddington", state: "NC" },
 ] as const;
 
 export const CAROLINA_LOCATION_IMAGES: Record<string, string> = {
+  "matthews-nc": "location-matthews-nc.png",
   "monroe-nc": "location-monroe-nc.png",
 };
 
