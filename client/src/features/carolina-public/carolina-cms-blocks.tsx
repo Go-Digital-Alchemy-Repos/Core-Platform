@@ -39,6 +39,8 @@ type TopicCard = {
 type SectionMode = "feature" | "grid" | "process" | "problem-solution" | "split";
 
 const TRUST_SIGNALS = ["Locally owned", "Licensed & insured", "Union County specialists"];
+const CAROLINA_DRAINAGE_IMAGE_VERSION = "773cf2c";
+const VERSIONED_CAROLINA_IMAGES = new Set(["hero-drainage.png", "card-commercial-drainage.png"]);
 
 function str(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
@@ -83,6 +85,15 @@ function getCarolinaBlogTags(post: {
 
 function html(value: unknown) {
   return { __html: str(value) };
+}
+
+function carolinaImageSrc(src: string) {
+  const filename = src.split("?")[0]?.split("/").pop();
+  if (!filename || !VERSIONED_CAROLINA_IMAGES.has(filename) || src.includes("v=")) {
+    return src;
+  }
+
+  return `${src}${src.includes("?") ? "&" : "?"}v=${CAROLINA_DRAINAGE_IMAGE_VERSION}`;
 }
 
 function parseRichContentSections(content: string): RichContentSection[] | null {
@@ -223,7 +234,7 @@ function getTopicImage(title: string, index = 0) {
   const match = matches.find(([keywords]) =>
     keywords.some((keyword) => normalized.includes(keyword)),
   );
-  if (match) return imagePath(match[1]);
+  if (match) return carolinaImageSrc(imagePath(match[1]));
 
   const fallbackImages = [
     "gallery-res-1.png",
@@ -235,7 +246,7 @@ function getTopicImage(title: string, index = 0) {
     "hero-drainage.png",
     "hero-commercial.png",
   ];
-  return imagePath(fallbackImages[index % fallbackImages.length]);
+  return carolinaImageSrc(imagePath(fallbackImages[index % fallbackImages.length]));
 }
 
 function normalizeKey(value: string) {
@@ -277,7 +288,7 @@ function getDesignedImage(pageSlug: string, title: string, index = 0, useDefault
     (sectionKey !== "default" ? design?.sectionImages[sectionKey] : undefined) ??
     design?.sectionImages[normalizeKey(title)] ??
     (useDefault ? design?.sectionImages.default : undefined);
-  return filename ? imagePath(filename) : getTopicImage(title, index);
+  return filename ? carolinaImageSrc(imagePath(filename)) : getTopicImage(title, index);
 }
 
 function getSectionMode(
@@ -328,7 +339,7 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
     >
       <div className="absolute inset-3 z-0 overflow-hidden rounded-[1.5rem] shadow-2xl md:inset-6 md:rounded-[2rem]">
         <img
-          src={str(props.imageUrl, imagePath("hero-home.png"))}
+          src={carolinaImageSrc(str(props.imageUrl, imagePath("hero-home.png")))}
           alt={str(props.imageAlt, str(props.heading, CAROLINA_BRAND.name))}
           className="w-full h-full object-cover"
         />
