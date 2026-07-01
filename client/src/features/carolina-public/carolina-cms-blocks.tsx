@@ -63,6 +63,7 @@ const CAROLINA_IMAGE_VERSION = "20260701";
 const VERSIONED_CAROLINA_IMAGES = new Set([
   "hero-drainage.png",
   "card-commercial-drainage.png",
+  "card-commercial-landscaping.png",
   "card-swales.png",
 ]);
 
@@ -222,6 +223,10 @@ function getTopicImage(title: string, index = 0) {
     [
       ["drain", "french", "basin", "downspout", "standing water", "erosion"],
       "hero-drainage.png",
+    ],
+    [
+      ["commercial landscaping", "entryway landscaping", "business landscaping"],
+      "card-commercial-landscaping.png",
     ],
     [["custom landscape", "landscape design", "design plan"], "gallery-res-2.png"],
     [["sod", "turf", "grass variety"], "hero-home.png"],
@@ -414,9 +419,13 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
   const locationFilename =
     CAROLINA_LOCATION_IMAGES[serviceAreaSlug] ??
     getLocationImageFilename(str(props.pageSlug), heading);
-  const imageUrl = locationFilename
-    ? imagePath(locationFilename)
-    : str(props.imageUrl, imagePath("hero-home.png"));
+  const pageHeroFilename =
+    location === "/commercial-landscaping" ? "card-commercial-landscaping.png" : "";
+  const imageUrl = pageHeroFilename
+    ? imagePath(pageHeroFilename)
+    : locationFilename
+      ? imagePath(locationFilename)
+      : str(props.imageUrl, imagePath("hero-home.png"));
 
   return (
     <section
@@ -686,6 +695,28 @@ function VisualRichContentSection({
             cards={sectionCards}
             mode={mode}
             startIndex={index}
+          />
+        </div>
+      </section>
+    );
+  }
+
+  if (pageSlug === "commercial-landscaping") {
+    return (
+      <section
+        className={`overflow-hidden rounded-[1.5rem] border border-border/70 ${band} shadow-sm md:rounded-[2rem]`}
+      >
+        <div className="aspect-[16/6] max-h-[24rem] min-h-64 bg-muted">
+          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+        </div>
+        <div className="p-6 md:p-8 lg:p-12">
+          <p className="carolina-eyebrow mb-3">
+            {mode === "process" ? "How It Works" : "Commercial Landscaping"}
+          </p>
+          <h2 className="text-2xl font-extrabold leading-tight md:text-4xl">{title}</h2>
+          <div
+            className="prose prose-stone mt-5 max-w-none prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground prose-li:font-medium prose-li:text-muted-foreground"
+            dangerouslySetInnerHTML={{ __html: richNodesHtml(section.children) }}
           />
         </div>
       </section>

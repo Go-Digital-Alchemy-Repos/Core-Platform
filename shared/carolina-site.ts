@@ -286,10 +286,10 @@ export const CAROLINA_SALES_PAGE_DESIGN: Record<string, CarolinaSalesPageDesign>
     quoteLink: "/commercial-quote",
     quoteLabel: "REQUEST COMMERCIAL PROPOSAL",
     sectionImages: {
-      default: "hero-commercial.png",
-      services: "gallery-com-1.png",
+      default: "card-commercial-landscaping.png",
+      services: "card-commercial-landscaping.png",
       process: "card-plant-shrub-installation.png",
-      property: "card-hoa-entry-signage.png",
+      property: "card-commercial-landscaping.png",
     },
   },
   "commercial-hardscape": {
