@@ -45,6 +45,7 @@ const CAROLINA_IMAGE_VERSION = "20260701";
 const VERSIONED_CAROLINA_IMAGES = new Set([
   "hero-drainage.png",
   "card-commercial-drainage.png",
+  "card-swales.png",
 ]);
 
 function str(value: unknown, fallback = "") {
@@ -148,6 +149,10 @@ function richNodesHtml(nodes: RichContentNode[]) {
   return nodes.map((node) => `<${node.tag}>${node.html}</${node.tag}>`).join("");
 }
 
+function textFromHtml(value: string) {
+  return value.replace(/<[^>]*>/g, " ");
+}
+
 function groupHeadingCards(nodes: RichContentNode[]): {
   lead: RichContentNode[];
   cards: TopicCard[];
@@ -195,15 +200,16 @@ function labeledParagraphCards(nodes: RichContentNode[]) {
 function getTopicImage(title: string, index = 0) {
   const normalized = title.toLowerCase();
   const matches: Array<[string[], string]> = [
+    [["swale", "swales"], "card-swales.png"],
+    [
+      ["drain", "french", "basin", "downspout", "standing water", "erosion"],
+      "hero-drainage.png",
+    ],
     [["custom landscape", "landscape design", "design plan"], "gallery-res-2.png"],
     [["sod", "turf", "grass variety"], "hero-home.png"],
     [["seasonal", "color", "flower", "annual"], "gallery-res-3.png"],
     [["consultation", "assessment", "walkthrough"], "gallery-res-1.png"],
     [["installation", "plant sourcing", "plant selection"], "hero-mulch.png"],
-    [
-      ["drain", "french", "basin", "downspout", "standing water", "erosion", "swale"],
-      "hero-drainage.png",
-    ],
     [
       [
         "hardscape",
@@ -271,6 +277,7 @@ function normalizeKey(value: string) {
 
 function getSectionKey(title: string) {
   const normalized = normalizeKey(title);
+  if (/swale/.test(normalized)) return "swales";
   if (/included|include|provided|offer|services|serve|property types/.test(normalized)) {
     return "services";
   }
@@ -695,7 +702,12 @@ function TopicCardGrid({
           {mode !== "process" && mode !== "problem-solution" ? (
             <div className="aspect-[16/9] overflow-hidden bg-muted">
               <img
-                src={getDesignedImage(pageSlug, card.title, startIndex + cardIndex + 1, false)}
+                src={getDesignedImage(
+                  pageSlug,
+                  `${card.title} ${textFromHtml(card.bodyHtml)}`,
+                  startIndex + cardIndex + 1,
+                  false,
+                )}
                 alt=""
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
@@ -783,7 +795,7 @@ function FeatureServiceCard({
     <article className="group h-full overflow-hidden rounded-[1.5rem] border border-border/80 bg-card shadow-md transition-shadow hover:shadow-lg md:rounded-[2rem] lg:col-span-5">
       <div className="aspect-[16/10] overflow-hidden bg-muted">
         <img
-          src={getTopicImage(item.title, index)}
+          src={getTopicImage(`${item.title} ${item.description}`, index)}
           alt=""
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
@@ -822,7 +834,7 @@ function CompactServiceCard({
     <article className="group flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-border/80 bg-card shadow-sm transition-all hover:border-primary/45 hover:shadow-md">
       <div className="aspect-[16/7] overflow-hidden bg-muted">
         <img
-          src={getTopicImage(item.title, index)}
+          src={getTopicImage(`${item.title} ${item.description}`, index)}
           alt=""
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
