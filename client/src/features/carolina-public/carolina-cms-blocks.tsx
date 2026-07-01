@@ -92,6 +92,14 @@ function html(value: unknown) {
   return { __html: str(value) };
 }
 
+function cleanHeroHeading(value: unknown) {
+  return str(value)
+    .replace(/\s*\|\s*Carolina Exterior\b\s*/gi, " ")
+    .replace(/\s+—\s+/g, " — ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function carolinaImageSrc(src: string) {
   const filename = src.split("?")[0]?.split("/").pop();
   if (!filename || !VERSIONED_CAROLINA_IMAGES.has(filename) || src.includes("v=")) {
@@ -349,6 +357,7 @@ function getCtaCopy(pageSlug: string) {
 
 export function CarolinaHeroBlock({ props }: { props: Props }) {
   const [location] = useLocation();
+  const heading = cleanHeroHeading(props.heading);
   const minHeight =
     str(props.minHeight, "standard") === "home"
       ? "min-h-[76vh] md:min-h-[82vh]"
@@ -358,7 +367,7 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
   const serviceAreaSlug = location.match(/^\/service-areas\/([^/?#]+)/)?.[1] ?? "";
   const locationFilename =
     CAROLINA_LOCATION_IMAGES[serviceAreaSlug] ??
-    getLocationImageFilename(str(props.pageSlug), str(props.heading));
+    getLocationImageFilename(str(props.pageSlug), heading);
   const imageUrl = locationFilename
     ? imagePath(locationFilename)
     : str(props.imageUrl, imagePath("hero-home.png"));
@@ -370,7 +379,7 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
       <div className="absolute inset-3 z-0 overflow-hidden rounded-[1.5rem] shadow-2xl md:inset-6 md:rounded-[2rem]">
         <img
           src={carolinaImageSrc(imageUrl)}
-          alt={str(props.imageAlt, str(props.heading, CAROLINA_BRAND.name))}
+          alt={str(props.imageAlt, heading || CAROLINA_BRAND.name)}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-black/25" />
@@ -387,7 +396,7 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
             {eyebrow}
           </span>
           <h1 className="mb-6 text-4xl font-extrabold leading-[1.02] tracking-normal text-white drop-shadow-[0_3px_18px_rgba(0,0,0,0.55)] sm:text-5xl md:text-6xl lg:text-7xl">
-            {str(props.heading)}
+            {heading}
           </h1>
           {str(props.subheading) ? (
             <p className="mb-8 max-w-2xl text-lg font-bold leading-relaxed text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.65)] md:text-xl">
@@ -421,7 +430,7 @@ export function CarolinaIntroHeroBlock({ props }: { props: Props }) {
     <section className="bg-foreground py-20 md:py-24 px-4 text-center">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-4">
-          {str(props.heading)}
+          {cleanHeroHeading(props.heading)}
         </h1>
         {str(props.subheading) ? (
           <p className="text-lg md:text-xl text-white/80 font-medium max-w-2xl mx-auto">
