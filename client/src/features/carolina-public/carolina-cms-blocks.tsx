@@ -333,11 +333,39 @@ function CommercialTopicIcon({ title }: { title: string }) {
   );
 }
 
+function ProcessStepIcon({ title, index }: { title: string; index: number }) {
+  const normalized = normalizeKey(title);
+  let Icon = ClipboardCheck;
+
+  if (/request|call|contact|estimate|quote/.test(normalized)) Icon = MessageSquareText;
+  else if (/assess|visit|walk|inspect|review|diagnos/.test(normalized)) Icon = Search;
+  else if (/proposal|agreement|contract|plan|scope/.test(normalized)) Icon = FileText;
+  else if (/schedule|timing|start|calendar|onboard/.test(normalized)) Icon = Calendar;
+  else if (/work|service|install|maintain|execute/.test(normalized)) Icon = CheckCircle2;
+  else if (/communicat|update|document/.test(normalized)) Icon = MessageSquareText;
+  else if (/team|crew|manager/.test(normalized)) Icon = UsersRound;
+  else if (/insured|licensed|protect/.test(normalized)) Icon = ShieldCheck;
+  else if (/time|quick|respond/.test(normalized)) Icon = Clock;
+
+  return (
+    <span className="relative inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-primary/15 bg-primary text-primary-foreground shadow-sm">
+      <Icon className="h-6 w-6" aria-hidden="true" />
+      <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-accent text-[0.7rem] font-extrabold text-accent-foreground">
+        {index + 1}
+      </span>
+    </span>
+  );
+}
+
 function normalizeKey(value: string) {
   return value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+}
+
+function isWhatToExpectTitle(title: string) {
+  return /\bwhat to expect\b/i.test(title);
 }
 
 function getSectionKey(title: string) {
@@ -401,6 +429,7 @@ function getSectionMode(
   const title = section.heading?.text ?? "";
   const normalized = normalizeKey(title);
   if (index === 0) return "feature";
+  if (isWhatToExpectTitle(title)) return "process";
   if (/process|assessment|estimate|how to|get service/.test(normalized)) return "process";
   if (/problem|must be fixed|why.*matter|why.*must/.test(normalized)) return "problem-solution";
   if (cardCount >= 3 || /included|services|types|materials|areas|properties/.test(normalized)) {
@@ -666,6 +695,47 @@ function VisualRichContentSection({
   }
 
   if (sectionCards.length >= 2) {
+    if (isWhatToExpectTitle(title)) {
+      return (
+        <section
+          className={`overflow-hidden rounded-[1.5rem] border border-border/70 ${band} p-6 shadow-sm md:rounded-[2rem] md:p-8 lg:p-10`}
+        >
+          <div className="mx-auto mb-10 max-w-4xl text-center">
+            <p className="carolina-eyebrow mb-3">What to Expect</p>
+            <h2 className="text-3xl font-extrabold leading-tight md:text-5xl">{title}</h2>
+            {sectionLead.length > 0 ? (
+              <div
+                className="prose prose-stone mx-auto mt-5 max-w-3xl prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground"
+                dangerouslySetInnerHTML={{ __html: richNodesHtml(sectionLead) }}
+              />
+            ) : null}
+          </div>
+          <div
+            className={`grid gap-5 ${
+              sectionCards.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"
+            }`}
+          >
+            {sectionCards.map((card, cardIndex) => (
+              <article
+                key={`${title}-${card.title}`}
+                className="relative rounded-xl border border-border/70 bg-white/90 p-5 shadow-sm"
+              >
+                {cardIndex > 0 ? (
+                  <span className="absolute right-[calc(100%+0.25rem)] top-12 hidden h-px w-5 bg-border lg:block" />
+                ) : null}
+                <ProcessStepIcon title={card.title} index={cardIndex} />
+                <h3 className="mt-5 text-lg font-extrabold leading-tight">{card.title}</h3>
+                <div
+                  className="prose prose-stone mt-3 max-w-none prose-p:text-sm prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground prose-li:text-sm prose-li:text-muted-foreground"
+                  dangerouslySetInnerHTML={{ __html: card.bodyHtml }}
+                />
+              </article>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
     if (mode === "grid") {
       return (
         <section
