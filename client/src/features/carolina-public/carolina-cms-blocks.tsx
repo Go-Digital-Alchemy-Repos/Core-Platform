@@ -616,33 +616,31 @@ function VisualRichContentSection({
       <section
         className={`overflow-hidden rounded-[1.5rem] border border-border/70 ${band} shadow-sm md:rounded-[2rem]`}
       >
-        <div className="grid gap-0 lg:grid-cols-[0.78fr_1.22fr]">
-          <div className="min-h-80 bg-muted lg:min-h-full">
-            <img src={imageUrl} alt="" className="h-full w-full object-cover" />
-          </div>
-          <div className="p-6 md:p-8 lg:p-10">
-            <p className="carolina-eyebrow mb-3">
-              {mode === "process"
-                ? "Our Process"
-                : mode === "problem-solution"
-                  ? "What We Solve"
-                  : "Service Details"}
-            </p>
-            <h2 className="text-3xl font-extrabold leading-tight md:text-5xl">{title}</h2>
-            {sectionLead.length > 0 ? (
-              <div
-                className="prose prose-stone mt-5 max-w-none prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground"
-                dangerouslySetInnerHTML={{ __html: richNodesHtml(sectionLead) }}
-              />
-            ) : null}
-            <TopicCardGrid
-              pageSlug={pageSlug}
-              title={title}
-              cards={sectionCards}
-              mode={mode}
-              startIndex={index}
+        <div className="aspect-[16/6] max-h-[24rem] min-h-64 bg-muted">
+          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+        </div>
+        <div className="p-6 md:p-8 lg:p-10">
+          <p className="carolina-eyebrow mb-3">
+            {mode === "process"
+              ? "Our Process"
+              : mode === "problem-solution"
+                ? "What We Solve"
+                : "Service Details"}
+          </p>
+          <h2 className="text-3xl font-extrabold leading-tight md:text-5xl">{title}</h2>
+          {sectionLead.length > 0 ? (
+            <div
+              className="prose prose-stone mt-5 max-w-none prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: richNodesHtml(sectionLead) }}
             />
-          </div>
+          ) : null}
+          <TopicCardGrid
+            pageSlug={pageSlug}
+            title={title}
+            cards={sectionCards}
+            mode={mode}
+            startIndex={index}
+          />
         </div>
       </section>
     );
@@ -684,17 +682,14 @@ function TopicCardGrid({
   mode: SectionMode;
   startIndex: number;
 }) {
-  const compact = mode === "process" || mode === "problem-solution";
   return (
-    <div
-      className={`mt-8 grid gap-4 ${compact ? "md:grid-cols-2" : "md:grid-cols-2 xl:grid-cols-3"}`}
-    >
+    <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {cards.map((card, cardIndex) => (
         <article
           key={`${title}-${card.title}`}
           className="group overflow-hidden rounded-xl border border-border/70 bg-white/85 shadow-sm transition-shadow hover:shadow-md"
         >
-          {!compact ? (
+          {mode !== "process" && mode !== "problem-solution" ? (
             <div className="aspect-[16/9] overflow-hidden bg-muted">
               <img
                 src={getDesignedImage(pageSlug, card.title, startIndex + cardIndex + 1, false)}
