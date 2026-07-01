@@ -1,6 +1,24 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowRight, Calendar, CheckCircle2, Clock, MapPin, Search, Tag } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  Calendar,
+  CheckCircle2,
+  ClipboardCheck,
+  Clock,
+  Factory,
+  FileText,
+  HeartPulse,
+  MapPin,
+  MessageSquareText,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  Store,
+  Tag,
+  UsersRound,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -266,6 +284,27 @@ function getTopicImage(title: string, index = 0) {
     "hero-commercial.png",
   ];
   return carolinaImageSrc(imagePath(fallbackImages[index % fallbackImages.length]));
+}
+
+function CommercialTopicIcon({ title }: { title: string }) {
+  const normalized = title.toLowerCase();
+  let Icon = Building2;
+
+  if (/retail|storefront|shopping/.test(normalized)) Icon = Store;
+  else if (/hoa|multi-family|community/.test(normalized)) Icon = UsersRound;
+  else if (/industrial|warehouse/.test(normalized)) Icon = Factory;
+  else if (/medical|professional/.test(normalized)) Icon = HeartPulse;
+  else if (/single point|contact|account/.test(normalized)) Icon = ClipboardCheck;
+  else if (/crew|consistent/.test(normalized)) Icon = RefreshCw;
+  else if (/communication|notify|document/.test(normalized)) Icon = MessageSquareText;
+  else if (/contract|flexible|monthly|annual|seasonal/.test(normalized)) Icon = FileText;
+  else if (/insured|licensed|documentation|certificate/.test(normalized)) Icon = ShieldCheck;
+
+  return (
+    <span className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+      <Icon className="h-7 w-7" aria-hidden="true" />
+    </span>
+  );
 }
 
 function normalizeKey(value: string) {
@@ -691,6 +730,7 @@ function TopicCardGrid({
 }) {
   const gridColumns =
     cards.length === 4 ? "md:grid-cols-2 xl:grid-cols-4" : "md:grid-cols-2 xl:grid-cols-3";
+  const useCommercialIcons = pageSlug === "commercial";
 
   return (
     <div className={`mt-8 grid gap-4 ${gridColumns}`}>
@@ -699,7 +739,11 @@ function TopicCardGrid({
           key={`${title}-${card.title}`}
           className="group overflow-hidden rounded-xl border border-border/70 bg-white/85 shadow-sm transition-shadow hover:shadow-md"
         >
-          {mode !== "process" && mode !== "problem-solution" ? (
+          {useCommercialIcons ? (
+            <div className="px-5 pt-5">
+              <CommercialTopicIcon title={card.title} />
+            </div>
+          ) : mode !== "process" && mode !== "problem-solution" ? (
             <div className="aspect-[16/9] overflow-hidden bg-muted">
               <img
                 src={getDesignedImage(
