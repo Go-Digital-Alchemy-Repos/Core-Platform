@@ -559,8 +559,8 @@ function VisualRichContentSection({
 
   if (!hasHeading) {
     return (
-      <section className="grid overflow-hidden rounded-[1.5rem] border border-border/80 bg-card shadow-sm md:rounded-[2rem] lg:grid-cols-[0.8fr_1.2fr]">
-        <div className="min-h-72 bg-muted">
+      <section className="overflow-hidden rounded-[1.5rem] border border-border/80 bg-card shadow-sm md:rounded-[2rem]">
+        <div className="aspect-[16/6] max-h-[24rem] min-h-64 bg-muted">
           <img
             src={getDesignedImage(
               pageSlug,
