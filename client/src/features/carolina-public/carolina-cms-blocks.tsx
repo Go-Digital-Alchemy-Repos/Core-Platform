@@ -747,8 +747,8 @@ function FeatureServiceCard({
         </h3>
         <p className="mt-4 text-muted-foreground font-medium leading-relaxed">{item.description}</p>
         {item.href ? (
-          <span className="mt-6 inline-flex items-center gap-2 text-sm font-extrabold text-primary">
-            Explore service <ArrowRight className="h-4 w-4" />
+          <span className="mt-6 inline-flex items-center justify-center gap-2 rounded-md border border-primary bg-primary px-5 py-3 text-sm font-extrabold text-primary-foreground transition-colors group-hover:bg-primary/90">
+            Learn More <ArrowRight className="h-4 w-4" />
           </span>
         ) : null}
       </div>
@@ -786,7 +786,11 @@ function CompactServiceCard({
         <p className="mt-3 flex-1 text-sm font-medium leading-relaxed text-muted-foreground">
           {item.description}
         </p>
-        {item.href ? <ArrowRight className="mt-5 h-5 w-5 text-primary" /> : null}
+        {item.href ? (
+          <span className="mt-5 inline-flex w-fit items-center justify-center gap-2 rounded-md border border-primary/80 px-4 py-2 text-sm font-extrabold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+            Learn More <ArrowRight className="h-4 w-4" />
+          </span>
+        ) : null}
       </div>
     </article>
   );
