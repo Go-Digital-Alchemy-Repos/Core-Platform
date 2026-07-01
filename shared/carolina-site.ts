@@ -262,10 +262,17 @@ export const CAROLINA_SALES_PAGE_DESIGN: Record<string, CarolinaSalesPageDesign>
     quoteLink: "/commercial-quote",
     quoteLabel: "REQUEST COMMERCIAL PROPOSAL",
     sectionImages: {
-      default: "hero-commercial.png",
-      properties: "hero-commercial.png",
-      services: "card-commercial-drainage.png",
-      managers: "card-hoa-entry-signage.png",
+      default: "commercial-office-campus.jpg",
+      services: "commercial-grounds-maintenance.jpg",
+      areas: "commercial-service-territory.jpg",
+      why: "commercial-property-management.jpg",
+      managers: "commercial-property-management.jpg",
+      "commercial property types we serve": "commercial-office-campus.jpg",
+      "our commercial landscaping services": "commercial-grounds-maintenance.jpg",
+      "why commercial property managers choose carolina exterior":
+        "commercial-property-management.jpg",
+      "service territory for commercial properties": "commercial-service-territory.jpg",
+      "request a commercial landscaping estimate": "commercial-retail-landscaping.jpg",
     },
   },
   "commercial-grounds-maintenance": {

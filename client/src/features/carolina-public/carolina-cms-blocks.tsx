@@ -64,6 +64,11 @@ const VERSIONED_CAROLINA_IMAGES = new Set([
   "hero-drainage.png",
   "card-commercial-drainage.png",
   "card-commercial-landscaping.png",
+  "commercial-grounds-maintenance.jpg",
+  "commercial-office-campus.jpg",
+  "commercial-property-management.jpg",
+  "commercial-retail-landscaping.jpg",
+  "commercial-service-territory.jpg",
   "card-swales.png",
 ]);
 
@@ -228,6 +233,22 @@ function getTopicImage(title: string, index = 0) {
       ["commercial landscaping", "entryway landscaping", "business landscaping"],
       "card-commercial-landscaping.png",
     ],
+    [
+      ["commercial grounds", "grounds maintenance", "commercial lawn care"],
+      "commercial-grounds-maintenance.jpg",
+    ],
+    [
+      ["office park", "corporate campus", "professional building", "medical facility"],
+      "commercial-office-campus.jpg",
+    ],
+    [
+      ["retail center", "storefront", "parking lot island", "seasonal color"],
+      "commercial-retail-landscaping.jpg",
+    ],
+    [
+      ["property manager", "single point", "consistent crews", "proactive communication"],
+      "commercial-property-management.jpg",
+    ],
     [["custom landscape", "landscape design", "design plan"], "gallery-res-2.png"],
     [["sod", "turf", "grass variety"], "hero-home.png"],
     [["seasonal", "color", "flower", "annual"], "gallery-res-3.png"],
@@ -366,8 +387,8 @@ function getDesignedImage(pageSlug: string, title: string, index = 0, useDefault
   const design = getSalesDesign(pageSlug);
   const sectionKey = getSectionKey(title);
   const filename =
-    (sectionKey !== "default" ? design?.sectionImages[sectionKey] : undefined) ??
     design?.sectionImages[normalizeKey(title)] ??
+    (sectionKey !== "default" ? design?.sectionImages[sectionKey] : undefined) ??
     (useDefault ? design?.sectionImages.default : undefined);
   return filename ? carolinaImageSrc(imagePath(filename)) : getTopicImage(title, index);
 }
@@ -420,7 +441,11 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
     CAROLINA_LOCATION_IMAGES[serviceAreaSlug] ??
     getLocationImageFilename(str(props.pageSlug), heading);
   const pageHeroFilename =
-    location === "/commercial-landscaping" ? "card-commercial-landscaping.png" : "";
+    location === "/commercial"
+      ? "commercial-office-campus.jpg"
+      : location === "/commercial-landscaping"
+        ? "card-commercial-landscaping.png"
+        : "";
   const imageUrl = pageHeroFilename
     ? imagePath(pageHeroFilename)
     : locationFilename
@@ -644,25 +669,32 @@ function VisualRichContentSection({
     if (mode === "grid") {
       return (
         <section
-          className={`overflow-hidden rounded-[1.5rem] border border-border/70 ${band} p-6 shadow-sm md:rounded-[2rem] md:p-8 lg:p-10`}
+          className={`overflow-hidden rounded-[1.5rem] border border-border/70 ${band} shadow-sm md:rounded-[2rem]`}
         >
-          <div className="mb-8 max-w-5xl">
-            <p className="carolina-eyebrow mb-3">Service Details</p>
-            <h2 className="text-3xl font-extrabold leading-tight md:text-5xl">{title}</h2>
-            {sectionLead.length > 0 ? (
-              <div
-                className="prose prose-stone mt-5 max-w-none prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground"
-                dangerouslySetInnerHTML={{ __html: richNodesHtml(sectionLead) }}
-              />
-            ) : null}
+          {pageSlug === "commercial" ? (
+            <div className="aspect-[16/5] max-h-[22rem] min-h-56 bg-muted">
+              <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+            </div>
+          ) : null}
+          <div className="p-6 md:p-8 lg:p-10">
+            <div className="mb-8 max-w-5xl">
+              <p className="carolina-eyebrow mb-3">Service Details</p>
+              <h2 className="text-3xl font-extrabold leading-tight md:text-5xl">{title}</h2>
+              {sectionLead.length > 0 ? (
+                <div
+                  className="prose prose-stone mt-5 max-w-none prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground"
+                  dangerouslySetInnerHTML={{ __html: richNodesHtml(sectionLead) }}
+                />
+              ) : null}
+            </div>
+            <TopicCardGrid
+              pageSlug={pageSlug}
+              title={title}
+              cards={sectionCards}
+              mode={mode}
+              startIndex={index}
+            />
           </div>
-          <TopicCardGrid
-            pageSlug={pageSlug}
-            title={title}
-            cards={sectionCards}
-            mode={mode}
-            startIndex={index}
-          />
         </section>
       );
     }

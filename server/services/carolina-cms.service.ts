@@ -86,7 +86,7 @@ const SERVICE_HERO_IMAGES: Record<string, string> = {
   "residential-hardscape": imagePath("hero-hardscape.png"),
   "mulching-and-planting": imagePath("hero-mulch.png"),
   "drainage-solutions": imagePath("hero-drainage.png"),
-  commercial: imagePath("hero-commercial.png"),
+  commercial: imagePath("commercial-office-campus.jpg"),
   "commercial-grounds-maintenance": imagePath("hero-commercial.png"),
   "commercial-landscaping": imagePath("card-commercial-landscaping.png"),
   "commercial-hardscape": imagePath("hero-hardscape.png"),
