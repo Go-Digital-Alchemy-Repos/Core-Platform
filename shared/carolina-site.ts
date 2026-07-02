@@ -103,6 +103,114 @@ export const CAROLINA_LOCATION_IMAGES: Record<string, string> = {
   "monroe-nc": "location-monroe-nc.png",
 };
 
+export const CAROLINA_IMAGE_METADATA: Record<
+  string,
+  { title: string; alt: string; description: string }
+> = {
+  "residential-lawn-maintenance.jpg": {
+    title: "Residential Lawn Maintenance",
+    alt: "Freshly mowed residential lawn with crisp edging and maintained planting beds.",
+    description:
+      "Residential lawn maintenance image for mowing, edging, turf care, and annual contract content.",
+  },
+  "residential-aeration-overseeding.jpg": {
+    title: "Residential Aeration and Overseeding",
+    alt: "Residential fescue lawn showing clean core aeration plugs after overseeding preparation.",
+    description:
+      "Residential lawn care image for aeration, overseeding, and fall turf health service cards.",
+  },
+  "residential-shrub-pruning.jpg": {
+    title: "Residential Shrub Pruning",
+    alt: "Neatly pruned shrubs and hedges beside a residential foundation planting bed.",
+    description:
+      "Residential pruning image for shrub trimming, hedge shaping, and ornamental plant care.",
+  },
+  "residential-downspout-extension.jpg": {
+    title: "Residential Downspout Extension",
+    alt: "Residential downspout extended discreetly away from the foundation through a clean drainage outlet.",
+    description:
+      "Residential drainage image for downspout extensions and roof runoff management copy.",
+  },
+  "residential-catch-basin.jpg": {
+    title: "Residential Catch Basin",
+    alt: "Small yard drain catch basin set flush into a residential lawn near a landscape bed.",
+    description:
+      "Residential drainage image for catch basin installation and low-spot water collection sections.",
+  },
+  "residential-french-drain.jpg": {
+    title: "Residential French Drain",
+    alt: "Subtle gravel French drain integrated along a residential lawn and planting bed.",
+    description:
+      "Residential drainage image for French drain solutions integrated into the landscape.",
+  },
+  "residential-yard-grading.jpg": {
+    title: "Residential Yard Grading",
+    alt: "Finished residential lawn graded gently away from the home foundation.",
+    description:
+      "Residential drainage image for yard grading, regrading, and positive slope corrections.",
+  },
+  "commercial-hardscape-walkway.jpg": {
+    title: "Commercial Hardscape Walkway",
+    alt: "Commercial building entrance with a durable walkway, clean curb edges, and maintained landscape beds.",
+    description:
+      "Commercial hardscape image for walkways, entry features, plazas, and accessible site circulation.",
+  },
+  "commercial-dumpster-enclosure.jpg": {
+    title: "Commercial Dumpster Enclosure",
+    alt: "Clean masonry dumpster enclosure with pavement, curbing, and landscape screening at a commercial property.",
+    description:
+      "Commercial hardscape image for dumpster enclosures, service areas, and site utility improvements.",
+  },
+  "commercial-drainage-catch-basin.jpg": {
+    title: "Commercial Drainage Catch Basin",
+    alt: "Commercial parking lot catch basin beside a landscaped island after rainfall.",
+    description:
+      "Commercial drainage image for parking lot flooding, catch basins, stormwater, and site drainage.",
+  },
+  "commercial-roof-drainage.jpg": {
+    title: "Commercial Roof Drainage",
+    alt: "Commercial downspout directed into a discreet drainage inlet beside a building walkway.",
+    description:
+      "Commercial drainage image for roof drainage, downspout management, and underground drainage inlets.",
+  },
+  "hoa-common-area-landscaping.jpg": {
+    title: "HOA Common Area Landscaping",
+    alt: "HOA entrance and common area landscaping with fresh mulch, seasonal color, and maintained turf.",
+    description:
+      "HOA services image for common areas, entrances, community mulch programs, and board-managed grounds.",
+  },
+  "commercial-grounds-maintenance.jpg": {
+    title: "Commercial Grounds Maintenance",
+    alt: "Commercial property with freshly maintained turf, clean sidewalk edges, and professional foundation landscaping.",
+    description:
+      "Commercial grounds image for recurring mowing, edging, cleanup, and site maintenance programs.",
+  },
+  "commercial-office-campus.jpg": {
+    title: "Commercial Office Campus Landscaping",
+    alt: "Office campus landscaping with clean parking lot edges, ornamental trees, and maintained planting beds.",
+    description:
+      "Commercial office campus image for property-type, corporate campus, and commercial hub content.",
+  },
+  "commercial-property-management.jpg": {
+    title: "Commercial Property Management Site Planning",
+    alt: "Commercial landscape plans and service materials staged at a maintained office property.",
+    description:
+      "Commercial operations image for property manager communication, planning, and site coordination content.",
+  },
+  "commercial-retail-landscaping.jpg": {
+    title: "Commercial Retail Landscaping",
+    alt: "Retail center parking island landscaping with seasonal flowers, shrubs, and clean storefront curb appeal.",
+    description:
+      "Commercial retail image for storefront landscaping, parking lot islands, and seasonal color programs.",
+  },
+  "commercial-service-territory.jpg": {
+    title: "Commercial Service Territory",
+    alt: "Commercial corridor with office and retail properties, maintained medians, and landscaped parking areas.",
+    description:
+      "Commercial territory image for service area, regional coverage, and multi-site property content.",
+  },
+};
+
 export const VALUE_PROPS = [
   {
     title: "Rooted in Carolina",
@@ -189,10 +297,15 @@ export const CAROLINA_SALES_PAGE_DESIGN: Record<string, CarolinaSalesPageDesign>
     quoteLink: "/get-a-quote",
     quoteLabel: "GET A QUOTE",
     sectionImages: {
-      default: "card-sod-installation.png",
-      included: "card-sod-installation.png",
-      optional: "gallery-res-3.png",
-      process: "gallery-res-2.png",
+      default: "residential-lawn-maintenance.jpg",
+      included: "residential-lawn-maintenance.jpg",
+      optional: "residential-aeration-overseeding.jpg",
+      process: "residential-lawn-maintenance.jpg",
+      "what s included in your annual lawn maintenance contract":
+        "residential-lawn-maintenance.jpg",
+      "optional add on services": "residential-aeration-overseeding.jpg",
+      "why choose an annual contract over one time services": "residential-lawn-maintenance.jpg",
+      "the carolina exterior lawn care process": "residential-lawn-maintenance.jpg",
     },
   },
   "residential-landscaping": {
@@ -205,6 +318,9 @@ export const CAROLINA_SALES_PAGE_DESIGN: Record<string, CarolinaSalesPageDesign>
       services: "card-plant-shrub-installation.png",
       process: "gallery-res-1.png",
       why: "gallery-res-2.png",
+      "our residential landscaping services": "card-plant-shrub-installation.png",
+      "our landscaping process": "gallery-res-1.png",
+      "why carolina exterior for your landscaping project": "gallery-res-2.png",
     },
   },
   "residential-hardscape": {
@@ -215,8 +331,11 @@ export const CAROLINA_SALES_PAGE_DESIGN: Record<string, CarolinaSalesPageDesign>
     sectionImages: {
       default: "hero-hardscape.png",
       services: "hero-hardscape.png",
-      materials: "gallery-res-3.png",
+      materials: "hero-hardscape.png",
       process: "gallery-res-1.png",
+      "our hardscape services": "hero-hardscape.png",
+      "hardscape materials we work with": "hero-hardscape.png",
+      "our hardscape installation process": "gallery-res-1.png",
     },
   },
   "mulching-and-planting": {
@@ -229,6 +348,9 @@ export const CAROLINA_SALES_PAGE_DESIGN: Record<string, CarolinaSalesPageDesign>
       mulch: "hero-mulch.png",
       planting: "card-plant-shrub-installation.png",
       programs: "gallery-res-3.png",
+      "mulching services": "hero-mulch.png",
+      "planting bed services": "card-plant-shrub-installation.png",
+      "spring fall mulching programs": "hero-mulch.png",
     },
   },
   "drainage-solutions": {
@@ -239,9 +361,13 @@ export const CAROLINA_SALES_PAGE_DESIGN: Record<string, CarolinaSalesPageDesign>
     sectionImages: {
       default: "hero-drainage.png",
       problems: "hero-drainage.png",
-      solutions: "card-commercial-drainage.png",
+      solutions: "residential-french-drain.jpg",
       swales: "card-swales.png",
-      assessment: "gallery-res-1.png",
+      assessment: "residential-yard-grading.jpg",
+      "common yard drainage problems we solve": "hero-drainage.png",
+      "our drainage solutions": "residential-french-drain.jpg",
+      "our drainage assessment process": "residential-yard-grading.jpg",
+      "why drainage problems must be fixed": "residential-catch-basin.jpg",
     },
   },
   "service-areas": {
@@ -281,10 +407,18 @@ export const CAROLINA_SALES_PAGE_DESIGN: Record<string, CarolinaSalesPageDesign>
     quoteLink: "/commercial-quote",
     quoteLabel: "REQUEST COMMERCIAL PROPOSAL",
     sectionImages: {
-      default: "hero-commercial.png",
-      included: "hero-commercial.png",
-      contract: "gallery-com-2.png",
-      multisite: "gallery-com-1.png",
+      default: "commercial-grounds-maintenance.jpg",
+      included: "commercial-grounds-maintenance.jpg",
+      contract: "commercial-property-management.jpg",
+      multisite: "commercial-service-territory.jpg",
+      services: "commercial-grounds-maintenance.jpg",
+      "what s included in our commercial grounds maintenance program":
+        "commercial-grounds-maintenance.jpg",
+      "commercial contract options": "commercial-property-management.jpg",
+      "multi site property management": "commercial-service-territory.jpg",
+      "why consistent grounds maintenance matters": "commercial-grounds-maintenance.jpg",
+      "properties we serve in monroe indian trail waxhaw charlotte":
+        "commercial-service-territory.jpg",
     },
   },
   "commercial-landscaping": {
@@ -295,8 +429,13 @@ export const CAROLINA_SALES_PAGE_DESIGN: Record<string, CarolinaSalesPageDesign>
     sectionImages: {
       default: "card-commercial-landscaping.png",
       services: "card-commercial-landscaping.png",
-      process: "card-plant-shrub-installation.png",
+      process: "commercial-property-management.jpg",
       property: "card-commercial-landscaping.png",
+      "commercial landscaping services we offer": "card-commercial-landscaping.png",
+      "the commercial landscaping process": "commercial-property-management.jpg",
+      "commercial landscaping across property types": "commercial-retail-landscaping.jpg",
+      "serving monroe charlotte indian trail surrounding business communities":
+        "commercial-service-territory.jpg",
     },
   },
   "commercial-hardscape": {
@@ -305,10 +444,16 @@ export const CAROLINA_SALES_PAGE_DESIGN: Record<string, CarolinaSalesPageDesign>
     quoteLink: "/commercial-quote",
     quoteLabel: "REQUEST COMMERCIAL PROPOSAL",
     sectionImages: {
-      default: "hero-hardscape.png",
-      services: "hero-hardscape.png",
-      materials: "gallery-com-3.png",
-      contractors: "gallery-com-1.png",
+      default: "commercial-hardscape-walkway.jpg",
+      services: "commercial-hardscape-walkway.jpg",
+      materials: "commercial-hardscape-walkway.jpg",
+      contractors: "commercial-property-management.jpg",
+      "commercial hardscape services": "commercial-hardscape-walkway.jpg",
+      "materials for commercial hardscape": "commercial-hardscape-walkway.jpg",
+      "ada code compliance": "commercial-hardscape-walkway.jpg",
+      "working with general contractors": "commercial-property-management.jpg",
+      "commercial hardscape across monroe indian trail waxhaw charlotte":
+        "commercial-service-territory.jpg",
     },
   },
   "commercial-drainage": {
@@ -317,11 +462,18 @@ export const CAROLINA_SALES_PAGE_DESIGN: Record<string, CarolinaSalesPageDesign>
     quoteLink: "/commercial-quote",
     quoteLabel: "REQUEST COMMERCIAL PROPOSAL",
     sectionImages: {
-      default: "card-commercial-drainage.png",
-      problems: "card-commercial-drainage.png",
-      services: "hero-drainage.png",
+      default: "commercial-drainage-catch-basin.jpg",
+      problems: "commercial-drainage-catch-basin.jpg",
+      services: "commercial-drainage-catch-basin.jpg",
       swales: "card-swales.png",
-      assessment: "gallery-com-2.png",
+      assessment: "commercial-roof-drainage.jpg",
+      "commercial drainage problems we solve": "commercial-drainage-catch-basin.jpg",
+      "our commercial drainage services": "commercial-drainage-catch-basin.jpg",
+      "why commercial drainage problems must be fixed quickly":
+        "commercial-drainage-catch-basin.jpg",
+      "the commercial drainage assessment process": "commercial-roof-drainage.jpg",
+      "drainage projects in monroe waxhaw indian trail charlotte":
+        "commercial-service-territory.jpg",
     },
   },
   "hoa-services": {
@@ -330,10 +482,16 @@ export const CAROLINA_SALES_PAGE_DESIGN: Record<string, CarolinaSalesPageDesign>
     quoteLink: "/commercial-quote",
     quoteLabel: "REQUEST HOA PROPOSAL",
     sectionImages: {
-      default: "card-hoa-entry-signage.png",
-      services: "card-hoa-entry-signage.png",
-      boards: "gallery-com-2.png",
-      contracts: "hero-commercial.png",
+      default: "hoa-common-area-landscaping.jpg",
+      services: "hoa-common-area-landscaping.jpg",
+      boards: "commercial-property-management.jpg",
+      contracts: "commercial-grounds-maintenance.jpg",
+      "hoa services we provide": "hoa-common-area-landscaping.jpg",
+      "how we work with hoa boards": "commercial-property-management.jpg",
+      "flexible hoa contract options": "commercial-property-management.jpg",
+      "why hoas in waxhaw weddington marvin trust carolina exterior":
+        "hoa-common-area-landscaping.jpg",
+      "hoa communities we serve across union county": "commercial-service-territory.jpg",
     },
   },
   "get-a-quote": {
@@ -348,7 +506,7 @@ export const CAROLINA_SALES_PAGE_DESIGN: Record<string, CarolinaSalesPageDesign>
       "Commercial estimates start with a clear request, a practical site review, and a written proposal tailored to the property.",
     quoteLink: "/commercial-quote",
     quoteLabel: "REQUEST COMMERCIAL PROPOSAL",
-    sectionImages: { default: "hero-commercial.png" },
+    sectionImages: { default: "commercial-property-management.jpg" },
   },
   faq: {
     intro:
@@ -362,7 +520,7 @@ export const CAROLINA_SALES_PAGE_DESIGN: Record<string, CarolinaSalesPageDesign>
       "Find answers about commercial landscaping, HOA grounds care, drainage, proposals, scheduling, and service expectations.",
     quoteLink: "/commercial-quote",
     quoteLabel: "REQUEST COMMERCIAL PROPOSAL",
-    sectionImages: { default: "hero-commercial.png" },
+    sectionImages: { default: "commercial-office-campus.jpg" },
   },
 };
 

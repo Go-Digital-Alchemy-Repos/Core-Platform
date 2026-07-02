@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/accordion";
 import {
   CAROLINA_BRAND,
+  CAROLINA_IMAGE_METADATA,
   CAROLINA_LOCATION_IMAGES,
   CAROLINA_SALES_PAGE_DESIGN,
   SERVICE_AREAS,
@@ -64,13 +65,39 @@ const VERSIONED_CAROLINA_IMAGES = new Set([
   "hero-drainage.png",
   "card-commercial-drainage.png",
   "card-commercial-landscaping.png",
+  "commercial-drainage-catch-basin.jpg",
+  "commercial-dumpster-enclosure.jpg",
   "commercial-grounds-maintenance.jpg",
+  "commercial-hardscape-walkway.jpg",
   "commercial-office-campus.jpg",
   "commercial-property-management.jpg",
   "commercial-retail-landscaping.jpg",
+  "commercial-roof-drainage.jpg",
   "commercial-service-territory.jpg",
+  "hoa-common-area-landscaping.jpg",
+  "residential-aeration-overseeding.jpg",
+  "residential-catch-basin.jpg",
+  "residential-downspout-extension.jpg",
+  "residential-french-drain.jpg",
+  "residential-lawn-maintenance.jpg",
+  "residential-shrub-pruning.jpg",
+  "residential-yard-grading.jpg",
   "card-swales.png",
 ]);
+
+const SERVICE_HERO_FILENAMES: Record<string, string> = {
+  "/residential-lawn-maintenance": "residential-lawn-maintenance.jpg",
+  "/residential-landscaping": "card-plant-shrub-installation.png",
+  "/residential-hardscape": "hero-hardscape.png",
+  "/mulching-and-planting": "hero-mulch.png",
+  "/drainage-solutions": "hero-drainage.png",
+  "/commercial": "commercial-office-campus.jpg",
+  "/commercial-grounds-maintenance": "commercial-grounds-maintenance.jpg",
+  "/commercial-landscaping": "card-commercial-landscaping.png",
+  "/commercial-hardscape": "commercial-hardscape-walkway.jpg",
+  "/commercial-drainage": "commercial-drainage-catch-basin.jpg",
+  "/hoa-services": "hoa-common-area-landscaping.jpg",
+};
 
 function str(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
@@ -84,12 +111,25 @@ function bool(value: unknown, fallback = false) {
   return typeof value === "boolean" ? value : fallback;
 }
 
+function pageSlugFromLocation(location: string) {
+  return location.split("?")[0]?.replace(/^\/+|\/+$/g, "") || "home";
+}
+
 function normalizeTopicTag(value: string) {
   return value
     .replace(/\b(monroe|charlotte|waxhaw|weddington|indian trail|union county|north carolina|nc)\b/gi, "")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function imageFilenameFromSource(src: string) {
+  return src.split("/").pop()?.split("?")[0] ?? "";
+}
+
+function getCarolinaImageAlt(src: string, fallback: string) {
+  const filename = imageFilenameFromSource(src);
+  return CAROLINA_IMAGE_METADATA[filename]?.alt ?? fallback;
 }
 
 function getCarolinaBlogTags(post: {
@@ -224,10 +264,33 @@ function labeledParagraphCards(nodes: RichContentNode[]) {
 function getTopicImage(title: string, index = 0) {
   const normalized = title.toLowerCase();
   const matches: Array<[string[], string]> = [
+    [
+      ["commercial catch basin", "parking lot flooding", "parking lot drainage"],
+      "commercial-drainage-catch-basin.jpg",
+    ],
+    [
+      ["commercial downspout", "roof drainage", "roof drain"],
+      "commercial-roof-drainage.jpg",
+    ],
+    [
+      ["catch basin", "yard drain", "low spot"],
+      "residential-catch-basin.jpg",
+    ],
+    [["downspout", "roof runoff"], "residential-downspout-extension.jpg"],
+    [["french drain"], "residential-french-drain.jpg"],
+    [["regrading", "grading"], "residential-yard-grading.jpg"],
     [["swale", "swales"], "card-swales.png"],
     [
       ["drain", "french", "basin", "downspout", "standing water", "erosion"],
       "hero-drainage.png",
+    ],
+    [
+      ["dumpster enclosure", "service area", "utility"],
+      "commercial-dumpster-enclosure.jpg",
+    ],
+    [
+      ["commercial hardscape", "commercial walkway", "plaza", "ada", "ramp"],
+      "commercial-hardscape-walkway.jpg",
     ],
     [
       ["commercial landscaping", "entryway landscaping", "business landscaping"],
@@ -241,16 +304,18 @@ function getTopicImage(title: string, index = 0) {
       ["office park", "corporate campus", "professional building", "medical facility"],
       "commercial-office-campus.jpg",
     ],
-    [
-      ["retail center", "storefront", "parking lot island", "seasonal color"],
-      "commercial-retail-landscaping.jpg",
-    ],
+    [["retail center", "storefront", "parking lot island"], "commercial-retail-landscaping.jpg"],
     [
       ["property manager", "single point", "consistent crews", "proactive communication"],
       "commercial-property-management.jpg",
     ],
     [["custom landscape", "landscape design", "design plan"], "gallery-res-2.png"],
     [["sod", "turf", "grass variety"], "hero-home.png"],
+    [["aeration", "overseeding"], "residential-aeration-overseeding.jpg"],
+    [["mow", "edging", "blowing"], "residential-lawn-maintenance.jpg"],
+    [["fertil", "weed", "insect", "lime", "fungus"], "residential-lawn-maintenance.jpg"],
+    [["leaf"], "residential-lawn-maintenance.jpg"],
+    [["pruning", "bush", "hedge"], "residential-shrub-pruning.jpg"],
     [["seasonal", "color", "flower", "annual"], "gallery-res-3.png"],
     [["consultation", "assessment", "walkthrough"], "gallery-res-1.png"],
     [["installation", "plant sourcing", "plant selection"], "hero-mulch.png"],
@@ -273,8 +338,12 @@ function getTopicImage(title: string, index = 0) {
     ],
     [["mulch", "plant", "shrub", "bed", "tree"], "hero-mulch.png"],
     [
+      ["hoa", "common area", "entrance", "signage", "community-wide"],
+      "hoa-common-area-landscaping.jpg",
+    ],
+    [
       ["commercial", "parking", "tenant", "hoa", "community", "grounds", "property manager"],
-      "hero-commercial.png",
+      "commercial-office-campus.jpg",
     ],
     [
       [
@@ -299,6 +368,13 @@ function getTopicImage(title: string, index = 0) {
   );
   if (match) return carolinaImageSrc(imagePath(match[1]));
 
+  if (typeof window !== "undefined") {
+    const routeDefault =
+      CAROLINA_SALES_PAGE_DESIGN[pageSlugFromLocation(window.location.pathname)]?.sectionImages
+        .default;
+    if (routeDefault) return carolinaImageSrc(imagePath(routeDefault));
+  }
+
   const fallbackImages = [
     "gallery-res-1.png",
     "gallery-res-2.png",
@@ -307,7 +383,7 @@ function getTopicImage(title: string, index = 0) {
     "hero-hardscape.png",
     "hero-mulch.png",
     "hero-drainage.png",
-    "hero-commercial.png",
+    "commercial-office-campus.jpg",
   ];
   return carolinaImageSrc(imagePath(fallbackImages[index % fallbackImages.length]));
 }
@@ -390,8 +466,20 @@ function getSectionKey(title: string) {
   return "default";
 }
 
+function resolvePageSlug(pageSlug: string) {
+  const normalized = pageSlug.replace(/^\/+|\/+$/g, "");
+  if (normalized && CAROLINA_SALES_PAGE_DESIGN[normalized]) return normalized;
+
+  if (typeof window !== "undefined") {
+    const locationSlug = pageSlugFromLocation(window.location.pathname);
+    if (CAROLINA_SALES_PAGE_DESIGN[locationSlug]) return locationSlug;
+  }
+
+  return normalized;
+}
+
 function getSalesDesign(pageSlug: string) {
-  return CAROLINA_SALES_PAGE_DESIGN[pageSlug];
+  return CAROLINA_SALES_PAGE_DESIGN[resolvePageSlug(pageSlug)];
 }
 
 function getLocationImageFilename(pageSlug: string, title: string) {
@@ -408,14 +496,89 @@ function getLocationImageFilename(pageSlug: string, title: string) {
   return undefined;
 }
 
+function getPageTopicImageFilename(pageSlug: string, title: string) {
+  const normalized = normalizeKey(title);
+
+  if (pageSlug === "residential-lawn-maintenance") {
+    if (/aeration|overseeding/.test(normalized)) return "residential-aeration-overseeding.jpg";
+    if (/pruning|bush|shrub|hedge/.test(normalized)) return "residential-shrub-pruning.jpg";
+    return "residential-lawn-maintenance.jpg";
+  }
+
+  if (pageSlug === "residential-landscaping") {
+    if (/sod/.test(normalized)) return "card-sod-installation.png";
+    return "card-plant-shrub-installation.png";
+  }
+
+  if (pageSlug === "residential-hardscape") return "hero-hardscape.png";
+
+  if (pageSlug === "mulching-and-planting") {
+    if (/seasonal|flower|plant|shrub|ornamental|bed preparation|cleanup/.test(normalized)) {
+      return "card-plant-shrub-installation.png";
+    }
+    return "hero-mulch.png";
+  }
+
+  if (pageSlug === "drainage-solutions") {
+    if (/catch basin|yard drain/.test(normalized)) return "residential-catch-basin.jpg";
+    if (/downspout/.test(normalized)) return "residential-downspout-extension.jpg";
+    if (/french drain/.test(normalized)) return "residential-french-drain.jpg";
+    if (/regrading|grading/.test(normalized)) return "residential-yard-grading.jpg";
+    if (/swale/.test(normalized)) return "card-swales.png";
+    return "hero-drainage.png";
+  }
+
+  if (pageSlug === "commercial-grounds-maintenance") {
+    return "commercial-grounds-maintenance.jpg";
+  }
+
+  if (pageSlug === "commercial-landscaping") {
+    if (/seasonal color|parking lot island|retail|storefront/.test(normalized)) {
+      return "commercial-retail-landscaping.jpg";
+    }
+    if (/process|proposal|schedule|phased/.test(normalized)) {
+      return "commercial-property-management.jpg";
+    }
+    return "card-commercial-landscaping.png";
+  }
+
+  if (pageSlug === "commercial-hardscape") {
+    if (/dumpster/.test(normalized)) return "commercial-dumpster-enclosure.jpg";
+    return "commercial-hardscape-walkway.jpg";
+  }
+
+  if (pageSlug === "commercial-drainage") {
+    if (/catch basin|stormwater/.test(normalized)) return "commercial-drainage-catch-basin.jpg";
+    if (/downspout|roof drainage|roof drain/.test(normalized)) return "commercial-roof-drainage.jpg";
+    if (/swale/.test(normalized)) return "card-swales.png";
+    return "commercial-drainage-catch-basin.jpg";
+  }
+
+  if (pageSlug === "hoa-services") {
+    if (/drainage/.test(normalized)) return "commercial-drainage-catch-basin.jpg";
+    if (/hardscape|walkway|wall|paver|curb/.test(normalized)) {
+      return "commercial-hardscape-walkway.jpg";
+    }
+    if (/board|contract|billing|documentation|photo/.test(normalized)) {
+      return "commercial-property-management.jpg";
+    }
+    return "hoa-common-area-landscaping.jpg";
+  }
+
+  return "";
+}
+
 function getDesignedImage(pageSlug: string, title: string, index = 0, useDefault = true) {
-  const locationFilename = getLocationImageFilename(pageSlug, title);
+  const resolvedPageSlug = resolvePageSlug(pageSlug);
+  const locationFilename = getLocationImageFilename(resolvedPageSlug, title);
   if (locationFilename) return carolinaImageSrc(imagePath(locationFilename));
 
-  const design = getSalesDesign(pageSlug);
+  const design = getSalesDesign(resolvedPageSlug);
   const sectionKey = getSectionKey(title);
+  const pageTopicFilename = useDefault ? "" : getPageTopicImageFilename(resolvedPageSlug, title);
   const filename =
     design?.sectionImages[normalizeKey(title)] ??
+    pageTopicFilename ??
     (sectionKey !== "default" ? design?.sectionImages[sectionKey] : undefined) ??
     (useDefault ? design?.sectionImages.default : undefined);
   return filename ? carolinaImageSrc(imagePath(filename)) : getTopicImage(title, index);
@@ -469,12 +632,7 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
   const locationFilename =
     CAROLINA_LOCATION_IMAGES[serviceAreaSlug] ??
     getLocationImageFilename(str(props.pageSlug), heading);
-  const pageHeroFilename =
-    location === "/commercial"
-      ? "commercial-office-campus.jpg"
-      : location === "/commercial-landscaping"
-        ? "card-commercial-landscaping.png"
-        : "";
+  const pageHeroFilename = SERVICE_HERO_FILENAMES[location] ?? "";
   const imageUrl = pageHeroFilename
     ? imagePath(pageHeroFilename)
     : locationFilename
@@ -488,7 +646,7 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
       <div className="absolute inset-3 z-0 overflow-hidden rounded-[1.5rem] shadow-2xl md:inset-6 md:rounded-[2rem]">
         <img
           src={carolinaImageSrc(imageUrl)}
-          alt={str(props.imageAlt, heading || CAROLINA_BRAND.name)}
+          alt={getCarolinaImageAlt(imageUrl, str(props.imageAlt, heading || CAROLINA_BRAND.name))}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-black/25" />
@@ -552,7 +710,8 @@ export function CarolinaIntroHeroBlock({ props }: { props: Props }) {
 }
 
 export function CarolinaPageIntroBlock({ props }: { props: Props }) {
-  const pageSlug = str(props.pageSlug);
+  const [location] = useLocation();
+  const pageSlug = str(props.pageSlug) || pageSlugFromLocation(location);
   const design = getSalesDesign(pageSlug);
   const intro = str(props.intro, design?.intro ?? "");
 
@@ -572,7 +731,8 @@ export function CarolinaPageIntroBlock({ props }: { props: Props }) {
 
 export function CarolinaRichContentBlock({ props }: { props: Props }) {
   const sections = useMemo(() => parseRichContentSections(str(props.content)), [props.content]);
-  const pageSlug = str(props.pageSlug);
+  const [location] = useLocation();
+  const pageSlug = str(props.pageSlug) || pageSlugFromLocation(location);
   const design = getSalesDesign(pageSlug);
   const quoteLink = str(props.quoteLink, design?.quoteLink ?? "/get-a-quote");
   const quoteLabel = str(props.quoteLabel, design?.quoteLabel ?? "GET A QUOTE");
@@ -667,16 +827,13 @@ function VisualRichContentSection({
   const imageUrl = getDesignedImage(pageSlug, title, index);
 
   if (!hasHeading) {
+    const introImageUrl = getDesignedImage(pageSlug, "", index);
     return (
       <section className="overflow-hidden rounded-[1.5rem] border border-border/80 bg-card shadow-sm md:rounded-[2rem]">
         <div className="aspect-[16/6] max-h-[24rem] min-h-64 bg-muted">
           <img
-            src={getDesignedImage(
-              pageSlug,
-              section.children.map((node) => node.text).join(" "),
-              index,
-            )}
-            alt=""
+            src={introImageUrl}
+            alt={getCarolinaImageAlt(introImageUrl, "Carolina Exterior landscape service example")}
             className="h-full w-full object-cover"
           />
         </div>
@@ -743,7 +900,11 @@ function VisualRichContentSection({
         >
           {pageSlug === "commercial" ? (
             <div className="aspect-[16/5] max-h-[22rem] min-h-56 bg-muted">
-              <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+              <img
+                src={imageUrl}
+                alt={getCarolinaImageAlt(imageUrl, `${title} example`)}
+                className="h-full w-full object-cover"
+              />
             </div>
           ) : null}
           <div className="p-6 md:p-8 lg:p-10">
@@ -774,7 +935,11 @@ function VisualRichContentSection({
         className={`overflow-hidden rounded-[1.5rem] border border-border/70 ${band} shadow-sm md:rounded-[2rem]`}
       >
         <div className="aspect-[16/6] max-h-[24rem] min-h-64 bg-muted">
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          <img
+            src={imageUrl}
+            alt={getCarolinaImageAlt(imageUrl, `${title} example`)}
+            className="h-full w-full object-cover"
+          />
         </div>
         <div className="p-6 md:p-8 lg:p-10">
           <p className="carolina-eyebrow mb-3">
@@ -809,7 +974,11 @@ function VisualRichContentSection({
         className={`overflow-hidden rounded-[1.5rem] border border-border/70 ${band} shadow-sm md:rounded-[2rem]`}
       >
         <div className="aspect-[16/6] max-h-[24rem] min-h-64 bg-muted">
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          <img
+            src={imageUrl}
+            alt={getCarolinaImageAlt(imageUrl, `${title} example`)}
+            className="h-full w-full object-cover"
+          />
         </div>
         <div className="p-6 md:p-8 lg:p-12">
           <p className="carolina-eyebrow mb-3">
@@ -832,7 +1001,11 @@ function VisualRichContentSection({
       }`}
     >
       <div className="visual-section-image min-h-72 bg-muted lg:min-h-[30rem]">
-        <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+        <img
+          src={imageUrl}
+          alt={getCarolinaImageAlt(imageUrl, `${title} example`)}
+          className="h-full w-full object-cover"
+        />
       </div>
       <div className="p-6 md:p-8 lg:p-12">
         <p className="carolina-eyebrow mb-3">
@@ -867,38 +1040,36 @@ function TopicCardGrid({
 
   return (
     <div className={`mt-8 grid gap-4 ${gridColumns}`}>
-      {cards.map((card, cardIndex) => (
-        <article
-          key={`${title}-${card.title}`}
-          className="group overflow-hidden rounded-xl border border-border/70 bg-white/85 shadow-sm transition-shadow hover:shadow-md"
-        >
-          {useCommercialIcons ? (
-            <div className="px-5 pt-5">
-              <CommercialTopicIcon title={card.title} />
-            </div>
-          ) : mode !== "process" && mode !== "problem-solution" ? (
-            <div className="aspect-[16/9] overflow-hidden bg-muted">
-              <img
-                src={getDesignedImage(
-                  pageSlug,
-                  `${card.title} ${textFromHtml(card.bodyHtml)}`,
-                  startIndex + cardIndex + 1,
-                  false,
-                )}
-                alt=""
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      {cards.map((card, cardIndex) => {
+        const cardImageUrl = getDesignedImage(pageSlug, card.title, startIndex + cardIndex + 1, false);
+        return (
+          <article
+            key={`${title}-${card.title}`}
+            className="group overflow-hidden rounded-xl border border-border/70 bg-white/85 shadow-sm transition-shadow hover:shadow-md"
+          >
+            {useCommercialIcons ? (
+              <div className="px-5 pt-5">
+                <CommercialTopicIcon title={card.title} />
+              </div>
+            ) : mode !== "process" && mode !== "problem-solution" ? (
+              <div className="aspect-[16/9] overflow-hidden bg-muted">
+                <img
+                  src={cardImageUrl}
+                  alt={getCarolinaImageAlt(cardImageUrl, `${card.title} service example`)}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
+            ) : null}
+            <div className="p-5">
+              <h3 className="text-lg font-extrabold leading-tight">{card.title}</h3>
+              <div
+                className="prose prose-stone mt-3 max-w-none prose-p:text-sm prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground prose-li:text-sm prose-li:text-muted-foreground"
+                dangerouslySetInnerHTML={{ __html: card.bodyHtml }}
               />
             </div>
-          ) : null}
-          <div className="p-5">
-            <h3 className="text-lg font-extrabold leading-tight">{card.title}</h3>
-            <div
-              className="prose prose-stone mt-3 max-w-none prose-p:text-sm prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground prose-li:text-sm prose-li:text-muted-foreground"
-              dangerouslySetInnerHTML={{ __html: card.bodyHtml }}
-            />
-          </div>
-        </article>
-      ))}
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -968,12 +1139,13 @@ function FeatureServiceCard({
   item: { title: string; description: string; href?: string };
   index: number;
 }) {
+  const imageUrl = getTopicImage(`${item.title} ${item.description}`, index);
   const card = (
     <article className="group h-full overflow-hidden rounded-[1.5rem] border border-border/80 bg-card shadow-md transition-shadow hover:shadow-lg md:rounded-[2rem] lg:col-span-5">
       <div className="aspect-[16/10] overflow-hidden bg-muted">
         <img
-          src={getTopicImage(`${item.title} ${item.description}`, index)}
-          alt=""
+          src={imageUrl}
+          alt={getCarolinaImageAlt(imageUrl, `${item.title} service example`)}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </div>
@@ -1007,12 +1179,13 @@ function CompactServiceCard({
   item: { title: string; description: string; href?: string };
   index: number;
 }) {
+  const imageUrl = getTopicImage(`${item.title} ${item.description}`, index);
   const card = (
     <article className="group flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-border/80 bg-card shadow-sm transition-all hover:border-primary/45 hover:shadow-md">
       <div className="aspect-[16/7] overflow-hidden bg-muted">
         <img
-          src={getTopicImage(`${item.title} ${item.description}`, index)}
-          alt=""
+          src={imageUrl}
+          alt={getCarolinaImageAlt(imageUrl, `${item.title} service example`)}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </div>
@@ -1349,7 +1522,11 @@ export function CarolinaCtaBlock({ props }: { props: Props }) {
           <ButtonRow props={props} />
         </div>
         <div className="min-h-72 bg-muted lg:min-h-full">
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          <img
+            src={imageUrl}
+            alt={getCarolinaImageAlt(imageUrl, `${str(props.heading, "Carolina Exterior")} image`)}
+            className="h-full w-full object-cover"
+          />
         </div>
       </div>
     </section>

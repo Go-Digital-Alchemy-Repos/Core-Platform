@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { stat } from "fs/promises";
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
 import {
@@ -15,7 +16,11 @@ import {
   type CarolinaBlock,
   type CarolinaPageContent,
 } from "@shared/carolina-content";
-import { CAROLINA_LOCATION_IMAGES, CAROLINA_SALES_PAGE_DESIGN } from "@shared/carolina-site";
+import {
+  CAROLINA_IMAGE_METADATA,
+  CAROLINA_LOCATION_IMAGES,
+  CAROLINA_SALES_PAGE_DESIGN,
+} from "@shared/carolina-site";
 import type { InsertCmsPage } from "@shared/schema";
 
 type CmsBlock = { id: string; type: string; props: Record<string, unknown> };
@@ -81,17 +86,17 @@ function block(type: string, props: Record<string, unknown>): CmsBlock {
 }
 
 const SERVICE_HERO_IMAGES: Record<string, string> = {
-  "residential-lawn-maintenance": imagePath("hero-home.png"),
-  "residential-landscaping": imagePath("hero-home.png"),
+  "residential-lawn-maintenance": imagePath("residential-lawn-maintenance.jpg"),
+  "residential-landscaping": imagePath("card-plant-shrub-installation.png"),
   "residential-hardscape": imagePath("hero-hardscape.png"),
   "mulching-and-planting": imagePath("hero-mulch.png"),
   "drainage-solutions": imagePath("hero-drainage.png"),
   commercial: imagePath("commercial-office-campus.jpg"),
-  "commercial-grounds-maintenance": imagePath("hero-commercial.png"),
+  "commercial-grounds-maintenance": imagePath("commercial-grounds-maintenance.jpg"),
   "commercial-landscaping": imagePath("card-commercial-landscaping.png"),
-  "commercial-hardscape": imagePath("hero-hardscape.png"),
-  "commercial-drainage": imagePath("hero-drainage.png"),
-  "hoa-services": imagePath("hero-commercial.png"),
+  "commercial-hardscape": imagePath("commercial-hardscape-walkway.jpg"),
+  "commercial-drainage": imagePath("commercial-drainage-catch-basin.jpg"),
+  "hoa-services": imagePath("hoa-common-area-landscaping.jpg"),
 };
 
 function locationImagePath(slug: string) {
@@ -645,7 +650,72 @@ async function ensureCarolinaReusableSections() {
   return created;
 }
 
+async function getCarolinaMediaFileSize(filename: string) {
+  try {
+    const file = await stat(`client/public/carolina/${filename}`);
+    return file.size;
+  } catch {
+    return 0;
+  }
+}
+
+function getCarolinaMediaMimeType(filename: string) {
+  if (/\.jpe?g$/i.test(filename)) return "image/jpeg";
+  if (/\.webp$/i.test(filename)) return "image/webp";
+  return "image/png";
+}
+
+async function ensureCarolinaMediaAssets() {
+  const existing = await storage.cmsMedia.getAllMedia();
+  const existingByFilename = new Map(existing.map((asset) => [asset.filename, asset]));
+  let created = 0;
+  let updated = 0;
+
+  for (const [filename, metadata] of Object.entries(CAROLINA_IMAGE_METADATA)) {
+    const asset = existingByFilename.get(filename);
+    const payload = {
+      originalName: filename,
+      title: metadata.title,
+      alt: metadata.alt,
+      caption: metadata.title,
+      description: metadata.description,
+      seoTitle: metadata.title,
+      seoDescription: metadata.description,
+      ogTitle: metadata.title,
+      ogDescription: metadata.description,
+    };
+
+    if (asset) {
+      await storage.cmsMedia.updateMetadata(asset.id, payload);
+      updated += 1;
+      continue;
+    }
+
+    await storage.cmsMedia.createMedia({
+      filename,
+      originalName: filename,
+      title: metadata.title,
+      url: imagePath(filename),
+      mimeType: getCarolinaMediaMimeType(filename),
+      fileSize: await getCarolinaMediaFileSize(filename),
+      r2Key: null,
+      alt: metadata.alt,
+      caption: metadata.title,
+      description: metadata.description,
+      seoTitle: metadata.title,
+      seoDescription: metadata.description,
+      ogTitle: metadata.title,
+      ogDescription: metadata.description,
+      uploadedBy: null,
+    });
+    created += 1;
+  }
+
+  return { created, updated, total: Object.keys(CAROLINA_IMAGE_METADATA).length };
+}
+
 export async function ensureCarolinaCmsSite() {
+  const media = await ensureCarolinaMediaAssets();
   const pages = buildCarolinaPages();
   const counts = { created: 0, updated: 0, preserved: 0 };
 
@@ -658,9 +728,12 @@ export async function ensureCarolinaCmsSite() {
 
   logger.cms.info("Ensured Carolina Exterior CMS site", {
     ...counts,
+    mediaCreated: media.created,
+    mediaUpdated: media.updated,
+    mediaTotal: media.total,
     sectionsCreated,
     totalPages: pages.length,
   });
 
-  return { ...counts, sectionsCreated, totalPages: pages.length };
+  return { ...counts, media, sectionsCreated, totalPages: pages.length };
 }
