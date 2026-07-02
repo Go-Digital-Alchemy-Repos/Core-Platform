@@ -12,6 +12,7 @@ import {
 } from "@shared/carolina-site";
 
 const logoFull = imagePath("logo-full.png");
+const logoFooter = imagePath("logo-footer.png");
 
 export function CarolinaLayout({ children }: { children: ReactNode }) {
   const { frontendLogoUrl } = useBranding();
@@ -204,9 +205,9 @@ export function CarolinaLayout({ children }: { children: ReactNode }) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             <div className="space-y-6">
               <img
-                src={brandLogo}
+                src={logoFooter}
                 alt={CAROLINA_BRAND.name}
-                className="h-10 w-auto brightness-0 invert"
+                className="h-10 w-auto"
               />
               <p className="text-muted/80 text-sm leading-relaxed font-medium">
                 {CAROLINA_BRAND.tagline} {CAROLINA_BRAND.subTagline}.<br />
