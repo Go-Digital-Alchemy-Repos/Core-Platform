@@ -654,19 +654,19 @@ export function CarolinaHeroBlock({ props }: { props: Props }) {
         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/76 via-black/38 to-transparent" />
       </div>
       <div
-        className={`relative z-10 mx-auto flex w-full max-w-7xl flex-col justify-end px-4 pb-8 pt-28 md:px-8 md:pb-12 ${
+        className={`relative z-10 mx-auto flex w-full max-w-7xl flex-col justify-end px-4 pb-8 pt-24 md:px-8 md:pb-12 md:pt-28 ${
           align === "center" ? "items-center text-center" : ""
         }`}
       >
-        <div className={align === "center" ? "max-w-4xl" : "max-w-3xl"}>
-          <span className="mb-5 inline-flex items-center rounded-full border border-white/35 bg-black/28 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-white shadow-sm backdrop-blur-sm">
+        <div className={`max-w-full ${align === "center" ? "md:max-w-4xl" : "md:max-w-3xl"}`}>
+          <span className="mb-5 inline-flex max-w-full items-center rounded-full border border-white/35 bg-black/28 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-white shadow-sm backdrop-blur-sm">
             {eyebrow}
           </span>
-          <h1 className="mb-6 text-4xl font-extrabold leading-[1.02] tracking-normal text-white drop-shadow-[0_3px_18px_rgba(0,0,0,0.55)] sm:text-5xl md:text-6xl lg:text-7xl">
+          <h1 className="mb-6 max-w-full text-[clamp(2.05rem,8.8vw,4.5rem)] font-extrabold leading-[1.06] tracking-normal text-white drop-shadow-[0_3px_18px_rgba(0,0,0,0.55)] [overflow-wrap:anywhere] sm:text-5xl md:text-6xl lg:text-7xl">
             {heading}
           </h1>
           {str(props.subheading) ? (
-            <p className="mb-8 max-w-2xl text-lg font-bold leading-relaxed text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.65)] md:text-xl">
+            <p className="mb-8 max-w-2xl text-base font-bold leading-relaxed text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.65)] sm:text-lg md:text-xl">
               {str(props.subheading)}
             </p>
           ) : null}
@@ -696,7 +696,7 @@ export function CarolinaIntroHeroBlock({ props }: { props: Props }) {
   return (
     <section className="bg-foreground py-20 md:py-24 px-4 text-center">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-4">
+        <h1 className="mb-4 text-[clamp(2.25rem,10vw,3.75rem)] font-extrabold leading-tight text-white md:text-6xl">
           {cleanHeroHeading(props.heading)}
         </h1>
         {str(props.subheading) ? (
@@ -741,11 +741,11 @@ export function CarolinaRichContentBlock({ props }: { props: Props }) {
 
   return (
     <section className="bg-background">
-      <div className="mx-auto max-w-7xl px-4 py-8 md:py-14">
-        <article>
+      <div className="mx-auto w-full max-w-7xl min-w-0 px-4 py-8 md:py-14">
+        <article className="min-w-0">
           {articleMode ? (
             <div
-              className="prose prose-stone mx-auto max-w-3xl lg:prose-lg prose-headings:font-extrabold prose-h2:text-3xl prose-h2:mt-14 prose-h2:mb-5 prose-h3:text-xl prose-p:font-medium prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:font-medium prose-li:text-muted-foreground"
+              className="prose prose-stone mx-auto max-w-full lg:max-w-3xl lg:prose-lg prose-headings:font-extrabold prose-h2:text-3xl prose-h2:mt-14 prose-h2:mb-5 prose-h3:text-xl prose-p:font-medium prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:font-medium prose-li:text-muted-foreground"
               dangerouslySetInnerHTML={html(props.content)}
             />
           ) : sections ? (
@@ -758,7 +758,7 @@ export function CarolinaRichContentBlock({ props }: { props: Props }) {
             />
           ) : (
             <div
-              className="prose prose-stone lg:prose-lg max-w-none prose-headings:font-extrabold prose-h2:text-3xl prose-h2:mt-14 prose-h2:mb-5 prose-h3:text-xl prose-p:font-medium prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:font-medium prose-li:text-muted-foreground"
+              className="prose prose-stone max-w-full lg:prose-lg prose-headings:font-extrabold prose-h2:text-3xl prose-h2:mt-14 prose-h2:mb-5 prose-h3:text-xl prose-p:font-medium prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:font-medium prose-li:text-muted-foreground"
               dangerouslySetInnerHTML={html(props.content)}
             />
           )}
@@ -830,11 +830,11 @@ function VisualRichContentSection({
     const introImageUrl = getDesignedImage(pageSlug, "", index);
     return (
       <section className="overflow-hidden rounded-[1.5rem] border border-border/80 bg-card shadow-sm md:rounded-[2rem]">
-        <div className="aspect-[16/6] max-h-[24rem] min-h-64 bg-muted">
+        <div className="h-56 w-full min-w-0 bg-muted sm:h-64 md:aspect-[16/6] md:h-auto md:max-h-[24rem] md:min-h-64">
           <img
             src={introImageUrl}
             alt={getCarolinaImageAlt(introImageUrl, "Carolina Exterior landscape service example")}
-            className="h-full w-full object-cover"
+            className="block h-full w-full object-cover"
           />
         </div>
         <div className="p-6 md:p-8 lg:p-10">
@@ -859,7 +859,9 @@ function VisualRichContentSection({
         >
           <div className="mx-auto mb-10 max-w-4xl text-center">
             <p className="carolina-eyebrow mb-3">What to Expect</p>
-            <h2 className="text-3xl font-extrabold leading-tight md:text-5xl">{title}</h2>
+            <h2 className="text-2xl font-extrabold leading-tight sm:text-3xl md:text-5xl">
+              {title}
+            </h2>
             {sectionLead.length > 0 ? (
               <div
                 className="prose prose-stone mx-auto mt-5 max-w-3xl prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground"
@@ -899,18 +901,20 @@ function VisualRichContentSection({
           className={`overflow-hidden rounded-[1.5rem] border border-border/70 ${band} shadow-sm md:rounded-[2rem]`}
         >
           {pageSlug === "commercial" ? (
-            <div className="aspect-[16/5] max-h-[22rem] min-h-56 bg-muted">
+            <div className="h-52 w-full min-w-0 bg-muted sm:h-60 md:aspect-[16/5] md:h-auto md:max-h-[22rem] md:min-h-56">
               <img
                 src={imageUrl}
                 alt={getCarolinaImageAlt(imageUrl, `${title} example`)}
-                className="h-full w-full object-cover"
+                className="block h-full w-full object-cover"
               />
             </div>
           ) : null}
           <div className="p-6 md:p-8 lg:p-10">
             <div className="mb-8 max-w-5xl">
               <p className="carolina-eyebrow mb-3">Service Details</p>
-              <h2 className="text-3xl font-extrabold leading-tight md:text-5xl">{title}</h2>
+              <h2 className="text-2xl font-extrabold leading-tight sm:text-3xl md:text-5xl">
+                {title}
+              </h2>
               {sectionLead.length > 0 ? (
                 <div
                   className="prose prose-stone mt-5 max-w-none prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground"
@@ -934,11 +938,11 @@ function VisualRichContentSection({
       <section
         className={`overflow-hidden rounded-[1.5rem] border border-border/70 ${band} shadow-sm md:rounded-[2rem]`}
       >
-        <div className="aspect-[16/6] max-h-[24rem] min-h-64 bg-muted">
+        <div className="h-56 w-full min-w-0 bg-muted sm:h-64 md:aspect-[16/6] md:h-auto md:max-h-[24rem] md:min-h-64">
           <img
             src={imageUrl}
             alt={getCarolinaImageAlt(imageUrl, `${title} example`)}
-            className="h-full w-full object-cover"
+            className="block h-full w-full object-cover"
           />
         </div>
         <div className="p-6 md:p-8 lg:p-10">
@@ -949,7 +953,9 @@ function VisualRichContentSection({
                 ? "What We Solve"
                 : "Service Details"}
           </p>
-          <h2 className="text-3xl font-extrabold leading-tight md:text-5xl">{title}</h2>
+          <h2 className="text-2xl font-extrabold leading-tight sm:text-3xl md:text-5xl">
+            {title}
+          </h2>
           {sectionLead.length > 0 ? (
             <div
               className="prose prose-stone mt-5 max-w-none prose-p:font-medium prose-p:leading-relaxed prose-p:text-muted-foreground"
@@ -973,11 +979,11 @@ function VisualRichContentSection({
       <section
         className={`overflow-hidden rounded-[1.5rem] border border-border/70 ${band} shadow-sm md:rounded-[2rem]`}
       >
-        <div className="aspect-[16/6] max-h-[24rem] min-h-64 bg-muted">
+        <div className="h-56 w-full min-w-0 bg-muted sm:h-64 md:aspect-[16/6] md:h-auto md:max-h-[24rem] md:min-h-64">
           <img
             src={imageUrl}
             alt={getCarolinaImageAlt(imageUrl, `${title} example`)}
-            className="h-full w-full object-cover"
+            className="block h-full w-full object-cover"
           />
         </div>
         <div className="p-6 md:p-8 lg:p-12">
@@ -1000,11 +1006,11 @@ function VisualRichContentSection({
         index % 2 === 0 ? "" : "lg:[&_.visual-section-image]:order-2"
       }`}
     >
-      <div className="visual-section-image min-h-72 bg-muted lg:min-h-[30rem]">
+      <div className="visual-section-image h-72 bg-muted sm:h-80 lg:h-auto lg:min-h-[30rem]">
         <img
           src={imageUrl}
           alt={getCarolinaImageAlt(imageUrl, `${title} example`)}
-          className="h-full w-full object-cover"
+          className="block h-full w-full object-cover"
         />
       </div>
       <div className="p-6 md:p-8 lg:p-12">
@@ -1085,9 +1091,9 @@ function InlineQuoteCta({
 }) {
   const copy = getCtaCopy(pageSlug);
   return (
-    <section className="overflow-hidden rounded-[1.5rem] border border-primary/15 bg-primary text-primary-foreground shadow-md md:rounded-[2rem]">
-      <div className="grid gap-0 md:grid-cols-[1fr_auto] md:items-center">
-        <div className="p-6 md:p-8">
+    <section className="min-w-0 overflow-hidden rounded-[1.5rem] border border-primary/15 bg-primary text-primary-foreground shadow-md md:rounded-[2rem]">
+      <div className="grid min-w-0 gap-0 md:grid-cols-[1fr_auto] md:items-center">
+        <div className="min-w-0 p-5 sm:p-6 md:p-8">
           <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.16em] text-white/70">
             Ready When You Are
           </p>
@@ -1096,9 +1102,9 @@ function InlineQuoteCta({
             {copy.text}
           </p>
         </div>
-        <div className="px-6 pb-6 md:p-8">
-          <Link href={quoteLink}>
-            <Button className="h-12 w-full bg-accent px-6 font-extrabold text-accent-foreground hover:bg-accent/90 md:w-auto">
+        <div className="min-w-0 px-5 pb-5 sm:px-6 sm:pb-6 md:p-8">
+          <Link href={quoteLink} className="block min-w-0 md:inline-block">
+            <Button className="min-h-12 h-auto w-full whitespace-normal bg-accent px-5 py-3 text-center font-extrabold leading-tight text-accent-foreground hover:bg-accent/90 md:w-auto md:px-6">
               {quoteLabel}
             </Button>
           </Link>
@@ -1351,7 +1357,7 @@ export function CarolinaBlogSidebar({ currentSlug }: { currentSlug?: string }) {
             <Link key={tag} href={`/blog?tag=${encodeURIComponent(tag)}`}>
               <Badge
                 variant="outline"
-                className="cursor-pointer rounded-full border-primary/25 px-3 py-1.5 text-xs font-bold text-foreground hover:border-primary hover:text-primary"
+                className="max-w-full cursor-pointer whitespace-normal rounded-full border-primary/25 px-3 py-1.5 text-xs font-bold leading-snug text-foreground hover:border-primary hover:text-primary"
               >
                 <Tag className="mr-1 h-3 w-3" />
                 {tag}
@@ -1508,24 +1514,24 @@ export function CarolinaCtaBlock({ props }: { props: Props }) {
   const imageUrl = getDesignedImage(pageSlug, str(props.heading, "quote"), 2);
   return (
     <section className="bg-background px-4 py-16 md:py-24">
-      <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[1.5rem] border border-border/80 bg-[#e5dcc8] shadow-lg md:rounded-[2rem] lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="p-8 md:p-12 lg:p-16">
+      <div className="mx-auto grid max-w-7xl min-w-0 overflow-hidden rounded-[1.5rem] border border-border/80 bg-[#e5dcc8] shadow-lg md:rounded-[2rem] lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="min-w-0 p-6 md:p-12 lg:p-16">
           <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.16em] text-foreground/65">
             Ready When You Are
           </p>
-          <h2 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">
+          <h2 className="mb-6 text-3xl font-extrabold leading-tight sm:text-4xl md:text-5xl">
             {str(props.heading)}
           </h2>
-          <p className="text-lg font-semibold text-foreground/75 mb-10 max-w-2xl leading-relaxed">
+          <p className="mb-10 max-w-2xl text-base font-semibold leading-relaxed text-foreground/75 md:text-lg">
             {str(props.subheading)}
           </p>
           <ButtonRow props={props} />
         </div>
-        <div className="min-h-72 bg-muted lg:min-h-full">
+        <div className="h-72 bg-muted sm:h-80 lg:h-auto lg:min-h-full">
           <img
             src={imageUrl}
             alt={getCarolinaImageAlt(imageUrl, `${str(props.heading, "Carolina Exterior")} image`)}
-            className="h-full w-full object-cover"
+            className="block h-full w-full object-cover"
           />
         </div>
       </div>
@@ -1538,7 +1544,7 @@ function SectionHeading({ props }: { props: Props }) {
     <div className="max-w-3xl mx-auto text-center mb-12">
       <p className="carolina-eyebrow mb-3">Carolina Exterior</p>
       {str(props.heading) ? (
-        <h2 className="text-3xl md:text-5xl font-extrabold mb-4 leading-tight">
+        <h2 className="mb-4 text-3xl font-extrabold leading-tight md:text-5xl">
           {str(props.heading)}
         </h2>
       ) : null}
@@ -1556,20 +1562,23 @@ function ButtonRow({ props }: { props: Props }) {
   const secondaryText = str(props.secondaryText);
   if (!primaryText && !secondaryText) return null;
   return (
-    <div className="flex flex-col sm:flex-row gap-4 justify-center sm:justify-start">
+    <div className="flex min-w-0 flex-col gap-4 justify-center sm:flex-row sm:justify-start">
       {primaryText ? (
-        <Link href={str(props.primaryLink, "/get-a-quote")}>
-          <Button size="lg" className="h-14 px-8 text-lg font-bold w-full sm:w-auto">
+        <Link href={str(props.primaryLink, "/get-a-quote")} className="min-w-0 sm:w-auto">
+          <Button
+            size="lg"
+            className="min-h-14 h-auto w-full whitespace-normal px-6 py-3 text-base font-bold leading-tight sm:w-auto sm:px-8 sm:text-lg"
+          >
             {primaryText} <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </Link>
       ) : null}
       {secondaryText ? (
-        <Link href={str(props.secondaryLink, "/about")}>
+        <Link href={str(props.secondaryLink, "/about")} className="min-w-0 sm:w-auto">
           <Button
             variant="outline"
             size="lg"
-            className="h-14 px-8 text-lg font-bold w-full sm:w-auto bg-transparent border-white/30 text-white hover:bg-white/10"
+            className="min-h-14 h-auto w-full whitespace-normal border-white/30 bg-transparent px-6 py-3 text-base font-bold leading-tight text-white hover:bg-white/10 sm:w-auto sm:px-8 sm:text-lg"
           >
             {secondaryText}
           </Button>

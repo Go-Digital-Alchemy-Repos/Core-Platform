@@ -240,9 +240,9 @@ export function CmsPageView({ page, globalSeo, previewLabel }: CmsPageViewProps)
         showSidebar ? (
           <>
             {heroBlocks.length > 0 && <PublicPageRenderer blocks={heroBlocks} />}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-              <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
-                <div className="space-y-8" data-testid="cms-page-main-with-sidebar">
+            <div className="mx-auto w-full max-w-7xl min-w-0 px-4 py-10 sm:px-6 sm:py-14">
+              <div className="grid min-w-0 grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <div className="min-w-0 space-y-8" data-testid="cms-page-main-with-sidebar">
                   {contentBlocks.map((block) => (
                     <PublicBlockRenderer key={block.id} block={block} />
                   ))}

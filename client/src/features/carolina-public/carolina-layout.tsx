@@ -34,9 +34,26 @@ export function CarolinaLayout({ children }: { children: ReactNode }) {
     window.scrollTo(0, 0);
   }, [location]);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [mobileMenuOpen]);
+
   return (
     <div className="carolina-theme min-h-screen flex flex-col overflow-x-clip font-sans bg-background text-foreground">
-      <div className="sticky top-0 z-50 w-full">
+      <div className={`sticky top-0 w-full ${mobileMenuOpen ? "z-[1301]" : "z-50"}`}>
         <div className="bg-primary text-primary-foreground py-2 px-4 hidden md:block text-sm font-medium tracking-wide">
           <div className="max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-6">
@@ -140,8 +157,10 @@ export function CarolinaLayout({ children }: { children: ReactNode }) {
             </div>
 
             <button
-              className="lg:hidden p-2 text-foreground z-50 relative"
+              className="lg:hidden p-2 text-foreground z-[1302] relative"
               onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="carolina-mobile-menu"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -149,11 +168,16 @@ export function CarolinaLayout({ children }: { children: ReactNode }) {
           </div>
 
           <div
-            className={`fixed inset-0 bg-background z-40 transition-transform duration-300 pt-24 px-6 overflow-y-auto ${
-              mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+            id="carolina-mobile-menu"
+            role="dialog"
+            aria-modal="true"
+            className={`fixed inset-0 z-[1300] h-[100dvh] bg-background px-6 pb-10 pt-24 shadow-2xl transition duration-300 lg:hidden ${
+              mobileMenuOpen
+                ? "visible translate-x-0 opacity-100"
+                : "invisible translate-x-full opacity-0 pointer-events-none"
             }`}
           >
-            <div className="flex flex-col gap-6 font-extrabold text-2xl">
+            <div className="flex h-full flex-col gap-6 overflow-y-auto pb-8 font-extrabold text-2xl">
               <Link href="/">Home</Link>
               <Link href="/about">About Us</Link>
               <MobileMenuSection title="Residential">

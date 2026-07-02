@@ -154,9 +154,9 @@ export function CookieConsentBanner() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-[1200] px-4 pb-4 sm:px-6 sm:pb-6">
-        <div className="mx-auto max-w-5xl rounded-2xl border border-border/70 bg-background/95 shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-background/90 animate-in slide-in-from-bottom-full duration-500">
-          <div className="flex items-start gap-4 px-5 py-4 sm:px-6 sm:py-5">
+      <div className="fixed inset-x-0 bottom-0 z-[1200] px-3 pb-3 sm:px-6 sm:pb-6">
+        <div className="mx-auto max-h-[58dvh] max-w-5xl overflow-y-auto rounded-2xl border border-border/70 bg-background/95 shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-background/90 animate-in slide-in-from-bottom-full duration-500">
+          <div className="flex items-start gap-4 px-4 py-4 sm:px-6 sm:py-5">
             <div className="mt-0.5 hidden rounded-full bg-primary/10 p-2 text-primary sm:block">
               <ShieldCheck className="h-5 w-5" />
             </div>
@@ -166,7 +166,7 @@ export function CookieConsentBanner() {
                   <p className="text-sm font-semibold text-foreground">
                     We use cookies to improve your experience.
                   </p>
-                  <p className="text-sm leading-6 text-muted-foreground">
+                  <p className="text-sm leading-5 text-muted-foreground sm:leading-6">
                     Essential cookies keep the site working. You can accept all cookies or review
                     cookie settings to turn off non-essential cookies at any time.
                   </p>
@@ -181,14 +181,24 @@ export function CookieConsentBanner() {
                 </button>
               </div>
               <Separator />
-              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                <Button type="button" onClick={handleAcceptAll}>
+              <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-row sm:flex-wrap sm:items-center">
+                <Button type="button" onClick={handleAcceptAll} className="h-10 sm:h-11">
                   Accept All
                 </Button>
-                <Button type="button" variant="outline" onClick={handleEssentialOnly}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleEssentialOnly}
+                  className="h-10 sm:h-11"
+                >
                   Essential Only
                 </Button>
-                <Button type="button" variant="ghost" onClick={() => setSettingsOpen(true)}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setSettingsOpen(true)}
+                  className="h-10 sm:h-11"
+                >
                   <Settings2 className="mr-2 h-4 w-4" />
                   Cookie Settings
                 </Button>
