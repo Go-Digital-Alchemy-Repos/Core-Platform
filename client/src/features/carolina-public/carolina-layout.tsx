@@ -207,7 +207,7 @@ export function CarolinaLayout({ children }: { children: ReactNode }) {
               <img
                 src={logoFooter}
                 alt={CAROLINA_BRAND.name}
-                className="h-10 w-auto"
+                className="h-[3.125rem] w-auto"
               />
               <p className="text-muted/80 text-sm leading-relaxed font-medium">
                 {CAROLINA_BRAND.tagline} {CAROLINA_BRAND.subTagline}.<br />
