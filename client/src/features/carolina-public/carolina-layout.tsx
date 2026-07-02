@@ -254,7 +254,7 @@ export function CarolinaLayout({ children }: { children: ReactNode }) {
               <Link href="/get-a-quote">
                 <Button
                   variant="outline"
-                  className="mt-8 w-full bg-transparent border-primary text-primary hover:bg-primary hover:text-white"
+                  className="mt-8 w-full border-white bg-white text-foreground shadow-sm hover:border-accent hover:bg-accent hover:text-accent-foreground"
                 >
                   REQUEST A QUOTE
                 </Button>
