@@ -13,6 +13,7 @@ import {
 
 const logoFull = imagePath("logo-full.png");
 const logoFooter = imagePath("logo-footer.png");
+const developerLogo = imagePath("da-logo.svg");
 
 export function CarolinaLayout({ children }: { children: ReactNode }) {
   const { frontendLogoUrl } = useBranding();
@@ -261,18 +262,32 @@ export function CarolinaLayout({ children }: { children: ReactNode }) {
               </Link>
             </div>
           </div>
-          <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-muted/50">
+          <div className="border-t border-white/10 pt-8 flex flex-col gap-5 text-xs font-medium text-muted/50 md:flex-row md:items-center md:justify-between">
             <p>
               &copy; {new Date().getFullYear()} {CAROLINA_BRAND.name}. All rights reserved.
             </p>
-            <div className="flex gap-6">
-              <span>{CAROLINA_BRAND.founded}</span>
-              <Link href="/about" className="hover:text-white">
-                About Us
-              </Link>
-              <Link href="/blog" className="hover:text-white">
-                Blog
-              </Link>
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6 md:justify-end">
+              <div className="flex gap-6">
+                <span>{CAROLINA_BRAND.founded}</span>
+                <Link href="/about" className="hover:text-white">
+                  About Us
+                </Link>
+                <Link href="/blog" className="hover:text-white">
+                  Blog
+                </Link>
+              </div>
+              <div className="flex items-center gap-2 text-muted/60">
+                <span>Site by</span>
+                <a
+                  href="https://godigitalalchemy.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Site by Go Digital Alchemy"
+                  className="opacity-80 transition-opacity hover:opacity-100"
+                >
+                  <img src={developerLogo} alt="Go Digital Alchemy" className="h-5 w-auto" />
+                </a>
+              </div>
             </div>
           </div>
         </div>
