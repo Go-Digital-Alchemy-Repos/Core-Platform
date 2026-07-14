@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Clock, Percent, Save, Settings, Truck, UserPlus } from "lucide-react";
+import { Activity, AlertTriangle, Ban, Clock, Percent, Save, Settings, ShieldCheck, ShieldAlert, Truck, UserPlus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -39,6 +41,75 @@ type CustomerAccountMode = "optional" | "required" | "guest_only";
 
 interface CustomerAccountSettingsStatus {
   customerAccountMode: CustomerAccountMode;
+}
+
+type FraudDecision = "allow" | "allow_with_alert" | "manual_review" | "block";
+
+interface FraudSettingsStatus {
+  enabled: boolean;
+  riskReviewThreshold: number;
+  riskBlockThreshold: number;
+  defaultHighRiskAction: FraudDecision;
+  billingShippingMismatchAction: FraudDecision;
+  countryMismatchAction: FraudDecision;
+  allowManualReviewOrders: boolean;
+  customerDeclineMessage: string;
+  adminAlertsEnabled: boolean;
+  logRetentionDays: number;
+  velocityWindowMinutes: number;
+  maxAttemptsPerIp: number;
+  maxAttemptsPerEmail: number;
+  blockDurationMinutes: number;
+  duplicateOrderWindowMinutes: number;
+  firstOrderHighValueAmount: number;
+  maxOrderAmount: number;
+  maxQuantity: number;
+  highRiskCountries: string[];
+  suspiciousEmailDomains: string[];
+  disposableEmailDomains: string[];
+  blockedEmails: string[];
+  blockedIpRanges: string[];
+  allowedIpRanges: string[];
+  blockedAddresses: string[];
+  captchaProvider: "none" | "recaptcha" | "turnstile";
+  captchaEnabled: boolean;
+  maxMindEnabled: boolean;
+  maxMindAccountId: string;
+  hasMaxMindLicenseKey: boolean;
+}
+
+interface FraudEvent {
+  id: string;
+  createdAt: string;
+  email?: string | null;
+  ipAddress?: string | null;
+  amount?: number | null;
+  score: number;
+  riskLevel: string;
+  decision: FraudDecision;
+  message?: string | null;
+  matchedRules?: Array<{ code: string; label: string; score: number }>;
+}
+
+interface FraudBlock {
+  id: string;
+  type: "ip" | "email" | "address";
+  value: string;
+  reason?: string | null;
+  expiresAt?: string | null;
+  createdAt: string;
+}
+
+interface SecurityOverview {
+  settings: FraudSettingsStatus;
+  summary: {
+    total: number;
+    blocked: number;
+    manualReview: number;
+    velocityBlocks: number;
+  };
+  recentEvents: FraudEvent[];
+  activeBlocks: FraudBlock[];
 }
 
 type StoreOriginField = keyof EcommerceStoreSettings["storeOrigin"];
@@ -266,6 +337,7 @@ export function SettingsTab() {
           <Button onClick={() => customerAccountMutation.mutate()} disabled={customerAccountMutation.isPending} className="w-fit"><Save className="mr-2 h-4 w-4" /> Save customer accounts</Button>
         </CardContent>
       </Card>
+      <SecurityCenterCard />
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5 text-slate-500" /> Stripe settings</CardTitle><CardDescription>Secret values are encrypted and masked after save.</CardDescription></CardHeader>
         <CardContent className="grid gap-4">
@@ -304,6 +376,269 @@ export function SettingsTab() {
   );
 }
 
+function SecurityCenterCard() {
+  const { toast } = useToast();
+  const { data: overview } = useQuery<SecurityOverview>({ queryKey: ["/api/admin/ecommerce/security/overview"] });
+  const { data: settingsData } = useQuery<FraudSettingsStatus>({ queryKey: ["/api/admin/ecommerce/security/settings"] });
+  const { data: blocks = [] } = useQuery<FraudBlock[]>({ queryKey: ["/api/admin/ecommerce/security/blocks"] });
+  const [settings, setSettings] = useState<FraudSettingsStatus | null>(null);
+  const [maxMindLicenseKey, setMaxMindLicenseKey] = useState("");
+  const [blockForm, setBlockForm] = useState({ type: "email" as FraudBlock["type"], value: "", reason: "" });
+
+  useEffect(() => {
+    if (settingsData) setSettings(settingsData);
+  }, [settingsData]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!settings) throw new Error("Security settings are still loading.");
+      return apiRequest("PUT", "/api/admin/ecommerce/security/settings", {
+        ...settings,
+        maxMindLicenseKey: maxMindLicenseKey.trim() || undefined,
+      });
+    },
+    onSuccess: () => {
+      setMaxMindLicenseKey("");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/security/settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/security/overview"] });
+      toast({ title: "Security Center settings saved" });
+    },
+  });
+
+  const blockMutation = useMutation({
+    mutationFn: async () => apiRequest("POST", "/api/admin/ecommerce/security/blocks", {
+      type: blockForm.type,
+      value: blockForm.value,
+      reason: blockForm.reason || undefined,
+    }),
+    onSuccess: () => {
+      setBlockForm({ type: "email", value: "", reason: "" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/security/blocks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/security/overview"] });
+      toast({ title: "Fraud block added" });
+    },
+  });
+
+  const deleteBlockMutation = useMutation({
+    mutationFn: async (id: string) => apiRequest("DELETE", `/api/admin/ecommerce/security/blocks/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/security/blocks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/security/overview"] });
+      toast({ title: "Fraud block removed" });
+    },
+  });
+
+  const updateSetting = <K extends keyof FraudSettingsStatus>(key: K, value: FraudSettingsStatus[K]) => {
+    setSettings((current) => current ? { ...current, [key]: value } : current);
+  };
+
+  const updateList = (key: keyof Pick<FraudSettingsStatus, "highRiskCountries" | "suspiciousEmailDomains" | "disposableEmailDomains" | "blockedEmails" | "blockedIpRanges" | "allowedIpRanges" | "blockedAddresses">, value: string) => {
+    updateSetting(key, csv(value) as FraudSettingsStatus[typeof key]);
+  };
+
+  const summary = overview?.summary ?? { total: 0, blocked: 0, manualReview: 0, velocityBlocks: 0 };
+  const events = overview?.recentEvents ?? [];
+
+  if (!settings) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-emerald-600" /> Security Center</CardTitle>
+          <CardDescription>Loading fraud prevention settings.</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-emerald-600" /> Security Center</CardTitle>
+        <CardDescription>Screen checkout attempts, tune fraud rules, review suspicious activity, and manage temporary blocks before payment is created.</CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-6">
+        <div className="grid gap-3 md:grid-cols-4">
+          <SecurityMetric label="Screened today" value={summary.total} icon={Activity} className="text-sky-600 bg-sky-50" />
+          <SecurityMetric label="Blocked" value={summary.blocked} icon={Ban} className="text-rose-600 bg-rose-50" />
+          <SecurityMetric label="Needs review" value={summary.manualReview} icon={ShieldAlert} className="text-amber-600 bg-amber-50" />
+          <SecurityMetric label="Velocity blocks" value={summary.velocityBlocks} icon={AlertTriangle} className="text-violet-600 bg-violet-50" />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <Label>Enable checkout screening</Label>
+              <p className="text-sm text-muted-foreground">Evaluate orders before creating a Stripe PaymentIntent.</p>
+            </div>
+            <Switch checked={settings.enabled} onCheckedChange={(enabled) => updateSetting("enabled", enabled)} />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <Label>Allow review orders</Label>
+              <p className="text-sm text-muted-foreground">Create a pending order when rules require manual review.</p>
+            </div>
+            <Switch checked={settings.allowManualReviewOrders} onCheckedChange={(enabled) => updateSetting("allowManualReviewOrders", enabled)} />
+          </div>
+          <NumberSetting label="Review threshold" value={settings.riskReviewThreshold} onChange={(value) => updateSetting("riskReviewThreshold", value)} />
+          <NumberSetting label="Block threshold" value={settings.riskBlockThreshold} onChange={(value) => updateSetting("riskBlockThreshold", value)} />
+          <DecisionSetting label="High-risk default action" value={settings.defaultHighRiskAction} onChange={(value) => updateSetting("defaultHighRiskAction", value)} />
+          <DecisionSetting label="Billing/shipping mismatch" value={settings.billingShippingMismatchAction} onChange={(value) => updateSetting("billingShippingMismatchAction", value)} />
+          <NumberSetting label="Velocity window minutes" value={settings.velocityWindowMinutes} onChange={(value) => updateSetting("velocityWindowMinutes", value)} />
+          <NumberSetting label="Max attempts per IP" value={settings.maxAttemptsPerIp} onChange={(value) => updateSetting("maxAttemptsPerIp", value)} />
+          <NumberSetting label="Max attempts per email" value={settings.maxAttemptsPerEmail} onChange={(value) => updateSetting("maxAttemptsPerEmail", value)} />
+          <NumberSetting label="Duplicate order window minutes" value={settings.duplicateOrderWindowMinutes} onChange={(value) => updateSetting("duplicateOrderWindowMinutes", value)} />
+          <NumberSetting label="First-order high value amount (cents)" value={settings.firstOrderHighValueAmount} onChange={(value) => updateSetting("firstOrderHighValueAmount", value)} />
+          <NumberSetting label="Maximum order amount (cents, 0 disables)" value={settings.maxOrderAmount} onChange={(value) => updateSetting("maxOrderAmount", value)} />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <ListSetting label="High-risk countries" value={settings.highRiskCountries} placeholder="NG, RU" onChange={(value) => updateList("highRiskCountries", value)} />
+          <ListSetting label="Suspicious email domains" value={settings.suspiciousEmailDomains} placeholder="mailinator.com, example.test" onChange={(value) => updateList("suspiciousEmailDomains", value)} />
+          <ListSetting label="Blocked emails" value={settings.blockedEmails} placeholder="buyer@example.com" onChange={(value) => updateList("blockedEmails", value)} />
+          <ListSetting label="Blocked IPs or prefixes" value={settings.blockedIpRanges} placeholder="192.0.2.10, 203.0.113." onChange={(value) => updateList("blockedIpRanges", value)} />
+          <ListSetting label="Allowed IPs or prefixes" value={settings.allowedIpRanges} placeholder="Office IPs that bypass velocity rules" onChange={(value) => updateList("allowedIpRanges", value)} />
+          <ListSetting label="Blocked address fragments" value={settings.blockedAddresses} placeholder="123 fraud st" onChange={(value) => updateList("blockedAddresses", value)} />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Customer-facing decline message</Label>
+            <Textarea
+              value={settings.customerDeclineMessage}
+              onChange={(event) => updateSetting("customerDeclineMessage", event.target.value)}
+              rows={3}
+            />
+            <p className="text-sm text-muted-foreground">Keep this generic so checkout does not reveal which rule matched.</p>
+          </div>
+          <div className="rounded-lg border p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <Label>Provider screening readiness</Label>
+                <p className="mt-1 text-sm text-muted-foreground">MaxMind, reCAPTCHA, and Cloudflare Turnstile can be configured here. Operational provider calls are adapter-gated.</p>
+              </div>
+              <Badge variant="outline">Configurable</Badge>
+            </div>
+            <div className="mt-4 grid gap-3">
+              <Select value={settings.captchaProvider} onValueChange={(value) => updateSetting("captchaProvider", value as FraudSettingsStatus["captchaProvider"])}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No CAPTCHA provider</SelectItem>
+                  <SelectItem value="recaptcha">Google reCAPTCHA</SelectItem>
+                  <SelectItem value="turnstile">Cloudflare Turnstile</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input value={settings.maxMindAccountId} onChange={(event) => updateSetting("maxMindAccountId", event.target.value)} placeholder="MaxMind account ID" />
+              <Input value={maxMindLicenseKey} onChange={(event) => setMaxMindLicenseKey(event.target.value)} placeholder={settings.hasMaxMindLicenseKey ? "MaxMind license key saved" : "MaxMind license key"} />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border p-4">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="font-semibold">Manual blocklist</h3>
+              <p className="text-sm text-muted-foreground">Temporarily or permanently block emails, IPs, or address fragments.</p>
+            </div>
+            <Button onClick={() => blockMutation.mutate()} disabled={blockMutation.isPending || !blockForm.value.trim()}>
+              <Ban className="mr-2 h-4 w-4" /> Add block
+            </Button>
+          </div>
+          <div className="grid gap-3 md:grid-cols-[180px_1fr_1fr]">
+            <Select value={blockForm.type} onValueChange={(type) => setBlockForm((current) => ({ ...current, type: type as FraudBlock["type"] }))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="email">Email</SelectItem>
+                <SelectItem value="ip">IP / prefix</SelectItem>
+                <SelectItem value="address">Address fragment</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input value={blockForm.value} onChange={(event) => setBlockForm((current) => ({ ...current, value: event.target.value }))} placeholder="Value to block" />
+            <Input value={blockForm.reason} onChange={(event) => setBlockForm((current) => ({ ...current, reason: event.target.value }))} placeholder="Internal reason" />
+          </div>
+          <div className="mt-4 grid gap-2">
+            {blocks.length ? blocks.map((block) => (
+              <div key={block.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted/30 p-3 text-sm">
+                <div>
+                  <Badge variant="secondary">{block.type}</Badge>
+                  <span className="ml-2 font-medium">{block.value}</span>
+                  {block.reason ? <span className="ml-2 text-muted-foreground">{block.reason}</span> : null}
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => deleteBlockMutation.mutate(block.id)}>Remove</Button>
+              </div>
+            )) : <p className="text-sm text-muted-foreground">No active manual fraud blocks.</p>}
+          </div>
+        </div>
+
+        <div className="rounded-lg border p-4">
+          <h3 className="font-semibold">Recent fraud activity</h3>
+          <div className="mt-3 grid gap-2">
+            {events.length ? events.slice(0, 8).map((event) => (
+              <div key={event.id} className="grid gap-2 rounded-lg bg-muted/30 p-3 text-sm md:grid-cols-[160px_1fr_120px_90px]">
+                <span className="text-muted-foreground">{new Date(event.createdAt).toLocaleString()}</span>
+                <span>{event.email || event.ipAddress || "Unknown checkout"}<span className="ml-2 text-muted-foreground">{event.message}</span></span>
+                <Badge variant={event.decision === "block" ? "destructive" : "outline"}>{event.decision.replace(/_/g, " ")}</Badge>
+                <span className="font-medium">Score {event.score}</span>
+              </div>
+            )) : <p className="text-sm text-muted-foreground">No fraud activity has been logged yet.</p>}
+          </div>
+        </div>
+
+        <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="w-fit">
+          <Save className="mr-2 h-4 w-4" /> Save Security Center
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SecurityMetric(props: { label: string; value: number; icon: typeof Activity; className: string }) {
+  const Icon = props.icon;
+  return (
+    <div className="rounded-lg border p-4">
+      <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-lg ${props.className}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="text-2xl font-semibold">{props.value}</div>
+      <div className="text-sm text-muted-foreground">{props.label}</div>
+    </div>
+  );
+}
+
+function NumberSetting(props: { label: string; value: number; onChange: (value: number) => void }) {
+  return (
+    <div className="space-y-2">
+      <Label>{props.label}</Label>
+      <Input type="number" value={props.value} onChange={(event) => props.onChange(Number(event.target.value) || 0)} />
+    </div>
+  );
+}
+
+function DecisionSetting(props: { label: string; value: FraudDecision; onChange: (value: FraudDecision) => void }) {
+  return (
+    <div className="space-y-2">
+      <Label>{props.label}</Label>
+      <Select value={props.value} onValueChange={(value) => props.onChange(value as FraudDecision)}>
+        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="allow">Allow</SelectItem>
+          <SelectItem value="allow_with_alert">Allow with alert</SelectItem>
+          <SelectItem value="manual_review">Manual review</SelectItem>
+          <SelectItem value="block">Block</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function ListSetting(props: { label: string; value: string[]; placeholder: string; onChange: (value: string) => void }) {
+  return (
+    <div className="space-y-2">
+      <Label>{props.label}</Label>
+      <Input value={props.value.join(", ")} onChange={(event) => props.onChange(event.target.value)} placeholder={props.placeholder} />
+    </div>
+  );
+}
+
 function StoreOriginInput(props: {
   label: string;
   field: StoreOriginField;
@@ -326,5 +661,3 @@ function StoreOriginInput(props: {
 function StripeModeFields(props: { title: string; publishable: string; setPublishable: (v: string) => void; secret: string; setSecret: (v: string) => void; webhook: string; setWebhook: (v: string) => void; hasSecret?: boolean; hasWebhook?: boolean }) {
   return <div className="space-y-3 rounded-lg border p-4"><h3 className="font-medium">{props.title}</h3><Input placeholder="Publishable key" value={props.publishable} onChange={(e) => props.setPublishable(e.target.value)} /><Input placeholder={props.hasSecret ? "Secret key saved" : "Secret key"} value={props.secret} onChange={(e) => props.setSecret(e.target.value)} /><Input placeholder={props.hasWebhook ? "Webhook secret saved" : "Webhook secret"} value={props.webhook} onChange={(e) => props.setWebhook(e.target.value)} /></div>;
 }
-
-

@@ -17,6 +17,8 @@ import {
   Plus,
   Save,
   Search,
+  ShieldAlert,
+  ShieldCheck,
   SlidersHorizontal,
   Settings,
   ShoppingBag,
@@ -105,6 +107,22 @@ function getOrderDisplayNumber(orderId: string) {
   return `#${orderId.split("-")[0]?.toUpperCase() || orderId.toUpperCase()}`;
 }
 
+function getOrderRiskBadge(order: Order) {
+  if (order.fraudReviewStatus === "pending") {
+    return { label: "Review risk", className: "bg-amber-50 text-amber-700 border-amber-200" };
+  }
+  if (order.fraudDecision === "block" || order.fraudReviewStatus === "rejected") {
+    return { label: "Blocked risk", className: "bg-rose-50 text-rose-700 border-rose-200" };
+  }
+  if (order.fraudRiskLevel === "high") {
+    return { label: "High risk", className: "bg-rose-50 text-rose-700 border-rose-200" };
+  }
+  if (order.fraudRiskLevel === "medium" || order.fraudDecision === "allow_with_alert") {
+    return { label: "Medium risk", className: "bg-amber-50 text-amber-700 border-amber-200" };
+  }
+  return null;
+}
+
 function OrderTableRow({
   order,
   selected,
@@ -119,6 +137,7 @@ function OrderTableRow({
   const orderStatus = getEcommerceOrderStatusBadge(order.status);
   const paymentStatus = getEcommercePaymentStatusBadge(order.paymentStatus);
   const displayOrderNumber = getOrderDisplayNumber(order.id);
+  const riskBadge = getOrderRiskBadge(order);
 
   return (
     <TableRow
@@ -160,6 +179,7 @@ function OrderTableRow({
         <div className="flex flex-wrap gap-2">
           <Badge variant={orderStatus.variant} className={orderStatus.className}>{orderStatus.label}</Badge>
           <Badge variant={paymentStatus.variant} className={paymentStatus.className}>{paymentStatus.label}</Badge>
+          {riskBadge ? <Badge variant="outline" className={riskBadge.className}>{riskBadge.label}</Badge> : null}
         </div>
       </TableCell>
       <TableCell>{formatMoney(order.totalAmount)}</TableCell>
@@ -1397,6 +1417,27 @@ export function OrdersTab() {
     }),
   });
 
+  const fraudReviewMutation = useMutation({
+    mutationFn: async (reviewStatus: "approved" | "rejected") => {
+      if (!selectedOrder) throw new Error("Select an order first.");
+      return apiRequest("POST", `/api/admin/ecommerce/orders/${selectedOrder.id}/fraud-review`, {
+        reviewStatus,
+        note: reviewStatus === "approved"
+          ? "Order risk reviewed and approved for fulfillment."
+          : "Order risk reviewed and rejected.",
+      });
+    },
+    onSuccess: async (_response, reviewStatus) => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/orders"] });
+      toast({ title: reviewStatus === "approved" ? "Order risk approved" : "Order risk rejected" });
+    },
+    onError: (error) => toast({
+      title: "Fraud review could not be saved",
+      description: error instanceof Error ? error.message : "Please try again.",
+      variant: "destructive",
+    }),
+  });
+
   return (
     <div className="space-y-6">
       <Card>
@@ -1641,6 +1682,57 @@ export function OrdersTab() {
                   </div>
 
                   <div className="grid content-start gap-5 lg:grid-cols-2 xl:grid-cols-1">
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          {selectedOrder.fraudReviewStatus === "pending" || selectedOrder.fraudRiskLevel === "high" ? (
+                            <ShieldAlert className="h-4 w-4 text-amber-600" />
+                          ) : (
+                            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                          )}
+                          Order risk
+                        </CardTitle>
+                        <CardDescription>Rule-based checkout screening and Stripe verification signals.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3 text-sm">
+                        <div className="grid grid-cols-2 gap-3">
+                          <DetailLine label="Risk level" value={selectedOrder.fraudRiskLevel || "low"} />
+                          <DetailLine label="Score" value={String(selectedOrder.fraudScore ?? 0)} />
+                          <DetailLine label="Decision" value={(selectedOrder.fraudDecision || "allow").replace(/_/g, " ")} />
+                          <DetailLine label="Review" value={(selectedOrder.fraudReviewStatus || "not_required").replace(/_/g, " ")} />
+                        </div>
+                        {(selectedOrder.fraudSignals ?? []).length ? (
+                          <div className="space-y-2">
+                            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Matched rules</div>
+                            {selectedOrder.fraudSignals?.map((signal) => (
+                              <div key={`${signal.code}-${signal.label}`} className="rounded-md bg-muted/40 p-2">
+                                <div className="font-medium">{signal.label}</div>
+                                <div className="text-xs text-muted-foreground">Score {signal.score}{signal.action ? ` · ${signal.action.replace(/_/g, " ")}` : ""}</div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground">No fraud rules matched this checkout.</p>
+                        )}
+                        <div className="grid gap-1 rounded-md bg-muted/30 p-3 text-xs">
+                          <div className="font-medium text-foreground">Stripe outcome</div>
+                          <div className="text-muted-foreground">Risk: {selectedOrder.stripeRiskLevel || "Not reported"}{selectedOrder.stripeRiskScore != null ? ` (${selectedOrder.stripeRiskScore})` : ""}</div>
+                          <div className="text-muted-foreground">CVC: {selectedOrder.stripeCvcCheck || "Not reported"}</div>
+                          <div className="text-muted-foreground">Postal: {selectedOrder.stripeAddressPostalCodeCheck || "Not reported"}</div>
+                        </div>
+                        {selectedOrder.fraudReviewStatus === "pending" ? (
+                          <div className="flex gap-2">
+                            <Button type="button" size="sm" onClick={() => fraudReviewMutation.mutate("approved")} disabled={fraudReviewMutation.isPending}>
+                              Approve fulfillment
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => fraudReviewMutation.mutate("rejected")} disabled={fraudReviewMutation.isPending}>
+                              Reject
+                            </Button>
+                          </div>
+                        ) : null}
+                      </CardContent>
+                    </Card>
+
                     <form
                       className="grid gap-4 rounded-lg border p-4"
                       onSubmit={(event) => {

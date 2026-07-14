@@ -2,7 +2,11 @@ import type Stripe from "stripe";
 import { storage } from "../storage/index";
 import { logger } from "../utils/logger";
 import { getEcommerceStripeClient, getEcommerceStripeWebhookSecret } from "../services/ecommerce-stripe.service";
-import { markEcommerceOrderPaid, reconcileEcommercePaymentRequestSession } from "../services/ecommerce-order.service";
+import {
+  markEcommerceOrderPaid,
+  reconcileEcommercePaymentRequestSession,
+  recordEcommerceStripeRiskOutcome,
+} from "../services/ecommerce-order.service";
 import { recordStripeRefundWebhook } from "../services/ecommerce-refund.service";
 
 export async function processEcommerceStripeWebhook(payload: Buffer, signature?: string) {
@@ -46,6 +50,16 @@ export async function processEcommerceStripeWebhook(payload: Buffer, signature?:
         actual: intent.amount,
       });
       return;
+    }
+    const latestCharge = typeof intent.latest_charge === "object" && intent.latest_charge
+      ? intent.latest_charge
+      : null;
+    if (latestCharge) {
+      await recordEcommerceStripeRiskOutcome({
+        orderId,
+        paymentIntentId: intent.id,
+        charge: latestCharge,
+      });
     }
     await markEcommerceOrderPaid(orderId, intent.id);
     const firstProcessing = await storage.ecommerce.markWebhookProcessed("stripe", event.id, event.type);

@@ -1289,7 +1289,7 @@ describe("ecommerce services", () => {
     expect(mockStripePaymentIntentCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         amount: 5000,
-        metadata: { orderId: order.id },
+        metadata: expect.objectContaining({ orderId: order.id }),
       }),
       { idempotencyKey: `ecommerce_order_${order.id}_payment_intent` },
     );
