@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   ClipboardList,
   Copy,
   DollarSign,
@@ -27,6 +28,7 @@ import {
   Trash2,
   Truck,
   Undo2,
+  UserPlus,
 } from "lucide-react";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
 import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
@@ -52,6 +54,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -63,7 +66,7 @@ import { CategoriesTab } from "@/features/admin/ecommerce/categories-tab";
 import { CouponsTab } from "@/features/admin/ecommerce/coupons-tab";
 import { RefundsTab } from "@/features/admin/ecommerce/refunds-tab";
 import { IntegrationsTab } from "@/features/admin/ecommerce/integrations-tab";
-import { SettingsTab } from "@/features/admin/ecommerce/settings-tab";
+import { SettingsTab, type EcommerceSettingsSection } from "@/features/admin/ecommerce/settings-tab";
 import { Metric } from "@/features/admin/ecommerce/metric";
 import type { EcommerceStoreSettings } from "@shared/ecommerce-shipping-settings";
 import type {
@@ -210,6 +213,14 @@ const nav: Array<{ view: View; label: string; icon: ElementType; iconColor: stri
   { view: "refunds", label: "Refunds", icon: Undo2, iconColor: "text-rose-600" },
   { view: "integrations", label: "Integrations", icon: Plug, iconColor: "text-blue-600" },
   { view: "settings", label: "Settings", icon: Settings, iconColor: "text-slate-500" },
+];
+
+const settingsNav: Array<{ section: EcommerceSettingsSection; label: string; icon: ElementType; iconColor: string }> = [
+  { section: "store", label: "Store origin and shipping markets", icon: Truck, iconColor: "text-sky-600" },
+  { section: "customer-accounts", label: "Customer accounts", icon: UserPlus, iconColor: "text-blue-600" },
+  { section: "security", label: "Security Center", icon: ShieldCheck, iconColor: "text-emerald-600" },
+  { section: "stripe", label: "Stripe settings", icon: Settings, iconColor: "text-slate-500" },
+  { section: "tax", label: "Tax settings", icon: Percent, iconColor: "text-amber-600" },
 ];
 
 export function ProductsTab() {
@@ -2662,8 +2673,14 @@ export function ShippingTab() {
 
 export default function AdminEcommercePage() {
   const [location] = useLocation();
-  const view = (location.split("/").pop() || "products") as View;
-  const activeView: View = nav.some((item) => item.view === view) ? view : "products";
+  const pathParts = location.split("/").filter(Boolean);
+  const ecommerceIndex = pathParts.indexOf("ecommerce");
+  const view = (ecommerceIndex >= 0 ? pathParts[ecommerceIndex + 1] : pathParts.at(-1)) as View | undefined;
+  const activeView: View = view && nav.some((item) => item.view === view) ? view : "products";
+  const requestedSettingsSection = activeView === "settings" ? pathParts[ecommerceIndex + 2] : undefined;
+  const activeSettingsSection: EcommerceSettingsSection = settingsNav.some((item) => item.section === requestedSettingsSection)
+    ? requestedSettingsSection as EcommerceSettingsSection
+    : "store";
   return (
     <AdminSidebar>
       <div className="space-y-6 p-6">
@@ -2675,6 +2692,48 @@ export default function AdminEcommercePage() {
           <TabsList className="flex h-auto flex-wrap justify-start">
             {nav.map((item) => {
               const Icon = item.icon;
+              if (item.view === "settings") {
+                const activeSettings = settingsNav.find((candidate) => candidate.section === activeSettingsSection) ?? settingsNav[0];
+                return (
+                  <DropdownMenu key={item.view}>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className={cn(
+                          "gap-2 rounded-sm px-3 py-1.5 text-sm font-medium",
+                          activeView === "settings"
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        <Icon className={cn("h-4 w-4", item.iconColor)} />
+                        <span>{item.label}</span>
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-72">
+                      {settingsNav.map((settingItem) => {
+                        const SettingIcon = settingItem.icon;
+                        return (
+                          <DropdownMenuItem key={settingItem.section} asChild>
+                            <Link
+                              href={`/admin/ecommerce/settings/${settingItem.section}`}
+                              className={cn(
+                                "flex cursor-pointer items-center gap-2",
+                                activeSettings.section === settingItem.section ? "bg-accent font-medium" : undefined,
+                              )}
+                            >
+                              <SettingIcon className={cn("h-4 w-4", settingItem.iconColor)} />
+                              <span>{settingItem.label}</span>
+                            </Link>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              }
               return (
                 <TabsTrigger key={item.view} value={item.view} asChild>
                   <Link href={`/admin/ecommerce/${item.view}`} className="gap-2">
@@ -2693,7 +2752,7 @@ export default function AdminEcommercePage() {
         {activeView === "shipping" ? <ShippingTab /> : null}
         {activeView === "refunds" ? <RefundsTab /> : null}
         {activeView === "integrations" ? <IntegrationsTab /> : null}
-        {activeView === "settings" ? <SettingsTab /> : null}
+        {activeView === "settings" ? <SettingsTab section={activeSettingsSection} /> : null}
       </div>
     </AdminSidebar>
   );

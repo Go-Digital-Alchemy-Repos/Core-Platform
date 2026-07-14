@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Activity, AlertTriangle, Ban, Clock, Percent, Save, Settings, ShieldCheck, ShieldAlert, Truck, UserPlus } from "lucide-react";
+import { Activity, AlertTriangle, Ban, Clock, Info, Percent, Save, Settings, ShieldCheck, ShieldAlert, Truck, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -113,12 +114,13 @@ interface SecurityOverview {
 }
 
 type StoreOriginField = keyof EcommerceStoreSettings["storeOrigin"];
+export type EcommerceSettingsSection = "store" | "customer-accounts" | "security" | "stripe" | "tax";
 
 function csv(value: string): string[] {
   return value.split(",").map((item) => item.trim()).filter(Boolean);
 }
 
-export function SettingsTab() {
+export function SettingsTab({ section = "store" }: { section?: EcommerceSettingsSection }) {
   const { data } = useQuery<StripeSettingsStatus>({ queryKey: ["/api/admin/ecommerce/settings/stripe"] });
   const { data: taxData } = useQuery<TaxSettingsStatus>({ queryKey: ["/api/admin/ecommerce/settings/tax"] });
   const { data: customerAccountData } = useQuery<CustomerAccountSettingsStatus>({ queryKey: ["/api/admin/ecommerce/settings/customer-accounts"] });
@@ -230,6 +232,7 @@ export function SettingsTab() {
   const originRegionOptions = getRegionOptions(storeOrigin.country);
   return (
     <div className="space-y-6">
+      {section === "store" ? (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-sky-600" /> Store origin and shipping markets</CardTitle>
@@ -312,6 +315,8 @@ export function SettingsTab() {
           <Button onClick={() => storeMutation.mutate()} disabled={storeMutation.isPending} className="w-fit"><Save className="mr-2 h-4 w-4" /> Save store shipping settings</Button>
         </CardContent>
       </Card>
+      ) : null}
+      {section === "customer-accounts" ? (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-blue-600" /> Customer accounts</CardTitle>
@@ -337,7 +342,9 @@ export function SettingsTab() {
           <Button onClick={() => customerAccountMutation.mutate()} disabled={customerAccountMutation.isPending} className="w-fit"><Save className="mr-2 h-4 w-4" /> Save customer accounts</Button>
         </CardContent>
       </Card>
-      <SecurityCenterCard />
+      ) : null}
+      {section === "security" ? <SecurityCenterCard /> : null}
+      {section === "stripe" ? (
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5 text-slate-500" /> Stripe settings</CardTitle><CardDescription>Secret values are encrypted and masked after save.</CardDescription></CardHeader>
         <CardContent className="grid gap-4">
@@ -349,6 +356,8 @@ export function SettingsTab() {
           <Button onClick={() => mutation.mutate()} disabled={mutation.isPending} className="w-fit"><Save className="mr-2 h-4 w-4" /> Save Stripe settings</Button>
         </CardContent>
       </Card>
+      ) : null}
+      {section === "tax" ? (
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2"><Percent className="h-5 w-5 text-amber-600" /> Tax settings</CardTitle><CardDescription>Checkout tax is calculated server-side from saved settings and taxable product records.</CardDescription></CardHeader>
         <CardContent className="grid gap-4">
@@ -372,6 +381,7 @@ export function SettingsTab() {
           <Button onClick={() => taxMutation.mutate()} disabled={taxMutation.isPending} className="w-fit"><Save className="mr-2 h-4 w-4" /> Save tax settings</Button>
         </CardContent>
       </Card>
+      ) : null}
     </div>
   );
 }
@@ -467,42 +477,47 @@ function SecurityCenterCard() {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <Label>Enable checkout screening</Label>
+              <SettingLabel label="Enable checkout screening" help="Turns on rule-based fraud evaluation before Stripe creates a PaymentIntent. When disabled, checkout skips Core Platform fraud rules but Stripe Radar still applies inside Stripe." />
               <p className="text-sm text-muted-foreground">Evaluate orders before creating a Stripe PaymentIntent.</p>
             </div>
             <Switch checked={settings.enabled} onCheckedChange={(enabled) => updateSetting("enabled", enabled)} />
           </div>
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <Label>Allow review orders</Label>
+              <SettingLabel label="Allow review orders" help="When enabled, suspicious checkouts can create a pending order for admin review without collecting payment. When disabled, review-level checkouts are stopped with a generic customer message." />
               <p className="text-sm text-muted-foreground">Create a pending order when rules require manual review.</p>
             </div>
             <Switch checked={settings.allowManualReviewOrders} onCheckedChange={(enabled) => updateSetting("allowManualReviewOrders", enabled)} />
           </div>
-          <NumberSetting label="Review threshold" value={settings.riskReviewThreshold} onChange={(value) => updateSetting("riskReviewThreshold", value)} />
-          <NumberSetting label="Block threshold" value={settings.riskBlockThreshold} onChange={(value) => updateSetting("riskBlockThreshold", value)} />
-          <DecisionSetting label="High-risk default action" value={settings.defaultHighRiskAction} onChange={(value) => updateSetting("defaultHighRiskAction", value)} />
-          <DecisionSetting label="Billing/shipping mismatch" value={settings.billingShippingMismatchAction} onChange={(value) => updateSetting("billingShippingMismatchAction", value)} />
-          <NumberSetting label="Velocity window minutes" value={settings.velocityWindowMinutes} onChange={(value) => updateSetting("velocityWindowMinutes", value)} />
-          <NumberSetting label="Max attempts per IP" value={settings.maxAttemptsPerIp} onChange={(value) => updateSetting("maxAttemptsPerIp", value)} />
-          <NumberSetting label="Max attempts per email" value={settings.maxAttemptsPerEmail} onChange={(value) => updateSetting("maxAttemptsPerEmail", value)} />
-          <NumberSetting label="Duplicate order window minutes" value={settings.duplicateOrderWindowMinutes} onChange={(value) => updateSetting("duplicateOrderWindowMinutes", value)} />
-          <NumberSetting label="First-order high value amount (cents)" value={settings.firstOrderHighValueAmount} onChange={(value) => updateSetting("firstOrderHighValueAmount", value)} />
-          <NumberSetting label="Maximum order amount (cents, 0 disables)" value={settings.maxOrderAmount} onChange={(value) => updateSetting("maxOrderAmount", value)} />
+          <NumberSetting label="Review threshold" help="Fraud scores at or above this number are routed to manual review. Lower numbers are stricter; higher numbers are more permissive." value={settings.riskReviewThreshold} onChange={(value) => updateSetting("riskReviewThreshold", value)} />
+          <NumberSetting label="Block threshold" help="Fraud scores at or above this number use the high-risk action. If that action is Block, no order or PaymentIntent is created." value={settings.riskBlockThreshold} onChange={(value) => updateSetting("riskBlockThreshold", value)} />
+          <DecisionSetting label="High-risk default action" help="Controls what happens when an order crosses the block threshold because of weighted signals such as high-risk countries, high amount, or multiple suspicious matches." value={settings.defaultHighRiskAction} onChange={(value) => updateSetting("defaultHighRiskAction", value)} />
+          <DecisionSetting label="Billing/shipping mismatch" help="Controls the action when billing and shipping addresses differ. Manual review is safer than blocking because gifts, family orders, and business purchases commonly ship to another address." value={settings.billingShippingMismatchAction} onChange={(value) => updateSetting("billingShippingMismatchAction", value)} />
+          <DecisionSetting label="Country mismatch" help="Controls the action when billing and shipping countries differ. This can indicate fraud, but it can also be legitimate for international families, business buyers, and gifts." value={settings.countryMismatchAction} onChange={(value) => updateSetting("countryMismatchAction", value)} />
+          <NumberSetting label="Velocity window minutes" help="The rolling time window used to count repeated checkout attempts by IP address and email. Shorter windows catch rapid card testing; longer windows are stricter." value={settings.velocityWindowMinutes} onChange={(value) => updateSetting("velocityWindowMinutes", value)} />
+          <NumberSetting label="Max attempts per IP" help="Maximum checkout screening attempts allowed from the same IP during the velocity window before Core Platform blocks additional attempts." value={settings.maxAttemptsPerIp} onChange={(value) => updateSetting("maxAttemptsPerIp", value)} />
+          <NumberSetting label="Max attempts per email" help="Maximum checkout screening attempts allowed for the same email during the velocity window before additional attempts are blocked." value={settings.maxAttemptsPerEmail} onChange={(value) => updateSetting("maxAttemptsPerEmail", value)} />
+          <NumberSetting label="Block duration minutes" help="How long temporary velocity blocks stay active before the buyer can try again. Use short values for normal fraud throttling and longer values for active card-testing attacks." value={settings.blockDurationMinutes} onChange={(value) => updateSetting("blockDurationMinutes", value)} />
+          <NumberSetting label="Duplicate order window minutes" help="How long Core Platform looks back for a similar checkout using the same email, amount, and shipping address. Matching attempts are flagged as possible duplicate or retry behavior." value={settings.duplicateOrderWindowMinutes} onChange={(value) => updateSetting("duplicateOrderWindowMinutes", value)} />
+          <NumberSetting label="First-order high value amount (cents)" help="A first checkout at or above this amount receives extra risk score and can be routed to review. Enter cents, so 50000 means $500.00." value={settings.firstOrderHighValueAmount} onChange={(value) => updateSetting("firstOrderHighValueAmount", value)} />
+          <NumberSetting label="Maximum order amount (cents, 0 disables)" help="Hard ceiling for checkout totals. Amounts above this value are blocked before payment. Use 0 when there is no store-level maximum." value={settings.maxOrderAmount} onChange={(value) => updateSetting("maxOrderAmount", value)} />
+          <NumberSetting label="Maximum item quantity (0 disables)" help="Flags or blocks unusually large item quantities before payment. This helps catch scripted tests and accidental bulk orders when the store does not support wholesale-style purchases." value={settings.maxQuantity} onChange={(value) => updateSetting("maxQuantity", value)} />
+          <NumberSetting label="Log retention days" help="How long fraud events are retained for admin review and investigation. Longer retention helps pattern analysis but stores more operational history." value={settings.logRetentionDays} onChange={(value) => updateSetting("logRetentionDays", value)} />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <ListSetting label="High-risk countries" value={settings.highRiskCountries} placeholder="NG, RU" onChange={(value) => updateList("highRiskCountries", value)} />
-          <ListSetting label="Suspicious email domains" value={settings.suspiciousEmailDomains} placeholder="mailinator.com, example.test" onChange={(value) => updateList("suspiciousEmailDomains", value)} />
-          <ListSetting label="Blocked emails" value={settings.blockedEmails} placeholder="buyer@example.com" onChange={(value) => updateList("blockedEmails", value)} />
-          <ListSetting label="Blocked IPs or prefixes" value={settings.blockedIpRanges} placeholder="192.0.2.10, 203.0.113." onChange={(value) => updateList("blockedIpRanges", value)} />
-          <ListSetting label="Allowed IPs or prefixes" value={settings.allowedIpRanges} placeholder="Office IPs that bypass velocity rules" onChange={(value) => updateList("allowedIpRanges", value)} />
-          <ListSetting label="Blocked address fragments" value={settings.blockedAddresses} placeholder="123 fraud st" onChange={(value) => updateList("blockedAddresses", value)} />
+          <ListSetting label="High-risk countries" help="Comma-separated ISO country codes that add risk when used as the shipping country. Use this carefully and prefer review over automatic blocks for broad regions." value={settings.highRiskCountries} placeholder="NG, RU" onChange={(value) => updateList("highRiskCountries", value)} />
+          <ListSetting label="Suspicious email domains" help="Email domains that are often associated with disposable inboxes or card testing. Matching domains add risk and usually route the order to review." value={settings.suspiciousEmailDomains} placeholder="mailinator.com, example.test" onChange={(value) => updateList("suspiciousEmailDomains", value)} />
+          <ListSetting label="Disposable email domains" help="Known throwaway email domains that should increase risk. Keep this list focused, because many privacy-minded customers use email aliases legitimately." value={settings.disposableEmailDomains} placeholder="tempmail.com, 10minutemail.com" onChange={(value) => updateList("disposableEmailDomains", value)} />
+          <ListSetting label="Blocked emails" help="Specific email addresses that should be blocked before payment. Use for confirmed abuse, not ordinary support disputes." value={settings.blockedEmails} placeholder="buyer@example.com" onChange={(value) => updateList("blockedEmails", value)} />
+          <ListSetting label="Blocked IPs or prefixes" help="IP addresses or simple prefixes that should be blocked unless allowlisted. Useful for known card-testing sources." value={settings.blockedIpRanges} placeholder="192.0.2.10, 203.0.113." onChange={(value) => updateList("blockedIpRanges", value)} />
+          <ListSetting label="Allowed IPs or prefixes" help="Trusted IPs that bypass IP block and velocity checks, such as store offices or testing locations. Other rules still apply." value={settings.allowedIpRanges} placeholder="Office IPs that bypass velocity rules" onChange={(value) => updateList("allowedIpRanges", value)} />
+          <ListSetting label="Blocked address fragments" help="Address text fragments that should block checkout when they appear in the shipping address. Use exact, confirmed problem addresses to avoid false positives." value={settings.blockedAddresses} placeholder="123 fraud st" onChange={(value) => updateList("blockedAddresses", value)} />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label>Customer-facing decline message</Label>
+            <SettingLabel label="Customer-facing decline message" help="The generic message shown when checkout is blocked or cannot proceed. Do not reveal the matched fraud rule, because that helps attackers tune future attempts." />
             <Textarea
               value={settings.customerDeclineMessage}
               onChange={(event) => updateSetting("customerDeclineMessage", event.target.value)}
@@ -510,15 +525,24 @@ function SecurityCenterCard() {
             />
             <p className="text-sm text-muted-foreground">Keep this generic so checkout does not reveal which rule matched.</p>
           </div>
-          <div className="rounded-lg border p-4">
+          <div className="grid gap-3">
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div>
+                <SettingLabel label="Admin alerts" help="Controls whether security review events should be eligible for admin notification workflows. This does not change checkout decisions; it affects operational awareness." />
+                <p className="text-sm text-muted-foreground">Notify operators about blocked or review-level attempts when notification adapters are enabled.</p>
+              </div>
+              <Switch checked={settings.adminAlertsEnabled} onCheckedChange={(enabled) => updateSetting("adminAlertsEnabled", enabled)} />
+            </div>
+            <div className="rounded-lg border p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <Label>Provider screening readiness</Label>
+                <SettingLabel label="Provider screening readiness" help="Stores readiness configuration for providers such as CAPTCHA, Turnstile, and MaxMind. Provider adapters remain gated until operational API calls are implemented." />
                 <p className="mt-1 text-sm text-muted-foreground">MaxMind, reCAPTCHA, and Cloudflare Turnstile can be configured here. Operational provider calls are adapter-gated.</p>
               </div>
               <Badge variant="outline">Configurable</Badge>
             </div>
             <div className="mt-4 grid gap-3">
+              <SettingLabel label="CAPTCHA provider" help="Chooses the bot-protection provider to prepare for checkout challenges. This is configuration/readiness until the public checkout adapter is enabled." />
               <Select value={settings.captchaProvider} onValueChange={(value) => updateSetting("captchaProvider", value as FraudSettingsStatus["captchaProvider"])}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -527,8 +551,29 @@ function SecurityCenterCard() {
                   <SelectItem value="turnstile">Cloudflare Turnstile</SelectItem>
                 </SelectContent>
               </Select>
-              <Input value={settings.maxMindAccountId} onChange={(event) => updateSetting("maxMindAccountId", event.target.value)} placeholder="MaxMind account ID" />
-              <Input value={maxMindLicenseKey} onChange={(event) => setMaxMindLicenseKey(event.target.value)} placeholder={settings.hasMaxMindLicenseKey ? "MaxMind license key saved" : "MaxMind license key"} />
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <div>
+                  <SettingLabel label="Enable CAPTCHA challenge" help="Allows checkout to require a bot challenge when the CAPTCHA adapter is operational. Keep disabled until site keys and public checkout verification are fully wired." />
+                  <p className="text-sm text-muted-foreground">Preparation setting for checkout bot protection.</p>
+                </div>
+                <Switch checked={settings.captchaEnabled} onCheckedChange={(enabled) => updateSetting("captchaEnabled", enabled)} />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <div>
+                  <SettingLabel label="Enable MaxMind screening" help="Allows checkout to request MaxMind minFraud scoring when the provider adapter is operational and credentials are saved." />
+                  <p className="text-sm text-muted-foreground">Preparation setting for provider-backed risk scoring.</p>
+                </div>
+                <Switch checked={settings.maxMindEnabled} onCheckedChange={(enabled) => updateSetting("maxMindEnabled", enabled)} />
+              </div>
+              <div className="space-y-2">
+                <SettingLabel label="MaxMind account ID" help="Stores the MaxMind account identifier for a future minFraud adapter. This does not call MaxMind until the adapter is enabled." />
+                <Input value={settings.maxMindAccountId} onChange={(event) => updateSetting("maxMindAccountId", event.target.value)} placeholder="MaxMind account ID" />
+              </div>
+              <div className="space-y-2">
+                <SettingLabel label="MaxMind license key" help="Encrypted credential storage for MaxMind minFraud. Saved keys are masked and are not exposed back to the browser." />
+                <Input value={maxMindLicenseKey} onChange={(event) => setMaxMindLicenseKey(event.target.value)} placeholder={settings.hasMaxMindLicenseKey ? "MaxMind license key saved" : "MaxMind license key"} />
+              </div>
+            </div>
             </div>
           </div>
         </div>
@@ -536,7 +581,7 @@ function SecurityCenterCard() {
         <div className="rounded-lg border p-4">
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 className="font-semibold">Manual blocklist</h3>
+              <h3 className="flex items-center gap-2 font-semibold">Manual blocklist <InfoHelp title="Manual blocklist" body="Use manual blocks for confirmed abuse such as repeated card testing, known bad emails, or exact problem address fragments. Blocks are checked before payment is created." /></h3>
               <p className="text-sm text-muted-foreground">Temporarily or permanently block emails, IPs, or address fragments.</p>
             </div>
             <Button onClick={() => blockMutation.mutate()} disabled={blockMutation.isPending || !blockForm.value.trim()}>
@@ -544,16 +589,25 @@ function SecurityCenterCard() {
             </Button>
           </div>
           <div className="grid gap-3 md:grid-cols-[180px_1fr_1fr]">
-            <Select value={blockForm.type} onValueChange={(type) => setBlockForm((current) => ({ ...current, type: type as FraudBlock["type"] }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="email">Email</SelectItem>
-                <SelectItem value="ip">IP / prefix</SelectItem>
-                <SelectItem value="address">Address fragment</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input value={blockForm.value} onChange={(event) => setBlockForm((current) => ({ ...current, value: event.target.value }))} placeholder="Value to block" />
-            <Input value={blockForm.reason} onChange={(event) => setBlockForm((current) => ({ ...current, reason: event.target.value }))} placeholder="Internal reason" />
+            <div className="space-y-2">
+              <SettingLabel label="Block type" help="Choose whether the block applies to an email address, IP/prefix, or a shipping address fragment." />
+              <Select value={blockForm.type} onValueChange={(type) => setBlockForm((current) => ({ ...current, type: type as FraudBlock["type"] }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="ip">IP / prefix</SelectItem>
+                  <SelectItem value="address">Address fragment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <SettingLabel label="Block value" help="The exact email, IP/prefix, or address fragment to block. Address fragments are matched against normalized shipping addresses." />
+              <Input value={blockForm.value} onChange={(event) => setBlockForm((current) => ({ ...current, value: event.target.value }))} placeholder="Value to block" />
+            </div>
+            <div className="space-y-2">
+              <SettingLabel label="Internal reason" help="Private explanation for admins so future operators understand why the block exists." />
+              <Input value={blockForm.reason} onChange={(event) => setBlockForm((current) => ({ ...current, reason: event.target.value }))} placeholder="Internal reason" />
+            </div>
           </div>
           <div className="mt-4 grid gap-2">
             {blocks.length ? blocks.map((block) => (
@@ -604,19 +658,44 @@ function SecurityMetric(props: { label: string; value: number; icon: typeof Acti
   );
 }
 
-function NumberSetting(props: { label: string; value: number; onChange: (value: number) => void }) {
+function InfoHelp(props: { title: string; body: string }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" aria-label={`About ${props.title}`}>
+          <Info className="h-3.5 w-3.5" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="max-w-sm text-sm leading-6">
+        <div className="font-medium text-foreground">{props.title}</div>
+        <p className="mt-1 text-muted-foreground">{props.body}</p>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function SettingLabel(props: { label: string; help: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <Label>{props.label}</Label>
+      <InfoHelp title={props.label} body={props.help} />
+    </div>
+  );
+}
+
+function NumberSetting(props: { label: string; help: string; value: number; onChange: (value: number) => void }) {
   return (
     <div className="space-y-2">
-      <Label>{props.label}</Label>
+      <SettingLabel label={props.label} help={props.help} />
       <Input type="number" value={props.value} onChange={(event) => props.onChange(Number(event.target.value) || 0)} />
     </div>
   );
 }
 
-function DecisionSetting(props: { label: string; value: FraudDecision; onChange: (value: FraudDecision) => void }) {
+function DecisionSetting(props: { label: string; help: string; value: FraudDecision; onChange: (value: FraudDecision) => void }) {
   return (
     <div className="space-y-2">
-      <Label>{props.label}</Label>
+      <SettingLabel label={props.label} help={props.help} />
       <Select value={props.value} onValueChange={(value) => props.onChange(value as FraudDecision)}>
         <SelectTrigger><SelectValue /></SelectTrigger>
         <SelectContent>
@@ -630,10 +709,10 @@ function DecisionSetting(props: { label: string; value: FraudDecision; onChange:
   );
 }
 
-function ListSetting(props: { label: string; value: string[]; placeholder: string; onChange: (value: string) => void }) {
+function ListSetting(props: { label: string; help: string; value: string[]; placeholder: string; onChange: (value: string) => void }) {
   return (
     <div className="space-y-2">
-      <Label>{props.label}</Label>
+      <SettingLabel label={props.label} help={props.help} />
       <Input value={props.value.join(", ")} onChange={(event) => props.onChange(event.target.value)} placeholder={props.placeholder} />
     </div>
   );
