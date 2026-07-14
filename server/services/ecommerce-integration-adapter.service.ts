@@ -1,4 +1,10 @@
 export type EcommerceIntegrationAdapterCapability =
+  | "payment_authorization"
+  | "payment_capture"
+  | "payment_refund"
+  | "payment_void"
+  | "payment_dispute_webhook"
+  | "wallet_tokenization"
   | "marketing_event_dispatch"
   | "customer_profile_sync"
   | "product_feed_publishing"
@@ -29,6 +35,94 @@ export interface EcommerceIntegrationAdapter {
 }
 
 export const ECOMMERCE_INTEGRATION_ADAPTER_REGISTRY: EcommerceIntegrationAdapterDefinition[] = [
+  {
+    provider: "stripe",
+    displayName: "Stripe",
+    configurable: true,
+    operational: true,
+    requiresAdapter: false,
+    capabilities: ["payment_authorization", "payment_capture", "payment_refund", "payment_void", "payment_dispute_webhook"],
+  },
+  {
+    provider: "paypal",
+    displayName: "PayPal",
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    capabilities: ["payment_authorization", "payment_capture", "payment_refund", "payment_void", "payment_dispute_webhook"],
+  },
+  {
+    provider: "square",
+    displayName: "Square",
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    capabilities: ["payment_authorization", "payment_capture", "payment_refund", "payment_void", "payment_dispute_webhook"],
+  },
+  {
+    provider: "authorize_net",
+    displayName: "Authorize.net",
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    capabilities: ["payment_authorization", "payment_capture", "payment_refund", "payment_void", "payment_dispute_webhook"],
+  },
+  {
+    provider: "braintree",
+    displayName: "Braintree",
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    capabilities: ["payment_authorization", "payment_capture", "payment_refund", "payment_void", "payment_dispute_webhook"],
+  },
+  {
+    provider: "adyen",
+    displayName: "Adyen",
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    capabilities: ["payment_authorization", "payment_capture", "payment_refund", "payment_void", "payment_dispute_webhook"],
+  },
+  {
+    provider: "amazon_pay",
+    displayName: "Amazon Pay",
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    capabilities: ["payment_authorization", "payment_capture", "payment_refund", "payment_void", "payment_dispute_webhook"],
+  },
+  {
+    provider: "apple_pay",
+    displayName: "Apple Pay",
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    capabilities: ["wallet_tokenization"],
+  },
+  {
+    provider: "google_pay",
+    displayName: "Google Pay",
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    capabilities: ["wallet_tokenization"],
+  },
+  {
+    provider: "klarna",
+    displayName: "Klarna",
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    capabilities: ["payment_authorization", "payment_capture", "payment_refund", "payment_void", "payment_dispute_webhook"],
+  },
+  {
+    provider: "afterpay",
+    displayName: "Afterpay",
+    configurable: true,
+    operational: false,
+    requiresAdapter: true,
+    capabilities: ["payment_authorization", "payment_capture", "payment_refund", "payment_void", "payment_dispute_webhook"],
+  },
   {
     provider: "klaviyo",
     displayName: "Klaviyo",

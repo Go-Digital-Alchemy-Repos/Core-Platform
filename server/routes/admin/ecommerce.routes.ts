@@ -25,6 +25,7 @@ import {
   type EcommerceStripeMode,
 } from "../../services/ecommerce-stripe.service";
 import { createEcommerceRefund } from "../../services/ecommerce-refund.service";
+import { ECOMMERCE_REFUND_PROVIDERS } from "../../services/ecommerce-payment-gateway-refund.service";
 import {
   adminOrderUpdateSchema,
   assertEcommerceFulfillmentRequest,
@@ -363,7 +364,7 @@ router.post("/refunds", asyncHandler(async (req, res) => {
     reason: z.string().optional(),
     reasonCode: z.string().optional(),
     type: z.enum(["full", "partial"]).optional(),
-    source: z.enum(["stripe", "manual"]).optional(),
+    source: z.enum(["manual", ...ECOMMERCE_REFUND_PROVIDERS]).optional(),
   }).parse(req.body);
   res.status(201).json(await createEcommerceRefund({ ...data, processedBy: req.user?.id }));
 }));
