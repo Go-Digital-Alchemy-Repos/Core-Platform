@@ -5,9 +5,5 @@ interface TherapistLayoutProps {
 }
 
 export function TherapistLayout({ children }: TherapistLayoutProps) {
-  return (
-    <TherapistSidebar>
-      {children}
-    </TherapistSidebar>
-  );
+  return <TherapistSidebar>{children}</TherapistSidebar>;
 }

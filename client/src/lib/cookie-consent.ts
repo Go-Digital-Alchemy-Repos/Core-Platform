@@ -47,7 +47,9 @@ export function buildCookieConsentRecord(
   };
 }
 
-export function parseCookieConsentRecord(value: string | null | undefined): CookieConsentRecord | null {
+export function parseCookieConsentRecord(
+  value: string | null | undefined,
+): CookieConsentRecord | null {
   if (!value) return null;
 
   try {
@@ -77,7 +79,10 @@ export function parseCookieConsentRecord(value: string | null | undefined): Cook
   }
 }
 
-export function isCookieConsentRecordActive(record: CookieConsentRecord | null, now = new Date()): boolean {
+export function isCookieConsentRecordActive(
+  record: CookieConsentRecord | null,
+  now = new Date(),
+): boolean {
   if (!record) return false;
   const expiresAt = Date.parse(record.expiresAt);
   if (Number.isNaN(expiresAt)) return false;
@@ -97,7 +102,10 @@ export function getCookieConsentPreferences(): CookieConsentPreferences {
   return stored.preferences;
 }
 
-export function hasCookieConsent(category: CookieConsentCategory, record: CookieConsentRecord | null = readCookieConsentRecord()): boolean {
+export function hasCookieConsent(
+  category: CookieConsentCategory,
+  record: CookieConsentRecord | null = readCookieConsentRecord(),
+): boolean {
   if (category === "essential") return true;
   if (!record || !isCookieConsentRecordActive(record)) return false;
   return Boolean(record.preferences[category]);
@@ -105,7 +113,9 @@ export function hasCookieConsent(category: CookieConsentCategory, record: Cookie
 
 function dispatchCookieConsentChanged(record: CookieConsentRecord) {
   if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") return;
-  window.dispatchEvent(new CustomEvent<CookieConsentRecord>(COOKIE_CONSENT_CHANGED_EVENT, { detail: record }));
+  window.dispatchEvent(
+    new CustomEvent<CookieConsentRecord>(COOKIE_CONSENT_CHANGED_EVENT, { detail: record }),
+  );
 }
 
 export function writeCookieConsentRecord(record: CookieConsentRecord) {

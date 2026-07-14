@@ -50,13 +50,17 @@ describe("therapistSearchSchema validation", () => {
 
   it("transforms acceptingClients string to boolean or undefined", () => {
     expect(therapistSearchSchema.parse({ acceptingClients: "true" }).acceptingClients).toBe(true);
-    expect(therapistSearchSchema.parse({ acceptingClients: "false" }).acceptingClients).toBeUndefined();
+    expect(
+      therapistSearchSchema.parse({ acceptingClients: "false" }).acceptingClients,
+    ).toBeUndefined();
     expect(therapistSearchSchema.parse({}).acceptingClients).toBeUndefined();
   });
 
   it("transforms willingToTravel string to boolean or undefined", () => {
     expect(therapistSearchSchema.parse({ willingToTravel: "true" }).willingToTravel).toBe(true);
-    expect(therapistSearchSchema.parse({ willingToTravel: "false" }).willingToTravel).toBeUndefined();
+    expect(
+      therapistSearchSchema.parse({ willingToTravel: "false" }).willingToTravel,
+    ).toBeUndefined();
   });
 
   it("passes through search, specialization, language, country strings", () => {
@@ -144,7 +148,9 @@ describe("search filter param processing", () => {
 
 describe("specialization filter param processing", () => {
   it("accepts comma-separated specializations", () => {
-    const result = therapistSearchSchema.parse({ specialization: "Anxiety,Depression,Trauma & PTSD" });
+    const result = therapistSearchSchema.parse({
+      specialization: "Anxiety,Depression,Trauma & PTSD",
+    });
     expect(result.specialization).toBe("Anxiety,Depression,Trauma & PTSD");
     const specArray = result.specialization.split(",").filter(Boolean);
     expect(specArray).toEqual(["Anxiety", "Depression", "Trauma & PTSD"]);
@@ -158,7 +164,9 @@ describe("specialization filter param processing", () => {
 
   it("handles empty specialization", () => {
     const result = therapistSearchSchema.parse({ specialization: "" });
-    const specArray = result.specialization ? result.specialization.split(",").filter(Boolean) : undefined;
+    const specArray = result.specialization
+      ? result.specialization.split(",").filter(Boolean)
+      : undefined;
     expect(specArray).toEqual(undefined);
   });
 });

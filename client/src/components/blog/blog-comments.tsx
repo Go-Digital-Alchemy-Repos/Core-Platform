@@ -102,7 +102,8 @@ export function BlogComments({ slug }: { slug: string }) {
 
   const settings = data?.settings;
   const comments = data?.comments ?? [];
-  const canComment = Boolean(settings?.commentsEnabled) && (Boolean(user) || Boolean(settings?.allowGuestComments));
+  const canComment =
+    Boolean(settings?.commentsEnabled) && (Boolean(user) || Boolean(settings?.allowGuestComments));
 
   const submitMutation = useMutation({
     mutationFn: async () => {
@@ -134,9 +135,7 @@ export function BlogComments({ slug }: { slug: string }) {
     if (settings.allowGuestComments) {
       return "Join the conversation below. Guest comments are welcome.";
     }
-    return user
-      ? "Join the conversation below."
-      : "Comments are open to logged-in users.";
+    return user ? "Join the conversation below." : "Comments are open to logged-in users.";
   }, [settings, user]);
 
   if (isLoading) {
@@ -244,7 +243,9 @@ export function BlogComments({ slug }: { slug: string }) {
           <CardContent className="p-6 text-sm text-muted-foreground">
             <p className="mb-3">You need to be logged in to leave a comment.</p>
             <Link href="/login">
-              <Button variant="outline" data-testid="button-login-to-comment">Log In</Button>
+              <Button variant="outline" data-testid="button-login-to-comment">
+                Log In
+              </Button>
             </Link>
           </CardContent>
         </Card>
@@ -263,7 +264,9 @@ export function BlogComments({ slug }: { slug: string }) {
               <CardContent className="p-5 space-y-2">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <p className="font-medium">{comment.authorName}</p>
-                  <p className="text-xs text-muted-foreground">{formatCommentDate(comment.createdAt)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatCommentDate(comment.createdAt)}
+                  </p>
                 </div>
                 <div className="text-sm leading-7 text-foreground/85 whitespace-pre-wrap">
                   {renderCommentBody(comment.body, settings.allowLinksInComments)}

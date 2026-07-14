@@ -1,8 +1,23 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, jsonb, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  varchar,
+  timestamp,
+  jsonb,
+  boolean,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { z } from "zod";
 
-export const CMS_FORM_KINDS = ["contact", "newsletter", "interest", "application", "custom"] as const;
+export const CMS_FORM_KINDS = [
+  "contact",
+  "newsletter",
+  "interest",
+  "application",
+  "custom",
+] as const;
 export type CmsFormKind = (typeof CMS_FORM_KINDS)[number];
 
 export const CMS_FORM_FIELD_TYPES = [
@@ -46,29 +61,31 @@ export const cmsFormListColumnSchema = z.object({
 
 export type CmsFormListColumn = z.infer<typeof cmsFormListColumnSchema>;
 
-export const cmsFormFieldConfigSchema = z.object({
-  nameFormat: z.enum(["full", "split"]).optional().default("full"),
-  sectionTitle: z.string().optional().default(""),
-  sectionSubtitle: z.string().optional().default(""),
-  showDivider: z.boolean().optional().default(true),
-  dividerColor: z.string().optional().default("#e2e8f0"),
-  htmlContent: z.string().optional().default(""),
-  pageTitle: z.string().optional().default(""),
-  pageDescription: z.string().optional().default(""),
-  nextButtonText: z.string().optional().default("Next"),
-  previousButtonText: z.string().optional().default("Previous"),
-  choiceLayout: z.enum(["stacked", "inline", "grid"]).optional().default("stacked"),
-  selectionMode: z.enum(["single", "multiple"]).optional().default("single"),
-  consentCheckboxLabel: z.string().optional().default("I agree"),
-  consentDescription: z.string().optional().default(""),
-  defaultValue: z.union([z.string(), z.boolean()]).optional(),
-  timeFormat: z.enum(["12", "24"]).optional().default("12"),
-  showStreet2: z.boolean().optional().default(false),
-  showCountry: z.boolean().optional().default(true),
-  addressLayout: z.enum(["stacked", "compact"]).optional().default("stacked"),
-  listColumns: z.array(cmsFormListColumnSchema).optional().default([]),
-  maxRows: z.number().optional().default(10),
-}).passthrough();
+export const cmsFormFieldConfigSchema = z
+  .object({
+    nameFormat: z.enum(["full", "split"]).optional().default("full"),
+    sectionTitle: z.string().optional().default(""),
+    sectionSubtitle: z.string().optional().default(""),
+    showDivider: z.boolean().optional().default(true),
+    dividerColor: z.string().optional().default("#e2e8f0"),
+    htmlContent: z.string().optional().default(""),
+    pageTitle: z.string().optional().default(""),
+    pageDescription: z.string().optional().default(""),
+    nextButtonText: z.string().optional().default("Next"),
+    previousButtonText: z.string().optional().default("Previous"),
+    choiceLayout: z.enum(["stacked", "inline", "grid"]).optional().default("stacked"),
+    selectionMode: z.enum(["single", "multiple"]).optional().default("single"),
+    consentCheckboxLabel: z.string().optional().default("I agree"),
+    consentDescription: z.string().optional().default(""),
+    defaultValue: z.union([z.string(), z.boolean()]).optional(),
+    timeFormat: z.enum(["12", "24"]).optional().default("12"),
+    showStreet2: z.boolean().optional().default(false),
+    showCountry: z.boolean().optional().default(true),
+    addressLayout: z.enum(["stacked", "compact"]).optional().default("stacked"),
+    listColumns: z.array(cmsFormListColumnSchema).optional().default([]),
+    maxRows: z.number().optional().default(10),
+  })
+  .passthrough();
 
 export type CmsFormFieldConfig = z.infer<typeof cmsFormFieldConfigSchema>;
 
@@ -102,15 +119,23 @@ export type CmsFormSettings = z.infer<typeof cmsFormSettingsSchema>;
 export const cmsForms = pgTable(
   "cms_forms",
   {
-    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
     name: text("name").notNull(),
     slug: text("slug").notNull(),
     description: text("description"),
     kind: text("kind").$type<CmsFormKind>().default("custom").notNull(),
     isSystem: boolean("is_system").default(false).notNull(),
     isActive: boolean("is_active").default(true).notNull(),
-    fields: jsonb("fields").$type<CmsFormField[]>().default(sql`'[]'::jsonb`).notNull(),
-    settings: jsonb("settings").$type<CmsFormSettings>().default(sql`'{}'::jsonb`).notNull(),
+    fields: jsonb("fields")
+      .$type<CmsFormField[]>()
+      .default(sql`'[]'::jsonb`)
+      .notNull(),
+    settings: jsonb("settings")
+      .$type<CmsFormSettings>()
+      .default(sql`'{}'::jsonb`)
+      .notNull(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
@@ -118,22 +143,29 @@ export const cmsForms = pgTable(
     uniqueIndex("idx_cms_forms_slug_unique").on(table.slug),
     index("idx_cms_forms_kind").on(table.kind),
     index("idx_cms_forms_updated_at").on(table.updatedAt),
-  ]
+  ],
 );
 
 export const cmsFormSubmissions = pgTable(
   "cms_form_submissions",
   {
-    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-    formId: varchar("form_id").references(() => cmsForms.id, { onDelete: "cascade" }).notNull(),
-    data: jsonb("data").$type<Record<string, unknown>>().default(sql`'{}'::jsonb`).notNull(),
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    formId: varchar("form_id")
+      .references(() => cmsForms.id, { onDelete: "cascade" })
+      .notNull(),
+    data: jsonb("data")
+      .$type<Record<string, unknown>>()
+      .default(sql`'{}'::jsonb`)
+      .notNull(),
     source: text("source"),
     createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => [
     index("idx_cms_form_submissions_form_id").on(table.formId),
     index("idx_cms_form_submissions_created_at").on(table.createdAt),
-  ]
+  ],
 );
 
 export const insertCmsFormSchema = z.object({

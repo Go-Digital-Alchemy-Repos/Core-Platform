@@ -77,7 +77,7 @@ router.get(
     }
 
     res.json(grouped);
-  })
+  }),
 );
 
 const upsertSettingSchema = z.object({
@@ -100,7 +100,7 @@ router.put(
       data.key,
       data.value,
       data.category,
-      data.isSecret
+      data.isSecret,
     );
 
     if (data.category === "stripe") {
@@ -127,7 +127,7 @@ router.put(
       ...setting,
       value: setting.isSecret ? "••••••••" : setting.value,
     });
-  })
+  }),
 );
 
 router.post(
@@ -166,7 +166,7 @@ router.post(
       url: asset.url,
       mediaId: asset.id,
     });
-  })
+  }),
 );
 
 router.delete(
@@ -175,7 +175,7 @@ router.delete(
   asyncHandler(async (req, res) => {
     await storage.settings.deleteSetting(paramString(req.params.key));
     res.json({ message: "Setting deleted" });
-  })
+  }),
 );
 
 const testConnectionSchema = z.object({
@@ -222,7 +222,7 @@ router.post(
     }
 
     res.status(400).json({ success: false, message: "Unknown integration" });
-  })
+  }),
 );
 
 router.get(
@@ -231,7 +231,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const templates = await storage.emailTemplates.getAllTemplates();
     res.json(templates);
-  })
+  }),
 );
 
 router.post(
@@ -244,7 +244,7 @@ router.post(
       restored: result.total,
       templates,
     });
-  })
+  }),
 );
 
 const updateTemplateSchema = z.object({
@@ -260,14 +260,14 @@ router.put(
     const data = updateTemplateSchema.parse(req.body);
     const template = await storage.emailTemplates.updateTemplate(
       paramString(req.params.slug),
-      data
+      data,
     );
     if (!template) {
       res.status(404).json({ message: "Template not found" });
       return;
     }
     res.json(template);
-  })
+  }),
 );
 
 const previewTemplateSchema = z.object({
@@ -279,7 +279,9 @@ router.post(
   "/email-templates/:slug/preview",
   requireRole("admin"),
   asyncHandler(async (req, res) => {
-    const { htmlBody: overrideBody, subject: overrideSubject } = previewTemplateSchema.parse(req.body);
+    const { htmlBody: overrideBody, subject: overrideSubject } = previewTemplateSchema.parse(
+      req.body,
+    );
     const template = await storage.emailTemplates.getTemplate(paramString(req.params.slug));
     if (!template) {
       res.status(404).json({ message: "Template not found" });
@@ -309,7 +311,7 @@ router.post(
     const html = await renderEmailShell("", renderedBody);
 
     res.json({ subject: renderedSubject, html });
-  })
+  }),
 );
 
 router.post(
@@ -350,7 +352,7 @@ router.post(
         ? `Test email sent to ${adminEmail}`
         : "Email not sent — no email provider configured",
     });
-  })
+  }),
 );
 
 export default router;

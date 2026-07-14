@@ -15,9 +15,4 @@ export type {
   InsertDoc,
 } from "@shared/schema";
 
-export type {
-  UserRole,
-  PracticeMode,
-  SubscriptionStatus,
-  DocCategory,
-} from "@shared/types";
+export type { UserRole, PracticeMode, SubscriptionStatus, DocCategory } from "@shared/types";

@@ -1,6 +1,10 @@
 import { eq, and, count, asc, sum, sql, inArray, isNull } from "drizzle-orm";
 import { db } from "../db";
-import { eventRegistrations, type EventRegistration, type InsertEventRegistration } from "@shared/schema";
+import {
+  eventRegistrations,
+  type EventRegistration,
+  type InsertEventRegistration,
+} from "@shared/schema";
 
 export class EventRegistrationStorage {
   async getRegistration(id: string): Promise<EventRegistration | undefined> {
@@ -8,7 +12,10 @@ export class EventRegistrationStorage {
     return reg;
   }
 
-  async getRegistrationByEventAndUser(eventId: string, userId: string): Promise<EventRegistration | undefined> {
+  async getRegistrationByEventAndUser(
+    eventId: string,
+    userId: string,
+  ): Promise<EventRegistration | undefined> {
     const [reg] = await db
       .select()
       .from(eventRegistrations)
@@ -16,7 +23,10 @@ export class EventRegistrationStorage {
     return reg;
   }
 
-  async getRegistrationByEventAndEmail(eventId: string, email: string): Promise<EventRegistration | undefined> {
+  async getRegistrationByEventAndEmail(
+    eventId: string,
+    email: string,
+  ): Promise<EventRegistration | undefined> {
     const [reg] = await db
       .select()
       .from(eventRegistrations)
@@ -36,7 +46,9 @@ export class EventRegistrationStorage {
     return db
       .select()
       .from(eventRegistrations)
-      .where(and(eq(eventRegistrations.eventId, eventId), eq(eventRegistrations.status, "confirmed")));
+      .where(
+        and(eq(eventRegistrations.eventId, eventId), eq(eventRegistrations.status, "confirmed")),
+      );
   }
 
   async getRegistrationsByUser(userId: string): Promise<EventRegistration[]> {
@@ -47,7 +59,9 @@ export class EventRegistrationStorage {
       .orderBy(asc(eventRegistrations.registeredAt));
   }
 
-  async getRegistrationByCheckoutSession(sessionId: string): Promise<EventRegistration | undefined> {
+  async getRegistrationByCheckoutSession(
+    sessionId: string,
+  ): Promise<EventRegistration | undefined> {
     const [reg] = await db
       .select()
       .from(eventRegistrations)
@@ -59,7 +73,9 @@ export class EventRegistrationStorage {
     const [result] = await db
       .select({ count: count() })
       .from(eventRegistrations)
-      .where(and(eq(eventRegistrations.eventId, eventId), eq(eventRegistrations.status, "confirmed")));
+      .where(
+        and(eq(eventRegistrations.eventId, eventId), eq(eventRegistrations.status, "confirmed")),
+      );
     return result?.count ?? 0;
   }
 
@@ -67,7 +83,9 @@ export class EventRegistrationStorage {
     const [reg] = await db
       .select()
       .from(eventRegistrations)
-      .where(and(eq(eventRegistrations.eventId, eventId), eq(eventRegistrations.status, "waitlisted")))
+      .where(
+        and(eq(eventRegistrations.eventId, eventId), eq(eventRegistrations.status, "waitlisted")),
+      )
       .orderBy(asc(eventRegistrations.registeredAt))
       .limit(1);
     return reg;
@@ -94,8 +112,8 @@ export class EventRegistrationStorage {
       .where(
         and(
           eq(eventRegistrations.eventId, eventId),
-          sql`${eventRegistrations.status} IN ('confirmed', 'waitlisted')`
-        )
+          sql`${eventRegistrations.status} IN ('confirmed', 'waitlisted')`,
+        ),
       );
     return result.rowCount ?? 0;
   }
@@ -153,10 +171,7 @@ export class EventRegistrationStorage {
       .select({ total: sum(eventRegistrations.amountPaid) })
       .from(eventRegistrations)
       .where(
-        and(
-          eq(eventRegistrations.eventId, eventId),
-          eq(eventRegistrations.paymentStatus, "paid")
-        )
+        and(eq(eventRegistrations.eventId, eventId), eq(eventRegistrations.paymentStatus, "paid")),
       );
 
     analytics.totalRevenueCents = Number(revenueResult[0]?.total ?? 0);
@@ -164,7 +179,10 @@ export class EventRegistrationStorage {
     return analytics;
   }
 
-  async updateRegistrationStatus(id: string, status: string): Promise<EventRegistration | undefined> {
+  async updateRegistrationStatus(
+    id: string,
+    status: string,
+  ): Promise<EventRegistration | undefined> {
     const updates: Partial<InsertEventRegistration> = { status };
     if (status !== "canceled") {
       updates.canceledAt = null;
@@ -177,7 +195,10 @@ export class EventRegistrationStorage {
     return reg;
   }
 
-  async updateRegistration(id: string, data: Partial<Pick<EventRegistration, "status" | "fullName" | "email" | "canceledAt">>): Promise<EventRegistration | undefined> {
+  async updateRegistration(
+    id: string,
+    data: Partial<Pick<EventRegistration, "status" | "fullName" | "email" | "canceledAt">>,
+  ): Promise<EventRegistration | undefined> {
     const [reg] = await db
       .update(eventRegistrations)
       .set(data)
@@ -218,8 +239,8 @@ export class EventRegistrationStorage {
         and(
           inArray(eventRegistrations.eventId, eventIds),
           eq(eventRegistrations.status, "confirmed"),
-          isNull(eventRegistrations.reminderSentAt)
-        )
+          isNull(eventRegistrations.reminderSentAt),
+        ),
       );
   }
 

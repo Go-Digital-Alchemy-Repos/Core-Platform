@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getEcommerceOrderStatusBadge, getEcommercePaymentStatusBadge } from "./order-status-labels";
+import {
+  getEcommerceOrderStatusBadge,
+  getEcommercePaymentStatusBadge,
+} from "./order-status-labels";
 
 describe("ecommerce order status labels", () => {
   it("formats refund payment statuses for customer and admin screens", () => {

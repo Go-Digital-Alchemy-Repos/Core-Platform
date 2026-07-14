@@ -1,6 +1,11 @@
 import { Router } from "express";
 import { z } from "zod";
-import { CRM_CLIENT_STATUSES, CRM_LEAD_STAGES, crmClientUpdateSchema, crmLeadInputSchema } from "@shared/schema";
+import {
+  CRM_CLIENT_STATUSES,
+  CRM_LEAD_STAGES,
+  crmClientUpdateSchema,
+  crmLeadInputSchema,
+} from "@shared/schema";
 import { asyncHandler } from "../../middleware/error-handler";
 import { storage } from "../../storage";
 import { createOrUpdateCrmLead, ensureClientForWonLead } from "../../services/crm.service";
@@ -35,22 +40,18 @@ router.get(
   "/",
   asyncHandler(async (req, res) => {
     const query = typeof req.query.q === "string" ? req.query.q : undefined;
-    const stage = isCrmLeadStage(req.query.stage)
-      ? req.query.stage
-      : "all";
+    const stage = isCrmLeadStage(req.query.stage) ? req.query.stage : "all";
     res.json(await storage.crm.listLeads({ query, stage }));
-  })
+  }),
 );
 
 router.get(
   "/clients",
   asyncHandler(async (req, res) => {
     const query = typeof req.query.q === "string" ? req.query.q : undefined;
-    const status = isCrmClientStatus(req.query.status)
-      ? req.query.status
-      : "all";
+    const status = isCrmClientStatus(req.query.status) ? req.query.status : "all";
     res.json(await storage.crm.listClients({ query, status }));
-  })
+  }),
 );
 
 router.get(
@@ -59,7 +60,7 @@ router.get(
     const detail = await storage.crm.getClientDetail(paramString(req.params.id));
     if (!detail) return res.status(404).json({ message: "Client not found" });
     res.json(detail);
-  })
+  }),
 );
 
 router.patch(
@@ -69,7 +70,7 @@ router.patch(
     const client = await storage.crm.updateClient(paramString(req.params.id), parsed);
     if (!client) return res.status(404).json({ message: "Client not found" });
     res.json(client);
-  })
+  }),
 );
 
 router.post(
@@ -79,12 +80,14 @@ router.post(
     const client = await storage.crm.getClientById(clientId);
     if (!client) return res.status(404).json({ message: "Client not found" });
     const parsed = clientNoteSchema.parse(req.body);
-    res.status(201).json(await storage.crm.createClientNote({
-      clientId,
-      body: parsed.body,
-      createdById: req.user?.id ?? null,
-    }));
-  })
+    res.status(201).json(
+      await storage.crm.createClientNote({
+        clientId,
+        body: parsed.body,
+        createdById: req.user?.id ?? null,
+      }),
+    );
+  }),
 );
 
 router.post(
@@ -94,15 +97,17 @@ router.post(
     const client = await storage.crm.getClientById(clientId);
     if (!client) return res.status(404).json({ message: "Client not found" });
     const parsed = clientTaskCreateSchema.parse(req.body);
-    res.status(201).json(await storage.crm.createClientTask({
-      clientId,
-      title: parsed.title,
-      dueAt: parsed.dueAt ?? null,
-      assignedToId: parsed.assignedToId ?? req.user?.id ?? null,
-      createdById: req.user?.id ?? null,
-      completed: false,
-    }));
-  })
+    res.status(201).json(
+      await storage.crm.createClientTask({
+        clientId,
+        title: parsed.title,
+        dueAt: parsed.dueAt ?? null,
+        assignedToId: parsed.assignedToId ?? req.user?.id ?? null,
+        createdById: req.user?.id ?? null,
+        completed: false,
+      }),
+    );
+  }),
 );
 
 router.patch(
@@ -112,15 +117,18 @@ router.patch(
     const task = await storage.crm.updateClientTask(paramString(req.params.taskId), parsed);
     if (!task) return res.status(404).json({ message: "Task not found" });
     res.json(task);
-  })
+  }),
 );
 
 router.post(
   "/",
   asyncHandler(async (req, res) => {
-    const result = await createOrUpdateCrmLead({ ...req.body, source: req.body?.source ?? "manual" }, req.user?.id);
+    const result = await createOrUpdateCrmLead(
+      { ...req.body, source: req.body?.source ?? "manual" },
+      req.user?.id,
+    );
     res.status(result.duplicate ? 200 : 201).json(result);
-  })
+  }),
 );
 
 router.get(
@@ -129,7 +137,7 @@ router.get(
     const detail = await storage.crm.getLeadDetail(paramString(req.params.id));
     if (!detail) return res.status(404).json({ message: "Lead not found" });
     res.json(detail);
-  })
+  }),
 );
 
 router.patch(
@@ -142,7 +150,7 @@ router.patch(
       await ensureClientForWonLead(lead, req.user?.id);
     }
     res.json(lead);
-  })
+  }),
 );
 
 router.post(
@@ -152,12 +160,14 @@ router.post(
     const lead = await storage.crm.getLeadById(leadId);
     if (!lead) return res.status(404).json({ message: "Lead not found" });
     const parsed = noteSchema.parse(req.body);
-    res.status(201).json(await storage.crm.createNote({
-      leadId,
-      body: parsed.body,
-      createdById: req.user?.id ?? null,
-    }));
-  })
+    res.status(201).json(
+      await storage.crm.createNote({
+        leadId,
+        body: parsed.body,
+        createdById: req.user?.id ?? null,
+      }),
+    );
+  }),
 );
 
 router.post(
@@ -167,15 +177,17 @@ router.post(
     const lead = await storage.crm.getLeadById(leadId);
     if (!lead) return res.status(404).json({ message: "Lead not found" });
     const parsed = taskCreateSchema.parse(req.body);
-    res.status(201).json(await storage.crm.createTask({
-      leadId,
-      title: parsed.title,
-      dueAt: parsed.dueAt ?? null,
-      assignedToId: parsed.assignedToId ?? req.user?.id ?? null,
-      createdById: req.user?.id ?? null,
-      completed: false,
-    }));
-  })
+    res.status(201).json(
+      await storage.crm.createTask({
+        leadId,
+        title: parsed.title,
+        dueAt: parsed.dueAt ?? null,
+        assignedToId: parsed.assignedToId ?? req.user?.id ?? null,
+        createdById: req.user?.id ?? null,
+        completed: false,
+      }),
+    );
+  }),
 );
 
 router.patch(
@@ -185,7 +197,7 @@ router.patch(
     const task = await storage.crm.updateTask(paramString(req.params.taskId), parsed);
     if (!task) return res.status(404).json({ message: "Task not found" });
     res.json(task);
-  })
+  }),
 );
 
 export default router;

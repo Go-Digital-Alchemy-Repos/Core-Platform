@@ -4,7 +4,9 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const systemSettings = pgTable("system_settings", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   key: text("key").notNull().unique(),
   value: text("value").notNull(),
   category: text("category").notNull(),

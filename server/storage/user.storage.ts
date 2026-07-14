@@ -17,7 +17,10 @@ export class UserStorage {
   }
 
   async createUser(data: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(data as UserInsertData).returning();
+    const [user] = await db
+      .insert(users)
+      .values(data as UserInsertData)
+      .returning();
     return user;
   }
 
@@ -49,10 +52,11 @@ export class UserStorage {
 
   async getFormNotificationUsers(formId: string): Promise<User[]> {
     const systemUsers = await this.getUsersByRoles(["admin", "editor"]);
-    return systemUsers.filter((user) =>
-      !user.isSuspended &&
-      Array.isArray(user.formNotificationFormIds) &&
-      user.formNotificationFormIds.includes(formId)
+    return systemUsers.filter(
+      (user) =>
+        !user.isSuspended &&
+        Array.isArray(user.formNotificationFormIds) &&
+        user.formNotificationFormIds.includes(formId),
     );
   }
 

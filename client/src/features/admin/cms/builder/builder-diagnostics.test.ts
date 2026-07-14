@@ -38,7 +38,7 @@ describe("reportBuilderRenderError", () => {
           index: 2,
           label: "CTA",
         }),
-      })
+      }),
     );
   });
 });

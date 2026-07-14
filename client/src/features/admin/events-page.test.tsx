@@ -3,7 +3,10 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import AdminEventsPage, { centsToDollarInput, dollarInputToCents } from "@/features/admin/events-page";
+import AdminEventsPage, {
+  centsToDollarInput,
+  dollarInputToCents,
+} from "@/features/admin/events-page";
 
 const useQueryMock = vi.fn();
 const useMutationMock = vi.fn();
@@ -176,7 +179,14 @@ vi.mock("@/features/admin/cms/components/cms-image-upload", () => ({
 }));
 
 vi.mock("@/features/admin/cms/builder/cms-rich-text-editor", () => ({
-  CmsRichTextEditor: ({ value = "", onChange, ...props }: { value?: string; onChange?: (value: string) => void }) =>
+  CmsRichTextEditor: ({
+    value = "",
+    onChange,
+    ...props
+  }: {
+    value?: string;
+    onChange?: (value: string) => void;
+  }) =>
     React.createElement("textarea", {
       ...props,
       value,
@@ -189,7 +199,8 @@ vi.mock("@/features/admin/cms/components/image-position-picker", () => ({
 }));
 
 vi.mock("@/components/shared/structured-data-status", () => ({
-  StructuredDataStatus: () => React.createElement("div", { "data-testid": "structured-data-status" }),
+  StructuredDataStatus: () =>
+    React.createElement("div", { "data-testid": "structured-data-status" }),
 }));
 
 vi.mock("@/hooks/use-toast", () => ({
@@ -250,8 +261,12 @@ describe("AdminEventsPage", () => {
         unobserve() {}
       },
     );
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     window.history.pushState({}, "", "/admin/events");
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -318,7 +333,9 @@ describe("AdminEventsPage", () => {
     });
 
     expect(document.body.querySelector('[data-testid="text-no-event-matches"]')).not.toBeNull();
-    expect(document.body.querySelector('[data-testid="button-clear-admin-event-filters"]')).not.toBeNull();
+    expect(
+      document.body.querySelector('[data-testid="button-clear-admin-event-filters"]'),
+    ).not.toBeNull();
 
     const clearButton = document.body.querySelector(
       '[data-testid="button-clear-admin-event-filters"]',
@@ -342,10 +359,18 @@ describe("AdminEventsPage", () => {
       root!.render(React.createElement(AdminEventsPage));
     });
 
-    expect(document.body.querySelector('[data-testid="select-admin-event-type-filter"]')).not.toBeNull();
-    expect(document.body.querySelector('[data-testid="select-admin-event-category-filter"]')).not.toBeNull();
-    expect(document.body.querySelector('[data-testid="select-admin-event-status-filter"]')).not.toBeNull();
-    expect(document.body.querySelector('[data-testid="select-admin-event-delivery-filter"]')).not.toBeNull();
+    expect(
+      document.body.querySelector('[data-testid="select-admin-event-type-filter"]'),
+    ).not.toBeNull();
+    expect(
+      document.body.querySelector('[data-testid="select-admin-event-category-filter"]'),
+    ).not.toBeNull();
+    expect(
+      document.body.querySelector('[data-testid="select-admin-event-status-filter"]'),
+    ).not.toBeNull();
+    expect(
+      document.body.querySelector('[data-testid="select-admin-event-delivery-filter"]'),
+    ).not.toBeNull();
   });
 
   it("closes the event editor sheet when a lock conflict is detected", async () => {
@@ -355,7 +380,9 @@ describe("AdminEventsPage", () => {
       root!.render(React.createElement(AdminEventsPage));
     });
 
-    const editButton = document.body.querySelector('[data-testid="button-edit-event-event-1"]') as HTMLButtonElement | null;
+    const editButton = document.body.querySelector(
+      '[data-testid="button-edit-event-event-1"]',
+    ) as HTMLButtonElement | null;
     expect(editButton).not.toBeNull();
 
     await act(async () => {
@@ -388,14 +415,18 @@ describe("AdminEventsPage", () => {
       root!.render(React.createElement(AdminEventsPage));
     });
 
-    const editButton = document.body.querySelector('[data-testid="button-edit-event-event-1"]') as HTMLButtonElement | null;
+    const editButton = document.body.querySelector(
+      '[data-testid="button-edit-event-event-1"]',
+    ) as HTMLButtonElement | null;
     expect(editButton).not.toBeNull();
 
     await act(async () => {
       editButton?.click();
     });
 
-    const submitButton = document.body.querySelector('[data-testid="button-submit-event"]') as HTMLButtonElement | null;
+    const submitButton = document.body.querySelector(
+      '[data-testid="button-submit-event"]',
+    ) as HTMLButtonElement | null;
     expect(submitButton).not.toBeNull();
 
     await act(async () => {
@@ -410,23 +441,30 @@ describe("AdminEventsPage", () => {
           title: "Counselor Training",
           location: "Zoom",
         }),
-      })
+      }),
     );
   });
 
   it("opens an event editor from an edit query parameter", async () => {
     editorLockState.isReadOnly = false;
-    window.history.pushState({}, "", "/admin/events?edit=event-2&returnTo=%2Fevents%2Fglobal-families-welcome-circle");
+    window.history.pushState(
+      {},
+      "",
+      "/admin/events?edit=event-2&returnTo=%2Fevents%2Fglobal-families-welcome-circle",
+    );
     root = createRoot(container);
 
     await act(async () => {
       root!.render(React.createElement(AdminEventsPage));
     });
 
-    expect(document.body.querySelector('[data-testid="text-event-dialog-title"]')?.textContent).toBe("Edit Event");
-    expect((document.body.querySelector('[data-testid="input-event-title"]') as HTMLInputElement | null)?.value).toBe(
-      "Global Families Welcome Circle",
-    );
+    expect(
+      document.body.querySelector('[data-testid="text-event-dialog-title"]')?.textContent,
+    ).toBe("Edit Event");
+    expect(
+      (document.body.querySelector('[data-testid="input-event-title"]') as HTMLInputElement | null)
+        ?.value,
+    ).toBe("Global Families Welcome Circle");
   });
 
   it("converts paid event fees between stored cents and admin-entered dollars", () => {
@@ -445,7 +483,9 @@ describe("AdminEventsPage", () => {
       root!.render(React.createElement(AdminEventsPage));
     });
 
-    const createButton = document.body.querySelector('[data-testid="button-create-event"]') as HTMLButtonElement | null;
+    const createButton = document.body.querySelector(
+      '[data-testid="button-create-event"]',
+    ) as HTMLButtonElement | null;
     expect(createButton).not.toBeNull();
 
     await act(async () => {
@@ -465,14 +505,18 @@ describe("AdminEventsPage", () => {
       root!.render(React.createElement(AdminEventsPage));
     });
 
-    const createButton = document.body.querySelector('[data-testid="button-create-event"]') as HTMLButtonElement | null;
+    const createButton = document.body.querySelector(
+      '[data-testid="button-create-event"]',
+    ) as HTMLButtonElement | null;
     expect(createButton).not.toBeNull();
 
     await act(async () => {
       createButton?.click();
     });
 
-    const createVenueButton = document.body.querySelector('[data-testid="button-create-venue"]') as HTMLButtonElement | null;
+    const createVenueButton = document.body.querySelector(
+      '[data-testid="button-create-venue"]',
+    ) as HTMLButtonElement | null;
     expect(createVenueButton).not.toBeNull();
 
     await act(async () => {
@@ -481,7 +525,9 @@ describe("AdminEventsPage", () => {
 
     expect(document.body.querySelector('[data-testid="input-venue-name"]')).not.toBeNull();
 
-    const submitVenueButton = document.body.querySelector('[data-testid="button-submit-venue"]') as HTMLButtonElement | null;
+    const submitVenueButton = document.body.querySelector(
+      '[data-testid="button-submit-venue"]',
+    ) as HTMLButtonElement | null;
     await act(async () => {
       submitVenueButton?.click();
     });
@@ -498,14 +544,18 @@ describe("AdminEventsPage", () => {
       root!.render(React.createElement(AdminEventsPage));
     });
 
-    const createButton = document.body.querySelector('[data-testid="button-create-event"]') as HTMLButtonElement | null;
+    const createButton = document.body.querySelector(
+      '[data-testid="button-create-event"]',
+    ) as HTMLButtonElement | null;
     expect(createButton).not.toBeNull();
 
     await act(async () => {
       createButton?.click();
     });
 
-    const createVenueButton = document.body.querySelector('[data-testid="button-create-venue"]') as HTMLButtonElement | null;
+    const createVenueButton = document.body.querySelector(
+      '[data-testid="button-create-venue"]',
+    ) as HTMLButtonElement | null;
     await act(async () => {
       createVenueButton?.click();
     });
@@ -540,12 +590,16 @@ describe("AdminEventsPage", () => {
         "events@example.com",
       );
       setControlValue(
-        document.body.querySelector('[data-testid="textarea-venue-parking"]') as HTMLTextAreaElement,
+        document.body.querySelector(
+          '[data-testid="textarea-venue-parking"]',
+        ) as HTMLTextAreaElement,
         "Validated garage parking is available next door.",
       );
     });
 
-    const submitVenueButton = document.body.querySelector('[data-testid="button-submit-venue"]') as HTMLButtonElement | null;
+    const submitVenueButton = document.body.querySelector(
+      '[data-testid="button-submit-venue"]',
+    ) as HTMLButtonElement | null;
     await act(async () => {
       submitVenueButton?.click();
     });
@@ -568,7 +622,7 @@ describe("AdminEventsPage", () => {
     ]);
 
     const onSuccess = createVenueCall?.[1]?.onSuccess as
-      | ((venue: typeof mockVenues[number]) => void)
+      | ((venue: (typeof mockVenues)[number]) => void)
       | undefined;
 
     await act(async () => {
@@ -587,19 +641,39 @@ describe("AdminEventsPage", () => {
     });
 
     expect(
-      (document.body.querySelector('[data-testid="input-event-location"]') as HTMLInputElement | null)?.value,
+      (
+        document.body.querySelector(
+          '[data-testid="input-event-location"]',
+        ) as HTMLInputElement | null
+      )?.value,
     ).toBe("Core Platform Studio");
     expect(
-      (document.body.querySelector('[data-testid="input-event-location-name"]') as HTMLInputElement | null)?.value,
+      (
+        document.body.querySelector(
+          '[data-testid="input-event-location-name"]',
+        ) as HTMLInputElement | null
+      )?.value,
     ).toBe("Core Platform Studio");
     expect(
-      (document.body.querySelector('[data-testid="input-event-location-address"]') as HTMLInputElement | null)?.value,
+      (
+        document.body.querySelector(
+          '[data-testid="input-event-location-address"]',
+        ) as HTMLInputElement | null
+      )?.value,
     ).toBe("120 Monroe Center St NW, Grand Rapids, MI, 49503, US");
     expect(
-      (document.body.querySelector('[data-testid="input-event-latitude"]') as HTMLInputElement | null)?.value,
+      (
+        document.body.querySelector(
+          '[data-testid="input-event-latitude"]',
+        ) as HTMLInputElement | null
+      )?.value,
     ).toBe("42.9634");
     expect(
-      (document.body.querySelector('[data-testid="input-event-longitude"]') as HTMLInputElement | null)?.value,
+      (
+        document.body.querySelector(
+          '[data-testid="input-event-longitude"]',
+        ) as HTMLInputElement | null
+      )?.value,
     ).toBe("-85.6681");
     expect(document.body.querySelector('[data-testid="input-venue-name"]')).toBeNull();
   });

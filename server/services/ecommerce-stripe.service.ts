@@ -30,9 +30,8 @@ export async function getEcommerceStripeMode(): Promise<EcommerceStripeMode> {
 export async function getEcommerceStripePublishableKey(): Promise<string> {
   const settings = await getEcommerceStripeSettings();
   const mode = settings.active_mode === "live" ? "live" : "test";
-  const key = mode === "live"
-    ? settings.live_publishable_key || ""
-    : settings.test_publishable_key || "";
+  const key =
+    mode === "live" ? settings.live_publishable_key || "" : settings.test_publishable_key || "";
   const error = validateStripeKeyMode(mode, key);
   if (error) throw stripeConfigurationError(error);
   if (!key) throw stripeConfigurationError("Ecommerce Stripe publishable key is not configured");
@@ -74,12 +73,18 @@ export async function getMaskedEcommerceStripeStatus() {
   };
 }
 
-export function validateStripeKeyMode(mode: EcommerceStripeMode, publishableKey?: string, secretKey?: string): string | null {
+export function validateStripeKeyMode(
+  mode: EcommerceStripeMode,
+  publishableKey?: string,
+  secretKey?: string,
+): string | null {
   if (mode === "test") {
-    if (publishableKey && isLiveKey(publishableKey)) return "Test mode cannot use a live publishable key";
+    if (publishableKey && isLiveKey(publishableKey))
+      return "Test mode cannot use a live publishable key";
     if (secretKey && isLiveKey(secretKey)) return "Test mode cannot use a live secret key";
   } else {
-    if (publishableKey && isTestKey(publishableKey)) return "Live mode cannot use a test publishable key";
+    if (publishableKey && isTestKey(publishableKey))
+      return "Live mode cannot use a test publishable key";
     if (secretKey && isTestKey(secretKey)) return "Live mode cannot use a test secret key";
   }
   return null;
@@ -97,13 +102,21 @@ export function validateStripeSettingsKeyModes(input: {
   );
 }
 
-export async function testEcommerceStripeConnection(): Promise<{ success: boolean; message: string }> {
+export async function testEcommerceStripeConnection(): Promise<{
+  success: boolean;
+  message: string;
+}> {
   try {
     const stripe = await getEcommerceStripeClient();
     await stripe.accounts.retrieve();
     return { success: true, message: "Stripe connection successful" };
   } catch (err) {
-    logger.stripe.warn("Ecommerce Stripe connection failed", { error: err instanceof Error ? err.message : String(err) });
-    return { success: false, message: err instanceof Error ? err.message : "Stripe connection failed" };
+    logger.stripe.warn("Ecommerce Stripe connection failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Stripe connection failed",
+    };
   }
 }

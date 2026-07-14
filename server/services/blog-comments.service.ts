@@ -27,15 +27,42 @@ function normalizeNumber(value: string | undefined, fallback: number) {
 export async function getBlogCommentSettings(): Promise<BlogCommentSettings> {
   const settings = await storage.settings.getDecryptedCategory("blog_comments");
   return blogCommentSettingsSchema.parse({
-    commentsEnabled: normalizeBoolean(settings.comments_enabled, DEFAULT_BLOG_COMMENT_SETTINGS.commentsEnabled),
-    allowGuestComments: normalizeBoolean(settings.allow_guest_comments, DEFAULT_BLOG_COMMENT_SETTINGS.allowGuestComments),
-    allowLinksInComments: normalizeBoolean(settings.allow_links_in_comments, DEFAULT_BLOG_COMMENT_SETTINGS.allowLinksInComments),
-    requireApproval: normalizeBoolean(settings.require_approval, DEFAULT_BLOG_COMMENT_SETTINGS.requireApproval),
-    enableSpamProtection: normalizeBoolean(settings.enable_spam_protection, DEFAULT_BLOG_COMMENT_SETTINGS.enableSpamProtection),
-    enableHoneypot: normalizeBoolean(settings.enable_honeypot, DEFAULT_BLOG_COMMENT_SETTINGS.enableHoneypot),
-    enableRateLimit: normalizeBoolean(settings.enable_rate_limit, DEFAULT_BLOG_COMMENT_SETTINGS.enableRateLimit),
-    rateLimitSeconds: normalizeNumber(settings.rate_limit_seconds, DEFAULT_BLOG_COMMENT_SETTINGS.rateLimitSeconds),
-    maxLinksPerComment: normalizeNumber(settings.max_links_per_comment, DEFAULT_BLOG_COMMENT_SETTINGS.maxLinksPerComment),
+    commentsEnabled: normalizeBoolean(
+      settings.comments_enabled,
+      DEFAULT_BLOG_COMMENT_SETTINGS.commentsEnabled,
+    ),
+    allowGuestComments: normalizeBoolean(
+      settings.allow_guest_comments,
+      DEFAULT_BLOG_COMMENT_SETTINGS.allowGuestComments,
+    ),
+    allowLinksInComments: normalizeBoolean(
+      settings.allow_links_in_comments,
+      DEFAULT_BLOG_COMMENT_SETTINGS.allowLinksInComments,
+    ),
+    requireApproval: normalizeBoolean(
+      settings.require_approval,
+      DEFAULT_BLOG_COMMENT_SETTINGS.requireApproval,
+    ),
+    enableSpamProtection: normalizeBoolean(
+      settings.enable_spam_protection,
+      DEFAULT_BLOG_COMMENT_SETTINGS.enableSpamProtection,
+    ),
+    enableHoneypot: normalizeBoolean(
+      settings.enable_honeypot,
+      DEFAULT_BLOG_COMMENT_SETTINGS.enableHoneypot,
+    ),
+    enableRateLimit: normalizeBoolean(
+      settings.enable_rate_limit,
+      DEFAULT_BLOG_COMMENT_SETTINGS.enableRateLimit,
+    ),
+    rateLimitSeconds: normalizeNumber(
+      settings.rate_limit_seconds,
+      DEFAULT_BLOG_COMMENT_SETTINGS.rateLimitSeconds,
+    ),
+    maxLinksPerComment: normalizeNumber(
+      settings.max_links_per_comment,
+      DEFAULT_BLOG_COMMENT_SETTINGS.maxLinksPerComment,
+    ),
   });
 }
 

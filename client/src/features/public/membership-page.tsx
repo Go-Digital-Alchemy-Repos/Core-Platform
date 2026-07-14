@@ -6,7 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { MembershipPlan, MembershipPlanEntitlement, MembershipPlanPrice } from "@shared/schema";
+import type {
+  MembershipPlan,
+  MembershipPlanEntitlement,
+  MembershipPlanPrice,
+} from "@shared/schema";
 
 interface PlanWithDetails extends MembershipPlan {
   prices: MembershipPlanPrice[];
@@ -61,7 +65,9 @@ export default function MembershipPage() {
         </div>
 
         {isLoading ? (
-          <div className="py-20 flex justify-center"><LoadingSpinner /></div>
+          <div className="py-20 flex justify-center">
+            <LoadingSpinner />
+          </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {plans.map((plan) => {
@@ -77,13 +83,18 @@ export default function MembershipPage() {
                       <div className="text-2xl font-semibold">
                         {formatPrice(primaryPrice)}
                         {primaryPrice.amount > 0 ? (
-                          <span className="text-sm font-normal text-muted-foreground"> / {primaryPrice.interval}</span>
+                          <span className="text-sm font-normal text-muted-foreground">
+                            {" "}
+                            / {primaryPrice.interval}
+                          </span>
                         ) : null}
                       </div>
                     ) : null}
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {plan.description ? <p className="text-sm text-muted-foreground">{plan.description}</p> : null}
+                    {plan.description ? (
+                      <p className="text-sm text-muted-foreground">{plan.description}</p>
+                    ) : null}
                     <ul className="space-y-2 text-sm">
                       {plan.entitlements.map((entitlement) => (
                         <li key={entitlement.id}>{entitlement.label || entitlement.entitlement}</li>
@@ -92,7 +103,10 @@ export default function MembershipPage() {
                     <Button
                       className="w-full"
                       disabled={!primaryPrice || checkoutMutation.isPending}
-                      onClick={() => primaryPrice && checkoutMutation.mutate({ planId: plan.id, priceId: primaryPrice.id })}
+                      onClick={() =>
+                        primaryPrice &&
+                        checkoutMutation.mutate({ planId: plan.id, priceId: primaryPrice.id })
+                      }
                     >
                       {plan.isFree ? "Start Free Membership" : "Join Now"}
                     </Button>

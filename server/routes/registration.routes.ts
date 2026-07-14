@@ -71,9 +71,14 @@ router.post(
       return res.status(400).json({ message: "This event has already occurred" });
     }
 
-    const existing = await storage.eventRegistrations.getRegistrationByEventAndUser(eventId, userId);
+    const existing = await storage.eventRegistrations.getRegistrationByEventAndUser(
+      eventId,
+      userId,
+    );
     if (existing && existing.status !== "canceled") {
-      return res.status(409).json({ message: "You are already registered for this event", registration: existing });
+      return res
+        .status(409)
+        .json({ message: "You are already registered for this event", registration: existing });
     }
 
     const user = await storage.users.getUser(userId);
@@ -115,21 +120,33 @@ router.post(
       });
     }
 
-    const eventLocation = event.locationName || event.location || (event.isVirtual ? "Virtual" : null);
+    const eventLocation =
+      event.locationName || event.location || (event.isVirtual ? "Virtual" : null);
     const eventDate = formatEventDate(event.date);
 
     if (status === "confirmed") {
-      sendRegistrationConfirmationEmail(user.email, user.firstName, event.title, eventDate, eventLocation, event).catch((err) => {
-        logger.email.warn("Failed to send registration confirmation", { error: err instanceof Error ? err.message : String(err) });
+      sendRegistrationConfirmationEmail(
+        user.email,
+        user.firstName,
+        event.title,
+        eventDate,
+        eventLocation,
+        event,
+      ).catch((err) => {
+        logger.email.warn("Failed to send registration confirmation", {
+          error: err instanceof Error ? err.message : String(err),
+        });
       });
     } else if (status === "waitlisted") {
       sendWaitlistEmail(user.email, user.firstName, event.title, eventDate, event).catch((err) => {
-        logger.email.warn("Failed to send waitlist email", { error: err instanceof Error ? err.message : String(err) });
+        logger.email.warn("Failed to send waitlist email", {
+          error: err instanceof Error ? err.message : String(err),
+        });
       });
     }
 
     res.status(201).json(registration);
-  })
+  }),
 );
 
 router.get(
@@ -138,12 +155,15 @@ router.get(
     const eventId = paramString(req.params.id);
     const userId = req.user!.id;
 
-    const registration = await storage.eventRegistrations.getRegistrationByEventAndUser(eventId, userId);
+    const registration = await storage.eventRegistrations.getRegistrationByEventAndUser(
+      eventId,
+      userId,
+    );
     if (!registration || registration.status === "canceled") {
       return res.status(404).json({ message: "No active registration found" });
     }
     res.json(registration);
-  })
+  }),
 );
 
 router.delete(
@@ -152,7 +172,10 @@ router.delete(
     const eventId = paramString(req.params.id);
     const userId = req.user!.id;
 
-    const registration = await storage.eventRegistrations.getRegistrationByEventAndUser(eventId, userId);
+    const registration = await storage.eventRegistrations.getRegistrationByEventAndUser(
+      eventId,
+      userId,
+    );
     if (!registration || registration.status === "canceled") {
       return res.status(404).json({ message: "No active registration found" });
     }
@@ -164,7 +187,9 @@ router.delete(
 
     if (event && user) {
       sendRegistrationCanceledEmail(user.email, user.firstName, event.title).catch((err) => {
-        logger.email.warn("Failed to send cancellation email", { error: err instanceof Error ? err.message : String(err) });
+        logger.email.warn("Failed to send cancellation email", {
+          error: err instanceof Error ? err.message : String(err),
+        });
       });
     }
 
@@ -178,15 +203,17 @@ router.delete(
           event.title,
           formatEventDate(event.date),
           event.locationName || event.location || (event.isVirtual ? "Virtual" : null),
-          event
+          event,
         ).catch((err) => {
-          logger.email.warn("Failed to send waitlist promotion email", { error: err instanceof Error ? err.message : String(err) });
+          logger.email.warn("Failed to send waitlist promotion email", {
+            error: err instanceof Error ? err.message : String(err),
+          });
         });
       }
     }
 
     res.json({ message: "Registration canceled" });
-  })
+  }),
 );
 
 export default router;

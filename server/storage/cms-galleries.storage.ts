@@ -32,7 +32,9 @@ export class CmsGalleriesStorage {
       .select({
         gallery: cmsGalleries,
         imageCount: sql<number>`count(${cmsGalleryItems.id})`,
-        authorName: sql<string | null>`nullif(trim(coalesce(${users.firstName}, '') || ' ' || coalesce(${users.lastName}, '')), '')`,
+        authorName: sql<
+          string | null
+        >`nullif(trim(coalesce(${users.firstName}, '') || ' ' || coalesce(${users.lastName}, '')), '')`,
       })
       .from(cmsGalleries)
       .leftJoin(cmsGalleryItems, eq(cmsGalleryItems.galleryId, cmsGalleries.id))
@@ -81,7 +83,10 @@ export class CmsGalleriesStorage {
     return gallery?.status === "published" ? gallery : undefined;
   }
 
-  async create(data: InsertCmsGallery, items: InsertCmsGalleryItem[]): Promise<CmsGalleryWithItems> {
+  async create(
+    data: InsertCmsGallery,
+    items: InsertCmsGalleryItem[],
+  ): Promise<CmsGalleryWithItems> {
     const [gallery] = await db.insert(cmsGalleries).values(data).returning();
     await this.replaceItems(gallery.id, items);
     const created = await this.getById(gallery.id);

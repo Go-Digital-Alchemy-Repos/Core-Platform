@@ -13,7 +13,7 @@ router.post(
       source: "contact-route",
     });
     res.status(201).json({ message: result.successMessage });
-  })
+  }),
 );
 
 export default router;

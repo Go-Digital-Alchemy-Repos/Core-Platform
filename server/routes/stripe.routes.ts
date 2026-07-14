@@ -64,7 +64,10 @@ router.post(
       return;
     }
 
-    const existing = await storage.eventRegistrations.getRegistrationByEventAndUser(eventId, req.user!.id);
+    const existing = await storage.eventRegistrations.getRegistrationByEventAndUser(
+      eventId,
+      req.user!.id,
+    );
     if (existing && existing.status !== "canceled" && existing.paymentStatus !== "pending") {
       res.status(409).json({ message: "You are already registered for this event" });
       return;
@@ -80,7 +83,10 @@ router.post(
           return;
         }
       } catch (err) {
-        logger.stripe.warn("Previous checkout session not found or expired, creating new one", { sessionId: existing.stripeCheckoutSessionId, error: err instanceof Error ? err.message : String(err) });
+        logger.stripe.warn("Previous checkout session not found or expired, creating new one", {
+          sessionId: existing.stripeCheckoutSessionId,
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
 
@@ -143,7 +149,7 @@ router.post(
     });
 
     res.json({ url: session.url });
-  })
+  }),
 );
 
 router.post(
@@ -163,9 +169,13 @@ router.post(
     const application = await storage.applications.getByUserId(user.id);
     if (
       directorySettings.directoryRequiresApplicationProcess &&
-      (!application || !["approved_pending_subscription", "active_member"].includes(application.status))
+      (!application ||
+        !["approved_pending_subscription", "active_member"].includes(application.status))
     ) {
-      res.status(403).json({ message: "Your application must be approved before you can subscribe. Please complete the application process first." });
+      res.status(403).json({
+        message:
+          "Your application must be approved before you can subscribe. Please complete the application process first.",
+      });
       return;
     }
 
@@ -199,7 +209,7 @@ router.post(
       application &&
       directorySettings.applicationFeeCreditOnApproval &&
       application.paymentStatus === "paid" &&
-      (subscription.applicationFeeCreditAppliedAt == null) &&
+      subscription.applicationFeeCreditAppliedAt == null &&
       directorySettings.applicationFeeCreditAmountCents > 0
     ) {
       try {
@@ -214,9 +224,13 @@ router.post(
           applicationFeeCreditAppliedAt: new Date(),
         });
       } catch (err) {
-        logger.stripe.error("Failed to apply application fee credit before subscription checkout", err, {
-          therapistId: user.id,
-        });
+        logger.stripe.error(
+          "Failed to apply application fee credit before subscription checkout",
+          err,
+          {
+            therapistId: user.id,
+          },
+        );
       }
     }
 
@@ -232,7 +246,7 @@ router.post(
     });
 
     res.json({ url: session.url });
-  })
+  }),
 );
 
 router.post(
@@ -254,7 +268,7 @@ router.post(
     });
 
     res.json({ url: session.url });
-  })
+  }),
 );
 
 router.post(
@@ -282,7 +296,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const subscription = await storage.subscriptions.getSubscriptionByTherapist(req.user!.id);
     res.json(subscription || null);
-  })
+  }),
 );
 
 router.post(
@@ -338,7 +352,10 @@ router.post(
           return;
         }
       } catch (err) {
-        logger.stripe.warn("Previous checkout session not found or expired, creating new one", { sessionId: existing.stripeCheckoutSessionId, error: err instanceof Error ? err.message : String(err) });
+        logger.stripe.warn("Previous checkout session not found or expired, creating new one", {
+          sessionId: existing.stripeCheckoutSessionId,
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
 
@@ -377,7 +394,7 @@ router.post(
     });
 
     res.json({ url: session.url });
-  })
+  }),
 );
 
 export default router;

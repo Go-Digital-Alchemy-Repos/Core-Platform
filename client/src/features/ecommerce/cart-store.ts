@@ -36,7 +36,10 @@ export function getCartItemCount(items = readCart()): number {
 
 export function addCartItem(item: CartItem): void {
   const cart = readCart();
-  const existing = cart.find((line) => line.productId === item.productId && (line.variantId ?? null) === (item.variantId ?? null));
+  const existing = cart.find(
+    (line) =>
+      line.productId === item.productId && (line.variantId ?? null) === (item.variantId ?? null),
+  );
   if (existing) {
     existing.quantity += item.quantity;
     writeCart([...cart]);

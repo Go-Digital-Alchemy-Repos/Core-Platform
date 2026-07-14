@@ -8,13 +8,29 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { BlogTaxonomy } from "@shared/schema";
-import { BookOpen, FolderTree, MessageSquare, Pencil, Plus, Settings, ShieldCheck, Tag, Trash2 } from "lucide-react";
+import {
+  BookOpen,
+  FolderTree,
+  MessageSquare,
+  Pencil,
+  Plus,
+  Settings,
+  ShieldCheck,
+  Tag,
+  Trash2,
+} from "lucide-react";
 
 type TaxonomyDraft = {
   id?: string;
@@ -79,7 +95,9 @@ export function CommentSettingsPanel() {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<BlogCommentSettings>(DEFAULT_COMMENT_SETTINGS);
   const [statusFilter, setStatusFilter] = useState<"all" | BlogCommentStatus>("pending");
-  const [commentDrafts, setCommentDrafts] = useState<Record<string, { body: string; moderationNote: string }>>({});
+  const [commentDrafts, setCommentDrafts] = useState<
+    Record<string, { body: string; moderationNote: string }>
+  >({});
 
   const { data: commentsData, isLoading: isSettingsLoading } = useQuery<{
     settings: BlogCommentSettings;
@@ -135,7 +153,9 @@ export function CommentSettingsPanel() {
 
   const statusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: BlogCommentStatus }) => {
-      const response = await apiRequest("PATCH", `/api/admin/blog/comments/${id}/status`, { status });
+      const response = await apiRequest("PATCH", `/api/admin/blog/comments/${id}/status`, {
+        status,
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -163,7 +183,15 @@ export function CommentSettingsPanel() {
   });
 
   const updateCommentMutation = useMutation({
-    mutationFn: async ({ id, body, moderationNote }: { id: string; body: string; moderationNote: string }) => {
+    mutationFn: async ({
+      id,
+      body,
+      moderationNote,
+    }: {
+      id: string;
+      body: string;
+      moderationNote: string;
+    }) => {
       const response = await apiRequest("PUT", `/api/admin/blog/comments/${id}`, {
         body,
         moderationNote: moderationNote.trim() || null,
@@ -216,7 +244,9 @@ export function CommentSettingsPanel() {
                 </div>
                 <Switch
                   checked={draft.commentsEnabled}
-                  onCheckedChange={(checked) => setDraft((current) => ({ ...current, commentsEnabled: checked }))}
+                  onCheckedChange={(checked) =>
+                    setDraft((current) => ({ ...current, commentsEnabled: checked }))
+                  }
                   data-testid="switch-blog-comments-enabled"
                 />
               </div>
@@ -238,7 +268,9 @@ export function CommentSettingsPanel() {
                     </div>
                     <Switch
                       checked={draft.allowGuestComments}
-                      onCheckedChange={(checked) => setDraft((current) => ({ ...current, allowGuestComments: checked }))}
+                      onCheckedChange={(checked) =>
+                        setDraft((current) => ({ ...current, allowGuestComments: checked }))
+                      }
                       disabled={!draft.commentsEnabled}
                       data-testid="switch-blog-comments-guests"
                     />
@@ -252,7 +284,9 @@ export function CommentSettingsPanel() {
                     </div>
                     <Switch
                       checked={draft.requireApproval}
-                      onCheckedChange={(checked) => setDraft((current) => ({ ...current, requireApproval: checked }))}
+                      onCheckedChange={(checked) =>
+                        setDraft((current) => ({ ...current, requireApproval: checked }))
+                      }
                       disabled={!draft.commentsEnabled}
                       data-testid="switch-blog-comments-approval"
                     />
@@ -266,7 +300,9 @@ export function CommentSettingsPanel() {
                     </div>
                     <Switch
                       checked={draft.allowLinksInComments}
-                      onCheckedChange={(checked) => setDraft((current) => ({ ...current, allowLinksInComments: checked }))}
+                      onCheckedChange={(checked) =>
+                        setDraft((current) => ({ ...current, allowLinksInComments: checked }))
+                      }
                       disabled={!draft.commentsEnabled}
                       data-testid="switch-blog-comments-links"
                     />
@@ -294,7 +330,9 @@ export function CommentSettingsPanel() {
                     </div>
                     <Switch
                       checked={draft.enableSpamProtection}
-                      onCheckedChange={(checked) => setDraft((current) => ({ ...current, enableSpamProtection: checked }))}
+                      onCheckedChange={(checked) =>
+                        setDraft((current) => ({ ...current, enableSpamProtection: checked }))
+                      }
                       disabled={!draft.commentsEnabled}
                       data-testid="switch-blog-comments-spam"
                     />
@@ -308,7 +346,9 @@ export function CommentSettingsPanel() {
                     </div>
                     <Switch
                       checked={draft.enableHoneypot}
-                      onCheckedChange={(checked) => setDraft((current) => ({ ...current, enableHoneypot: checked }))}
+                      onCheckedChange={(checked) =>
+                        setDraft((current) => ({ ...current, enableHoneypot: checked }))
+                      }
                       disabled={!draft.commentsEnabled}
                       data-testid="switch-blog-comments-honeypot"
                     />
@@ -322,7 +362,9 @@ export function CommentSettingsPanel() {
                     </div>
                     <Switch
                       checked={draft.enableRateLimit}
-                      onCheckedChange={(checked) => setDraft((current) => ({ ...current, enableRateLimit: checked }))}
+                      onCheckedChange={(checked) =>
+                        setDraft((current) => ({ ...current, enableRateLimit: checked }))
+                      }
                       disabled={!draft.commentsEnabled}
                       data-testid="switch-blog-comments-rate-limit"
                     />
@@ -356,7 +398,11 @@ export function CommentSettingsPanel() {
                       min={0}
                       max={20}
                       value={draft.maxLinksPerComment}
-                      disabled={!draft.commentsEnabled || !draft.enableSpamProtection || !draft.allowLinksInComments}
+                      disabled={
+                        !draft.commentsEnabled ||
+                        !draft.enableSpamProtection ||
+                        !draft.allowLinksInComments
+                      }
                       onChange={(event) =>
                         setDraft((current) => ({
                           ...current,
@@ -447,7 +493,8 @@ export function CommentSettingsPanel() {
                       <Badge variant="outline">{comment.postTitle}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {comment.authorEmail || "No email"} • {formatAdminCommentDate(comment.createdAt)}
+                      {comment.authorEmail || "No email"} •{" "}
+                      {formatAdminCommentDate(comment.createdAt)}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -456,7 +503,9 @@ export function CommentSettingsPanel() {
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => statusMutation.mutate({ id: comment.id, status: "approved" })}
+                        onClick={() =>
+                          statusMutation.mutate({ id: comment.id, status: "approved" })
+                        }
                         disabled={statusMutation.isPending}
                         data-testid={`button-approve-comment-${comment.id}`}
                       >
@@ -492,7 +541,9 @@ export function CommentSettingsPanel() {
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => statusMutation.mutate({ id: comment.id, status: "rejected" })}
+                        onClick={() =>
+                          statusMutation.mutate({ id: comment.id, status: "rejected" })
+                        }
                         disabled={statusMutation.isPending}
                         data-testid={`button-reject-comment-${comment.id}`}
                       >
@@ -527,7 +578,9 @@ export function CommentSettingsPanel() {
                       disabled={
                         updateCommentMutation.isPending ||
                         ((commentDrafts[comment.id]?.body ?? comment.body) === comment.body &&
-                          (commentDrafts[comment.id]?.moderationNote ?? comment.moderationNote ?? "") === (comment.moderationNote ?? ""))
+                          (commentDrafts[comment.id]?.moderationNote ??
+                            comment.moderationNote ??
+                            "") === (comment.moderationNote ?? ""))
                       }
                       data-testid={`button-save-comment-${comment.id}`}
                     >
@@ -547,7 +600,8 @@ export function CommentSettingsPanel() {
                           ...current,
                           [comment.id]: {
                             body: event.target.value,
-                            moderationNote: current[comment.id]?.moderationNote ?? comment.moderationNote ?? "",
+                            moderationNote:
+                              current[comment.id]?.moderationNote ?? comment.moderationNote ?? "",
                           },
                         }))
                       }
@@ -558,7 +612,9 @@ export function CommentSettingsPanel() {
                     <Label htmlFor={`comment-note-${comment.id}`}>Moderation Note</Label>
                     <Textarea
                       id={`comment-note-${comment.id}`}
-                      value={commentDrafts[comment.id]?.moderationNote ?? comment.moderationNote ?? ""}
+                      value={
+                        commentDrafts[comment.id]?.moderationNote ?? comment.moderationNote ?? ""
+                      }
                       onChange={(event) =>
                         setCommentDrafts((current) => ({
                           ...current,
@@ -608,20 +664,21 @@ function TaxonomyManager({
 
   const categories = useMemo(
     () => taxonomies.filter((item) => item.type === "category"),
-    [taxonomies]
+    [taxonomies],
   );
-  const items = useMemo(
-    () => taxonomies.filter((item) => item.type === type),
-    [taxonomies, type]
-  );
+  const items = useMemo(() => taxonomies.filter((item) => item.type === type), [taxonomies, type]);
 
   const saveMutation = useMutation({
     mutationFn: async (payload: TaxonomyDraft) => {
       if (payload.id) {
-        const response = await apiRequest("PUT", `/api/admin/blog/settings/taxonomies/${payload.id}`, {
-          name: payload.name,
-          parentId: type === "category" ? payload.parentId || null : null,
-        });
+        const response = await apiRequest(
+          "PUT",
+          `/api/admin/blog/settings/taxonomies/${payload.id}`,
+          {
+            name: payload.name,
+            parentId: type === "category" ? payload.parentId || null : null,
+          },
+        );
         return response.json();
       }
 
@@ -695,7 +752,12 @@ function TaxonomyManager({
                 <Label>Parent Category</Label>
                 <Select
                   value={draft.parentId || "__none__"}
-                  onValueChange={(value) => setDraft((current) => ({ ...current, parentId: value === "__none__" ? "" : value }))}
+                  onValueChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      parentId: value === "__none__" ? "" : value,
+                    }))
+                  }
                 >
                   <SelectTrigger data-testid="select-blog-category-parent">
                     <SelectValue placeholder="None" />
@@ -755,7 +817,9 @@ function TaxonomyManager({
                       {type === "category" ? buildCategoryPath(item, categories) : item.name}
                     </p>
                     {item.parentId && <Badge variant="outline">Subcategory</Badge>}
-                    <Badge variant="secondary" className="capitalize">{item.type}</Badge>
+                    <Badge variant="secondary" className="capitalize">
+                      {item.type}
+                    </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1 font-mono">/{item.slug}</p>
                 </div>
@@ -764,7 +828,9 @@ function TaxonomyManager({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setDraft({ id: item.id, name: item.name, parentId: item.parentId ?? "" })}
+                    onClick={() =>
+                      setDraft({ id: item.id, name: item.name, parentId: item.parentId ?? "" })
+                    }
                     data-testid={`button-edit-blog-taxonomy-${item.id}`}
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -811,7 +877,8 @@ export function BlogSettingsPanel() {
       <Card className="border-dashed">
         <CardContent className="pt-6 text-sm text-muted-foreground flex items-center gap-2">
           <Plus className="h-4 w-4 text-violet-500" />
-          Your editorial taxonomy lives here, while engagement and moderation rules can now stay in the Comments tab.
+          Your editorial taxonomy lives here, while engagement and moderation rules can now stay in
+          the Comments tab.
         </CardContent>
       </Card>
     </div>
@@ -827,7 +894,10 @@ export default function CmsBlogSettingsPage() {
             <Settings className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-heading font-semibold" data-testid="text-blog-settings-title">
+            <h1
+              className="text-2xl font-heading font-semibold"
+              data-testid="text-blog-settings-title"
+            >
               Blog Settings
             </h1>
             <p className="text-muted-foreground mt-1">

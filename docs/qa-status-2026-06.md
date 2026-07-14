@@ -1,6 +1,6 @@
 # QA Status - June 2026
 
-Current as of June 18, 2026 after the production reconciliation, branch cleanup, and lint cleanup passes.
+Current as of July 14, 2026 after the handoff cleanup reconciliation.
 
 ## Release State
 
@@ -8,17 +8,18 @@ Current as of June 18, 2026 after the production reconciliation, branch cleanup,
 - `main`, `origin/main`, and the local checkout are expected to stay aligned after each release push.
 - Latest release gates passed before deployment:
   - `npm run check`
-  - `npm run lint -- --quiet`
-  - `npm test` with 359 passing tests
+  - `npm run lint`
+  - `npm test` with 363 passing tests
   - `npm run build`
   - `npm run budget`
 
 ## Branch State
 
-- Remote branches are reduced to `main` plus two unmerged review branches:
+- Two remote review branches remain unmerged:
   - `codex/collapsible-admin-nav`
   - `codex/live-sync-main`
-- Eighty-nine merged `codex/*` remote branches were deleted after they were proven merged into `origin/main`.
+- Merged archive/recovery branches remain on the remote but contain no work missing from `origin/main`.
+- Eighty-nine other merged `codex/*` remote branches were deleted after they were proven merged into `origin/main`.
 - The two remaining branches both conflict with current `main` and should not be merged directly.
 
 ## Remaining Review Branches

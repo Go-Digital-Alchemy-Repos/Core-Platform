@@ -81,9 +81,7 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
         <Checkbox
           id="filter-willing-travel"
           checked={filters.willingToTravel}
-          onCheckedChange={(checked) =>
-            onChange({ ...filters, willingToTravel: checked === true })
-          }
+          onCheckedChange={(checked) => onChange({ ...filters, willingToTravel: checked === true })}
           data-testid="checkbox-willing-to-travel"
         />
         <Label htmlFor="filter-willing-travel" className="text-sm cursor-pointer">

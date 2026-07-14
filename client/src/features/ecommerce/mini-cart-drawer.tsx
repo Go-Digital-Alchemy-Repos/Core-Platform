@@ -28,7 +28,11 @@ export function MiniCartDrawer({ open, onOpenChange, items }: MiniCartDrawerProp
 
   const updateQuantity = (item: CartItem, nextQuantity: number) => {
     const normalizedQuantity = Math.max(1, Math.min(99, nextQuantity));
-    writeCart(items.map((line) => (lineMatches(line, item) ? { ...line, quantity: normalizedQuantity } : line)));
+    writeCart(
+      items.map((line) =>
+        lineMatches(line, item) ? { ...line, quantity: normalizedQuantity } : line,
+      ),
+    );
   };
 
   const removeItem = (item: CartItem) => {
@@ -44,7 +48,9 @@ export function MiniCartDrawer({ open, onOpenChange, items }: MiniCartDrawerProp
             Cart
           </SheetTitle>
           <SheetDescription>
-            {itemCount > 0 ? `${itemCount} item${itemCount === 1 ? "" : "s"} ready for checkout.` : "Your cart is empty."}
+            {itemCount > 0
+              ? `${itemCount} item${itemCount === 1 ? "" : "s"} ready for checkout.`
+              : "Your cart is empty."}
           </SheetDescription>
         </SheetHeader>
 
@@ -52,7 +58,9 @@ export function MiniCartDrawer({ open, onOpenChange, items }: MiniCartDrawerProp
           {items.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
               <ShoppingCart className="mx-auto h-10 w-10 text-muted-foreground" />
-              <p className="mt-3 text-sm text-muted-foreground">Add a product to start a checkout.</p>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Add a product to start a checkout.
+              </p>
               <Button asChild className="mt-5" onClick={() => onOpenChange(false)}>
                 <Link href="/shop">Shop products</Link>
               </Button>
@@ -65,7 +73,11 @@ export function MiniCartDrawer({ open, onOpenChange, items }: MiniCartDrawerProp
                   <Link href={`/products/${item.slug}`} onClick={() => onOpenChange(false)}>
                     <div className="h-20 w-20 shrink-0 overflow-hidden rounded-md bg-muted">
                       {item.image ? (
-                        <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center">
                           <ShoppingCart className="h-5 w-5 text-muted-foreground" />
@@ -81,7 +93,9 @@ export function MiniCartDrawer({ open, onOpenChange, items }: MiniCartDrawerProp
                     >
                       {item.name}
                     </Link>
-                    <p className="mt-1 text-sm text-muted-foreground">{formatMoney(item.unitPrice)}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {formatMoney(item.unitPrice)}
+                    </p>
                     <div className="mt-3 flex items-center justify-between gap-2">
                       <div className="flex h-9 items-center rounded-md border">
                         <Button
@@ -94,7 +108,9 @@ export function MiniCartDrawer({ open, onOpenChange, items }: MiniCartDrawerProp
                         >
                           <Minus className="h-3.5 w-3.5" />
                         </Button>
-                        <span className="min-w-8 text-center text-sm font-medium">{item.quantity}</span>
+                        <span className="min-w-8 text-center text-sm font-medium">
+                          {item.quantity}
+                        </span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -118,7 +134,9 @@ export function MiniCartDrawer({ open, onOpenChange, items }: MiniCartDrawerProp
                       </Button>
                     </div>
                   </div>
-                  <p className="shrink-0 text-sm font-semibold">{formatMoney(item.unitPrice * item.quantity)}</p>
+                  <p className="shrink-0 text-sm font-semibold">
+                    {formatMoney(item.unitPrice * item.quantity)}
+                  </p>
                 </div>
               );
             })
@@ -130,7 +148,9 @@ export function MiniCartDrawer({ open, onOpenChange, items }: MiniCartDrawerProp
             <span className="text-muted-foreground">Subtotal</span>
             <span className="font-semibold">{formatMoney(subtotal)}</span>
           </div>
-          <p className="text-xs text-muted-foreground">Taxes, shipping, and discounts are calculated at checkout.</p>
+          <p className="text-xs text-muted-foreground">
+            Taxes, shipping, and discounts are calculated at checkout.
+          </p>
           {items.length > 0 ? (
             <Button asChild className="w-full" onClick={() => onOpenChange(false)}>
               <Link href="/checkout">Checkout</Link>

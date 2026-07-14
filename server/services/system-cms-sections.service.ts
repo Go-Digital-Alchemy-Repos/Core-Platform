@@ -1,4 +1,10 @@
-import { createBlock, ALL_BLOCKS, type BlockDef, type BlockInstance, type PropDef } from "../../client/src/features/admin/cms/builder/block-registry";
+import {
+  createBlock,
+  ALL_BLOCKS,
+  type BlockDef,
+  type BlockInstance,
+  type PropDef,
+} from "../../client/src/features/admin/cms/builder/block-registry";
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
 
@@ -28,10 +34,19 @@ function mapBlockToSectionCategory(block: BlockDef): string {
   ) {
     return "features";
   }
-  if (block.category === "conversion" || block.type.includes("cta") || block.type.includes("button")) {
+  if (
+    block.category === "conversion" ||
+    block.type.includes("cta") ||
+    block.type.includes("button")
+  ) {
     return "cta";
   }
-  if (block.category === "content" || block.category === "media" || block.category === "data" || block.category === "dynamic") {
+  if (
+    block.category === "content" ||
+    block.category === "media" ||
+    block.category === "data" ||
+    block.category === "dynamic"
+  ) {
     return "content";
   }
   return "general";
@@ -44,9 +59,19 @@ function placeholderTextForKey(key: string): string {
   if (normalized.includes("quote")) return LOREM_LONG;
   if (normalized.includes("title") || normalized.includes("heading")) return LOREM_TITLE;
   if (normalized.includes("subtitle") || normalized.includes("subheading")) return LOREM_SUBTITLE;
-  if (normalized.includes("eyebrow") || normalized.includes("badge") || normalized.includes("label")) return LOREM_SHORT;
+  if (
+    normalized.includes("eyebrow") ||
+    normalized.includes("badge") ||
+    normalized.includes("label")
+  )
+    return LOREM_SHORT;
   if (normalized.includes("caption")) return "Lorem ipsum dolor sit amet.";
-  if (normalized.includes("description") || normalized.includes("answer") || normalized.includes("response")) return LOREM_BODY;
+  if (
+    normalized.includes("description") ||
+    normalized.includes("answer") ||
+    normalized.includes("response")
+  )
+    return LOREM_BODY;
   if (normalized.includes("body") || normalized.includes("content")) return LOREM_BODY;
   if (normalized.includes("cta") || normalized.includes("button")) return "Lorem Ipsum";
   if (normalized.includes("name")) return "Lorem Ipsum";
@@ -62,7 +87,9 @@ function placeholderValueForProp(prop: PropDef, existingValue: unknown): unknown
   switch (prop.type) {
     case "text":
       if (prop.key.toLowerCase().includes("icon")) {
-        return typeof existingValue === "string" && existingValue.trim().length > 0 ? existingValue : "Sparkles";
+        return typeof existingValue === "string" && existingValue.trim().length > 0
+          ? existingValue
+          : "Sparkles";
       }
       return placeholderTextForKey(prop.key);
     case "textarea":
@@ -78,15 +105,17 @@ function placeholderValueForProp(prop: PropDef, existingValue: unknown): unknown
     case "boolean":
       return typeof existingValue === "boolean" ? existingValue : false;
     case "number":
-      return typeof existingValue === "number" ? existingValue : prop.min ?? 0;
+      return typeof existingValue === "number" ? existingValue : (prop.min ?? 0);
     case "color":
       return typeof existingValue === "string" ? existingValue : "#ffffff";
     case "array-items": {
       const schema = prop.itemSchema ?? [];
       const currentItems = Array.isArray(existingValue) ? existingValue : [];
-      const sourceItems = currentItems.length > 0 ? currentItems : Array.from({ length: 2 }, () => ({}));
+      const sourceItems =
+        currentItems.length > 0 ? currentItems : Array.from({ length: 2 }, () => ({}));
       return sourceItems.map((item) => {
-        const itemRecord = typeof item === "object" && item !== null ? (item as Record<string, unknown>) : {};
+        const itemRecord =
+          typeof item === "object" && item !== null ? (item as Record<string, unknown>) : {};
         const nextItem: Record<string, unknown> = {};
         for (const field of schema) {
           nextItem[field.key] = placeholderValueForProp(field as PropDef, itemRecord[field.key]);
@@ -127,7 +156,7 @@ export async function ensureSystemCmsSections(options?: { refreshExisting?: bool
   const existingSections = await storage.cmsSections.getAllSections();
   const existingByName = new Map(existingSections.map((section) => [section.name, section]));
   const desiredStarterNames = new Set(
-    STARTER_LIBRARY_BLOCKS.map((block) => `${SYSTEM_SECTION_NAME_PREFIX}${block.label}`)
+    STARTER_LIBRARY_BLOCKS.map((block) => `${SYSTEM_SECTION_NAME_PREFIX}${block.label}`),
   );
 
   let created = 0;
@@ -136,7 +165,10 @@ export async function ensureSystemCmsSections(options?: { refreshExisting?: bool
 
   if (refreshExisting) {
     for (const section of existingSections) {
-      if (section.name.startsWith(SYSTEM_SECTION_NAME_PREFIX) && !desiredStarterNames.has(section.name)) {
+      if (
+        section.name.startsWith(SYSTEM_SECTION_NAME_PREFIX) &&
+        !desiredStarterNames.has(section.name)
+      ) {
         await storage.cmsSections.deleteSection(section.id);
         deleted += 1;
       }

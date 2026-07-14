@@ -4,10 +4,7 @@ import { emailTemplates, type EmailTemplate } from "@shared/schema";
 
 export class EmailTemplateStorage {
   async getTemplate(slug: string): Promise<EmailTemplate | undefined> {
-    const [template] = await db
-      .select()
-      .from(emailTemplates)
-      .where(eq(emailTemplates.slug, slug));
+    const [template] = await db.select().from(emailTemplates).where(eq(emailTemplates.slug, slug));
     return template;
   }
 
@@ -17,7 +14,7 @@ export class EmailTemplateStorage {
 
   async updateTemplate(
     slug: string,
-    data: { subject?: string; htmlBody?: string; isActive?: boolean }
+    data: { subject?: string; htmlBody?: string; isActive?: boolean },
   ): Promise<EmailTemplate | undefined> {
     const [updated] = await db
       .update(emailTemplates)
@@ -46,10 +43,7 @@ export class EmailTemplateStorage {
         .returning();
       return updated;
     }
-    const [created] = await db
-      .insert(emailTemplates)
-      .values(data)
-      .returning();
+    const [created] = await db.insert(emailTemplates).values(data).returning();
     return created;
   }
 }

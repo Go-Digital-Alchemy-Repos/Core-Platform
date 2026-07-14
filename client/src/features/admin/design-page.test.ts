@@ -41,7 +41,9 @@ describe("IntegrationCard", () => {
   it("renders boolean integration fields as switches", () => {
     (globalThis as typeof globalThis & { React?: typeof React }).React = React;
     const client = new QueryClient();
-    const merchantCenter = INTEGRATIONS.find((config) => config.category === "google_merchant_center");
+    const merchantCenter = INTEGRATIONS.find(
+      (config) => config.category === "google_merchant_center",
+    );
 
     expect(merchantCenter).toBeDefined();
     const html = renderToString(
@@ -125,19 +127,21 @@ describe("integration library helpers", () => {
       ECOMMERCE_INTEGRATION_CATEGORIES.has(config.category),
     ).map((config) => config.category);
 
-    expect(ecommerceIntegrationCategories).toEqual(expect.arrayContaining([
-      "klaviyo",
-      "omnisend",
-      "google_ads_tag_manager",
-      "pinterest_ads",
-      "microsoft_ads_merchant_center",
-      "avalara_avatax",
-      "taxjar",
-      "shipbob",
-      "amazon_marketplace",
-      "walmart_marketplace",
-      "dhl_express",
-    ]));
+    expect(ecommerceIntegrationCategories).toEqual(
+      expect.arrayContaining([
+        "klaviyo",
+        "omnisend",
+        "google_ads_tag_manager",
+        "pinterest_ads",
+        "microsoft_ads_merchant_center",
+        "avalara_avatax",
+        "taxjar",
+        "shipbob",
+        "amazon_marketplace",
+        "walmart_marketplace",
+        "dhl_express",
+      ]),
+    );
 
     const avalara = INTEGRATIONS.find((config) => config.category === "avalara_avatax");
     expect(avalara).toMatchObject({

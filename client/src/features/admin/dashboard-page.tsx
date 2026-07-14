@@ -103,9 +103,7 @@ function formatMonth(monthStr: string) {
 }
 
 function formatAction(action: string) {
-  return action
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return action.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function timeAgo(dateStr: string) {
@@ -143,12 +141,42 @@ function DashboardContent() {
   }
 
   const statCards = [
-    { title: "Total Users", value: analytics?.totalUsers ?? 0, icon: Users, color: "text-blue-500" },
-    { title: "Total Providers", value: stats?.totalTherapists ?? 0, icon: UserCheck, color: "text-emerald-500" },
-    { title: "Active Subscriptions", value: stats?.activeSubscriptions ?? 0, icon: CreditCard, color: "text-violet-500" },
-    { title: "Pending Approvals", value: stats?.pendingTherapists ?? 0, icon: Clock, color: "text-amber-500" },
-    { title: "Unread Messages", value: stats?.unreadMessages ?? 0, icon: Mail, color: "text-rose-500" },
-    { title: "Upcoming Events", value: analytics?.upcomingEvents ?? 0, icon: CalendarDays, color: "text-cyan-500" },
+    {
+      title: "Total Users",
+      value: analytics?.totalUsers ?? 0,
+      icon: Users,
+      color: "text-blue-500",
+    },
+    {
+      title: "Total Providers",
+      value: stats?.totalTherapists ?? 0,
+      icon: UserCheck,
+      color: "text-emerald-500",
+    },
+    {
+      title: "Active Subscriptions",
+      value: stats?.activeSubscriptions ?? 0,
+      icon: CreditCard,
+      color: "text-violet-500",
+    },
+    {
+      title: "Pending Approvals",
+      value: stats?.pendingTherapists ?? 0,
+      icon: Clock,
+      color: "text-amber-500",
+    },
+    {
+      title: "Unread Messages",
+      value: stats?.unreadMessages ?? 0,
+      icon: Mail,
+      color: "text-rose-500",
+    },
+    {
+      title: "Upcoming Events",
+      value: analytics?.upcomingEvents ?? 0,
+      icon: CalendarDays,
+      color: "text-cyan-500",
+    },
   ];
 
   const registrationData = (analytics?.registrationTrend ?? []).map((r) => ({
@@ -164,10 +192,17 @@ function DashboardContent() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-heading font-semibold" data-testid="text-admin-dashboard-title">
+        <h1
+          className="text-2xl font-heading font-semibold"
+          data-testid="text-admin-dashboard-title"
+        >
           Dashboard
         </h1>
-        <Badge variant="outline" className="text-xs text-muted-foreground" data-testid="badge-last-refresh">
+        <Badge
+          variant="outline"
+          className="text-xs text-muted-foreground"
+          data-testid="badge-last-refresh"
+        >
           <Activity className="h-3 w-3 mr-1" />
           Live
         </Badge>
@@ -175,12 +210,18 @@ function DashboardContent() {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {statCards.map((card) => (
-          <Card key={card.title} data-testid={`card-stat-${card.title.toLowerCase().replace(/\s+/g, "-")}`}>
+          <Card
+            key={card.title}
+            data-testid={`card-stat-${card.title.toLowerCase().replace(/\s+/g, "-")}`}
+          >
             <CardContent className="pt-4 pb-3 px-4">
               <div className="flex items-center justify-between mb-2">
                 <card.icon className={`h-4 w-4 ${card.color}`} />
               </div>
-              <div className="text-2xl font-bold" data-testid={`text-stat-value-${card.title.toLowerCase().replace(/\s+/g, "-")}`}>
+              <div
+                className="text-2xl font-bold"
+                data-testid={`text-stat-value-${card.title.toLowerCase().replace(/\s+/g, "-")}`}
+              >
                 {card.value}
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">{card.title}</p>
@@ -201,7 +242,10 @@ function DashboardContent() {
           <CardContent>
             {registrationData.length > 0 ? (
               <ChartContainer config={registrationConfig} className="h-[220px] w-full">
-                <LineChart data={registrationData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                <LineChart
+                  data={registrationData}
+                  margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
@@ -411,12 +455,7 @@ function DashboardContent() {
                 >
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                   <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={140}
-                    tick={{ fontSize: 11 }}
-                  />
+                  <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 11 }} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar dataKey="count" fill="var(--color-count)" radius={[0, 4, 4, 0]} />
                 </BarChart>
@@ -449,8 +488,7 @@ function DashboardContent() {
                     <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm">
-                        <span className="font-medium">{entry.userName}</span>
-                        {" "}
+                        <span className="font-medium">{entry.userName}</span>{" "}
                         <span className="text-muted-foreground">{formatAction(entry.action)}</span>
                       </p>
                       {entry.details && (

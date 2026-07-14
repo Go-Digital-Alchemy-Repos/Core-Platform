@@ -23,7 +23,7 @@ router.get(
     }
     const registrations = await storage.eventRegistrations.getRegistrationsByEvent(eventId);
     res.json(registrations);
-  })
+  }),
 );
 
 router.get(
@@ -37,7 +37,17 @@ router.get(
     }
     const registrations = await storage.eventRegistrations.getRegistrationsByEvent(eventId);
 
-    const headers = ["Name", "Email", "Phone", "Status", "Payment Status", "Amount Paid", "Registered At", "Canceled At", "Notes"];
+    const headers = [
+      "Name",
+      "Email",
+      "Phone",
+      "Status",
+      "Payment Status",
+      "Amount Paid",
+      "Registered At",
+      "Canceled At",
+      "Notes",
+    ];
     const rows = registrations.map((r) => [
       escapeCsv(r.fullName),
       escapeCsv(r.email),
@@ -56,7 +66,7 @@ router.get(
     res.setHeader("Content-Type", "text/csv");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.send(csv);
-  })
+  }),
 );
 
 function escapeCsv(value: string): string {
@@ -83,7 +93,7 @@ router.put(
     }
 
     res.json(registration);
-  })
+  }),
 );
 
 router.put(
@@ -94,7 +104,9 @@ router.put(
     const { status } = req.body;
 
     if (!status || !["confirmed", "waitlisted", "canceled"].includes(status)) {
-      return res.status(400).json({ message: "Invalid status. Must be: confirmed, waitlisted, or canceled" });
+      return res
+        .status(400)
+        .json({ message: "Invalid status. Must be: confirmed, waitlisted, or canceled" });
     }
 
     const registration = await storage.eventRegistrations.getRegistration(id);
@@ -119,32 +131,53 @@ router.put(
             registration.email,
             registration.fullName.split(" ")[0],
             event.title,
-            new Date(event.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }),
-            event.locationName || event.location || (event.isVirtual ? "Virtual" : null)
+            new Date(event.date).toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }),
+            event.locationName || event.location || (event.isVirtual ? "Virtual" : null),
           ).catch((err) => {
-            logger.email.warn("Failed to send promotion email", { error: err instanceof Error ? err.message : String(err) });
+            logger.email.warn("Failed to send promotion email", {
+              error: err instanceof Error ? err.message : String(err),
+            });
           });
         } else if (status === "canceled") {
           sendRegistrationCanceledEmail(
             registration.email,
             registration.fullName.split(" ")[0],
-            event.title
+            event.title,
           ).catch((err) => {
-            logger.email.warn("Failed to send admin cancellation email", { error: err instanceof Error ? err.message : String(err) });
+            logger.email.warn("Failed to send admin cancellation email", {
+              error: err instanceof Error ? err.message : String(err),
+            });
           });
 
           if (previousStatus === "confirmed" && event.waitlistEnabled) {
-            const nextWaitlisted = await storage.eventRegistrations.getFirstWaitlisted(registration.eventId);
+            const nextWaitlisted = await storage.eventRegistrations.getFirstWaitlisted(
+              registration.eventId,
+            );
             if (nextWaitlisted) {
-              await storage.eventRegistrations.updateRegistrationStatus(nextWaitlisted.id, "confirmed");
+              await storage.eventRegistrations.updateRegistrationStatus(
+                nextWaitlisted.id,
+                "confirmed",
+              );
               sendRegistrationConfirmationEmail(
                 nextWaitlisted.email,
                 nextWaitlisted.fullName.split(" ")[0],
                 event.title,
-                new Date(event.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }),
-                event.locationName || event.location || (event.isVirtual ? "Virtual" : null)
+                new Date(event.date).toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                }),
+                event.locationName || event.location || (event.isVirtual ? "Virtual" : null),
               ).catch((err) => {
-                logger.email.warn("Failed to send waitlist promotion email", { error: err instanceof Error ? err.message : String(err) });
+                logger.email.warn("Failed to send waitlist promotion email", {
+                  error: err instanceof Error ? err.message : String(err),
+                });
               });
             }
           }
@@ -153,7 +186,7 @@ router.put(
     }
 
     res.json(updated);
-  })
+  }),
 );
 
 router.delete(
@@ -171,24 +204,33 @@ router.delete(
     if (registration.status === "confirmed") {
       const event = await storage.events.getEvent(registration.eventId);
       if (event?.waitlistEnabled) {
-        const nextWaitlisted = await storage.eventRegistrations.getFirstWaitlisted(registration.eventId);
+        const nextWaitlisted = await storage.eventRegistrations.getFirstWaitlisted(
+          registration.eventId,
+        );
         if (nextWaitlisted) {
           await storage.eventRegistrations.updateRegistrationStatus(nextWaitlisted.id, "confirmed");
           sendRegistrationConfirmationEmail(
             nextWaitlisted.email,
             nextWaitlisted.fullName.split(" ")[0],
             event.title,
-            new Date(event.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }),
-            event.locationName || event.location || (event.isVirtual ? "Virtual" : null)
+            new Date(event.date).toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }),
+            event.locationName || event.location || (event.isVirtual ? "Virtual" : null),
           ).catch((err) => {
-            logger.email.warn("Failed to send waitlist promotion email", { error: err instanceof Error ? err.message : String(err) });
+            logger.email.warn("Failed to send waitlist promotion email", {
+              error: err instanceof Error ? err.message : String(err),
+            });
           });
         }
       }
     }
 
     res.json({ message: "Registration removed" });
-  })
+  }),
 );
 
 export default router;

@@ -13,10 +13,7 @@ export class CmsPageRevisionsStorage {
   }
 
   async getRevision(id: string): Promise<CmsPageRevision | undefined> {
-    const [rev] = await db
-      .select()
-      .from(cmsPageRevisions)
-      .where(eq(cmsPageRevisions.id, id));
+    const [rev] = await db.select().from(cmsPageRevisions).where(eq(cmsPageRevisions.id, id));
     return rev;
   }
 

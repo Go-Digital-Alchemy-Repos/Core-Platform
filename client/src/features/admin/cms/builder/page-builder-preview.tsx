@@ -17,7 +17,7 @@ import type { BlockInstance } from "./block-registry";
 const LazyPublicPageRenderer = lazy(() =>
   import("@/features/public/public-block-renderer").then((module) => ({
     default: module.PublicPageRenderer,
-  }))
+  })),
 );
 
 export type PreviewDevice = "desktop" | "tablet" | "mobile";
@@ -47,9 +47,11 @@ export function initializeFrontendPreviewDocument(
   doc.body.style.background = "transparent";
   doc.body.style.minHeight = "100vh";
 
-  Array.from(sourceDocument.head.querySelectorAll('style, link[rel="stylesheet"]')).forEach((node) => {
-    doc.head.appendChild(node.cloneNode(true));
-  });
+  Array.from(sourceDocument.head.querySelectorAll('style, link[rel="stylesheet"]')).forEach(
+    (node) => {
+      doc.head.appendChild(node.cloneNode(true));
+    },
+  );
 
   const root = doc.createElement("div");
   root.setAttribute("data-frontend-preview-root", "true");
@@ -170,7 +172,8 @@ export function FrontendPreviewDialog({
                 Frontend Preview
               </DialogTitle>
               <DialogDescription>
-                Review the current page content with the published renderer only, without builder chrome, before you publish.
+                Review the current page content with the published renderer only, without builder
+                chrome, before you publish.
               </DialogDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">

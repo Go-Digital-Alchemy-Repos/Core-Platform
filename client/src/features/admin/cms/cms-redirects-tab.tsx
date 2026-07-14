@@ -74,7 +74,11 @@ function RedirectForm({ onSuccess }: { onSuccess: () => void }) {
       onSuccess();
     },
     onError: (err: Error) => {
-      toast({ title: "Failed to create redirect", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed to create redirect",
+        description: err.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -115,7 +119,9 @@ function RedirectForm({ onSuccess }: { onSuccess: () => void }) {
                     data-testid="input-redirect-to"
                   />
                 </FormControl>
-                <FormDescription className="text-xs">Relative or absolute destination</FormDescription>
+                <FormDescription className="text-xs">
+                  Relative or absolute destination
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -153,14 +159,24 @@ function RedirectForm({ onSuccess }: { onSuccess: () => void }) {
               <FormItem>
                 <FormLabel className="text-xs">Note (optional)</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="e.g. Old blog URL" className="text-sm" data-testid="input-redirect-note" />
+                  <Input
+                    {...field}
+                    placeholder="e.g. Old blog URL"
+                    className="text-sm"
+                    data-testid="input-redirect-note"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-        <Button type="submit" size="sm" disabled={createMutation.isPending} data-testid="button-add-redirect">
+        <Button
+          type="submit"
+          size="sm"
+          disabled={createMutation.isPending}
+          data-testid="button-add-redirect"
+        >
           <Plus className="h-4 w-4 mr-2" />
           {createMutation.isPending ? "Adding…" : "Add Redirect"}
         </Button>
@@ -224,14 +240,15 @@ function RedirectRow({ redirect }: { redirect: Redirect }) {
               {redirect.statusCode}
             </Badge>
             {!redirect.isActive && (
-              <Badge variant="secondary" className="text-xs px-1.5 py-0 bg-slate-100 text-slate-500">
+              <Badge
+                variant="secondary"
+                className="text-xs px-1.5 py-0 bg-slate-100 text-slate-500"
+              >
                 Inactive
               </Badge>
             )}
           </div>
-          {redirect.note && (
-            <p className="text-xs text-muted-foreground mt-1">{redirect.note}</p>
-          )}
+          {redirect.note && <p className="text-xs text-muted-foreground mt-1">{redirect.note}</p>}
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <Button
@@ -266,8 +283,9 @@ function RedirectRow({ redirect }: { redirect: Redirect }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete redirect?</AlertDialogTitle>
             <AlertDialogDescription>
-              The redirect from <code className="text-xs bg-muted px-1 py-0.5 rounded">{redirect.fromPath}</code> will be
-              permanently removed. This cannot be undone.
+              The redirect from{" "}
+              <code className="text-xs bg-muted px-1 py-0.5 rounded">{redirect.fromPath}</code> will
+              be permanently removed. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -310,8 +328,9 @@ export function CmsRedirectsTab() {
           <div className="flex items-start gap-2 rounded-md bg-muted/60 px-3 py-2.5 text-xs text-muted-foreground">
             <Info className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
             <span>
-              Use <strong>301</strong> for permanent URL changes (slug renamed, page moved). Use <strong>302</strong> for
-              temporary redirects. Inactive redirects are saved but not applied.
+              Use <strong>301</strong> for permanent URL changes (slug renamed, page moved). Use{" "}
+              <strong>302</strong> for temporary redirects. Inactive redirects are saved but not
+              applied.
             </span>
           </div>
 
@@ -347,13 +366,16 @@ export function CmsRedirectsTab() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Active Redirects</CardTitle>
           <CardDescription className="text-xs">
-            {redirectsList?.length ?? 0} redirect{(redirectsList?.length ?? 0) !== 1 ? "s" : ""} configured
+            {redirectsList?.length ?? 0} redirect{(redirectsList?.length ?? 0) !== 1 ? "s" : ""}{" "}
+            configured
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="space-y-3">
-              {[0, 1, 2].map((i) => <Skeleton key={i} className="h-10 rounded" />)}
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} className="h-10 rounded" />
+              ))}
             </div>
           ) : !redirectsList || redirectsList.length === 0 ? (
             <div className="text-center py-8 text-sm text-muted-foreground">

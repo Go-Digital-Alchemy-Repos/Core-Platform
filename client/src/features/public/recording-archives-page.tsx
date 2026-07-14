@@ -25,12 +25,7 @@ import {
   ShoppingCart,
   CheckCircle,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -62,7 +57,9 @@ function formatPrice(cents: number) {
 function getVideoEmbedUrl(url: string) {
   if (!url) return null;
 
-  const ytMatch = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/);
+  const ytMatch = url.match(
+    /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/,
+  );
   if (ytMatch) {
     return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1`;
   }
@@ -94,14 +91,13 @@ function RecordingCard({
   const canWatch = !isPaid || isPurchased;
 
   return (
-    <Card data-testid={`card-recording-${event.id}`} className="flex flex-col h-full hover-elevate overflow-visible">
+    <Card
+      data-testid={`card-recording-${event.id}`}
+      className="flex flex-col h-full hover-elevate overflow-visible"
+    >
       <div className="aspect-video relative overflow-hidden rounded-t-md bg-muted flex items-center justify-center">
         {event.imageUrl ? (
-          <img
-            src={event.imageUrl}
-            alt={event.title}
-            className="w-full h-full object-cover"
-          />
+          <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
         ) : (
           <Video className="h-12 w-12 text-muted-foreground/40" />
         )}
@@ -120,7 +116,10 @@ function RecordingCard({
         )}
         {isPaid && !isPurchased && (
           <div className="absolute top-2 right-2">
-            <Badge className="bg-amber-500 text-white border-0 shadow-md" data-testid={`badge-paid-${event.id}`}>
+            <Badge
+              className="bg-amber-500 text-white border-0 shadow-md"
+              data-testid={`badge-paid-${event.id}`}
+            >
               <Lock className="h-3 w-3 mr-1" />
               {formatPrice(event.recordingPrice!)}
             </Badge>
@@ -128,7 +127,10 @@ function RecordingCard({
         )}
         {isPaid && isPurchased && (
           <div className="absolute top-2 right-2">
-            <Badge className="bg-green-600 text-white border-0 shadow-md" data-testid={`badge-purchased-${event.id}`}>
+            <Badge
+              className="bg-green-600 text-white border-0 shadow-md"
+              data-testid={`badge-purchased-${event.id}`}
+            >
               <CheckCircle className="h-3 w-3 mr-1" />
               Purchased
             </Badge>
@@ -144,12 +146,19 @@ function RecordingCard({
       </div>
       <CardHeader className="flex-none p-4 pb-2">
         <div className="flex justify-between items-start gap-2 mb-1">
-          <Badge variant="outline" className="text-[10px] uppercase tracking-wider" data-testid={`text-recording-date-${event.id}`}>
+          <Badge
+            variant="outline"
+            className="text-[10px] uppercase tracking-wider"
+            data-testid={`text-recording-date-${event.id}`}
+          >
             {formatDate(event.date)}
           </Badge>
         </div>
         <Link href={getEventPath(event)}>
-          <CardTitle className="text-base line-clamp-2 cursor-pointer hover:text-primary transition-colors" data-testid={`text-recording-title-${event.id}`}>
+          <CardTitle
+            className="text-base line-clamp-2 cursor-pointer hover:text-primary transition-colors"
+            data-testid={`text-recording-title-${event.id}`}
+          >
             {event.title}
           </CardTitle>
         </Link>
@@ -222,16 +231,13 @@ function RecordingSkeleton() {
   );
 }
 
-export function RecordingArchivesSection({
-  props = {},
-}: {
-  props?: Record<string, unknown>;
-}) {
+export function RecordingArchivesSection({ props = {} }: { props?: Record<string, unknown> }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const searchParams = useSearch();
   const heading = str(props.heading) || "Video Archives";
-  const subheading = str(props.subheading) || "Browse our collection of past trainings and webinars.";
+  const subheading =
+    str(props.subheading) || "Browse our collection of past trainings and webinars.";
   const showSearch = bool(props.showSearch, true);
   const showYearFilter = bool(props.showYearFilter, true);
   const showAccessFilter = bool(props.showAccessFilter, true);
@@ -251,9 +257,7 @@ export function RecordingArchivesSection({
 
   const purchasedEventIds = useMemo(() => {
     if (!purchases) return new Set<string>();
-    return new Set(
-      purchases.filter((p) => p.stripePaymentIntentId).map((p) => p.eventId)
-    );
+    return new Set(purchases.filter((p) => p.stripePaymentIntentId).map((p) => p.eventId));
   }, [purchases]);
 
   const purchaseMutation = useMutation({
@@ -298,7 +302,9 @@ export function RecordingArchivesSection({
     });
   }, [recordings, search, yearFilter, accessFilter, purchasedEventIds]);
 
-  const embedUrl = selectedEvent?.recordingUrl ? getVideoEmbedUrl(selectedEvent.recordingUrl) : null;
+  const embedUrl = selectedEvent?.recordingUrl
+    ? getVideoEmbedUrl(selectedEvent.recordingUrl)
+    : null;
 
   if (user && user.role === "client") {
     return <Redirect to="/" />;
@@ -312,13 +318,25 @@ export function RecordingArchivesSection({
   return (
     <>
       <section className="relative bg-muted/30 overflow-hidden" data-testid="section-archives-hero">
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32" style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)" }} />
+        <div
+          className="pointer-events-none absolute bottom-0 left-0 right-0 h-32"
+          style={{
+            background:
+              "radial-gradient(ellipse at 50% 100%, hsl(var(--accent) / 0.18) 0%, transparent 70%)",
+          }}
+        />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center">
-          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4" data-testid="text-archives-heading">
+          <h1
+            className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4"
+            data-testid="text-archives-heading"
+          >
             {heading}
           </h1>
           {subheading && (
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed" data-testid="text-archives-subtitle">
+            <p
+              className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+              data-testid="text-archives-subtitle"
+            >
               {subheading}
             </p>
           )}
@@ -328,11 +346,18 @@ export function RecordingArchivesSection({
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
         <div className="mb-8 space-y-4">
           {checkoutStatus === "success" && (
-            <div className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800 p-4 flex items-center gap-3" data-testid="alert-purchase-success">
+            <div
+              className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800 p-4 flex items-center gap-3"
+              data-testid="alert-purchase-success"
+            >
               <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
               <div>
-                <p className="font-medium text-green-800 dark:text-green-200">Purchase successful!</p>
-                <p className="text-sm text-green-700 dark:text-green-300">You now have permanent access to the recording.</p>
+                <p className="font-medium text-green-800 dark:text-green-200">
+                  Purchase successful!
+                </p>
+                <p className="text-sm text-green-700 dark:text-green-300">
+                  You now have permanent access to the recording.
+                </p>
               </div>
             </div>
           )}
@@ -389,7 +414,10 @@ export function RecordingArchivesSection({
         {isLoading ? (
           <RecordingSkeleton />
         ) : filteredRecordings.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="grid-recordings">
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            data-testid="grid-recordings"
+          >
             {filteredRecordings.map((event) => (
               <RecordingCard
                 key={event.id}
@@ -403,7 +431,10 @@ export function RecordingArchivesSection({
             ))}
           </div>
         ) : (
-          <div className="py-20 text-center border rounded-xl bg-muted/20" data-testid="text-no-recordings">
+          <div
+            className="py-20 text-center border rounded-xl bg-muted/20"
+            data-testid="text-no-recordings"
+          >
             <Video className="mx-auto h-12 w-12 text-muted-foreground/40 mb-4" />
             <h3 className="text-lg font-medium">No recordings found</h3>
             <p className="text-muted-foreground">Try adjusting your search or filter.</p>

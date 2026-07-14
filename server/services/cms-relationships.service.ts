@@ -23,7 +23,10 @@ export interface CmsPageMenuReference {
 }
 
 function pagePath(slug: string | null | undefined): string {
-  const cleanSlug = String(slug ?? "").trim().replace(/^\/+/, "").replace(/\/+$/, "");
+  const cleanSlug = String(slug ?? "")
+    .trim()
+    .replace(/^\/+/, "")
+    .replace(/\/+$/, "");
   return cleanSlug ? `/${cleanSlug}` : "/";
 }
 
@@ -53,7 +56,8 @@ function syncMenuItemsForPage(items: MenuItem[], oldPage: CmsPage, newPage: CmsP
     const childResult = syncMenuItemsForPage(item.children ?? [], oldPage, newPage);
     const normalizedUrl = normalizeUrlForMatch(item.url);
     const isLinkedById = item.pageId === newPage.id || item.pageId === oldPage.id;
-    const isLegacyPageUrl = !item.pageId && (normalizedUrl === oldPath || normalizedUrl === newPath);
+    const isLegacyPageUrl =
+      !item.pageId && (normalizedUrl === oldPath || normalizedUrl === newPath);
     const shouldSyncLabel =
       item.labelSource === "page" ||
       (isLegacyPageUrl && (!item.label.trim() || item.label.trim() === oldPage.title.trim()));
@@ -61,9 +65,10 @@ function syncMenuItemsForPage(items: MenuItem[], oldPage: CmsPage, newPage: CmsP
     let nextItem: MenuItem = childResult.changed ? { ...item, children: childResult.items } : item;
 
     if (isLinkedById || isLegacyPageUrl) {
-      const nextUrl = isLinkedById || item.url === oldPath || normalizedUrl === oldPath ? newPath : item.url;
+      const nextUrl =
+        isLinkedById || item.url === oldPath || normalizedUrl === oldPath ? newPath : item.url;
       const nextLabel = shouldSyncLabel ? newPage.title : item.label;
-      const nextLabelSource = shouldSyncLabel ? "page" : item.labelSource ?? "custom";
+      const nextLabelSource = shouldSyncLabel ? "page" : (item.labelSource ?? "custom");
 
       if (
         nextItem.pageId !== newPage.id ||
@@ -104,7 +109,8 @@ function collectMenuReferences(
   const references: CmsPageMenuReference[] = [];
 
   for (const item of items) {
-    const isReference = item.pageId === page.id || (!item.pageId && normalizeUrlForMatch(item.url) === path);
+    const isReference =
+      item.pageId === page.id || (!item.pageId && normalizeUrlForMatch(item.url) === path);
     if (isReference) {
       references.push({
         menuId: menu.id,
@@ -132,7 +138,8 @@ function removeMenuReferencesForPage(items: MenuItem[], page: CmsPage) {
 
   for (const item of items) {
     const childResult = removeMenuReferencesForPage(item.children ?? [], page);
-    const isReference = item.pageId === page.id || (!item.pageId && normalizeUrlForMatch(item.url) === path);
+    const isReference =
+      item.pageId === page.id || (!item.pageId && normalizeUrlForMatch(item.url) === path);
 
     if (isReference) {
       changed = true;
@@ -171,7 +178,9 @@ export async function getCmsPageMenuReferences(page: CmsPage): Promise<CmsPageMe
   );
 }
 
-export async function removeCmsPageMenuReferences(page: CmsPage): Promise<CmsPageRelationshipCleanupResult> {
+export async function removeCmsPageMenuReferences(
+  page: CmsPage,
+): Promise<CmsPageRelationshipCleanupResult> {
   const menus = await storage.cmsMenus.getAll();
   let menusUpdated = 0;
   let itemsRemoved = 0;

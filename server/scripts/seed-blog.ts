@@ -5,7 +5,8 @@ const posts = [
   {
     title: "Designing a Member-Friendly Onboarding Flow",
     slug: "member-friendly-onboarding-flow",
-    excerpt: "Practical ways to make setup, profile completion, and first actions feel clear for new members and providers.",
+    excerpt:
+      "Practical ways to make setup, profile completion, and first actions feel clear for new members and providers.",
     content: `A strong onboarding flow helps people understand what to do next without overwhelming them. The best flows focus on a few clear milestones: account setup, profile completion, verification, and the first meaningful action.
 
 Start With Orientation
@@ -33,7 +34,8 @@ If your site includes approvals, references, payments, or verification, set expe
   {
     title: "Building Trust in a Public Directory",
     slug: "building-trust-public-directory",
-    excerpt: "Directories work best when visitors can quickly understand who is listed, what is verified, and how to compare options.",
+    excerpt:
+      "Directories work best when visitors can quickly understand who is listed, what is verified, and how to compare options.",
     content: `A public directory is only useful when visitors can make confident decisions. Trust starts with clear labels, consistent profiles, and transparent review standards.
 
 Show What Is Verified
@@ -61,7 +63,8 @@ A configurable platform should support providers, locations, vendors, programs, 
   {
     title: "Planning Events That Are Easy to Join",
     slug: "planning-events-easy-to-join",
-    excerpt: "A short checklist for event pages, registrations, reminders, and follow-up that make participation smoother.",
+    excerpt:
+      "A short checklist for event pages, registrations, reminders, and follow-up that make participation smoother.",
     content: `Event experiences start before the event begins. A helpful event page answers the practical questions first: who it is for, when it happens, where it happens, what it costs, and how registration works.
 
 Clarify the Format
@@ -79,7 +82,8 @@ After the event, attendees may need recordings, resources, invoices, feedback fo
 Review What Worked
 
 Track registrations, attendance, waitlists, and feedback. A simple review rhythm helps each event become easier to run than the last.`,
-    coverImageUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&h=450&fit=crop",
+    coverImageUrl:
+      "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&h=450&fit=crop",
     authorName: "Core Platform Team",
     category: "Events",
     tags: ["Events", "Registration", "Operations", "Members"],
@@ -89,7 +93,8 @@ Track registrations, attendance, waitlists, and feedback. A simple review rhythm
   {
     title: "Why Save States Matter in Admin Tools",
     slug: "why-save-states-matter-admin-tools",
-    excerpt: "Consistent save feedback helps editors trust that their changes are protected and published intentionally.",
+    excerpt:
+      "Consistent save feedback helps editors trust that their changes are protected and published intentionally.",
     content: `Admin tools are full of small trust moments. Save buttons, dirty-state warnings, success messages, and error states all tell editors whether the system is protecting their work.
 
 Use One Pattern Everywhere
@@ -107,7 +112,8 @@ Saving content and publishing content are different decisions. Clear statuses, p
 Design for Recovery
 
 When a save fails, explain what happened and keep the editor's work on screen. The best error state gives people a next action without panic.`,
-    coverImageUrl: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&h=450&fit=crop",
+    coverImageUrl:
+      "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&h=450&fit=crop",
     authorName: "Core Platform Team",
     category: "Admin UX",
     tags: ["Admin", "UX", "Publishing", "Reliability"],
@@ -117,7 +123,8 @@ When a save fails, explain what happened and keep the editor's work on screen. T
   {
     title: "Keeping Public Themes Out of Admin Chrome",
     slug: "keeping-public-themes-out-of-admin-chrome",
-    excerpt: "Public CMS themes should style visitor content and previews without leaking into the admin workspace.",
+    excerpt:
+      "Public CMS themes should style visitor content and previews without leaking into the admin workspace.",
     content: `Theme systems are powerful because they let each site feel distinct. They also need clear boundaries. Public theme variables should shape visitor pages and preview surfaces, while admin chrome should remain stable and predictable.
 
 Keep Contexts Separate
@@ -131,7 +138,8 @@ Editors still need to see public content as visitors will see it. A dedicated pr
 Test the Boundary
 
 Regression tests should confirm that theme classes and CSS variable overrides do not land on the document root or persistent admin layout. This protects both brand flexibility and editor usability.`,
-    coverImageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=450&fit=crop",
+    coverImageUrl:
+      "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=450&fit=crop",
     authorName: "Core Platform Team",
     category: "Design System",
     tags: ["Themes", "CMS", "Admin", "Design System"],
@@ -140,7 +148,9 @@ Regression tests should confirm that theme classes and CSS variable overrides do
   },
 ];
 
-export async function seedBlogPosts(options: { refreshExisting?: boolean } = { refreshExisting: true }) {
+export async function seedBlogPosts(
+  options: { refreshExisting?: boolean } = { refreshExisting: true },
+) {
   const updatedAt = new Date();
   for (const post of posts) {
     const insert = db.insert(blogPosts).values(post);

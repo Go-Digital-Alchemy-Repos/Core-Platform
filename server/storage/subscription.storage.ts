@@ -1,14 +1,23 @@
 import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db";
-import { therapistSubscriptions, type TherapistSubscription, type InsertSubscription } from "@shared/schema";
+import {
+  therapistSubscriptions,
+  type TherapistSubscription,
+  type InsertSubscription,
+} from "@shared/schema";
 
 export class SubscriptionStorage {
   async getSubscription(id: string): Promise<TherapistSubscription | undefined> {
-    const [sub] = await db.select().from(therapistSubscriptions).where(eq(therapistSubscriptions.id, id));
+    const [sub] = await db
+      .select()
+      .from(therapistSubscriptions)
+      .where(eq(therapistSubscriptions.id, id));
     return sub;
   }
 
-  async getSubscriptionByTherapist(therapistId: string): Promise<TherapistSubscription | undefined> {
+  async getSubscriptionByTherapist(
+    therapistId: string,
+  ): Promise<TherapistSubscription | undefined> {
     const [sub] = await db
       .select()
       .from(therapistSubscriptions)
@@ -21,7 +30,10 @@ export class SubscriptionStorage {
     return sub;
   }
 
-  async updateSubscription(id: string, data: Partial<TherapistSubscription>): Promise<TherapistSubscription | undefined> {
+  async updateSubscription(
+    id: string,
+    data: Partial<TherapistSubscription>,
+  ): Promise<TherapistSubscription | undefined> {
     const [sub] = await db
       .update(therapistSubscriptions)
       .set({ ...data, updatedAt: new Date() })
@@ -30,7 +42,10 @@ export class SubscriptionStorage {
     return sub;
   }
 
-  async updateByStripeSubscriptionId(stripeSubId: string, data: Partial<TherapistSubscription>): Promise<TherapistSubscription | undefined> {
+  async updateByStripeSubscriptionId(
+    stripeSubId: string,
+    data: Partial<TherapistSubscription>,
+  ): Promise<TherapistSubscription | undefined> {
     const [sub] = await db
       .update(therapistSubscriptions)
       .set({ ...data, updatedAt: new Date() })

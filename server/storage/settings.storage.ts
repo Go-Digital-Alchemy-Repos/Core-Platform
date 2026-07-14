@@ -29,7 +29,9 @@ function decrypt(text: string, settingKey?: string): string {
     decrypted += decipher.final("utf8");
     return decrypted;
   } catch {
-    logger.db.warn("Decryption failed, returning raw value", { settingKey: settingKey ?? "unknown" });
+    logger.db.warn("Decryption failed, returning raw value", {
+      settingKey: settingKey ?? "unknown",
+    });
     return text;
   }
 }
@@ -85,10 +87,7 @@ export class SettingsStorage {
     const cached = this.settingCache.get(key);
     if (this.isFresh(cached)) return cached.data;
 
-    const [setting] = await db
-      .select()
-      .from(systemSettings)
-      .where(eq(systemSettings.key, key));
+    const [setting] = await db.select().from(systemSettings).where(eq(systemSettings.key, key));
     if (!setting) {
       this.settingCache.set(key, { data: null, expiresAt: Date.now() + this.ttlMs });
       return null;
@@ -100,10 +99,7 @@ export class SettingsStorage {
   }
 
   async getSettingsByCategory(category: string): Promise<SystemSetting[]> {
-    return db
-      .select()
-      .from(systemSettings)
-      .where(eq(systemSettings.category, category));
+    return db.select().from(systemSettings).where(eq(systemSettings.category, category));
   }
 
   async getAllSettings(): Promise<SystemSetting[]> {
@@ -114,13 +110,10 @@ export class SettingsStorage {
     key: string,
     value: string,
     category: string,
-    isSecret: boolean
+    isSecret: boolean,
   ): Promise<SystemSetting> {
     const storedValue = isSecret ? encrypt(value) : value;
-    const existing = await db
-      .select()
-      .from(systemSettings)
-      .where(eq(systemSettings.key, key));
+    const existing = await db.select().from(systemSettings).where(eq(systemSettings.key, key));
 
     this.settingCache.delete(key);
 
@@ -149,10 +142,7 @@ export class SettingsStorage {
   }
 
   async deleteSetting(key: string): Promise<void> {
-    const [existing] = await db
-      .select()
-      .from(systemSettings)
-      .where(eq(systemSettings.key, key));
+    const [existing] = await db.select().from(systemSettings).where(eq(systemSettings.key, key));
     this.settingCache.delete(key);
     await db.delete(systemSettings).where(eq(systemSettings.key, key));
     if (existing) {

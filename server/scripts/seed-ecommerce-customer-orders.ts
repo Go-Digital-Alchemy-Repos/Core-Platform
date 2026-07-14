@@ -35,7 +35,9 @@ async function main() {
 
   const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (!user) {
-    throw new Error(`No user found for ${email}. Sign in once or create the account before seeding orders.`);
+    throw new Error(
+      `No user found for ${email}. Sign in once or create the account before seeding orders.`,
+    );
   }
 
   const name = [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || "Mike Dickerman";
@@ -46,42 +48,51 @@ async function main() {
     .limit(1);
 
   const customer = existingCustomer
-    ? (await db
-      .update(ecommerceCustomers)
-      .set({
-        userId: user.id,
-        name,
-        phone: "(616) 555-0144",
-        address: "120 Monroe Center St NW",
-        line2: "Suite 400",
-        city: "Grand Rapids",
-        state: "MI",
-        zipCode: "49503",
-        country: "US",
-        updatedAt: new Date(),
-      })
-      .where(eq(ecommerceCustomers.id, existingCustomer.id))
-      .returning())[0]
-    : (await db.insert(ecommerceCustomers).values({
-      userId: user.id,
-      email,
-      name,
-      phone: "(616) 555-0144",
-      address: "120 Monroe Center St NW",
-      line2: "Suite 400",
-      city: "Grand Rapids",
-      state: "MI",
-      zipCode: "49503",
-      country: "US",
-    }).returning())[0];
+    ? (
+        await db
+          .update(ecommerceCustomers)
+          .set({
+            userId: user.id,
+            name,
+            phone: "(616) 555-0144",
+            address: "120 Monroe Center St NW",
+            line2: "Suite 400",
+            city: "Grand Rapids",
+            state: "MI",
+            zipCode: "49503",
+            country: "US",
+            updatedAt: new Date(),
+          })
+          .where(eq(ecommerceCustomers.id, existingCustomer.id))
+          .returning()
+      )[0]
+    : (
+        await db
+          .insert(ecommerceCustomers)
+          .values({
+            userId: user.id,
+            email,
+            name,
+            phone: "(616) 555-0144",
+            address: "120 Monroe Center St NW",
+            line2: "Suite 400",
+            city: "Grand Rapids",
+            state: "MI",
+            zipCode: "49503",
+            country: "US",
+          })
+          .returning()
+      )[0];
 
   const seededOrders = await db
     .select()
     .from(ecommerceOrders)
-    .where(and(
-      eq(ecommerceOrders.customerId, customer.id),
-      ilike(ecommerceOrders.notes, "Seeded customer portal demo:%"),
-    ));
+    .where(
+      and(
+        eq(ecommerceOrders.customerId, customer.id),
+        ilike(ecommerceOrders.notes, "Seeded customer portal demo:%"),
+      ),
+    );
 
   if (seededOrders.length >= 3) {
     console.log(`Customer ${email} already has ${seededOrders.length} seeded portal demo orders.`);
@@ -91,30 +102,56 @@ async function main() {
   const products = await db
     .select()
     .from(ecommerceProducts)
-    .where(and(
-      eq(ecommerceProducts.active, true),
-      eq(ecommerceProducts.status, "published"),
-      isNull(ecommerceProducts.archivedAt),
-    ))
+    .where(
+      and(
+        eq(ecommerceProducts.active, true),
+        eq(ecommerceProducts.status, "published"),
+        isNull(ecommerceProducts.archivedAt),
+      ),
+    )
     .limit(5);
 
   if (products.length === 0) {
-    throw new Error("No active published ecommerce products found. Seed products before seeding customer orders.");
+    throw new Error(
+      "No active published ecommerce products found. Seed products before seeding customer orders.",
+    );
   }
 
   const variants = await db.select().from(ecommerceProductVariants);
   const demos = [
-    { status: "delivered", paymentStatus: "paid", days: 42, carrier: "UPS", tracking: "1Z999AA10123456784", refund: 0 },
-    { status: "shipped", paymentStatus: "paid", days: 8, carrier: "USPS", tracking: "9400111202555012345678", refund: 0 },
-    { status: "paid", paymentStatus: "partially_refunded", days: 2, carrier: null, tracking: null, refund: 1200 },
+    {
+      status: "delivered",
+      paymentStatus: "paid",
+      days: 42,
+      carrier: "UPS",
+      tracking: "1Z999AA10123456784",
+      refund: 0,
+    },
+    {
+      status: "shipped",
+      paymentStatus: "paid",
+      days: 8,
+      carrier: "USPS",
+      tracking: "9400111202555012345678",
+      refund: 0,
+    },
+    {
+      status: "paid",
+      paymentStatus: "partially_refunded",
+      days: 2,
+      carrier: null,
+      tracking: null,
+      refund: 1200,
+    },
   ];
 
   for (let i = seededOrders.length; i < demos.length; i += 1) {
     const demo = demos[i];
     const product = products[i % products.length];
-    const variant = variants.find((item) => item.productId === product.id && item.isDefault)
-      ?? variants.find((item) => item.productId === product.id)
-      ?? null;
+    const variant =
+      variants.find((item) => item.productId === product.id && item.isDefault) ??
+      variants.find((item) => item.productId === product.id) ??
+      null;
     const quantity = i === 1 ? 2 : 1;
     const unitPrice = variant?.salePrice ?? variant?.price ?? product.salePrice ?? product.price;
     const subtotalAmount = unitPrice * quantity;
@@ -125,35 +162,38 @@ async function main() {
     const createdAt = daysAgo(demo.days);
 
     await db.transaction(async (tx) => {
-      const [order] = await tx.insert(ecommerceOrders).values({
-        customerId: customer.id,
-        status: demo.status,
-        paymentStatus: demo.paymentStatus,
-        subtotalAmount,
-        shippingAmount,
-        taxAmount,
-        discountAmount,
-        totalAmount,
-        isManualOrder: true,
-        notes: `Seeded customer portal demo: ${demo.status}`,
-        shippingName: customer.name,
-        shippingAddress: customer.address,
-        shippingLine2: customer.line2,
-        shippingCity: customer.city,
-        shippingState: customer.state,
-        shippingZip: customer.zipCode,
-        shippingCountry: customer.country,
-        billingSameAsShipping: true,
-        billingName: customer.name,
-        billingAddress: customer.address,
-        billingLine2: customer.line2,
-        billingCity: customer.city,
-        billingState: customer.state,
-        billingZip: customer.zipCode,
-        billingCountry: customer.country,
-        createdAt,
-        updatedAt: createdAt,
-      }).returning();
+      const [order] = await tx
+        .insert(ecommerceOrders)
+        .values({
+          customerId: customer.id,
+          status: demo.status,
+          paymentStatus: demo.paymentStatus,
+          subtotalAmount,
+          shippingAmount,
+          taxAmount,
+          discountAmount,
+          totalAmount,
+          isManualOrder: true,
+          notes: `Seeded customer portal demo: ${demo.status}`,
+          shippingName: customer.name,
+          shippingAddress: customer.address,
+          shippingLine2: customer.line2,
+          shippingCity: customer.city,
+          shippingState: customer.state,
+          shippingZip: customer.zipCode,
+          shippingCountry: customer.country,
+          billingSameAsShipping: true,
+          billingName: customer.name,
+          billingAddress: customer.address,
+          billingLine2: customer.line2,
+          billingCity: customer.city,
+          billingState: customer.state,
+          billingZip: customer.zipCode,
+          billingCountry: customer.country,
+          createdAt,
+          updatedAt: createdAt,
+        })
+        .returning();
 
       await tx.insert(ecommerceOrderItems).values({
         orderId: order.id,

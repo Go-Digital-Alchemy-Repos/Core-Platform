@@ -14,8 +14,7 @@ interface SeoPreviewProps {
 function TitleMeter({ value }: { value: string }) {
   const len = value.length;
   if (len === 0) return null;
-  const status =
-    len < 20 ? "short" : len <= 60 ? "ok" : len <= 70 ? "long" : "too-long";
+  const status = len < 20 ? "short" : len <= 60 ? "ok" : len <= 70 ? "long" : "too-long";
   const colors = {
     short: "text-amber-500",
     ok: "text-emerald-600 dark:text-emerald-400",
@@ -38,8 +37,7 @@ function TitleMeter({ value }: { value: string }) {
 function DescMeter({ value }: { value: string }) {
   const len = value.length;
   if (len === 0) return null;
-  const status =
-    len < 70 ? "short" : len <= 160 ? "ok" : "too-long";
+  const status = len < 70 ? "short" : len <= 160 ? "ok" : "too-long";
   const colors = {
     short: "text-amber-500",
     ok: "text-emerald-600 dark:text-emerald-400",
@@ -88,8 +86,8 @@ export function SeoPreview({
           {source === "global"
             ? "Using global SEO defaults — add page-specific values above to override"
             : source === "page"
-            ? "Preview based on page SEO fields"
-            : "Preview based on post SEO fields"}
+              ? "Preview based on page SEO fields"
+              : "Preview based on post SEO fields"}
         </p>
       )}
 
@@ -97,7 +95,8 @@ export function SeoPreview({
         <div className="flex items-start gap-2 rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
           <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
           <span>
-            Missing: <strong>{missingFields.join(", ")}</strong>. Fallbacks from the page title and global defaults will be used.
+            Missing: <strong>{missingFields.join(", ")}</strong>. Fallbacks from the page title and
+            global defaults will be used.
           </span>
         </div>
       )}
@@ -111,19 +110,23 @@ export function SeoPreview({
             <Globe className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground truncate">{url}</span>
           </div>
-          <p className={cn(
-            "text-[15px] font-medium leading-snug",
-            hasTitle ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground italic"
-          )}>
+          <p
+            className={cn(
+              "text-[15px] font-medium leading-snug",
+              hasTitle ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground italic",
+            )}
+          >
             {truncatedTitle}
           </p>
           <div className="flex items-center justify-between mt-0.5">
             <TitleMeter value={title} />
           </div>
-          <p className={cn(
-            "text-xs mt-1 leading-relaxed line-clamp-2",
-            hasDescription ? "text-muted-foreground" : "text-muted-foreground italic"
-          )}>
+          <p
+            className={cn(
+              "text-xs mt-1 leading-relaxed line-clamp-2",
+              hasDescription ? "text-muted-foreground" : "text-muted-foreground italic",
+            )}
+          >
             {truncatedDesc}
           </p>
           <div className="flex items-center justify-between mt-0.5">
@@ -153,16 +156,20 @@ export function SeoPreview({
         )}
         <div className="px-4 py-3 border-t">
           <p className="text-[11px] uppercase text-muted-foreground mb-0.5">{siteName}</p>
-          <p className={cn(
-            "text-sm font-medium leading-snug line-clamp-1",
-            !hasTitle && "text-muted-foreground italic"
-          )}>
+          <p
+            className={cn(
+              "text-sm font-medium leading-snug line-clamp-1",
+              !hasTitle && "text-muted-foreground italic",
+            )}
+          >
             {truncatedTitle}
           </p>
-          <p className={cn(
-            "text-xs mt-0.5 line-clamp-2",
-            !hasDescription ? "text-muted-foreground italic" : "text-muted-foreground"
-          )}>
+          <p
+            className={cn(
+              "text-xs mt-0.5 line-clamp-2",
+              !hasDescription ? "text-muted-foreground italic" : "text-muted-foreground",
+            )}
+          >
             {truncatedDesc}
           </p>
         </div>

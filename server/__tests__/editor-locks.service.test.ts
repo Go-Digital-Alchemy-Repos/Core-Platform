@@ -26,13 +26,15 @@ const mockDeleteById = vi.fn(async () => {
   currentLock = undefined;
   return true;
 });
-const mockDeleteExpiredForResource = vi.fn(async (_type: EditorLockResourceType, _resourceId: string, now: Date) => {
-  if (currentLock && new Date(currentLock.expiresAt).getTime() <= now.getTime()) {
-    currentLock = undefined;
-    return 1;
-  }
-  return 0;
-});
+const mockDeleteExpiredForResource = vi.fn(
+  async (_type: EditorLockResourceType, _resourceId: string, now: Date) => {
+    if (currentLock && new Date(currentLock.expiresAt).getTime() <= now.getTime()) {
+      currentLock = undefined;
+      return 1;
+    }
+    return 0;
+  },
+);
 const mockListActiveByResourceType = vi.fn(async () => (currentLock ? [currentLock] : []));
 
 vi.mock("../storage", () => ({
@@ -108,7 +110,9 @@ describe("editor-locks.service", () => {
     const heartbeat = await service.heartbeatEditorLock("blog_post", "post-1", adminUser);
 
     expect(heartbeat.status).toBe("acquired");
-    expect(new Date(String(currentLock?.expiresAt)).getTime()).toBeGreaterThan(new Date("2026-04-15T20:31:00.000Z").getTime());
+    expect(new Date(String(currentLock?.expiresAt)).getTime()).toBeGreaterThan(
+      new Date("2026-04-15T20:31:00.000Z").getTime(),
+    );
   });
 
   it("treats expired locks as available and lets a new user reacquire", async () => {

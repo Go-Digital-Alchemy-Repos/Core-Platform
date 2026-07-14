@@ -5,7 +5,9 @@ import { z } from "zod";
 import { users } from "./users";
 
 export const docs = pgTable("docs", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   slug: text("slug").notNull().unique(),
   category: text("category").notNull(),

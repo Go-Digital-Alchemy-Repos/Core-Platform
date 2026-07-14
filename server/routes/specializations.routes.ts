@@ -16,7 +16,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const specs = await storage.specializations.getAll();
     res.json(specs);
-  })
+  }),
 );
 
 router.post(
@@ -27,7 +27,7 @@ router.post(
     const body = bodySchema.parse(req.body);
     const spec = await storage.specializations.create(body);
     res.status(201).json(spec);
-  })
+  }),
 );
 
 router.put(
@@ -43,7 +43,7 @@ router.put(
       return;
     }
     res.json(updated);
-  })
+  }),
 );
 
 router.delete(
@@ -53,7 +53,7 @@ router.delete(
   asyncHandler(async (req, res) => {
     await storage.specializations.delete(Number(req.params.id));
     res.json({ ok: true });
-  })
+  }),
 );
 
 export default router;

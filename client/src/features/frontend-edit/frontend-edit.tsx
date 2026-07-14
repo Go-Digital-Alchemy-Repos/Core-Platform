@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { Link, useLocation } from "wouter";
 import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +16,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
 import type { User } from "@shared/schema";
 import type { AdminPermission } from "@shared/types";
@@ -89,7 +96,9 @@ export function buildFrontendEditHref(target: FrontendEditTarget, returnTo: stri
 }
 
 export function shouldHideFrontendEditButton(pathname: string) {
-  return HIDDEN_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  return HIDDEN_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 }
 
 export function canUseFrontendEditTarget(
@@ -109,23 +118,26 @@ export function canUseFrontendEditTarget(
 export function FrontendEditProvider({ children }: { children: ReactNode }) {
   const [targets, setTargets] = useState<Map<string, RegisteredFrontendEditTarget>>(new Map());
 
-  const value = useMemo<FrontendEditContextValue>(() => ({
-    registerTarget: (target) => {
-      const key = getTargetKey(target);
-      setTargets((current) => {
-        const next = new Map(current);
-        next.set(key, { ...target, key });
-        return next;
-      });
-      return () => {
+  const value = useMemo<FrontendEditContextValue>(
+    () => ({
+      registerTarget: (target) => {
+        const key = getTargetKey(target);
         setTargets((current) => {
           const next = new Map(current);
-          next.delete(key);
+          next.set(key, { ...target, key });
           return next;
         });
-      };
-    },
-  }), []);
+        return () => {
+          setTargets((current) => {
+            const next = new Map(current);
+            next.delete(key);
+            return next;
+          });
+        };
+      },
+    }),
+    [],
+  );
 
   return (
     <FrontendEditContext.Provider value={value}>
@@ -188,60 +200,74 @@ function FrontendEditButton({ targets }: { targets: RegisteredFrontendEditTarget
   if (visibleTargets.length === 0) return null;
 
   const returnTo = getReturnTo();
+  const primaryTarget = visibleTargets[0];
+  const actionLabel = primaryTarget.kind === "cms-page" ? "Edit Page" : "Edit Content";
+  const bannerText =
+    primaryTarget.kind === "cms-page"
+      ? "You are viewing a CMS-managed page."
+      : "You are viewing editable site content.";
   const buttonClassName =
-    "fixed bottom-24 right-5 z-[1200] h-11 rounded-full border border-primary/70 bg-primary px-4 text-primary-foreground shadow-xl shadow-black/20 backdrop-blur transition hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:bottom-8 sm:right-8";
+    "h-9 border-primary/70 bg-primary px-4 text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+  const bannerClassName =
+    "fixed inset-x-0 bottom-0 z-[1100] border-t border-border/70 bg-background/95 px-4 py-3 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur supports-[backdrop-filter]:bg-background/90";
+  const bannerInnerClassName =
+    "mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between";
+  const bannerCopy = (
+    <div className="min-w-0">
+      <p className="text-sm font-medium text-foreground">Admin editing shortcut</p>
+      <p className="truncate text-xs text-muted-foreground">{bannerText}</p>
+    </div>
+  );
 
   if (visibleTargets.length === 1) {
-    const target = visibleTargets[0];
+    const target = primaryTarget;
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
+      <div className={bannerClassName} data-testid="frontend-edit-banner">
+        <div className={bannerInnerClassName}>
+          {bannerCopy}
           <Link href={buildFrontendEditHref(target, returnTo)}>
             <Button
               type="button"
               variant="outline"
               className={buttonClassName}
-              aria-label="Edit this page"
+              aria-label={actionLabel}
               data-testid="button-frontend-edit"
             >
-              <Pencil className="h-4 w-4" />
-              <span className="ml-2 hidden text-sm font-medium sm:inline">Edit</span>
+              <Pencil className="mr-2 h-4 w-4" />
+              {actionLabel}
             </Button>
           </Link>
-        </TooltipTrigger>
-        <TooltipContent side="left">Edit this page</TooltipContent>
-      </Tooltip>
+        </div>
+      </div>
     );
   }
 
   return (
-    <DropdownMenu>
-      <Tooltip>
-        <TooltipTrigger asChild>
+    <div className={bannerClassName} data-testid="frontend-edit-banner">
+      <div className={bannerInnerClassName}>
+        {bannerCopy}
+        <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               type="button"
               variant="outline"
               className={buttonClassName}
-              aria-label="Edit this page"
+              aria-label={actionLabel}
               data-testid="button-frontend-edit"
             >
-              <Pencil className="h-4 w-4" />
-              <span className="ml-2 hidden text-sm font-medium sm:inline">Edit</span>
+              <Pencil className="mr-2 h-4 w-4" />
+              {actionLabel}
             </Button>
           </DropdownMenuTrigger>
-        </TooltipTrigger>
-        <TooltipContent side="left">Edit this page</TooltipContent>
-      </Tooltip>
-      <DropdownMenuContent align="end" side="top" className="z-[1000] w-56">
-        {visibleTargets.map((target) => (
-          <DropdownMenuItem key={target.key} asChild>
-            <Link href={buildFrontendEditHref(target, returnTo)}>
-              {target.label}
-            </Link>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuContent align="end" side="top" className="z-[1200] w-56">
+            {visibleTargets.map((target) => (
+              <DropdownMenuItem key={target.key} asChild>
+                <Link href={buildFrontendEditHref(target, returnTo)}>{target.label}</Link>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
   );
 }

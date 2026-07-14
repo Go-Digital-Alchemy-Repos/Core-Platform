@@ -24,7 +24,12 @@ export async function getAnalyticsRuntimeConfig(): Promise<AnalyticsRuntimeConfi
         }
         return response.json() as Promise<AnalyticsRuntimeConfig>;
       })
-      .catch(() => ({ ga4MeasurementId: null, metaPixelId: null, tiktokPixelId: null, xPixelId: null }));
+      .catch(() => ({
+        ga4MeasurementId: null,
+        metaPixelId: null,
+        tiktokPixelId: null,
+        xPixelId: null,
+      }));
   }
 
   return analyticsRuntimeConfigPromise;
@@ -98,7 +103,11 @@ export async function loadMarketingPixelsIfConsented() {
 
 export async function loadGa4IfConsented() {
   const config = await getAnalyticsRuntimeConfig();
-  if (!config.ga4MeasurementId || typeof window === "undefined" || !canLoadConsentedCategory("analytics")) {
+  if (
+    !config.ga4MeasurementId ||
+    typeof window === "undefined" ||
+    !canLoadConsentedCategory("analytics")
+  ) {
     return null;
   }
 

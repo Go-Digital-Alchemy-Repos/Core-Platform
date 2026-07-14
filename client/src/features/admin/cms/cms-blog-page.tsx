@@ -88,7 +88,9 @@ export default function CmsBlogPage() {
       !search ||
       p.title.toLowerCase().includes(search.toLowerCase()) ||
       (p.authorName ?? "").toLowerCase().includes(search.toLowerCase()) ||
-      getPostCategories(p).some((category) => category.toLowerCase().includes(search.toLowerCase()));
+      getPostCategories(p).some((category) =>
+        category.toLowerCase().includes(search.toLowerCase()),
+      );
     const isScheduled = !p.isPublished && !!p.scheduledAt;
     const matchStatus =
       statusFilter === "all" ||
@@ -132,11 +134,7 @@ export default function CmsBlogPage() {
           </Button>
         </div>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={handleTabChange}
-          className="space-y-4"
-        >
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
           <TabsList>
             <TabsTrigger value="posts" data-testid="tab-blog-posts">
               <BookOpen className="mr-1.5 h-4 w-4 text-blue-600" />
@@ -179,7 +177,9 @@ export default function CmsBlogPage() {
 
             {isLoading ? (
               <div className="space-y-3">
-                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
+                {[...Array(4)].map((_, i) => (
+                  <Skeleton key={i} className="h-20 w-full" />
+                ))}
               </div>
             ) : filtered.length === 0 ? (
               <Card>
@@ -188,7 +188,9 @@ export default function CmsBlogPage() {
                     <BookOpen className="h-8 w-8 text-orange-400" />
                   </div>
                   <h2 className="text-lg font-semibold mb-2">
-                    {search || statusFilter !== "all" ? "No posts match your filters" : "No blog posts yet"}
+                    {search || statusFilter !== "all"
+                      ? "No posts match your filters"
+                      : "No blog posts yet"}
                   </h2>
                   <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-5">
                     {search || statusFilter !== "all"
@@ -217,27 +219,42 @@ export default function CmsBlogPage() {
                     <CardContent className="p-4 flex items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h3 className="font-semibold truncate" data-testid={`text-post-title-${post.id}`}>
+                          <h3
+                            className="font-semibold truncate"
+                            data-testid={`text-post-title-${post.id}`}
+                          >
                             {post.title}
                           </h3>
                           {post.isPublished ? (
-                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-xs" data-testid={`badge-published-${post.id}`}>
+                            <Badge
+                              className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-xs"
+                              data-testid={`badge-published-${post.id}`}
+                            >
                               <Eye className="h-3 w-3 mr-1" />
                               Published
                             </Badge>
                           ) : post.scheduledAt ? (
-                            <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs" data-testid={`badge-scheduled-${post.id}`}>
+                            <Badge
+                              className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs"
+                              data-testid={`badge-scheduled-${post.id}`}
+                            >
                               <CalendarClock className="h-3 w-3 mr-1" />
                               Scheduled · {format(new Date(post.scheduledAt), "MMM d, yyyy h:mm a")}
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-xs" data-testid={`badge-draft-${post.id}`}>
+                            <Badge
+                              variant="outline"
+                              className="text-xs"
+                              data-testid={`badge-draft-${post.id}`}
+                            >
                               <EyeOff className="h-3 w-3 mr-1" />
                               Draft
                             </Badge>
                           )}
                           {getPrimaryPostCategory(post) && (
-                            <Badge variant="secondary" className="text-xs">{getPrimaryPostCategory(post)}</Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {getPrimaryPostCategory(post)}
+                            </Badge>
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground">
@@ -245,10 +262,15 @@ export default function CmsBlogPage() {
                           {post.publishedAt && (
                             <> · {format(new Date(post.publishedAt), "MMM d, yyyy")}</>
                           )}
-                          <span className="ml-2 font-mono text-xs text-muted-foreground/60">/insights/{post.slug}</span>
+                          <span className="ml-2 font-mono text-xs text-muted-foreground/60">
+                            /insights/{post.slug}
+                          </span>
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <div
+                        className="flex items-center gap-2 flex-shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         {post.isPublished && (
                           <Button
                             variant="ghost"
@@ -257,7 +279,12 @@ export default function CmsBlogPage() {
                             asChild
                             title="View on site"
                           >
-                            <a href={`/insights/${post.slug}`} target="_blank" rel="noopener noreferrer" data-testid={`link-view-post-${post.id}`}>
+                            <a
+                              href={`/insights/${post.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              data-testid={`link-view-post-${post.id}`}
+                            >
                               <ExternalLink className="h-4 w-4" />
                             </a>
                           </Button>
@@ -294,7 +321,8 @@ export default function CmsBlogPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this post?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently deletes the blog post. Published posts will immediately disappear from the public site. This cannot be undone.
+              This permanently deletes the blog post. Published posts will immediately disappear
+              from the public site. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

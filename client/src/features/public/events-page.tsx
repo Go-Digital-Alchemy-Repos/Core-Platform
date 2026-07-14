@@ -23,12 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatEventDate, formatEventListDateLines, formatEventTime } from "@/lib/event-datetime";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import { stripHtml } from "@/lib/html";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
   CalendarDays,
   MapPin,
@@ -96,7 +91,8 @@ function formatPrice(fee: number, currency: string) {
 
 function getDeliveryMode(event: Event): EventDeliveryMode {
   if (event.deliveryMode) return event.deliveryMode;
-  if (event.isVirtual && (event.location || event.locationName || event.locationAddress)) return "hybrid";
+  if (event.isVirtual && (event.location || event.locationName || event.locationAddress))
+    return "hybrid";
   return event.isVirtual ? "virtual" : "in_person";
 }
 
@@ -119,7 +115,10 @@ function EventCard({ event }: { event: Event }) {
       >
         <div className={event.imageUrl ? "flex flex-col sm:flex-row" : ""}>
           {event.imageUrl && (
-            <div className="sm:w-48 sm:min-w-[12rem] shrink-0" data-testid={`img-event-thumbnail-${event.id}`}>
+            <div
+              className="sm:w-48 sm:min-w-[12rem] shrink-0"
+              data-testid={`img-event-thumbnail-${event.id}`}
+            >
               <img
                 src={event.imageUrl}
                 alt={event.title}
@@ -131,7 +130,10 @@ function EventCard({ event }: { event: Event }) {
           <div className="flex-1 min-w-0">
             <CardHeader className="flex flex-col sm:flex-row items-start justify-between gap-2 space-y-0 pb-3">
               <div className="space-y-1 min-w-0">
-                <CardTitle className="text-base sm:text-lg break-words" data-testid={`text-event-title-${event.id}`}>
+                <CardTitle
+                  className="text-base sm:text-lg break-words"
+                  data-testid={`text-event-title-${event.id}`}
+                >
                   {event.title}
                 </CardTitle>
                 <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
@@ -139,7 +141,9 @@ function EventCard({ event }: { event: Event }) {
                   <div data-testid={`text-event-date-${event.id}`} className="space-y-0.5">
                     {dateLines.map((line, index) => (
                       <div key={`${event.id}-date-line-${index}`} className="leading-relaxed">
-                        {line.label ? <span className="font-medium text-foreground">{line.label}:</span> : null}
+                        {line.label ? (
+                          <span className="font-medium text-foreground">{line.label}:</span>
+                        ) : null}
                         {line.label ? " " : ""}
                         <span>{line.text}</span>
                       </div>
@@ -169,7 +173,9 @@ function EventCard({ event }: { event: Event }) {
                     {EVENT_TYPE_LABELS[event.eventType] ?? event.eventType}
                   </Badge>
                 )}
-                {event.registrationEnabled && event.registrationType === "paid" && event.registrationFee ? (
+                {event.registrationEnabled &&
+                event.registrationType === "paid" &&
+                event.registrationFee ? (
                   <Badge variant="outline" data-testid={`badge-paid-${event.id}`}>
                     <DollarSign className="mr-1 h-3 w-3" />
                     {formatPrice(event.registrationFee, event.registrationCurrency || "usd")}
@@ -217,17 +223,13 @@ function EventCard({ event }: { event: Event }) {
               {event.speakerName && (
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <User className="h-3.5 w-3.5 shrink-0" />
-                  <span data-testid={`text-event-speaker-${event.id}`}>
-                    {event.speakerName}
-                  </span>
+                  <span data-testid={`text-event-speaker-${event.id}`}>{event.speakerName}</span>
                 </div>
               )}
               {displayLocation && (
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <MapPin className="h-3.5 w-3.5 shrink-0" />
-                  <span data-testid={`text-event-location-${event.id}`}>
-                    {displayLocation}
-                  </span>
+                  <span data-testid={`text-event-location-${event.id}`}>{displayLocation}</span>
                 </div>
               )}
             </CardContent>
@@ -317,133 +319,125 @@ function CalendarView({ events }: { events: Event[] }) {
 
   return (
     <TooltipProvider delayDuration={200}>
-    <div data-testid="calendar-view">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={prevMonth}
-          data-testid="button-prev-month"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <h2 className="font-heading text-lg font-semibold" data-testid="text-calendar-month">
-          {monthLabel}
-        </h2>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={nextMonth}
-          data-testid="button-next-month"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+      <div data-testid="calendar-view">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <Button variant="outline" size="icon" onClick={prevMonth} data-testid="button-prev-month">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <h2 className="font-heading text-lg font-semibold" data-testid="text-calendar-month">
+            {monthLabel}
+          </h2>
+          <Button variant="outline" size="icon" onClick={nextMonth} data-testid="button-next-month">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
 
-      <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border bg-border">
-        {WEEKDAYS.map((day) => (
-          <div
-            key={day}
-            className="bg-muted px-2 py-2 text-center text-xs font-medium text-muted-foreground"
-          >
-            {day}
-          </div>
-        ))}
-        {cells.map((day, i) => {
-          const key = day ? `${currentYear}-${currentMonth}-${day}` : null;
-          const dayEvents = key ? eventsByDate[key] || [] : [];
-          const isToday = key === todayKey;
-
-          return (
+        <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border bg-border">
+          {WEEKDAYS.map((day) => (
             <div
-              key={i}
-              className={`min-h-[60px] sm:min-h-[80px] bg-card p-1 sm:p-1.5 ${
-                !day ? "bg-muted/30" : ""
-              }`}
-              data-testid={day ? `calendar-day-${day}` : undefined}
+              key={day}
+              className="bg-muted px-2 py-2 text-center text-xs font-medium text-muted-foreground"
             >
-              {day && (
-                <>
-                  <span
-                    className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${
-                      isToday
-                        ? "bg-primary text-primary-foreground font-bold"
-                        : "text-foreground"
-                    }`}
-                  >
-                    {day}
-                  </span>
-                  {dayEvents.length > 0 && (
-                    <div className="mt-0.5 space-y-0.5">
-                      {dayEvents.map((event) => (
-                        <Tooltip key={event.id}>
-                          <TooltipTrigger asChild>
-                            <Link href={getEventPath(event)}>
-                              <div
-                                className="truncate rounded bg-primary/10 px-1 py-0.5 text-[10px] leading-tight text-primary cursor-pointer hover:bg-primary/20 transition-colors"
-                                data-testid={`calendar-event-${event.id}`}
-                              >
-                                {event.title}
-                              </div>
-                            </Link>
-                          </TooltipTrigger>
-                          <TooltipContent
-                            side="right"
-                            align="start"
-                            className="w-[min(90vw,16rem)] p-0 overflow-hidden"
-                            data-testid={`tooltip-event-${event.id}`}
-                          >
-                            <Link href={getEventPath(event)}>
-                              <div className="cursor-pointer">
-                                {event.imageUrl && (
-                                  <img
-                                    src={event.imageUrl}
-                                    alt={event.title}
-                                    className="h-32 w-full object-cover"
-                                  />
-                                )}
-                                <div className="p-3 space-y-2">
-                                  <p className="font-semibold text-sm leading-tight" data-testid={`tooltip-event-title-${event.id}`}>
-                                    {event.title}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {formatEventDate(event.date, event.timezone)} at {formatEventTime(event.date, event.timezone)}
-                                  </p>
-                                  {event.description && (
-                                    <p className="text-xs text-muted-foreground line-clamp-2">
-                                      {stripHtml(event.description)}
-                                    </p>
-                                  )}
-                                  <span className="inline-flex items-center justify-center rounded-md bg-primary px-3 h-7 text-xs font-medium text-primary-foreground" data-testid={`button-learn-more-${event.id}`}>
-                                    Learn More
-                                  </span>
-                                </div>
-                              </div>
-                            </Link>
-                          </TooltipContent>
-                        </Tooltip>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
+              {day}
             </div>
-          );
-        })}
+          ))}
+          {cells.map((day, i) => {
+            const key = day ? `${currentYear}-${currentMonth}-${day}` : null;
+            const dayEvents = key ? eventsByDate[key] || [] : [];
+            const isToday = key === todayKey;
+
+            return (
+              <div
+                key={i}
+                className={`min-h-[60px] sm:min-h-[80px] bg-card p-1 sm:p-1.5 ${
+                  !day ? "bg-muted/30" : ""
+                }`}
+                data-testid={day ? `calendar-day-${day}` : undefined}
+              >
+                {day && (
+                  <>
+                    <span
+                      className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${
+                        isToday ? "bg-primary text-primary-foreground font-bold" : "text-foreground"
+                      }`}
+                    >
+                      {day}
+                    </span>
+                    {dayEvents.length > 0 && (
+                      <div className="mt-0.5 space-y-0.5">
+                        {dayEvents.map((event) => (
+                          <Tooltip key={event.id}>
+                            <TooltipTrigger asChild>
+                              <Link href={getEventPath(event)}>
+                                <div
+                                  className="truncate rounded bg-primary/10 px-1 py-0.5 text-[10px] leading-tight text-primary cursor-pointer hover:bg-primary/20 transition-colors"
+                                  data-testid={`calendar-event-${event.id}`}
+                                >
+                                  {event.title}
+                                </div>
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="right"
+                              align="start"
+                              className="w-[min(90vw,16rem)] p-0 overflow-hidden"
+                              data-testid={`tooltip-event-${event.id}`}
+                            >
+                              <Link href={getEventPath(event)}>
+                                <div className="cursor-pointer">
+                                  {event.imageUrl && (
+                                    <img
+                                      src={event.imageUrl}
+                                      alt={event.title}
+                                      className="h-32 w-full object-cover"
+                                    />
+                                  )}
+                                  <div className="p-3 space-y-2">
+                                    <p
+                                      className="font-semibold text-sm leading-tight"
+                                      data-testid={`tooltip-event-title-${event.id}`}
+                                    >
+                                      {event.title}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {formatEventDate(event.date, event.timezone)} at{" "}
+                                      {formatEventTime(event.date, event.timezone)}
+                                    </p>
+                                    {event.description && (
+                                      <p className="text-xs text-muted-foreground line-clamp-2">
+                                        {stripHtml(event.description)}
+                                      </p>
+                                    )}
+                                    <span
+                                      className="inline-flex items-center justify-center rounded-md bg-primary px-3 h-7 text-xs font-medium text-primary-foreground"
+                                      data-testid={`button-learn-more-${event.id}`}
+                                    >
+                                      Learn More
+                                    </span>
+                                  </div>
+                                </div>
+                              </Link>
+                            </TooltipContent>
+                          </Tooltip>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
     </TooltipProvider>
   );
 }
 
-export function EventsArchiveSection({
-  props = {},
-}: {
-  props?: Record<string, unknown>;
-}) {
+export function EventsArchiveSection({ props = {} }: { props?: Record<string, unknown> }) {
   const [location] = useLocation();
   const initialView =
-    getInitialSearchParam("view", str(props.defaultView) === "calendar" ? "calendar" : "list") === "calendar"
+    getInitialSearchParam("view", str(props.defaultView) === "calendar" ? "calendar" : "list") ===
+    "calendar"
       ? "calendar"
       : "list";
   const [view, setView] = useState<"list" | "calendar">(initialView);
@@ -460,7 +454,11 @@ export function EventsArchiveSection({
     str(props.subheading) ||
     "We offer quarterly platform-approved trainings for professional providers. All of our members get free registration to the events below.";
   const showViewToggle = bool(props.showViewToggle, true);
-  const { data: events, isLoading, error } = useQuery<Event[]>({
+  const {
+    data: events,
+    isLoading,
+    error,
+  } = useQuery<Event[]>({
     queryKey: ["/api/events/all"],
   });
   const isEventsPage = location.split("?")[0] === "/events";
@@ -529,7 +527,17 @@ export function EventsArchiveSection({
 
       return true;
     });
-  }, [audienceFilter, categoryFilter, costFilter, deliveryFilter, events, keywordFilter, recordingFilter, timeFilter, typeFilter]);
+  }, [
+    audienceFilter,
+    categoryFilter,
+    costFilter,
+    deliveryFilter,
+    events,
+    keywordFilter,
+    recordingFilter,
+    timeFilter,
+    typeFilter,
+  ]);
 
   const resetFilters = () => {
     setKeywordFilter("");
@@ -555,14 +563,20 @@ export function EventsArchiveSection({
               {heading}
             </h1>
             {subheading && (
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed" data-testid="text-events-subtitle">
+              <p
+                className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+                data-testid="text-events-subtitle"
+              >
                 {subheading}
               </p>
             )}
           </div>
           {showViewToggle && (
             <div className="flex justify-center">
-              <div className="flex gap-1 rounded-lg border p-1 bg-background/80 backdrop-blur-sm" data-testid="toggle-view">
+              <div
+                className="flex gap-1 rounded-lg border p-1 bg-background/80 backdrop-blur-sm"
+                data-testid="toggle-view"
+              >
                 <Button
                   variant={view === "list" ? "default" : "ghost"}
                   size="sm"
@@ -587,9 +601,15 @@ export function EventsArchiveSection({
         </div>
       </section>
 
-      <section className="mx-auto max-w-4xl px-4 sm:px-6 py-10 sm:py-14" data-testid="section-events-content">
+      <section
+        className="mx-auto max-w-4xl px-4 sm:px-6 py-10 sm:py-14"
+        data-testid="section-events-content"
+      >
         {events && events.length > 0 && (
-          <div className="mb-6 space-y-3 rounded-lg border bg-background p-3" data-testid="events-filters">
+          <div
+            className="mb-6 space-y-3 rounded-lg border bg-background p-3"
+            data-testid="events-filters"
+          >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="relative flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -613,53 +633,96 @@ export function EventsArchiveSection({
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} data-testid="filter-event-type">
-              <option value="all">All types</option>
-              {EVENT_TYPES.map((eventType) => (
-                <option key={eventType} value={eventType}>{EVENT_TYPE_LABELS[eventType]}</option>
-              ))}
-            </select>
-            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} data-testid="filter-event-category">
-              <option value="all">All categories</option>
-              {EVENT_CATEGORIES.map((category) => (
-                <option key={category} value={category}>{EVENT_CATEGORY_LABELS[category]}</option>
-              ))}
-            </select>
-            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={audienceFilter} onChange={(event) => setAudienceFilter(event.target.value)} data-testid="filter-event-audience">
-              <option value="all">All audiences</option>
-              {EVENT_AUDIENCES.map((audience) => (
-                <option key={audience} value={audience}>{EVENT_AUDIENCE_LABELS[audience]}</option>
-              ))}
-            </select>
-            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={deliveryFilter} onChange={(event) => setDeliveryFilter(event.target.value)} data-testid="filter-event-delivery">
-              <option value="all">All delivery</option>
-              {EVENT_DELIVERY_MODES.map((mode) => (
-                <option key={mode} value={mode}>{EVENT_DELIVERY_MODE_LABELS[mode]}</option>
-              ))}
-            </select>
-            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={timeFilter} onChange={(event) => setTimeFilter(event.target.value)} data-testid="filter-event-time">
-              <option value="upcoming">Upcoming</option>
-              <option value="past">Past</option>
-              <option value="all">All dates</option>
-            </select>
-            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={costFilter} onChange={(event) => setCostFilter(event.target.value)} data-testid="filter-event-cost">
-              <option value="all">Free and paid</option>
-              <option value="free">Free</option>
-              <option value="paid">Paid</option>
-            </select>
-            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={recordingFilter} onChange={(event) => setRecordingFilter(event.target.value)} data-testid="filter-event-recordings">
-              <option value="all">All media</option>
-              <option value="recordings">Recordings</option>
-            </select>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={resetFilters}
-              data-testid="button-reset-event-filters"
-            >
-              <X className="mr-1.5 h-4 w-4" />
-              Reset
-            </Button>
+              <select
+                className="h-10 rounded-md border bg-background px-3 text-sm"
+                value={typeFilter}
+                onChange={(event) => setTypeFilter(event.target.value)}
+                data-testid="filter-event-type"
+              >
+                <option value="all">All types</option>
+                {EVENT_TYPES.map((eventType) => (
+                  <option key={eventType} value={eventType}>
+                    {EVENT_TYPE_LABELS[eventType]}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="h-10 rounded-md border bg-background px-3 text-sm"
+                value={categoryFilter}
+                onChange={(event) => setCategoryFilter(event.target.value)}
+                data-testid="filter-event-category"
+              >
+                <option value="all">All categories</option>
+                {EVENT_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {EVENT_CATEGORY_LABELS[category]}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="h-10 rounded-md border bg-background px-3 text-sm"
+                value={audienceFilter}
+                onChange={(event) => setAudienceFilter(event.target.value)}
+                data-testid="filter-event-audience"
+              >
+                <option value="all">All audiences</option>
+                {EVENT_AUDIENCES.map((audience) => (
+                  <option key={audience} value={audience}>
+                    {EVENT_AUDIENCE_LABELS[audience]}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="h-10 rounded-md border bg-background px-3 text-sm"
+                value={deliveryFilter}
+                onChange={(event) => setDeliveryFilter(event.target.value)}
+                data-testid="filter-event-delivery"
+              >
+                <option value="all">All delivery</option>
+                {EVENT_DELIVERY_MODES.map((mode) => (
+                  <option key={mode} value={mode}>
+                    {EVENT_DELIVERY_MODE_LABELS[mode]}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="h-10 rounded-md border bg-background px-3 text-sm"
+                value={timeFilter}
+                onChange={(event) => setTimeFilter(event.target.value)}
+                data-testid="filter-event-time"
+              >
+                <option value="upcoming">Upcoming</option>
+                <option value="past">Past</option>
+                <option value="all">All dates</option>
+              </select>
+              <select
+                className="h-10 rounded-md border bg-background px-3 text-sm"
+                value={costFilter}
+                onChange={(event) => setCostFilter(event.target.value)}
+                data-testid="filter-event-cost"
+              >
+                <option value="all">Free and paid</option>
+                <option value="free">Free</option>
+                <option value="paid">Paid</option>
+              </select>
+              <select
+                className="h-10 rounded-md border bg-background px-3 text-sm"
+                value={recordingFilter}
+                onChange={(event) => setRecordingFilter(event.target.value)}
+                data-testid="filter-event-recordings"
+              >
+                <option value="all">All media</option>
+                <option value="recordings">Recordings</option>
+              </select>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={resetFilters}
+                data-testid="button-reset-event-filters"
+              >
+                <X className="mr-1.5 h-4 w-4" />
+                Reset
+              </Button>
             </div>
           </div>
         )}
@@ -687,7 +750,10 @@ export function EventsArchiveSection({
 
         {events && events.length > 0 && filteredEvents.length === 0 && (
           <Card>
-            <CardContent className="py-12 text-center text-muted-foreground" data-testid="text-no-filtered-events">
+            <CardContent
+              className="py-12 text-center text-muted-foreground"
+              data-testid="text-no-filtered-events"
+            >
               No events match these filters.
             </CardContent>
           </Card>

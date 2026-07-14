@@ -55,25 +55,10 @@ const seoFormSchema = z.object({
   defaultOgImageUrl: z.string().optional().nullable(),
   organizationName: z.string().optional().nullable(),
   organizationLogoUrl: z.string().optional().nullable(),
-  facebookUrl: z
-    .string()
-    .url("Must be a valid URL")
-    .optional()
-    .or(z.literal(""))
-    .nullable(),
+  facebookUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")).nullable(),
   twitterHandle: z.string().optional().nullable(),
-  linkedinUrl: z
-    .string()
-    .url("Must be a valid URL")
-    .optional()
-    .or(z.literal(""))
-    .nullable(),
-  instagramUrl: z
-    .string()
-    .url("Must be a valid URL")
-    .optional()
-    .or(z.literal(""))
-    .nullable(),
+  linkedinUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")).nullable(),
+  instagramUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")).nullable(),
   defaultRobotsNoindex: z.boolean().default(false),
 });
 
@@ -83,37 +68,43 @@ const ROADMAP_ITEMS = [
   {
     icon: Globe,
     title: "Per-Page SEO",
-    description: "CMS pages already support per-page seoTitle, seoDescription, seoKeywords, and ogImageUrl. Full edit UI exists in the page editor.",
+    description:
+      "CMS pages already support per-page seoTitle, seoDescription, seoKeywords, and ogImageUrl. Full edit UI exists in the page editor.",
     status: "available",
   },
   {
     icon: SearchIcon,
     title: "Per-Post SEO",
-    description: "Blog posts already support seoTitle, seoDescription, and ogImageUrl. Fields are editable in the blog post editor.",
+    description:
+      "Blog posts already support seoTitle, seoDescription, and ogImageUrl. Fields are editable in the blog post editor.",
     status: "available",
   },
   {
     icon: Code2,
     title: "Structured Data / JSON-LD",
-    description: "Organization, WebSite, BreadcrumbList, Article (blog posts), Event (event detail), VideoObject (events with recordings), and FAQPage (CMS pages with FAQ blocks) are generated automatically from real content using JSON-LD.",
+    description:
+      "Organization, WebSite, BreadcrumbList, Article (blog posts), Event (event detail), VideoObject (events with recordings), and FAQPage (CMS pages with FAQ blocks) are generated automatically from real content using JSON-LD.",
     status: "available",
   },
   {
     icon: Map,
     title: "Sitemap Generation",
-    description: "Auto-generated /sitemap.xml from all published CMS pages, blog posts, and public events. Draft and noindex content is automatically excluded. Preview available in the Sitemap tab.",
+    description:
+      "Auto-generated /sitemap.xml from all published CMS pages, blog posts, and public events. Draft and noindex content is automatically excluded. Preview available in the Sitemap tab.",
     status: "available",
   },
   {
     icon: ListChecks,
     title: "Redirects Manager",
-    description: "Manage 301/302 redirects for slug changes and retired pages. Redirects are applied server-side before the frontend loads. Toggle active/inactive without deleting.",
+    description:
+      "Manage 301/302 redirects for slug changes and retired pages. Redirects are applied server-side before the frontend loads. Toggle active/inactive without deleting.",
     status: "available",
   },
   {
     icon: BarChart2,
     title: "SEO Audit",
-    description: "Scans all CMS pages, blog posts, and events for missing SEO title, meta description, social image, noindex flags, and publication status. Includes direct edit links.",
+    description:
+      "Scans all CMS pages, blog posts, and events for missing SEO title, meta description, social image, noindex flags, and publication status. Includes direct edit links.",
     status: "available",
   },
 ];
@@ -121,13 +112,19 @@ const ROADMAP_ITEMS = [
 function StatusBadge({ status }: { status: string }) {
   if (status === "available") {
     return (
-      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs">
+      <Badge
+        variant="secondary"
+        className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs"
+      >
         Available
       </Badge>
     );
   }
   return (
-    <Badge variant="secondary" className="bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 text-xs">
+    <Badge
+      variant="secondary"
+      className="bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 text-xs"
+    >
       Planned
     </Badge>
   );
@@ -179,8 +176,7 @@ export default function CmsSeoPage() {
   }, [settings, form]);
 
   const saveMutation = useMutation({
-    mutationFn: (data: SeoFormValues) =>
-      apiRequest("PUT", "/api/admin/cms/seo", data),
+    mutationFn: (data: SeoFormValues) => apiRequest("PUT", "/api/admin/cms/seo", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cms/seo"] });
       queryClient.invalidateQueries({ queryKey: ["/api/seo/global"] });
@@ -197,7 +193,11 @@ export default function CmsSeoPage() {
 
   const descValue = form.watch("defaultMetaDescription") ?? "";
   const lastUpdated = settings?.updatedAt
-    ? new Date(settings.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    ? new Date(settings.updatedAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
     : null;
 
   return (
@@ -254,7 +254,6 @@ export default function CmsSeoPage() {
             ) : (
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-
                   <Card>
                     <CardHeader className="pb-3">
                       <div className="flex items-center gap-2">
@@ -370,7 +369,9 @@ export default function CmsSeoPage() {
                           <FormItem>
                             <FormLabel>
                               Default Meta Description
-                              <span className={`ml-2 text-xs font-normal ${descValue.length > 160 ? "text-amber-500" : "text-muted-foreground"}`}>
+                              <span
+                                className={`ml-2 text-xs font-normal ${descValue.length > 160 ? "text-amber-500" : "text-muted-foreground"}`}
+                              >
                                 {descValue.length}/160 recommended
                               </span>
                             </FormLabel>
@@ -424,7 +425,8 @@ export default function CmsSeoPage() {
                         <CardTitle className="text-base">Default Open Graph Image</CardTitle>
                       </div>
                       <CardDescription className="text-xs">
-                        Fallback image for social sharing when a page has no custom OG image. Recommended: 1200×630 px.
+                        Fallback image for social sharing when a page has no custom OG image.
+                        Recommended: 1200×630 px.
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -455,7 +457,8 @@ export default function CmsSeoPage() {
                         <CardTitle className="text-base">Organization Logo</CardTitle>
                       </div>
                       <CardDescription className="text-xs">
-                        Used in Organization structured data and as a fallback brand image. Recommended: square PNG or SVG.
+                        Used in Organization structured data and as a fallback brand image.
+                        Recommended: square PNG or SVG.
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -594,7 +597,8 @@ export default function CmsSeoPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">SEO Architecture</CardTitle>
                 <CardDescription className="text-xs">
-                  Current capabilities and the planned roadmap for per-page SEO, structured data, and technical SEO tooling
+                  Current capabilities and the planned roadmap for per-page SEO, structured data,
+                  and technical SEO tooling
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-1">
@@ -640,8 +644,10 @@ export default function CmsSeoPage() {
                   </a>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Returns the current global SEO settings. Used by the <code className="text-xs bg-muted px-1 py-0.5 rounded">useSeo</code> hook
-                  and public pages to apply site-wide defaults for title suffix, OG image, and robots preferences.
+                  Returns the current global SEO settings. Used by the{" "}
+                  <code className="text-xs bg-muted px-1 py-0.5 rounded">useSeo</code> hook and
+                  public pages to apply site-wide defaults for title suffix, OG image, and robots
+                  preferences.
                 </p>
               </CardContent>
             </Card>

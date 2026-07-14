@@ -99,9 +99,7 @@ export function TiersContent({ embedded = false }: { embedded?: boolean } = {}) 
         ...data,
         monthlyPrice: dollarsToCents(data.monthlyPrice),
         annualPrice: dollarsToCents(data.annualPrice),
-        features: data.features
-          ? data.features.split("\n").filter((f) => f.trim())
-          : [],
+        features: data.features ? data.features.split("\n").filter((f) => f.trim()) : [],
       };
       await apiRequest("POST", "/api/admin/membership-tiers", payload);
     },
@@ -119,9 +117,7 @@ export function TiersContent({ embedded = false }: { embedded?: boolean } = {}) 
         ...data,
         monthlyPrice: dollarsToCents(data.monthlyPrice),
         annualPrice: dollarsToCents(data.annualPrice),
-        features: data.features
-          ? data.features.split("\n").filter((f) => f.trim())
-          : [],
+        features: data.features ? data.features.split("\n").filter((f) => f.trim()) : [],
       };
       await apiRequest("PUT", `/api/admin/membership-tiers/${id}`, payload);
     },
@@ -188,7 +184,8 @@ export function TiersContent({ embedded = false }: { embedded?: boolean } = {}) 
           </h1>
           {embedded && (
             <p className="text-sm text-muted-foreground mt-1">
-              Create and maintain the subscription plans that control directory access and membership billing.
+              Create and maintain the subscription plans that control directory access and
+              membership billing.
             </p>
           )}
         </div>
@@ -213,19 +210,22 @@ export function TiersContent({ embedded = false }: { embedded?: boolean } = {}) 
               </Button>
             </CardHeader>
             <CardContent>
-                  <div className="flex items-baseline gap-2 mb-2 flex-wrap">
-                    <span className="text-2xl font-bold" data-testid={`text-tier-price-${tier.id}`}>
+              <div className="flex items-baseline gap-2 mb-2 flex-wrap">
+                <span className="text-2xl font-bold" data-testid={`text-tier-price-${tier.id}`}>
                   ${centsToDollars(tier.monthlyPrice)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">/month</span>
-                  </div>
+                </span>
+                <span className="text-sm text-muted-foreground">/month</span>
+              </div>
               {tier.annualPrice > 0 && (
                 <p className="mb-3 text-sm text-muted-foreground">
                   ${centsToDollars(tier.annualPrice)}/year
                 </p>
               )}
               {tier.description && (
-                <p className="text-sm text-muted-foreground mb-3" data-testid={`text-tier-desc-${tier.id}`}>
+                <p
+                  className="text-sm text-muted-foreground mb-3"
+                  data-testid={`text-tier-desc-${tier.id}`}
+                >
                   {tier.description}
                 </p>
               )}
@@ -239,7 +239,10 @@ export function TiersContent({ embedded = false }: { embedded?: boolean } = {}) 
                 </ul>
               )}
               <div className="mt-3">
-                <Badge variant={tier.isActive ? "default" : "secondary"} data-testid={`badge-tier-status-${tier.id}`}>
+                <Badge
+                  variant={tier.isActive ? "default" : "secondary"}
+                  data-testid={`badge-tier-status-${tier.id}`}
+                >
                   {tier.isActive ? "Active" : "Inactive"}
                 </Badge>
               </div>

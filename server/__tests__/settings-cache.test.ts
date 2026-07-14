@@ -59,7 +59,9 @@ describe("SettingsStorage caching", () => {
 
   it("caches getSetting results and avoids repeat DB calls", async () => {
     const { from, where } = setupMockDb();
-    where.mockResolvedValue([{ key: "test_key", value: "test_val", isSecret: false, category: "general" }]);
+    where.mockResolvedValue([
+      { key: "test_key", value: "test_val", isSecret: false, category: "general" },
+    ]);
 
     const result1 = await storage.getSetting("test_key");
     const result2 = await storage.getSetting("test_key");
@@ -89,9 +91,7 @@ describe("SettingsStorage caching", () => {
   it("invalidates category cache when invalidateCategory is called", async () => {
     const { from } = setupMockDb();
     from.mockReturnValue({
-      where: vi.fn().mockResolvedValue([
-        { key: "k1", value: "v1", isSecret: false },
-      ]),
+      where: vi.fn().mockResolvedValue([{ key: "k1", value: "v1", isSecret: false }]),
     });
 
     await storage.getDecryptedCategory("test_cat");
@@ -103,7 +103,9 @@ describe("SettingsStorage caching", () => {
 
   it("expires cache entries after TTL", async () => {
     const { from, where } = setupMockDb();
-    where.mockResolvedValue([{ key: "ttl_key", value: "val", isSecret: false, category: "general" }]);
+    where.mockResolvedValue([
+      { key: "ttl_key", value: "val", isSecret: false, category: "general" },
+    ]);
 
     await storage.getSetting("ttl_key");
     expect(from).toHaveBeenCalledTimes(1);
@@ -117,9 +119,7 @@ describe("SettingsStorage caching", () => {
   it("handles concurrent access to the same category", async () => {
     const { from } = setupMockDb();
     from.mockReturnValue({
-      where: vi.fn().mockResolvedValue([
-        { key: "c1", value: "cv1", isSecret: false },
-      ]),
+      where: vi.fn().mockResolvedValue([{ key: "c1", value: "cv1", isSecret: false }]),
     });
 
     const [r1, r2, r3] = await Promise.all([
@@ -141,11 +141,15 @@ describe("SettingsStorage caching", () => {
     expect(val1).toBeNull();
 
     where.mockResolvedValue([]);
-    returning.mockResolvedValue([{ key: "new_key", value: "new_val", category: "cat", isSecret: false }]);
+    returning.mockResolvedValue([
+      { key: "new_key", value: "new_val", category: "cat", isSecret: false },
+    ]);
 
     await storage.upsertSetting("new_key", "new_val", "cat", false);
 
-    where.mockResolvedValue([{ key: "new_key", value: "new_val", isSecret: false, category: "cat" }]);
+    where.mockResolvedValue([
+      { key: "new_key", value: "new_val", isSecret: false, category: "cat" },
+    ]);
     const val2 = await storage.getSetting("new_key");
     expect(val2).toBe("new_val");
   });

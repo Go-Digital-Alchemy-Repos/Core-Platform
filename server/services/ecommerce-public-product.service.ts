@@ -98,7 +98,9 @@ export interface PublicEcommerceProduct {
   media: PublicEcommerceProductMedia[];
 }
 
-export function getPublicProductCategories(categories: EcommerceCategory[]): PublicEcommerceCategory[] {
+export function getPublicProductCategories(
+  categories: EcommerceCategory[],
+): PublicEcommerceCategory[] {
   return categories
     .filter((category) => category.active)
     .map((category) => ({
@@ -112,7 +114,9 @@ export function getPublicProductCategories(categories: EcommerceCategory[]): Pub
     }));
 }
 
-export function getPublicProductVariants(variants: EcommerceProductVariant[]): PublicEcommerceProductVariant[] {
+export function getPublicProductVariants(
+  variants: EcommerceProductVariant[],
+): PublicEcommerceProductVariant[] {
   return variants
     .filter((variant) => variant.active && variant.status === "active")
     .map((variant) => ({
@@ -133,7 +137,9 @@ export function getPublicProductVariants(variants: EcommerceProductVariant[]): P
     }));
 }
 
-export function getPublicProductMedia(media: EcommerceProductMedia[]): PublicEcommerceProductMedia[] {
+export function getPublicProductMedia(
+  media: EcommerceProductMedia[],
+): PublicEcommerceProductMedia[] {
   return media.map((item) => ({
     id: item.id,
     productId: item.productId,

@@ -50,25 +50,58 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [image, setImage] = useState<string | null>(null);
   const { toast } = useToast();
-  const { data: product, isLoading } = useQuery<Product>({ queryKey: ["/api/ecommerce/products", slug], enabled: !!slug });
+  const { data: product, isLoading } = useQuery<Product>({
+    queryKey: ["/api/ecommerce/products", slug],
+    enabled: !!slug,
+  });
   const { data: globalSeo } = useQuery<SeoSettings>({ queryKey: ["/api/seo/global"] });
 
-  useFrontendEditTarget(product ? {
-    kind: "product",
-    id: product.id,
-    label: `Edit ${product.name}`,
-  } : null);
+  useFrontendEditTarget(
+    product
+      ? {
+          kind: "product",
+          id: product.id,
+          label: `Edit ${product.name}`,
+        }
+      : null,
+  );
 
-  if (isLoading) return <PageLayout><div className="py-20"><LoadingSpinner /></div></PageLayout>;
+  if (isLoading)
+    return (
+      <PageLayout>
+        <div className="py-20">
+          <LoadingSpinner />
+        </div>
+      </PageLayout>
+    );
   if (!product) {
-    return <PageLayout><div className="mx-auto max-w-3xl px-4 py-16"><h1 className="text-3xl font-semibold">Product not found</h1><Button asChild className="mt-6"><Link href="/shop">Back to shop</Link></Button></div></PageLayout>;
+    return (
+      <PageLayout>
+        <div className="mx-auto max-w-3xl px-4 py-16">
+          <h1 className="text-3xl font-semibold">Product not found</h1>
+          <Button asChild className="mt-6">
+            <Link href="/shop">Back to shop</Link>
+          </Button>
+        </div>
+      </PageLayout>
+    );
   }
   const selectedImage = image || product.primaryImage;
   const price = product.salePrice ?? product.price;
   const gallery = [product.primaryImage, ...product.secondaryImages].filter(Boolean) as string[];
   const addToCart = () => {
-    addCartItem({ productId: product.id, name: product.name, slug: product.urlSlug, unitPrice: price, quantity, image: product.primaryImage });
-    toast({ title: "Added to cart", description: `${quantity} ${quantity === 1 ? "item" : "items"} added. Use the cart icon to checkout.` });
+    addCartItem({
+      productId: product.id,
+      name: product.name,
+      slug: product.urlSlug,
+      unitPrice: price,
+      quantity,
+      image: product.primaryImage,
+    });
+    toast({
+      title: "Added to cart",
+      description: `${quantity} ${quantity === 1 ? "item" : "items"} added. Use the cart icon to checkout.`,
+    });
   };
 
   return (
@@ -76,17 +109,30 @@ export default function ProductDetailPage() {
       <ProductSeo product={product} globalSeo={globalSeo} price={price} />
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <Button asChild variant="ghost" className="mb-6">
-          <Link href="/shop"><ArrowLeft className="mr-2 h-4 w-4" /> Shop</Link>
+          <Link href="/shop">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Shop
+          </Link>
         </Button>
         <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="space-y-4">
             <div className="aspect-[4/3] overflow-hidden rounded-lg bg-muted">
-              {selectedImage ? <img src={selectedImage} alt={product.name} className="h-full w-full object-cover" /> : null}
+              {selectedImage ? (
+                <img
+                  src={selectedImage}
+                  alt={product.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : null}
             </div>
             {gallery.length > 1 ? (
               <div className="grid grid-cols-5 gap-3">
                 {gallery.map((src) => (
-                  <button key={src} type="button" onClick={() => setImage(src)} className="aspect-square overflow-hidden rounded-md border bg-muted">
+                  <button
+                    key={src}
+                    type="button"
+                    onClick={() => setImage(src)}
+                    className="aspect-square overflow-hidden rounded-md border bg-muted"
+                  >
                     <img src={src} alt="" className="h-full w-full object-cover" />
                   </button>
                 ))}
@@ -95,13 +141,25 @@ export default function ProductDetailPage() {
           </div>
           <div className="space-y-6">
             <div>
-              <div className="flex flex-wrap gap-2">{product.tags.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}</div>
+              <div className="flex flex-wrap gap-2">
+                {product.tags.map((tag) => (
+                  <Badge key={tag} variant="secondary">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
               <h1 className="mt-4 font-heading text-4xl font-semibold">{product.name}</h1>
-              {product.tagline ? <p className="mt-2 text-lg text-muted-foreground">{product.tagline}</p> : null}
+              {product.tagline ? (
+                <p className="mt-2 text-lg text-muted-foreground">{product.tagline}</p>
+              ) : null}
             </div>
             <div className="text-2xl font-semibold">
               {formatMoney(price)}
-              {product.salePrice != null ? <span className="ml-3 text-base text-muted-foreground line-through">{formatMoney(product.price)}</span> : null}
+              {product.salePrice != null ? (
+                <span className="ml-3 text-base text-muted-foreground line-through">
+                  {formatMoney(product.price)}
+                </span>
+              ) : null}
             </div>
             {product.description ? (
               <div
@@ -111,16 +169,48 @@ export default function ProductDetailPage() {
             ) : null}
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex h-10 items-center rounded-md border">
-                <Button type="button" variant="ghost" size="icon" onClick={() => setQuantity((value) => Math.max(1, value - 1))}><Minus className="h-4 w-4" /></Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
                 <span className="w-10 text-center text-sm font-medium">{quantity}</span>
-                <Button type="button" variant="ghost" size="icon" onClick={() => setQuantity((value) => value + 1)}><Plus className="h-4 w-4" /></Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setQuantity((value) => value + 1)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
               <Button onClick={addToCart}>
                 <ShoppingCart className="mr-2 h-4 w-4" /> Add to cart
               </Button>
             </div>
-            {product.features.length ? <div><h2 className="font-semibold">Features</h2><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">{product.features.map((item) => <li key={item}>{item}</li>)}</ul></div> : null}
-            {product.included.length ? <div><h2 className="font-semibold">Included</h2><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">{product.included.map((item) => <li key={item}>{item}</li>)}</ul></div> : null}
+            {product.features.length ? (
+              <div>
+                <h2 className="font-semibold">Features</h2>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {product.features.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {product.included.length ? (
+              <div>
+                <h2 className="font-semibold">Included</h2>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {product.included.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -137,10 +227,15 @@ function ProductSeo({
   globalSeo?: SeoSettings;
   price: number;
 }) {
-  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const siteUrl =
+    globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
   const canonical = product.canonicalUrl || `${siteUrl}/products/${product.urlSlug}`;
   const seoTitle = product.metaTitle || product.ogTitle || product.name;
-  const seoDescription = product.metaDescription || product.ogDescription || product.tagline || (product.description ? stripHtml(product.description) : undefined);
+  const seoDescription =
+    product.metaDescription ||
+    product.ogDescription ||
+    product.tagline ||
+    (product.description ? stripHtml(product.description) : undefined);
   const seoImage = absoluteStoreUrl(product.ogImage || product.primaryImage, siteUrl);
 
   useSeo({
@@ -159,20 +254,23 @@ function ProductSeo({
     ],
   });
 
-  const productLd = buildProductLd({
-    id: product.id,
-    name: product.name,
-    description: seoDescription,
-    slug: product.urlSlug,
-    image: product.primaryImage,
-    gallery: product.secondaryImages,
-    sku: product.sku,
-    categories: product.categories ?? [],
-    tags: product.tags,
-    price: product.price,
-    salePrice: product.salePrice,
-    active: true,
-  }, globalSeo);
+  const productLd = buildProductLd(
+    {
+      id: product.id,
+      name: product.name,
+      description: seoDescription,
+      slug: product.urlSlug,
+      image: product.primaryImage,
+      gallery: product.secondaryImages,
+      sku: product.sku,
+      categories: product.categories ?? [],
+      tags: product.tags,
+      price: product.price,
+      salePrice: product.salePrice,
+      active: true,
+    },
+    globalSeo,
+  );
   const breadcrumbs = buildBreadcrumbLd([
     { name: "Home", url: siteUrl || "/" },
     { name: "Shop", url: `${siteUrl}/shop` },

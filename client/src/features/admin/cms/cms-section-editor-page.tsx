@@ -61,7 +61,7 @@ export default function CmsSectionEditorPage() {
   const [builderContent, setBuilderContent] = useState<BuilderContent>(EMPTY_CONTENT);
   const [initialized, setInitialized] = useState(false);
   const [savedBuilderSnapshot, setSavedBuilderSnapshot] = useState(() =>
-    JSON.stringify(EMPTY_CONTENT)
+    JSON.stringify(EMPTY_CONTENT),
   );
 
   const { data: section, isLoading: sectionLoading } = useQuery<CmsSection>({
@@ -92,7 +92,7 @@ export default function CmsSectionEditorPage() {
         description: section.description ?? "",
         category: section.category ?? "general",
       });
-      const blocks = Array.isArray(section.blocks) ? section.blocks as BlockInstance[] : [];
+      const blocks = Array.isArray(section.blocks) ? (section.blocks as BlockInstance[]) : [];
       setBuilderContent({ blocks });
       setSavedBuilderSnapshot(JSON.stringify({ blocks }));
       setInitialized(true);
@@ -130,7 +130,7 @@ export default function CmsSectionEditorPage() {
           description: variables.description,
           category: variables.category,
         },
-        variables.content
+        variables.content,
       );
       saveState.markSaved();
       navigate(`/admin/cms/sections/${created.id}`);
@@ -158,7 +158,7 @@ export default function CmsSectionEditorPage() {
           description: variables.description,
           category: variables.category,
         },
-        variables.content
+        variables.content,
       );
       saveState.markSaved();
     },
@@ -183,8 +183,7 @@ export default function CmsSectionEditorPage() {
   };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
-  const builderDirty =
-    JSON.stringify(builderContent) !== savedBuilderSnapshot;
+  const builderDirty = JSON.stringify(builderContent) !== savedBuilderSnapshot;
   const isDirty = form.formState.isDirty || builderDirty;
   const saveState = useEditorSaveState({
     isDirty,
@@ -235,8 +234,11 @@ export default function CmsSectionEditorPage() {
             </Button>
             <div className="flex items-center gap-2">
               <Layers className="h-5 w-5 text-violet-500" />
-              <h1 className="text-xl font-heading font-semibold" data-testid="text-section-editor-title">
-                {isNew ? "New Section" : (form.watch("name") || "Edit Section")}
+              <h1
+                className="text-xl font-heading font-semibold"
+                data-testid="text-section-editor-title"
+              >
+                {isNew ? "New Section" : form.watch("name") || "Edit Section"}
               </h1>
             </div>
           </div>
@@ -253,9 +255,17 @@ export default function CmsSectionEditorPage() {
           </div>
         </div>
 
-        <Card className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
+        <Card
+          className={cn(
+            editorLock.hasLocking &&
+              editorLock.isReadOnly &&
+              "pointer-events-none select-none opacity-70",
+          )}
+        >
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Section Details</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Section Details
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -308,7 +318,10 @@ export default function CmsSectionEditorPage() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                      <FormLabel>
+                        Description{" "}
+                        <span className="text-muted-foreground font-normal">(optional)</span>
+                      </FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Brief description of when to use this section…"
@@ -328,12 +341,15 @@ export default function CmsSectionEditorPage() {
 
         <div className="space-y-2">
           <h2 className="text-sm font-medium text-muted-foreground">Blocks</h2>
-          <Card className={cn(editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
+          <Card
+            className={cn(
+              editorLock.hasLocking &&
+                editorLock.isReadOnly &&
+                "pointer-events-none select-none opacity-70",
+            )}
+          >
             <CardContent className="pt-4">
-              <PageBuilder
-                content={builderContent}
-                onChange={setBuilderContent}
-              />
+              <PageBuilder content={builderContent} onChange={setBuilderContent} />
             </CardContent>
           </Card>
         </div>

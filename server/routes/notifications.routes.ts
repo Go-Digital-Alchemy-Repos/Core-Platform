@@ -13,7 +13,7 @@ router.get(
     const userId = req.user!.id;
     const notifs = await storage.notifications.getForUser(userId);
     res.json(notifs);
-  })
+  }),
 );
 
 router.get(
@@ -22,7 +22,7 @@ router.get(
     const userId = req.user!.id;
     const count = await storage.notifications.getUnreadCount(userId);
     res.json({ count });
-  })
+  }),
 );
 
 router.post(
@@ -31,7 +31,7 @@ router.post(
     const userId = req.user!.id;
     await storage.notifications.markAllRead(userId);
     res.json({ ok: true });
-  })
+  }),
 );
 
 router.post(
@@ -40,7 +40,7 @@ router.post(
     const userId = req.user!.id;
     await storage.notifications.markRead(Number(req.params.id), userId);
     res.json({ ok: true });
-  })
+  }),
 );
 
 router.get(
@@ -49,7 +49,7 @@ router.get(
     const userId = req.user!.id;
     const prefs = await storage.notifications.getPreferences(userId);
     res.json(prefs);
-  })
+  }),
 );
 
 const prefsSchema = z.object({
@@ -64,7 +64,7 @@ router.put(
     const body = prefsSchema.parse(req.body);
     const prefs = await storage.notifications.updatePreferences(userId, body);
     res.json(prefs);
-  })
+  }),
 );
 
 export default router;

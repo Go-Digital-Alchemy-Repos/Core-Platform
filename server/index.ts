@@ -47,29 +47,38 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
   }
 });
 
-app.post("/api/ecommerce/webhook/stripe", express.raw({ type: "application/json" }), async (req, res) => {
-  try {
-    const signature = req.headers["stripe-signature"] as string | undefined;
-    const { processEcommerceStripeWebhook } = await import("./webhooks/ecommerce-stripe.handler");
-    await processEcommerceStripeWebhook(req.body, signature);
-    res.json({ received: true });
-  } catch (err) {
-    logger.stripe.error("Ecommerce webhook endpoint error", err, { requestId: req.requestId });
-    res.status(400).json({ error: "Webhook processing failed" });
-  }
-});
+app.post(
+  "/api/ecommerce/webhook/stripe",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    try {
+      const signature = req.headers["stripe-signature"] as string | undefined;
+      const { processEcommerceStripeWebhook } = await import("./webhooks/ecommerce-stripe.handler");
+      await processEcommerceStripeWebhook(req.body, signature);
+      res.json({ received: true });
+    } catch (err) {
+      logger.stripe.error("Ecommerce webhook endpoint error", err, { requestId: req.requestId });
+      res.status(400).json({ error: "Webhook processing failed" });
+    }
+  },
+);
 
-app.post("/api/membership/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
-  try {
-    const signature = req.headers["stripe-signature"] as string | undefined;
-    const { handleMembershipStripeWebhook } = await import("./services/membership-webhook.service");
-    await handleMembershipStripeWebhook(req.body, signature);
-    res.json({ received: true });
-  } catch (err) {
-    logger.stripe.error("Membership webhook endpoint error", err, { requestId: req.requestId });
-    res.status(400).json({ error: "Webhook processing failed" });
-  }
-});
+app.post(
+  "/api/membership/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    try {
+      const signature = req.headers["stripe-signature"] as string | undefined;
+      const { handleMembershipStripeWebhook } =
+        await import("./services/membership-webhook.service");
+      await handleMembershipStripeWebhook(req.body, signature);
+      res.json({ received: true });
+    } catch (err) {
+      logger.stripe.error("Membership webhook endpoint error", err, { requestId: req.requestId });
+      res.status(400).json({ error: "Webhook processing failed" });
+    }
+  },
+);
 
 app.use(
   express.json({
@@ -134,10 +143,22 @@ app.use(originCheck);
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
 const REDACTED_KEYS = [
-  "password", "currentPassword", "newPassword",
-  "token", "resetToken", "secret", "authorization",
-  "email", "phone", "address", "addressLine1", "addressLine2",
-  "refereeEmail", "refereePhone", "ssn", "dateOfBirth",
+  "password",
+  "currentPassword",
+  "newPassword",
+  "token",
+  "resetToken",
+  "secret",
+  "authorization",
+  "email",
+  "phone",
+  "address",
+  "addressLine1",
+  "addressLine2",
+  "refereeEmail",
+  "refereePhone",
+  "ssn",
+  "dateOfBirth",
   "secureToken",
 ];
 const MAX_LOG_BODY_LENGTH = 500;
@@ -158,7 +179,8 @@ function redactSensitive(obj: unknown): unknown {
       redacted[key] = "[REDACTED]";
     } else if (key === "bio" || key === "content" || key === "body" || key === "description") {
       const val = obj[key];
-      redacted[key] = typeof val === "string" && val.length > 100 ? val.substring(0, 100) + "..." : val;
+      redacted[key] =
+        typeof val === "string" && val.length > 100 ? val.substring(0, 100) + "..." : val;
     } else if (typeof obj[key] === "object" && obj[key] !== null) {
       redacted[key] = redactSensitive(obj[key]);
     } else {

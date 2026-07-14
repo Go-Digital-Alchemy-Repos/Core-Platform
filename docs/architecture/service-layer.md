@@ -28,11 +28,11 @@ export const storage = {
 
 For cross-cutting concerns that don't map to a single storage domain:
 
-| Service | File | Responsibility |
-|---------|------|---------------|
-| `EmailService` | `server/services/email.service.ts` | Template rendering, email dispatch via SendGrid |
-| `R2Service` | `server/services/r2.service.ts` | Cloudflare R2 file upload/delete/signed URLs |
-| `BackgroundCheckService` | `server/services/background-check.service.ts` | Provider background check workflow |
+| Service                   | File                                           | Responsibility                                    |
+| ------------------------- | ---------------------------------------------- | ------------------------------------------------- |
+| `EmailService`            | `server/services/email.service.ts`             | Template rendering, email dispatch via SMTP       |
+| `R2Service`               | `server/services/r2.service.ts`                | Cloudflare R2 file upload/delete/signed URLs      |
+| `BackgroundCheckService`  | `server/services/background-check.service.ts`  | Provider background check workflow                |
 | `ScheduledPublishService` | `server/services/scheduled-publish.service.ts` | Periodic check for CMS pages scheduled to publish |
 
 ### Service Boundary Philosophy
@@ -47,6 +47,7 @@ Each backend service module (`email.service.ts`, `r2.service.ts`, `config/stripe
 ### Route Handler Responsibility
 
 Route handlers are intentionally thin. They:
+
 1. Validate request input (via Zod schemas or middleware)
 2. Call storage methods
 3. Return JSON responses
@@ -86,6 +87,7 @@ Business logic that spans multiple storage domains is currently in route handler
 ### Client-Side Caching
 
 TanStack Query provides the primary caching layer:
+
 - 5-minute stale time means repeated navigation doesn't trigger redundant API calls
 - Cache is keyed by query parameters, so paginated/filtered results are cached independently
 - Mutations invalidate relevant cache entries

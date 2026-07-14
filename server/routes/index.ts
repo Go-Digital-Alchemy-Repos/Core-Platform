@@ -238,16 +238,17 @@ export function registerApiRoutes(app: Express) {
 
   app.get("/sitemap.xml", async (_req, res) => {
     try {
-      const [seoSettings, pages, posts, events, siteFeatures, products, jobs, portfolioProjects] = await Promise.all([
-        storage.seoSettings.get(),
-        storage.cmsPages.getAllPages(),
-        storage.blog.getAllPosts(),
-        storage.events.getAllEvents(),
-        getSiteFeatures(),
-        storage.ecommerce.getProducts({ publicOnly: true }),
-        storage.careers.getJobs({ publicOnly: true }),
-        storage.portfolio.getProjects({ publicOnly: true }),
-      ]);
+      const [seoSettings, pages, posts, events, siteFeatures, products, jobs, portfolioProjects] =
+        await Promise.all([
+          storage.seoSettings.get(),
+          storage.cmsPages.getAllPages(),
+          storage.blog.getAllPosts(),
+          storage.events.getAllEvents(),
+          getSiteFeatures(),
+          storage.ecommerce.getProducts({ publicOnly: true }),
+          storage.careers.getJobs({ publicOnly: true }),
+          storage.portfolio.getProjects({ publicOnly: true }),
+        ]);
 
       const base = seoSettings?.siteUrl?.replace(/\/$/, "") || "";
 
@@ -258,11 +259,36 @@ export function registerApiRoutes(app: Express) {
 
       const staticRoutes = [
         { path: "/about", changefreq: "monthly", priority: "0.7", enabled: true },
-        { path: "/insights", changefreq: "weekly", priority: "0.8", enabled: siteFeatures.blogEnabled },
-        { path: "/events", changefreq: "daily", priority: "0.8", enabled: siteFeatures.eventsEnabled },
-        { path: "/recordings", changefreq: "weekly", priority: "0.7", enabled: siteFeatures.eventsEnabled },
-        { path: "/directory", changefreq: "daily", priority: "0.9", enabled: siteFeatures.directoryEnabled },
-        { path: "/join", changefreq: "monthly", priority: "0.6", enabled: siteFeatures.directoryEnabled },
+        {
+          path: "/insights",
+          changefreq: "weekly",
+          priority: "0.8",
+          enabled: siteFeatures.blogEnabled,
+        },
+        {
+          path: "/events",
+          changefreq: "daily",
+          priority: "0.8",
+          enabled: siteFeatures.eventsEnabled,
+        },
+        {
+          path: "/recordings",
+          changefreq: "weekly",
+          priority: "0.7",
+          enabled: siteFeatures.eventsEnabled,
+        },
+        {
+          path: "/directory",
+          changefreq: "daily",
+          priority: "0.9",
+          enabled: siteFeatures.directoryEnabled,
+        },
+        {
+          path: "/join",
+          changefreq: "monthly",
+          priority: "0.6",
+          enabled: siteFeatures.directoryEnabled,
+        },
         { path: "/contact", changefreq: "monthly", priority: "0.5", enabled: true },
       ];
       for (const r of staticRoutes) {
@@ -372,7 +398,9 @@ export function registerApiRoutes(app: Express) {
           if (job.noindex) continue;
           urls.push({
             loc: `${base}/careers/${job.slug}`,
-            lastmod: job.updatedAt ? new Date(job.updatedAt).toISOString().split("T")[0] : undefined,
+            lastmod: job.updatedAt
+              ? new Date(job.updatedAt).toISOString().split("T")[0]
+              : undefined,
             changefreq: "daily",
             priority: "0.7",
           });
@@ -384,7 +412,9 @@ export function registerApiRoutes(app: Express) {
           if (project.noindex) continue;
           urls.push({
             loc: `${base}/portfolio/${project.slug}`,
-            lastmod: project.updatedAt ? new Date(project.updatedAt).toISOString().split("T")[0] : undefined,
+            lastmod: project.updatedAt
+              ? new Date(project.updatedAt).toISOString().split("T")[0]
+              : undefined,
             changefreq: "monthly",
             priority: project.featured ? "0.8" : "0.7",
           });

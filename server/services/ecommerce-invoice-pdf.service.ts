@@ -7,7 +7,11 @@ function formatCurrency(cents: number | null | undefined) {
 
 function formatDate(value: Date | string | null | undefined) {
   if (!value) return "";
-  return new Date(value).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  return new Date(value).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function addressLines(order: EcommerceOrderWithDetails) {
@@ -21,9 +25,19 @@ function addressLines(order: EcommerceOrderWithDetails) {
   ].filter((line): line is string => Boolean(line));
 }
 
-function writeKeyValue(doc: PDFKit.PDFDocument, label: string, value: string, x: number, y: number) {
+function writeKeyValue(
+  doc: PDFKit.PDFDocument,
+  label: string,
+  value: string,
+  x: number,
+  y: number,
+) {
   doc.font("Helvetica").fontSize(9).fillColor("#667085").text(label, x, y);
-  doc.font("Helvetica-Bold").fontSize(10).fillColor("#111827").text(value || "-", x, y + 14);
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .fillColor("#111827")
+    .text(value || "-", x, y + 14);
 }
 
 export async function renderEcommerceInvoicePdf(order: EcommerceOrderWithDetails): Promise<Buffer> {
@@ -40,8 +54,16 @@ export async function renderEcommerceInvoicePdf(order: EcommerceOrderWithDetails
   const paidLabel = order.paymentStatus === "paid" ? "Paid invoice" : "Order invoice";
   doc.font("Helvetica-Bold").fontSize(24).fillColor("#111827").text("Core Platform", 54, 54);
   doc.font("Helvetica").fontSize(10).fillColor("#667085").text("Customer order invoice", 54, 84);
-  doc.font("Helvetica-Bold").fontSize(22).fillColor("#111827").text(paidLabel, 360, 54, { align: "right" });
-  doc.font("Helvetica").fontSize(10).fillColor("#667085").text(`Invoice #${invoiceNumber}`, 360, 84, { align: "right" });
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(22)
+    .fillColor("#111827")
+    .text(paidLabel, 360, 54, { align: "right" });
+  doc
+    .font("Helvetica")
+    .fontSize(10)
+    .fillColor("#667085")
+    .text(`Invoice #${invoiceNumber}`, 360, 84, { align: "right" });
 
   doc.moveTo(54, 120).lineTo(558, 120).strokeColor("#D0D5DD").lineWidth(1).stroke();
 
@@ -57,7 +79,11 @@ export async function renderEcommerceInvoicePdf(order: EcommerceOrderWithDetails
     doc.font("Helvetica").fontSize(10).fillColor("#344054");
     lines.forEach((line, index) => doc.text(line, 72, 248 + index * 15));
   } else {
-    doc.font("Helvetica").fontSize(10).fillColor("#667085").text("Shipping address was not captured for this order.", 72, 248, { width: 190 });
+    doc
+      .font("Helvetica")
+      .fontSize(10)
+      .fillColor("#667085")
+      .text("Shipping address was not captured for this order.", 72, 248, { width: 190 });
   }
 
   doc.roundedRect(318, 206, 240, 120, 6).strokeColor("#D0D5DD").stroke();
@@ -71,7 +97,10 @@ export async function renderEcommerceInvoicePdf(order: EcommerceOrderWithDetails
   ];
   totalRows.forEach(([label, value, strong], index) => {
     const y = 248 + index * 15;
-    doc.font(strong ? "Helvetica-Bold" : "Helvetica").fontSize(strong ? 11 : 10).fillColor(strong ? "#111827" : "#344054");
+    doc
+      .font(strong ? "Helvetica-Bold" : "Helvetica")
+      .fontSize(strong ? 11 : 10)
+      .fillColor(strong ? "#111827" : "#344054");
     doc.text(label, 336, y);
     doc.text(value, 450, y, { width: 86, align: "right" });
   });
@@ -93,9 +122,17 @@ export async function renderEcommerceInvoicePdf(order: EcommerceOrderWithDetails
       doc.addPage();
       y = 54;
     }
-    doc.font("Helvetica-Bold").fontSize(10).fillColor("#111827").text(item.productName, 54, y, { width: 270 });
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .fillColor("#111827")
+      .text(item.productName, 54, y, { width: 270 });
     if (item.variantTitle) {
-      doc.font("Helvetica").fontSize(9).fillColor("#667085").text(item.variantTitle, 54, y + 14, { width: 270 });
+      doc
+        .font("Helvetica")
+        .fontSize(9)
+        .fillColor("#667085")
+        .text(item.variantTitle, 54, y + 14, { width: 270 });
     }
     doc.font("Helvetica").fontSize(10).fillColor("#344054");
     doc.text(String(item.quantity), 350, y, { width: 40, align: "right" });
@@ -111,24 +148,34 @@ export async function renderEcommerceInvoicePdf(order: EcommerceOrderWithDetails
   y += 20;
   if (order.shipments.length) {
     order.shipments.forEach((shipment) => {
-      doc.font("Helvetica").fontSize(10).fillColor("#344054").text(
-        `${shipment.carrier || "Carrier pending"} - ${shipment.trackingNumber || "Tracking pending"} - ${shipment.status}`,
-        54,
-        y,
-        { width: 504 },
-      );
+      doc
+        .font("Helvetica")
+        .fontSize(10)
+        .fillColor("#344054")
+        .text(
+          `${shipment.carrier || "Carrier pending"} - ${shipment.trackingNumber || "Tracking pending"} - ${shipment.status}`,
+          54,
+          y,
+          { width: 504 },
+        );
       y += 16;
     });
   } else {
-    doc.font("Helvetica").fontSize(10).fillColor("#667085").text("Tracking will appear once the order ships.", 54, y);
+    doc
+      .font("Helvetica")
+      .fontSize(10)
+      .fillColor("#667085")
+      .text("Tracking will appear once the order ships.", 54, y);
   }
 
-  doc.font("Helvetica").fontSize(8).fillColor("#98A2B3").text(
-    "This invoice was generated from the customer's Core Platform account.",
-    54,
-    742,
-    { width: 504, align: "center" },
-  );
+  doc
+    .font("Helvetica")
+    .fontSize(8)
+    .fillColor("#98A2B3")
+    .text("This invoice was generated from the customer's Core Platform account.", 54, 742, {
+      width: 504,
+      align: "center",
+    });
 
   doc.end();
   return finished;

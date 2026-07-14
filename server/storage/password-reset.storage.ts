@@ -26,8 +26,8 @@ export class PasswordResetStorage {
         and(
           eq(passwordResetTokens.token, token),
           isNull(passwordResetTokens.usedAt),
-          gt(passwordResetTokens.expiresAt, new Date())
-        )
+          gt(passwordResetTokens.expiresAt, new Date()),
+        ),
       );
     return record;
   }

@@ -4,22 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  ChevronDown,
-  Copy,
-  GripVertical,
-  ListOrdered,
-  Plus,
-  Search,
-  Trash2,
-} from "lucide-react";
+import { ChevronDown, Copy, GripVertical, ListOrdered, Plus, Search, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getBlockDef, isDynamicBlock, type BlockDef, type BlockInstance } from "./block-registry";
-import {
-  BlockIcon,
-  getBlockSummary,
-  SectionsLibrary,
-} from "./page-builder-support";
+import { BlockIcon, getBlockSummary, SectionsLibrary } from "./page-builder-support";
 import { FULL_WIDTH_BLOCK_TYPES } from "./page-builder-constants";
 
 interface StructurePanelProps {
@@ -101,7 +89,9 @@ export function StructurePanel({
         <div className="space-y-2 p-3">
           {visibleBlocks.length === 0 ? (
             <div className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
-              {blocks.length === 0 ? "No blocks yet. Add content to start building." : "No blocks match that filter."}
+              {blocks.length === 0
+                ? "No blocks yet. Add content to start building."
+                : "No blocks match that filter."}
             </div>
           ) : (
             visibleBlocks.map((block, visibleIndex) => {
@@ -110,7 +100,8 @@ export function StructurePanel({
               const isSelected = block.id === selectedId;
               const isDynamic = isDynamicBlock(block.type);
               const summary = getBlockSummary(block);
-              const showDropBefore = dropTarget?.id === block.id && dropTarget.position === "before";
+              const showDropBefore =
+                dropTarget?.id === block.id && dropTarget.position === "before";
               const showDropAfter = dropTarget?.id === block.id && dropTarget.position === "after";
 
               return (
@@ -118,10 +109,12 @@ export function StructurePanel({
                   key={block.id}
                   className={cn(
                     "rounded-xl border transition-all",
-                    isSelected ? "border-violet-400 bg-violet-50/80 shadow-sm dark:bg-violet-950/20" : "border-border/70 bg-background",
+                    isSelected
+                      ? "border-violet-400 bg-violet-50/80 shadow-sm dark:bg-violet-950/20"
+                      : "border-border/70 bg-background",
                     draggedBlockId === block.id && "opacity-60",
                     showDropBefore && "ring-2 ring-inset ring-violet-400 ring-offset-1",
-                    showDropAfter && "shadow-[inset_0_-2px_0_0_rgb(167_139_250)]"
+                    showDropAfter && "shadow-[inset_0_-2px_0_0_rgb(167_139_250)]",
                   )}
                   onDragOver={(event) => onDragOver(event, block.id)}
                   onDrop={(event) => onDrop(event, block.id)}
@@ -148,7 +141,12 @@ export function StructurePanel({
                     >
                       <div className="flex items-center gap-2">
                         <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-violet-100 dark:bg-violet-900/30">
-                          {definition && <BlockIcon name={definition.iconName} className="h-3 w-3 text-violet-600" />}
+                          {definition && (
+                            <BlockIcon
+                              name={definition.iconName}
+                              className="h-3 w-3 text-violet-600"
+                            />
+                          )}
                         </div>
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium leading-tight">
@@ -258,7 +256,9 @@ interface InserterPanelProps {
   onInsertBlocks: (blocks: BlockInstance[]) => void;
   onDragStart: (
     event: DragEvent,
-    payload: { kind: "block"; type: string } | { kind: "section"; sectionId: string; blocks: BlockInstance[] }
+    payload:
+      | { kind: "block"; type: string }
+      | { kind: "section"; sectionId: string; blocks: BlockInstance[] },
   ) => void;
   onDragEnd: () => void;
 }
@@ -284,7 +284,8 @@ export function InserterPanel({
               <p className="text-sm font-semibold">Add Content</p>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Browse blocks and saved sections here, then click to insert quickly or drag into the exact position you want.
+              Browse blocks and saved sections here, then click to insert quickly or drag into the
+              exact position you want.
             </p>
           </div>
           {insertAtIndex !== null ? (
@@ -302,7 +303,8 @@ export function InserterPanel({
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          Drag blocks or saved sections onto the canvas to place them precisely, or click once to insert at the current target.
+          Drag blocks or saved sections onto the canvas to place them precisely, or click once to
+          insert at the current target.
         </p>
       </div>
 
@@ -312,7 +314,11 @@ export function InserterPanel({
             <TabsTrigger value="blocks" className="h-auto px-2 py-2 text-xs leading-tight">
               Block Types
             </TabsTrigger>
-            <TabsTrigger value="sections" className="h-auto px-2 py-2 text-xs leading-tight" data-testid="tab-saved-sections">
+            <TabsTrigger
+              value="sections"
+              className="h-auto px-2 py-2 text-xs leading-tight"
+              data-testid="tab-saved-sections"
+            >
               Saved Sections
             </TabsTrigger>
           </TabsList>
@@ -336,46 +342,58 @@ export function InserterPanel({
                   <div className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
                     No block types match that search.
                   </div>
-                ) : filteredAddContentGroups.map(({ category, label, items }) => (
-                  <div key={category}>
-                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      {label}
-                    </h3>
-                    <div className="space-y-2">
-                      {items.map((definition) => (
-                        <button
-                          key={definition.type}
-                          type="button"
-                          draggable
-                          onDragStart={(event) =>
-                            onDragStart(event, {
-                              kind: "block",
-                              type: definition.type,
-                            })
-                          }
-                          onDragEnd={onDragEnd}
-                          onClick={() => onAddBlock(definition.type)}
-                          className="group flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30"
-                          data-testid={`block-type-${definition.type}`}
-                        >
-                          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-violet-100 transition-colors group-hover:bg-violet-200 dark:bg-violet-900/30 dark:group-hover:bg-violet-900/50">
-                            <BlockIcon name={definition.iconName} className="h-4 w-4 text-violet-600" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium leading-tight">{definition.label}</p>
-                            <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{definition.description}</p>
-                          </div>
-                        </button>
-                      ))}
+                ) : (
+                  filteredAddContentGroups.map(({ category, label, items }) => (
+                    <div key={category}>
+                      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        {label}
+                      </h3>
+                      <div className="space-y-2">
+                        {items.map((definition) => (
+                          <button
+                            key={definition.type}
+                            type="button"
+                            draggable
+                            onDragStart={(event) =>
+                              onDragStart(event, {
+                                kind: "block",
+                                type: definition.type,
+                              })
+                            }
+                            onDragEnd={onDragEnd}
+                            onClick={() => onAddBlock(definition.type)}
+                            className="group flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30"
+                            data-testid={`block-type-${definition.type}`}
+                          >
+                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-violet-100 transition-colors group-hover:bg-violet-200 dark:bg-violet-900/30 dark:group-hover:bg-violet-900/50">
+                              <BlockIcon
+                                name={definition.iconName}
+                                className="h-4 w-4 text-violet-600"
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium leading-tight">
+                                {definition.label}
+                              </p>
+                              <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                                {definition.description}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </ScrollArea>
           </div>
         </TabsContent>
 
-        <TabsContent value="sections" className="mt-0 min-h-0 flex-1 overflow-hidden px-4 pb-4 pt-3">
+        <TabsContent
+          value="sections"
+          className="mt-0 min-h-0 flex-1 overflow-hidden px-4 pb-4 pt-3"
+        >
           <ScrollArea className="h-full">
             <SectionsLibrary
               onInsert={onInsertBlocks}

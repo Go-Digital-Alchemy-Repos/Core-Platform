@@ -31,7 +31,9 @@ const samplePage: CmsPage = {
   pageType: "custom",
   template: "full-width",
   sidebarId: null,
-  content: [{ title: "The Application Process", body: "Learn how to apply with step-by-step guidance." }],
+  content: [
+    { title: "The Application Process", body: "Learn how to apply with step-by-step guidance." },
+  ],
   seoTitle: null,
   seoDescription: "A guide to the Core Platform application process.",
   seoKeywords: null,
@@ -152,9 +154,13 @@ describe("public-search.service", () => {
     const { searchPublicSite } = await import("../services/public-search.service");
     const results = await searchPublicSite("application process");
 
-    expect(results.map((result) => result.type)).toEqual(expect.arrayContaining(["page", "post", "event"]));
+    expect(results.map((result) => result.type)).toEqual(
+      expect.arrayContaining(["page", "post", "event"]),
+    );
     expect(results.map((result) => result.url)).toContain("/application-process");
-    expect(results.map((result) => result.url)).toContain("/insights/understanding-application-process");
+    expect(results.map((result) => result.url)).toContain(
+      "/insights/understanding-application-process",
+    );
     expect(results.map((result) => result.url)).toContain("/events/application-process-webinar");
   });
 
@@ -179,7 +185,9 @@ describe("public-search.service", () => {
     const results = await searchPublicSite("application process");
 
     expect(results.some((result) => result.url === "/join")).toBe(true);
-    expect(results.find((result) => result.url === "/join")?.excerpt).toContain("Submit Your Application");
+    expect(results.find((result) => result.url === "/join")?.excerpt).toContain(
+      "Submit Your Application",
+    );
   });
 
   it("retains fallback system-page search terms even when a CMS version of that page exists", async () => {

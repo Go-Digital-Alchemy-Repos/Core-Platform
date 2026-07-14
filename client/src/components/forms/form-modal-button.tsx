@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { PublicFormRenderer } from "./public-form-renderer";
 import { stripHtml } from "@/lib/html";

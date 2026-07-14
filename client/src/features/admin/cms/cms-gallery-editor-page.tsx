@@ -211,7 +211,11 @@ export default function CmsGalleryEditorPage() {
       if (isNew) navigate(`/admin/cms/galleries/${saved.id}`);
     },
     onError: (error: Error) =>
-      toast({ title: "Failed to save gallery", description: error.message, variant: "destructive" }),
+      toast({
+        title: "Failed to save gallery",
+        description: error.message,
+        variant: "destructive",
+      }),
   });
 
   const setSetting = <K extends keyof CmsGallerySettings>(key: K, value: CmsGallerySettings[K]) => {
@@ -275,7 +279,11 @@ export default function CmsGalleryEditorPage() {
                 {isNew ? "New Gallery" : title || "Edit Gallery"}
               </h1>
               <Badge variant={status === "published" ? "default" : "outline"} className="mt-1">
-                {status === "published" ? <Eye className="mr-1 h-3 w-3" /> : <EyeOff className="mr-1 h-3 w-3" />}
+                {status === "published" ? (
+                  <Eye className="mr-1 h-3 w-3" />
+                ) : (
+                  <EyeOff className="mr-1 h-3 w-3" />
+                )}
                 {status}
               </Badge>
             </div>
@@ -291,7 +299,10 @@ export default function CmsGalleryEditorPage() {
               <Monitor className="mr-2 h-4 w-4" />
               Preview Gallery
             </Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !title.trim()}>
+            <Button
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending || !title.trim()}
+            >
               {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Save Gallery
             </Button>
@@ -408,41 +419,79 @@ export default function CmsGalleryEditorPage() {
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div className="grid gap-1.5">
                               <Label>Title</Label>
-                              <Input value={item.title} onChange={(event) => updateItem(index, { title: event.target.value })} />
+                              <Input
+                                value={item.title}
+                                onChange={(event) =>
+                                  updateItem(index, { title: event.target.value })
+                                }
+                              />
                             </div>
                             <div className="grid gap-1.5">
                               <Label>Alt text</Label>
-                              <Input value={item.alt} onChange={(event) => updateItem(index, { alt: event.target.value })} />
+                              <Input
+                                value={item.alt}
+                                onChange={(event) => updateItem(index, { alt: event.target.value })}
+                              />
                             </div>
                           </div>
                           <div className="grid gap-1.5">
                             <Label>Caption</Label>
-                            <Textarea value={item.caption} onChange={(event) => updateItem(index, { caption: event.target.value })} rows={2} />
+                            <Textarea
+                              value={item.caption}
+                              onChange={(event) =>
+                                updateItem(index, { caption: event.target.value })
+                              }
+                              rows={2}
+                            />
                           </div>
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div className="grid gap-1.5">
                               <Label>Link URL</Label>
-                              <Input value={item.linkUrl} onChange={(event) => updateItem(index, { linkUrl: event.target.value })} />
+                              <Input
+                                value={item.linkUrl}
+                                onChange={(event) =>
+                                  updateItem(index, { linkUrl: event.target.value })
+                                }
+                              />
                             </div>
                             <div className="grid gap-1.5">
                               <Label>CTA text</Label>
-                              <Input value={item.ctaText} onChange={(event) => updateItem(index, { ctaText: event.target.value })} />
+                              <Input
+                                value={item.ctaText}
+                                onChange={(event) =>
+                                  updateItem(index, { ctaText: event.target.value })
+                                }
+                              />
                             </div>
                           </div>
                         </div>
                       </div>
                       <div className="mt-3 flex justify-end gap-1">
-                        <Button type="button" variant="ghost" size="icon" onClick={() => moveItem(index, -1)} disabled={index === 0}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => moveItem(index, -1)}
+                          disabled={index === 0}
+                        >
                           <ArrowUp className="h-4 w-4" />
                         </Button>
-                        <Button type="button" variant="ghost" size="icon" onClick={() => moveItem(index, 1)} disabled={index === items.length - 1}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => moveItem(index, 1)}
+                          disabled={index === items.length - 1}
+                        >
                           <ArrowDown className="h-4 w-4" />
                         </Button>
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => setItems((current) => current.filter((_, i) => i !== index))}
+                          onClick={() =>
+                            setItems((current) => current.filter((_, i) => i !== index))
+                          }
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -465,21 +514,52 @@ export default function CmsGalleryEditorPage() {
                     <div className="grid grid-cols-3 gap-2">
                       <div className="grid gap-1.5">
                         <Label>{layout === "carousel" ? "Desktop shown" : "Desktop"}</Label>
-                        <Input type="number" min={1} max={6} value={settings.columnsDesktop} onChange={(event) => setSetting("columnsDesktop", Number(event.target.value))} />
+                        <Input
+                          type="number"
+                          min={1}
+                          max={6}
+                          value={settings.columnsDesktop}
+                          onChange={(event) =>
+                            setSetting("columnsDesktop", Number(event.target.value))
+                          }
+                        />
                       </div>
                       <div className="grid gap-1.5">
                         <Label>{layout === "carousel" ? "Tablet shown" : "Tablet"}</Label>
-                        <Input type="number" min={1} max={4} value={settings.columnsTablet} onChange={(event) => setSetting("columnsTablet", Number(event.target.value))} />
+                        <Input
+                          type="number"
+                          min={1}
+                          max={4}
+                          value={settings.columnsTablet}
+                          onChange={(event) =>
+                            setSetting("columnsTablet", Number(event.target.value))
+                          }
+                        />
                       </div>
                       <div className="grid gap-1.5">
                         <Label>{layout === "carousel" ? "Mobile shown" : "Mobile"}</Label>
-                        <Input type="number" min={1} max={2} value={settings.columnsMobile} onChange={(event) => setSetting("columnsMobile", Number(event.target.value))} />
+                        <Input
+                          type="number"
+                          min={1}
+                          max={2}
+                          value={settings.columnsMobile}
+                          onChange={(event) =>
+                            setSetting("columnsMobile", Number(event.target.value))
+                          }
+                        />
                       </div>
                     </div>
                     <div className="grid gap-2">
                       <Label>Spacing</Label>
-                      <Select value={settings.spacing} onValueChange={(value) => setSetting("spacing", value as CmsGallerySettings["spacing"])}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                      <Select
+                        value={settings.spacing}
+                        onValueChange={(value) =>
+                          setSetting("spacing", value as CmsGallerySettings["spacing"])
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">None</SelectItem>
                           <SelectItem value="sm">Small</SelectItem>
@@ -492,8 +572,15 @@ export default function CmsGalleryEditorPage() {
                 ) : null}
                 <div className="grid gap-2">
                   <Label>Image ratio</Label>
-                  <Select value={settings.imageRatio} onValueChange={(value) => setSetting("imageRatio", value as CmsGallerySettings["imageRatio"])}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={settings.imageRatio}
+                    onValueChange={(value) =>
+                      setSetting("imageRatio", value as CmsGallerySettings["imageRatio"])
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="auto">Natural</SelectItem>
                       <SelectItem value="1/1">Square</SelectItem>
@@ -505,8 +592,15 @@ export default function CmsGalleryEditorPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label>Image fit</Label>
-                  <Select value={settings.cropMode} onValueChange={(value) => setSetting("cropMode", value as CmsGallerySettings["cropMode"])}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={settings.cropMode}
+                    onValueChange={(value) =>
+                      setSetting("cropMode", value as CmsGallerySettings["cropMode"])
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="cover">Crop to fill</SelectItem>
                       <SelectItem value="contain">Fit full image</SelectItem>
@@ -515,8 +609,15 @@ export default function CmsGalleryEditorPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label>Corner radius</Label>
-                  <Select value={settings.borderRadius} onValueChange={(value) => setSetting("borderRadius", value as CmsGallerySettings["borderRadius"])}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={settings.borderRadius}
+                    onValueChange={(value) =>
+                      setSetting("borderRadius", value as CmsGallerySettings["borderRadius"])
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
                       <SelectItem value="sm">Small</SelectItem>
@@ -527,8 +628,15 @@ export default function CmsGalleryEditorPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label>Hover effect</Label>
-                  <Select value={settings.hoverEffect} onValueChange={(value) => setSetting("hoverEffect", value as CmsGallerySettings["hoverEffect"])}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={settings.hoverEffect}
+                    onValueChange={(value) =>
+                      setSetting("hoverEffect", value as CmsGallerySettings["hoverEffect"])
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
                       <SelectItem value="zoom">Zoom</SelectItem>
@@ -549,8 +657,18 @@ export default function CmsGalleryEditorPage() {
                 {usesSlideSettings ? (
                   <div className="grid gap-2">
                     <Label>Transition effect</Label>
-                    <Select value={settings.transitionEffect} onValueChange={(value) => setSetting("transitionEffect", value as CmsGallerySettings["transitionEffect"])}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    <Select
+                      value={settings.transitionEffect}
+                      onValueChange={(value) =>
+                        setSetting(
+                          "transitionEffect",
+                          value as CmsGallerySettings["transitionEffect"],
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No transition effect</SelectItem>
                         <SelectItem value="fade">Fade</SelectItem>
@@ -584,8 +702,15 @@ export default function CmsGalleryEditorPage() {
                 ) : null}
                 <div className="grid gap-2">
                   <Label>Caption position</Label>
-                  <Select value={settings.captionPosition} onValueChange={(value) => setSetting("captionPosition", value as CmsGallerySettings["captionPosition"])}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={settings.captionPosition}
+                    onValueChange={(value) =>
+                      setSetting("captionPosition", value as CmsGallerySettings["captionPosition"])
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="below">Below image</SelectItem>
                       <SelectItem value="overlay">Overlay</SelectItem>
@@ -594,15 +719,24 @@ export default function CmsGalleryEditorPage() {
                 </div>
                 <div className="flex items-center justify-between rounded-md border p-3">
                   <Label>Show title</Label>
-                  <Switch checked={settings.showTitle} onCheckedChange={(value) => setSetting("showTitle", value)} />
+                  <Switch
+                    checked={settings.showTitle}
+                    onCheckedChange={(value) => setSetting("showTitle", value)}
+                  />
                 </div>
                 <div className="flex items-center justify-between rounded-md border p-3">
                   <Label>Show captions</Label>
-                  <Switch checked={settings.showCaptions} onCheckedChange={(value) => setSetting("showCaptions", value)} />
+                  <Switch
+                    checked={settings.showCaptions}
+                    onCheckedChange={(value) => setSetting("showCaptions", value)}
+                  />
                 </div>
                 <div className="flex items-center justify-between rounded-md border p-3">
                   <Label>Lightbox</Label>
-                  <Switch checked={settings.lightbox} onCheckedChange={(value) => setSetting("lightbox", value)} />
+                  <Switch
+                    checked={settings.lightbox}
+                    onCheckedChange={(value) => setSetting("lightbox", value)}
+                  />
                 </div>
               </CardContent>
             </Card>

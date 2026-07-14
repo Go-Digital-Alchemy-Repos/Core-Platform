@@ -860,8 +860,7 @@ export function EmailTemplatesTab() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground" data-testid="text-template-result-count">
-          Showing {filteredTemplates.length} of{" "}
-          {visibleTemplateList.length} templates
+          Showing {filteredTemplates.length} of {visibleTemplateList.length} templates
         </p>
         {(searchQuery || moduleFilter !== "all" || statusFilter !== "all") && (
           <Button
@@ -959,4 +958,3 @@ export function EmailTemplatesTab() {
     </div>
   );
 }
-

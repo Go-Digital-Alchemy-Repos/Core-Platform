@@ -104,8 +104,7 @@ function CmsPageSeo({ page, globalSeo }: { page: CmsPage; globalSeo?: SeoSetting
     const prevTitle = document.title;
     const effectiveTitle = page.seoTitle || page.title;
     const titleSuffix = globalSeo?.titleSuffix ?? " | Core Platform";
-    const effectiveDescription =
-      page.seoDescription || globalSeo?.defaultMetaDescription || "";
+    const effectiveDescription = page.seoDescription || globalSeo?.defaultMetaDescription || "";
     const effectiveOgImage = page.ogImageUrl || globalSeo?.defaultOgImageUrl || "";
     const origin =
       globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
@@ -215,7 +214,8 @@ export function CmsPageView({ page, globalSeo, previewLabel }: CmsPageViewProps)
   });
 
   const blocks = parseCmsContent(page.content);
-  const showSidebar = page.template === "with-sidebar" && Boolean(page.sidebarId || page.slug === "insights");
+  const showSidebar =
+    page.template === "with-sidebar" && Boolean(page.sidebarId || page.slug === "insights");
   const useDefaultSidebar = !page.sidebarId && page.slug === "insights";
   const heroBlocks = showSidebar && blocks[0] && /hero/i.test(blocks[0].type) ? [blocks[0]] : [];
   const contentBlocks = heroBlocks.length > 0 ? blocks.slice(1) : blocks;
@@ -260,7 +260,11 @@ export function CmsPageView({ page, globalSeo, previewLabel }: CmsPageViewProps)
 }
 
 export function CmsHybridPage({ slug, fallback, enabled = true }: CmsHybridPageProps) {
-  const { data: page, isLoading, error } = useQuery<CmsPage>({
+  const {
+    data: page,
+    isLoading,
+    error,
+  } = useQuery<CmsPage>({
     queryKey: ["/api/cms/pages/by-slug", slug],
     queryFn: async () => {
       const res = await fetch(`/api/cms/pages/by-slug/${slug}`, { credentials: "include" });
@@ -269,7 +273,10 @@ export function CmsHybridPage({ slug, fallback, enabled = true }: CmsHybridPageP
       }
       if (res.status === 401 || res.status === 403) {
         const payload = await res.json().catch(() => ({}));
-        throw new CmsMembershipAccessError(res.status, typeof payload.teaser === "string" ? payload.teaser : null);
+        throw new CmsMembershipAccessError(
+          res.status,
+          typeof payload.teaser === "string" ? payload.teaser : null,
+        );
       }
       if (!res.ok) {
         throw new Error(`CMS fetch failed: ${res.status} ${res.statusText}`);
@@ -309,7 +316,10 @@ export function CmsHybridPage({ slug, fallback, enabled = true }: CmsHybridPageP
       return <MembershipRestrictedPage status={error.status} teaser={error.teaser} />;
     }
     if (import.meta.env.DEV && !(error instanceof CmsNotFoundError)) {
-      console.warn(`[CmsHybridPage] Transient error for slug "${slug}", showing fallback:`, error.message);
+      console.warn(
+        `[CmsHybridPage] Transient error for slug "${slug}", showing fallback:`,
+        error.message,
+      );
     }
     return <>{fallback}</>;
   }

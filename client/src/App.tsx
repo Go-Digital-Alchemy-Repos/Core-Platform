@@ -179,7 +179,9 @@ function CmsDynamicPageRoute({ enabled }: { enabled: boolean }) {
     return <NotFound />;
   }
 
-  return <CmsHybridPage slug={slug} fallback={<PublicGalleryPage slug={slug} />} enabled={enabled} />;
+  return (
+    <CmsHybridPage slug={slug} fallback={<PublicGalleryPage slug={slug} />} enabled={enabled} />
+  );
 }
 
 function Router() {

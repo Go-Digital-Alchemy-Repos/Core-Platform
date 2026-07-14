@@ -71,10 +71,7 @@ const GRID_COLUMN_CLASS: {
   },
 };
 
-function getCarouselItemVisibilityClass(
-  offset: number,
-  settings: CmsGallerySettings,
-) {
+function getCarouselItemVisibilityClass(offset: number, settings: CmsGallerySettings) {
   return cn(
     offset >= settings.columnsMobile && "hidden",
     offset < settings.columnsTablet ? "sm:block" : "sm:hidden",

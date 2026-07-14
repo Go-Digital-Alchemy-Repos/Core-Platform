@@ -26,7 +26,7 @@ type AdminApplicationListItem = ProviderApplication & {
 
 function recordFrom(value: unknown): Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
-    ? value as Record<string, unknown>
+    ? (value as Record<string, unknown>)
     : {};
 }
 
@@ -36,7 +36,9 @@ function displayValue(value: unknown): string {
   return "";
 }
 
-function statusBadgeVariant(status: ApplicationStatus): "default" | "secondary" | "destructive" | "outline" {
+function statusBadgeVariant(
+  status: ApplicationStatus,
+): "default" | "secondary" | "destructive" | "outline" {
   if (["active_member", "approved_pending_subscription"].includes(status)) return "default";
   if (status === "denied") return "destructive";
   if (status === "withdrawn") return "secondary";
@@ -53,7 +55,10 @@ function subStatusBadge(value: string) {
 const FILTER_OPTIONS = [
   { value: "", label: "All Applications" },
   { value: "submitted", label: "Submitted" },
-  { value: "awaiting_background_check,background_check_in_progress", label: "Waiting on Background Check" },
+  {
+    value: "awaiting_background_check,background_check_in_progress",
+    label: "Waiting on Background Check",
+  },
   { value: "awaiting_references,references_in_progress", label: "Waiting on References" },
   { value: "ready_for_interview,interview_scheduled", label: "Ready for / In Interview" },
   { value: "interview_completed", label: "Interview Completed" },
@@ -82,7 +87,8 @@ export default function AdminApplicationsPage() {
   });
 
   const totalApps = applications?.length ?? 0;
-  const pendingCount = (stats?.submitted ?? 0) +
+  const pendingCount =
+    (stats?.submitted ?? 0) +
     (stats?.awaiting_background_check ?? 0) +
     (stats?.background_check_in_progress ?? 0) +
     (stats?.awaiting_references ?? 0) +
@@ -109,7 +115,9 @@ export default function AdminApplicationsPage() {
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-heading font-bold" data-testid="text-page-title">Applications</h1>
+            <h1 className="text-2xl font-heading font-bold" data-testid="text-page-title">
+              Applications
+            </h1>
             <p className="text-muted-foreground text-sm">Manage provider membership applications</p>
           </div>
         </div>
@@ -118,25 +126,33 @@ export default function AdminApplicationsPage() {
           <Card>
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">Total</p>
-              <p className="text-2xl font-bold" data-testid="text-total-apps">{totalApps}</p>
+              <p className="text-2xl font-bold" data-testid="text-total-apps">
+                {totalApps}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">Pending Review</p>
-              <p className="text-2xl font-bold text-blue-600" data-testid="text-pending-apps">{pendingCount}</p>
+              <p className="text-2xl font-bold text-blue-600" data-testid="text-pending-apps">
+                {pendingCount}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">Approved</p>
-              <p className="text-2xl font-bold text-green-600" data-testid="text-approved-apps">{(stats?.approved_pending_subscription ?? 0) + (stats?.active_member ?? 0)}</p>
+              <p className="text-2xl font-bold text-green-600" data-testid="text-approved-apps">
+                {(stats?.approved_pending_subscription ?? 0) + (stats?.active_member ?? 0)}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">Denied</p>
-              <p className="text-2xl font-bold text-red-600" data-testid="text-denied-apps">{stats?.denied ?? 0}</p>
+              <p className="text-2xl font-bold text-red-600" data-testid="text-denied-apps">
+                {stats?.denied ?? 0}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -168,7 +184,9 @@ export default function AdminApplicationsPage() {
                     data-testid="select-status-filter"
                   >
                     {FILTER_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -219,13 +237,19 @@ export default function AdminApplicationsPage() {
                               <p className="font-medium text-sm">{app.userName}</p>
                               <p className="text-xs text-muted-foreground">{app.userEmail}</p>
                               {displayValue(fd.applyingAs) && (
-                                <p className="text-xs text-muted-foreground capitalize">{displayValue(fd.applyingAs)}</p>
+                                <p className="text-xs text-muted-foreground capitalize">
+                                  {displayValue(fd.applyingAs)}
+                                </p>
                               )}
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={statusBadgeVariant(app.status as ApplicationStatus)} className="text-xs whitespace-nowrap">
-                              {APPLICATION_STATUS_LABELS[app.status as ApplicationStatus] ?? app.status}
+                            <Badge
+                              variant={statusBadgeVariant(app.status as ApplicationStatus)}
+                              className="text-xs whitespace-nowrap"
+                            >
+                              {APPLICATION_STATUS_LABELS[app.status as ApplicationStatus] ??
+                                app.status}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
@@ -237,17 +261,26 @@ export default function AdminApplicationsPage() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={subStatusBadge(app.backgroundCheckStatus)} className="text-xs">
+                            <Badge
+                              variant={subStatusBadge(app.backgroundCheckStatus)}
+                              className="text-xs"
+                            >
                               {app.backgroundCheckStatus}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={subStatusBadge(app.referencesStatus)} className="text-xs">
+                            <Badge
+                              variant={subStatusBadge(app.referencesStatus)}
+                              className="text-xs"
+                            >
                               {app.referencesStatus}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={subStatusBadge(app.interviewStatus)} className="text-xs">
+                            <Badge
+                              variant={subStatusBadge(app.interviewStatus)}
+                              className="text-xs"
+                            >
                               {app.interviewStatus}
                             </Badge>
                           </TableCell>
@@ -278,7 +311,11 @@ export default function AdminApplicationsPage() {
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>{searchQuery || statusFilter ? "No applications match your filters" : "No applications yet"}</p>
+                <p>
+                  {searchQuery || statusFilter
+                    ? "No applications match your filters"
+                    : "No applications yet"}
+                </p>
               </div>
             )}
           </CardContent>

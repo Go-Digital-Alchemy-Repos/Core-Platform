@@ -97,8 +97,12 @@ describe("CmsSectionEditorPage", () => {
       mutateAsync: vi.fn(),
       isPending: false,
     });
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -133,7 +137,9 @@ describe("CmsSectionEditorPage", () => {
       guardArgs.onConflict();
     });
 
-    const saveButton = container.querySelector('[data-testid="button-save-section"]') as HTMLButtonElement | null;
+    const saveButton = container.querySelector(
+      '[data-testid="button-save-section"]',
+    ) as HTMLButtonElement | null;
     expect(saveButton).not.toBeNull();
     expect(saveButton?.disabled).toBe(true);
     expect(navigateMock).toHaveBeenCalledWith("/admin/cms/sections");

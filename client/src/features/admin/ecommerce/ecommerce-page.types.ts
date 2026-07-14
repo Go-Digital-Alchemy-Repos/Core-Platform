@@ -204,8 +204,23 @@ export interface Order {
   shippingZip?: string | null;
   shippingCountry?: string | null;
   items: Array<{ id: string; productName: string; quantity: number; lineTotal: number }>;
-  shipments?: Array<{ id: string; carrier?: string | null; trackingNumber?: string | null; trackingUrl?: string | null; status: string; shippedAt?: string | null; emailSentAt?: string | null }>;
-  fulfillments?: Array<{ id: string; status: string; carrier?: string | null; trackingNumber?: string | null; fulfilledAt?: string | null; serviceLevel?: string | null }>;
+  shipments?: Array<{
+    id: string;
+    carrier?: string | null;
+    trackingNumber?: string | null;
+    trackingUrl?: string | null;
+    status: string;
+    shippedAt?: string | null;
+    emailSentAt?: string | null;
+  }>;
+  fulfillments?: Array<{
+    id: string;
+    status: string;
+    carrier?: string | null;
+    trackingNumber?: string | null;
+    fulfilledAt?: string | null;
+    serviceLevel?: string | null;
+  }>;
   internalNotes?: Array<{
     id: string;
     body: string;

@@ -41,8 +41,8 @@ async function main() {
         createdAt: snapshot.manifest.createdAt,
       },
       null,
-      2
-    )
+      2,
+    ),
   );
 }
 

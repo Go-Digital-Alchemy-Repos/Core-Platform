@@ -8,7 +8,9 @@ export class CmsSectionsStorage {
   }
 
   async getSectionsByCategory(category: string): Promise<CmsSection[]> {
-    return db.select().from(cmsSections)
+    return db
+      .select()
+      .from(cmsSections)
       .where(eq(cmsSections.category, category))
       .orderBy(desc(cmsSections.createdAt));
   }
@@ -23,7 +25,10 @@ export class CmsSectionsStorage {
     return section;
   }
 
-  async updateSection(id: string, data: Partial<InsertCmsSection>): Promise<CmsSection | undefined> {
+  async updateSection(
+    id: string,
+    data: Partial<InsertCmsSection>,
+  ): Promise<CmsSection | undefined> {
     const [section] = await db
       .update(cmsSections)
       .set({ ...data, updatedAt: new Date() })

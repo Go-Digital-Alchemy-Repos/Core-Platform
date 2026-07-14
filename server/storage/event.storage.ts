@@ -36,12 +36,7 @@ export class EventStorage {
     return db
       .select()
       .from(events)
-      .where(
-        and(
-          eq(events.status, "published"),
-          eq(events.visibility, "public")
-        )
-      )
+      .where(and(eq(events.status, "published"), eq(events.visibility, "public")))
       .orderBy(asc(events.date));
   }
 
@@ -53,8 +48,8 @@ export class EventStorage {
         and(
           gte(events.date, new Date()),
           eq(events.status, "published"),
-          eq(events.visibility, "public")
-        )
+          eq(events.visibility, "public"),
+        ),
       )
       .orderBy(asc(events.date));
   }
@@ -68,14 +63,17 @@ export class EventStorage {
           lt(events.date, new Date()),
           eq(events.status, "published"),
           sql`${events.recordingUrl} IS NOT NULL`,
-          eq(events.showInArchives, true)
-        )
+          eq(events.showInArchives, true),
+        ),
       )
       .orderBy(desc(events.date));
   }
 
   async createEvent(data: InsertEvent): Promise<Event> {
-    const [event] = await db.insert(events).values(data as EventInsert).returning();
+    const [event] = await db
+      .insert(events)
+      .values(data as EventInsert)
+      .returning();
     return event;
   }
 
@@ -97,12 +95,6 @@ export class EventStorage {
     return db
       .select()
       .from(events)
-      .where(
-        and(
-          gte(events.date, from),
-          lte(events.date, to),
-          eq(events.status, "published")
-        )
-      );
+      .where(and(gte(events.date, from), lte(events.date, to), eq(events.status, "published")));
   }
 }

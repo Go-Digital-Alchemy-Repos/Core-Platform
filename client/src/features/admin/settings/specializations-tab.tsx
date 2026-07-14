@@ -7,7 +7,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetBody, SheetFooter } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetBody,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { Loader2, Pencil, Plus, Tag, Trash2 } from "lucide-react";
 
 type Specialization = { id: number; name: string; sortOrder: number };
@@ -157,7 +165,9 @@ export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean
         <SheetContent side="right" className="sm:max-w-md z-[1300]">
           <SheetHeader>
             <SheetTitle>Add {specialtyLabelPlural}</SheetTitle>
-            <SheetDescription>Enter a name for the new {specialtyLabelLower} item.</SheetDescription>
+            <SheetDescription>
+              Enter a name for the new {specialtyLabelLower} item.
+            </SheetDescription>
           </SheetHeader>
           <SheetBody>
             <div className="space-y-2">
@@ -271,4 +281,3 @@ export function SpecializationsTab({ showHeader = true }: { showHeader?: boolean
     </>
   );
 }
-

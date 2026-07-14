@@ -156,7 +156,11 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
               <p className="font-medium text-sm" data-testid="text-profile-name">
                 {user.firstName} {user.lastName}
               </p>
-              <Badge variant="outline" className="text-xs capitalize" data-testid="badge-profile-role">
+              <Badge
+                variant="outline"
+                className="text-xs capitalize"
+                data-testid="badge-profile-role"
+              >
                 {user.role}
               </Badge>
             </div>

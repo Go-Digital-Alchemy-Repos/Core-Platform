@@ -29,12 +29,22 @@ export interface SocialMediaLink {
 
 export const SOCIAL_MEDIA_PLATFORMS: SocialPlatform[] = [
   { key: "facebook", label: "Facebook", settingKey: "social_facebook_url", brandColor: "#1877F2" },
-  { key: "instagram", label: "Instagram", settingKey: "social_instagram_url", brandColor: "#E4405F" },
+  {
+    key: "instagram",
+    label: "Instagram",
+    settingKey: "social_instagram_url",
+    brandColor: "#E4405F",
+  },
   { key: "linkedin", label: "LinkedIn", settingKey: "social_linkedin_url", brandColor: "#0A66C2" },
   { key: "x", label: "X", settingKey: "social_x_url", brandColor: "#000000" },
   { key: "tiktok", label: "TikTok", settingKey: "social_tiktok_url", brandColor: "#000000" },
   { key: "youtube", label: "YouTube", settingKey: "social_youtube_url", brandColor: "#FF0000" },
-  { key: "pinterest", label: "Pinterest", settingKey: "social_pinterest_url", brandColor: "#BD081C" },
+  {
+    key: "pinterest",
+    label: "Pinterest",
+    settingKey: "social_pinterest_url",
+    brandColor: "#BD081C",
+  },
   { key: "houzz", label: "Houzz", settingKey: "social_houzz_url", brandColor: "#4DBC15" },
   { key: "yelp", label: "Yelp", settingKey: "social_yelp_url", brandColor: "#D32323" },
   { key: "nextdoor", label: "Nextdoor", settingKey: "social_nextdoor_url", brandColor: "#8ED500" },
@@ -46,7 +56,9 @@ export function normalizeSocialIconStyle(value: string | null | undefined): Soci
     : "brand";
 }
 
-export function getSocialMediaLinks(settings: Record<string, string | null | undefined>): SocialMediaLink[] {
+export function getSocialMediaLinks(
+  settings: Record<string, string | null | undefined>,
+): SocialMediaLink[] {
   return SOCIAL_MEDIA_PLATFORMS.map((platform) => {
     const url = settings[platform.settingKey]?.trim();
     if (!url) return null;

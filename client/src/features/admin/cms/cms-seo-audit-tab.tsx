@@ -46,7 +46,10 @@ interface AuditData {
   events: AuditItem[];
 }
 
-const ISSUE_META: Record<string, { label: string; icon: React.ElementType; severity: "high" | "medium" | "low" }> = {
+const ISSUE_META: Record<
+  string,
+  { label: string; icon: React.ElementType; severity: "high" | "medium" | "low" }
+> = {
   missing_seo_title: { label: "No SEO title", icon: Type, severity: "high" },
   missing_seo_description: { label: "No meta description", icon: AlignLeft, severity: "high" },
   missing_og_image: { label: "No social image", icon: ImageOff, severity: "medium" },
@@ -65,11 +68,13 @@ function IssueBadge({ issue }: { issue: string }) {
     meta.severity === "high"
       ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
       : meta.severity === "medium"
-      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-      : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400";
+        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+        : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400";
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${colors}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${colors}`}
+    >
       <Icon className="h-3 w-3" />
       {meta.label}
     </span>
@@ -99,9 +104,7 @@ function AuditRow({
             {item.title}
           </span>
           {item.slug && (
-            <span className="text-xs text-muted-foreground font-mono truncate">
-              /{item.slug}
-            </span>
+            <span className="text-xs text-muted-foreground font-mono truncate">/{item.slug}</span>
           )}
         </div>
         {clean ? (
@@ -120,13 +123,23 @@ function AuditRow({
       <div className="flex items-center gap-1.5 flex-shrink-0">
         {previewPath && (
           <a href={previewPath} target="_blank" rel="noopener noreferrer">
-            <Button size="sm" variant="ghost" className="h-7 px-2" data-testid={`audit-preview-${item.id}`}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2"
+              data-testid={`audit-preview-${item.id}`}
+            >
               <ExternalLink className="h-3.5 w-3.5" />
             </Button>
           </a>
         )}
         <Link href={editPath}>
-          <Button size="sm" variant="outline" className="h-7 px-3 text-xs" data-testid={`audit-edit-${item.id}`}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 px-3 text-xs"
+            data-testid={`audit-edit-${item.id}`}
+          >
             Edit
           </Button>
         </Link>
@@ -160,12 +173,18 @@ function SummaryCard({
             <p className="text-lg font-semibold leading-tight">{total}</p>
           </div>
           {issues > 0 && (
-            <Badge variant="secondary" className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs">
+            <Badge
+              variant="secondary"
+              className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs"
+            >
               {issues} issue{issues !== 1 ? "s" : ""}
             </Badge>
           )}
           {issues === 0 && total > 0 && (
-            <Badge variant="secondary" className="ml-auto bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs">
+            <Badge
+              variant="secondary"
+              className="ml-auto bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs"
+            >
               All clear
             </Badge>
           )}
@@ -185,7 +204,9 @@ export function CmsSeoAuditTab() {
     return (
       <div className="space-y-4 mt-5">
         <div className="grid grid-cols-3 gap-4">
-          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-20 rounded-lg" />
+          ))}
         </div>
         <Skeleton className="h-64 rounded-lg" />
       </div>
@@ -217,9 +238,27 @@ export function CmsSeoAuditTab() {
   return (
     <div className="space-y-5 mt-5">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <SummaryCard label="CMS Pages" total={data.pages.length} issues={pagesWithIssues} icon={FileText} color="bg-violet-500" />
-        <SummaryCard label="Blog Posts" total={data.posts.length} issues={postsWithIssues} icon={BookOpen} color="bg-purple-500" />
-        <SummaryCard label="Events" total={data.events.length} issues={eventsWithIssues} icon={CalendarDays} color="bg-indigo-500" />
+        <SummaryCard
+          label="CMS Pages"
+          total={data.pages.length}
+          issues={pagesWithIssues}
+          icon={FileText}
+          color="bg-violet-500"
+        />
+        <SummaryCard
+          label="Blog Posts"
+          total={data.posts.length}
+          issues={postsWithIssues}
+          icon={BookOpen}
+          color="bg-purple-500"
+        />
+        <SummaryCard
+          label="Events"
+          total={data.events.length}
+          issues={eventsWithIssues}
+          icon={CalendarDays}
+          color="bg-indigo-500"
+        />
       </div>
 
       {totalIssues === 0 ? (
@@ -227,7 +266,9 @@ export function CmsSeoAuditTab() {
           <CardContent className="pt-8 pb-8 text-center">
             <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-3" />
             <p className="font-medium text-sm">No SEO issues found</p>
-            <p className="text-xs text-muted-foreground mt-1">All content has SEO titles, descriptions, and images.</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              All content has SEO titles, descriptions, and images.
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -236,11 +277,13 @@ export function CmsSeoAuditTab() {
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
               <CardTitle className="text-base">
-                {itemsWithIssues.length} item{itemsWithIssues.length !== 1 ? "s" : ""} with SEO issues
+                {itemsWithIssues.length} item{itemsWithIssues.length !== 1 ? "s" : ""} with SEO
+                issues
               </CardTitle>
             </div>
             <CardDescription className="text-xs">
-              {totalIssues} signal{totalIssues !== 1 ? "s" : ""} detected across all content. Click Edit to resolve them.
+              {totalIssues} signal{totalIssues !== 1 ? "s" : ""} detected across all content. Click
+              Edit to resolve them.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
@@ -257,7 +300,9 @@ export function CmsSeoAuditTab() {
                       item={item}
                       type="page"
                       editPath={`/admin/cms/pages/${item.id}`}
-                      previewPath={item.slug && item.status === "published" ? `/${item.slug}` : undefined}
+                      previewPath={
+                        item.slug && item.status === "published" ? `/${item.slug}` : undefined
+                      }
                     />
                   ))}
               </div>
@@ -276,7 +321,9 @@ export function CmsSeoAuditTab() {
                       item={item}
                       type="post"
                       editPath={`/admin/cms/blog/${item.id}`}
-                      previewPath={item.slug && item.isPublished ? `/insights/${item.slug}` : undefined}
+                      previewPath={
+                        item.slug && item.isPublished ? `/insights/${item.slug}` : undefined
+                      }
                     />
                   ))}
               </div>
@@ -295,7 +342,9 @@ export function CmsSeoAuditTab() {
                       item={item}
                       type="event"
                       editPath={`/admin/events/${item.id}`}
-                      previewPath={item.status !== "draft" ? `/events/${item.slug || item.id}` : undefined}
+                      previewPath={
+                        item.status !== "draft" ? `/events/${item.slug || item.id}` : undefined
+                      }
                     />
                   ))}
               </div>
@@ -307,7 +356,9 @@ export function CmsSeoAuditTab() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Issue Reference</CardTitle>
-          <CardDescription className="text-xs">What each signal means and how to resolve it</CardDescription>
+          <CardDescription className="text-xs">
+            What each signal means and how to resolve it
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -319,15 +370,24 @@ export function CmsSeoAuditTab() {
                   <div>
                     <p className="text-xs font-medium">{meta.label}</p>
                     <p className="text-xs text-muted-foreground">
-                      {key === "missing_seo_title" && "Set a custom SEO Title in the page/post SEO tab."}
-                      {key === "missing_seo_description" && "Add a Meta Description for better click-through rates."}
-                      {key === "missing_og_image" && "Upload a social sharing image for rich link previews."}
-                      {key === "noindex" && "This content is marked as noindex and won't appear in search results."}
-                      {key === "not_published" && "Content is in draft state and not publicly visible."}
-                      {key === "no_canonical" && "Published pages benefit from an explicit canonical URL."}
-                      {key === "non_public" && "Event visibility is restricted — not crawlable by search engines."}
-                      {key === "missing_author" && "Add an author name to blog posts for Article structured data."}
-                      {key === "missing_description" && "Events should include a description for rich search results."}
+                      {key === "missing_seo_title" &&
+                        "Set a custom SEO Title in the page/post SEO tab."}
+                      {key === "missing_seo_description" &&
+                        "Add a Meta Description for better click-through rates."}
+                      {key === "missing_og_image" &&
+                        "Upload a social sharing image for rich link previews."}
+                      {key === "noindex" &&
+                        "This content is marked as noindex and won't appear in search results."}
+                      {key === "not_published" &&
+                        "Content is in draft state and not publicly visible."}
+                      {key === "no_canonical" &&
+                        "Published pages benefit from an explicit canonical URL."}
+                      {key === "non_public" &&
+                        "Event visibility is restricted — not crawlable by search engines."}
+                      {key === "missing_author" &&
+                        "Add an author name to blog posts for Article structured data."}
+                      {key === "missing_description" &&
+                        "Events should include a description for rich search results."}
                     </p>
                   </div>
                 </div>

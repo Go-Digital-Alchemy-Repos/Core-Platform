@@ -16,22 +16,27 @@ function escapeHtml(str: string): string {
     .replace(/'/g, "&#39;");
 }
 
-const contactProfessionalSchema = z.object({
-  professionalUserId: z.string().min(1),
-  senderName: z.string().min(1).max(100),
-  senderEmail: z.string().email().max(255),
-  message: z.string().min(10).max(5000),
-  preferredContact: z.enum(["email", "phone", "text"]),
-  phone: z.string().max(30).optional(),
-}).refine(
-  (data) => {
-    if (data.preferredContact === "phone" || data.preferredContact === "text") {
-      return !!data.phone && data.phone.trim().length >= 7;
-    }
-    return true;
-  },
-  { message: "Phone number is required when preferred contact is phone call or text message", path: ["phone"] }
-);
+const contactProfessionalSchema = z
+  .object({
+    professionalUserId: z.string().min(1),
+    senderName: z.string().min(1).max(100),
+    senderEmail: z.string().email().max(255),
+    message: z.string().min(10).max(5000),
+    preferredContact: z.enum(["email", "phone", "text"]),
+    phone: z.string().max(30).optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.preferredContact === "phone" || data.preferredContact === "text") {
+        return !!data.phone && data.phone.trim().length >= 7;
+      }
+      return true;
+    },
+    {
+      message: "Phone number is required when preferred contact is phone call or text message",
+      path: ["phone"],
+    },
+  );
 
 const PREFERRED_CONTACT_LABELS: Record<string, string> = {
   email: "Email",
@@ -42,10 +47,13 @@ const PREFERRED_CONTACT_LABELS: Record<string, string> = {
 router.post("/", guestMessageLimiter, async (req: Request, res: Response) => {
   const parsed = contactProfessionalSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: "Invalid form data", details: parsed.error.flatten().fieldErrors });
+    return res
+      .status(400)
+      .json({ error: "Invalid form data", details: parsed.error.flatten().fieldErrors });
   }
 
-  const { professionalUserId, senderName, senderEmail, message, preferredContact, phone } = parsed.data;
+  const { professionalUserId, senderName, senderEmail, message, preferredContact, phone } =
+    parsed.data;
 
   try {
     const profile = await storage.therapists.getProfileByUserId(professionalUserId);
@@ -58,7 +66,8 @@ router.post("/", guestMessageLimiter, async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Professional contact not available" });
     }
 
-    const professionalName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Professional";
+    const professionalName =
+      [user.firstName, user.lastName].filter(Boolean).join(" ") || "Professional";
     const safeName = escapeHtml(senderName);
     const safeEmail = escapeHtml(senderEmail);
     const safeMessage = escapeHtml(message);
@@ -88,18 +97,20 @@ router.post("/", guestMessageLimiter, async (req: Request, res: Response) => {
       </div>
     `;
 
-    const sent = await sendEmail(
-      user.email,
-      `New message from ${safeName} — Core Platform`,
-      html
-    );
+    const sent = await sendEmail(user.email, `New message from ${safeName} — Core Platform`, html);
 
     if (!sent) {
-      logger.email.warn("Email delivery not configured — contact-professional message could not be sent", {
-        professionalUserId,
-        senderEmail,
+      logger.email.warn(
+        "Email delivery not configured — contact-professional message could not be sent",
+        {
+          professionalUserId,
+          senderEmail,
+        },
+      );
+      return res.status(503).json({
+        error:
+          "Email service is not configured. Please try contacting the professional through other means listed on their profile.",
       });
-      return res.status(503).json({ error: "Email service is not configured. Please try contacting the professional through other means listed on their profile." });
     }
 
     res.json({ success: true });

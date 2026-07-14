@@ -794,9 +794,7 @@ function DirectoryApplicationSettingsTab() {
                       directory_mode: nextMode,
                       ...presetToStoredValues(nextMode),
                       directory_show_location_jobs:
-                        nextMode === "store_locator"
-                          ? current.directory_show_location_jobs
-                          : false,
+                        nextMode === "store_locator" ? current.directory_show_location_jobs : false,
                     }));
                   }}
                 >
@@ -1469,7 +1467,10 @@ function TemplatePreviewCard({ fixture }: { fixture: TemplateFixture }) {
             </Badge>
           ))}
         </div>
-        <Button className="w-full" variant={fixture.mode === "store_locator" ? "default" : "outline"}>
+        <Button
+          className="w-full"
+          variant={fixture.mode === "store_locator" ? "default" : "outline"}
+        >
           {fixture.cta}
         </Button>
       </CardContent>

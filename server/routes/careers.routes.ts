@@ -52,7 +52,10 @@ function escapeXml(value: string) {
 }
 
 function stripHtml(value?: string | null) {
-  return (value ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return (value ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 router.get(
@@ -100,19 +103,21 @@ router.get(
       "  <publisher>Core Platform</publisher>",
       `  <publisherurl>${escapeXml(baseUrl)}</publisherurl>`,
       `  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>`,
-      ...jobs.map((job) => [
-        "  <job>",
-        `    <title><![CDATA[${job.title}]]></title>`,
-        `    <date><![CDATA[${new Date(job.publishedAt ?? job.updatedAt ?? job.createdAt).toUTCString()}]]></date>`,
-        `    <referencenumber><![CDATA[${job.id}]]></referencenumber>`,
-        `    <url><![CDATA[${baseUrl}/careers/${job.slug}?source=indeed]]></url>`,
-        `    <company><![CDATA[Core Platform]]></company>`,
-        `    <city><![CDATA[${job.location ?? ""}]]></city>`,
-        `    <description><![CDATA[${stripHtml(job.description || job.summary)}]]></description>`,
-        `    <jobtype><![CDATA[${CAREER_EMPLOYMENT_TYPE_LABELS[job.employmentType] ?? job.employmentType}]]></jobtype>`,
-        `    <remotetype><![CDATA[${CAREER_WORK_MODE_LABELS[job.workMode] ?? job.workMode}]]></remotetype>`,
-        "  </job>",
-      ].join("\n")),
+      ...jobs.map((job) =>
+        [
+          "  <job>",
+          `    <title><![CDATA[${job.title}]]></title>`,
+          `    <date><![CDATA[${new Date(job.publishedAt ?? job.updatedAt ?? job.createdAt).toUTCString()}]]></date>`,
+          `    <referencenumber><![CDATA[${job.id}]]></referencenumber>`,
+          `    <url><![CDATA[${baseUrl}/careers/${job.slug}?source=indeed]]></url>`,
+          `    <company><![CDATA[Core Platform]]></company>`,
+          `    <city><![CDATA[${job.location ?? ""}]]></city>`,
+          `    <description><![CDATA[${stripHtml(job.description || job.summary)}]]></description>`,
+          `    <jobtype><![CDATA[${CAREER_EMPLOYMENT_TYPE_LABELS[job.employmentType] ?? job.employmentType}]]></jobtype>`,
+          `    <remotetype><![CDATA[${CAREER_WORK_MODE_LABELS[job.workMode] ?? job.workMode}]]></remotetype>`,
+          "  </job>",
+        ].join("\n"),
+      ),
       "</source>",
     ].join("\n");
 
@@ -128,10 +133,16 @@ router.post(
       return res.status(404).json({ message: "Indeed Apply is disabled" });
     }
     const secret = req.header("x-indeed-apply-secret") || req.query.secret;
-    if (settings.integrations.indeedApplySecret && secret !== settings.integrations.indeedApplySecret) {
+    if (
+      settings.integrations.indeedApplySecret &&
+      secret !== settings.integrations.indeedApplySecret
+    ) {
       return res.status(401).json({ message: "Invalid Indeed Apply secret" });
     }
-    res.status(202).json({ accepted: true, message: "Indeed Apply endpoint is ready for partner payload mapping" });
+    res.status(202).json({
+      accepted: true,
+      message: "Indeed Apply endpoint is ready for partner payload mapping",
+    });
   }),
 );
 
@@ -162,7 +173,9 @@ router.post(
 
     const parsed = publicCareerApplicationSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Invalid application", errors: parsed.error.flatten() });
+      return res
+        .status(400)
+        .json({ message: "Invalid application", errors: parsed.error.flatten() });
     }
 
     const resume = await storeCareerResume(req.file);
@@ -188,7 +201,10 @@ router.post(
   "/ziprecruiter/apply",
   asyncHandler(async (req, res) => {
     zipRecruiterWebhookSchema.parse(req.body);
-    res.status(202).json({ accepted: true, message: "ZipRecruiter inbound apply endpoint is ready for partner payload mapping" });
+    res.status(202).json({
+      accepted: true,
+      message: "ZipRecruiter inbound apply endpoint is ready for partner payload mapping",
+    });
   }),
 );
 

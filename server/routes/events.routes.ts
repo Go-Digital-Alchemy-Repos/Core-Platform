@@ -44,7 +44,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const eventsList = await storage.events.getUpcomingEvents();
     res.json(await Promise.all(eventsList.map(normalizeEventImage)));
-  })
+  }),
 );
 
 router.get(
@@ -52,7 +52,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const eventsList = await storage.events.getPublishedEvents();
     res.json(await Promise.all(eventsList.map(normalizeEventImage)));
-  })
+  }),
 );
 
 router.get(
@@ -67,7 +67,7 @@ router.get(
     if (userId) {
       const purchases = await storage.recordingPurchases.getByUser(userId);
       purchasedEventIds = new Set(
-        purchases.filter((p) => p.stripePaymentIntentId).map((p) => p.eventId)
+        purchases.filter((p) => p.stripePaymentIntentId).map((p) => p.eventId),
       );
     }
 
@@ -83,7 +83,7 @@ router.get(
         return event;
       });
     res.json(await Promise.all(filtered.map(normalizeEventImage)));
-  })
+  }),
 );
 
 router.get(
@@ -92,7 +92,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const purchases = await storage.recordingPurchases.getByUser(req.user!.id);
     res.json(purchases);
-  })
+  }),
 );
 
 router.get(
@@ -105,7 +105,7 @@ router.get(
       purchased: !!(purchase && purchase.stripePaymentIntentId),
       pending: !!(purchase && !purchase.stripePaymentIntentId && purchase.stripeCheckoutSessionId),
     });
-  })
+  }),
 );
 
 router.get(
@@ -114,7 +114,12 @@ router.get(
   asyncHandler(async (req, res) => {
     const id = paramString(req.params.id);
     const event = await storage.events.getEventByIdentifier(id);
-    if (!event || event.status === "draft" || event.status === "archived" || !event.registrationFormId) {
+    if (
+      !event ||
+      event.status === "draft" ||
+      event.status === "archived" ||
+      !event.registrationFormId
+    ) {
       return res.status(404).json({ message: "Form not found" });
     }
     const userRole = req.user?.role ?? null;
@@ -126,7 +131,7 @@ router.get(
       return res.status(404).json({ message: "Form not found" });
     }
     res.json(form);
-  })
+  }),
 );
 
 router.get(
@@ -147,7 +152,7 @@ router.get(
     } else {
       res.json(await normalizeEventImage(redactSensitiveFields(event)));
     }
-  })
+  }),
 );
 
 export default router;

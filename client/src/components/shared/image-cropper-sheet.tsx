@@ -54,21 +54,17 @@ function makeInitialCrop(width: number, height: number, aspect?: number): Crop {
     };
   }
 
-  return centerCrop(
-    makeAspectCrop({ unit: "%", width: 90 }, aspect, width, height),
-    width,
-    height
-  );
+  return centerCrop(makeAspectCrop({ unit: "%", width: 90 }, aspect, width, height), width, height);
 }
 
 function cropToPixelCrop(crop: Crop, width: number, height: number): PixelCrop {
   if (crop.unit === "%") {
     return {
       unit: "px",
-      x: Math.round((crop.x ?? 0) * width / 100),
-      y: Math.round((crop.y ?? 0) * height / 100),
-      width: Math.round((crop.width ?? 0) * width / 100),
-      height: Math.round((crop.height ?? 0) * height / 100),
+      x: Math.round(((crop.x ?? 0) * width) / 100),
+      y: Math.round(((crop.y ?? 0) * height) / 100),
+      width: Math.round(((crop.width ?? 0) * width) / 100),
+      height: Math.round(((crop.height ?? 0) * height) / 100),
     };
   }
 
@@ -85,7 +81,7 @@ async function getCroppedFile(
   image: HTMLImageElement,
   crop: PixelCrop,
   fileName: string,
-  outputMimeType: "image/jpeg" | "image/png" | "image/webp"
+  outputMimeType: "image/jpeg" | "image/png" | "image/webp",
 ): Promise<File> {
   const canvas = document.createElement("canvas");
   const scaleX = image.naturalWidth / image.width;
@@ -103,16 +99,21 @@ async function getCroppedFile(
     0,
     0,
     canvas.width,
-    canvas.height
+    canvas.height,
   );
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
-        if (!blob) { reject(new Error("Could not crop image")); return; }
-        resolve(new File([blob], withFileExtension(fileName, outputMimeType), { type: outputMimeType }));
+        if (!blob) {
+          reject(new Error("Could not crop image"));
+          return;
+        }
+        resolve(
+          new File([blob], withFileExtension(fileName, outputMimeType), { type: outputMimeType }),
+        );
       },
       outputMimeType,
-      0.95
+      0.95,
     );
   });
 }
@@ -143,12 +144,15 @@ export function ImageCropperSheet({
     }
   }, [imageSrc]);
 
-  const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    const { width, height } = e.currentTarget;
-    const initialCrop = makeInitialCrop(width, height, aspect);
-    setCrop(initialCrop);
-    setCompletedCrop(cropToPixelCrop(initialCrop, width, height));
-  }, [aspect]);
+  const onImageLoad = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      const { width, height } = e.currentTarget;
+      const initialCrop = makeInitialCrop(width, height, aspect);
+      setCrop(initialCrop);
+      setCompletedCrop(cropToPixelCrop(initialCrop, width, height));
+    },
+    [aspect],
+  );
 
   async function handleConfirm() {
     if (!imgRef.current || !completedCrop) return;
@@ -174,7 +178,12 @@ export function ImageCropperSheet({
   }
 
   return (
-    <Sheet open={!!imageSrc} onOpenChange={(open) => { if (!open) onCancel(); }}>
+    <Sheet
+      open={!!imageSrc}
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
       <SheetContent side="right" className="w-full sm:max-w-lg z-[1300]">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">

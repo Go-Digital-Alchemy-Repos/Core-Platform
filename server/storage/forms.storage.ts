@@ -20,7 +20,10 @@ function normalizeForm<T extends CmsForm | undefined>(form: T): T {
 
 export class FormsStorage {
   async getAll(): Promise<CmsForm[]> {
-    const rows = await db.select().from(cmsForms).orderBy(desc(cmsForms.updatedAt), desc(cmsForms.createdAt));
+    const rows = await db
+      .select()
+      .from(cmsForms)
+      .orderBy(desc(cmsForms.updatedAt), desc(cmsForms.createdAt));
     return rows.map((row) => normalizeForm(row));
   }
 
@@ -82,7 +85,10 @@ export class FormsStorage {
   }
 
   async delete(id: string): Promise<boolean> {
-    const deleted = await db.delete(cmsForms).where(eq(cmsForms.id, id)).returning({ id: cmsForms.id });
+    const deleted = await db
+      .delete(cmsForms)
+      .where(eq(cmsForms.id, id))
+      .returning({ id: cmsForms.id });
     return deleted.length > 0;
   }
 

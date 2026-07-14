@@ -39,7 +39,11 @@ function safeFilename(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
-function buildUniqueDisplayName(baseName: string, extension: string, existingNames: Iterable<string>) {
+function buildUniqueDisplayName(
+  baseName: string,
+  extension: string,
+  existingNames: Iterable<string>,
+) {
   const normalizedExtension = extension.startsWith(".") ? extension : `.${extension}`;
   const existing = new Set(Array.from(existingNames, (name) => name.toLowerCase()));
 
@@ -67,9 +71,10 @@ export async function createCmsMediaAssetFromUpload({
   const safeName = safeFilename(originalName);
   const baseName = stripExtension(safeName) || "media";
   const originalExtension = path.extname(safeName) || ".bin";
-  const optimized: OptimizedImage | null = optimize !== false && isImageMime(mimeType)
-    ? await optimizeImage(buffer, mimeType, optimize)
-    : null;
+  const optimized: OptimizedImage | null =
+    optimize !== false && isImageMime(mimeType)
+      ? await optimizeImage(buffer, mimeType, optimize)
+      : null;
   const fileBuffer = optimized?.buffer ?? buffer;
   const fileMimeType = optimized?.mimeType ?? mimeType;
   const fileExtension = optimized?.extension ?? originalExtension;
@@ -80,7 +85,7 @@ export async function createCmsMediaAssetFromUpload({
   const displayName = buildUniqueDisplayName(
     baseName,
     fileExtension,
-    existingAssets.map((asset) => asset.originalName)
+    existingAssets.map((asset) => asset.originalName),
   );
   const filename = `${Date.now()}-${stripExtension(displayName)}${fileExtension}`;
   const r2Key = `cms/${mediaDirectory}/${filename}`;

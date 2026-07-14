@@ -16,16 +16,33 @@ import {
 } from "../services/ecommerce-pricing.service";
 import { checkoutSchema, createEcommercePaymentIntent } from "../services/ecommerce-order.service";
 import { ecommerceOrderStatusLookupSchema } from "../services/ecommerce-order-lookup.service";
-import { getPublicProductCategories, toPublicEcommerceProduct } from "../services/ecommerce-public-product.service";
+import {
+  getPublicProductCategories,
+  toPublicEcommerceProduct,
+} from "../services/ecommerce-public-product.service";
 import { toPublicEcommerceOrderStatus } from "../services/ecommerce-public-order.service";
 import { getEcommerceCustomerAccountSettings } from "../services/ecommerce-customer-account.service";
 import { getEcommerceStoreSettings } from "../services/ecommerce-store-settings.service";
 import { sendEcommerceOrderStatusLinkEmail } from "../services/ecommerce-email.service";
 import { renderEcommerceInvoicePdf } from "../services/ecommerce-invoice-pdf.service";
-import { getEcommerceStripePublishableKey, getEcommerceStripeMode } from "../services/ecommerce-stripe.service";
+import {
+  getEcommerceStripePublishableKey,
+  getEcommerceStripeMode,
+} from "../services/ecommerce-stripe.service";
 import { requireEcommerceEnabled } from "../middleware/site-features";
-import { authenticateToken, generateToken, optionalAuth, requireRole, setTokenCookie } from "../middleware/auth";
-import { ecommerceCheckoutLimiter, ecommerceOrderLookupLimiter, ecommercePricingLimiter, noStorePrivateResponse } from "../middleware/security";
+import {
+  authenticateToken,
+  generateToken,
+  optionalAuth,
+  requireRole,
+  setTokenCookie,
+} from "../middleware/auth";
+import {
+  ecommerceCheckoutLimiter,
+  ecommerceOrderLookupLimiter,
+  ecommercePricingLimiter,
+  noStorePrivateResponse,
+} from "../middleware/security";
 
 const router = Router();
 
@@ -52,7 +69,12 @@ const accountAddressSchema = z.object({
   city: z.string().trim().min(1).max(160),
   state: z.string().trim().min(1).max(160),
   zipCode: z.string().trim().min(1).max(40),
-  country: z.string().trim().length(2).default("US").transform((value) => value.toUpperCase()),
+  country: z
+    .string()
+    .trim()
+    .length(2)
+    .default("US")
+    .transform((value) => value.toUpperCase()),
   isDefault: z.boolean().default(false),
 });
 
@@ -64,7 +86,8 @@ const accountPreferencesSchema = z.object({
 async function getOrCreateSignedInCustomer(user: NonNullable<Express.Request["user"]>) {
   const existing = await storage.ecommerce.getCustomerByUserId(user.id);
   if (existing) return existing;
-  const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || user.email;
+  const displayName =
+    [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || user.email;
   return storage.ecommerce.findOrCreateCustomer({
     userId: user.id,
     email: user.email,
@@ -89,7 +112,9 @@ function toAccountCustomer(customer: Awaited<ReturnType<typeof getOrCreateSigned
   };
 }
 
-function toAccountAddress(address: Awaited<ReturnType<typeof storage.ecommerce.createCustomerAddress>>) {
+function toAccountAddress(
+  address: Awaited<ReturnType<typeof storage.ecommerce.createCustomerAddress>>,
+) {
   return {
     id: address.id,
     label: address.label,
@@ -110,12 +135,18 @@ router.get(
   "/products",
   asyncHandler(async (_req, res) => {
     const products = await storage.ecommerce.getProducts({ publicOnly: true });
-    res.json(await Promise.all(products.map(async (product) => toPublicEcommerceProduct({
-      product,
-      categories: await storage.ecommerce.getProductCategories(product.id),
-      variants: await storage.ecommerce.getProductVariants(product.id),
-      media: await storage.ecommerce.getProductMedia(product.id),
-    }))));
+    res.json(
+      await Promise.all(
+        products.map(async (product) =>
+          toPublicEcommerceProduct({
+            product,
+            categories: await storage.ecommerce.getProductCategories(product.id),
+            variants: await storage.ecommerce.getProductVariants(product.id),
+            media: await storage.ecommerce.getProductMedia(product.id),
+          }),
+        ),
+      ),
+    );
   }),
 );
 
@@ -123,16 +154,24 @@ router.get(
   "/products/:slug",
   asyncHandler(async (req, res) => {
     const product = await storage.ecommerce.getProductBySlug(paramString(req.params.slug));
-    if (!product || product.archivedAt || !product.active || product.status !== "published" || product.visibility !== "online") {
+    if (
+      !product ||
+      product.archivedAt ||
+      !product.active ||
+      product.status !== "published" ||
+      product.visibility !== "online"
+    ) {
       res.status(404).json({ message: "Product not found" });
       return;
     }
-    res.json(toPublicEcommerceProduct({
-      product,
-      categories: await storage.ecommerce.getProductCategories(product.id),
-      variants: await storage.ecommerce.getProductVariants(product.id),
-      media: await storage.ecommerce.getProductMedia(product.id),
-    }));
+    res.json(
+      toPublicEcommerceProduct({
+        product,
+        categories: await storage.ecommerce.getProductCategories(product.id),
+        variants: await storage.ecommerce.getProductVariants(product.id),
+        media: await storage.ecommerce.getProductMedia(product.id),
+      }),
+    );
   }),
 );
 
@@ -184,10 +223,12 @@ router.post(
   asyncHandler(async (req, res) => {
     const data = req.body;
     const priced = await priceCart({ items: data.items });
-    res.json(await getShippingRateOptions({
-      subtotalAmount: priced.subtotalAmount,
-      address: data.address,
-    }));
+    res.json(
+      await getShippingRateOptions({
+        subtotalAmount: priced.subtotalAmount,
+        address: data.address,
+      }),
+    );
   }),
 );
 
@@ -199,11 +240,17 @@ router.post(
   asyncHandler(async (req, res) => {
     const data = req.body;
     if (data.items?.length) {
-      const priced = await priceCart({ items: data.items, couponCode: data.code, customerEmail: data.customerEmail });
+      const priced = await priceCart({
+        items: data.items,
+        couponCode: data.code,
+        customerEmail: data.customerEmail,
+      });
       res.json(toPublicCouponValidationResult(priced.couponValidation));
       return;
     }
-    res.json(toPublicCouponValidationResult(await validateCoupon(data.code, data.subtotalAmount ?? 0)));
+    res.json(
+      toPublicCouponValidationResult(await validateCoupon(data.code, data.subtotalAmount ?? 0)),
+    );
   }),
 );
 
@@ -214,7 +261,10 @@ router.post(
   noStorePrivateResponse,
   validateBody(checkoutSchema),
   asyncHandler(async (req, res) => {
-    const result = await createEcommercePaymentIntent(req.body, { ip: req.ip, user: req.user ?? null });
+    const result = await createEcommercePaymentIntent(req.body, {
+      ip: req.ip,
+      user: req.user ?? null,
+    });
     if (result.accountUser) {
       setTokenCookie(res, generateToken(result.accountUser));
     }
@@ -230,7 +280,10 @@ router.post(
   validateBody(orderStatusLinkSchema),
   asyncHandler(async (req, res) => {
     const details = await storage.ecommerce.getOrderWithDetails(req.body.orderId);
-    if (details && details.customer?.email.trim().toLowerCase() === req.body.email.trim().toLowerCase()) {
+    if (
+      details &&
+      details.customer?.email.trim().toLowerCase() === req.body.email.trim().toLowerCase()
+    ) {
       await sendEcommerceOrderStatusLinkEmail(details);
     }
     res.json({ message: "If that order matches this email, a secure status link has been sent." });
@@ -252,7 +305,12 @@ router.post(
   }),
 );
 
-router.use("/account", authenticateToken, requireRole("client", "admin", "editor"), noStorePrivateResponse);
+router.use(
+  "/account",
+  authenticateToken,
+  requireRole("client", "admin", "editor"),
+  noStorePrivateResponse,
+);
 
 router.get(
   "/account",
@@ -264,7 +322,9 @@ router.get(
       addresses: (await storage.ecommerce.getCustomerAddresses(customer.id)).map(toAccountAddress),
       recentOrders: orders.slice(0, 5).map(toPublicEcommerceOrderStatus),
       orderCount: orders.length,
-      openShipmentCount: orders.filter((order) => !["delivered", "cancelled"].includes(order.status)).length,
+      openShipmentCount: orders.filter(
+        (order) => !["delivered", "cancelled"].includes(order.status),
+      ).length,
     });
   }),
 );
@@ -322,7 +382,10 @@ router.post(
   validateBody(accountAddressSchema),
   asyncHandler(async (req, res) => {
     const customer = await getOrCreateSignedInCustomer(req.user!);
-    const address = await storage.ecommerce.createCustomerAddress({ ...req.body, customerId: customer.id });
+    const address = await storage.ecommerce.createCustomerAddress({
+      ...req.body,
+      customerId: customer.id,
+    });
     res.status(201).json(toAccountAddress(address));
   }),
 );
@@ -332,7 +395,11 @@ router.put(
   validateBody(accountAddressSchema),
   asyncHandler(async (req, res) => {
     const customer = await getOrCreateSignedInCustomer(req.user!);
-    const address = await storage.ecommerce.updateCustomerAddress(customer.id, paramString(req.params.id), req.body);
+    const address = await storage.ecommerce.updateCustomerAddress(
+      customer.id,
+      paramString(req.params.id),
+      req.body,
+    );
     if (!address) {
       res.status(404).json({ message: "Address not found" });
       return;
@@ -345,7 +412,10 @@ router.delete(
   "/account/addresses/:id",
   asyncHandler(async (req, res) => {
     const customer = await getOrCreateSignedInCustomer(req.user!);
-    const address = await storage.ecommerce.deleteCustomerAddress(customer.id, paramString(req.params.id));
+    const address = await storage.ecommerce.deleteCustomerAddress(
+      customer.id,
+      paramString(req.params.id),
+    );
     if (!address) {
       res.status(404).json({ message: "Address not found" });
       return;
@@ -358,7 +428,10 @@ router.post(
   "/account/addresses/:id/default",
   asyncHandler(async (req, res) => {
     const customer = await getOrCreateSignedInCustomer(req.user!);
-    const address = await storage.ecommerce.setDefaultCustomerAddress(customer.id, paramString(req.params.id));
+    const address = await storage.ecommerce.setDefaultCustomerAddress(
+      customer.id,
+      paramString(req.params.id),
+    );
     if (!address) {
       res.status(404).json({ message: "Address not found" });
       return;
@@ -401,9 +474,16 @@ router.put(
     const updated = await storage.ecommerce.updateCustomer(customer.id, customerAddress);
     const [defaultAddress] = await storage.ecommerce.getCustomerAddresses(customer.id);
     if (defaultAddress) {
-      await storage.ecommerce.updateCustomerAddress(customer.id, defaultAddress.id, { ...req.body, isDefault: true });
+      await storage.ecommerce.updateCustomerAddress(customer.id, defaultAddress.id, {
+        ...req.body,
+        isDefault: true,
+      });
     } else {
-      await storage.ecommerce.createCustomerAddress({ ...req.body, customerId: customer.id, isDefault: true });
+      await storage.ecommerce.createCustomerAddress({
+        ...req.body,
+        customerId: customer.id,
+        isDefault: true,
+      });
     }
     res.json(toAccountCustomer(updated ?? customer));
   }),

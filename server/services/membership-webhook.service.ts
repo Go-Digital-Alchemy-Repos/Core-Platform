@@ -1,7 +1,10 @@
 import type Stripe from "stripe";
 import { storage } from "../storage/index";
 import { logger } from "../utils/logger";
-import { getMembershipStripeClient, getMembershipStripeWebhookSecret } from "./membership-stripe.service";
+import {
+  getMembershipStripeClient,
+  getMembershipStripeWebhookSecret,
+} from "./membership-stripe.service";
 
 function fromUnix(value: number | null | undefined): Date | null {
   return value ? new Date(value * 1000) : null;
@@ -27,8 +30,11 @@ function metadataFromStripeObject(obj: { metadata?: Stripe.Metadata | null }) {
 async function syncStripeSubscription(subscription: Stripe.Subscription) {
   const subscriptionWithPeriods = subscription as StripeSubscriptionWithPeriods;
   const metadata = metadataFromStripeObject(subscription);
-  const existing = await storage.membership.getSubscriptionByProviderSubscriptionId(subscription.id);
-  const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id;
+  const existing = await storage.membership.getSubscriptionByProviderSubscriptionId(
+    subscription.id,
+  );
+  const customerId =
+    typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id;
   const data = {
     userId: metadata.userId || existing?.userId || "",
     planId: metadata.planId || existing?.planId || null,
@@ -45,7 +51,9 @@ async function syncStripeSubscription(subscription: Stripe.Subscription) {
   };
 
   if (!data.userId) {
-    logger.stripe.warn("Membership subscription webhook missing userId", { subscriptionId: subscription.id });
+    logger.stripe.warn("Membership subscription webhook missing userId", {
+      subscriptionId: subscription.id,
+    });
     return null;
   }
 
@@ -63,7 +71,10 @@ async function syncStripeSubscription(subscription: Stripe.Subscription) {
   return synced;
 }
 
-export async function handleMembershipStripeWebhook(payload: Buffer | string, signature: string | undefined) {
+export async function handleMembershipStripeWebhook(
+  payload: Buffer | string,
+  signature: string | undefined,
+) {
   const stripe = await getMembershipStripeClient();
   const secret = await getMembershipStripeWebhookSecret();
   let event: Stripe.Event;
@@ -73,12 +84,18 @@ export async function handleMembershipStripeWebhook(payload: Buffer | string, si
     event = stripe.webhooks.constructEvent(payload, signature, secret);
   } else {
     if (process.env.NODE_ENV === "production") {
-      throw Object.assign(new Error("Membership Stripe webhook secret is required in production"), { statusCode: 400 });
+      throw Object.assign(new Error("Membership Stripe webhook secret is required in production"), {
+        statusCode: 400,
+      });
     }
     event = JSON.parse(payload.toString()) as Stripe.Event;
   }
 
-  const firstProcessing = await storage.membership.markWebhookProcessed("stripe", event.id, event.type);
+  const firstProcessing = await storage.membership.markWebhookProcessed(
+    "stripe",
+    event.id,
+    event.type,
+  );
   if (!firstProcessing) {
     return { received: true, duplicate: true };
   }
@@ -95,7 +112,10 @@ export async function handleMembershipStripeWebhook(payload: Buffer | string, si
           source: "stripe",
           provider: "stripe",
           providerCustomerId: typeof session.customer === "string" ? session.customer : null,
-          providerSubscriptionId: typeof session.subscription === "string" ? session.subscription : session.subscription.id,
+          providerSubscriptionId:
+            typeof session.subscription === "string"
+              ? session.subscription
+              : session.subscription.id,
           providerCheckoutSessionId: session.id,
         });
         await storage.membership.createAuditEvent({
@@ -115,9 +135,11 @@ export async function handleMembershipStripeWebhook(payload: Buffer | string, si
     case "invoice.payment_succeeded": {
       const invoice = event.data.object as Stripe.Invoice;
       const invoiceSubscription = (invoice as StripeInvoiceWithSubscription).subscription;
-      const subscriptionId = typeof invoiceSubscription === "string" ? invoiceSubscription : invoiceSubscription?.id;
+      const subscriptionId =
+        typeof invoiceSubscription === "string" ? invoiceSubscription : invoiceSubscription?.id;
       if (subscriptionId) {
-        const subscription = await storage.membership.getSubscriptionByProviderSubscriptionId(subscriptionId);
+        const subscription =
+          await storage.membership.getSubscriptionByProviderSubscriptionId(subscriptionId);
         if (subscription) {
           await storage.membership.updateSubscription(subscription.id, {
             status: "active",
@@ -136,9 +158,11 @@ export async function handleMembershipStripeWebhook(payload: Buffer | string, si
     case "invoice.payment_failed": {
       const invoice = event.data.object as Stripe.Invoice;
       const invoiceSubscription = (invoice as StripeInvoiceWithSubscription).subscription;
-      const subscriptionId = typeof invoiceSubscription === "string" ? invoiceSubscription : invoiceSubscription?.id;
+      const subscriptionId =
+        typeof invoiceSubscription === "string" ? invoiceSubscription : invoiceSubscription?.id;
       if (subscriptionId) {
-        const subscription = await storage.membership.getSubscriptionByProviderSubscriptionId(subscriptionId);
+        const subscription =
+          await storage.membership.getSubscriptionByProviderSubscriptionId(subscriptionId);
         if (subscription) {
           await storage.membership.updateSubscription(subscription.id, {
             status: "past_due",
@@ -155,7 +179,10 @@ export async function handleMembershipStripeWebhook(payload: Buffer | string, si
       break;
     }
     default:
-      logger.stripe.info("Unhandled membership Stripe event", { eventId: event.id, eventType: event.type });
+      logger.stripe.info("Unhandled membership Stripe event", {
+        eventId: event.id,
+        eventType: event.type,
+      });
   }
 
   return { received: true };

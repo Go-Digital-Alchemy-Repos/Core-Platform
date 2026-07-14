@@ -9,7 +9,10 @@ interface MailchimpConfig {
 }
 
 function normalizeServerPrefix(value: string): string {
-  return value.trim().replace(/^https?:\/\//i, "").replace(/\.api\.mailchimp\.com.*$/i, "");
+  return value
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\.api\.mailchimp\.com.*$/i, "");
 }
 
 function inferServerPrefixFromApiKey(apiKey: string): string | null {

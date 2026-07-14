@@ -24,7 +24,9 @@ function valueToString(value: unknown): string | null {
   return null;
 }
 
-export function inferCrmLeadFromFormData(data: Record<string, unknown>): Pick<CrmLeadInput, "name" | "email" | "phone" | "company" | "message"> {
+export function inferCrmLeadFromFormData(
+  data: Record<string, unknown>,
+): Pick<CrmLeadInput, "name" | "email" | "phone" | "company" | "message"> {
   const name =
     valueToString(data.name) ||
     valueToString(data.fullName) ||
@@ -37,11 +39,15 @@ export function inferCrmLeadFromFormData(data: Record<string, unknown>): Pick<Cr
     email: valueToString(data.email),
     phone: valueToString(data.phone) || valueToString(data.tel),
     company: valueToString(data.company) || valueToString(data.organization),
-    message: valueToString(data.message) || valueToString(data.comments) || valueToString(data.details),
+    message:
+      valueToString(data.message) || valueToString(data.comments) || valueToString(data.details),
   };
 }
 
-export async function createOrUpdateCrmLead(input: unknown, createdById?: string | null): Promise<{ lead: CrmLead; duplicate: boolean }> {
+export async function createOrUpdateCrmLead(
+  input: unknown,
+  createdById?: string | null,
+): Promise<{ lead: CrmLead; duplicate: boolean }> {
   const parsed = crmLeadInputSchema.parse(input);
   const payload = {
     ...parsed,
@@ -97,7 +103,10 @@ export async function createCrmLeadFromFormSubmission({
   });
 }
 
-export async function ensureClientForWonLead(lead: CrmLead, createdById?: string | null): Promise<CrmClient> {
+export async function ensureClientForWonLead(
+  lead: CrmLead,
+  createdById?: string | null,
+): Promise<CrmClient> {
   const existing = await storage.crm.getClientBySourceLeadId(lead.id);
   if (existing) return existing;
   const clientType = cleanString(lead.company) ? "business" : "individual";

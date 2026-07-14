@@ -2,10 +2,20 @@ import { db } from "../db";
 import { cmsMedia, type CmsMediaAsset, type InsertCmsMedia } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
-type CmsMediaMetadataUpdate = Partial<Pick<
-  CmsMediaAsset,
-  "originalName" | "title" | "alt" | "caption" | "description" | "seoTitle" | "seoDescription" | "ogTitle" | "ogDescription"
->>;
+type CmsMediaMetadataUpdate = Partial<
+  Pick<
+    CmsMediaAsset,
+    | "originalName"
+    | "title"
+    | "alt"
+    | "caption"
+    | "description"
+    | "seoTitle"
+    | "seoDescription"
+    | "ogTitle"
+    | "ogDescription"
+  >
+>;
 
 type CmsMediaFileUpdate = Pick<CmsMediaAsset, "mimeType" | "fileSize" | "url"> & {
   filename?: CmsMediaAsset["filename"];
@@ -28,29 +38,20 @@ export class CmsMediaStorage {
   }
 
   async updateAlt(id: string, alt: string): Promise<CmsMediaAsset | undefined> {
-    const [asset] = await db
-      .update(cmsMedia)
-      .set({ alt })
-      .where(eq(cmsMedia.id, id))
-      .returning();
+    const [asset] = await db.update(cmsMedia).set({ alt }).where(eq(cmsMedia.id, id)).returning();
     return asset;
   }
 
-  async updateMetadata(id: string, data: CmsMediaMetadataUpdate): Promise<CmsMediaAsset | undefined> {
-    const [asset] = await db
-      .update(cmsMedia)
-      .set(data)
-      .where(eq(cmsMedia.id, id))
-      .returning();
+  async updateMetadata(
+    id: string,
+    data: CmsMediaMetadataUpdate,
+  ): Promise<CmsMediaAsset | undefined> {
+    const [asset] = await db.update(cmsMedia).set(data).where(eq(cmsMedia.id, id)).returning();
     return asset;
   }
 
   async updateFile(id: string, data: CmsMediaFileUpdate): Promise<CmsMediaAsset | undefined> {
-    const [asset] = await db
-      .update(cmsMedia)
-      .set(data)
-      .where(eq(cmsMedia.id, id))
-      .returning();
+    const [asset] = await db.update(cmsMedia).set(data).where(eq(cmsMedia.id, id)).returning();
     return asset;
   }
 

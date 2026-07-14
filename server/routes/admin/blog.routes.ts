@@ -3,10 +3,18 @@ import { z } from "zod";
 import { BLOG_COMMENT_STATUSES, blogCommentSettingsSchema } from "@shared/schema";
 import { storage } from "../../storage/index";
 import { asyncHandler } from "../../middleware/error-handler";
-import { insertBlogPostSchema, insertBlogTaxonomySchema, type BlogPost, type BlogTaxonomy } from "@shared/schema";
+import {
+  insertBlogPostSchema,
+  insertBlogTaxonomySchema,
+  type BlogPost,
+  type BlogTaxonomy,
+} from "@shared/schema";
 import { paramString } from "../../utils/params";
 import * as r2Service from "../../services/r2.service";
-import { getBlogCommentSettings, saveBlogCommentSettings } from "../../services/blog-comments.service";
+import {
+  getBlogCommentSettings,
+  saveBlogCommentSettings,
+} from "../../services/blog-comments.service";
 
 const router = Router();
 
@@ -14,14 +22,16 @@ const blogPostSchemaWithCoercedDate = insertBlogPostSchema.extend({
   publishedAt: z.coerce.date().optional().nullable(),
   scheduledAt: z.coerce.date().optional().nullable(),
 });
-const blogTaxonomyMutationSchema = insertBlogTaxonomySchema.pick({
-  name: true,
-  type: true,
-  parentId: true,
-  sortOrder: true,
-}).extend({
-  slug: z.string().optional(),
-});
+const blogTaxonomyMutationSchema = insertBlogTaxonomySchema
+  .pick({
+    name: true,
+    type: true,
+    parentId: true,
+    sortOrder: true,
+  })
+  .extend({
+    slug: z.string().optional(),
+  });
 
 function slugifyTaxonomy(name: string): string {
   return name
@@ -33,12 +43,17 @@ function slugifyTaxonomy(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
-function buildUniqueTaxonomySlug(type: BlogTaxonomy["type"], name: string, taxonomies: BlogTaxonomy[], ignoreId?: string) {
+function buildUniqueTaxonomySlug(
+  type: BlogTaxonomy["type"],
+  name: string,
+  taxonomies: BlogTaxonomy[],
+  ignoreId?: string,
+) {
   const baseSlug = slugifyTaxonomy(name) || type;
   const existingSlugs = new Set(
     taxonomies
       .filter((taxonomy) => taxonomy.type === type && taxonomy.id !== ignoreId)
-      .map((taxonomy) => taxonomy.slug.toLowerCase())
+      .map((taxonomy) => taxonomy.slug.toLowerCase()),
   );
 
   let suffix = 1;
@@ -82,7 +97,11 @@ async function ensureTaxonomiesExist(
   const existing = await storage.blogTaxonomies.getAllTaxonomies();
 
   for (const categoryName of normalizeCategories(categories, category)) {
-    const match = existing.find((item) => item.type === "category" && item.name.trim().toLowerCase() === categoryName.trim().toLowerCase());
+    const match = existing.find(
+      (item) =>
+        item.type === "category" &&
+        item.name.trim().toLowerCase() === categoryName.trim().toLowerCase(),
+    );
     if (!match) {
       const slug = buildUniqueTaxonomySlug("category", categoryName, existing);
       const created = await storage.blogTaxonomies.createTaxonomy({
@@ -98,7 +117,9 @@ async function ensureTaxonomiesExist(
 
   for (const tag of tags ?? []) {
     if (!tag.trim()) continue;
-    const match = existing.find((item) => item.type === "tag" && item.name.trim().toLowerCase() === tag.trim().toLowerCase());
+    const match = existing.find(
+      (item) => item.type === "tag" && item.name.trim().toLowerCase() === tag.trim().toLowerCase(),
+    );
     if (!match) {
       const slug = buildUniqueTaxonomySlug("tag", tag, existing);
       const created = await storage.blogTaxonomies.createTaxonomy({
@@ -125,7 +146,7 @@ router.get(
   "/settings/taxonomies",
   asyncHandler(async (_req, res) => {
     res.json(await getResolvedTaxonomies());
-  })
+  }),
 );
 
 router.get(
@@ -140,7 +161,7 @@ router.get(
       settings,
       statusCounts,
     });
-  })
+  }),
 );
 
 router.put(
@@ -149,7 +170,7 @@ router.put(
     const settings = blogCommentSettingsSchema.parse(req.body);
     await saveBlogCommentSettings(settings);
     res.json(await getBlogCommentSettings());
-  })
+  }),
 );
 
 const blogCommentStatusSchema = z.enum(BLOG_COMMENT_STATUSES);
@@ -161,27 +182,35 @@ const blogCommentUpdateSchema = z.object({
 router.get(
   "/comments",
   asyncHandler(async (req, res) => {
-    const status = req.query.status ? blogCommentStatusSchema.parse(String(req.query.status)) : undefined;
+    const status = req.query.status
+      ? blogCommentStatusSchema.parse(String(req.query.status))
+      : undefined;
     const comments = await storage.blogComments.getCommentsForModeration(status);
     res.json(comments);
-  })
+  }),
 );
 
 router.patch(
   "/comments/:id/status",
   asyncHandler(async (req, res) => {
     const id = paramString(req.params.id);
-    const payload = z.object({
-      status: blogCommentStatusSchema,
-      moderationNote: z.string().optional(),
-    }).parse(req.body);
+    const payload = z
+      .object({
+        status: blogCommentStatusSchema,
+        moderationNote: z.string().optional(),
+      })
+      .parse(req.body);
 
-    const comment = await storage.blogComments.updateCommentStatus(id, payload.status, payload.moderationNote ?? null);
+    const comment = await storage.blogComments.updateCommentStatus(
+      id,
+      payload.status,
+      payload.moderationNote ?? null,
+    );
     if (!comment) {
       return res.status(404).json({ message: "Comment not found" });
     }
     res.json(comment);
-  })
+  }),
 );
 
 router.put(
@@ -197,7 +226,7 @@ router.put(
       return res.status(404).json({ message: "Comment not found" });
     }
     res.json(comment);
-  })
+  }),
 );
 
 router.delete(
@@ -205,7 +234,7 @@ router.delete(
   asyncHandler(async (req, res) => {
     await storage.blogComments.deleteComment(paramString(req.params.id));
     res.json({ success: true });
-  })
+  }),
 );
 
 router.post(
@@ -215,7 +244,9 @@ router.post(
     const allTaxonomies = await storage.blogTaxonomies.getAllTaxonomies();
 
     const nameExists = allTaxonomies.some(
-      (taxonomy) => taxonomy.type === data.type && taxonomy.name.trim().toLowerCase() === data.name.trim().toLowerCase()
+      (taxonomy) =>
+        taxonomy.type === data.type &&
+        taxonomy.name.trim().toLowerCase() === data.name.trim().toLowerCase(),
     );
     if (nameExists) {
       return res.status(409).json({ message: `A ${data.type} with that name already exists` });
@@ -232,12 +263,12 @@ router.post(
       name: data.name.trim(),
       slug: data.slug?.trim() || buildUniqueTaxonomySlug(data.type, data.name, allTaxonomies),
       type: data.type,
-      parentId: data.type === "category" ? data.parentId ?? null : null,
+      parentId: data.type === "category" ? (data.parentId ?? null) : null,
       sortOrder: data.sortOrder ?? 0,
     });
 
     res.status(201).json(created);
-  })
+  }),
 );
 
 router.put(
@@ -258,7 +289,7 @@ router.put(
       (taxonomy) =>
         taxonomy.id !== id &&
         taxonomy.type === nextType &&
-        taxonomy.name.trim().toLowerCase() === nextName.trim().toLowerCase()
+        taxonomy.name.trim().toLowerCase() === nextName.trim().toLowerCase(),
     );
     if (nameExists) {
       return res.status(409).json({ message: `A ${nextType} with that name already exists` });
@@ -278,7 +309,8 @@ router.put(
       name: nextName,
       slug: data.slug?.trim() || buildUniqueTaxonomySlug(nextType, nextName, allTaxonomies, id),
       type: nextType,
-      parentId: nextType === "category" ? data.parentId ?? existingTaxonomy.parentId ?? null : null,
+      parentId:
+        nextType === "category" ? (data.parentId ?? existingTaxonomy.parentId ?? null) : null,
       sortOrder: data.sortOrder ?? existingTaxonomy.sortOrder,
     });
 
@@ -294,7 +326,7 @@ router.put(
     }
 
     res.json(updated);
-  })
+  }),
 );
 
 router.delete(
@@ -315,7 +347,7 @@ router.delete(
 
     await storage.blogTaxonomies.deleteTaxonomy(id);
     res.json({ success: true });
-  })
+  }),
 );
 
 router.get(
@@ -323,7 +355,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const posts = await storage.blog.getAllPosts();
     res.json(await Promise.all(posts.map(normalizePostImages)));
-  })
+  }),
 );
 
 router.get(
@@ -334,7 +366,7 @@ router.get(
       return res.status(404).json({ message: "Post not found" });
     }
     res.json(await normalizePostImages(post));
-  })
+  }),
 );
 
 router.post(
@@ -354,7 +386,7 @@ router.post(
     await ensureTaxonomiesExist(data.categories, data.category, data.tags);
     const post = await storage.blog.createPost(data);
     res.status(201).json(await normalizePostImages(post));
-  })
+  }),
 );
 
 router.put(
@@ -378,7 +410,7 @@ router.put(
       return res.status(404).json({ message: "Post not found" });
     }
     res.json(await normalizePostImages(post));
-  })
+  }),
 );
 
 router.delete(
@@ -386,7 +418,7 @@ router.delete(
   asyncHandler(async (req, res) => {
     await storage.blog.deletePost(paramString(req.params.id));
     res.json({ message: "Post deleted" });
-  })
+  }),
 );
 
 export default router;

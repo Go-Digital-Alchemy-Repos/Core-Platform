@@ -6,7 +6,12 @@ function id() {
   return randomUUID();
 }
 
-function item(label: string, url: string, children: MenuItem[] = [], openInNewTab = false): MenuItem {
+function item(
+  label: string,
+  url: string,
+  children: MenuItem[] = [],
+  openInNewTab = false,
+): MenuItem {
   return {
     id: id(),
     label,
@@ -62,7 +67,9 @@ function patchLegalItemUrls(items: MenuItem[]): { items: MenuItem[]; changed: bo
     };
   });
 
-  const hasDisclaimer = nextItems.some((entry) => entry.label.trim().toLowerCase() === "disclaimer");
+  const hasDisclaimer = nextItems.some(
+    (entry) => entry.label.trim().toLowerCase() === "disclaimer",
+  );
   if (!hasDisclaimer) {
     nextItems.push(item("Disclaimer", "/disclaimer"));
     changed = true;
@@ -72,11 +79,15 @@ function patchLegalItemUrls(items: MenuItem[]): { items: MenuItem[]; changed: bo
 }
 
 function patchShopItem(items: MenuItem[]): { items: MenuItem[]; changed: boolean } {
-  const hasShop = items.some((entry) => entry.label.trim().toLowerCase() === "shop" || entry.url === "/shop");
+  const hasShop = items.some(
+    (entry) => entry.label.trim().toLowerCase() === "shop" || entry.url === "/shop",
+  );
   if (hasShop) return { items, changed: false };
 
   const nextItems = [...items];
-  const contactIndex = nextItems.findIndex((entry) => entry.label.trim().toLowerCase() === "contact");
+  const contactIndex = nextItems.findIndex(
+    (entry) => entry.label.trim().toLowerCase() === "contact",
+  );
   const insertIndex = contactIndex >= 0 ? contactIndex : nextItems.length;
   nextItems.splice(insertIndex, 0, item("Shop", "/shop"));
   return { items: nextItems, changed: true };
@@ -119,10 +130,7 @@ const defaultMenus: Array<InsertCmsMenu & { location: StandardMenuLocation }> = 
       item("About", "/about"),
       item("Find a Verified Provider", "/directory"),
       item("Join the Network", "/join"),
-      item("Resources", "#", [
-        item("Events", "/events"),
-        item("Insights & Articles", "/insights"),
-      ]),
+      item("Resources", "#", [item("Events", "/events"), item("Insights & Articles", "/insights")]),
       item("Shop", "/shop"),
       item("Contact", "/contact"),
     ],
@@ -157,11 +165,7 @@ const defaultMenus: Array<InsertCmsMenu & { location: StandardMenuLocation }> = 
   {
     name: "Company",
     location: "footer_company",
-    items: [
-      item("About Us", "/about"),
-      item("Contact", "/contact"),
-      item("Support", "/contact"),
-    ],
+    items: [item("About Us", "/about"), item("Contact", "/contact"), item("Support", "/contact")],
   },
   {
     name: "Legal",

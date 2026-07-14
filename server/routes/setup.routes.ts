@@ -31,7 +31,9 @@ async function hasAdminUser(): Promise<boolean> {
     const admins = await storage.users.getUsersByRole("admin");
     return admins.length > 0;
   } catch (err) {
-    logger.app.warn("Setup status check failed (table may not exist yet)", { error: getErrorMessage(err) });
+    logger.app.warn("Setup status check failed (table may not exist yet)", {
+      error: getErrorMessage(err),
+    });
     return false;
   }
 }
@@ -64,7 +66,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const adminExists = await hasAdminUser();
     res.json({ needsSetup: !adminExists });
-  })
+  }),
 );
 
 const setupAdminSchema = z.object({
@@ -105,7 +107,9 @@ router.post(
       if (result.rows.length === 0) {
         const adminExists = await hasAdminUser();
         if (adminExists) {
-          res.status(403).json({ message: "Admin account already exists. Setup is no longer available." });
+          res
+            .status(403)
+            .json({ message: "Admin account already exists. Setup is no longer available." });
         } else {
           res.status(409).json({ message: "An account with this email already exists" });
         }
@@ -129,7 +133,7 @@ router.post(
       }
       throw err;
     }
-  })
+  }),
 );
 
 export default router;

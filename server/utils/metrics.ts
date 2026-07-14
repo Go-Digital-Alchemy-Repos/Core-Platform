@@ -28,7 +28,12 @@ function routeKey(method: string, path: string): string {
   return `${method} ${normalized}`;
 }
 
-export function recordRequest(method: string, path: string, durationMs: number, statusCode: number) {
+export function recordRequest(
+  method: string,
+  path: string,
+  durationMs: number,
+  statusCode: number,
+) {
   const key = routeKey(method, path);
   const existing = store.requests.get(key) || { count: 0, totalMs: 0, minMs: Infinity, maxMs: 0 };
   existing.count++;
@@ -79,7 +84,8 @@ export function getMetricsSnapshot() {
     errors,
     dbQueries: {
       count: store.dbQueries.count,
-      avgMs: store.dbQueries.count > 0 ? Math.round(store.dbQueries.totalMs / store.dbQueries.count) : 0,
+      avgMs:
+        store.dbQueries.count > 0 ? Math.round(store.dbQueries.totalMs / store.dbQueries.count) : 0,
       minMs: store.dbQueries.minMs === Infinity ? 0 : store.dbQueries.minMs,
       maxMs: store.dbQueries.maxMs,
     },

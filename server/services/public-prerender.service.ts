@@ -417,7 +417,8 @@ async function buildTherapistSnapshot(
     !profile ||
     !profile.isActive ||
     (directorySettings.directoryRequiresApprovedApplication && !profile.isApproved)
-  ) return null;
+  )
+    return null;
 
   const displayName =
     [profile.user?.firstName, profile.user?.lastName].filter(Boolean).join(" ") ||
@@ -426,9 +427,7 @@ async function buildTherapistSnapshot(
   const description =
     truncate(
       stripHtml(
-        profile.bio ||
-          profile.title ||
-          "View this platform-approved verified provider profile.",
+        profile.bio || profile.title || "View this platform-approved verified provider profile.",
       ),
       180,
     ) || "View this platform-approved verified provider profile.";
@@ -468,7 +467,9 @@ async function buildTherapistSnapshot(
         name: displayName,
         description,
         url: canonicalUrl,
-        image: profile.user?.profileImageUrl ? absoluteUrl(profile.user.profileImageUrl, siteUrl) : undefined,
+        image: profile.user?.profileImageUrl
+          ? absoluteUrl(profile.user.profileImageUrl, siteUrl)
+          : undefined,
         jobTitle: profile.title || "Verified Provider",
         knowsAbout: profile.specializations?.length ? profile.specializations : undefined,
         knowsLanguage: profile.languages?.length ? profile.languages : undefined,
@@ -476,7 +477,9 @@ async function buildTherapistSnapshot(
         address: addressParts.length
           ? {
               "@type": "PostalAddress",
-              streetAddress: [profile.addressLine1, profile.addressLine2].filter(Boolean).join(", ") || undefined,
+              streetAddress:
+                [profile.addressLine1, profile.addressLine2].filter(Boolean).join(", ") ||
+                undefined,
               addressLocality: profile.city || undefined,
               addressRegion: profile.state || undefined,
               postalCode: profile.zipCode || undefined,
@@ -635,7 +638,8 @@ export async function getPublicHtmlSnapshot(
   const productMatch = pathname.match(/^\/products\/([^/]+)$/);
   if (productMatch) {
     const product = await storage.ecommerce.getProductBySlug(decodeURIComponent(productMatch[1]));
-    if (!product || product.archivedAt || !product.active || product.status !== "published") return null;
+    if (!product || product.archivedAt || !product.active || product.status !== "published")
+      return null;
     return buildProductSnapshot(product, seo, siteUrl);
   }
 

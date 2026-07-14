@@ -14,7 +14,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const settings = await storage.seoSettings.get();
     res.json(settings ?? {});
-  })
+  }),
 );
 
 router.put(
@@ -22,11 +22,13 @@ router.put(
   asyncHandler(async (req, res) => {
     const parsed = updateSeoSettingsSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0]?.message || "Validation failed" });
+      return res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message || "Validation failed" });
     }
     const settings = await storage.seoSettings.upsert(parsed.data);
     res.json(settings);
-  })
+  }),
 );
 
 router.get(
@@ -34,7 +36,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const settings = await storage.seoSettings.get();
     res.json(buildRobotsTxtPayload(settings));
-  })
+  }),
 );
 
 router.put(
@@ -47,7 +49,9 @@ router.put(
       .safeParse(req.body);
 
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0]?.message || "Validation failed" });
+      return res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message || "Validation failed" });
     }
 
     const normalized =
@@ -57,7 +61,7 @@ router.put(
 
     const settings = await storage.seoSettings.upsert({ customRobotsTxt: normalized });
     res.json(buildRobotsTxtPayload(settings));
-  })
+  }),
 );
 
 export default router;

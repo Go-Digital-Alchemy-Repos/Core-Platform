@@ -27,7 +27,13 @@ interface EventLocationMapProps {
   className?: string;
 }
 
-export function EventLocationMap({ latitude, longitude, locationName, address, className }: EventLocationMapProps) {
+export function EventLocationMap({
+  latitude,
+  longitude,
+  locationName,
+  address,
+  className,
+}: EventLocationMapProps) {
   const lat = latitude ? parseFloat(latitude) : NaN;
   const lng = longitude ? parseFloat(longitude) : NaN;
   const mapClassName = className ?? "aspect-video max-h-[300px] rounded-xl overflow-hidden border";

@@ -6,7 +6,12 @@ import { authenticateToken } from "../middleware/auth";
 import { asyncHandler } from "../middleware/error-handler";
 import { storage } from "../storage/index";
 import * as r2Service from "../services/r2.service";
-import { optimizeImage, isImageMime, AVATAR_OPTIONS, ATTACHMENT_OPTIONS } from "../services/image-optimizer";
+import {
+  optimizeImage,
+  isImageMime,
+  AVATAR_OPTIONS,
+  ATTACHMENT_OPTIONS,
+} from "../services/image-optimizer";
 import { createCmsMediaAssetFromUpload } from "../services/cms-media-upload.service";
 
 const router = Router();
@@ -34,7 +39,8 @@ router.post(
       return;
     }
 
-    const targetUserId = (req.user!.role === "admin" && req.body.userId) ? req.body.userId : req.user!.id;
+    const targetUserId =
+      req.user!.role === "admin" && req.body.userId ? req.body.userId : req.user!.id;
 
     const asset = await createCmsMediaAssetFromUpload({
       buffer: req.file.buffer,
@@ -51,11 +57,14 @@ router.post(
     await storage.users.updateUser(targetUserId, { profileImageUrl: asset.url });
 
     res.json({ url: asset.url, mediaId: asset.id });
-  })
+  }),
 );
 
 const ATTACHMENT_MIMES = [
-  "image/png", "image/jpeg", "image/webp", "image/gif",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -68,9 +77,20 @@ const ATTACHMENT_MIMES = [
 ];
 
 const SAFE_EXTENSIONS = [
-  ".png", ".jpg", ".jpeg", ".gif", ".webp",
-  ".pdf", ".doc", ".docx", ".xls", ".xlsx",
-  ".ppt", ".pptx", ".csv", ".txt",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".webp",
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".ppt",
+  ".pptx",
+  ".csv",
+  ".txt",
 ];
 
 const attachmentUpload = multer({
@@ -81,7 +101,11 @@ const attachmentUpload = multer({
     if (ATTACHMENT_MIMES.includes(file.mimetype) && SAFE_EXTENSIONS.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error("File type not allowed. Accepted: images, PDF, Word, Excel, PowerPoint, CSV, TXT."));
+      cb(
+        new Error(
+          "File type not allowed. Accepted: images, PDF, Word, Excel, PowerPoint, CSV, TXT.",
+        ),
+      );
     }
   },
 });
@@ -141,7 +165,7 @@ router.post(
       type: fileMime,
       size: fileSize,
     });
-  })
+  }),
 );
 
 export default router;

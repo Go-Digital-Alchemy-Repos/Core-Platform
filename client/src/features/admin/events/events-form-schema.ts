@@ -1,9 +1,7 @@
 import { z } from "zod";
 
 import { getDefaultEventTimeZone } from "@/lib/event-datetime";
-import {
-  EVENT_PRESET_DEFAULTS,
-} from "@shared/schema";
+import { EVENT_PRESET_DEFAULTS } from "@shared/schema";
 
 export const eventFormSchema = z
   .object({
@@ -188,4 +186,3 @@ export const defaultVenueFormValues: VenueFormValues = {
   arrivalNotes: "",
   isVirtual: false,
 };
-

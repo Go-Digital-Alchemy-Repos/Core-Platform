@@ -29,16 +29,18 @@ router.get(
   asyncHandler(async (req, res) => {
     const rawLimit = getStringQuery(req.query.limit);
     const limit = rawLimit ? Math.max(1, Math.min(48, Number(rawLimit) || 0)) : undefined;
-    res.json(await storage.portfolio.getProjects({
-      publicOnly: true,
-      q: getStringQuery(req.query.q),
-      industry: getStringQuery(req.query.industry),
-      category: getStringQuery(req.query.category),
-      location: getStringQuery(req.query.location),
-      featured: getStringQuery(req.query.featured) === "true",
-      excludeFeatured: getStringQuery(req.query.excludeFeatured) === "true",
-      limit,
-    }));
+    res.json(
+      await storage.portfolio.getProjects({
+        publicOnly: true,
+        q: getStringQuery(req.query.q),
+        industry: getStringQuery(req.query.industry),
+        category: getStringQuery(req.query.category),
+        location: getStringQuery(req.query.location),
+        featured: getStringQuery(req.query.featured) === "true",
+        excludeFeatured: getStringQuery(req.query.excludeFeatured) === "true",
+        limit,
+      }),
+    );
   }),
 );
 

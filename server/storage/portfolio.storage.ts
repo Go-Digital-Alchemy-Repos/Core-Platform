@@ -26,14 +26,21 @@ export class PortfolioStorage {
     if (filters.publicOnly) {
       conditions.push(eq(portfolioProjects.status, "published"));
       conditions.push(eq(portfolioProjects.visibility, "public"));
-      conditions.push(or(sql`${portfolioProjects.publishedAt} IS NULL`, lte(portfolioProjects.publishedAt, new Date())));
+      conditions.push(
+        or(
+          sql`${portfolioProjects.publishedAt} IS NULL`,
+          lte(portfolioProjects.publishedAt, new Date()),
+        ),
+      );
       conditions.push(eq(portfolioProjects.noindex, false));
     }
     if (filters.status && filters.status !== "all") {
       conditions.push(eq(portfolioProjects.status, filters.status as PortfolioProject["status"]));
     }
     if (filters.industry && filters.industry !== "all") {
-      conditions.push(eq(portfolioProjects.industry, filters.industry as PortfolioProject["industry"]));
+      conditions.push(
+        eq(portfolioProjects.industry, filters.industry as PortfolioProject["industry"]),
+      );
     }
     if (filters.location && filters.location !== "all") {
       conditions.push(eq(portfolioProjects.location, filters.location));
@@ -49,21 +56,27 @@ export class PortfolioStorage {
     }
     if (filters.q?.trim()) {
       const term = `%${filters.q.trim()}%`;
-      conditions.push(or(
-        ilike(portfolioProjects.title, term),
-        ilike(portfolioProjects.subtitle, term),
-        ilike(portfolioProjects.location, term),
-        ilike(portfolioProjects.clientName, term),
-        ilike(portfolioProjects.summary, term),
-        ilike(portfolioProjects.description, term),
-      ));
+      conditions.push(
+        or(
+          ilike(portfolioProjects.title, term),
+          ilike(portfolioProjects.subtitle, term),
+          ilike(portfolioProjects.location, term),
+          ilike(portfolioProjects.clientName, term),
+          ilike(portfolioProjects.summary, term),
+          ilike(portfolioProjects.description, term),
+        ),
+      );
     }
 
     const query = db
       .select()
       .from(portfolioProjects)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(portfolioProjects.sortOrder, desc(portfolioProjects.publishedAt), desc(portfolioProjects.updatedAt));
+      .orderBy(
+        portfolioProjects.sortOrder,
+        desc(portfolioProjects.publishedAt),
+        desc(portfolioProjects.updatedAt),
+      );
 
     if (filters.limit && filters.limit > 0) {
       return query.limit(filters.limit);
@@ -72,12 +85,20 @@ export class PortfolioStorage {
   }
 
   async getProject(id: string): Promise<PortfolioProject | undefined> {
-    const [project] = await db.select().from(portfolioProjects).where(eq(portfolioProjects.id, id)).limit(1);
+    const [project] = await db
+      .select()
+      .from(portfolioProjects)
+      .where(eq(portfolioProjects.id, id))
+      .limit(1);
     return project;
   }
 
   async getProjectBySlug(slug: string): Promise<PortfolioProject | undefined> {
-    const [project] = await db.select().from(portfolioProjects).where(eq(portfolioProjects.slug, slug)).limit(1);
+    const [project] = await db
+      .select()
+      .from(portfolioProjects)
+      .where(eq(portfolioProjects.slug, slug))
+      .limit(1);
     return project;
   }
 
@@ -85,12 +106,17 @@ export class PortfolioStorage {
     const [project] = await db
       .select()
       .from(portfolioProjects)
-      .where(and(
-        eq(portfolioProjects.slug, slug),
-        eq(portfolioProjects.status, "published"),
-        eq(portfolioProjects.visibility, "public"),
-        or(sql`${portfolioProjects.publishedAt} IS NULL`, lte(portfolioProjects.publishedAt, new Date())),
-      ))
+      .where(
+        and(
+          eq(portfolioProjects.slug, slug),
+          eq(portfolioProjects.status, "published"),
+          eq(portfolioProjects.visibility, "public"),
+          or(
+            sql`${portfolioProjects.publishedAt} IS NULL`,
+            lte(portfolioProjects.publishedAt, new Date()),
+          ),
+        ),
+      )
       .limit(1);
     return project;
   }
@@ -100,11 +126,17 @@ export class PortfolioStorage {
   }
 
   async createProject(data: InsertPortfolioProject): Promise<PortfolioProject> {
-    const [project] = await db.insert(portfolioProjects).values(data as PortfolioProjectInsert).returning();
+    const [project] = await db
+      .insert(portfolioProjects)
+      .values(data as PortfolioProjectInsert)
+      .returning();
     return project;
   }
 
-  async updateProject(id: string, data: Partial<InsertPortfolioProject>): Promise<PortfolioProject | undefined> {
+  async updateProject(
+    id: string,
+    data: Partial<InsertPortfolioProject>,
+  ): Promise<PortfolioProject | undefined> {
     const [project] = await db
       .update(portfolioProjects)
       .set({ ...data, updatedAt: new Date() } as Partial<PortfolioProjectInsert>)
@@ -118,12 +150,26 @@ export class PortfolioStorage {
     return true;
   }
 
-  async getFilterOptions(): Promise<{ industries: string[]; categories: string[]; locations: string[] }> {
+  async getFilterOptions(): Promise<{
+    industries: string[];
+    categories: string[];
+    locations: string[];
+  }> {
     const projects = await this.getProjects({ publicOnly: true });
     return {
-      industries: Array.from(new Set(projects.map((project) => project.industry).filter(Boolean))).sort(),
-      categories: Array.from(new Set(projects.flatMap((project) => project.categories ?? []).filter(Boolean))).sort(),
-      locations: Array.from(new Set(projects.map((project) => project.location).filter((value): value is string => Boolean(value)))).sort(),
+      industries: Array.from(
+        new Set(projects.map((project) => project.industry).filter(Boolean)),
+      ).sort(),
+      categories: Array.from(
+        new Set(projects.flatMap((project) => project.categories ?? []).filter(Boolean)),
+      ).sort(),
+      locations: Array.from(
+        new Set(
+          projects
+            .map((project) => project.location)
+            .filter((value): value is string => Boolean(value)),
+        ),
+      ).sort(),
     };
   }
 }

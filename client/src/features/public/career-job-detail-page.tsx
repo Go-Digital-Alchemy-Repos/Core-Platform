@@ -1,7 +1,17 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "wouter";
-import { Briefcase, CheckCircle2, Copy, Facebook, Linkedin, Mail, MapPin, Share2, Twitter } from "lucide-react";
+import {
+  Briefcase,
+  CheckCircle2,
+  Copy,
+  Facebook,
+  Linkedin,
+  Mail,
+  MapPin,
+  Share2,
+  Twitter,
+} from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { JsonLd } from "@/components/shared/json-ld";
 import { useFrontendEditTarget } from "@/features/frontend-edit/frontend-edit";
@@ -31,7 +41,8 @@ function formatSalary(job: CareerJob) {
     currency: job.salaryCurrency || "USD",
     maximumFractionDigits: 0,
   });
-  if (job.salaryMin && job.salaryMax) return `${formatter.format(job.salaryMin)}-${formatter.format(job.salaryMax)} / ${job.salaryPeriod}`;
+  if (job.salaryMin && job.salaryMax)
+    return `${formatter.format(job.salaryMin)}-${formatter.format(job.salaryMax)} / ${job.salaryPeriod}`;
   return `${formatter.format(job.salaryMin || job.salaryMax || 0)} / ${job.salaryPeriod}`;
 }
 
@@ -49,7 +60,10 @@ function ShareActions({ job, settings }: { job: CareerJob; settings?: CareerSett
   const { toast } = useToast();
   const sharing = settings?.sharing;
   if (!sharing?.enabled) return null;
-  const url = typeof window !== "undefined" ? `${window.location.origin}/careers/${job.slug}` : `/careers/${job.slug}`;
+  const url =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/careers/${job.slug}`
+      : `/careers/${job.slug}`;
   const encodedUrl = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(job.title);
   const canNativeShare = typeof navigator !== "undefined" && "share" in navigator;
@@ -87,21 +101,33 @@ function ShareActions({ job, settings }: { job: CareerJob; settings?: CareerSett
       )}
       {sharing.linkedin && (
         <Button variant="outline" size="icon" asChild aria-label="Share on LinkedIn">
-          <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`} target="_blank" rel="noreferrer">
+          <a
+            href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
+            target="_blank"
+            rel="noreferrer"
+          >
             <Linkedin className="h-4 w-4" />
           </a>
         </Button>
       )}
       {sharing.facebook && (
         <Button variant="outline" size="icon" asChild aria-label="Share on Facebook">
-          <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`} target="_blank" rel="noreferrer">
+          <a
+            href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
+            target="_blank"
+            rel="noreferrer"
+          >
             <Facebook className="h-4 w-4" />
           </a>
         </Button>
       )}
       {sharing.x && (
         <Button variant="outline" size="icon" asChild aria-label="Share on X">
-          <a href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`} target="_blank" rel="noreferrer">
+          <a
+            href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`}
+            target="_blank"
+            rel="noreferrer"
+          >
             <Twitter className="h-4 w-4" />
           </a>
         </Button>
@@ -120,16 +146,23 @@ export default function CareerJobDetailPage() {
   const { data: globalSeo } = useQuery<SeoSettings>({ queryKey: ["/api/seo/global"] });
   const salary = job ? formatSalary(job) : null;
 
-  useFrontendEditTarget(job ? {
-    kind: "career-job",
-    id: job.id,
-    label: `Edit ${job.title}`,
-  } : null);
+  useFrontendEditTarget(
+    job
+      ? {
+          kind: "career-job",
+          id: job.id,
+          label: `Edit ${job.title}`,
+        }
+      : null,
+  );
 
   useSeo({
     title: job ? `${job.metaTitle || job.title} | Careers` : "Careers",
     description: job?.metaDescription || job?.summary || undefined,
-    canonical: job && typeof window !== "undefined" ? `${window.location.origin}/careers/${job.slug}` : undefined,
+    canonical:
+      job && typeof window !== "undefined"
+        ? `${window.location.origin}/careers/${job.slug}`
+        : undefined,
     noindex: job?.noindex,
   });
 
@@ -178,10 +211,18 @@ export default function CareerJobDetailPage() {
   };
 
   if (isLoading) {
-    return <PageLayout><main className="container mx-auto px-4 py-10">Loading job...</main></PageLayout>;
+    return (
+      <PageLayout>
+        <main className="container mx-auto px-4 py-10">Loading job...</main>
+      </PageLayout>
+    );
   }
   if (!job) {
-    return <PageLayout><main className="container mx-auto px-4 py-10">Job not found.</main></PageLayout>;
+    return (
+      <PageLayout>
+        <main className="container mx-auto px-4 py-10">Job not found.</main>
+      </PageLayout>
+    );
   }
 
   return (
@@ -189,7 +230,9 @@ export default function CareerJobDetailPage() {
       <JsonLd schemas={schemas} />
       <main className="container mx-auto grid gap-8 px-4 py-10 lg:grid-cols-[1fr_360px]">
         <article className="space-y-8">
-          <Link href="/careers" className="text-sm text-muted-foreground hover:text-foreground">Back to careers</Link>
+          <Link href="/careers" className="text-sm text-muted-foreground hover:text-foreground">
+            Back to careers
+          </Link>
           <header className="space-y-4">
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary">{CAREER_EMPLOYMENT_TYPE_LABELS[job.employmentType]}</Badge>
@@ -197,8 +240,18 @@ export default function CareerJobDetailPage() {
             </div>
             <h1 className="text-3xl font-bold tracking-normal sm:text-4xl">{job.title}</h1>
             <div className="flex flex-wrap gap-x-4 gap-y-2 text-muted-foreground">
-              {job.department && <span className="inline-flex items-center gap-1.5"><Briefcase className="h-4 w-4" />{job.department}</span>}
-              {job.location && <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" />{job.location}</span>}
+              {job.department && (
+                <span className="inline-flex items-center gap-1.5">
+                  <Briefcase className="h-4 w-4" />
+                  {job.department}
+                </span>
+              )}
+              {job.location && (
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4" />
+                  {job.location}
+                </span>
+              )}
               {salary && <span>{salary}</span>}
             </div>
             <ShareActions job={job} settings={settings} />
@@ -220,7 +273,9 @@ export default function CareerJobDetailPage() {
                 <Alert>
                   <CheckCircle2 className="h-4 w-4" />
                   <AlertTitle>Application received</AlertTitle>
-                  <AlertDescription>Thanks for applying. We sent a confirmation to your email.</AlertDescription>
+                  <AlertDescription>
+                    Thanks for applying. We sent a confirmation to your email.
+                  </AlertDescription>
                 </Alert>
               ) : (
                 <form className="space-y-4" onSubmit={submitApplication}>
@@ -244,7 +299,13 @@ export default function CareerJobDetailPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="resume">Resume</Label>
-                    <Input id="resume" name="resume" type="file" accept=".pdf,.doc,.docx" required />
+                    <Input
+                      id="resume"
+                      name="resume"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      required
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="coverLetter">Cover letter</Label>
@@ -259,10 +320,19 @@ export default function CareerJobDetailPage() {
                     <Input id="portfolioUrl" name="portfolioUrl" type="url" />
                   </div>
                   <label className="flex items-start gap-2 text-sm">
-                    <Checkbox checked={consentAccepted} onCheckedChange={(checked) => setConsentAccepted(checked === true)} />
-                    <span>I consent to Core Platform storing my application materials for hiring review.</span>
+                    <Checkbox
+                      checked={consentAccepted}
+                      onCheckedChange={(checked) => setConsentAccepted(checked === true)}
+                    />
+                    <span>
+                      I consent to Core Platform storing my application materials for hiring review.
+                    </span>
                   </label>
-                  <Button type="submit" className="w-full" disabled={applicationMutation.isPending || !consentAccepted}>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={applicationMutation.isPending || !consentAccepted}
+                  >
                     {applicationMutation.isPending ? "Submitting..." : "Submit Application"}
                   </Button>
                 </form>

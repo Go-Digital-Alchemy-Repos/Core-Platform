@@ -30,14 +30,14 @@ function isBlank(value: unknown): boolean {
 
 function isRichTextBlank(value: unknown): boolean {
   if (typeof value !== "string") return true;
-  const stripped = value.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim();
+  const stripped = value
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .trim();
   return stripped.length === 0;
 }
 
-function addIssue(
-  issues: CmsPageQualityIssue[],
-  issue: CmsPageQualityIssue
-) {
+function addIssue(issues: CmsPageQualityIssue[], issue: CmsPageQualityIssue) {
   issues.push(issue);
 }
 
@@ -69,7 +69,8 @@ export function analyzeCmsPageQuality(input: AnalyzeCmsPageQualityInput): CmsPag
       id: "no-content-blocks",
       severity: "error",
       title: "No page sections yet",
-      description: "Add at least one block section in the builder so this page has visible content.",
+      description:
+        "Add at least one block section in the builder so this page has visible content.",
       tab: "builder",
     });
   }
@@ -79,7 +80,8 @@ export function analyzeCmsPageQuality(input: AnalyzeCmsPageQualityInput): CmsPag
       id: "missing-sidebar",
       severity: "warning",
       title: "Sidebar layout has no sidebar assigned",
-      description: "Choose a sidebar in Page Settings so the sidebar template does not render empty.",
+      description:
+        "Choose a sidebar in Page Settings so the sidebar template does not render empty.",
       tab: "settings",
     });
   }
@@ -99,7 +101,8 @@ export function analyzeCmsPageQuality(input: AnalyzeCmsPageQualityInput): CmsPag
       id: "missing-seo-description",
       severity: "warning",
       title: "SEO description is missing",
-      description: "Add a meta description so search previews and social cards have meaningful summary text.",
+      description:
+        "Add a meta description so search previews and social cards have meaningful summary text.",
       tab: "seo",
     });
   }
@@ -109,7 +112,8 @@ export function analyzeCmsPageQuality(input: AnalyzeCmsPageQualityInput): CmsPag
       id: "missing-og-image",
       severity: "warning",
       title: "Open Graph image is missing",
-      description: "Add a social sharing image so this page looks polished when linked on social or in messages.",
+      description:
+        "Add a social sharing image so this page looks polished when linked on social or in messages.",
       tab: "seo",
     });
   }
@@ -119,7 +123,8 @@ export function analyzeCmsPageQuality(input: AnalyzeCmsPageQualityInput): CmsPag
       id: "published-noindex",
       severity: "info",
       title: "Published page is marked noindex",
-      description: "That may be intentional, but this page will ask search engines not to index it.",
+      description:
+        "That may be intentional, but this page will ask search engines not to index it.",
       tab: "seo",
     });
   }
@@ -200,7 +205,11 @@ export function analyzeCmsPageQuality(input: AnalyzeCmsPageQualityInput): CmsPag
     }
 
     if (block.type === "button-group" && Array.isArray(props.buttons)) {
-      const hasInvalidButton = props.buttons.some((button) => isBlank((button as Record<string, unknown>).text) || isBlank((button as Record<string, unknown>).link));
+      const hasInvalidButton = props.buttons.some(
+        (button) =>
+          isBlank((button as Record<string, unknown>).text) ||
+          isBlank((button as Record<string, unknown>).link),
+      );
       if (hasInvalidButton) {
         addIssue(issues, {
           id: `${prefix}-button-group`,
@@ -217,7 +226,8 @@ export function analyzeCmsPageQuality(input: AnalyzeCmsPageQualityInput): CmsPag
         id: `${prefix}-empty-items`,
         severity: "info",
         title: `${blockLabel} section has no items`,
-        description: "This section currently has an empty repeater list and may render with no meaningful content.",
+        description:
+          "This section currently has an empty repeater list and may render with no meaningful content.",
         tab: "builder",
       });
     }
@@ -232,7 +242,8 @@ export function analyzeCmsPageQuality(input: AnalyzeCmsPageQualityInput): CmsPag
           id: `${prefix}-link-list-placeholder`,
           severity: "warning",
           title: "Link List contains placeholder links",
-          description: "Replace placeholder URLs so editors do not accidentally publish dead links.",
+          description:
+            "Replace placeholder URLs so editors do not accidentally publish dead links.",
           tab: "builder",
         });
       }
@@ -244,7 +255,8 @@ export function analyzeCmsPageQuality(input: AnalyzeCmsPageQualityInput): CmsPag
       id: "missing-h1",
       severity: "warning",
       title: "No primary H1 heading detected",
-      description: "Make sure the page has one clear top-level heading for structure and SEO clarity.",
+      description:
+        "Make sure the page has one clear top-level heading for structure and SEO clarity.",
       tab: "builder",
     });
   } else if (h1Count > 1) {
@@ -252,7 +264,8 @@ export function analyzeCmsPageQuality(input: AnalyzeCmsPageQualityInput): CmsPag
       id: "multiple-h1",
       severity: "info",
       title: "Multiple H1 headings detected",
-      description: "That can be valid in some designs, but pages usually work best with one primary H1.",
+      description:
+        "That can be valid in some designs, but pages usually work best with one primary H1.",
       tab: "builder",
     });
   }

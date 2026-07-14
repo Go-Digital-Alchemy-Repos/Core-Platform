@@ -9,6 +9,9 @@ export const specializations = pgTable("specializations", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const insertSpecializationSchema = createInsertSchema(specializations).omit({ id: true, createdAt: true });
+export const insertSpecializationSchema = createInsertSchema(specializations).omit({
+  id: true,
+  createdAt: true,
+});
 export type InsertSpecialization = z.infer<typeof insertSpecializationSchema>;
 export type Specialization = typeof specializations.$inferSelect;

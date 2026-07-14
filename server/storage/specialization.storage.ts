@@ -4,25 +4,43 @@ import { eq, asc } from "drizzle-orm";
 import type { Specialization, InsertSpecialization } from "../../shared/schema/specializations";
 
 const SEED_SPECIALIZATIONS = [
-  "Consulting", "Coaching", "Implementation", "Training",
-  "Managed Services", "Operations", "Strategy", "Customer Success",
-  "Marketing", "Sales Enablement", "Technology", "Design",
-  "Finance", "Legal", "Compliance", "Human Resources",
-  "Facilities", "Events", "Community Programs", "Support Services",
+  "Consulting",
+  "Coaching",
+  "Implementation",
+  "Training",
+  "Managed Services",
+  "Operations",
+  "Strategy",
+  "Customer Success",
+  "Marketing",
+  "Sales Enablement",
+  "Technology",
+  "Design",
+  "Finance",
+  "Legal",
+  "Compliance",
+  "Human Resources",
+  "Facilities",
+  "Events",
+  "Community Programs",
+  "Support Services",
 ];
 
 export class SpecializationStorage {
   async ensureSeeded(): Promise<void> {
     const existing = await db.select().from(specializations).limit(1);
     if (existing.length > 0) return;
-    await db.insert(specializations).values(
-      SEED_SPECIALIZATIONS.map((name, i) => ({ name, sortOrder: i }))
-    );
+    await db
+      .insert(specializations)
+      .values(SEED_SPECIALIZATIONS.map((name, i) => ({ name, sortOrder: i })));
   }
 
   async getAll(): Promise<Specialization[]> {
     await this.ensureSeeded();
-    return db.select().from(specializations).orderBy(asc(specializations.sortOrder), asc(specializations.name));
+    return db
+      .select()
+      .from(specializations)
+      .orderBy(asc(specializations.sortOrder), asc(specializations.name));
   }
 
   async create(data: InsertSpecialization): Promise<Specialization> {
@@ -35,7 +53,10 @@ export class SpecializationStorage {
     return created;
   }
 
-  async update(id: number, data: Partial<InsertSpecialization>): Promise<Specialization | undefined> {
+  async update(
+    id: number,
+    data: Partial<InsertSpecialization>,
+  ): Promise<Specialization | undefined> {
     const [updated] = await db
       .update(specializations)
       .set(data)

@@ -177,7 +177,7 @@ function EventDirectionsDropdown({
     event.deliveryMode === "hybrid" ||
     event.locationAddress ||
     coords ||
-    (!event.isVirtual && (displayLocationName || event.location))
+    (!event.isVirtual && (displayLocationName || event.location)),
   );
   const links = hasPhysicalLocation ? getDirectionsLinks(event, displayLocationName) : [];
 
@@ -260,17 +260,18 @@ function RegistrationSection({
   const { toast } = useToast();
   const registrationState = getRegistrationState(event);
 
-  const {
-    data: registration,
-    isLoading: regLoading,
-  } = useQuery<EventRegistration | null>({
+  const { data: registration, isLoading: regLoading } = useQuery<EventRegistration | null>({
     queryKey: ["/api/events", event.id, "registration"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!user && event.registrationEnabled === true && !isPast && !isCanceled,
   });
   const { data: registrationForm } = useQuery<CmsForm>({
     queryKey: ["/api/events", event.id, "registration-form"],
-    enabled: Boolean(event.registrationFormId) && event.registrationEnabled === true && !isPast && !isCanceled,
+    enabled:
+      Boolean(event.registrationFormId) &&
+      event.registrationEnabled === true &&
+      !isPast &&
+      !isCanceled,
   });
 
   const registerMutation = useMutation({
@@ -280,7 +281,10 @@ function RegistrationSection({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events", event.id, "registration"] });
-      toast({ title: "Registered successfully", description: "You have been registered for this event." });
+      toast({
+        title: "Registered successfully",
+        description: "You have been registered for this event.",
+      });
     },
     onError: (error: Error) => {
       toast({ title: "Registration failed", description: error.message, variant: "destructive" });
@@ -293,7 +297,10 @@ function RegistrationSection({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events", event.id, "registration"] });
-      toast({ title: "Registration canceled", description: "Your registration has been canceled." });
+      toast({
+        title: "Registration canceled",
+        description: "Your registration has been canceled.",
+      });
     },
     onError: (error: Error) => {
       toast({ title: "Cancellation failed", description: error.message, variant: "destructive" });
@@ -302,7 +309,9 @@ function RegistrationSection({
 
   const payMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/stripe/create-event-checkout-session", { eventId: event.id });
+      const res = await apiRequest("POST", "/api/stripe/create-event-checkout-session", {
+        eventId: event.id,
+      });
       const { url } = await res.json();
       return url;
     },
@@ -336,9 +345,7 @@ function RegistrationSection({
 
     return (
       <Card className={className} data-testid={testId}>
-        <CardContent className="p-5 sm:p-6">
-          {content}
-        </CardContent>
+        <CardContent className="p-5 sm:p-6">{content}</CardContent>
       </Card>
     );
   }
@@ -354,10 +361,14 @@ function RegistrationSection({
     },
     onSuccess: (data) => {
       setGuestRegistered(true);
-      const statusMsg = data.status === "waitlisted" 
-        ? "You've been added to the waitlist. We'll notify you if a spot opens up."
-        : "You have been registered for this event. Check your email for confirmation.";
-      toast({ title: data.status === "waitlisted" ? "Added to waitlist" : "Registered successfully", description: statusMsg });
+      const statusMsg =
+        data.status === "waitlisted"
+          ? "You've been added to the waitlist. We'll notify you if a spot opens up."
+          : "You have been registered for this event. Check your email for confirmation.";
+      toast({
+        title: data.status === "waitlisted" ? "Added to waitlist" : "Registered successfully",
+        description: statusMsg,
+      });
     },
     onError: (error: Error) => {
       toast({ title: "Registration failed", description: error.message, variant: "destructive" });
@@ -373,7 +384,18 @@ function RegistrationSection({
             <h3 className="font-heading text-lg font-semibold">Registration Opens Soon</h3>
             {event.registrationOpensAt && (
               <p className="text-sm text-muted-foreground mt-1">
-                Registration opens on {formatEventDate(event.registrationOpensAt, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })} at {formatEventTime(event.registrationOpensAt, event.timezone, { timeZoneName: "short" })}.
+                Registration opens on{" "}
+                {formatEventDate(event.registrationOpensAt, event.timezone, {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}{" "}
+                at{" "}
+                {formatEventTime(event.registrationOpensAt, event.timezone, {
+                  timeZoneName: "short",
+                })}
+                .
               </p>
             )}
           </div>
@@ -421,8 +443,8 @@ function RegistrationSection({
             <h3 className="font-heading text-lg font-semibold">Register for This Event</h3>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            {isPaid 
-              ? `This is a paid event (${formatCurrency(event.registrationFee || 0, event.registrationCurrency || "usd")}). Log in to register and pay.` 
+            {isPaid
+              ? `This is a paid event (${formatCurrency(event.registrationFee || 0, event.registrationCurrency || "usd")}). Log in to register and pay.`
               : event.registrationFormId
                 ? "Log in to complete the event registration form."
                 : "Log in to your account to register for this event."}
@@ -440,90 +462,105 @@ function RegistrationSection({
 
     return renderShell(
       <>
-          <div className="flex items-center gap-3 mb-3">
-            <Ticket className="h-5 w-5 text-accent" />
-            <h3 className="font-heading text-lg font-semibold">Register for This Event</h3>
-          </div>
-          <p className="text-sm text-muted-foreground mb-4">
-            Fill in your details below to register for this free event.
-          </p>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              guestRegisterMutation.mutate();
-            }}
-            className="space-y-3"
-          >
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="guest-first-name" className="text-sm">First Name</Label>
-                <Input
-                  id="guest-first-name"
-                  value={guestFirstName}
-                  onChange={(e) => setGuestFirstName(e.target.value)}
-                  required
-                  data-testid="input-guest-first-name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="guest-last-name" className="text-sm">Last Name</Label>
-                <Input
-                  id="guest-last-name"
-                  value={guestLastName}
-                  onChange={(e) => setGuestLastName(e.target.value)}
-                  required
-                  data-testid="input-guest-last-name"
-                />
-              </div>
-            </div>
+        <div className="flex items-center gap-3 mb-3">
+          <Ticket className="h-5 w-5 text-accent" />
+          <h3 className="font-heading text-lg font-semibold">Register for This Event</h3>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Fill in your details below to register for this free event.
+        </p>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            guestRegisterMutation.mutate();
+          }}
+          className="space-y-3"
+        >
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="guest-email" className="text-sm">Email</Label>
+              <Label htmlFor="guest-first-name" className="text-sm">
+                First Name
+              </Label>
               <Input
-                id="guest-email"
-                type="email"
-                value={guestEmail}
-                onChange={(e) => setGuestEmail(e.target.value)}
+                id="guest-first-name"
+                value={guestFirstName}
+                onChange={(e) => setGuestFirstName(e.target.value)}
                 required
-                data-testid="input-guest-email"
+                data-testid="input-guest-first-name"
               />
             </div>
-            <Button
-              type="submit"
-              disabled={guestRegisterMutation.isPending || !guestFirstName || !guestLastName || !guestEmail}
-              className="w-full"
-              data-testid="button-guest-register"
-            >
-              {guestRegisterMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Ticket className="mr-2 h-4 w-4" />
-              )}
-              Register
-            </Button>
-          </form>
-          <div className="mt-3 text-center">
-            <p className="text-xs text-muted-foreground">
-              Already have an account?{" "}
-              <Link href="/login" className="text-accent hover:underline" data-testid="link-login-instead">
-                Log in
-              </Link>
-            </p>
+            <div>
+              <Label htmlFor="guest-last-name" className="text-sm">
+                Last Name
+              </Label>
+              <Input
+                id="guest-last-name"
+                value={guestLastName}
+                onChange={(e) => setGuestLastName(e.target.value)}
+                required
+                data-testid="input-guest-last-name"
+              />
+            </div>
           </div>
+          <div>
+            <Label htmlFor="guest-email" className="text-sm">
+              Email
+            </Label>
+            <Input
+              id="guest-email"
+              type="email"
+              value={guestEmail}
+              onChange={(e) => setGuestEmail(e.target.value)}
+              required
+              data-testid="input-guest-email"
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={
+              guestRegisterMutation.isPending || !guestFirstName || !guestLastName || !guestEmail
+            }
+            className="w-full"
+            data-testid="button-guest-register"
+          >
+            {guestRegisterMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Ticket className="mr-2 h-4 w-4" />
+            )}
+            Register
+          </Button>
+        </form>
+        <div className="mt-3 text-center">
+          <p className="text-xs text-muted-foreground">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="text-accent hover:underline"
+              data-testid="link-login-instead"
+            >
+              Log in
+            </Link>
+          </p>
+        </div>
       </>,
       "card-guest-registration",
     );
   }
 
-  if (registration && registration.status === "confirmed" && (registration.paymentStatus === "paid" || registration.paymentStatus === "not_required") && registrationState !== "open") {
+  if (
+    registration &&
+    registration.status === "confirmed" &&
+    (registration.paymentStatus === "paid" || registration.paymentStatus === "not_required") &&
+    registrationState !== "open"
+  ) {
     return renderShell(
       <>
         <div className="flex items-center gap-3">
           <CheckCircle2 className="h-5 w-5 text-green-600" />
           <h3 className="font-heading text-lg font-semibold">You're Registered</h3>
         </div>
-        <p className="text-sm text-muted-foreground mt-2">
-          You are confirmed for this event.
-        </p>
+        <p className="text-sm text-muted-foreground mt-2">You are confirmed for this event.</p>
       </>,
       "card-registration-confirmed-closed",
       embedded ? "" : "border-green-600/30",
@@ -553,7 +590,18 @@ function RegistrationSection({
           <h3 className="font-heading text-lg font-semibold">Registration Opens Soon</h3>
           {event.registrationOpensAt && (
             <p className="text-sm text-muted-foreground mt-1">
-              Registration opens on {formatEventDate(event.registrationOpensAt, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })} at {formatEventTime(event.registrationOpensAt, event.timezone, { timeZoneName: "short" })}.
+              Registration opens on{" "}
+              {formatEventDate(event.registrationOpensAt, event.timezone, {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}{" "}
+              at{" "}
+              {formatEventTime(event.registrationOpensAt, event.timezone, {
+                timeZoneName: "short",
+              })}
+              .
             </p>
           )}
         </div>
@@ -573,7 +621,11 @@ function RegistrationSection({
     );
   }
 
-  if (registration && registration.status === "confirmed" && (registration.paymentStatus === "paid" || registration.paymentStatus === "not_required")) {
+  if (
+    registration &&
+    registration.status === "confirmed" &&
+    (registration.paymentStatus === "paid" || registration.paymentStatus === "not_required")
+  ) {
     return renderShell(
       <>
         <div className="flex items-center gap-3 mb-3">
@@ -640,7 +692,8 @@ function RegistrationSection({
           <h3 className="font-heading text-lg font-semibold">You're on the Waitlist</h3>
         </div>
         <p className="text-sm text-muted-foreground mb-4">
-          This event is at capacity. You'll be automatically confirmed if a spot opens up, and we'll notify you by email.
+          This event is at capacity. You'll be automatically confirmed if a spot opens up, and we'll
+          notify you by email.
         </p>
         <Button
           variant="outline"
@@ -706,42 +759,43 @@ function RegistrationSection({
 
   return renderShell(
     <>
-        <div className="flex items-center gap-3 mb-3">
-          <Ticket className="h-5 w-5 text-accent" />
-          <h3 className="font-heading text-lg font-semibold">Register for This Event</h3>
-        </div>
-        <p className="text-sm text-muted-foreground mb-4">
-          {isPaid 
-            ? `Secure your spot for this event. Registration fee: ${formatCurrency(event.registrationFee || 0, event.registrationCurrency || "usd")}.`
-            : "Secure your spot for this free event. You'll receive a confirmation email after registering."}
-        </p>
-        {isPaid ? (
-          <Button
-            onClick={() => payMutation.mutate()}
-            disabled={payMutation.isPending}
-            data-testid="button-register-and-pay"
-          >
-            {payMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Ticket className="mr-2 h-4 w-4" />
-            )}
-            Register & Pay {formatCurrency(event.registrationFee || 0, event.registrationCurrency || "usd")}
-          </Button>
-        ) : (
-          <Button
-            onClick={() => registerMutation.mutate()}
-            disabled={registerMutation.isPending}
-            data-testid="button-register-event"
-          >
-            {registerMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Ticket className="mr-2 h-4 w-4" />
-            )}
-            Register for This Event
-          </Button>
-        )}
+      <div className="flex items-center gap-3 mb-3">
+        <Ticket className="h-5 w-5 text-accent" />
+        <h3 className="font-heading text-lg font-semibold">Register for This Event</h3>
+      </div>
+      <p className="text-sm text-muted-foreground mb-4">
+        {isPaid
+          ? `Secure your spot for this event. Registration fee: ${formatCurrency(event.registrationFee || 0, event.registrationCurrency || "usd")}.`
+          : "Secure your spot for this free event. You'll receive a confirmation email after registering."}
+      </p>
+      {isPaid ? (
+        <Button
+          onClick={() => payMutation.mutate()}
+          disabled={payMutation.isPending}
+          data-testid="button-register-and-pay"
+        >
+          {payMutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Ticket className="mr-2 h-4 w-4" />
+          )}
+          Register & Pay{" "}
+          {formatCurrency(event.registrationFee || 0, event.registrationCurrency || "usd")}
+        </Button>
+      ) : (
+        <Button
+          onClick={() => registerMutation.mutate()}
+          disabled={registerMutation.isPending}
+          data-testid="button-register-event"
+        >
+          {registerMutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Ticket className="mr-2 h-4 w-4" />
+          )}
+          Register for This Event
+        </Button>
+      )}
     </>,
     "card-registration-register",
   );
@@ -757,7 +811,10 @@ function EventOverviewCard({
   showMap: boolean;
 }) {
   return (
-    <Card className={showMap ? "mb-8 overflow-hidden" : "mb-2 overflow-hidden"} data-testid="card-event-overview">
+    <Card
+      className={showMap ? "mb-8 overflow-hidden" : "mb-2 overflow-hidden"}
+      data-testid="card-event-overview"
+    >
       {event.imageUrl && (
         <div className="aspect-[21/9] overflow-hidden bg-muted" data-testid="img-event-cover">
           <img
@@ -779,13 +836,26 @@ function EventOverviewCard({
                     Date
                   </h2>
                   <p className="font-medium" data-testid="text-event-detail-date">
-                    {formatEventDate(event.date, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                    {formatEventDate(event.date, event.timezone, {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
                   </p>
-                  {event.endDate && new Date(event.endDate).toDateString() !== new Date(event.date).toDateString() && (
-                    <p className="text-sm text-muted-foreground">
-                      to {formatEventDate(event.endDate, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-                    </p>
-                  )}
+                  {event.endDate &&
+                    new Date(event.endDate).toDateString() !==
+                      new Date(event.date).toDateString() && (
+                      <p className="text-sm text-muted-foreground">
+                        to{" "}
+                        {formatEventDate(event.endDate, event.timezone, {
+                          weekday: "long",
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </p>
+                    )}
                 </div>
               </div>
 
@@ -797,7 +867,8 @@ function EventOverviewCard({
                   </h2>
                   <p className="font-medium" data-testid="text-event-detail-time">
                     {formatEventTime(event.date, event.timezone, { timeZoneName: "short" })}
-                    {event.endDate && ` — ${formatEventTime(event.endDate, event.timezone, { timeZoneName: "short" })}`}
+                    {event.endDate &&
+                      ` — ${formatEventTime(event.endDate, event.timezone, { timeZoneName: "short" })}`}
                   </p>
                   {event.timezone && (
                     <p className="text-sm text-muted-foreground" data-testid="text-event-timezone">
@@ -818,7 +889,9 @@ function EventOverviewCard({
                     <p className="font-medium" data-testid="text-event-capacity">
                       {event.capacity}
                       {event.waitlistEnabled && (
-                        <span className="text-sm text-muted-foreground ml-2">(waitlist available)</span>
+                        <span className="text-sm text-muted-foreground ml-2">
+                          (waitlist available)
+                        </span>
                       )}
                     </p>
                   </div>
@@ -853,12 +926,18 @@ function EventOverviewCard({
                       </p>
                     ) : null}
                     {event.locationAddress && (
-                      <p className="text-sm text-muted-foreground" data-testid="text-event-detail-address">
+                      <p
+                        className="text-sm text-muted-foreground"
+                        data-testid="text-event-detail-address"
+                      >
                         {event.locationAddress}
                       </p>
                     )}
                   </div>
-                  <EventDirectionsDropdown event={event} displayLocationName={displayLocationName} />
+                  <EventDirectionsDropdown
+                    event={event}
+                    displayLocationName={displayLocationName}
+                  />
                 </div>
               </div>
             )}
@@ -892,7 +971,10 @@ function EventOverviewCard({
                     {event.speakerName}
                   </p>
                   {event.speakerBio && (
-                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap" data-testid="text-speaker-bio">
+                    <p
+                      className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap"
+                      data-testid="text-speaker-bio"
+                    >
                       {event.speakerBio}
                     </p>
                   )}
@@ -919,7 +1001,9 @@ function RegistrationSummary({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         {event.registrationType === "free" ? (
-          <Badge variant="outline" data-testid="badge-registration-free">Free Event</Badge>
+          <Badge variant="outline" data-testid="badge-registration-free">
+            Free Event
+          </Badge>
         ) : event.registrationFee ? (
           <Badge variant="outline" data-testid="badge-registration-paid">
             {formatCurrency(event.registrationFee, event.registrationCurrency || "usd")}
@@ -929,23 +1013,45 @@ function RegistrationSummary({
           <Badge className="bg-green-600/15 text-green-700 border-green-600/30">Open</Badge>
         )}
         {registrationState === "closed" && (
-          <Badge variant="outline" className="opacity-60">Closed</Badge>
+          <Badge variant="outline" className="opacity-60">
+            Closed
+          </Badge>
         )}
         {registrationState === "upcoming" && event.registrationOpensAt && (
           <Badge variant="outline">
-            Opens {formatEventDate(event.registrationOpensAt, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+            Opens{" "}
+            {formatEventDate(event.registrationOpensAt, event.timezone, {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
           </Badge>
         )}
       </div>
       <div className="text-sm text-muted-foreground space-y-1">
         {event.registrationOpensAt && registrationState !== "upcoming" && (
           <p data-testid="text-registration-opens">
-            Opened: {formatEventDate(event.registrationOpensAt, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+            Opened:{" "}
+            {formatEventDate(event.registrationOpensAt, event.timezone, {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
           </p>
         )}
         {event.registrationClosesAt && (
           <p data-testid="text-registration-closes">
-            {registrationState === "closed" ? "Closed" : "Closes"}: {formatEventDate(event.registrationClosesAt, event.timezone, { weekday: "long", month: "long", day: "numeric", year: "numeric" })} at {formatEventTime(event.registrationClosesAt, event.timezone, { timeZoneName: "short" })}
+            {registrationState === "closed" ? "Closed" : "Closes"}:{" "}
+            {formatEventDate(event.registrationClosesAt, event.timezone, {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}{" "}
+            at{" "}
+            {formatEventTime(event.registrationClosesAt, event.timezone, { timeZoneName: "short" })}
           </p>
         )}
         {event.waitlistEnabled && (
@@ -1102,12 +1208,16 @@ function EventParticipationCard({
             {event.registrationEnabled ? (
               <RegistrationSection
                 event={event}
-                user={user ? {
-                  id: user.id,
-                  role: user.role,
-                  email: user.email,
-                  firstName: user.firstName ?? "",
-                } : null}
+                user={
+                  user
+                    ? {
+                        id: user.id,
+                        role: user.role,
+                        email: user.email,
+                        firstName: user.firstName ?? "",
+                      }
+                    : null
+                }
                 isPast={isPast}
                 isCanceled={isCanceled}
                 embedded
@@ -1130,7 +1240,8 @@ function EventParticipationCard({
 
 function EventSeo({ event, globalSeo }: { event: Event; globalSeo?: SeoSettings }) {
   const titleSuffix = globalSeo?.titleSuffix ?? " | Core Platform";
-  const siteUrl = globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
+  const siteUrl =
+    globalSeo?.siteUrl || (typeof window !== "undefined" ? window.location.origin : "");
   const effectiveTitle = `${event.title}${titleSuffix}`;
   const effectiveDescription = event.description
     ? stripHtml(event.description)
@@ -1170,7 +1281,11 @@ export default function EventDetailPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const { data: event, isLoading, error } = useQuery<Event>({
+  const {
+    data: event,
+    isLoading,
+    error,
+  } = useQuery<Event>({
     queryKey: ["/api/events", eventId],
     enabled: !!eventId,
   });
@@ -1180,11 +1295,15 @@ export default function EventDetailPage() {
     staleTime: STALE_TIMES.CONTENT,
   });
 
-  useFrontendEditTarget(event ? {
-    kind: "event",
-    id: event.id,
-    label: `Edit ${event.title}`,
-  } : null);
+  useFrontendEditTarget(
+    event
+      ? {
+          kind: "event",
+          id: event.id,
+          label: `Edit ${event.title}`,
+        }
+      : null,
+  );
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -1201,7 +1320,8 @@ export default function EventDetailPage() {
     } else if (checkout === "canceled") {
       toast({
         title: "Registration canceled",
-        description: "The payment process was canceled. You can try registering again when you're ready.",
+        description:
+          "The payment process was canceled. You can try registering again when you're ready.",
       });
       setLocation(event ? getEventPath(event) : `/events/${eventId}`, { replace: true });
     }
@@ -1222,7 +1342,9 @@ export default function EventDetailPage() {
   const isDraft = event?.status === "draft";
   const isCompleted = event?.status === "completed";
 
-  const isHybrid = event?.isVirtual && (event?.latitude || event?.location || event?.locationName || event?.locationAddress);
+  const isHybrid =
+    event?.isVirtual &&
+    (event?.latitude || event?.location || event?.locationName || event?.locationAddress);
   const isVirtualOnly = event?.isVirtual && !isHybrid;
   const hasGeo = event?.latitude && event?.longitude;
   const hasAddressMapFallback = !!event?.locationAddress;
@@ -1244,12 +1366,18 @@ export default function EventDetailPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-3 pb-2 sm:pt-4 sm:pb-3" data-testid="section-event-info">
+      <div
+        className="mx-auto max-w-3xl px-4 sm:px-6 pt-3 pb-2 sm:pt-4 sm:pb-3"
+        data-testid="section-event-info"
+      >
         {isLoading && <EventDetailSkeleton />}
 
         {error && (
           <Card>
-            <CardContent className="py-12 text-center text-muted-foreground" data-testid="text-event-error">
+            <CardContent
+              className="py-12 text-center text-muted-foreground"
+              data-testid="text-event-error"
+            >
               Event not found or could not be loaded.
             </CardContent>
           </Card>
@@ -1259,14 +1387,20 @@ export default function EventDetailPage() {
           <article data-testid={`event-detail-${event.id}`}>
             <EventSeo event={event} globalSeo={globalSeo} />
             {isCanceled && (
-              <div className="flex items-center gap-3 rounded-md border border-destructive/50 bg-destructive/10 p-4 mb-6" data-testid="banner-event-canceled">
+              <div
+                className="flex items-center gap-3 rounded-md border border-destructive/50 bg-destructive/10 p-4 mb-6"
+                data-testid="banner-event-canceled"
+              >
                 <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
                 <p className="font-medium text-destructive">This event has been canceled.</p>
               </div>
             )}
 
             {isDraft && (
-              <div className="flex items-center gap-3 rounded-md border p-4 mb-6 opacity-70" data-testid="banner-event-draft">
+              <div
+                className="flex items-center gap-3 rounded-md border p-4 mb-6 opacity-70"
+                data-testid="banner-event-draft"
+              >
                 <AlertTriangle className="h-5 w-5 flex-shrink-0" />
                 <p className="font-medium">This event is not yet published.</p>
               </div>
@@ -1316,9 +1450,13 @@ export default function EventDetailPage() {
               {event.visibility && event.visibility !== "public" && !event.memberOnly && (
                 <Badge variant="outline" data-testid="badge-event-visibility">
                   <Lock className="mr-1 h-3 w-3" />
-                  {event.visibility === "members_only" ? "Members Only" :
-                   event.visibility === "counselors_only" ? "Verified Providers Only" :
-                   event.visibility === "admins_only" ? "Admins Only" : event.visibility}
+                  {event.visibility === "members_only"
+                    ? "Members Only"
+                    : event.visibility === "counselors_only"
+                      ? "Verified Providers Only"
+                      : event.visibility === "admins_only"
+                        ? "Admins Only"
+                        : event.visibility}
                 </Badge>
               )}
               {event.registrationEnabled && event.registrationType === "free" && (
@@ -1327,19 +1465,28 @@ export default function EventDetailPage() {
                   Free
                 </Badge>
               )}
-              {event.registrationEnabled && event.registrationType === "paid" && event.registrationFee && (
-                <Badge variant="outline" data-testid="badge-event-paid">
-                  <Ticket className="mr-1 h-3 w-3" />
-                  {formatCurrency(event.registrationFee, event.registrationCurrency || "usd")}
-                </Badge>
-              )}
+              {event.registrationEnabled &&
+                event.registrationType === "paid" &&
+                event.registrationFee && (
+                  <Badge variant="outline" data-testid="badge-event-paid">
+                    <Ticket className="mr-1 h-3 w-3" />
+                    {formatCurrency(event.registrationFee, event.registrationCurrency || "usd")}
+                  </Badge>
+                )}
               {registrationState === "open" && !isPast && !isCanceled && (
-                <Badge className="bg-green-600/15 text-green-700 border-green-600/30" data-testid="badge-registration-open">
+                <Badge
+                  className="bg-green-600/15 text-green-700 border-green-600/30"
+                  data-testid="badge-registration-open"
+                >
                   Registration Open
                 </Badge>
               )}
               {registrationState === "closed" && !isPast && !isCanceled && (
-                <Badge variant="outline" className="opacity-60" data-testid="badge-registration-closed">
+                <Badge
+                  variant="outline"
+                  className="opacity-60"
+                  data-testid="badge-registration-closed"
+                >
                   Registration Closed
                 </Badge>
               )}
@@ -1349,7 +1496,10 @@ export default function EventDetailPage() {
                 </Badge>
               )}
               {isPast && event.recordingUrl && (
-                <Badge className="bg-blue-600/15 text-blue-700 border-blue-600/30" data-testid="badge-recording-available">
+                <Badge
+                  className="bg-blue-600/15 text-blue-700 border-blue-600/30"
+                  data-testid="badge-recording-available"
+                >
                   <Video className="mr-1 h-3 w-3" />
                   Recording Available
                 </Badge>
@@ -1363,14 +1513,20 @@ export default function EventDetailPage() {
               {event.title}
             </h1>
 
-            <EventOverviewCard event={event} displayLocationName={displayLocationName} showMap={!!showMap} />
-
+            <EventOverviewCard
+              event={event}
+              displayLocationName={displayLocationName}
+              showMap={!!showMap}
+            />
           </article>
         )}
       </div>
 
       {event && (
-        <section className="mx-auto max-w-3xl px-4 sm:px-6 pt-4 pb-10 sm:pt-5 sm:pb-14" data-testid="section-event-registration">
+        <section
+          className="mx-auto max-w-3xl px-4 sm:px-6 pt-4 pb-10 sm:pt-5 sm:pb-14"
+          data-testid="section-event-registration"
+        >
           {(event.registrationEnabled || (!isPast && !isCanceled && !isCompleted)) && (
             <EventParticipationCard
               event={event}
@@ -1386,60 +1542,65 @@ export default function EventDetailPage() {
             />
           )}
 
-            {isPast && event.recordingUrl && (
-              <Card className="mb-8 border-blue-200" data-testid="section-recording">
-                <CardContent className="p-5 sm:p-6">
-                  <h2 className="font-heading text-lg font-semibold mb-2">Recording Available</h2>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    A recording of this event is available to watch. This recording will also be available in the event archives.
-                  </p>
-                  {userHasAccess ? (
-                    <div className="space-y-3">
-                      <a href={event.recordingUrl} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline" data-testid="button-view-recording">
-                          <Video className="mr-2 h-4 w-4" />
-                          Watch Recording
-                        </Button>
-                      </a>
-                      <p className="text-sm">
-                        <Link href="/recordings" className="text-muted-foreground hover:text-accent transition-colors underline-offset-4 hover:underline" data-testid="link-browse-recordings">
-                          Browse all recordings →
-                        </Link>
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">
-                      <Lock className="inline mr-1 h-3 w-3" />
-                      Log in to access the recording.
+          {isPast && event.recordingUrl && (
+            <Card className="mb-8 border-blue-200" data-testid="section-recording">
+              <CardContent className="p-5 sm:p-6">
+                <h2 className="font-heading text-lg font-semibold mb-2">Recording Available</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  A recording of this event is available to watch. This recording will also be
+                  available in the event archives.
+                </p>
+                {userHasAccess ? (
+                  <div className="space-y-3">
+                    <a href={event.recordingUrl} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" data-testid="button-view-recording">
+                        <Video className="mr-2 h-4 w-4" />
+                        Watch Recording
+                      </Button>
+                    </a>
+                    <p className="text-sm">
+                      <Link
+                        href="/recordings"
+                        className="text-muted-foreground hover:text-accent transition-colors underline-offset-4 hover:underline"
+                        data-testid="link-browse-recordings"
+                      >
+                        Browse all recordings →
+                      </Link>
                     </p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    <Lock className="inline mr-1 h-3 w-3" />
+                    Log in to access the recording.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-            {isPast && !event.recordingUrl && (
-              <div className="pt-4" data-testid="section-event-past-notice">
-                <p className="text-sm text-muted-foreground">
-                  This event has already taken place. Check our{" "}
-                  <Link href="/events" className="text-accent underline underline-offset-2">
-                    events page
-                  </Link>{" "}
-                  for upcoming events.
-                </p>
-              </div>
-            )}
+          {isPast && !event.recordingUrl && (
+            <div className="pt-4" data-testid="section-event-past-notice">
+              <p className="text-sm text-muted-foreground">
+                This event has already taken place. Check our{" "}
+                <Link href="/events" className="text-accent underline underline-offset-2">
+                  events page
+                </Link>{" "}
+                for upcoming events.
+              </p>
+            </div>
+          )}
 
-            {isCanceled && !isPast && (
-              <div className="pt-4" data-testid="section-event-canceled-notice">
-                <p className="text-sm text-muted-foreground">
-                  This event has been canceled. Check our{" "}
-                  <Link href="/events" className="text-accent underline underline-offset-2">
-                    events page
-                  </Link>{" "}
-                  for other upcoming events.
-                </p>
-              </div>
-            )}
+          {isCanceled && !isPast && (
+            <div className="pt-4" data-testid="section-event-canceled-notice">
+              <p className="text-sm text-muted-foreground">
+                This event has been canceled. Check our{" "}
+                <Link href="/events" className="text-accent underline underline-offset-2">
+                  events page
+                </Link>{" "}
+                for other upcoming events.
+              </p>
+            </div>
+          )}
         </section>
       )}
     </PageLayout>

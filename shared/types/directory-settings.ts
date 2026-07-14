@@ -1,7 +1,4 @@
-export const DIRECTORY_MODES = [
-  "service_provider",
-  "store_locator",
-] as const;
+export const DIRECTORY_MODES = ["service_provider", "store_locator"] as const;
 
 export type DirectoryMode = (typeof DIRECTORY_MODES)[number];
 

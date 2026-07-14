@@ -13,7 +13,9 @@ function orderUrl(order: { id: string; lookupToken: string }, email: string): st
   return `${base}/orders/status?${params.toString()}`;
 }
 
-export async function sendEcommerceOrderConfirmation(order: EcommerceOrderWithDetails): Promise<void> {
+export async function sendEcommerceOrderConfirmation(
+  order: EcommerceOrderWithDetails,
+): Promise<void> {
   if (!order.customer?.email) return;
   const lines = order.items
     .map((item) => `<li>${item.productName} x ${item.quantity}: ${money(item.lineTotal)}</li>`)
@@ -26,18 +28,26 @@ export async function sendEcommerceOrderConfirmation(order: EcommerceOrderWithDe
     <p><a href="${orderUrl(order, order.customer.email)}">View order status</a></p>
   `;
   const html = await renderEmailShell("Order confirmation", body);
-  const ok = await sendEmail(order.customer.email, `Order confirmed #${order.id.slice(0, 8)}`, html);
+  const ok = await sendEmail(
+    order.customer.email,
+    `Order confirmed #${order.id.slice(0, 8)}`,
+    html,
+  );
   if (!ok) logger.email.warn("Failed to send ecommerce order confirmation", { orderId: order.id });
 }
 
-export async function sendEcommerceOrderStatusEmail(order: EcommerceOrderWithDetails): Promise<void> {
+export async function sendEcommerceOrderStatusEmail(
+  order: EcommerceOrderWithDetails,
+): Promise<void> {
   if (!order.customer?.email) return;
   const body = `<p>Your order status is now <strong>${order.status}</strong>.</p><p><a href="${orderUrl(order, order.customer.email)}">View order status</a></p>`;
   const html = await renderEmailShell("Order status updated", body);
   await sendEmail(order.customer.email, `Order status updated #${order.id.slice(0, 8)}`, html);
 }
 
-export async function sendEcommerceOrderStatusLinkEmail(order: EcommerceOrderWithDetails): Promise<void> {
+export async function sendEcommerceOrderStatusLinkEmail(
+  order: EcommerceOrderWithDetails,
+): Promise<void> {
   if (!order.customer?.email) return;
   const body = `
     <p>Hi ${order.customer.name || "there"},</p>
@@ -68,15 +78,22 @@ export async function sendEcommerceShipmentEmail(
   `;
   const html = await renderEmailShell("Shipping notification", body);
   const ok = await sendEmail(order.customer.email, `Order shipped #${order.id.slice(0, 8)}`, html);
-  if (!ok) logger.email.warn("Failed to send ecommerce shipment notification", {
-    orderId: order.id,
-    shipmentId: shipment.id,
-  });
+  if (!ok)
+    logger.email.warn("Failed to send ecommerce shipment notification", {
+      orderId: order.id,
+      shipmentId: shipment.id,
+    });
   return ok;
 }
 
-export async function sendEcommerceRefundEmail(order: EcommerceOrderWithDetails, amount: number): Promise<void> {
+export async function sendEcommerceRefundEmail(
+  order: EcommerceOrderWithDetails,
+  amount: number,
+): Promise<void> {
   if (!order.customer?.email) return;
-  const html = await renderEmailShell("Refund update", `<p>A refund of ${money(amount)} has been recorded for your order.</p>`);
+  const html = await renderEmailShell(
+    "Refund update",
+    `<p>A refund of ${money(amount)} has been recorded for your order.</p>`,
+  );
   await sendEmail(order.customer.email, `Refund update #${order.id.slice(0, 8)}`, html);
 }

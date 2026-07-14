@@ -14,8 +14,12 @@ describe("ErrorBoundary", () => {
   let root: Root | null = null;
 
   beforeEach(() => {
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -43,17 +47,19 @@ describe("ErrorBoundary", () => {
           fallback={<div data-testid="boundary-fallback">Fallback UI</div>}
         >
           <ThrowingChild />
-        </ErrorBoundary>
+        </ErrorBoundary>,
       );
     });
 
-    expect(container.querySelector('[data-testid="boundary-fallback"]')?.textContent).toBe("Fallback UI");
+    expect(container.querySelector('[data-testid="boundary-fallback"]')?.textContent).toBe(
+      "Fallback UI",
+    );
     expect(onError).toHaveBeenCalledTimes(1);
     expect(onError.mock.calls[0]?.[0]).toBeInstanceOf(Error);
     expect(onError.mock.calls[0]?.[1]).toEqual(
       expect.objectContaining({
         componentStack: expect.any(String),
-      })
+      }),
     );
     expect(consoleErrorSpy).toHaveBeenCalled();
   });

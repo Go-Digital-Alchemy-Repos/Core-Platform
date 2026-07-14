@@ -12,7 +12,9 @@ import { enrichTherapistLocationFields } from "../../services/therapist-location
 
 const router = Router();
 
-async function normalizeTherapistResult<T extends { user?: { profileImageUrl?: string | null } | null }>(item: T): Promise<T> {
+async function normalizeTherapistResult<
+  T extends { user?: { profileImageUrl?: string | null } | null },
+>(item: T): Promise<T> {
   if (!item.user) return item;
   return {
     ...item,
@@ -28,7 +30,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const profiles = await storage.therapists.getAllProfiles();
     res.json(await Promise.all(profiles.map(normalizeTherapistResult)));
-  })
+  }),
 );
 
 const createTherapistSchema = z.object({
@@ -49,11 +51,15 @@ const createTherapistSchema = z.object({
   state: z.string().optional(),
   country: z.string().optional(),
   zipCode: z.string().optional(),
-  phone: z.string().optional().nullable().refine((v) => {
-    if (!v) return true;
-    const digits = v.replace(/\D/g, "");
-    return v.startsWith("+") && digits.length >= 7 && digits.length <= 15;
-  }, "Enter a valid phone number with country code, e.g. +1 (555) 123-4567"),
+  phone: z
+    .string()
+    .optional()
+    .nullable()
+    .refine((v) => {
+      if (!v) return true;
+      const digits = v.replace(/\D/g, "");
+      return v.startsWith("+") && digits.length >= 7 && digits.length <= 15;
+    }, "Enter a valid phone number with country code, e.g. +1 (555) 123-4567"),
   website: z.string().optional(),
   acceptingClients: z.boolean().optional(),
   willingToTravel: z.boolean().optional(),
@@ -101,12 +107,16 @@ router.post(
       sendApprovalEmail(
         profileWithUser.user.email,
         profileWithUser.user.firstName || "Therapist",
-        baseUrl
-      ).catch((err) => logger.email.warn("Failed to send approval email on create", { error: err.message }));
+        baseUrl,
+      ).catch((err) =>
+        logger.email.warn("Failed to send approval email on create", { error: err.message }),
+      );
     }
 
-    res.status(201).json(profileWithUser ? await normalizeTherapistResult(profileWithUser) : profileWithUser);
-  })
+    res
+      .status(201)
+      .json(profileWithUser ? await normalizeTherapistResult(profileWithUser) : profileWithUser);
+  }),
 );
 
 router.put(
@@ -127,12 +137,12 @@ router.put(
       sendApprovalEmail(
         profileWithUser.user.email,
         profileWithUser.user.firstName,
-        `${baseUrl}/auth/login`
+        `${baseUrl}/auth/login`,
       ).catch((err) => logger.email.warn("Failed to send approval email", { error: err.message }));
     }
 
     res.json(profileWithUser ? await normalizeTherapistResult(profileWithUser) : profile);
-  })
+  }),
 );
 
 const rejectSchema = z.object({
@@ -157,12 +167,12 @@ router.put(
       sendRejectionEmail(
         profileWithUser.user.email,
         profileWithUser.user.firstName,
-        reason || null
+        reason || null,
       ).catch((err) => logger.email.warn("Failed to send rejection email", { error: err.message }));
     }
 
     res.json(profileWithUser ? await normalizeTherapistResult(profileWithUser) : profile);
-  })
+  }),
 );
 
 const updateTherapistSchema = z.object({
@@ -183,11 +193,15 @@ const updateTherapistSchema = z.object({
   zipCode: z.string().optional().nullable(),
   latitude: z.string().optional().nullable(),
   longitude: z.string().optional().nullable(),
-  phone: z.string().optional().nullable().refine((v) => {
-    if (!v) return true;
-    const digits = v.replace(/\D/g, "");
-    return v.startsWith("+") && digits.length >= 7 && digits.length <= 15;
-  }, "Enter a valid phone number with country code, e.g. +1 (555) 123-4567"),
+  phone: z
+    .string()
+    .optional()
+    .nullable()
+    .refine((v) => {
+      if (!v) return true;
+      const digits = v.replace(/\D/g, "");
+      return v.startsWith("+") && digits.length >= 7 && digits.length <= 15;
+    }, "Enter a valid phone number with country code, e.g. +1 (555) 123-4567"),
   website: z.string().optional().nullable(),
   instagramHandle: z.string().optional().nullable(),
   facebookHandle: z.string().optional().nullable(),
@@ -227,7 +241,7 @@ router.put(
     await storage.activity.log(profile.userId, "profile_update", "Profile updated by admin");
     const profileWithUser = await storage.therapists.getProfileWithUser(profile.id);
     res.json(profileWithUser ? await normalizeTherapistResult(profileWithUser) : profile);
-  })
+  }),
 );
 
 router.delete(
@@ -240,7 +254,9 @@ router.delete(
     }
 
     if (profile.isApproved && profile.isActive) {
-      res.status(400).json({ message: "Only rejected or inactive provider profiles can be permanently deleted." });
+      res.status(400).json({
+        message: "Only rejected or inactive provider profiles can be permanently deleted.",
+      });
       return;
     }
 
@@ -251,7 +267,7 @@ router.delete(
     }
 
     res.json({ message: "Provider deleted" });
-  })
+  }),
 );
 
 router.get(
@@ -276,7 +292,7 @@ router.get(
       },
       logs,
     });
-  })
+  }),
 );
 
 router.get(
@@ -294,7 +310,7 @@ router.get(
     }
     const tier = subscription.tierId ? await storage.tiers.getTier(subscription.tierId) : null;
     res.json({ subscription, tier });
-  })
+  }),
 );
 
 export default router;

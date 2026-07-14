@@ -115,7 +115,9 @@ export interface EcommerceCouponReport {
 }
 
 export class EcommerceStorage {
-  async getProducts(options: { publicOnly?: boolean; search?: string; includeArchived?: boolean } = {}): Promise<EcommerceProduct[]> {
+  async getProducts(
+    options: { publicOnly?: boolean; search?: string; includeArchived?: boolean } = {},
+  ): Promise<EcommerceProduct[]> {
     const clauses = [];
     if (!options.includeArchived) clauses.push(isNull(ecommerceProducts.archivedAt));
     if (options.publicOnly) {
@@ -136,11 +138,17 @@ export class EcommerceStorage {
   }
 
   async getProductBySlug(slug: string): Promise<EcommerceProduct | undefined> {
-    const [product] = await db.select().from(ecommerceProducts).where(eq(ecommerceProducts.urlSlug, slug));
+    const [product] = await db
+      .select()
+      .from(ecommerceProducts)
+      .where(eq(ecommerceProducts.urlSlug, slug));
     return product;
   }
 
-  async createProduct(data: InsertEcommerceProduct, categoryIds: string[] = []): Promise<EcommerceProduct> {
+  async createProduct(
+    data: InsertEcommerceProduct,
+    categoryIds: string[] = [],
+  ): Promise<EcommerceProduct> {
     return db.transaction(async (tx) => {
       const [product] = await tx.insert(ecommerceProducts).values(data).returning();
       await tx.insert(ecommerceProductVariants).values({
@@ -158,15 +166,20 @@ export class EcommerceStorage {
         isDefault: true,
       });
       if (categoryIds.length) {
-        await tx.insert(ecommerceProductCategories).values(
-          categoryIds.map((categoryId) => ({ productId: product.id, categoryId })),
-        ).onConflictDoNothing();
+        await tx
+          .insert(ecommerceProductCategories)
+          .values(categoryIds.map((categoryId) => ({ productId: product.id, categoryId })))
+          .onConflictDoNothing();
       }
       return product;
     });
   }
 
-  async updateProduct(id: string, data: Partial<InsertEcommerceProduct>, categoryIds?: string[]): Promise<EcommerceProduct | undefined> {
+  async updateProduct(
+    id: string,
+    data: Partial<InsertEcommerceProduct>,
+    categoryIds?: string[],
+  ): Promise<EcommerceProduct | undefined> {
     return db.transaction(async (tx) => {
       const [product] = await tx
         .update(ecommerceProducts)
@@ -186,13 +199,21 @@ export class EcommerceStorage {
           status: (data.active ?? product.active) ? "active" : "inactive",
           updatedAt: new Date(),
         })
-        .where(and(eq(ecommerceProductVariants.productId, id), eq(ecommerceProductVariants.isDefault, true)));
+        .where(
+          and(
+            eq(ecommerceProductVariants.productId, id),
+            eq(ecommerceProductVariants.isDefault, true),
+          ),
+        );
       if (categoryIds) {
-        await tx.delete(ecommerceProductCategories).where(eq(ecommerceProductCategories.productId, id));
+        await tx
+          .delete(ecommerceProductCategories)
+          .where(eq(ecommerceProductCategories.productId, id));
         if (categoryIds.length) {
-          await tx.insert(ecommerceProductCategories).values(
-            categoryIds.map((categoryId) => ({ productId: id, categoryId })),
-          ).onConflictDoNothing();
+          await tx
+            .insert(ecommerceProductCategories)
+            .values(categoryIds.map((categoryId) => ({ productId: id, categoryId })))
+            .onConflictDoNothing();
         }
       }
       return product;
@@ -233,7 +254,10 @@ export class EcommerceStorage {
         updatedAt: ecommerceCategories.updatedAt,
       })
       .from(ecommerceProductCategories)
-      .innerJoin(ecommerceCategories, eq(ecommerceProductCategories.categoryId, ecommerceCategories.id))
+      .innerJoin(
+        ecommerceCategories,
+        eq(ecommerceProductCategories.categoryId, ecommerceCategories.id),
+      )
       .where(eq(ecommerceProductCategories.productId, productId));
   }
 
@@ -254,7 +278,10 @@ export class EcommerceStorage {
   }
 
   async getProductVariant(id: string): Promise<EcommerceProductVariant | undefined> {
-    const [variant] = await db.select().from(ecommerceProductVariants).where(eq(ecommerceProductVariants.id, id));
+    const [variant] = await db
+      .select()
+      .from(ecommerceProductVariants)
+      .where(eq(ecommerceProductVariants.id, id));
     return variant;
   }
 
@@ -262,17 +289,27 @@ export class EcommerceStorage {
     const [variant] = await db
       .select()
       .from(ecommerceProductVariants)
-      .where(and(eq(ecommerceProductVariants.productId, productId), eq(ecommerceProductVariants.isDefault, true)))
+      .where(
+        and(
+          eq(ecommerceProductVariants.productId, productId),
+          eq(ecommerceProductVariants.isDefault, true),
+        ),
+      )
       .limit(1);
     return variant;
   }
 
-  async createProductVariant(data: InsertEcommerceProductVariant): Promise<EcommerceProductVariant> {
+  async createProductVariant(
+    data: InsertEcommerceProductVariant,
+  ): Promise<EcommerceProductVariant> {
     const [variant] = await db.insert(ecommerceProductVariants).values(data).returning();
     return variant;
   }
 
-  async updateProductVariant(id: string, data: Partial<InsertEcommerceProductVariant>): Promise<EcommerceProductVariant | undefined> {
+  async updateProductVariant(
+    id: string,
+    data: Partial<InsertEcommerceProductVariant>,
+  ): Promise<EcommerceProductVariant | undefined> {
     const [variant] = await db
       .update(ecommerceProductVariants)
       .set({ ...data, updatedAt: new Date() })
@@ -287,12 +324,18 @@ export class EcommerceStorage {
   }
 
   async getCategory(id: string): Promise<EcommerceCategory | undefined> {
-    const [category] = await db.select().from(ecommerceCategories).where(eq(ecommerceCategories.id, id));
+    const [category] = await db
+      .select()
+      .from(ecommerceCategories)
+      .where(eq(ecommerceCategories.id, id));
     return category;
   }
 
   async getCategories(publicOnly = false): Promise<EcommerceCategory[]> {
-    const query = db.select().from(ecommerceCategories).orderBy(ecommerceCategories.sortOrder, ecommerceCategories.name);
+    const query = db
+      .select()
+      .from(ecommerceCategories)
+      .orderBy(ecommerceCategories.sortOrder, ecommerceCategories.name);
     return publicOnly ? query.where(eq(ecommerceCategories.active, true)) : query;
   }
 
@@ -301,7 +344,10 @@ export class EcommerceStorage {
     return category;
   }
 
-  async updateCategory(id: string, data: Partial<InsertEcommerceCategory>): Promise<EcommerceCategory | undefined> {
+  async updateCategory(
+    id: string,
+    data: Partial<InsertEcommerceCategory>,
+  ): Promise<EcommerceCategory | undefined> {
     const [category] = await db
       .update(ecommerceCategories)
       .set({ ...data, updatedAt: new Date() })
@@ -341,7 +387,10 @@ export class EcommerceStorage {
         .returning();
       return updated;
     }
-    const [customer] = await db.insert(ecommerceCustomers).values({ ...data, email: normalizedEmail }).returning();
+    const [customer] = await db
+      .insert(ecommerceCustomers)
+      .values({ ...data, email: normalizedEmail })
+      .returning();
     return customer;
   }
 
@@ -364,7 +413,10 @@ export class EcommerceStorage {
   }
 
   async getCustomer(id: string): Promise<EcommerceCustomer | undefined> {
-    const [customer] = await db.select().from(ecommerceCustomers).where(eq(ecommerceCustomers.id, id));
+    const [customer] = await db
+      .select()
+      .from(ecommerceCustomers)
+      .where(eq(ecommerceCustomers.id, id));
     return customer;
   }
 
@@ -385,7 +437,10 @@ export class EcommerceStorage {
       .limit(25);
   }
 
-  async updateCustomer(id: string, data: Partial<InsertEcommerceCustomer>): Promise<EcommerceCustomer | undefined> {
+  async updateCustomer(
+    id: string,
+    data: Partial<InsertEcommerceCustomer>,
+  ): Promise<EcommerceCustomer | undefined> {
     const [customer] = await db
       .update(ecommerceCustomers)
       .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommerceCustomers.$inferInsert>)
@@ -398,29 +453,49 @@ export class EcommerceStorage {
     return db
       .select()
       .from(ecommerceCustomerAddresses)
-      .where(and(eq(ecommerceCustomerAddresses.customerId, customerId), isNull(ecommerceCustomerAddresses.archivedAt)))
-      .orderBy(desc(ecommerceCustomerAddresses.isDefault), desc(ecommerceCustomerAddresses.updatedAt));
+      .where(
+        and(
+          eq(ecommerceCustomerAddresses.customerId, customerId),
+          isNull(ecommerceCustomerAddresses.archivedAt),
+        ),
+      )
+      .orderBy(
+        desc(ecommerceCustomerAddresses.isDefault),
+        desc(ecommerceCustomerAddresses.updatedAt),
+      );
   }
 
-  async getCustomerAddress(customerId: string, addressId: string): Promise<EcommerceCustomerAddress | undefined> {
+  async getCustomerAddress(
+    customerId: string,
+    addressId: string,
+  ): Promise<EcommerceCustomerAddress | undefined> {
     const [address] = await db
       .select()
       .from(ecommerceCustomerAddresses)
-      .where(and(
-        eq(ecommerceCustomerAddresses.customerId, customerId),
-        eq(ecommerceCustomerAddresses.id, addressId),
-        isNull(ecommerceCustomerAddresses.archivedAt),
-      ))
+      .where(
+        and(
+          eq(ecommerceCustomerAddresses.customerId, customerId),
+          eq(ecommerceCustomerAddresses.id, addressId),
+          isNull(ecommerceCustomerAddresses.archivedAt),
+        ),
+      )
       .limit(1);
     return address;
   }
 
-  async createCustomerAddress(data: InsertEcommerceCustomerAddress): Promise<EcommerceCustomerAddress> {
+  async createCustomerAddress(
+    data: InsertEcommerceCustomerAddress,
+  ): Promise<EcommerceCustomerAddress> {
     return db.transaction(async (tx) => {
       const existingActiveAddresses = await tx
         .select({ id: ecommerceCustomerAddresses.id })
         .from(ecommerceCustomerAddresses)
-        .where(and(eq(ecommerceCustomerAddresses.customerId, data.customerId), isNull(ecommerceCustomerAddresses.archivedAt)))
+        .where(
+          and(
+            eq(ecommerceCustomerAddresses.customerId, data.customerId),
+            isNull(ecommerceCustomerAddresses.archivedAt),
+          ),
+        )
         .limit(1);
       const shouldBeDefault = data.isDefault === true || existingActiveAddresses.length === 0;
       if (shouldBeDefault) {
@@ -434,15 +509,18 @@ export class EcommerceStorage {
         .values({ ...data, isDefault: shouldBeDefault })
         .returning();
       if (address.isDefault) {
-        await tx.update(ecommerceCustomers).set({
-          address: address.address,
-          line2: address.line2,
-          city: address.city,
-          state: address.state,
-          zipCode: address.zipCode,
-          country: address.country,
-          updatedAt: new Date(),
-        }).where(eq(ecommerceCustomers.id, address.customerId));
+        await tx
+          .update(ecommerceCustomers)
+          .set({
+            address: address.address,
+            line2: address.line2,
+            city: address.city,
+            state: address.state,
+            zipCode: address.zipCode,
+            country: address.country,
+            updatedAt: new Date(),
+          })
+          .where(eq(ecommerceCustomers.id, address.customerId));
       }
       return address;
     });
@@ -462,54 +540,73 @@ export class EcommerceStorage {
       }
       const [address] = await tx
         .update(ecommerceCustomerAddresses)
-        .set({ ...data, customerId, updatedAt: new Date() } as Partial<typeof ecommerceCustomerAddresses.$inferInsert>)
-        .where(and(
-          eq(ecommerceCustomerAddresses.customerId, customerId),
-          eq(ecommerceCustomerAddresses.id, addressId),
-          isNull(ecommerceCustomerAddresses.archivedAt),
-        ))
+        .set({ ...data, customerId, updatedAt: new Date() } as Partial<
+          typeof ecommerceCustomerAddresses.$inferInsert
+        >)
+        .where(
+          and(
+            eq(ecommerceCustomerAddresses.customerId, customerId),
+            eq(ecommerceCustomerAddresses.id, addressId),
+            isNull(ecommerceCustomerAddresses.archivedAt),
+          ),
+        )
         .returning();
       if (address?.isDefault) {
-        await tx.update(ecommerceCustomers).set({
-          address: address.address,
-          line2: address.line2,
-          city: address.city,
-          state: address.state,
-          zipCode: address.zipCode,
-          country: address.country,
-          updatedAt: new Date(),
-        }).where(eq(ecommerceCustomers.id, customerId));
+        await tx
+          .update(ecommerceCustomers)
+          .set({
+            address: address.address,
+            line2: address.line2,
+            city: address.city,
+            state: address.state,
+            zipCode: address.zipCode,
+            country: address.country,
+            updatedAt: new Date(),
+          })
+          .where(eq(ecommerceCustomers.id, customerId));
       }
       return address;
     });
   }
 
-  async deleteCustomerAddress(customerId: string, addressId: string): Promise<EcommerceCustomerAddress | undefined> {
+  async deleteCustomerAddress(
+    customerId: string,
+    addressId: string,
+  ): Promise<EcommerceCustomerAddress | undefined> {
     return db.transaction(async (tx) => {
       const [existing] = await tx
         .select()
         .from(ecommerceCustomerAddresses)
-        .where(and(
-          eq(ecommerceCustomerAddresses.customerId, customerId),
-          eq(ecommerceCustomerAddresses.id, addressId),
-          isNull(ecommerceCustomerAddresses.archivedAt),
-        ))
+        .where(
+          and(
+            eq(ecommerceCustomerAddresses.customerId, customerId),
+            eq(ecommerceCustomerAddresses.id, addressId),
+            isNull(ecommerceCustomerAddresses.archivedAt),
+          ),
+        )
         .limit(1);
       if (!existing) return undefined;
       const [archived] = await tx
         .update(ecommerceCustomerAddresses)
         .set({ archivedAt: new Date(), isDefault: false, updatedAt: new Date() })
-        .where(and(
-          eq(ecommerceCustomerAddresses.customerId, customerId),
-          eq(ecommerceCustomerAddresses.id, addressId),
-          isNull(ecommerceCustomerAddresses.archivedAt),
-        ))
+        .where(
+          and(
+            eq(ecommerceCustomerAddresses.customerId, customerId),
+            eq(ecommerceCustomerAddresses.id, addressId),
+            isNull(ecommerceCustomerAddresses.archivedAt),
+          ),
+        )
         .returning();
       if (existing.isDefault) {
         const [fallback] = await tx
           .select()
           .from(ecommerceCustomerAddresses)
-          .where(and(eq(ecommerceCustomerAddresses.customerId, customerId), isNull(ecommerceCustomerAddresses.archivedAt)))
+          .where(
+            and(
+              eq(ecommerceCustomerAddresses.customerId, customerId),
+              isNull(ecommerceCustomerAddresses.archivedAt),
+            ),
+          )
           .orderBy(desc(ecommerceCustomerAddresses.updatedAt))
           .limit(1);
         if (fallback) {
@@ -517,41 +614,52 @@ export class EcommerceStorage {
             .update(ecommerceCustomerAddresses)
             .set({ isDefault: true, updatedAt: new Date() })
             .where(eq(ecommerceCustomerAddresses.id, fallback.id));
-          await tx.update(ecommerceCustomers).set({
-            address: fallback.address,
-            line2: fallback.line2,
-            city: fallback.city,
-            state: fallback.state,
-            zipCode: fallback.zipCode,
-            country: fallback.country,
-            updatedAt: new Date(),
-          }).where(eq(ecommerceCustomers.id, customerId));
+          await tx
+            .update(ecommerceCustomers)
+            .set({
+              address: fallback.address,
+              line2: fallback.line2,
+              city: fallback.city,
+              state: fallback.state,
+              zipCode: fallback.zipCode,
+              country: fallback.country,
+              updatedAt: new Date(),
+            })
+            .where(eq(ecommerceCustomers.id, customerId));
         } else {
-          await tx.update(ecommerceCustomers).set({
-            address: null,
-            line2: null,
-            city: null,
-            state: null,
-            zipCode: null,
-            country: "US",
-            updatedAt: new Date(),
-          }).where(eq(ecommerceCustomers.id, customerId));
+          await tx
+            .update(ecommerceCustomers)
+            .set({
+              address: null,
+              line2: null,
+              city: null,
+              state: null,
+              zipCode: null,
+              country: "US",
+              updatedAt: new Date(),
+            })
+            .where(eq(ecommerceCustomers.id, customerId));
         }
       }
       return archived;
     });
   }
 
-  async setDefaultCustomerAddress(customerId: string, addressId: string): Promise<EcommerceCustomerAddress | undefined> {
+  async setDefaultCustomerAddress(
+    customerId: string,
+    addressId: string,
+  ): Promise<EcommerceCustomerAddress | undefined> {
     return db.transaction(async (tx) => {
       const [existing] = await tx
         .select()
         .from(ecommerceCustomerAddresses)
-        .where(and(
-          eq(ecommerceCustomerAddresses.customerId, customerId),
-          eq(ecommerceCustomerAddresses.id, addressId),
-          isNull(ecommerceCustomerAddresses.archivedAt),
-        ))
+        .where(
+          and(
+            eq(ecommerceCustomerAddresses.customerId, customerId),
+            eq(ecommerceCustomerAddresses.id, addressId),
+            isNull(ecommerceCustomerAddresses.archivedAt),
+          ),
+        )
         .limit(1);
       if (!existing) return undefined;
       await tx
@@ -563,25 +671,32 @@ export class EcommerceStorage {
         .set({ isDefault: true, updatedAt: new Date() })
         .where(eq(ecommerceCustomerAddresses.id, addressId))
         .returning();
-      await tx.update(ecommerceCustomers).set({
-        address: address.address,
-        line2: address.line2,
-        city: address.city,
-        state: address.state,
-        zipCode: address.zipCode,
-        country: address.country,
-        updatedAt: new Date(),
-      }).where(eq(ecommerceCustomers.id, customerId));
+      await tx
+        .update(ecommerceCustomers)
+        .set({
+          address: address.address,
+          line2: address.line2,
+          city: address.city,
+          state: address.state,
+          zipCode: address.zipCode,
+          country: address.country,
+          updatedAt: new Date(),
+        })
+        .where(eq(ecommerceCustomers.id, customerId));
       return address;
     });
   }
 
-  async getCoupons(options: { includeArchived?: boolean; search?: string } = {}): Promise<EcommerceCoupon[]> {
+  async getCoupons(
+    options: { includeArchived?: boolean; search?: string } = {},
+  ): Promise<EcommerceCoupon[]> {
     const clauses = [];
     if (!options.includeArchived) clauses.push(isNull(ecommerceCoupons.archivedAt));
     if (options.search?.trim()) {
       const term = `%${options.search.trim()}%`;
-      clauses.push(sql`(${ecommerceCoupons.code} ILIKE ${term} OR ${ecommerceCoupons.name} ILIKE ${term})`);
+      clauses.push(
+        sql`(${ecommerceCoupons.code} ILIKE ${term} OR ${ecommerceCoupons.name} ILIKE ${term})`,
+      );
     }
     const query = db.select().from(ecommerceCoupons).orderBy(desc(ecommerceCoupons.createdAt));
     return clauses.length ? query.where(and(...clauses)) : query;
@@ -608,10 +723,17 @@ export class EcommerceStorage {
     return coupon;
   }
 
-  async updateCoupon(id: string, data: Partial<InsertEcommerceCoupon>): Promise<EcommerceCoupon | undefined> {
+  async updateCoupon(
+    id: string,
+    data: Partial<InsertEcommerceCoupon>,
+  ): Promise<EcommerceCoupon | undefined> {
     const [coupon] = await db
       .update(ecommerceCoupons)
-      .set({ ...data, code: data.code ? data.code.trim().toUpperCase() : undefined, updatedAt: new Date() })
+      .set({
+        ...data,
+        code: data.code ? data.code.trim().toUpperCase() : undefined,
+        updatedAt: new Date(),
+      })
       .where(eq(ecommerceCoupons.id, id))
       .returning();
     return coupon;
@@ -643,10 +765,17 @@ export class EcommerceStorage {
     return copy;
   }
 
-  async countCouponRedemptions(couponId: string, customerId?: string | null, customerEmail?: string | null): Promise<number> {
+  async countCouponRedemptions(
+    couponId: string,
+    customerId?: string | null,
+    customerEmail?: string | null,
+  ): Promise<number> {
     const clauses = [eq(ecommerceCouponRedemptions.couponId, couponId)];
     if (customerId) clauses.push(eq(ecommerceCouponRedemptions.customerId, customerId));
-    else if (customerEmail) clauses.push(eq(ecommerceCouponRedemptions.customerEmail, customerEmail.trim().toLowerCase()));
+    else if (customerEmail)
+      clauses.push(
+        eq(ecommerceCouponRedemptions.customerEmail, customerEmail.trim().toLowerCase()),
+      );
 
     const [row] = await db
       .select({ count: sql<number>`count(*)::int` })
@@ -688,7 +817,10 @@ export class EcommerceStorage {
       totalUses: summary?.totalUses ?? 0,
       totalDiscountGiven: summary?.totalDiscountGiven ?? 0,
       totalRevenue: summary?.totalRevenue ?? 0,
-      remainingUses: coupon.maxRedemptions == null ? null : Math.max(0, coupon.maxRedemptions - coupon.timesUsed),
+      remainingUses:
+        coupon.maxRedemptions == null
+          ? null
+          : Math.max(0, coupon.maxRedemptions - coupon.timesUsed),
       recentOrders: recentOrders
         .filter((order) => order.orderId)
         .map((order) => ({
@@ -703,7 +835,10 @@ export class EcommerceStorage {
 
   async recordCouponRedemptionForOrder(orderId: string): Promise<void> {
     await db.transaction(async (tx) => {
-      const [order] = await tx.select().from(ecommerceOrders).where(eq(ecommerceOrders.id, orderId));
+      const [order] = await tx
+        .select()
+        .from(ecommerceOrders)
+        .where(eq(ecommerceOrders.id, orderId));
       if (!order?.couponCode || order.discountAmount <= 0) return;
 
       const [existing] = await tx
@@ -719,7 +854,10 @@ export class EcommerceStorage {
         .where(eq(ecommerceCoupons.code, order.couponCode));
       if (!coupon) return;
 
-      const [customer] = await tx.select().from(ecommerceCustomers).where(eq(ecommerceCustomers.id, order.customerId));
+      const [customer] = await tx
+        .select()
+        .from(ecommerceCustomers)
+        .where(eq(ecommerceCustomers.id, order.customerId));
       await tx
         .update(ecommerceCoupons)
         .set({ timesUsed: sql`${ecommerceCoupons.timesUsed} + 1`, updatedAt: new Date() })
@@ -735,17 +873,41 @@ export class EcommerceStorage {
     });
   }
 
-  async createOrder(data: InsertEcommerceOrder, items: InsertEcommerceOrderItem[]): Promise<EcommerceOrderWithDetails> {
+  async createOrder(
+    data: InsertEcommerceOrder,
+    items: InsertEcommerceOrderItem[],
+  ): Promise<EcommerceOrderWithDetails> {
     return db.transaction(async (tx) => {
-      const [order] = await tx.insert(ecommerceOrders).values(data as typeof ecommerceOrders.$inferInsert).returning();
+      const [order] = await tx
+        .insert(ecommerceOrders)
+        .values(data as typeof ecommerceOrders.$inferInsert)
+        .returning();
       if (items.length) {
         await tx
           .insert(ecommerceOrderItems)
-          .values(items.map((item) => ({ ...item, orderId: order.id })) as Array<typeof ecommerceOrderItems.$inferInsert>);
+          .values(
+            items.map((item) => ({ ...item, orderId: order.id })) as Array<
+              typeof ecommerceOrderItems.$inferInsert
+            >,
+          );
       }
-      const orderItems = await tx.select().from(ecommerceOrderItems).where(eq(ecommerceOrderItems.orderId, order.id));
-      const [customer] = await tx.select().from(ecommerceCustomers).where(eq(ecommerceCustomers.id, order.customerId));
-      return { ...order, customer: customer ?? null, items: orderItems, refunds: [], shipments: [], fulfillments: [], internalNotes: [] };
+      const orderItems = await tx
+        .select()
+        .from(ecommerceOrderItems)
+        .where(eq(ecommerceOrderItems.orderId, order.id));
+      const [customer] = await tx
+        .select()
+        .from(ecommerceCustomers)
+        .where(eq(ecommerceCustomers.id, order.customerId));
+      return {
+        ...order,
+        customer: customer ?? null,
+        items: orderItems,
+        refunds: [],
+        shipments: [],
+        fulfillments: [],
+        internalNotes: [],
+      };
     });
   }
 
@@ -780,7 +942,11 @@ export class EcommerceStorage {
     return order;
   }
 
-  async getOrderForLookup(params: { orderId: string; email: string; token: string }): Promise<EcommerceOrderWithDetails | undefined> {
+  async getOrderForLookup(params: {
+    orderId: string;
+    email: string;
+    token: string;
+  }): Promise<EcommerceOrderWithDetails | undefined> {
     const details = await this.getOrderWithDetails(params.orderId);
     if (!details || !isEcommerceOrderLookupAuthorized(details, params)) return undefined;
     return details;
@@ -797,7 +963,15 @@ export class EcommerceStorage {
       db.select().from(ecommerceFulfillments).where(eq(ecommerceFulfillments.orderId, id)),
       this.getOrderNotes(id),
     ]);
-    return { ...order, customer: customer ?? null, items, refunds, shipments, fulfillments, internalNotes };
+    return {
+      ...order,
+      customer: customer ?? null,
+      items,
+      refunds,
+      shipments,
+      fulfillments,
+      internalNotes,
+    };
   }
 
   async getOrderNotes(orderId: string): Promise<EcommerceOrderNoteWithAuthor[]> {
@@ -839,7 +1013,10 @@ export class EcommerceStorage {
     return note;
   }
 
-  async updateOrder(id: string, data: Partial<InsertEcommerceOrder>): Promise<EcommerceOrder | undefined> {
+  async updateOrder(
+    id: string,
+    data: Partial<InsertEcommerceOrder>,
+  ): Promise<EcommerceOrder | undefined> {
     const [order] = await db
       .update(ecommerceOrders)
       .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommerceOrders.$inferInsert>)
@@ -848,7 +1025,10 @@ export class EcommerceStorage {
     return order;
   }
 
-  async updateOrderByPaymentIntent(paymentIntentId: string, data: Partial<InsertEcommerceOrder>): Promise<EcommerceOrder | undefined> {
+  async updateOrderByPaymentIntent(
+    paymentIntentId: string,
+    data: Partial<InsertEcommerceOrder>,
+  ): Promise<EcommerceOrder | undefined> {
     const [order] = await db
       .update(ecommerceOrders)
       .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommerceOrders.$inferInsert>)
@@ -857,7 +1037,10 @@ export class EcommerceStorage {
     return order;
   }
 
-  async markOrderPaidIfUnpaid(id: string, paymentIntentId: string): Promise<EcommerceOrder | undefined> {
+  async markOrderPaidIfUnpaid(
+    id: string,
+    paymentIntentId: string,
+  ): Promise<EcommerceOrder | undefined> {
     const [order] = await db
       .update(ecommerceOrders)
       .set({
@@ -866,32 +1049,38 @@ export class EcommerceStorage {
         stripePaymentIntentId: paymentIntentId,
         updatedAt: new Date(),
       })
-      .where(and(
-        eq(ecommerceOrders.id, id),
-        or(
-          isNull(ecommerceOrders.stripePaymentIntentId),
-          eq(ecommerceOrders.stripePaymentIntentId, paymentIntentId),
+      .where(
+        and(
+          eq(ecommerceOrders.id, id),
+          or(
+            isNull(ecommerceOrders.stripePaymentIntentId),
+            eq(ecommerceOrders.stripePaymentIntentId, paymentIntentId),
+          ),
+          or(ne(ecommerceOrders.status, "paid"), ne(ecommerceOrders.paymentStatus, "paid")),
         ),
-        or(
-          ne(ecommerceOrders.status, "paid"),
-          ne(ecommerceOrders.paymentStatus, "paid"),
-        ),
-      ))
+      )
       .returning();
     return order;
   }
 
-  async createPaymentRequest(data: InsertEcommercePaymentRequest): Promise<EcommercePaymentRequest> {
+  async createPaymentRequest(
+    data: InsertEcommercePaymentRequest,
+  ): Promise<EcommercePaymentRequest> {
     const [request] = await db.insert(ecommercePaymentRequests).values(data).returning();
     return request;
   }
 
   async getPaymentRequest(id: string): Promise<EcommercePaymentRequest | undefined> {
-    const [request] = await db.select().from(ecommercePaymentRequests).where(eq(ecommercePaymentRequests.id, id));
+    const [request] = await db
+      .select()
+      .from(ecommercePaymentRequests)
+      .where(eq(ecommercePaymentRequests.id, id));
     return request;
   }
 
-  async getPaymentRequestBySessionId(sessionId: string): Promise<EcommercePaymentRequest | undefined> {
+  async getPaymentRequestBySessionId(
+    sessionId: string,
+  ): Promise<EcommercePaymentRequest | undefined> {
     const [request] = await db
       .select()
       .from(ecommercePaymentRequests)
@@ -899,16 +1088,24 @@ export class EcommerceStorage {
     return request;
   }
 
-  async updatePaymentRequest(id: string, data: Partial<InsertEcommercePaymentRequest> & { paidAt?: Date | null }): Promise<EcommercePaymentRequest | undefined> {
+  async updatePaymentRequest(
+    id: string,
+    data: Partial<InsertEcommercePaymentRequest> & { paidAt?: Date | null },
+  ): Promise<EcommercePaymentRequest | undefined> {
     const [request] = await db
       .update(ecommercePaymentRequests)
-      .set({ ...data, updatedAt: new Date() } as Partial<typeof ecommercePaymentRequests.$inferInsert>)
+      .set({ ...data, updatedAt: new Date() } as Partial<
+        typeof ecommercePaymentRequests.$inferInsert
+      >)
       .where(eq(ecommercePaymentRequests.id, id))
       .returning();
     return request;
   }
 
-  async markPaymentRequestPaidBySession(sessionId: string, paymentIntentId?: string | null): Promise<EcommercePaymentRequest | undefined> {
+  async markPaymentRequestPaidBySession(
+    sessionId: string,
+    paymentIntentId?: string | null,
+  ): Promise<EcommercePaymentRequest | undefined> {
     const [request] = await db
       .update(ecommercePaymentRequests)
       .set({
@@ -929,17 +1126,22 @@ export class EcommerceStorage {
 
   async deductInventoryForPaidOrder(orderId: string): Promise<void> {
     await db.transaction(async (tx) => {
-      const items = await tx.select().from(ecommerceOrderItems).where(eq(ecommerceOrderItems.orderId, orderId));
+      const items = await tx
+        .select()
+        .from(ecommerceOrderItems)
+        .where(eq(ecommerceOrderItems.orderId, orderId));
       for (const item of items) {
         if (!item.variantId) continue;
         const [existingAdjustment] = await tx
           .select()
           .from(ecommerceInventoryAdjustments)
-          .where(and(
-            eq(ecommerceInventoryAdjustments.orderId, orderId),
-            eq(ecommerceInventoryAdjustments.variantId, item.variantId),
-            eq(ecommerceInventoryAdjustments.reason, "order_paid"),
-          ))
+          .where(
+            and(
+              eq(ecommerceInventoryAdjustments.orderId, orderId),
+              eq(ecommerceInventoryAdjustments.variantId, item.variantId),
+              eq(ecommerceInventoryAdjustments.reason, "order_paid"),
+            ),
+          )
           .limit(1);
         if (existingAdjustment) continue;
 
@@ -951,7 +1153,10 @@ export class EcommerceStorage {
         if (!variant?.trackInventory) continue;
 
         const whereClause = requiresAtomicInventoryStockGuard(variant)
-          ? and(eq(ecommerceProductVariants.id, variant.id), gte(ecommerceProductVariants.inventoryQuantity, item.quantity))
+          ? and(
+              eq(ecommerceProductVariants.id, variant.id),
+              gte(ecommerceProductVariants.inventoryQuantity, item.quantity),
+            )
           : eq(ecommerceProductVariants.id, variant.id);
         const [updatedVariant] = await tx
           .update(ecommerceProductVariants)
@@ -982,7 +1187,10 @@ export class EcommerceStorage {
     return refund;
   }
 
-  async updateRefund(id: string, data: Partial<InsertEcommerceRefund>): Promise<EcommerceRefund | undefined> {
+  async updateRefund(
+    id: string,
+    data: Partial<InsertEcommerceRefund>,
+  ): Promise<EcommerceRefund | undefined> {
     const [refund] = await db
       .update(ecommerceRefunds)
       .set({ ...data, updatedAt: new Date() })
@@ -1008,7 +1216,10 @@ export class EcommerceStorage {
     return zone;
   }
 
-  async updateShippingZone(id: string, data: Partial<InsertEcommerceShippingZone>): Promise<EcommerceShippingZone | undefined> {
+  async updateShippingZone(
+    id: string,
+    data: Partial<InsertEcommerceShippingZone>,
+  ): Promise<EcommerceShippingZone | undefined> {
     const [zone] = await db
       .update(ecommerceShippingZones)
       .set({ ...data, updatedAt: new Date() })
@@ -1040,7 +1251,10 @@ export class EcommerceStorage {
     return rate;
   }
 
-  async updateShippingRate(id: string, data: Partial<InsertEcommerceShippingRate>): Promise<EcommerceShippingRate | undefined> {
+  async updateShippingRate(
+    id: string,
+    data: Partial<InsertEcommerceShippingRate>,
+  ): Promise<EcommerceShippingRate | undefined> {
     const [rate] = await db
       .update(ecommerceShippingRates)
       .set({ ...data, updatedAt: new Date() })
@@ -1061,7 +1275,10 @@ export class EcommerceStorage {
     return shipment;
   }
 
-  async updateShipment(id: string, data: Partial<InsertEcommerceShipment>): Promise<EcommerceShipment | undefined> {
+  async updateShipment(
+    id: string,
+    data: Partial<InsertEcommerceShipment>,
+  ): Promise<EcommerceShipment | undefined> {
     const [shipment] = await db
       .update(ecommerceShipments)
       .set({ ...data, updatedAt: new Date() })
@@ -1077,7 +1294,9 @@ export class EcommerceStorage {
       .orderBy(desc(ecommerceFulfillmentLocations.isPrimary), ecommerceFulfillmentLocations.name);
   }
 
-  async createFulfillmentLocation(data: InsertEcommerceFulfillmentLocation): Promise<EcommerceFulfillmentLocation> {
+  async createFulfillmentLocation(
+    data: InsertEcommerceFulfillmentLocation,
+  ): Promise<EcommerceFulfillmentLocation> {
     const [location] = await db.insert(ecommerceFulfillmentLocations).values(data).returning();
     return location;
   }
@@ -1095,10 +1314,15 @@ export class EcommerceStorage {
   }
 
   async getShippingProviders(): Promise<EcommerceShippingProvider[]> {
-    return db.select().from(ecommerceShippingProviders).orderBy(ecommerceShippingProviders.displayName);
+    return db
+      .select()
+      .from(ecommerceShippingProviders)
+      .orderBy(ecommerceShippingProviders.displayName);
   }
 
-  async upsertShippingProvider(data: InsertEcommerceShippingProvider): Promise<EcommerceShippingProvider> {
+  async upsertShippingProvider(
+    data: InsertEcommerceShippingProvider,
+  ): Promise<EcommerceShippingProvider> {
     const [provider] = await db
       .insert(ecommerceShippingProviders)
       .values(data)
@@ -1117,10 +1341,12 @@ export class EcommerceStorage {
     return db.transaction(async (tx) => {
       const [fulfillment] = await tx.insert(ecommerceFulfillments).values(data).returning();
       if (items.length) {
-        await tx.insert(ecommerceFulfillmentItems).values(items.map((item) => ({
-          ...item,
-          fulfillmentId: fulfillment.id,
-        })));
+        await tx.insert(ecommerceFulfillmentItems).values(
+          items.map((item) => ({
+            ...item,
+            fulfillmentId: fulfillment.id,
+          })),
+        );
       }
       const fulfillmentItems = await tx
         .select()
@@ -1137,28 +1363,36 @@ export class EcommerceStorage {
       .where(eq(ecommerceFulfillments.orderId, orderId))
       .orderBy(desc(ecommerceFulfillments.createdAt));
 
-    return Promise.all(fulfillments.map(async (fulfillment) => ({
-      ...fulfillment,
-      items: await db
-        .select()
-        .from(ecommerceFulfillmentItems)
-        .where(eq(ecommerceFulfillmentItems.fulfillmentId, fulfillment.id)),
-    })));
+    return Promise.all(
+      fulfillments.map(async (fulfillment) => ({
+        ...fulfillment,
+        items: await db
+          .select()
+          .from(ecommerceFulfillmentItems)
+          .where(eq(ecommerceFulfillmentItems.fulfillmentId, fulfillment.id)),
+      })),
+    );
   }
 
   async hasProcessedWebhook(provider: string, eventId: string): Promise<boolean> {
     const [event] = await db
       .select({ id: ecommerceProcessedWebhookEvents.id })
       .from(ecommerceProcessedWebhookEvents)
-      .where(and(
-        eq(ecommerceProcessedWebhookEvents.provider, provider),
-        eq(ecommerceProcessedWebhookEvents.eventId, eventId),
-      ))
+      .where(
+        and(
+          eq(ecommerceProcessedWebhookEvents.provider, provider),
+          eq(ecommerceProcessedWebhookEvents.eventId, eventId),
+        ),
+      )
       .limit(1);
     return Boolean(event);
   }
 
-  async markWebhookProcessed(provider: string, eventId: string, eventType: string): Promise<boolean> {
+  async markWebhookProcessed(
+    provider: string,
+    eventId: string,
+    eventType: string,
+  ): Promise<boolean> {
     const inserted = await db
       .insert(ecommerceProcessedWebhookEvents)
       .values({ provider, eventId, eventType })

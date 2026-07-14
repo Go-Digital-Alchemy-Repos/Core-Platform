@@ -267,4 +267,3 @@ export function SystemConfigurationTab({ settings }: { settings: SettingsData })
     </div>
   );
 }
-

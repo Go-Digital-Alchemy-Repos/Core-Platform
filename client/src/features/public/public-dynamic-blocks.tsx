@@ -9,7 +9,11 @@ import { LoginDialog } from "@/components/auth/login-dialog";
 import { MapView } from "@/components/directory/map-view";
 import { SectionHeading } from "@/features/admin/cms/builder/section-heading";
 import { normalizeHexColor } from "@/features/admin/cms/builder/section-style";
-import { getPostCategories, getPrimaryPostCategory, postMatchesCategory } from "@/lib/blog-post-categories";
+import {
+  getPostCategories,
+  getPrimaryPostCategory,
+  postMatchesCategory,
+} from "@/lib/blog-post-categories";
 import { getImageObjectPositionStyle } from "@/lib/image-focus";
 import { PublicFormRenderer } from "@/components/forms/public-form-renderer";
 import { CompanyInformationCard } from "@/components/shared/company-information-card";
@@ -57,17 +61,21 @@ export function TherapistMapBlock({ props }: { props: Record<string, unknown> })
           profileImageUrl: t.user?.profileImageUrl ?? null,
         },
       })),
-    [allTherapistsData]
+    [allTherapistsData],
   );
   const headingAlignment = str(props.sectionHeadingAlignment) || "center";
-  const buttonJustifyClass = headingAlignment === "left"
-    ? "justify-start"
-    : headingAlignment === "right"
-      ? "justify-end"
-      : "justify-center";
+  const buttonJustifyClass =
+    headingAlignment === "left"
+      ? "justify-start"
+      : headingAlignment === "right"
+        ? "justify-end"
+        : "justify-center";
 
   return (
-    <section className="relative bg-[#ffffff4d] overflow-hidden" data-testid="section-professional-map">
+    <section
+      className="relative bg-[#ffffff4d] overflow-hidden"
+      data-testid="section-professional-map"
+    >
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24">
         <div className="mb-8 sm:mb-12 space-y-5">
           <SectionHeading props={props} defaultAlignment="center" />
@@ -142,11 +150,21 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
   const accentHeading = plainText(props.accentHeading);
   const subheading = str(props.subheading);
   const hasImageBackground = !!str(props.sectionBackgroundImageUrl);
-  const headingTextStyle = colorStyle(props.headingColor, hasImageBackground ? "#ffffff" : undefined);
-  const accentHeadingTextStyle = colorStyle(props.accentHeadingColor, hasImageBackground ? "#ffffff" : undefined);
-  const subheadingTextStyle = colorStyle(props.subheadingColor, hasImageBackground ? "#ffffff" : undefined);
+  const headingTextStyle = colorStyle(
+    props.headingColor,
+    hasImageBackground ? "#ffffff" : undefined,
+  );
+  const accentHeadingTextStyle = colorStyle(
+    props.accentHeadingColor,
+    hasImageBackground ? "#ffffff" : undefined,
+  );
+  const subheadingTextStyle = colorStyle(
+    props.subheadingColor,
+    hasImageBackground ? "#ffffff" : undefined,
+  );
   const applicationStatusText = plainText(props.applicationStatusText) || "Apply to join.";
-  const loginPromptPrefix = plainText(props.loginPromptPrefix) || "If you're already a member click here to";
+  const loginPromptPrefix =
+    plainText(props.loginPromptPrefix) || "If you're already a member click here to";
   const loginLinkText = plainText(props.loginLinkText) || "Log in";
   const loginPromptSuffix = plainText(props.loginPromptSuffix) || "to your profile!";
   const hasHeroCopy = !!(heading || accentHeading);
@@ -158,12 +176,18 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
     >
       {hasHeroCopy && (
         <>
-          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-title" style={headingTextStyle}>
+          <h1
+            className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6"
+            data-testid="text-join-title"
+            style={headingTextStyle}
+          >
             {heading}
             {accentHeading && (
               <>
                 {" "}
-                <span className="text-accent" style={accentHeadingTextStyle}>{accentHeading}</span>
+                <span className="text-accent" style={accentHeadingTextStyle}>
+                  {accentHeading}
+                </span>
               </>
             )}
           </h1>
@@ -186,7 +210,11 @@ export function JoinRegistrationFormBlock({ props = {} }: { props?: Record<strin
         <Clock className="mr-2 h-5 w-5" />
         {applicationStatusText}
       </Button>
-      <p className="text-sm sm:text-base public-helper-text mt-6" data-testid="text-login-prompt" style={subheadingTextStyle}>
+      <p
+        className="text-sm sm:text-base public-helper-text mt-6"
+        data-testid="text-login-prompt"
+        style={subheadingTextStyle}
+      >
         {loginPromptPrefix}{" "}
         <button
           onClick={() => setLoginOpen(true)}
@@ -207,18 +235,36 @@ export function JoinHeroBlock({ props = {} }: { props?: Record<string, unknown> 
   const accentHeading = plainText(props.accentHeading) || "Join the Network!";
   const subheading = str(props.subheading);
   const hasImageBackground = !!str(props.sectionBackgroundImageUrl);
-  const headingTextStyle = colorStyle(props.headingColor, hasImageBackground ? "#ffffff" : undefined);
-  const accentHeadingTextStyle = colorStyle(props.accentHeadingColor, hasImageBackground ? "#ffffff" : undefined);
-  const subheadingTextStyle = colorStyle(props.subheadingColor, hasImageBackground ? "#ffffff" : undefined);
+  const headingTextStyle = colorStyle(
+    props.headingColor,
+    hasImageBackground ? "#ffffff" : undefined,
+  );
+  const accentHeadingTextStyle = colorStyle(
+    props.accentHeadingColor,
+    hasImageBackground ? "#ffffff" : undefined,
+  );
+  const subheadingTextStyle = colorStyle(
+    props.subheadingColor,
+    hasImageBackground ? "#ffffff" : undefined,
+  );
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center" data-testid="dynamic-join-hero">
-      <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6" data-testid="text-join-hero-title" style={headingTextStyle}>
+    <div
+      className="max-w-4xl mx-auto px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center"
+      data-testid="dynamic-join-hero"
+    >
+      <h1
+        className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold mb-6"
+        data-testid="text-join-hero-title"
+        style={headingTextStyle}
+      >
         {heading}
         {accentHeading && (
           <>
             {" "}
-            <span className="text-accent" style={accentHeadingTextStyle}>{accentHeading}</span>
+            <span className="text-accent" style={accentHeadingTextStyle}>
+              {accentHeading}
+            </span>
           </>
         )}
       </h1>
@@ -271,19 +317,42 @@ function FeaturedBlogCard({
   const isPodcast = post.postType === "podcast";
   const actionText = isExternal ? "Visit Article" : isPodcast ? "Listen Now" : "Read Article";
   const card = (
-    <Card className={`cursor-pointer overflow-hidden ${getBlogCardMotionClass(enableHoverMotion)}`} data-testid="blog-featured-card">
-      <div className={layout === "stacked" ? "grid grid-cols-1" : "grid grid-cols-1 md:grid-cols-2"}>
+    <Card
+      className={`cursor-pointer overflow-hidden ${getBlogCardMotionClass(enableHoverMotion)}`}
+      data-testid="blog-featured-card"
+    >
+      <div
+        className={layout === "stacked" ? "grid grid-cols-1" : "grid grid-cols-1 md:grid-cols-2"}
+      >
         {post.coverImageUrl && (
           <div className="aspect-[16/9] md:aspect-auto overflow-hidden">
-            <img src={post.coverImageUrl} alt={plainText(post.title)} className="w-full h-full object-cover" style={getImageObjectPositionStyle(post.coverImagePositionX, post.coverImagePositionY)} data-blog-card-image />
+            <img
+              src={post.coverImageUrl}
+              alt={plainText(post.title)}
+              className="w-full h-full object-cover"
+              style={getImageObjectPositionStyle(
+                post.coverImagePositionX,
+                post.coverImagePositionY,
+              )}
+              data-blog-card-image
+            />
           </div>
         )}
         <CardContent className="p-6 flex flex-col justify-center">
-          <h3 className="text-xl font-heading font-bold mb-3 public-heading-3">{plainText(post.title)}</h3>
-          <p className="text-sm public-body-text line-clamp-4 leading-relaxed">{plainText(post.excerpt)}</p>
+          <h3 className="text-xl font-heading font-bold mb-3 public-heading-3">
+            {plainText(post.title)}
+          </h3>
+          <p className="text-sm public-body-text line-clamp-4 leading-relaxed">
+            {plainText(post.excerpt)}
+          </p>
           <div className="mt-4">
             <span className="text-sm public-link-text font-medium inline-flex items-center gap-1">
-              {actionText} {isExternal ? <ExternalLink className="h-3.5 w-3.5" /> : <ArrowRight className="h-3.5 w-3.5" />}
+              {actionText}{" "}
+              {isExternal ? (
+                <ExternalLink className="h-3.5 w-3.5" />
+              ) : (
+                <ArrowRight className="h-3.5 w-3.5" />
+              )}
             </span>
           </div>
         </CardContent>
@@ -296,9 +365,7 @@ function FeaturedBlogCard({
       {card}
     </a>
   ) : (
-    <Link href={`/insights/${post.slug}`}>
-      {card}
-    </Link>
+    <Link href={`/insights/${post.slug}`}>{card}</Link>
   );
 }
 
@@ -351,7 +418,11 @@ function BlogFeedFilters({
           data-testid="select-blog-category"
         >
           <option value="">All Categories</option>
-          {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
         </select>
       )}
       {showTagFilter && allTags.length > 0 && (
@@ -362,11 +433,21 @@ function BlogFeedFilters({
           data-testid="select-blog-tag"
         >
           <option value="">All Tags</option>
-          {allTags.map((t) => <option key={t} value={t}>{t}</option>)}
+          {allTags.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
         </select>
       )}
       {(searchQuery || selectedCategory || selectedTag) && (
-        <Button variant="ghost" size="sm" onClick={onReset} className="text-xs" data-testid="button-clear-filters">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onReset}
+          className="text-xs"
+          data-testid="button-clear-filters"
+        >
           Clear filters
         </Button>
       )}
@@ -407,7 +488,11 @@ function BlogFeedGrid({
     return (
       <div className="text-center py-12 public-helper-text">
         <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />
-        <p className="text-sm">{searchQuery || selectedCategory || selectedTag ? "No articles match your filters" : "No articles published yet"}</p>
+        <p className="text-sm">
+          {searchQuery || selectedCategory || selectedTag
+            ? "No articles match your filters"
+            : "No articles published yet"}
+        </p>
       </div>
     );
   }
@@ -420,18 +505,43 @@ function BlogFeedGrid({
           const isPodcast = p.postType === "podcast";
           const actionText = isExternal ? "Visit Article" : isPodcast ? "Listen Now" : "Read More";
           const card = (
-            <Card className={`h-full cursor-pointer ${getBlogCardMotionClass(enableHoverMotion)}`} data-testid={`blog-feed-card-${p.id}`}>
+            <Card
+              className={`h-full cursor-pointer ${getBlogCardMotionClass(enableHoverMotion)}`}
+              data-testid={`blog-feed-card-${p.id}`}
+            >
               {p.coverImageUrl && (
                 <div className="aspect-[16/9] overflow-hidden rounded-t-lg">
-                  <img src={p.coverImageUrl} alt={plainText(p.title)} className="w-full h-full object-cover" style={getImageObjectPositionStyle(p.coverImagePositionX, p.coverImagePositionY)} data-blog-card-image />
+                  <img
+                    src={p.coverImageUrl}
+                    alt={plainText(p.title)}
+                    className="w-full h-full object-cover"
+                    style={getImageObjectPositionStyle(
+                      p.coverImagePositionX,
+                      p.coverImagePositionY,
+                    )}
+                    data-blog-card-image
+                  />
                 </div>
               )}
               <CardContent className="p-4">
-                {getPrimaryPostCategory(p) && <span className="text-xs public-meta-text font-medium">{getPrimaryPostCategory(p)}</span>}
-                <p className="font-semibold text-sm mb-1 line-clamp-2 public-heading-3">{plainText(p.title)}</p>
-                <p className="text-xs public-body-text line-clamp-3 leading-relaxed">{plainText(p.excerpt)}</p>
+                {getPrimaryPostCategory(p) && (
+                  <span className="text-xs public-meta-text font-medium">
+                    {getPrimaryPostCategory(p)}
+                  </span>
+                )}
+                <p className="font-semibold text-sm mb-1 line-clamp-2 public-heading-3">
+                  {plainText(p.title)}
+                </p>
+                <p className="text-xs public-body-text line-clamp-3 leading-relaxed">
+                  {plainText(p.excerpt)}
+                </p>
                 <span className="mt-3 text-xs public-link-text font-medium inline-flex items-center gap-1">
-                  {actionText} {isExternal ? <ExternalLink className="h-3 w-3" /> : <ArrowRight className="h-3 w-3" />}
+                  {actionText}{" "}
+                  {isExternal ? (
+                    <ExternalLink className="h-3 w-3" />
+                  ) : (
+                    <ArrowRight className="h-3 w-3" />
+                  )}
                 </span>
               </CardContent>
             </Card>
@@ -514,11 +624,18 @@ export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> })
     setCurrentPage(1);
   }, [location]);
 
-  const categories = Array.from(new Set(published.flatMap((p) => getPostCategories(p)).filter(Boolean))) as string[];
+  const categories = Array.from(
+    new Set(published.flatMap((p) => getPostCategories(p)).filter(Boolean)),
+  ) as string[];
   const allTags = Array.from(new Set(published.flatMap((p) => p.tags ?? []).filter(Boolean)));
 
   const filtered = published.filter((p) => {
-    if (searchQuery && !p.title.toLowerCase().includes(searchQuery.toLowerCase()) && !(p.excerpt ?? "").toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (
+      searchQuery &&
+      !p.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !(p.excerpt ?? "").toLowerCase().includes(searchQuery.toLowerCase())
+    )
+      return false;
     if (selectedCategory && !postMatchesCategory(p, selectedCategory)) return false;
     if (selectedTag && !(p.tags ?? []).includes(selectedTag)) return false;
     return true;
@@ -526,14 +643,16 @@ export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> })
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / postsPerPage));
   const safePage = Math.min(currentPage, totalPages);
-  const visible = feedStyle === "load-more"
-    ? filtered.slice(0, safePage * postsPerPage)
-    : filtered.slice((safePage - 1) * postsPerPage, safePage * postsPerPage);
-  const gridColsClass = gridColumns === "2"
-    ? "grid-cols-1 md:grid-cols-2"
-    : gridColumns === "4"
-      ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-4"
-      : "grid-cols-1 md:grid-cols-3";
+  const visible =
+    feedStyle === "load-more"
+      ? filtered.slice(0, safePage * postsPerPage)
+      : filtered.slice((safePage - 1) * postsPerPage, safePage * postsPerPage);
+  const gridColsClass =
+    gridColumns === "2"
+      ? "grid-cols-1 md:grid-cols-2"
+      : gridColumns === "4"
+        ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-4"
+        : "grid-cols-1 md:grid-cols-3";
 
   const resetFilters = () => {
     setSearchQuery("");
@@ -553,9 +672,18 @@ export function BlogPostFeedBlock({ props }: { props: Record<string, unknown> })
         selectedTag={selectedTag}
         categories={categories}
         allTags={allTags}
-        onSearchChange={(value) => { setSearchQuery(value); setCurrentPage(1); }}
-        onCategoryChange={(value) => { setSelectedCategory(value); setCurrentPage(1); }}
-        onTagChange={(value) => { setSelectedTag(value); setCurrentPage(1); }}
+        onSearchChange={(value) => {
+          setSearchQuery(value);
+          setCurrentPage(1);
+        }}
+        onCategoryChange={(value) => {
+          setSelectedCategory(value);
+          setCurrentPage(1);
+        }}
+        onTagChange={(value) => {
+          setSelectedTag(value);
+          setCurrentPage(1);
+        }}
         onReset={resetFilters}
       />
       <BlogFeedGrid
@@ -628,12 +756,19 @@ export function StandardBlogPageBlock({ props }: { props: Record<string, unknown
     setCurrentPage(1);
   }, [location]);
 
-  const categories = Array.from(new Set(published.flatMap((p) => getPostCategories(p)).filter(Boolean))) as string[];
+  const categories = Array.from(
+    new Set(published.flatMap((p) => getPostCategories(p)).filter(Boolean)),
+  ) as string[];
   const allTags = Array.from(new Set(published.flatMap((p) => p.tags ?? []).filter(Boolean)));
 
   const filtered = published.filter((p) => {
     if (featured?.id && p.id === featured.id) return false;
-    if (searchQuery && !p.title.toLowerCase().includes(searchQuery.toLowerCase()) && !(p.excerpt ?? "").toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (
+      searchQuery &&
+      !p.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !(p.excerpt ?? "").toLowerCase().includes(searchQuery.toLowerCase())
+    )
+      return false;
     if (selectedCategory && !postMatchesCategory(p, selectedCategory)) return false;
     if (selectedTag && !(p.tags ?? []).includes(selectedTag)) return false;
     return true;
@@ -641,14 +776,16 @@ export function StandardBlogPageBlock({ props }: { props: Record<string, unknown
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / postsPerPage));
   const safePage = Math.min(currentPage, totalPages);
-  const visible = feedStyle === "load-more"
-    ? filtered.slice(0, safePage * postsPerPage)
-    : filtered.slice((safePage - 1) * postsPerPage, safePage * postsPerPage);
-  const gridColsClass = gridColumns === "2"
-    ? "grid-cols-1 md:grid-cols-2"
-    : gridColumns === "4"
-      ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-4"
-      : "grid-cols-1 md:grid-cols-3";
+  const visible =
+    feedStyle === "load-more"
+      ? filtered.slice(0, safePage * postsPerPage)
+      : filtered.slice((safePage - 1) * postsPerPage, safePage * postsPerPage);
+  const gridColsClass =
+    gridColumns === "2"
+      ? "grid-cols-1 md:grid-cols-2"
+      : gridColumns === "4"
+        ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-4"
+        : "grid-cols-1 md:grid-cols-3";
 
   const resetFilters = () => {
     setSearchQuery("");
@@ -668,12 +805,23 @@ export function StandardBlogPageBlock({ props }: { props: Record<string, unknown
         selectedTag={selectedTag}
         categories={categories}
         allTags={allTags}
-        onSearchChange={(value) => { setSearchQuery(value); setCurrentPage(1); }}
-        onCategoryChange={(value) => { setSelectedCategory(value); setCurrentPage(1); }}
-        onTagChange={(value) => { setSelectedTag(value); setCurrentPage(1); }}
+        onSearchChange={(value) => {
+          setSearchQuery(value);
+          setCurrentPage(1);
+        }}
+        onCategoryChange={(value) => {
+          setSelectedCategory(value);
+          setCurrentPage(1);
+        }}
+        onTagChange={(value) => {
+          setSelectedTag(value);
+          setCurrentPage(1);
+        }}
         onReset={resetFilters}
       />
-      {featured ? <FeaturedBlogCard post={featured} layout={layout} enableHoverMotion={enableHoverMotion} /> : null}
+      {featured ? (
+        <FeaturedBlogCard post={featured} layout={layout} enableHoverMotion={enableHoverMotion} />
+      ) : null}
       <BlogFeedGrid
         visible={visible}
         feedStyle={feedStyle}

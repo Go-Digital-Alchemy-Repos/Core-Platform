@@ -11,7 +11,9 @@ export const ecommerceCustomerAccountSettingsSchema = z.object({
 });
 
 export type EcommerceCustomerAccountMode = z.infer<typeof ecommerceCustomerAccountModeSchema>;
-export type EcommerceCustomerAccountSettings = z.infer<typeof ecommerceCustomerAccountSettingsSchema>;
+export type EcommerceCustomerAccountSettings = z.infer<
+  typeof ecommerceCustomerAccountSettingsSchema
+>;
 
 export async function getEcommerceCustomerAccountSettings(): Promise<EcommerceCustomerAccountSettings> {
   if (typeof storage.settings.getSetting !== "function") {

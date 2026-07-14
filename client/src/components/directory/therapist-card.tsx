@@ -39,31 +39,26 @@ function getPracticeModeIcon(mode: string | null) {
 }
 
 export function TherapistCard({ profile, user }: TherapistCardProps) {
-  const initials = `${(user.firstName || "")[0] || ""}${(user.lastName || "")[0] || ""}`.toUpperCase();
+  const initials =
+    `${(user.firstName || "")[0] || ""}${(user.lastName || "")[0] || ""}`.toUpperCase();
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Therapist";
   const specializations = profile.specializations || [];
   const displayedSpecs = specializations.slice(0, 3);
   const remainingCount = specializations.length - 3;
 
-  const locationText = profile.city && profile.country
-    ? `${profile.city}, ${profile.country}`
-    : profile.country || null;
+  const locationText =
+    profile.city && profile.country
+      ? `${profile.city}, ${profile.country}`
+      : profile.country || null;
 
   const PracticeModeIcon = getPracticeModeIcon(profile.practiceMode);
 
   return (
-    <Card
-      data-testid={`card-therapist-${profile.id}`}
-      className="flex flex-col h-full"
-    >
+    <Card data-testid={`card-therapist-${profile.id}`} className="flex flex-col h-full">
       <CardHeader className="flex flex-row items-start gap-3 space-y-0">
         <Avatar className="h-12 w-12">
-          {user.profileImageUrl && (
-            <AvatarImage src={user.profileImageUrl} alt={fullName} />
-          )}
-          <AvatarFallback data-testid={`avatar-therapist-${profile.id}`}>
-            {initials}
-          </AvatarFallback>
+          {user.profileImageUrl && <AvatarImage src={user.profileImageUrl} alt={fullName} />}
+          <AvatarFallback data-testid={`avatar-therapist-${profile.id}`}>{initials}</AvatarFallback>
         </Avatar>
         <div className="flex flex-col gap-1 min-w-0">
           <h3

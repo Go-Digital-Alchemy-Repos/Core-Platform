@@ -12,14 +12,18 @@ interface ConsentedScriptOptions {
 }
 
 function findScriptById(id: string) {
-  return typeof document === "undefined" ? null : document.querySelector<HTMLScriptElement>(`script[data-consent-script-id="${id}"]`);
+  return typeof document === "undefined"
+    ? null
+    : document.querySelector<HTMLScriptElement>(`script[data-consent-script-id="${id}"]`);
 }
 
 export function canLoadConsentedCategory(category: NonEssentialConsentCategory): boolean {
   return hasCookieConsent(category);
 }
 
-export async function loadScriptWithConsent(options: ConsentedScriptOptions): Promise<HTMLScriptElement | null> {
+export async function loadScriptWithConsent(
+  options: ConsentedScriptOptions,
+): Promise<HTMLScriptElement | null> {
   if (typeof document === "undefined") return null;
   if (!canLoadConsentedCategory(options.category)) return null;
 
@@ -41,7 +45,11 @@ export async function loadScriptWithConsent(options: ConsentedScriptOptions): Pr
 
   const loaded = new Promise<HTMLScriptElement>((resolve, reject) => {
     script.addEventListener("load", () => resolve(script), { once: true });
-    script.addEventListener("error", () => reject(new Error(`Failed to load script: ${options.src}`)), { once: true });
+    script.addEventListener(
+      "error",
+      () => reject(new Error(`Failed to load script: ${options.src}`)),
+      { once: true },
+    );
   });
 
   document.head.appendChild(script);

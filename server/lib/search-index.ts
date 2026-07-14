@@ -147,6 +147,9 @@ export async function initSearchIndex() {
     logger.app.info("Full-text search index initialized successfully");
   } catch (err) {
     searchIndexReady = false;
-    logger.app.error("Failed to initialize search index — text search will fall back to ILIKE", err);
+    logger.app.error(
+      "Failed to initialize search index — text search will fall back to ILIKE",
+      err,
+    );
   }
 }

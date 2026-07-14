@@ -53,16 +53,39 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
   });
 
   const hasSubmittedApplication = Boolean(application?.status && application.status !== "draft");
-  const hasDraftOrNoApplication = !application || !application.status || application.status === "draft";
+  const hasDraftOrNoApplication =
+    !application || !application.status || application.status === "draft";
   const isActiveMember = application?.status === "active_member";
   const applicationsEnabled = directorySettings.directoryRequiresApplicationProcess;
 
   const navItems: NavItem[] = [
     { title: "Dashboard", href: "/therapist", icon: LayoutDashboard, iconColor: "text-teal-600" },
-    { title: `Edit ${directorySettings.listingLabelSingular}`, href: "/therapist/profile", icon: UserPen, iconColor: "text-emerald-600" },
-    { title: "Subscription", href: "/therapist/subscription", icon: CreditCard, iconColor: "text-amber-600" },
-    { title: "Application", href: "/therapist/apply", icon: FileText, iconColor: "text-blue-600", show: applicationsEnabled && !isActiveMember && hasDraftOrNoApplication },
-    { title: "Application Status", href: "/therapist/application/status", icon: ClipboardCheck, iconColor: "text-purple-600", show: applicationsEnabled && hasSubmittedApplication },
+    {
+      title: `Edit ${directorySettings.listingLabelSingular}`,
+      href: "/therapist/profile",
+      icon: UserPen,
+      iconColor: "text-emerald-600",
+    },
+    {
+      title: "Subscription",
+      href: "/therapist/subscription",
+      icon: CreditCard,
+      iconColor: "text-amber-600",
+    },
+    {
+      title: "Application",
+      href: "/therapist/apply",
+      icon: FileText,
+      iconColor: "text-blue-600",
+      show: applicationsEnabled && !isActiveMember && hasDraftOrNoApplication,
+    },
+    {
+      title: "Application Status",
+      href: "/therapist/application/status",
+      icon: ClipboardCheck,
+      iconColor: "text-purple-600",
+      show: applicationsEnabled && hasSubmittedApplication,
+    },
   ];
 
   const visibleItems = navItems.filter((item) => item.show !== false);
@@ -74,9 +97,7 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
         <span
           className={cn(
             "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium cursor-pointer hover-elevate whitespace-nowrap overflow-hidden",
-            isActive
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground"
+            isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground",
           )}
           data-testid={`link-therapist-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
           onClick={() => setMobileOpen(false)}
@@ -85,7 +106,7 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
           <span
             className={cn(
               "transition-opacity duration-200",
-              collapsed ? "opacity-0" : "opacity-100"
+              collapsed ? "opacity-0" : "opacity-100",
             )}
           >
             {item.title}
@@ -117,7 +138,7 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
             "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium cursor-pointer",
             isActive
               ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
           )}
           data-testid={`link-therapist-mobile-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
           onClick={() => setMobileOpen(false)}
@@ -142,13 +163,18 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
           <h2
             className={cn(
               "font-heading text-lg font-semibold whitespace-nowrap transition-opacity duration-200",
-              collapsed ? "opacity-0 w-0" : "opacity-100"
+              collapsed ? "opacity-0 w-0" : "opacity-100",
             )}
-          >My Account</h2>
+          >
+            My Account
+          </h2>
         </div>
       </div>
 
-      <nav className="flex flex-col gap-1 px-2 flex-1 overflow-y-auto" data-testid="nav-therapist-sidebar">
+      <nav
+        className="flex flex-col gap-1 px-2 flex-1 overflow-y-auto"
+        data-testid="nav-therapist-sidebar"
+      >
         {visibleItems.map(renderNavItem)}
       </nav>
 
@@ -163,15 +189,23 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
                     <img src={user.profileImageUrl} alt="" className="h-full w-full object-cover" />
                   ) : (
                     <span className="text-xs font-semibold text-primary">
-                      {user.firstName?.[0]}{user.lastName?.[0]}
+                      {user.firstName?.[0]}
+                      {user.lastName?.[0]}
                     </span>
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium truncate" data-testid="text-therapist-sidebar-username">
+                  <p
+                    className="text-sm font-medium truncate"
+                    data-testid="text-therapist-sidebar-username"
+                  >
                     {user.firstName} {user.lastName}
                   </p>
-                  <Badge variant="outline" className="text-[10px]" data-testid="badge-therapist-sidebar-role">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px]"
+                    data-testid="badge-therapist-sidebar-role"
+                  >
                     {directorySettings.participantLabelSingular}
                   </Badge>
                 </div>
@@ -190,13 +224,19 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
                       data-testid="button-therapist-sidebar-profile"
                     >
                       {user?.profileImageUrl ? (
-                        <img src={user.profileImageUrl} alt="" className="h-full w-full object-cover" />
+                        <img
+                          src={user.profileImageUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         <User className="h-4 w-4 text-muted-foreground" />
                       )}
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={8}>My Profile</TooltipContent>
+                  <TooltipContent side="right" sideOffset={8}>
+                    My Profile
+                  </TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -210,7 +250,9 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
                       <LogOut className="h-4 w-4 text-rose-500" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={8}>Logout</TooltipContent>
+                  <TooltipContent side="right" sideOffset={8}>
+                    Logout
+                  </TooltipContent>
                 </Tooltip>
               </>
             ) : (
@@ -223,7 +265,11 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
                 >
                   <span className="h-6 w-6 rounded-full border border-border bg-background flex items-center justify-center overflow-hidden shrink-0">
                     {user?.profileImageUrl ? (
-                      <img src={user.profileImageUrl} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={user.profileImageUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       <User className="h-4 w-4 text-muted-foreground" />
                     )}
@@ -255,7 +301,7 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
           <aside
             className={cn(
               "border-r bg-muted/30 h-full flex flex-col transition-[width] duration-300 ease-in-out overflow-hidden",
-              collapsed ? "w-[68px]" : "w-64"
+              collapsed ? "w-[68px]" : "w-64",
             )}
           >
             {sidebarContent}
@@ -266,11 +312,7 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
             className="absolute top-6 -right-3.5 z-20 h-7 w-7 rounded-full border bg-background shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:shadow-md transition-all"
             data-testid="button-therapist-toggle-sidebar"
           >
-            {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
         </div>
 
@@ -306,16 +348,25 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
                     <div className="flex items-center gap-2">
                       <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
                         {user.profileImageUrl ? (
-                          <img src={user.profileImageUrl} alt="" className="h-full w-full object-cover" />
+                          <img
+                            src={user.profileImageUrl}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
                         ) : (
                           <span className="text-xs font-semibold text-primary">
-                            {user.firstName?.[0]}{user.lastName?.[0]}
+                            {user.firstName?.[0]}
+                            {user.lastName?.[0]}
                           </span>
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{user.firstName} {user.lastName}</p>
-                        <Badge variant="outline" className="text-[10px]">Provider</Badge>
+                        <p className="text-sm font-medium truncate">
+                          {user.firstName} {user.lastName}
+                        </p>
+                        <Badge variant="outline" className="text-[10px]">
+                          Provider
+                        </Badge>
                       </div>
                     </div>
                   </div>
@@ -323,7 +374,10 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
                     <button
                       type="button"
                       className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      onClick={() => { setProfileOpen(true); setMobileOpen(false); }}
+                      onClick={() => {
+                        setProfileOpen(true);
+                        setMobileOpen(false);
+                      }}
                       data-testid="button-therapist-mobile-profile"
                     >
                       <User className="h-4 w-4" />
@@ -346,9 +400,7 @@ export function TherapistSidebar({ children }: TherapistSidebarProps) {
           </SheetContent>
         </Sheet>
 
-        <main className="flex-1 overflow-auto md:pt-0 pt-12">
-          {children}
-        </main>
+        <main className="flex-1 overflow-auto md:pt-0 pt-12">{children}</main>
 
         <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
       </div>

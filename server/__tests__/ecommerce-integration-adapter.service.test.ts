@@ -9,21 +9,25 @@ import {
 
 describe("ecommerce integration adapter registry", () => {
   it("registers the must-have configurable ecommerce integrations", () => {
-    const providers = ECOMMERCE_INTEGRATION_ADAPTER_REGISTRY.map((definition) => definition.provider);
+    const providers = ECOMMERCE_INTEGRATION_ADAPTER_REGISTRY.map(
+      (definition) => definition.provider,
+    );
 
-    expect(providers).toEqual(expect.arrayContaining([
-      "klaviyo",
-      "omnisend",
-      "google_ads_tag_manager",
-      "pinterest_ads",
-      "microsoft_ads_merchant_center",
-      "avalara_avatax",
-      "taxjar",
-      "shipbob",
-      "amazon_marketplace",
-      "walmart_marketplace",
-      "dhl_express",
-    ]));
+    expect(providers).toEqual(
+      expect.arrayContaining([
+        "klaviyo",
+        "omnisend",
+        "google_ads_tag_manager",
+        "pinterest_ads",
+        "microsoft_ads_merchant_center",
+        "avalara_avatax",
+        "taxjar",
+        "shipbob",
+        "amazon_marketplace",
+        "walmart_marketplace",
+        "dhl_express",
+      ]),
+    );
   });
 
   it("keeps setup-only providers from pretending to be operational", () => {
@@ -41,8 +45,11 @@ describe("ecommerce integration adapter registry", () => {
   });
 
   it("exposes capability lookups and safe adapter stubs", () => {
-    expect(getEcommerceIntegrationAdaptersByCapability("marketplace_order_sync").map((provider) => provider.provider))
-      .toEqual(expect.arrayContaining(["amazon_marketplace", "walmart_marketplace"]));
+    expect(
+      getEcommerceIntegrationAdaptersByCapability("marketplace_order_sync").map(
+        (provider) => provider.provider,
+      ),
+    ).toEqual(expect.arrayContaining(["amazon_marketplace", "walmart_marketplace"]));
 
     const adapter = createEcommerceIntegrationAdapter("klaviyo");
     expect(adapter.capabilities).toEqual(expect.arrayContaining(["marketing_event_dispatch"]));

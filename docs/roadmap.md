@@ -4,6 +4,34 @@ Recommended improvements for the next development wave, ordered by impact and fe
 
 ---
 
+## Architecture Sequencing Guardrail
+
+This section captures the current working recommendation for the possible Next.js, Neon, and multi-tenancy migration. Treat it as a planning guardrail to revisit before implementation, especially as new product, deployment, billing, or tenant-isolation requirements are clarified.
+
+See `docs/core-project-plan.md` for the fuller strategic plan, including the theme/template system and future agent panel.
+
+### Recommended Order
+
+1. Refine and stabilize existing features while the current Vite/React + Express architecture is still familiar.
+2. Move the existing Postgres/Drizzle setup to Neon before changing application framework.
+3. Design the tenancy model before starting a full Next.js migration.
+4. Implement tenant-aware backend, storage, auth, settings, uploads, integrations, and feature flags.
+5. Migrate to Next.js once tenant boundaries are explicit, starting with public SEO-heavy pages if a phased migration is needed.
+6. Add agent or automation features only after tenant isolation and core workflows are solid.
+
+### Rationale
+
+- Neon is the lowest-risk architectural step because the app already uses Postgres and Drizzle.
+- Next.js does not solve tenancy by itself; moving first could copy current single-tenant assumptions into a new framework.
+- Tenancy affects data schema, auth, domains, settings, media, Stripe, email, analytics, background jobs, and admin permissions.
+- Feature refinement should happen before the larger migration so the product target is clearer and less churn is carried into the rewrite.
+
+### Possible Exception
+
+A small Next.js prototype branch may be useful to prove host-based tenant routing, Neon connection behavior, and one representative public page. Avoid a full conversion until the tenancy model is designed.
+
+---
+
 ## Phase 1: Full-Text & Faceted Search
 
 **Priority**: High

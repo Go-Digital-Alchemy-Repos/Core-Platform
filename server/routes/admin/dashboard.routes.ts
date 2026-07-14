@@ -4,7 +4,14 @@ import { db } from "../../db";
 import { storage } from "../../storage/index";
 import { asyncHandler } from "../../middleware/error-handler";
 import { MemoryCache } from "../../lib/cache";
-import { users, therapistProfiles, therapistSubscriptions, activityLogs, contactMessages, events } from "@shared/schema";
+import {
+  users,
+  therapistProfiles,
+  therapistSubscriptions,
+  activityLogs,
+  contactMessages,
+  events,
+} from "@shared/schema";
 
 const router = Router();
 
@@ -15,14 +22,19 @@ const ANALYTICS_CACHE_KEY = "dashboard_analytics";
 router.get(
   "/dashboard-stats",
   asyncHandler(async (_req, res) => {
-    const [totalTherapists, approvedTherapists, pendingTherapists, activeSubscriptions, unreadMessages] =
-      await Promise.all([
-        storage.therapists.countProfiles(),
-        storage.therapists.countApproved(),
-        storage.therapists.countPending(),
-        storage.subscriptions.countByStatus("active"),
-        storage.contacts.countUnread(),
-      ]);
+    const [
+      totalTherapists,
+      approvedTherapists,
+      pendingTherapists,
+      activeSubscriptions,
+      unreadMessages,
+    ] = await Promise.all([
+      storage.therapists.countProfiles(),
+      storage.therapists.countApproved(),
+      storage.therapists.countPending(),
+      storage.subscriptions.countByStatus("active"),
+      storage.contacts.countUnread(),
+    ]);
 
     res.json({
       totalTherapists,
@@ -31,7 +43,7 @@ router.get(
       activeSubscriptions,
       unreadMessages,
     });
-  })
+  }),
 );
 
 router.get(
@@ -81,7 +93,7 @@ router.get(
             when ${therapistProfiles.isApproved} = false and ${therapistProfiles.isActive} = true and ${therapistProfiles.rejectionReason} is null then 'pending'
             when ${therapistProfiles.isApproved} = false and ${therapistProfiles.rejectionReason} is not null then 'rejected'
             else 'inactive'
-          end`
+          end`,
         ),
 
       db
@@ -138,13 +150,9 @@ router.get(
         .orderBy(sql`count(*) desc`)
         .limit(8),
 
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(users),
+      db.select({ count: sql<number>`count(*)` }).from(users),
 
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(events),
+      db.select({ count: sql<number>`count(*)` }).from(events),
 
       db
         .select({ count: sql<number>`count(*)` })
@@ -154,8 +162,14 @@ router.get(
 
     const result = {
       usersByRole: usersByRole.map((r) => ({ role: r.role, count: Number(r.count) })),
-      therapistsByStatus: therapistsByStatus.map((r) => ({ status: r.status, count: Number(r.count) })),
-      subscriptionsByStatus: subscriptionsByStatus.map((r) => ({ status: r.status, count: Number(r.count) })),
+      therapistsByStatus: therapistsByStatus.map((r) => ({
+        status: r.status,
+        count: Number(r.count),
+      })),
+      subscriptionsByStatus: subscriptionsByStatus.map((r) => ({
+        status: r.status,
+        count: Number(r.count),
+      })),
       registrationTrend: registrationTrend.map((r) => ({ month: r.month, count: Number(r.count) })),
       contactsTrend: contactsTrend.map((r) => ({ month: r.month, count: Number(r.count) })),
       topSpecializations: topSpecializations.map((r) => ({ name: r.name, count: Number(r.count) })),
@@ -174,7 +188,7 @@ router.get(
 
     analyticsCache.set(ANALYTICS_CACHE_KEY, result);
     res.json(result);
-  })
+  }),
 );
 
 export default router;

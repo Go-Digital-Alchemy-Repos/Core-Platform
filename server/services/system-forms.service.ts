@@ -1,4 +1,9 @@
-import { cmsFormFieldSchema, type CmsFormField, type CmsFormSettings, type InsertCmsForm } from "@shared/schema";
+import {
+  cmsFormFieldSchema,
+  type CmsFormField,
+  type CmsFormSettings,
+  type InsertCmsForm,
+} from "@shared/schema";
 import { z } from "zod";
 import { storage } from "../storage";
 import { logger } from "../utils/logger";
@@ -10,7 +15,7 @@ function field(
   key: string,
   label: string,
   type: CmsFormField["type"],
-  options: Partial<CmsFormFieldInput> = {}
+  options: Partial<CmsFormFieldInput> = {},
 ): CmsFormField {
   return cmsFormFieldSchema.parse({
     id,
@@ -51,10 +56,24 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
     isSystem: true,
     isActive: true,
     fields: [
-      field("name", "name", "Name", "text", { placeholder: "Your name", required: true, width: "half" }),
-      field("email", "email", "Email", "email", { placeholder: "you@example.com", required: true, width: "half" }),
-      field("subject", "subject", "Subject", "text", { placeholder: "What is this about?", required: true }),
-      field("message", "message", "Message", "textarea", { placeholder: "Tell us more...", required: true }),
+      field("name", "name", "Name", "text", {
+        placeholder: "Your name",
+        required: true,
+        width: "half",
+      }),
+      field("email", "email", "Email", "email", {
+        placeholder: "you@example.com",
+        required: true,
+        width: "half",
+      }),
+      field("subject", "subject", "Subject", "text", {
+        placeholder: "What is this about?",
+        required: true,
+      }),
+      field("message", "message", "Message", "textarea", {
+        placeholder: "Tell us more...",
+        required: true,
+      }),
     ],
     settings: settings({
       submitButtonText: "Send Message",
@@ -88,7 +107,8 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
   {
     name: "Core Platform Interest Form",
     slug: "corePlatform-interest",
-    description: "Launch update and early-interest form for people who want to stay informed about Core Platform.",
+    description:
+      "Launch update and early-interest form for people who want to stay informed about Core Platform.",
     kind: "interest",
     isSystem: true,
     isActive: true,
@@ -107,20 +127,32 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
         placeholder: "example@example.com",
         required: true,
       }),
-      field("demographics", "demographics", "What demographic do you fit into? Choose all that apply!", "checkbox", {
-        required: true,
-        options: [
-          { label: "Core Platform", value: "corePlatform" },
-          { label: "Provider", value: "provider" },
-          { label: "Core Platform Parent", value: "corePlatform-parent" },
-          { label: "Core Platform Caregiver", value: "corePlatform-caregiver" },
-          { label: "Adult Core Platform", value: "adult-corePlatform" },
-          { label: "Other", value: "other" },
-        ],
-      }),
-      field("website", "website", "If you are a provider and would like to give us your website link please do so below.", "website", {
-        placeholder: "https://yourwebsite.com",
-      }),
+      field(
+        "demographics",
+        "demographics",
+        "What demographic do you fit into? Choose all that apply!",
+        "checkbox",
+        {
+          required: true,
+          options: [
+            { label: "Core Platform", value: "corePlatform" },
+            { label: "Provider", value: "provider" },
+            { label: "Core Platform Parent", value: "corePlatform-parent" },
+            { label: "Core Platform Caregiver", value: "corePlatform-caregiver" },
+            { label: "Adult Core Platform", value: "adult-corePlatform" },
+            { label: "Other", value: "other" },
+          ],
+        },
+      ),
+      field(
+        "website",
+        "website",
+        "If you are a provider and would like to give us your website link please do so below.",
+        "website",
+        {
+          placeholder: "https://yourwebsite.com",
+        },
+      ),
       field(
         "provider_info",
         "providerInfo",
@@ -128,7 +160,7 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
         "textarea",
         {
           placeholder: "Share what information would help you evaluate applying in the future.",
-        }
+        },
       ),
       field(
         "testimonial",
@@ -137,12 +169,13 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
         "textarea",
         {
           placeholder: "Share 1-2 sentences if you'd like to contribute a testimonial.",
-        }
+        },
       ),
     ],
     settings: settings({
       submitButtonText: "Keep Me Informed",
-      successMessage: "Thanks for your interest. We'll keep you informed about the Core Platform launch.",
+      successMessage:
+        "Thanks for your interest. We'll keep you informed about the Core Platform launch.",
       mailchimpEnabled: true,
       mailchimpTag: "Core Platform Interest",
     }),
@@ -150,7 +183,8 @@ const SYSTEM_FORMS: ManagedSystemForm[] = [
   {
     name: "Directory Application Start",
     slug: "directory-application-start",
-    description: "System workflow form used when a registered directory user starts their application.",
+    description:
+      "System workflow form used when a registered directory user starts their application.",
     kind: "application",
     isSystem: true,
     isActive: true,
@@ -178,11 +212,10 @@ export async function ensureSystemForms() {
           Array.isArray(existing.fields) && existing.fields.length > 0
             ? existing.fields
             : systemForm.fields,
-        settings:
-          {
-            ...systemForm.settings,
-            ...(typeof existing.settings === "object" && existing.settings ? existing.settings : {}),
-          },
+        settings: {
+          ...systemForm.settings,
+          ...(typeof existing.settings === "object" && existing.settings ? existing.settings : {}),
+        },
       });
       continue;
     }

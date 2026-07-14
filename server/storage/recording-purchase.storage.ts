@@ -1,6 +1,10 @@
 import { eq, and } from "drizzle-orm";
 import { db } from "../db";
-import { recordingPurchases, type RecordingPurchase, type InsertRecordingPurchase } from "@shared/schema";
+import {
+  recordingPurchases,
+  type RecordingPurchase,
+  type InsertRecordingPurchase,
+} from "@shared/schema";
 
 export class RecordingPurchaseStorage {
   async create(data: InsertRecordingPurchase): Promise<RecordingPurchase> {
@@ -17,15 +21,14 @@ export class RecordingPurchaseStorage {
   }
 
   async getByUser(userId: string): Promise<RecordingPurchase[]> {
-    return db
-      .select()
-      .from(recordingPurchases)
-      .where(eq(recordingPurchases.userId, userId));
+    return db.select().from(recordingPurchases).where(eq(recordingPurchases.userId, userId));
   }
 
   async updatePaymentDetails(
     id: string,
-    data: Partial<Pick<RecordingPurchase, "stripePaymentIntentId" | "stripeCheckoutSessionId" | "amountPaid">>
+    data: Partial<
+      Pick<RecordingPurchase, "stripePaymentIntentId" | "stripeCheckoutSessionId" | "amountPaid">
+    >,
   ): Promise<RecordingPurchase | undefined> {
     const [purchase] = await db
       .update(recordingPurchases)

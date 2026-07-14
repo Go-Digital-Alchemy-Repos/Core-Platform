@@ -3,7 +3,10 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import CmsMenusPage, { promoteMenuItemToRoot, reorderMenuItems } from "@/features/admin/cms/cms-menus-page";
+import CmsMenusPage, {
+  promoteMenuItemToRoot,
+  reorderMenuItems,
+} from "@/features/admin/cms/cms-menus-page";
 import type { MenuItem } from "@shared/schema";
 
 const useQueryMock = vi.fn();
@@ -141,8 +144,12 @@ describe("CmsMenusPage", () => {
       mutateAsync: vi.fn(),
       isPending: false,
     }));
-    (globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }).React = React;
-    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    (
+      globalThis as typeof globalThis & { React?: typeof React; IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).React = React;
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.appendChild(container);
   });
@@ -163,25 +170,35 @@ describe("CmsMenusPage", () => {
     });
 
     act(() => {
-      container.querySelector<HTMLButtonElement>('[data-testid="button-edit-menu-menu-main"]')?.click();
+      container
+        .querySelector<HTMLButtonElement>('[data-testid="button-edit-menu-menu-main"]')
+        ?.click();
     });
 
-    const linkTypeSelect = container.querySelector<HTMLSelectElement>('[data-testid="select-link-type-item-about"]');
+    const linkTypeSelect = container.querySelector<HTMLSelectElement>(
+      '[data-testid="select-link-type-item-about"]',
+    );
     expect(linkTypeSelect).not.toBeNull();
 
     act(() => {
       changeValue(linkTypeSelect!, "existing-page");
     });
 
-    const pageSelect = container.querySelector<HTMLSelectElement>('[data-testid="select-page-item-about"]');
+    const pageSelect = container.querySelector<HTMLSelectElement>(
+      '[data-testid="select-page-item-about"]',
+    );
     expect(pageSelect).not.toBeNull();
 
     act(() => {
       changeValue(pageSelect!, "page-about");
     });
 
-    expect(container.querySelector<HTMLInputElement>('[data-testid="input-label-item-about"]')?.value).toBe("About Us");
-    expect(container.querySelector<HTMLInputElement>('[data-testid="input-url-item-about"]')?.value).toBe("/about-us");
+    expect(
+      container.querySelector<HTMLInputElement>('[data-testid="input-label-item-about"]')?.value,
+    ).toBe("About Us");
+    expect(
+      container.querySelector<HTMLInputElement>('[data-testid="input-url-item-about"]')?.value,
+    ).toBe("/about-us");
   });
 
   it("marks linked menu labels as custom when edited manually", () => {
@@ -217,10 +234,14 @@ describe("CmsMenusPage", () => {
     });
 
     act(() => {
-      container.querySelector<HTMLButtonElement>('[data-testid="button-edit-menu-menu-main"]')?.click();
+      container
+        .querySelector<HTMLButtonElement>('[data-testid="button-edit-menu-menu-main"]')
+        ?.click();
     });
 
-    const labelInput = container.querySelector<HTMLInputElement>('[data-testid="input-label-item-about"]');
+    const labelInput = container.querySelector<HTMLInputElement>(
+      '[data-testid="input-label-item-about"]',
+    );
     act(() => {
       changeValue(labelInput!, "Our Story");
     });
@@ -252,7 +273,9 @@ describe("CmsMenusPage", () => {
       root.render(<CmsMenusPage />);
     });
 
-    expect(container.querySelector('[data-testid="text-menu-editor-title"]')?.textContent).toContain("Edit: Main Navigation");
+    expect(
+      container.querySelector('[data-testid="text-menu-editor-title"]')?.textContent,
+    ).toContain("Edit: Main Navigation");
   });
 });
 
@@ -327,10 +350,12 @@ describe("promoteMenuItemToRoot", () => {
     const promoted = promoteMenuItemToRoot(items, "insights");
 
     expect(promoted.map((item) => item.id)).toEqual(["resources", "insights", "events"]);
-    expect(promoted[0].children[0]).toEqual(expect.objectContaining({
-      id: "learn",
-      children: [],
-    }));
+    expect(promoted[0].children[0]).toEqual(
+      expect.objectContaining({
+        id: "learn",
+        children: [],
+      }),
+    );
   });
 });
 

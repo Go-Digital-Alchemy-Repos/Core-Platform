@@ -192,11 +192,11 @@ function MenuItemEditor({
   const updateChild = useCallback(
     (childId: string, updates: Partial<MenuItem>) => {
       const updatedChildren = item.children.map((c) =>
-        c.id === childId ? { ...c, ...updates } : c
+        c.id === childId ? { ...c, ...updates } : c,
       );
       onUpdate(item.id, { children: updatedChildren });
     },
-    [item, onUpdate]
+    [item, onUpdate],
   );
 
   const deleteChild = useCallback(
@@ -205,7 +205,7 @@ function MenuItemEditor({
         children: item.children.filter((c) => c.id !== childId),
       });
     },
-    [item, onUpdate]
+    [item, onUpdate],
   );
 
   const moveChildUp = useCallback(
@@ -216,7 +216,7 @@ function MenuItemEditor({
       [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
       onUpdate(item.id, { children: arr });
     },
-    [item, onUpdate]
+    [item, onUpdate],
   );
 
   const moveChildDown = useCallback(
@@ -227,14 +227,14 @@ function MenuItemEditor({
       [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
       onUpdate(item.id, { children: arr });
     },
-    [item, onUpdate]
+    [item, onUpdate],
   );
 
   const reorderChild = useCallback(
     (activeId: string, overId: string) => {
       onUpdate(item.id, { children: reorderMenuItems(item.children, activeId, overId) });
     },
-    [item, onUpdate]
+    [item, onUpdate],
   );
 
   const updateLabel = (label: string) => {
@@ -526,7 +526,12 @@ function MenuItemEditor({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" data-testid={`menu-item-actions-${item.id}`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0"
+              data-testid={`menu-item-actions-${item.id}`}
+            >
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -534,7 +539,10 @@ function MenuItemEditor({
             <DropdownMenuItem onClick={() => onMoveUp(item.id)} disabled={index === 0}>
               <ArrowUp className="mr-2 h-4 w-4" /> Move up
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onMoveDown(item.id)} disabled={index === totalSiblings - 1}>
+            <DropdownMenuItem
+              onClick={() => onMoveDown(item.id)}
+              disabled={index === totalSiblings - 1}
+            >
               <ArrowDown className="mr-2 h-4 w-4" /> Move down
             </DropdownMenuItem>
             {depth > 1 && (
@@ -614,7 +622,9 @@ function MenuEditor({
   const { toast } = useToast();
   const isNew = !menu;
   const [name, setName] = useState(menu?.name || draft?.name || "");
-  const [location, setLocation] = useState<MenuLocation>((menu?.location as MenuLocation) || (draft?.location as MenuLocation) || "unassigned");
+  const [location, setLocation] = useState<MenuLocation>(
+    (menu?.location as MenuLocation) || (draft?.location as MenuLocation) || "unassigned",
+  );
   const [items, setItems] = useState<MenuItem[]>((menu?.items as MenuItem[]) || []);
   const { data: pages = [] } = useQuery<CmsPage[]>({
     queryKey: ["/api/admin/cms/pages"],
@@ -624,7 +634,7 @@ function MenuEditor({
   });
   const editorLock = useEditorLock({
     resourceType: "cms_menu",
-    resourceId: isNew ? null : menu?.id ?? null,
+    resourceId: isNew ? null : (menu?.id ?? null),
     enabled: !isNew,
   });
 
@@ -649,16 +659,14 @@ function MenuEditor({
 
   useLockConflictGuard({
     active: !isNew && Boolean(menu?.id),
-    resourceId: isNew ? null : menu?.id ?? null,
+    resourceId: isNew ? null : (menu?.id ?? null),
     resourceLabel: "menu",
     editorLock,
     onConflict: onClose,
   });
 
   const updateItem = useCallback((id: string, updates: Partial<MenuItem>) => {
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
-    );
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...updates } : item)));
   }, []);
 
   const deleteItem = useCallback((id: string) => {
@@ -725,13 +733,19 @@ function MenuEditor({
     setItems((prev) => promoteMenuItemToRoot(prev, id));
   }, []);
 
-  function outdentFromChildren(parent: MenuItem, targetId: string): { item: MenuItem; extracted?: MenuItem } {
+  function outdentFromChildren(
+    parent: MenuItem,
+    targetId: string,
+  ): { item: MenuItem; extracted?: MenuItem } {
     const newChildren: MenuItem[] = [];
     for (const child of parent.children) {
       const childIdx = child.children.findIndex((c) => c.id === targetId);
       if (childIdx >= 0) {
         const target = child.children[childIdx];
-        const updatedChild = { ...child, children: child.children.filter((_, idx) => idx !== childIdx) };
+        const updatedChild = {
+          ...child,
+          children: child.children.filter((_, idx) => idx !== childIdx),
+        };
         newChildren.push(updatedChild);
         newChildren.push({ ...target });
       } else {
@@ -777,7 +791,14 @@ function MenuEditor({
         </div>
       </div>
 
-      <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-4", editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
+      <div
+        className={cn(
+          "grid grid-cols-1 sm:grid-cols-2 gap-4",
+          editorLock.hasLocking &&
+            editorLock.isReadOnly &&
+            "pointer-events-none select-none opacity-70",
+        )}
+      >
         <div className="space-y-2">
           <Label htmlFor="menu-name">Menu Name</Label>
           <Input
@@ -816,7 +837,14 @@ function MenuEditor({
         </div>
       </div>
 
-      <div className={cn("space-y-3", editorLock.hasLocking && editorLock.isReadOnly && "pointer-events-none select-none opacity-70")}>
+      <div
+        className={cn(
+          "space-y-3",
+          editorLock.hasLocking &&
+            editorLock.isReadOnly &&
+            "pointer-events-none select-none opacity-70",
+        )}
+      >
         <div className="flex items-center justify-between">
           <Label>Menu Items</Label>
           <Button variant="outline" size="sm" onClick={addItem} data-testid="button-add-menu-item">
@@ -825,29 +853,32 @@ function MenuEditor({
         </div>
 
         {items.length === 0 ? (
-          <div className="border border-dashed rounded-lg p-8 text-center text-muted-foreground" data-testid="text-no-items">
+          <div
+            className="border border-dashed rounded-lg p-8 text-center text-muted-foreground"
+            data-testid="text-no-items"
+          >
             <MenuIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">No menu items yet. Click "Add Item" to get started.</p>
           </div>
         ) : (
           <div className="space-y-2">
             {items.map((item, idx) => (
-            <MenuItemEditor
-              key={item.id}
-              item={item}
-              pages={pages}
-              forms={forms}
-              depth={1}
-              index={idx}
+              <MenuItemEditor
+                key={item.id}
+                item={item}
+                pages={pages}
+                forms={forms}
+                depth={1}
+                index={idx}
                 totalSiblings={items.length}
                 onUpdate={updateItem}
                 onDelete={deleteItem}
-              onMoveUp={moveItemUp}
-              onMoveDown={moveItemDown}
-              onReorder={(activeId, overId) => {
-                setItems((prev) => reorderMenuItems(prev, activeId, overId));
-              }}
-              onIndent={indentItem}
+                onMoveUp={moveItemUp}
+                onMoveDown={moveItemDown}
+                onReorder={(activeId, overId) => {
+                  setItems((prev) => reorderMenuItems(prev, activeId, overId));
+                }}
+                onIndent={indentItem}
                 onOutdent={outdentItem}
                 onPromoteToRoot={promoteItemToRoot}
               />
@@ -863,7 +894,9 @@ export default function CmsMenusPage() {
   const { toast } = useToast();
   const [currentPath, navigate] = useLocation();
   const [editingMenu, setEditingMenu] = useState<CmsMenu | null | "new">(null);
-  const [draftMenuDefaults, setDraftMenuDefaults] = useState<Partial<Pick<CmsMenu, "name" | "location">> | null>(null);
+  const [draftMenuDefaults, setDraftMenuDefaults] = useState<Partial<
+    Pick<CmsMenu, "name" | "location">
+  > | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<CmsMenu | null>(null);
 
   const { data: menus, isLoading } = useQuery<CmsMenu[]>({
@@ -904,7 +937,9 @@ export default function CmsMenusPage() {
 
   useEffect(() => {
     if (!menus || editingMenu !== null) return;
-    const query = currentPath.includes("?") ? currentPath.slice(currentPath.indexOf("?")) : window.location.search;
+    const query = currentPath.includes("?")
+      ? currentPath.slice(currentPath.indexOf("?"))
+      : window.location.search;
     const editMenuId = new URLSearchParams(query).get("editMenu");
     if (!editMenuId) return;
 
@@ -938,9 +973,12 @@ export default function CmsMenusPage() {
       <div className="p-6 max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold" data-testid="text-menus-title">Navigation Menus</h1>
+            <h1 className="text-2xl font-bold" data-testid="text-menus-title">
+              Navigation Menus
+            </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Create reusable menus and assign them to theme locations like the main navigation and footer areas.
+              Create reusable menus and assign them to theme locations like the main navigation and
+              footer areas.
             </p>
           </div>
           <Button
@@ -979,7 +1017,11 @@ export default function CmsMenusPage() {
                   ? `${displayMenu.name} (${location === "main_navigation" ? "legacy header menu" : "legacy footer menu"})`
                   : "No menu assigned yet";
               return (
-                <div key={location} className="rounded-lg border p-4" data-testid={`card-menu-location-${location}`}>
+                <div
+                  key={location}
+                  className="rounded-lg border p-4"
+                  data-testid={`card-menu-location-${location}`}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold">{MENU_LOCATION_LABELS[location]}</p>
@@ -1024,7 +1066,9 @@ export default function CmsMenusPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <MenuIcon className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-              <h3 className="text-lg font-medium mb-1" data-testid="text-no-menus">No Menus Yet</h3>
+              <h3 className="text-lg font-medium mb-1" data-testid="text-no-menus">
+                No Menus Yet
+              </h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Create a menu and assign it to a theme location to replace the default navigation.
               </p>
@@ -1114,14 +1158,19 @@ export default function CmsMenusPage() {
               Are you sure you want to delete "{deleteConfirm?.name}"? This action cannot be undone.
               {deleteConfirm?.location !== "unassigned" && (
                 <span className="block mt-1 font-medium text-destructive">
-                  This menu is currently assigned to the {MENU_LOCATION_LABELS[(deleteConfirm?.location as MenuLocation) || "unassigned"]}.
+                  This menu is currently assigned to the{" "}
+                  {MENU_LOCATION_LABELS[(deleteConfirm?.location as MenuLocation) || "unassigned"]}.
                   Deleting it will revert that area to the default navigation.
                 </span>
               )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)} data-testid="button-cancel-delete">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirm(null)}
+              data-testid="button-cancel-delete"
+            >
               Cancel
             </Button>
             <Button

@@ -71,7 +71,7 @@ const DEFAULT_EXCLUDED_TABLES = new Set(["session", "__drizzle_migrations"]);
 let backupTimer: NodeJS.Timeout | null = null;
 
 function quoteIdent(identifier: string) {
-  return `"${identifier.replace(/"/g, "\"\"")}"`;
+  return `"${identifier.replace(/"/g, '""')}"`;
 }
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
@@ -106,7 +106,7 @@ function getExcludedTables() {
     envValue
       .split(",")
       .map((entry) => entry.trim())
-      .filter(Boolean)
+      .filter(Boolean),
   );
 }
 
@@ -146,7 +146,10 @@ async function queryForeignKeyGraph() {
   return result.rows;
 }
 
-function topologicallySortTables(tables: string[], edges: Array<{ child_table: string; parent_table: string }>) {
+function topologicallySortTables(
+  tables: string[],
+  edges: Array<{ child_table: string; parent_table: string }>,
+) {
   const tableSet = new Set(tables);
   const inbound = new Map<string, Set<string>>();
   const outgoing = new Map<string, Set<string>>();
@@ -182,9 +185,12 @@ function topologicallySortTables(tables: string[], edges: Array<{ child_table: s
 
   if (order.length !== tables.length) {
     const remaining = tables.filter((table) => !order.includes(table)).sort();
-    logger.backup.warn("Detected cyclic or unresolved table dependencies during backup ordering; appending remaining tables alphabetically", {
-      remainingTables: remaining,
-    });
+    logger.backup.warn(
+      "Detected cyclic or unresolved table dependencies during backup ordering; appending remaining tables alphabetically",
+      {
+        remainingTables: remaining,
+      },
+    );
     order.push(...remaining);
   }
 
@@ -207,7 +213,7 @@ async function querySequenceColumns() {
 
 async function captureTable(tableName: string): Promise<BackupTableSnapshot> {
   const result = await pool.query<Record<string, unknown>>(
-    `SELECT * FROM public.${quoteIdent(tableName)}`
+    `SELECT * FROM public.${quoteIdent(tableName)}`,
   );
 
   return {
@@ -221,7 +227,7 @@ async function writeLatestManifest(manifest: BackupManifest) {
   await uploadBackupObject(
     MANIFEST_LATEST_KEY,
     Buffer.from(JSON.stringify(manifest, null, 2), "utf8"),
-    "application/json"
+    "application/json",
   );
 }
 
@@ -242,7 +248,7 @@ async function pruneExpiredBackups(retentionDays: number, maxSnapshots: number) 
 async function acquireBackupLock() {
   const result = await pool.query<{ acquired: boolean }>(
     "SELECT pg_try_advisory_lock($1) AS acquired",
-    [ADVISORY_LOCK_ID]
+    [ADVISORY_LOCK_ID],
   );
   return Boolean(result.rows[0]?.acquired);
 }
@@ -309,19 +315,14 @@ export async function runSystemBackup(reason: BackupRunReason = "manual") {
     };
 
     const compressed = gzipSync(Buffer.from(JSON.stringify(snapshot), "utf8"));
-    const uploaded = await uploadBackupObject(
-      manifest.key,
-      compressed,
-      "application/json",
-      {
-        contentEncoding: "gzip",
-        metadata: {
-          createdAt: manifest.createdAt,
-          reason: manifest.reason,
-          appVersion: manifest.appVersion,
-        },
-      }
-    );
+    const uploaded = await uploadBackupObject(manifest.key, compressed, "application/json", {
+      contentEncoding: "gzip",
+      metadata: {
+        createdAt: manifest.createdAt,
+        reason: manifest.reason,
+        appVersion: manifest.appVersion,
+      },
+    });
 
     if (!uploaded) {
       throw new Error("Backup upload failed");
@@ -364,13 +365,17 @@ export async function listRecentBackupManifests(limit = 10): Promise<BackupManif
     }
   }
 
-  return manifests.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return manifests.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
 }
 
 export async function getBackupStatus(): Promise<BackupStatus> {
   const configured = await isBackupStorageConfigured();
   const storage = configured ? await getBackupStorageInfo() : null;
-  const latest = configured ? await listRecentBackupManifests(1).then((items) => items[0] ?? null) : null;
+  const latest = configured
+    ? await listRecentBackupManifests(1).then((items) => items[0] ?? null)
+    : null;
   const recent = configured ? await listRecentBackupManifests(10) : [];
 
   return {
@@ -402,7 +407,7 @@ export async function restoreBackupSnapshot(snapshot: DatabaseBackupSnapshot) {
     const tableNames = snapshot.tables.map((table) => table.name);
     if (tableNames.length > 0) {
       await client.query(
-        `TRUNCATE TABLE ${tableNames.map((table) => `public.${quoteIdent(table)}`).join(", ")} RESTART IDENTITY CASCADE`
+        `TRUNCATE TABLE ${tableNames.map((table) => `public.${quoteIdent(table)}`).join(", ")} RESTART IDENTITY CASCADE`,
       );
     }
 
@@ -428,7 +433,7 @@ export async function restoreBackupSnapshot(snapshot: DatabaseBackupSnapshot) {
 
         await client.query(
           `INSERT INTO public.${quoteIdent(tableName)} (${columns.map(quoteIdent).join(", ")}) VALUES ${placeholders.join(", ")}`,
-          values
+          values,
         );
       }
     }
@@ -436,7 +441,7 @@ export async function restoreBackupSnapshot(snapshot: DatabaseBackupSnapshot) {
     for (const sequence of snapshot.sequences) {
       await client.query(
         `SELECT setval($1::regclass, COALESCE((SELECT MAX(${quoteIdent(sequence.columnName)})::bigint FROM public.${quoteIdent(sequence.tableName)}), 1), COALESCE((SELECT MAX(${quoteIdent(sequence.columnName)}) IS NOT NULL FROM public.${quoteIdent(sequence.tableName)}), false))`,
-        [sequence.sequenceName]
+        [sequence.sequenceName],
       );
     }
 
@@ -488,7 +493,9 @@ export function startSystemBackupService() {
       }
 
       const latest = await listRecentBackupManifests(1).then((items) => items[0] ?? null);
-      const latestAgeMs = latest ? Date.now() - new Date(latest.createdAt).getTime() : Number.POSITIVE_INFINITY;
+      const latestAgeMs = latest
+        ? Date.now() - new Date(latest.createdAt).getTime()
+        : Number.POSITIVE_INFINITY;
 
       if (latest && latestAgeMs < intervalMs) {
         return;
@@ -501,9 +508,12 @@ export function startSystemBackupService() {
   };
 
   void tick();
-  backupTimer = setInterval(() => {
-    void tick();
-  }, Math.min(intervalMs, 60 * 60 * 1000));
+  backupTimer = setInterval(
+    () => {
+      void tick();
+    },
+    Math.min(intervalMs, 60 * 60 * 1000),
+  );
 
   if (typeof backupTimer.unref === "function") {
     backupTimer.unref();

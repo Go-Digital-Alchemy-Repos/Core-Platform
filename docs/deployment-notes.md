@@ -17,13 +17,13 @@
    - Webhook endpoint URL must be updated in the Stripe dashboard to point to the production domain
    - Verify webhook events are configured for: `checkout.session.completed`, `customer.subscription.*`, `invoice.*`
 
-4. **R2 / file storage**:
-   - R2 credentials must be for the production bucket
-   - CORS configuration on the R2 bucket should allow the production domain
+4. **R2 / system backups**:
+   - If `SYSTEM_BACKUPS_ENABLED=true`, backup R2 credentials must be for the production backup bucket
+   - Keep backup credentials separate from any user-upload storage credentials used by a host platform or future integration
 
-5. **Email (SendGrid)**:
-   - `SENDGRID_API_KEY` must be for the production account
-   - Sender domain must be verified in SendGrid
+5. **Email (SMTP)**:
+   - `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM` must match the production email account
+   - Sender domain must be verified with the email provider
    - Check email templates exist in the database (seed if needed)
 
 ## Migration Notes

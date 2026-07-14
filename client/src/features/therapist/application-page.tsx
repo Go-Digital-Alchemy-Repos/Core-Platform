@@ -3,9 +3,24 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, useSearch } from "wouter";
 import { TherapistLayout } from "./therapist-layout";
 import {
-  ArrowLeft, ArrowRight, Send, CheckCircle2, Loader2, Clock,
-  FileText, User, Briefcase, MessageSquare, Users, DollarSign, Shield,
-  Plus, X, ExternalLink, AlertCircle, CreditCard
+  ArrowLeft,
+  ArrowRight,
+  Send,
+  CheckCircle2,
+  Loader2,
+  Clock,
+  FileText,
+  User,
+  Briefcase,
+  MessageSquare,
+  Users,
+  DollarSign,
+  Shield,
+  Plus,
+  X,
+  ExternalLink,
+  AlertCircle,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,7 +96,8 @@ const WIZARD_STEPS = [
 const CORE_PLATFORM_QUESTIONS = [
   {
     id: "corePlatform_experience",
-    label: "Describe your experience working with the populations or communities this directory serves.",
+    label:
+      "Describe your experience working with the populations or communities this directory serves.",
   },
   {
     id: "corePlatform_approach",
@@ -89,15 +105,21 @@ const CORE_PLATFORM_QUESTIONS = [
   },
   {
     id: "corePlatform_understanding",
-    label: "How would you describe the needs of the members you serve, and how does your practice address them?",
+    label:
+      "How would you describe the needs of the members you serve, and how does your practice address them?",
   },
   {
     id: "corePlatform_continuing_ed",
-    label: "What continuing education, training, or personal experience informs your Core Platform-related work?",
+    label:
+      "What continuing education, training, or personal experience informs your Core Platform-related work?",
   },
 ];
 
-function StepIndicator({ currentStep, onStepClick, completedSteps }: {
+function StepIndicator({
+  currentStep,
+  onStepClick,
+  completedSteps,
+}: {
   currentStep: number;
   onStepClick: (step: number) => void;
   completedSteps: Set<number>;
@@ -122,18 +144,26 @@ function StepIndicator({ currentStep, onStepClick, completedSteps }: {
                     isActive
                       ? "border-primary bg-primary text-primary-foreground"
                       : isCompleted
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-muted-foreground/30 text-muted-foreground group-hover:border-muted-foreground/50"
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-muted-foreground/30 text-muted-foreground group-hover:border-muted-foreground/50"
                   }`}
                 >
-                  {isCompleted && !isActive ? <CheckCircle2 className="w-5 h-5" /> : <StepIcon className="w-5 h-5" />}
+                  {isCompleted && !isActive ? (
+                    <CheckCircle2 className="w-5 h-5" />
+                  ) : (
+                    <StepIcon className="w-5 h-5" />
+                  )}
                 </div>
-                <span className={`text-[10px] font-medium text-center leading-tight max-w-[70px] ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+                <span
+                  className={`text-[10px] font-medium text-center leading-tight max-w-[70px] ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                >
                   {step.label}
                 </span>
               </button>
               {idx < WIZARD_STEPS.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-2 mt-[-1rem] ${isCompleted ? "bg-primary" : "bg-muted-foreground/20"}`} />
+                <div
+                  className={`flex-1 h-0.5 mx-2 mt-[-1rem] ${isCompleted ? "bg-primary" : "bg-muted-foreground/20"}`}
+                />
               )}
             </div>
           );
@@ -141,7 +171,9 @@ function StepIndicator({ currentStep, onStepClick, completedSteps }: {
       </div>
       <div className="md:hidden">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">Step {currentStep + 1} of {WIZARD_STEPS.length}</span>
+          <span className="text-sm font-medium">
+            Step {currentStep + 1} of {WIZARD_STEPS.length}
+          </span>
           <span className="text-sm text-muted-foreground">{WIZARD_STEPS[currentStep].label}</span>
         </div>
         <div className="flex gap-1">
@@ -151,7 +183,11 @@ function StepIndicator({ currentStep, onStepClick, completedSteps }: {
               type="button"
               onClick={() => onStepClick(idx)}
               className={`h-1.5 flex-1 rounded-full transition-colors ${
-                idx === currentStep ? "bg-primary" : idx < currentStep || completedSteps.has(idx) ? "bg-primary/40" : "bg-muted-foreground/20"
+                idx === currentStep
+                  ? "bg-primary"
+                  : idx < currentStep || completedSteps.has(idx)
+                    ? "bg-primary/40"
+                    : "bg-muted-foreground/20"
               }`}
               data-testid={`step-bar-${idx}`}
             />
@@ -208,7 +244,8 @@ function ApplicationFeeNoticeStep({
           {directorySettings.applicationFeeNoticeTitle}
         </h3>
         <p className="text-muted-foreground mt-1">
-          Review the fee policy before moving into payment and the remainder of your membership application.
+          Review the fee policy before moving into payment and the remainder of your membership
+          application.
         </p>
       </div>
 
@@ -217,17 +254,22 @@ function ApplicationFeeNoticeStep({
           <div className="flex items-start gap-3">
             <DollarSign className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium">Application Fee: {formatUsd(directorySettings.applicationFeeAmountCents)}</p>
+              <p className="font-medium">
+                Application Fee: {formatUsd(directorySettings.applicationFeeAmountCents)}
+              </p>
               <p className="text-sm text-muted-foreground mt-1">
                 {directorySettings.applicationFeeNoticeBody}
               </p>
             </div>
           </div>
           <div className="rounded-lg border bg-muted/30 p-4">
-            <p className="text-sm text-muted-foreground">{directorySettings.applicationFeePolicySummary}</p>
+            <p className="text-sm text-muted-foreground">
+              {directorySettings.applicationFeePolicySummary}
+            </p>
             {directorySettings.applicationFeeCreditOnApproval && (
               <p className="text-sm text-muted-foreground mt-2">
-                If approved, up to {formatUsd(directorySettings.applicationFeeCreditAmountCents)} can be applied to your first membership invoice.
+                If approved, up to {formatUsd(directorySettings.applicationFeeCreditAmountCents)}{" "}
+                can be applied to your first membership invoice.
               </p>
             )}
           </div>
@@ -266,7 +308,9 @@ function ApplicationPaymentStep({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold" data-testid="text-step-title">Application Payment</h3>
+        <h3 className="text-lg font-semibold" data-testid="text-step-title">
+          Application Payment
+        </h3>
         <p className="text-muted-foreground mt-1">
           Secure your place in the review queue by paying the application fee before continuing.
         </p>
@@ -277,11 +321,16 @@ function ApplicationPaymentStep({
           <div className="flex items-start gap-3">
             <CreditCard className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
             <div className="flex-1 space-y-2">
-              <p className="font-medium">Fee due now: {formatUsd(directorySettings.applicationFeeAmountCents)}</p>
-              <p className="text-sm text-muted-foreground">{directorySettings.applicationFeePolicySummary}</p>
+              <p className="font-medium">
+                Fee due now: {formatUsd(directorySettings.applicationFeeAmountCents)}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {directorySettings.applicationFeePolicySummary}
+              </p>
               {isPaid ? (
                 <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-900 dark:bg-green-950/40 dark:text-green-300">
-                  Your application fee has been processed. You can continue with the rest of the application.
+                  Your application fee has been processed. You can continue with the rest of the
+                  application.
                 </div>
               ) : (
                 <>
@@ -294,7 +343,11 @@ function ApplicationPaymentStep({
                     disabled={paymentPending || paymentProcessing}
                     data-testid="button-pay-application-fee"
                   >
-                    {paymentPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
+                    {paymentPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <CreditCard className="w-4 h-4 mr-2" />
+                    )}
                     Pay {formatUsd(directorySettings.applicationFeeAmountCents)}
                   </Button>
                 </>
@@ -307,12 +360,22 @@ function ApplicationPaymentStep({
   );
 }
 
-function BeforeYouBeginStep({ formData, onChange }: { formData: FormData; onChange: (data: Partial<FormData>) => void }) {
+function BeforeYouBeginStep({
+  formData,
+  onChange,
+}: {
+  formData: FormData;
+  onChange: (data: Partial<FormData>) => void;
+}) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold" data-testid="text-step-title">Before You Begin</h3>
-        <p className="text-muted-foreground mt-1">Please review the following information before starting your application.</p>
+        <h3 className="text-lg font-semibold" data-testid="text-step-title">
+          Before You Begin
+        </h3>
+        <p className="text-muted-foreground mt-1">
+          Please review the following information before starting your application.
+        </p>
       </div>
 
       <div className="grid gap-4">
@@ -321,7 +384,10 @@ function BeforeYouBeginStep({ formData, onChange }: { formData: FormData; onChan
             <Clock className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
             <div>
               <p className="font-medium">Estimated Time: 50–60 minutes</p>
-              <p className="text-sm text-muted-foreground">We recommend completing this application in one sitting for the best experience. Your progress is automatically saved if you need to step away.</p>
+              <p className="text-sm text-muted-foreground">
+                We recommend completing this application in one sitting for the best experience.
+                Your progress is automatically saved if you need to step away.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -331,7 +397,10 @@ function BeforeYouBeginStep({ formData, onChange }: { formData: FormData; onChan
             <Users className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
             <div>
               <p className="font-medium">Have 3 References Ready</p>
-              <p className="text-sm text-muted-foreground">You will need to provide contact information for 3 professional references. They will receive a confidential reference form after your application is submitted.</p>
+              <p className="text-sm text-muted-foreground">
+                You will need to provide contact information for 3 professional references. They
+                will receive a confidential reference form after your application is submitted.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -341,8 +410,17 @@ function BeforeYouBeginStep({ formData, onChange }: { formData: FormData; onChan
             <FileText className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
             <div>
               <p className="font-medium">Vetting Criteria</p>
-              <p className="text-sm text-muted-foreground">Review our vetting criteria to understand what we look for in Core Platform providers.</p>
-              <Button variant="ghost" size="sm" className="p-0 h-auto mt-1 text-primary" data-testid="link-vetting-criteria" disabled>
+              <p className="text-sm text-muted-foreground">
+                Review our vetting criteria to understand what we look for in Core Platform
+                providers.
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-0 h-auto mt-1 text-primary"
+                data-testid="link-vetting-criteria"
+                disabled
+              >
                 <ExternalLink className="w-3 h-3 mr-1" />
                 Preview vetting criteria (PDF coming soon)
               </Button>
@@ -369,12 +447,22 @@ function BeforeYouBeginStep({ formData, onChange }: { formData: FormData; onChan
   );
 }
 
-function ContactInfoStep({ formData, onChange }: { formData: FormData; onChange: (data: Partial<FormData>) => void }) {
+function ContactInfoStep({
+  formData,
+  onChange,
+}: {
+  formData: FormData;
+  onChange: (data: Partial<FormData>) => void;
+}) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold" data-testid="text-step-title">Contact Information</h3>
-        <p className="text-muted-foreground mt-1">Provide your contact details for the application.</p>
+        <h3 className="text-lg font-semibold" data-testid="text-step-title">
+          Contact Information
+        </h3>
+        <p className="text-muted-foreground mt-1">
+          Provide your contact details for the application.
+        </p>
       </div>
 
       <div className="space-y-4">
@@ -437,7 +525,9 @@ function ContactInfoStep({ formData, onChange }: { formData: FormData; onChange:
 }
 
 function ProfessionalInfoStep({
-  formData, onChange, application
+  formData,
+  onChange,
+  application,
 }: {
   formData: FormData;
   onChange: (data: Partial<FormData>) => void;
@@ -445,7 +535,11 @@ function ProfessionalInfoStep({
 }) {
   const { toast } = useToast();
   const [credForm, setCredForm] = useState({
-    credentialType: "", licenseNumber: "", stateOrCountry: "", middleName: "", verificationUrl: ""
+    credentialType: "",
+    licenseNumber: "",
+    stateOrCountry: "",
+    middleName: "",
+    verificationUrl: "",
   });
 
   const credentials = application?.credentials ?? [];
@@ -457,7 +551,13 @@ function ProfessionalInfoStep({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/therapist/application"] });
-      setCredForm({ credentialType: "", licenseNumber: "", stateOrCountry: "", middleName: "", verificationUrl: "" });
+      setCredForm({
+        credentialType: "",
+        licenseNumber: "",
+        stateOrCountry: "",
+        middleName: "",
+        verificationUrl: "",
+      });
       toast({ title: "Credential added" });
     },
     onError: () => toast({ title: "Failed to add credential", variant: "destructive" }),
@@ -483,7 +583,9 @@ function ProfessionalInfoStep({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold" data-testid="text-step-title">Professional Information</h3>
+        <h3 className="text-lg font-semibold" data-testid="text-step-title">
+          Professional Information
+        </h3>
         <p className="text-muted-foreground mt-1">Tell us about your professional background.</p>
       </div>
 
@@ -495,7 +597,9 @@ function ProfessionalInfoStep({
               <label
                 key={opt.value}
                 className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                  formData.applyingAs === opt.value ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+                  formData.applyingAs === opt.value
+                    ? "border-primary bg-primary/5"
+                    : "hover:bg-muted/50"
                 }`}
               >
                 <input
@@ -553,7 +657,9 @@ function ProfessionalInfoStep({
         <div className="flex items-center justify-between mb-3">
           <div>
             <Label className="text-base">Credentials & Licenses</Label>
-            <p className="text-sm text-muted-foreground">Add your professional credentials, licenses, and certifications.</p>
+            <p className="text-sm text-muted-foreground">
+              Add your professional credentials, licenses, and certifications.
+            </p>
           </div>
           <Badge variant="outline">{credentials.length} added</Badge>
         </div>
@@ -561,14 +667,24 @@ function ProfessionalInfoStep({
         {credentials.length > 0 && (
           <div className="space-y-2 mb-4">
             {credentials.map((c) => (
-              <div key={c.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+              <div
+                key={c.id}
+                className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+              >
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-sm truncate">{c.credentialType}</p>
                   <p className="text-xs text-muted-foreground">
-                    {[c.licenseNumber && `#${c.licenseNumber}`, c.stateOrCountry].filter(Boolean).join(" — ")}
+                    {[c.licenseNumber && `#${c.licenseNumber}`, c.stateOrCountry]
+                      .filter(Boolean)
+                      .join(" — ")}
                   </p>
                   {c.verificationUrl && (
-                    <a href={c.verificationUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-0.5">
+                    <a
+                      href={c.verificationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-0.5"
+                    >
                       <ExternalLink className="w-3 h-3" /> Verification link
                     </a>
                   )}
@@ -643,14 +759,20 @@ function ProfessionalInfoStep({
                 />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground italic">Document upload support will be available in a future update.</p>
+            <p className="text-xs text-muted-foreground italic">
+              Document upload support will be available in a future update.
+            </p>
             <Button
               onClick={() => addCredential.mutate()}
               disabled={!credForm.credentialType || addCredential.isPending}
               size="sm"
               data-testid="button-add-credential"
             >
-              {addCredential.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+              {addCredential.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}
               Add Credential
             </Button>
           </CardContent>
@@ -660,7 +782,13 @@ function ProfessionalInfoStep({
   );
 }
 
-function ProviderPracticeQuestionsStep({ formData, onChange }: { formData: FormData; onChange: (data: Partial<FormData>) => void }) {
+function ProviderPracticeQuestionsStep({
+  formData,
+  onChange,
+}: {
+  formData: FormData;
+  onChange: (data: Partial<FormData>) => void;
+}) {
   const questions = formData.corePlatformQuestions || {};
   const updateQuestion = (id: string, value: string) => {
     onChange({ corePlatformQuestions: { ...questions, [id]: value } });
@@ -669,7 +797,9 @@ function ProviderPracticeQuestionsStep({ formData, onChange }: { formData: FormD
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold" data-testid="text-step-title">Provider Practice</h3>
+        <h3 className="text-lg font-semibold" data-testid="text-step-title">
+          Provider Practice
+        </h3>
         <p className="text-muted-foreground mt-1">
           Help us understand your experience, approach, and fit for this provider network.
         </p>
@@ -716,7 +846,8 @@ function ReferencesStep({ application }: { application?: ApplicationResponse | n
       setRefForm({ refereeName: "", refereeEmail: "", relationship: "" });
       toast({ title: "Reference added" });
     },
-    onError: (err) => toast({ title: errorMessage(err, "Failed to add reference"), variant: "destructive" }),
+    onError: (err) =>
+      toast({ title: errorMessage(err, "Failed to add reference"), variant: "destructive" }),
   });
 
   const deleteReference = useMutation({
@@ -733,7 +864,9 @@ function ReferencesStep({ application }: { application?: ApplicationResponse | n
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold" data-testid="text-step-title">Professional References</h3>
+        <h3 className="text-lg font-semibold" data-testid="text-step-title">
+          Professional References
+        </h3>
         <p className="text-muted-foreground mt-1">
           Please provide exactly 3 professional references who can speak to your qualifications.
         </p>
@@ -742,7 +875,10 @@ function ReferencesStep({ application }: { application?: ApplicationResponse | n
       <Alert className="border-blue-200 dark:border-blue-800">
         <Users className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-sm">
-          <strong>Who to include:</strong> Supervisors, colleagues, mentors, or other professionals who can attest to your clinical competence, ethical conduct, and experience with cross-cultural populations. After you submit your application, each reference will receive a confidential reference form via email.
+          <strong>Who to include:</strong> Supervisors, colleagues, mentors, or other professionals
+          who can attest to your clinical competence, ethical conduct, and experience with
+          cross-cultural populations. After you submit your application, each reference will receive
+          a confidential reference form via email.
         </AlertDescription>
       </Alert>
 
@@ -756,10 +892,18 @@ function ReferencesStep({ application }: { application?: ApplicationResponse | n
       {references.length > 0 && (
         <div className="space-y-2">
           {references.map((r, idx) => (
-            <div key={r.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+            <div
+              key={r.id}
+              className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+            >
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-sm">Reference {idx + 1}: {r.refereeName}</p>
-                <p className="text-xs text-muted-foreground">{r.refereeEmail}{r.relationship && ` — ${r.relationship}`}</p>
+                <p className="font-medium text-sm">
+                  Reference {idx + 1}: {r.refereeName}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {r.refereeEmail}
+                  {r.relationship && ` — ${r.relationship}`}
+                </p>
               </div>
               <Button
                 variant="ghost"
@@ -816,7 +960,11 @@ function ReferencesStep({ application }: { application?: ApplicationResponse | n
               size="sm"
               data-testid="button-add-reference"
             >
-              {addReference.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+              {addReference.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}
               Add Reference
             </Button>
           </CardContent>
@@ -826,19 +974,30 @@ function ReferencesStep({ application }: { application?: ApplicationResponse | n
   );
 }
 
-function AccessibilityStep({ formData, onChange }: { formData: FormData; onChange: (data: Partial<FormData>) => void }) {
+function AccessibilityStep({
+  formData,
+  onChange,
+}: {
+  formData: FormData;
+  onChange: (data: Partial<FormData>) => void;
+}) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold" data-testid="text-step-title">Accessibility & Pricing</h3>
+        <h3 className="text-lg font-semibold" data-testid="text-step-title">
+          Accessibility & Pricing
+        </h3>
         <p className="text-muted-foreground mt-1">
-          Help us understand your fee structure. This information is used to identify providers who may qualify for an accessibility discount program.
+          Help us understand your fee structure. This information is used to identify providers who
+          may qualify for an accessibility discount program.
         </p>
       </div>
 
       <div className="space-y-4">
         <div>
-          <Label htmlFor="accessibilityStartingFee">What is your starting fee per appointment? *</Label>
+          <Label htmlFor="accessibilityStartingFee">
+            What is your starting fee per appointment? *
+          </Label>
           <div className="relative mt-1">
             <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -862,7 +1021,9 @@ function AccessibilityStep({ formData, onChange }: { formData: FormData; onChang
               <label
                 key={opt.value}
                 className={`flex items-center justify-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors text-sm font-medium ${
-                  formData.accessibilitySlidingScale === opt.value ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+                  formData.accessibilitySlidingScale === opt.value
+                    ? "border-primary bg-primary/5"
+                    : "hover:bg-muted/50"
                 }`}
               >
                 <input
@@ -882,7 +1043,9 @@ function AccessibilityStep({ formData, onChange }: { formData: FormData; onChang
 
         {formData.accessibilitySlidingScale === "yes" && (
           <div>
-            <Label htmlFor="accessibilityDetails">Please describe your sliding-scale or reduced-fee structure</Label>
+            <Label htmlFor="accessibilityDetails">
+              Please describe your sliding-scale or reduced-fee structure
+            </Label>
             <Textarea
               id="accessibilityDetails"
               value={formData.accessibilityDetails || ""}
@@ -899,7 +1062,13 @@ function AccessibilityStep({ formData, onChange }: { formData: FormData; onChang
   );
 }
 
-function TermsStep({ formData, onChange }: { formData: FormData; onChange: (data: Partial<FormData>) => void }) {
+function TermsStep({
+  formData,
+  onChange,
+}: {
+  formData: FormData;
+  onChange: (data: Partial<FormData>) => void;
+}) {
   const termsItems = [
     "I acknowledge that I am an independent professional and not an employee, agent, or representative of Core Platform.",
     "I understand that listing on the Core Platform directory does not constitute an endorsement by Core Platform of my services, qualifications, or methods.",
@@ -914,7 +1083,9 @@ function TermsStep({ formData, onChange }: { formData: FormData; onChange: (data
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold" data-testid="text-step-title">Terms & Conditions</h3>
+        <h3 className="text-lg font-semibold" data-testid="text-step-title">
+          Terms & Conditions
+        </h3>
         <p className="text-muted-foreground mt-1">
           Please read and accept the following terms to complete your application.
         </p>
@@ -925,7 +1096,9 @@ function TermsStep({ formData, onChange }: { formData: FormData; onChange: (data
           <div className="max-h-[300px] overflow-y-auto space-y-3 pr-2">
             {termsItems.map((item, idx) => (
               <div key={idx} className="flex gap-2 text-sm">
-                <span className="text-muted-foreground font-mono text-xs mt-0.5 flex-shrink-0">{idx + 1}.</span>
+                <span className="text-muted-foreground font-mono text-xs mt-0.5 flex-shrink-0">
+                  {idx + 1}.
+                </span>
                 <p className="text-foreground/90">{item}</p>
               </div>
             ))}
@@ -942,7 +1115,10 @@ function TermsStep({ formData, onChange }: { formData: FormData; onChange: (data
             className="mt-0.5 h-4 w-4 rounded border-gray-300"
             data-testid="checkbox-insurance-agreement"
           />
-          <span className="text-sm">I agree to maintain professional liability insurance for as long as I am listed on the Core Platform directory.</span>
+          <span className="text-sm">
+            I agree to maintain professional liability insurance for as long as I am listed on the
+            Core Platform directory.
+          </span>
         </label>
 
         <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-muted/50 transition-colors">
@@ -953,7 +1129,9 @@ function TermsStep({ formData, onChange }: { formData: FormData; onChange: (data
             className="mt-0.5 h-4 w-4 rounded border-gray-300"
             data-testid="checkbox-licensure-proof"
           />
-          <span className="text-sm">I agree to provide proof of licensure or certification upon request.</span>
+          <span className="text-sm">
+            I agree to provide proof of licensure or certification upon request.
+          </span>
         </label>
 
         <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-muted/50 transition-colors">
@@ -964,14 +1142,18 @@ function TermsStep({ formData, onChange }: { formData: FormData; onChange: (data
             className="mt-0.5 h-4 w-4 rounded border-gray-300"
             data-testid="checkbox-terms-accepted"
           />
-          <span className="text-sm font-medium">I have read and agree to all terms and conditions listed above.</span>
+          <span className="text-sm font-medium">
+            I have read and agree to all terms and conditions listed above.
+          </span>
         </label>
       </div>
 
       <Separator />
 
       <div>
-        <Label htmlFor="termsSignature">Type your full legal name as your electronic signature *</Label>
+        <Label htmlFor="termsSignature">
+          Type your full legal name as your electronic signature *
+        </Label>
         <Input
           id="termsSignature"
           value={formData.termsSignature || ""}
@@ -980,22 +1162,32 @@ function TermsStep({ formData, onChange }: { formData: FormData; onChange: (data
           className="mt-1 font-serif text-lg"
           data-testid="input-terms-signature"
         />
-        <p className="text-xs text-muted-foreground mt-1">By typing your name, you acknowledge this serves as your legally binding electronic signature.</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          By typing your name, you acknowledge this serves as your legally binding electronic
+          signature.
+        </p>
       </div>
     </div>
   );
 }
 
-function getStepValidation(step: number, formData: FormData, application?: ApplicationResponse | null): { valid: boolean; message?: string } {
+function getStepValidation(
+  step: number,
+  formData: FormData,
+  application?: ApplicationResponse | null,
+): { valid: boolean; message?: string } {
   switch (step) {
     case 0:
-      if (!formData.feeAcknowledgment) return { valid: false, message: "Please acknowledge the application fee policy." };
+      if (!formData.feeAcknowledgment)
+        return { valid: false, message: "Please acknowledge the application fee policy." };
       return { valid: true };
     case 1:
-      if (application?.paymentStatus !== "paid") return { valid: false, message: "Please complete payment before continuing." };
+      if (application?.paymentStatus !== "paid")
+        return { valid: false, message: "Please complete payment before continuing." };
       return { valid: true };
     case 2:
-      if (!formData.readyAcknowledgment) return { valid: false, message: "Please acknowledge you have reviewed the information." };
+      if (!formData.readyAcknowledgment)
+        return { valid: false, message: "Please acknowledge you have reviewed the information." };
       return { valid: true };
     case 3:
       if (!formData.fullName) return { valid: false, message: "Full name is required." };
@@ -1005,28 +1197,44 @@ function getStepValidation(step: number, formData: FormData, application?: Appli
       if (!formData.country) return { valid: false, message: "Country is required." };
       return { valid: true };
     case 4:
-      if (!formData.applyingAs) return { valid: false, message: "Please select what you're applying as." };
-      if (!formData.professionalTitle) return { valid: false, message: "Professional title is required." };
-      if ((application?.credentials?.length ?? 0) === 0) return { valid: false, message: "At least one credential is required." };
+      if (!formData.applyingAs)
+        return { valid: false, message: "Please select what you're applying as." };
+      if (!formData.professionalTitle)
+        return { valid: false, message: "Professional title is required." };
+      if ((application?.credentials?.length ?? 0) === 0)
+        return { valid: false, message: "At least one credential is required." };
       return { valid: true };
     case 5: {
       const questions = formData.corePlatformQuestions || {};
-      const answered = CORE_PLATFORM_QUESTIONS.filter((q) => (questions[q.id] || "").trim().length > 0);
-      if (answered.length < CORE_PLATFORM_QUESTIONS.length) return { valid: false, message: `Please answer all ${CORE_PLATFORM_QUESTIONS.length} questions.` };
+      const answered = CORE_PLATFORM_QUESTIONS.filter(
+        (q) => (questions[q.id] || "").trim().length > 0,
+      );
+      if (answered.length < CORE_PLATFORM_QUESTIONS.length)
+        return {
+          valid: false,
+          message: `Please answer all ${CORE_PLATFORM_QUESTIONS.length} questions.`,
+        };
       return { valid: true };
     }
     case 6:
-      if ((application?.references?.length ?? 0) < 3) return { valid: false, message: "Please add all 3 references." };
+      if ((application?.references?.length ?? 0) < 3)
+        return { valid: false, message: "Please add all 3 references." };
       return { valid: true };
     case 7:
-      if (!formData.accessibilityStartingFee) return { valid: false, message: "Starting fee is required." };
-      if (!formData.accessibilitySlidingScale) return { valid: false, message: "Please indicate if you offer sliding-scale sessions." };
+      if (!formData.accessibilityStartingFee)
+        return { valid: false, message: "Starting fee is required." };
+      if (!formData.accessibilitySlidingScale)
+        return { valid: false, message: "Please indicate if you offer sliding-scale sessions." };
       return { valid: true };
     case 8:
-      if (!formData.termsAccepted) return { valid: false, message: "You must accept the terms and conditions." };
-      if (!formData.termsInsuranceAgreement) return { valid: false, message: "Insurance agreement is required." };
-      if (!formData.termsLicensureProof) return { valid: false, message: "Licensure proof agreement is required." };
-      if (!formData.termsSignature) return { valid: false, message: "Electronic signature is required." };
+      if (!formData.termsAccepted)
+        return { valid: false, message: "You must accept the terms and conditions." };
+      if (!formData.termsInsuranceAgreement)
+        return { valid: false, message: "Insurance agreement is required." };
+      if (!formData.termsLicensureProof)
+        return { valid: false, message: "Licensure proof agreement is required." };
+      if (!formData.termsSignature)
+        return { valid: false, message: "Electronic signature is required." };
       return { valid: true };
     default:
       return { valid: true };
@@ -1040,7 +1248,9 @@ export default function ApplicationPage() {
   const searchString = useSearch();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<FormData>({});
-  const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved" | "error">(
+    "idle",
+  );
   const [initialized, setInitialized] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
@@ -1090,7 +1300,11 @@ export default function ApplicationPage() {
       }
     },
     onError: (err) => {
-      toast({ title: "Payment failed", description: errorMessage(err, "Could not initiate payment."), variant: "destructive" });
+      toast({
+        title: "Payment failed",
+        description: errorMessage(err, "Could not initiate payment."),
+        variant: "destructive",
+      });
     },
   });
 
@@ -1102,16 +1316,28 @@ export default function ApplicationPage() {
     onSuccess: (data: { paid: boolean }) => {
       if (data.paid) {
         queryClient.invalidateQueries({ queryKey: ["/api/therapist/application"] });
-        toast({ title: "Payment confirmed!", description: "Your application fee has been processed. You can continue with the remaining application steps." });
+        toast({
+          title: "Payment confirmed!",
+          description:
+            "Your application fee has been processed. You can continue with the remaining application steps.",
+        });
         setPaymentProcessing(false);
       } else {
-        toast({ title: "Payment not confirmed", description: "We couldn't verify your payment. Please try again.", variant: "destructive" });
+        toast({
+          title: "Payment not confirmed",
+          description: "We couldn't verify your payment. Please try again.",
+          variant: "destructive",
+        });
         setPaymentProcessing(false);
       }
     },
     onError: (err) => {
       setPaymentProcessing(false);
-      toast({ title: "Payment verification failed", description: errorMessage(err, "Please contact support if you were charged."), variant: "destructive" });
+      toast({
+        title: "Payment verification failed",
+        description: errorMessage(err, "Please contact support if you were charged."),
+        variant: "destructive",
+      });
     },
   });
 
@@ -1122,11 +1348,18 @@ export default function ApplicationPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/therapist/application"] });
-      toast({ title: "Application submitted!", description: "We'll review your application and get back to you soon." });
+      toast({
+        title: "Application submitted!",
+        description: "We'll review your application and get back to you soon.",
+      });
       setLocation("/therapist/application/status");
     },
     onError: (err) => {
-      toast({ title: "Submission failed", description: errorMessage(err, "Please check all required fields."), variant: "destructive" });
+      toast({
+        title: "Submission failed",
+        description: errorMessage(err, "Please check all required fields."),
+        variant: "destructive",
+      });
     },
   });
 
@@ -1135,11 +1368,7 @@ export default function ApplicationPage() {
       setFormData((application.formData as FormData) || {});
       const savedStep = application.currentStep || 0;
       const clampedStep =
-        application.paymentStatus === "paid"
-          ? savedStep
-          : savedStep > 1
-            ? 1
-            : savedStep;
+        application.paymentStatus === "paid" ? savedStep : savedStep > 1 ? 1 : savedStep;
       setCurrentStep(clampedStep);
       setInitialized(true);
     }
@@ -1185,31 +1414,39 @@ export default function ApplicationPage() {
     }, 1000);
   }, []);
 
-  const handleFormChange = useCallback((updates: Partial<FormData>) => {
-    setFormData((prev) => {
-      const next = { ...prev, ...updates };
-      triggerAutosave(next, currentStep);
-      return next;
-    });
-    setValidationError(null);
-  }, [currentStep, triggerAutosave]);
+  const handleFormChange = useCallback(
+    (updates: Partial<FormData>) => {
+      setFormData((prev) => {
+        const next = { ...prev, ...updates };
+        triggerAutosave(next, currentStep);
+        return next;
+      });
+      setValidationError(null);
+    },
+    [currentStep, triggerAutosave],
+  );
 
-  const handleStepChange = useCallback((step: number) => {
-    if (step > currentStep) {
-      for (let i = 0; i < step; i++) {
-        const validation = getStepValidation(i, formData, application);
-        if (!validation.valid) {
-          setCurrentStep(i);
-          setValidationError(validation.message || "Please complete this step before continuing.");
-          return;
+  const handleStepChange = useCallback(
+    (step: number) => {
+      if (step > currentStep) {
+        for (let i = 0; i < step; i++) {
+          const validation = getStepValidation(i, formData, application);
+          if (!validation.valid) {
+            setCurrentStep(i);
+            setValidationError(
+              validation.message || "Please complete this step before continuing.",
+            );
+            return;
+          }
         }
       }
-    }
-    setCurrentStep(step);
-    setValidationError(null);
-    triggerAutosave(formData, step);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [application, currentStep, formData, triggerAutosave]);
+      setCurrentStep(step);
+      setValidationError(null);
+      triggerAutosave(formData, step);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [application, currentStep, formData, triggerAutosave],
+  );
 
   const handleNext = useCallback(() => {
     const validation = getStepValidation(currentStep, formData, application);
@@ -1239,12 +1476,20 @@ export default function ApplicationPage() {
     submittingRef.current = true;
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
 
-    autosaveMutation.mutate({ formData, currentStep }, {
-      onSuccess: () => submitApplication.mutate(undefined, {
-        onSettled: () => { submittingRef.current = false; },
-      }),
-      onError: () => { submittingRef.current = false; },
-    });
+    autosaveMutation.mutate(
+      { formData, currentStep },
+      {
+        onSuccess: () =>
+          submitApplication.mutate(undefined, {
+            onSettled: () => {
+              submittingRef.current = false;
+            },
+          }),
+        onError: () => {
+          submittingRef.current = false;
+        },
+      },
+    );
   }, [formData, application, currentStep]);
 
   const completedSteps = new Set<number>();
@@ -1289,161 +1534,195 @@ export default function ApplicationPage() {
   if (!application) {
     return (
       <TherapistLayout>
-      <div className="container max-w-2xl mx-auto py-8 px-4">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-heading">Apply for Membership</CardTitle>
-            <CardDescription className="max-w-md mx-auto">
-              Join the Core Platform provider network and connect with members who need your expertise.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <Button
-              onClick={() => createApplication.mutate()}
-              disabled={createApplication.isPending}
-              size="lg"
-              data-testid="button-start-application"
-            >
-              {createApplication.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Begin Application
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+        <div className="container max-w-2xl mx-auto py-8 px-4">
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-heading">Apply for Membership</CardTitle>
+              <CardDescription className="max-w-md mx-auto">
+                Join the Core Platform provider network and connect with members who need your
+                expertise.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <Button
+                onClick={() => createApplication.mutate()}
+                disabled={createApplication.isPending}
+                size="lg"
+                data-testid="button-start-application"
+              >
+                {createApplication.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Begin Application
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </TherapistLayout>
     );
   }
 
   const isLastStep = currentStep === WIZARD_STEPS.length - 1;
-  const allComplete = Array.from({ length: WIZARD_STEPS.length }, (_, i) => i).every((i) => completedSteps.has(i));
+  const allComplete = Array.from({ length: WIZARD_STEPS.length }, (_, i) => i).every((i) =>
+    completedSteps.has(i),
+  );
 
   return (
     <TherapistLayout>
-    <div className="container max-w-2xl mx-auto py-8 px-4">
-      <div className="flex items-center justify-between mb-4">
-        <div />
-        <AutosaveIndicator status={autosaveStatus} />
-      </div>
+      <div className="container max-w-2xl mx-auto py-8 px-4">
+        <div className="flex items-center justify-between mb-4">
+          <div />
+          <AutosaveIndicator status={autosaveStatus} />
+        </div>
 
-      <h1 className="text-2xl font-heading font-bold mb-1" data-testid="text-page-title">Membership Application</h1>
-      <p className="text-muted-foreground mb-6 text-sm">Complete each step to submit your application for review.</p>
+        <h1 className="text-2xl font-heading font-bold mb-1" data-testid="text-page-title">
+          Membership Application
+        </h1>
+        <p className="text-muted-foreground mb-6 text-sm">
+          Complete each step to submit your application for review.
+        </p>
 
-      <StepIndicator currentStep={currentStep} onStepClick={handleStepChange} completedSteps={completedSteps} />
+        <StepIndicator
+          currentStep={currentStep}
+          onStepClick={handleStepChange}
+          completedSteps={completedSteps}
+        />
 
-      {paymentProcessing && (
-        <Alert className="mb-4 border-blue-200 dark:border-blue-800">
-          <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-          <AlertDescription>Confirming your payment... Please wait.</AlertDescription>
-        </Alert>
-      )}
+        {paymentProcessing && (
+          <Alert className="mb-4 border-blue-200 dark:border-blue-800">
+            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+            <AlertDescription>Confirming your payment... Please wait.</AlertDescription>
+          </Alert>
+        )}
 
-      {validationError && (
-        <Alert variant="destructive" className="mb-4" data-testid="alert-validation-error">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{validationError}</AlertDescription>
-        </Alert>
-      )}
+        {validationError && (
+          <Alert variant="destructive" className="mb-4" data-testid="alert-validation-error">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{validationError}</AlertDescription>
+          </Alert>
+        )}
 
-      <Card>
-        <CardContent className="p-6">
-          {currentStep === 0 && (
-            <ApplicationFeeNoticeStep
-              directorySettings={effectiveDirectorySettings}
-              formData={formData}
-              onChange={handleFormChange}
-            />
-          )}
-          {currentStep === 1 && (
-            <ApplicationPaymentStep
-              directorySettings={effectiveDirectorySettings}
-              isPaid={isPaid}
-              paymentPending={paymentMutation.isPending}
-              paymentProcessing={paymentProcessing}
-              onPayNow={() => paymentMutation.mutate()}
-            />
-          )}
-          {currentStep === 2 && <BeforeYouBeginStep formData={formData} onChange={handleFormChange} />}
-          {currentStep === 3 && <ContactInfoStep formData={formData} onChange={handleFormChange} />}
-          {currentStep === 4 && <ProfessionalInfoStep formData={formData} onChange={handleFormChange} application={application} />}
-          {currentStep === 5 && <ProviderPracticeQuestionsStep formData={formData} onChange={handleFormChange} />}
-          {currentStep === 6 && <ReferencesStep application={application} />}
-          {currentStep === 7 && <AccessibilityStep formData={formData} onChange={handleFormChange} />}
-          {currentStep === 8 && <TermsStep formData={formData} onChange={handleFormChange} />}
-        </CardContent>
-      </Card>
-
-      {isLastStep && allComplete && (
-        <Card className="mt-4 border-primary/30">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <Send className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="font-medium">Ready to submit for review</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Your payment has been completed and all required application steps are filled in. Submit now to send your application into the review workflow.
-                </p>
-              </div>
-            </div>
+        <Card>
+          <CardContent className="p-6">
+            {currentStep === 0 && (
+              <ApplicationFeeNoticeStep
+                directorySettings={effectiveDirectorySettings}
+                formData={formData}
+                onChange={handleFormChange}
+              />
+            )}
+            {currentStep === 1 && (
+              <ApplicationPaymentStep
+                directorySettings={effectiveDirectorySettings}
+                isPaid={isPaid}
+                paymentPending={paymentMutation.isPending}
+                paymentProcessing={paymentProcessing}
+                onPayNow={() => paymentMutation.mutate()}
+              />
+            )}
+            {currentStep === 2 && (
+              <BeforeYouBeginStep formData={formData} onChange={handleFormChange} />
+            )}
+            {currentStep === 3 && (
+              <ContactInfoStep formData={formData} onChange={handleFormChange} />
+            )}
+            {currentStep === 4 && (
+              <ProfessionalInfoStep
+                formData={formData}
+                onChange={handleFormChange}
+                application={application}
+              />
+            )}
+            {currentStep === 5 && (
+              <ProviderPracticeQuestionsStep formData={formData} onChange={handleFormChange} />
+            )}
+            {currentStep === 6 && <ReferencesStep application={application} />}
+            {currentStep === 7 && (
+              <AccessibilityStep formData={formData} onChange={handleFormChange} />
+            )}
+            {currentStep === 8 && <TermsStep formData={formData} onChange={handleFormChange} />}
           </CardContent>
         </Card>
-      )}
 
-      <div className="flex items-center justify-between mt-6">
-        <Button
-          variant="outline"
-          onClick={() => handleStepChange(currentStep - 1)}
-          disabled={currentStep === 0}
-          data-testid="button-prev-step"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Previous
-        </Button>
-        <div className="flex gap-2">
-          {isLastStep && allComplete ? (
-            <Button
-              onClick={handleSubmitApplication}
-              disabled={submitApplication.isPending || autosaveMutation.isPending || paymentProcessing}
-              className="bg-green-600 hover:bg-green-700"
-              data-testid="button-submit-application"
-            >
-              {submitApplication.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-              Submit Application
-            </Button>
-          ) : (
-            <Button
-              onClick={handleNext}
-              disabled={currentStep >= WIZARD_STEPS.length - 1 && !allComplete}
-              data-testid="button-next-step"
-            >
-              Next
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          )}
-        </div>
-      </div>
+        {isLastStep && allComplete && (
+          <Card className="mt-4 border-primary/30">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Send className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium">Ready to submit for review</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Your payment has been completed and all required application steps are filled
+                    in. Submit now to send your application into the review workflow.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-      {isLastStep && !allComplete && (
-        <div className="mt-4 text-center">
-          <p className="text-sm text-muted-foreground">Complete all steps to enable payment and submission.</p>
-          <div className="flex flex-wrap justify-center gap-2 mt-2">
-            {WIZARD_STEPS.map((step, idx) => {
-              if (completedSteps.has(idx)) return null;
-              return (
-                <Button
-                  key={step.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleStepChange(idx)}
-                  className="text-xs"
-                >
-                  {step.label}
-                </Button>
-              );
-            })}
+        <div className="flex items-center justify-between mt-6">
+          <Button
+            variant="outline"
+            onClick={() => handleStepChange(currentStep - 1)}
+            disabled={currentStep === 0}
+            data-testid="button-prev-step"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Previous
+          </Button>
+          <div className="flex gap-2">
+            {isLastStep && allComplete ? (
+              <Button
+                onClick={handleSubmitApplication}
+                disabled={
+                  submitApplication.isPending || autosaveMutation.isPending || paymentProcessing
+                }
+                className="bg-green-600 hover:bg-green-700"
+                data-testid="button-submit-application"
+              >
+                {submitApplication.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4 mr-2" />
+                )}
+                Submit Application
+              </Button>
+            ) : (
+              <Button
+                onClick={handleNext}
+                disabled={currentStep >= WIZARD_STEPS.length - 1 && !allComplete}
+                data-testid="button-next-step"
+              >
+                Next
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            )}
           </div>
         </div>
-      )}
-    </div>
+
+        {isLastStep && !allComplete && (
+          <div className="mt-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              Complete all steps to enable payment and submission.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2 mt-2">
+              {WIZARD_STEPS.map((step, idx) => {
+                if (completedSteps.has(idx)) return null;
+                return (
+                  <Button
+                    key={step.id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleStepChange(idx)}
+                    className="text-xs"
+                  >
+                    {step.label}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
     </TherapistLayout>
   );
 }

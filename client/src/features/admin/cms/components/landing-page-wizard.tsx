@@ -59,14 +59,12 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
 
   const toggleAudience = (id: string) => {
     setSelectedAudiences((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
     );
   };
 
   const toggleBlock = (id: string) => {
-    setSelectedBlocks((prev) =>
-      prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]
-    );
+    setSelectedBlocks((prev) => (prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]));
   };
 
   const blockOptions: WizardBlockOption[] = goalId ? getRecommendedBlocks(goalId) : [];
@@ -89,7 +87,7 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
     selectedAudiences,
     selectedBlocks,
     ctaText,
-    ctaLink
+    ctaLink,
   );
 
   const resetState = () => {
@@ -112,7 +110,7 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
       selectedAudiences,
       selectedBlocks,
       ctaText,
-      ctaLink
+      ctaLink,
     );
     const title = headline || "Landing Page";
     resetState();
@@ -121,11 +119,16 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
 
   const canProceed = () => {
     switch (step) {
-      case 0: return !!goalId && !!headline.trim();
-      case 1: return selectedAudiences.length > 0;
-      case 2: return selectedBlocks.length > 0;
-      case 3: return true;
-      default: return false;
+      case 0:
+        return !!goalId && !!headline.trim();
+      case 1:
+        return selectedAudiences.length > 0;
+      case 2:
+        return selectedBlocks.length > 0;
+      case 3:
+        return true;
+      default:
+        return false;
     }
   };
 
@@ -136,7 +139,10 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0" data-testid="dialog-landing-wizard">
+      <DialogContent
+        className="max-w-3xl max-h-[90vh] flex flex-col p-0"
+        data-testid="dialog-landing-wizard"
+      >
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
             <Wand2 className="h-5 w-5 text-violet-500" />
@@ -158,8 +164,8 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
                     isActive
                       ? "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400"
                       : isDone
-                      ? "text-violet-600 cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-950/20"
-                      : "text-muted-foreground"
+                        ? "text-violet-600 cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-950/20"
+                        : "text-muted-foreground"
                   }`}
                   data-testid={`wizard-step-${i}`}
                 >
@@ -171,7 +177,9 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
                   <span className="hidden sm:inline">{s.label}</span>
                 </button>
                 {i < STEPS.length - 1 && (
-                  <div className={`flex-1 h-px mx-1 ${i < step ? "bg-violet-300 dark:bg-violet-700" : "bg-border"}`} />
+                  <div
+                    className={`flex-1 h-px mx-1 ${i < step ? "bg-violet-300 dark:bg-violet-700" : "bg-border"}`}
+                  />
                 )}
               </div>
             );
@@ -200,7 +208,9 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
                       }`}
                       data-testid={`goal-${goal.id}`}
                     >
-                      <Target className={`h-4 w-4 mt-0.5 flex-shrink-0 ${goalId === goal.id ? "text-violet-600" : "text-muted-foreground"}`} />
+                      <Target
+                        className={`h-4 w-4 mt-0.5 flex-shrink-0 ${goalId === goal.id ? "text-violet-600" : "text-muted-foreground"}`}
+                      />
                       <div>
                         <p className="text-sm font-medium">{goal.label}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{goal.description}</p>
@@ -224,7 +234,8 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
                 </div>
                 <div>
                   <Label htmlFor="wiz-subheadline">
-                    Subheadline <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+                    Subheadline{" "}
+                    <span className="text-muted-foreground font-normal text-xs">(optional)</span>
                   </Label>
                   <Textarea
                     id="wiz-subheadline"
@@ -244,7 +255,9 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">Who is this page for?</Label>
-                <p className="text-xs text-muted-foreground mt-0.5">Select one or more target audiences</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Select one or more target audiences
+                </p>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {AUDIENCE_OPTIONS.map((aud) => {
@@ -265,7 +278,9 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
                           <Check className="h-2.5 w-2.5 text-white" />
                         </div>
                       )}
-                      <Users className={`h-4 w-4 flex-shrink-0 ${isSelected ? "text-violet-600" : "text-muted-foreground"}`} />
+                      <Users
+                        className={`h-4 w-4 flex-shrink-0 ${isSelected ? "text-violet-600" : "text-muted-foreground"}`}
+                      />
                       <span className="text-sm font-medium">{aud.label}</span>
                     </button>
                   );
@@ -329,9 +344,13 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
                       }`}
                       data-testid={`block-option-${opt.id}`}
                     >
-                      <div className={`h-5 w-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                        isSelected ? "border-violet-500 bg-violet-500" : "border-muted-foreground/40"
-                      }`}>
+                      <div
+                        className={`h-5 w-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                          isSelected
+                            ? "border-violet-500 bg-violet-500"
+                            : "border-muted-foreground/40"
+                        }`}
+                      >
                         {isSelected && <Check className="h-3 w-3 text-white" />}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -378,8 +397,8 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
               <div className="bg-muted/30 rounded-lg p-3 text-xs text-muted-foreground flex items-start gap-2">
                 <Wand2 className="h-4 w-4 mt-0.5 text-violet-500 flex-shrink-0" />
                 <p>
-                  After creating, you'll be taken to the page editor where you can customize every section,
-                  rearrange blocks, add new ones, and configure page settings and SEO.
+                  After creating, you'll be taken to the page editor where you can customize every
+                  section, rearrange blocks, add new ones, and configure page settings and SEO.
                 </p>
               </div>
             </div>
@@ -392,7 +411,11 @@ export function LandingPageWizard({ open, onClose, onCreate }: LandingPageWizard
           <div className="flex items-center justify-between w-full">
             <div>
               {step > 0 && (
-                <Button variant="ghost" onClick={() => goToStep(step - 1)} data-testid="button-wizard-back">
+                <Button
+                  variant="ghost"
+                  onClick={() => goToStep(step - 1)}
+                  data-testid="button-wizard-back"
+                >
                   <ChevronLeft className="h-4 w-4 mr-1" />
                   Back
                 </Button>

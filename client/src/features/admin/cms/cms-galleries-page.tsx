@@ -52,7 +52,11 @@ export default function CmsGalleriesPage() {
       toast({ title: "Gallery published" });
     },
     onError: (error: Error) =>
-      toast({ title: "Failed to publish gallery", description: error.message, variant: "destructive" }),
+      toast({
+        title: "Failed to publish gallery",
+        description: error.message,
+        variant: "destructive",
+      }),
   });
 
   const unpublishMutation = useMutation({
@@ -62,7 +66,11 @@ export default function CmsGalleriesPage() {
       toast({ title: "Gallery moved to draft" });
     },
     onError: (error: Error) =>
-      toast({ title: "Failed to unpublish gallery", description: error.message, variant: "destructive" }),
+      toast({
+        title: "Failed to unpublish gallery",
+        description: error.message,
+        variant: "destructive",
+      }),
   });
 
   const duplicateMutation = useMutation({
@@ -74,7 +82,11 @@ export default function CmsGalleriesPage() {
       navigate(`/admin/cms/galleries/${gallery.id}`);
     },
     onError: (error: Error) =>
-      toast({ title: "Failed to duplicate gallery", description: error.message, variant: "destructive" }),
+      toast({
+        title: "Failed to duplicate gallery",
+        description: error.message,
+        variant: "destructive",
+      }),
   });
 
   const deleteMutation = useMutation({
@@ -84,7 +96,11 @@ export default function CmsGalleriesPage() {
       toast({ title: "Gallery deleted" });
     },
     onError: (error: Error) =>
-      toast({ title: "Failed to delete gallery", description: error.message, variant: "destructive" }),
+      toast({
+        title: "Failed to delete gallery",
+        description: error.message,
+        variant: "destructive",
+      }),
   });
 
   return (
@@ -148,7 +164,9 @@ export default function CmsGalleriesPage() {
               <div className="py-16 text-center text-muted-foreground">
                 <Image className="mx-auto mb-3 h-10 w-10 opacity-35" />
                 <p className="font-medium text-foreground">No galleries yet</p>
-                <p className="mt-1 text-sm">Create your first gallery to reuse it across the site.</p>
+                <p className="mt-1 text-sm">
+                  Create your first gallery to reuse it across the site.
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -184,29 +202,51 @@ export default function CmsGalleriesPage() {
                           </Badge>
                         </td>
                         <td className="px-2 py-3 hidden lg:table-cell text-muted-foreground">
-                          {gallery.updatedAt ? format(new Date(gallery.updatedAt), "MMM d, yyyy") : ""}
+                          {gallery.updatedAt
+                            ? format(new Date(gallery.updatedAt), "MMM d, yyyy")
+                            : ""}
                         </td>
                         <td className="px-2 py-3">
                           <div
                             className="flex justify-end gap-1"
                             onClick={(event) => event.stopPropagation()}
                           >
-                            <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/cms/galleries/${gallery.id}`)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => navigate(`/admin/cms/galleries/${gallery.id}`)}
+                            >
                               <Pencil className="h-4 w-4" />
                             </Button>
                             {gallery.status === "published" ? (
-                              <Button variant="ghost" size="icon" onClick={() => unpublishMutation.mutate(gallery.id)}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => unpublishMutation.mutate(gallery.id)}
+                              >
                                 <EyeOff className="h-4 w-4 text-amber-600" />
                               </Button>
                             ) : (
-                              <Button variant="ghost" size="icon" onClick={() => publishMutation.mutate(gallery.id)}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => publishMutation.mutate(gallery.id)}
+                              >
                                 <Eye className="h-4 w-4 text-green-600" />
                               </Button>
                             )}
-                            <Button variant="ghost" size="icon" onClick={() => duplicateMutation.mutate(gallery.id)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => duplicateMutation.mutate(gallery.id)}
+                            >
                               <Copy className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(gallery.id)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deleteMutation.mutate(gallery.id)}
+                            >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>

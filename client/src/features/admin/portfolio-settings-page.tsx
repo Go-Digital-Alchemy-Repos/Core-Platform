@@ -7,7 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -54,7 +60,12 @@ export default function AdminPortfolioSettingsPage() {
       ]);
       toast({ title: "Portfolio settings saved" });
     },
-    onError: (error: Error) => toast({ title: "Could not save settings", description: error.message, variant: "destructive" }),
+    onError: (error: Error) =>
+      toast({
+        title: "Could not save settings",
+        description: error.message,
+        variant: "destructive",
+      }),
   });
 
   return (
@@ -66,38 +77,99 @@ export default function AdminPortfolioSettingsPage() {
               <FolderKanban className="h-6 w-6 text-indigo-600" />
               Portfolio Settings
             </h1>
-            <p className="text-sm text-muted-foreground">Tune public archive labels, filters, sharing, and default calls to action.</p>
+            <p className="text-sm text-muted-foreground">
+              Tune public archive labels, filters, sharing, and default calls to action.
+            </p>
           </div>
-          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}><Save className="mr-2 h-4 w-4" />Save Settings</Button>
+          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+            <Save className="mr-2 h-4 w-4" />
+            Save Settings
+          </Button>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Archive Defaults</CardTitle>
-              <CardDescription>These values power the fallback portfolio page and CMS live block defaults.</CardDescription>
+              <CardDescription>
+                These values power the fallback portfolio page and CMS live block defaults.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1.5">
                 <Label>Industry preset</Label>
-                <Select value={settings.industryPreset} onValueChange={(value) => set("industryPreset", value as PortfolioSettings["industryPreset"])}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{Object.entries(PORTFOLIO_INDUSTRY_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent>
+                <Select
+                  value={settings.industryPreset}
+                  onValueChange={(value) =>
+                    set("industryPreset", value as PortfolioSettings["industryPreset"])
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PORTFOLIO_INDUSTRY_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
                 <Label>Archive layout</Label>
-                <Select value={settings.archiveLayout} onValueChange={(value) => set("archiveLayout", value as PortfolioSettings["archiveLayout"])}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="grid">Grid</SelectItem><SelectItem value="list">List</SelectItem></SelectContent>
+                <Select
+                  value={settings.archiveLayout}
+                  onValueChange={(value) =>
+                    set("archiveLayout", value as PortfolioSettings["archiveLayout"])
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="grid">Grid</SelectItem>
+                    <SelectItem value="list">List</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5"><Label>Eyebrow</Label><Input value={settings.archiveEyebrow} onChange={(event) => set("archiveEyebrow", event.target.value)} /></div>
-              <div className="space-y-1.5"><Label>Heading</Label><Input value={settings.archiveHeading} onChange={(event) => set("archiveHeading", event.target.value)} /></div>
-              <div className="space-y-1.5"><Label>Subheading</Label><Textarea value={settings.archiveSubheading} onChange={(event) => set("archiveSubheading", event.target.value)} rows={3} /></div>
+              <div className="space-y-1.5">
+                <Label>Eyebrow</Label>
+                <Input
+                  value={settings.archiveEyebrow}
+                  onChange={(event) => set("archiveEyebrow", event.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Heading</Label>
+                <Input
+                  value={settings.archiveHeading}
+                  onChange={(event) => set("archiveHeading", event.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Subheading</Label>
+                <Textarea
+                  value={settings.archiveSubheading}
+                  onChange={(event) => set("archiveSubheading", event.target.value)}
+                  rows={3}
+                />
+              </div>
               <div className="grid gap-3 md:grid-cols-2">
-                <div className="space-y-1.5"><Label>Project label</Label><Input value={settings.projectLabel} onChange={(event) => set("projectLabel", event.target.value)} /></div>
-                <div className="space-y-1.5"><Label>Projects label</Label><Input value={settings.projectsLabel} onChange={(event) => set("projectsLabel", event.target.value)} /></div>
+                <div className="space-y-1.5">
+                  <Label>Project label</Label>
+                  <Input
+                    value={settings.projectLabel}
+                    onChange={(event) => set("projectLabel", event.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Projects label</Label>
+                  <Input
+                    value={settings.projectsLabel}
+                    onChange={(event) => set("projectsLabel", event.target.value)}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -105,23 +177,42 @@ export default function AdminPortfolioSettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Filters And Actions</CardTitle>
-              <CardDescription>Control visitor browsing tools and default conversion action.</CardDescription>
+              <CardDescription>
+                Control visitor browsing tools and default conversion action.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {([
-                ["showSearch", "Show search"],
-                ["showIndustryFilter", "Show industry filter"],
-                ["showCategoryFilter", "Show category filter"],
-                ["showLocationFilter", "Show location filter"],
-                ["sharingEnabled", "Enable share actions"],
-              ] as const).map(([key, label]) => (
+              {(
+                [
+                  ["showSearch", "Show search"],
+                  ["showIndustryFilter", "Show industry filter"],
+                  ["showCategoryFilter", "Show category filter"],
+                  ["showLocationFilter", "Show location filter"],
+                  ["sharingEnabled", "Enable share actions"],
+                ] as const
+              ).map(([key, label]) => (
                 <label key={key} className="flex items-center gap-2 text-sm">
-                  <Checkbox checked={settings[key]} onCheckedChange={(value) => set(key, value === true)} />
+                  <Checkbox
+                    checked={settings[key]}
+                    onCheckedChange={(value) => set(key, value === true)}
+                  />
                   {label}
                 </label>
               ))}
-              <div className="space-y-1.5"><Label>Default CTA label</Label><Input value={settings.defaultCtaLabel} onChange={(event) => set("defaultCtaLabel", event.target.value)} /></div>
-              <div className="space-y-1.5"><Label>Default CTA URL</Label><Input value={settings.defaultCtaUrl} onChange={(event) => set("defaultCtaUrl", event.target.value)} /></div>
+              <div className="space-y-1.5">
+                <Label>Default CTA label</Label>
+                <Input
+                  value={settings.defaultCtaLabel}
+                  onChange={(event) => set("defaultCtaLabel", event.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Default CTA URL</Label>
+                <Input
+                  value={settings.defaultCtaUrl}
+                  onChange={(event) => set("defaultCtaUrl", event.target.value)}
+                />
+              </div>
             </CardContent>
           </Card>
         </div>

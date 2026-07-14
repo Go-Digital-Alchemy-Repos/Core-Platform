@@ -320,9 +320,14 @@ export default function InsightsPostPage() {
               </p>
             )}
 
-            {post.content && (post.content.trim().startsWith("<") || post.content.includes("[gallery")) ? (
+            {post.content &&
+            (post.content.trim().startsWith("<") || post.content.includes("[gallery")) ? (
               <BlogPostContent
-                content={post.content.trim().startsWith("<") ? post.content : post.content.replace(/\n/g, "<br />")}
+                content={
+                  post.content.trim().startsWith("<")
+                    ? post.content
+                    : post.content.replace(/\n/g, "<br />")
+                }
               />
             ) : (
               <div

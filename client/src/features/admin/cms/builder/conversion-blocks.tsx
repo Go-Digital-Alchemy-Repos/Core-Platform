@@ -640,4 +640,3 @@ export function ProtocolBuilderBlock({ props }: { props: Record<string, unknown>
     </div>
   );
 }
-
