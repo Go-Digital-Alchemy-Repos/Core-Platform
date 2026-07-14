@@ -416,7 +416,7 @@ function TherapistsContent() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <h1
           className="text-2xl font-heading font-semibold"

@@ -764,7 +764,7 @@ export function ProductsTab() {
         }}
       >
         <SheetContent side="right" size="full" className="p-0">
-          <SheetHeader className="border-b p-6 pr-12">
+          <SheetHeader className="border-b p-4 sm:p-6 pr-12">
             <SheetTitle>{editingId ? "Edit product" : "Create product"}</SheetTitle>
             <SheetDescription>
               Manage content, media, pricing, inventory, shipping, publishing, and SEO.
@@ -809,7 +809,7 @@ export function ProductsTab() {
                     </TabsTrigger>
                   </TabsList>
                 </div>
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                   <TabsContent value="content" className="mt-0">
                     <ProductEditorSection title="Product content">
                       <div className="grid gap-4 lg:grid-cols-2">
@@ -4106,7 +4106,7 @@ export default function AdminEcommercePage() {
     : "store";
   return (
     <AdminSidebar>
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-4 sm:p-6">
         <div>
           <h1 className="text-3xl font-semibold tracking-normal">Ecommerce</h1>
           <p className="text-muted-foreground">

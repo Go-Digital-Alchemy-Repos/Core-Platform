@@ -176,7 +176,7 @@ export function TiersContent({ embedded = false }: { embedded?: boolean } = {}) 
   }
 
   return (
-    <div className={embedded ? "space-y-6" : "p-6"}>
+    <div className={embedded ? "space-y-6" : "p-4 sm:p-6"}>
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h1 className="text-2xl font-heading font-semibold" data-testid="text-admin-tiers-title">

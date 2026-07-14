@@ -322,7 +322,7 @@ export default function AdminApplicationDetailPage() {
   if (!application) {
     return (
       <AdminSidebar>
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <p>Application not found.</p>
           <Link href="/admin/applications">
             <Button variant="ghost" className="mt-4">
@@ -351,7 +351,7 @@ export default function AdminApplicationDetailPage() {
 
   return (
     <AdminSidebar>
-      <div className="p-6 max-w-5xl">
+      <div className="p-4 sm:p-6 max-w-5xl">
         <div className="mb-4">
           <Link href="/admin/applications">
             <Button variant="ghost" size="sm" data-testid="button-back-applications">

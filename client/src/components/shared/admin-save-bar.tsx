@@ -37,13 +37,13 @@ export function AdminSaveBar({
   return (
     <div
       className={cn(
-        "flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
+        "admin-save-bar flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
       data-testid="admin-save-bar"
     >
       <EditorSaveIndicator state={state} />
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-col-reverse gap-2 xs:flex-row xs:justify-end">
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel}>
             {cancelLabel ?? "Cancel"}
@@ -53,7 +53,7 @@ export function AdminSaveBar({
           type={type}
           form={form}
           onClick={onSave}
-          className="min-w-[160px]"
+          className="w-full xs:min-w-[160px] xs:w-auto"
           disabled={disabled}
           data-testid={buttonTestId}
         >

@@ -257,7 +257,7 @@ export default function CmsGalleryEditorPage() {
   if (!isNew && isLoading) {
     return (
       <AdminSidebar>
-        <div className="mx-auto max-w-6xl space-y-4 p-6">
+        <div className="mx-auto max-w-6xl space-y-4 p-4 sm:p-6">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-96 w-full" />
         </div>
@@ -267,7 +267,7 @@ export default function CmsGalleryEditorPage() {
 
   return (
     <AdminSidebar>
-      <div className="mx-auto max-w-6xl space-y-6 p-6">
+      <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => navigate("/admin/cms/galleries")}>

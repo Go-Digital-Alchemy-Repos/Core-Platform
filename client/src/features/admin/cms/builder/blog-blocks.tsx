@@ -65,7 +65,7 @@ function FeaturedBlogCard({
             />
           </div>
         )}
-        <CardContent className="p-6 flex flex-col justify-center">
+        <CardContent className="p-4 sm:p-6 flex flex-col justify-center">
           <h3 className="text-xl font-heading font-bold mb-3">{post.title}</h3>
           <p className="text-sm text-muted-foreground line-clamp-4">{post.excerpt}</p>
           <div className="mt-4">

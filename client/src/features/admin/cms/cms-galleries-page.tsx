@@ -105,7 +105,7 @@ export default function CmsGalleriesPage() {
 
   return (
     <AdminSidebar>
-      <div className="mx-auto max-w-6xl space-y-6 p-6">
+      <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-heading font-semibold">Galleries</h1>

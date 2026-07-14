@@ -308,6 +308,158 @@
   .admin-shell {
     --font-sans: "Inter", sans-serif;
     --font-serif: "Inter", sans-serif;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-mobile-header,
+  .admin-mobile-drawer,
+  .admin-mobile-action-bar {
+    display: none;
+  }
+
+  .admin-main {
+    min-width: 0;
+  }
+
+  .admin-main [role="tablist"] {
+    max-width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+  }
+
+  @media (min-width: 768px) and (max-width: 1023px),
+    (max-width: 767px) and (hover: hover) and (pointer: fine) {
+    .admin-sidebar-panel {
+      width: 68px !important;
+    }
+
+    .admin-sidebar-label,
+    .admin-sidebar-panel nav p,
+    .admin-sidebar-panel nav button span,
+    .admin-sidebar-panel nav a span > span,
+    .admin-sidebar-panel nav a span > svg:last-child,
+    .admin-sidebar-panel > div:last-of-type > div:first-of-type {
+      display: none;
+    }
+
+    .admin-sidebar-panel nav a > span,
+    .admin-sidebar-panel nav button,
+    .admin-sidebar-panel > div:first-child button {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .admin-sidebar-panel nav div.ml-5,
+    .admin-sidebar-toggle {
+      display: none;
+    }
+
+    .admin-sidebar-group-trigger {
+      display: none !important;
+    }
+
+    .admin-sidebar-group-content {
+      display: flex !important;
+      animation: none !important;
+    }
+
+    .admin-sidebar-account > div:first-of-type {
+      display: none;
+    }
+
+    .admin-sidebar-account button {
+      justify-content: center;
+      overflow: hidden;
+      padding-left: 0;
+      padding-right: 0;
+      font-size: 0;
+    }
+
+    .admin-sidebar-account button svg {
+      margin: 0;
+    }
+  }
+
+  @media (max-width: 767px) and (hover: none), (max-width: 767px) and (pointer: coarse) {
+    .admin-desktop-sidebar,
+    .admin-breadcrumbs {
+      display: none;
+    }
+
+    .admin-mobile-header,
+    .admin-mobile-drawer,
+    .admin-mobile-action-bar {
+      display: block;
+    }
+
+    .admin-mobile-header {
+      padding-top: env(safe-area-inset-top);
+    }
+
+    .admin-main {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .admin-mobile-action-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 45;
+      padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    }
+
+    .admin-has-mobile-action-bar {
+      padding-bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
+    }
+
+    .admin-main > div.p-6,
+    .admin-main > main.p-6,
+    .admin-main > div > div.p-6 {
+      padding: 1rem;
+    }
+
+    .admin-main form .grid-cols-2:not(.admin-keep-two-columns),
+    .admin-main form .grid-cols-3:not(.admin-keep-three-columns) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .admin-main .canvas-block-actions {
+      bottom: 0.5rem;
+      left: 0.5rem;
+      right: 0.5rem;
+      top: auto;
+      max-width: none;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .admin-main .canvas-block-actions button {
+      height: 44px;
+      width: 44px;
+    }
+
+    .admin-shell button,
+    .admin-shell [role="button"],
+    .admin-shell [role="tab"] {
+      min-height: 44px;
+    }
+
+    [role="dialog"] button,
+    [role="dialog"] [role="button"] {
+      min-height: 44px;
+    }
+
+    .admin-main input:not([type="checkbox"]):not([type="radio"]),
+    .admin-main select,
+    .admin-main textarea {
+      max-width: 100%;
+      font-size: 16px;
+    }
   }
 
   * {

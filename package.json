@@ -17,7 +17,8 @@
     "seed:ecommerce-customer-orders": "tsx server/scripts/seed-ecommerce-customer-orders.ts",
     "lint": "eslint client/src server shared",
     "format": "prettier --check client/src server shared",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1004.0",
@@ -131,6 +132,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.61.1",
     "@replit/vite-plugin-cartographer": "^0.4.4",
     "@replit/vite-plugin-dev-banner": "^0.1.1",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",

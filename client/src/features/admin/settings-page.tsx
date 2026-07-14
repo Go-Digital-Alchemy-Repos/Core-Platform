@@ -2648,7 +2648,7 @@ function IntegrationsTab({ settings }: { settings: SettingsData }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/20 p-3">
-        <div className="relative min-w-[240px] flex-1">
+        <div className="relative min-w-0 flex-1 basis-60">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={searchQuery}
@@ -2662,7 +2662,10 @@ function IntegrationsTab({ settings }: { settings: SettingsData }) {
           value={groupFilter}
           onValueChange={(value) => setGroupFilter(value as IntegrationGroupKey | "all")}
         >
-          <SelectTrigger className="w-[190px]" data-testid="select-integration-group-filter">
+          <SelectTrigger
+            className="w-full sm:w-[190px]"
+            data-testid="select-integration-group-filter"
+          >
             <SelectValue placeholder="Module type" />
           </SelectTrigger>
           <SelectContent>
@@ -2678,7 +2681,10 @@ function IntegrationsTab({ settings }: { settings: SettingsData }) {
           value={categoryFilter}
           onValueChange={(value) => setCategoryFilter(value as IntegrationLibraryCategory | "all")}
         >
-          <SelectTrigger className="w-[190px]" data-testid="select-integration-category-filter">
+          <SelectTrigger
+            className="w-full sm:w-[190px]"
+            data-testid="select-integration-category-filter"
+          >
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
@@ -2694,7 +2700,10 @@ function IntegrationsTab({ settings }: { settings: SettingsData }) {
           value={statusFilter}
           onValueChange={(value) => setStatusFilter(value as IntegrationStatusFilter)}
         >
-          <SelectTrigger className="w-[165px]" data-testid="select-integration-status-filter">
+          <SelectTrigger
+            className="w-full sm:w-[165px]"
+            data-testid="select-integration-status-filter"
+          >
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -2857,7 +2866,7 @@ export default function AdminSettingsPage() {
 
   return (
     <AdminSidebar>
-      <div className="p-6 max-w-7xl">
+      <div className="max-w-7xl p-4 sm:p-6">
         <h1 className="text-2xl font-heading font-bold mb-1" data-testid="text-settings-title">
           System Settings
         </h1>

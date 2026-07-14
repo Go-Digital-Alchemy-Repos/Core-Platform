@@ -189,7 +189,7 @@ function BlogContent() {
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-heading font-semibold" data-testid="text-admin-blog-title">
           Blog Management

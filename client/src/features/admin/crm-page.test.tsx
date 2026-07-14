@@ -106,5 +106,6 @@ describe("AdminCrmPage", () => {
     expect(container.textContent).toContain("Won");
     expect(container.textContent).toContain("Lost");
     expect(container.querySelector('[data-testid="card-crm-lead-lead-1"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="select-move-crm-lead-lead-1"]')).not.toBeNull();
   });
 });

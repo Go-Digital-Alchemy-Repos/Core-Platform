@@ -28,7 +28,7 @@ export function BlockInspectorPanel({
 }: BlockInspectorPanelProps) {
   if (!selectedBlock || !selectedEditorDef) {
     return (
-      <div className="flex h-full min-h-0 flex-col rounded-2xl border border-dashed border-border/70 bg-background/70 p-6 text-center shadow-sm">
+      <div className="flex h-full min-h-0 flex-col rounded-2xl border border-dashed border-border/70 bg-background/70 p-4 sm:p-6 text-center shadow-sm">
         <div className="m-auto max-w-sm">
           <Settings2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground/35" />
           <p className="text-base font-semibold">Select a block to inspect</p>

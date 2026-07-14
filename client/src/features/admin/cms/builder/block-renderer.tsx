@@ -1071,7 +1071,7 @@ export function BlockRenderer({
     const Renderer = RENDERERS[block.type];
     if (!Renderer) {
       return (
-        <div className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
+        <div className="rounded-lg border border-dashed p-4 sm:p-6 text-center text-muted-foreground text-sm">
           Unknown block type: <code>{block.type}</code>
         </div>
       );

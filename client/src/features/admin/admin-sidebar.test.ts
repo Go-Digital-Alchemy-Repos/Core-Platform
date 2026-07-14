@@ -5,6 +5,7 @@ import type { User } from "@shared/schema";
 import type { PublicDirectorySettings } from "@shared/types/directory-settings";
 import { buildNavGroups } from "@/features/admin/admin-sidebar";
 import { buildAdminCommandItems } from "@/features/admin/admin-command-palette";
+import { findAdminBreadcrumbTarget } from "@/features/admin/admin-breadcrumbs";
 
 const adminUser = {
   id: "user-1",
@@ -140,5 +141,20 @@ describe("buildNavGroups", () => {
     const commands = buildAdminCommandItems(navGroups);
 
     expect(commands.some((item) => item.href.startsWith("/admin/ecommerce"))).toBe(false);
+  });
+
+  it("uses the same command model to label nested responsive admin routes", () => {
+    const navGroups = buildNavGroups(
+      { ...DEFAULT_SITE_FEATURES, eventsEnabled: true },
+      adminUser,
+      () => true,
+      directorySettings,
+    );
+    const commands = buildAdminCommandItems(navGroups);
+
+    expect(
+      findAdminBreadcrumbTarget(commands, "/admin/events/settings?tab=registration")?.href,
+    ).toBe("/admin/events/settings");
+    expect(findAdminBreadcrumbTarget(commands, "/admin/events/new")?.title).toBe("Create Event");
   });
 });

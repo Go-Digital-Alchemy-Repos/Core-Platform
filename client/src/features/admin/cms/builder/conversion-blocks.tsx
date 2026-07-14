@@ -88,7 +88,7 @@ export function ObjectionBustersBlock({ props }: { props: Record<string, unknown
       <SectionHeading props={props} defaultAlignment="center" className="mb-8" />
       <div className="space-y-6 max-w-3xl mx-auto">
         {items.map((item, i) => (
-          <div key={i} className="rounded-xl border p-6" data-testid={`objection-item-${i}`}>
+          <div key={i} className="rounded-xl border p-4 sm:p-6" data-testid={`objection-item-${i}`}>
             <div className="flex items-start gap-3 mb-3">
               <XCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
               <p className="font-medium text-sm">{item.concern}</p>
@@ -282,7 +282,7 @@ export function SliderBlock({ props }: { props: Record<string, unknown> }) {
           />
         )}
         <div
-          className={`${slide.imageUrl ? "absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent" : ""} p-6 sm:p-8`}
+          className={`${slide.imageUrl ? "absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent" : ""} p-4 sm:p-8`}
         >
           {slide.heading && (
             <h3
@@ -561,7 +561,7 @@ export function DeliverySetupBlock({ props }: { props: Record<string, unknown> }
         </div>
       </div>
       {includedItems.length > 0 && (
-        <div className="bg-muted/30 rounded-xl p-6 max-w-3xl mx-auto">
+        <div className="bg-muted/30 rounded-xl p-4 sm:p-6 max-w-3xl mx-auto">
           <h3 className="font-semibold text-sm mb-3">What's Included</h3>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {includedItems.map((item, i) => {

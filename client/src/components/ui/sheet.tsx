@@ -99,14 +99,17 @@ const SheetContent = React.forwardRef<
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
 const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col space-y-2 p-6 pb-0 text-left", className)} {...props} />
+  <div
+    className={cn("flex flex-col space-y-2 p-4 pb-0 text-left sm:p-6 sm:pb-0", className)}
+    {...props}
+  />
 );
 SheetHeader.displayName = "SheetHeader";
 
 const SheetFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 p-6 pt-4 border-t mt-auto",
+      "mt-auto flex flex-col-reverse border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:flex-row sm:justify-end sm:space-x-2 sm:p-6 sm:pt-4",
       className,
     )}
     {...props}
@@ -115,7 +118,7 @@ const SheetFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 SheetFooter.displayName = "SheetFooter";
 
 const SheetBody = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex-1 overflow-y-auto p-6", className)} {...props} />
+  <div className={cn("flex-1 overflow-y-auto p-4 sm:p-6", className)} {...props} />
 );
 SheetBody.displayName = "SheetBody";
 

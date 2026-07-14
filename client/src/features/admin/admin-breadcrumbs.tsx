@@ -14,7 +14,7 @@ interface AdminBreadcrumbsProps {
   items: AdminCommandItem[];
 }
 
-function findBreadcrumbTarget(items: AdminCommandItem[], location: string) {
+export function findAdminBreadcrumbTarget(items: AdminCommandItem[], location: string) {
   const pathname = location.split("?")[0];
   return items
     .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
@@ -23,14 +23,14 @@ function findBreadcrumbTarget(items: AdminCommandItem[], location: string) {
 
 export function AdminBreadcrumbs({ items }: AdminBreadcrumbsProps) {
   const [location] = useLocation();
-  const current = findBreadcrumbTarget(items, location);
+  const current = findAdminBreadcrumbTarget(items, location);
 
   if (!current || current.href === "/admin") {
     return null;
   }
 
   return (
-    <div className="border-b bg-background/80 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="admin-breadcrumbs border-b bg-background/80 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

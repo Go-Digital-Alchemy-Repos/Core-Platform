@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { AdminSaveBar } from "@/components/shared/admin-save-bar";
+import { AdminMobileActionBar } from "@/components/shared/admin-mobile-action-bar";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import {
   Select,
@@ -377,7 +378,7 @@ export default function CmsBlogEditorPage() {
   if (!isNew && isLoading) {
     return (
       <AdminSidebar>
-        <div className="p-6 max-w-4xl mx-auto space-y-4">
+        <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-4">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-64 w-full" />
         </div>
@@ -387,7 +388,7 @@ export default function CmsBlogEditorPage() {
 
   return (
     <AdminSidebar>
-      <div className="p-6 max-w-4xl mx-auto space-y-6">
+      <div className="admin-has-mobile-action-bar mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
         {editorLock.summary ? (
           <EditorLockBanner
             variant={editorLock.summary.variant}
@@ -444,7 +445,7 @@ export default function CmsBlogEditorPage() {
                 ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {!isNew &&
               isPublished &&
               (watchPostType === "external" && form.watch("externalUrl") ? (
@@ -1427,6 +1428,25 @@ export default function CmsBlogEditorPage() {
           />
         </div>
       </div>
+      <AdminMobileActionBar>
+        {!isNew && isPublished && watchPostType !== "external" && (
+          <Button variant="outline" size="sm" asChild>
+            <a href={`/insights/${currentSlug}`} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Preview
+            </a>
+          </Button>
+        )}
+        <Button
+          type="button"
+          size="sm"
+          onClick={onSave}
+          disabled={isSaving || editorLock.isReadOnly}
+          data-testid="button-save-post-mobile"
+        >
+          Save Post
+        </Button>
+      </AdminMobileActionBar>
       {unsavedChangesGuard.dialog}
     </AdminSidebar>
   );

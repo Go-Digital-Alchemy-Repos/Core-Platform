@@ -888,7 +888,7 @@ export function BlogSettingsPanel() {
 export default function CmsBlogSettingsPage() {
   return (
     <AdminSidebar>
-      <div className="p-6 max-w-6xl mx-auto space-y-6">
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
             <Settings className="h-5 w-5" />

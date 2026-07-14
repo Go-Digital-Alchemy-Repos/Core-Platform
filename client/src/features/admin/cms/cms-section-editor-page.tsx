@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
 import { AdminSaveBar } from "@/components/shared/admin-save-bar";
+import { AdminMobileActionBar } from "@/components/shared/admin-mobile-action-bar";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -197,7 +198,7 @@ export default function CmsSectionEditorPage() {
   if (!isNew && sectionLoading) {
     return (
       <AdminSidebar>
-        <div className="p-6 max-w-5xl mx-auto space-y-6">
+        <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-6">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-48 w-full" />
           <Skeleton className="h-96 w-full" />
@@ -208,7 +209,7 @@ export default function CmsSectionEditorPage() {
 
   return (
     <AdminSidebar>
-      <div className="p-6 max-w-5xl mx-auto space-y-6">
+      <div className="admin-has-mobile-action-bar p-4 sm:p-6 max-w-5xl mx-auto space-y-6">
         {editorLock.summary ? (
           <EditorLockBanner
             variant={editorLock.summary.variant}
@@ -366,6 +367,17 @@ export default function CmsSectionEditorPage() {
           />
         </div>
       </div>
+      <AdminMobileActionBar>
+        <Button
+          type="button"
+          size="sm"
+          onClick={onSave}
+          disabled={isSaving || editorLock.isReadOnly}
+          data-testid="button-save-section-mobile"
+        >
+          Save Section
+        </Button>
+      </AdminMobileActionBar>
       {unsavedChangesGuard.dialog}
     </AdminSidebar>
   );

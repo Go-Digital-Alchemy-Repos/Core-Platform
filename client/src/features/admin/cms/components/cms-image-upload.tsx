@@ -239,7 +239,7 @@ export function CmsImageUpload({
               data-testid={testId ? `${testId}-preview` : "cms-image-preview"}
             />
           ) : (
-            <div className="flex min-h-40 w-full flex-col items-center justify-center gap-3 rounded-lg bg-muted/40 p-6 text-center">
+            <div className="flex min-h-40 w-full flex-col items-center justify-center gap-3 rounded-lg bg-muted/40 p-4 sm:p-6 text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-background shadow-sm">
                 <FileText className="h-7 w-7 text-violet-500" />
               </div>

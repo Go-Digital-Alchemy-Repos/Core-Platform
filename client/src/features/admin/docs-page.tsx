@@ -394,7 +394,7 @@ export default function DocsPage() {
 
   return (
     <AdminSidebar>
-      <div className="flex h-[calc(100vh-4rem)] min-h-0 flex-col gap-6 overflow-hidden p-6">
+      <div className="flex min-h-0 flex-col gap-6 p-4 sm:p-6 xl:h-[calc(100dvh-4rem)] xl:overflow-hidden">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <h1 className="text-2xl font-heading font-bold" data-testid="text-page-title">
@@ -455,7 +455,7 @@ export default function DocsPage() {
           </Card>
         </div>
 
-        <div className="grid min-h-0 flex-1 gap-6 overflow-hidden xl:grid-cols-[280px_360px_minmax(0,1fr)]">
+        <div className="grid min-h-0 flex-1 gap-6 xl:grid-cols-[280px_360px_minmax(0,1fr)] xl:overflow-hidden">
           <Card className="flex min-h-0 flex-col overflow-hidden">
             <CardHeader className="space-y-3">
               <CardTitle className="text-base">System Index</CardTitle>

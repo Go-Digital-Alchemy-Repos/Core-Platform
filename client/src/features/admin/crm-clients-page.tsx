@@ -825,7 +825,7 @@ function CrmClientsContent() {
   });
 
   return (
-    <div className="flex min-h-screen flex-col gap-5 p-6">
+    <div className="flex min-h-screen flex-col gap-5 p-4 sm:p-6">
       <div>
         <h1 className="text-2xl font-heading font-bold" data-testid="text-crm-clients-title">
           CRM Clients

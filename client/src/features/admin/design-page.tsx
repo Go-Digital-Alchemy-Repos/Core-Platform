@@ -37,7 +37,7 @@ export default function AdminDesignPage({ initialSubview }: { initialSubview: Br
 
   return (
     <AdminSidebar>
-      <div className="p-6 max-w-5xl">
+      <div className="p-4 sm:p-6 max-w-5xl">
         <h1 className="text-2xl font-heading font-bold mb-1" data-testid="text-design-title">
           {copy.title}
         </h1>

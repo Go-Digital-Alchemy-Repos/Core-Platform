@@ -88,7 +88,7 @@ function BlockPreviewFallback({
   blockId: string;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/80 p-6 text-left dark:border-amber-700 dark:bg-amber-950/20">
+    <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/80 p-4 sm:p-6 text-left dark:border-amber-700 dark:bg-amber-950/20">
       <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
         This block preview could not be rendered in the builder.
       </p>
@@ -227,7 +227,7 @@ function CanvasBlockFrame({
 
       <div
         className={cn(
-          "absolute right-3 top-3 z-20 flex items-center gap-1 transition-opacity",
+          "canvas-block-actions absolute right-3 top-3 z-20 flex items-center gap-1 transition-opacity",
           isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100",
         )}
       >
@@ -247,6 +247,7 @@ function CanvasBlockFrame({
           }}
           data-testid={`canvas-drag-${block.id}`}
           title="Drag to move"
+          aria-label="Drag block to move"
         >
           <GripVertical className="h-3.5 w-3.5" />
         </Button>
@@ -261,6 +262,11 @@ function CanvasBlockFrame({
           }}
           data-testid={`canvas-toggle-active-${block.id}`}
           title={block.props.isActive === false ? "Show on public site" : "Hide from public site"}
+          aria-label={
+            block.props.isActive === false
+              ? "Show block on public site"
+              : "Hide block from public site"
+          }
         >
           {block.props.isActive === false ? (
             <EyeOff className="h-3.5 w-3.5" />
@@ -278,6 +284,7 @@ function CanvasBlockFrame({
             onSelect(block.id);
           }}
           data-testid={`canvas-edit-${block.id}`}
+          aria-label="Edit block"
         >
           <Pencil className="h-3.5 w-3.5" />
         </Button>
@@ -291,6 +298,7 @@ function CanvasBlockFrame({
             onMove(block.id, "up");
           }}
           data-testid={`canvas-move-up-${block.id}`}
+          aria-label="Move block up"
         >
           <ArrowUp className="h-3.5 w-3.5" />
         </Button>
@@ -304,6 +312,7 @@ function CanvasBlockFrame({
             onMove(block.id, "down");
           }}
           data-testid={`canvas-move-down-${block.id}`}
+          aria-label="Move block down"
         >
           <ArrowDown className="h-3.5 w-3.5" />
         </Button>
@@ -317,6 +326,7 @@ function CanvasBlockFrame({
             onAddBelow(block.id);
           }}
           data-testid={`canvas-add-below-${block.id}`}
+          aria-label="Add block below"
         >
           <Plus className="h-3.5 w-3.5" />
         </Button>
@@ -330,6 +340,7 @@ function CanvasBlockFrame({
             onDuplicate(block.id);
           }}
           data-testid={`canvas-duplicate-${block.id}`}
+          aria-label="Duplicate block"
         >
           <Copy className="h-3.5 w-3.5" />
         </Button>
@@ -343,6 +354,7 @@ function CanvasBlockFrame({
             onDelete(block.id);
           }}
           data-testid={`canvas-delete-${block.id}`}
+          aria-label="Delete block"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
@@ -401,7 +413,7 @@ export function VisualCanvas({
   let nonFullWidthIndex = 0;
 
   return (
-    <div className="h-full bg-[radial-gradient(circle_at_top,_rgba(137,205,161,0.12),_transparent_45%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,250,252,0.98))] p-5">
+    <div className="h-full bg-[radial-gradient(circle_at_top,_rgba(137,205,161,0.12),_transparent_45%),linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,250,252,0.98))] p-2 sm:p-5">
       <div
         className={cn(
           "mx-auto flex min-h-full max-w-full flex-col overflow-hidden rounded-[28px] border border-border/60 bg-background shadow-[0_20px_70px_rgba(15,23,42,0.08)] transition-[max-width] duration-200",

@@ -53,7 +53,15 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { UserProfileDialog } from "@/components/shared/user-profile-dialog";
 import { useBranding } from "@/components/shared/branding-provider";
 import { ThemeModeToggle } from "@/components/shared/theme-mode-toggle";
-import { AdminBreadcrumbs } from "@/features/admin/admin-breadcrumbs";
+import { AdminBreadcrumbs, findAdminBreadcrumbTarget } from "@/features/admin/admin-breadcrumbs";
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   AdminCommandPalette,
   buildAdminCommandItems,
@@ -504,6 +512,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
   const { user, logout, hasAdminPermission } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const branding = useBranding();
@@ -549,12 +558,30 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
   const activeGroupLabel =
     navGroups.find((group) => group.label && group.items.some(isNavItemActive))?.label ?? null;
   const commandItems = useMemo(() => buildAdminCommandItems(navGroups), [navGroups]);
+  const currentCommandItem = findAdminBreadcrumbTarget(commandItems, location);
 
   useEffect(() => {
     setOpenGroup(activeGroupLabel);
   }, [activeGroupLabel]);
 
-  const renderNavItem = (item: NavItem) => {
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location]);
+
+  useEffect(() => {
+    const desktopMedia = window.matchMedia(
+      "(min-width: 768px), (hover: hover) and (pointer: fine)",
+    );
+    const closeMobileNavigation = () => {
+      if (desktopMedia.matches) setMobileNavOpen(false);
+    };
+    desktopMedia.addEventListener("change", closeMobileNavigation);
+    return () => desktopMedia.removeEventListener("change", closeMobileNavigation);
+  }, []);
+
+  const renderNavItem = (item: NavItem, mobile = false) => {
+    const navigationCollapsed = mobile ? false : collapsed;
+    const testIdSuffix = mobile ? "-mobile" : "";
     const isActive = isRouteActive(item.href);
     const childIsActive = Boolean(item.children?.some(isChildRouteActive));
     const parentIsActive = isActive || childIsActive;
@@ -565,7 +592,9 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
             "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium cursor-pointer hover-elevate whitespace-nowrap overflow-hidden",
             parentIsActive ? "bg-primary text-primary-foreground" : "text-muted-foreground",
           )}
-          data-testid={`link-admin-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
+          data-testid={`link-admin-${item.title.toLowerCase().replace(/\s+/g, "-")}${testIdSuffix}`}
+          onClick={() => mobile && setMobileNavOpen(false)}
+          title={item.title}
         >
           <item.icon
             className={cn("h-4 w-4 flex-shrink-0", parentIsActive ? "" : item.iconColor)}
@@ -573,12 +602,12 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
           <span
             className={cn(
               "transition-opacity duration-200 flex-1",
-              collapsed ? "opacity-0" : "opacity-100",
+              navigationCollapsed ? "opacity-0" : "opacity-100",
             )}
           >
             {item.title}
           </span>
-          {item.children && !collapsed && (
+          {item.children && !navigationCollapsed && (
             <ChevronDown
               className={cn("h-4 w-4 transition-transform", childIsActive ? "rotate-180" : "")}
             />
@@ -587,7 +616,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
       </Link>
     );
 
-    if (collapsed) {
+    if (navigationCollapsed) {
       return (
         <Tooltip key={item.href}>
           <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
@@ -598,7 +627,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
       );
     }
 
-    if (item.children && !collapsed) {
+    if (item.children && !navigationCollapsed) {
       return (
         <div key={item.href ?? item.title} className="space-y-0.5">
           {linkContent}
@@ -614,7 +643,8 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                         ? "bg-primary/10 text-primary font-medium"
                         : "text-muted-foreground hover:text-foreground",
                     )}
-                    data-testid={`link-admin-${child.title.toLowerCase().replace(/\s+/g, "-")}`}
+                    data-testid={`link-admin-${child.title.toLowerCase().replace(/\s+/g, "-")}${testIdSuffix}`}
+                    onClick={() => mobile && setMobileNavOpen(false)}
                   >
                     <child.icon
                       className={cn(
@@ -637,11 +667,11 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="admin-shell flex min-h-screen relative">
-        <div className="relative flex-shrink-0">
+      <div className="admin-shell flex min-h-dvh min-w-0 relative">
+        <div className="admin-desktop-sidebar relative flex-shrink-0">
           <aside
             className={cn(
-              "border-r bg-muted/30 h-full flex flex-col transition-[width] duration-300 ease-in-out overflow-hidden",
+              "admin-sidebar-panel sticky top-0 border-r bg-muted/30 h-dvh flex flex-col transition-[width] duration-300 ease-in-out overflow-hidden",
               collapsed ? "w-[68px]" : "w-64",
             )}
           >
@@ -655,7 +685,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                 />
                 <h2
                   className={cn(
-                    "font-heading text-lg font-semibold whitespace-nowrap transition-opacity duration-200",
+                    "admin-sidebar-label font-heading text-lg font-semibold whitespace-nowrap transition-opacity duration-200",
                     collapsed ? "opacity-0 w-0" : "opacity-100",
                   )}
                 >
@@ -676,8 +706,8 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                 <SearchIcon className={cn("h-4 w-4", collapsed ? "" : "mr-2")} />
                 {!collapsed && (
                   <>
-                    <span className="flex-1 text-left">Search</span>
-                    <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    <span className="admin-sidebar-label flex-1 text-left">Search</span>
+                    <kbd className="admin-sidebar-label rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                       Cmd K
                     </kbd>
                   </>
@@ -686,7 +716,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
             </div>
 
             <nav
-              className="flex flex-col gap-1 px-2 flex-1 overflow-y-auto"
+              className="admin-sidebar-navigation flex flex-col gap-1 px-2 flex-1 overflow-y-auto"
               data-testid="nav-admin-sidebar"
             >
               {navGroups.map((group, groupIdx) => {
@@ -702,7 +732,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                           {group.label}
                         </p>
                       )}
-                      {group.items.map(renderNavItem)}
+                      {group.items.map((item) => renderNavItem(item))}
                     </div>
                   );
                 }
@@ -718,7 +748,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                     <CollapsibleTrigger asChild>
                       <button
                         type="button"
-                        className="flex w-full items-center gap-2 rounded-md px-3 py-1 text-left text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 transition-colors hover:bg-muted hover:text-muted-foreground"
+                        className="admin-sidebar-group-trigger flex w-full items-center gap-2 rounded-md px-3 py-1 text-left text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 transition-colors hover:bg-muted hover:text-muted-foreground"
                         aria-label={`${groupIsOpen ? "Collapse" : "Expand"} ${group.label}`}
                         data-testid={`button-toggle-admin-section-${group.label.toLowerCase().replace(/\s+/g, "-")}`}
                       >
@@ -731,8 +761,8 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
                         <span className="min-w-0 flex-1 truncate">{group.label}</span>
                       </button>
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="flex flex-col gap-0.5 overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                      {group.items.map(renderNavItem)}
+                    <CollapsibleContent className="admin-sidebar-group-content flex flex-col gap-0.5 overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                      {group.items.map((item) => renderNavItem(item))}
                     </CollapsibleContent>
                   </Collapsible>
                 );
@@ -740,7 +770,7 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
             </nav>
 
             {user && (
-              <div className="px-2 pb-4">
+              <div className="admin-sidebar-account px-2 pb-4">
                 <Separator className="mb-3" />
                 {!collapsed && (
                   <div className="px-3 mb-2">
@@ -854,17 +884,147 @@ export function AdminSidebar({ children }: AdminSidebarProps) {
 
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="absolute top-6 -right-3.5 z-20 h-7 w-7 rounded-full border bg-background shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:shadow-md transition-all"
+            className="admin-sidebar-toggle absolute top-6 -right-3.5 z-20 h-7 w-7 rounded-full border bg-background shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:shadow-md transition-all"
             data-testid="button-toggle-sidebar"
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
         </div>
 
-        <main className="flex-1 overflow-auto">
-          <AdminBreadcrumbs items={commandItems} />
-          {children}
-        </main>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="admin-mobile-header sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
+            <div className="flex h-14 items-center gap-3 px-3">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="shrink-0"
+                onClick={() => setMobileNavOpen(true)}
+                aria-label="Open admin navigation"
+                data-testid="button-open-admin-navigation"
+              >
+                <MenuIcon className="h-5 w-5" />
+              </Button>
+              <img src={adminLogo} alt="" className="h-8 w-8 shrink-0 object-contain" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">
+                  {currentCommandItem?.title ?? "Admin Dashboard"}
+                </p>
+                {currentCommandItem?.groupLabel && (
+                  <p className="truncate text-xs text-muted-foreground">
+                    {currentCommandItem.groupLabel}
+                  </p>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="shrink-0"
+                onClick={() => setCommandOpen(true)}
+                aria-label="Search admin"
+                data-testid="button-admin-command-search-mobile"
+              >
+                <SearchIcon className="h-5 w-5" />
+              </Button>
+            </div>
+          </header>
+
+          <main className="admin-main min-w-0 flex-1">
+            <AdminBreadcrumbs items={commandItems} />
+            {children}
+          </main>
+        </div>
+
+        <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+          <SheetContent
+            side="left"
+            className="admin-mobile-drawer w-[min(88vw,22rem)] gap-0 p-0"
+            data-testid="admin-mobile-navigation"
+          >
+            <SheetHeader className="border-b p-4 pr-12">
+              <div className="flex items-center gap-3">
+                <img src={adminLogo} alt="Core Platform" className="h-9 w-9 object-contain" />
+                <SheetTitle>Admin Dashboard</SheetTitle>
+              </div>
+              <SheetDescription className="sr-only">
+                Navigate the administration area
+              </SheetDescription>
+            </SheetHeader>
+            <div className="px-3 pt-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-start text-muted-foreground"
+                onClick={() => {
+                  setMobileNavOpen(false);
+                  setCommandOpen(true);
+                }}
+              >
+                <SearchIcon className="mr-2 h-4 w-4" />
+                Search admin
+              </Button>
+            </div>
+            <SheetBody className="p-2">
+              <nav className="flex flex-col gap-1" data-testid="nav-admin-sidebar-mobile">
+                {navGroups.map((group, groupIdx) => (
+                  <div key={group.label ?? `mobile-group-${groupIdx}`} className="space-y-0.5">
+                    {groupIdx > 0 && <Separator className="my-2" />}
+                    {group.label && (
+                      <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                        {group.label}
+                      </p>
+                    )}
+                    {group.items.map((item) => renderNavItem(item, true))}
+                  </div>
+                ))}
+              </nav>
+            </SheetBody>
+            {user && (
+              <div className="border-t p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <div className="mb-2 flex items-center gap-2 px-2">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-background">
+                    {user.profileImageUrl ? (
+                      <img
+                        src={user.profileImageUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {user.firstName} {user.lastName}
+                    </p>
+                    <p className="text-xs capitalize text-muted-foreground">{user.role}</p>
+                  </div>
+                </div>
+                <ThemeModeToggle />
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                  onClick={() => {
+                    setMobileNavOpen(false);
+                    setProfileOpen(true);
+                  }}
+                >
+                  <User className="h-4 w-4" />
+                  My Profile
+                </button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-muted-foreground"
+                  onClick={() => logout.mutate()}
+                >
+                  <LogOut className="mr-2 h-4 w-4 text-rose-500" />
+                  Logout
+                </Button>
+              </div>
+            )}
+          </SheetContent>
+        </Sheet>
 
         <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
         <AdminCommandPalette

@@ -84,24 +84,17 @@ function formatDate(value: string | Date | null | undefined) {
 function LeadCard({
   lead,
   onOpen,
+  onMove,
   dragState,
 }: {
   lead: CrmLead;
   onOpen: (id: string) => void;
+  onMove?: (leadId: string, stage: CrmLeadStage) => void;
   dragState?: ReturnType<typeof useDraggable>;
 }) {
   const transform = dragState?.transform;
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpen(lead.id)}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onOpen(lead.id);
-        }
-      }}
       ref={dragState?.setNodeRef}
       style={
         transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined
@@ -114,37 +107,82 @@ function LeadCard({
       )}
       data-testid={`card-crm-lead-${lead.id}`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{lead.name}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {lead.email || lead.phone || "No contact info"}
-          </p>
+      <button
+        type="button"
+        className="w-full text-left"
+        onClick={() => onOpen(lead.id)}
+        aria-label={`Open ${lead.name}`}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">{lead.name}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {lead.email || lead.phone || "No contact info"}
+            </p>
+          </div>
+          <Badge variant="outline" className="shrink-0 text-[10px] uppercase">
+            {lead.source}
+          </Badge>
         </div>
-        <Badge variant="outline" className="shrink-0 text-[10px] uppercase">
-          {lead.source}
-        </Badge>
-      </div>
-      {lead.company ? (
-        <p className="mt-2 truncate text-xs text-muted-foreground">{lead.company}</p>
-      ) : null}
-      {lead.nextFollowUpAt ? (
-        <p className="mt-2 flex items-center gap-1 text-xs text-amber-700">
-          <CalendarClock className="h-3 w-3" />
-          {formatDate(lead.nextFollowUpAt)}
-        </p>
+        {lead.company ? (
+          <p className="mt-2 truncate text-xs text-muted-foreground">{lead.company}</p>
+        ) : null}
+        {lead.nextFollowUpAt ? (
+          <p className="mt-2 flex items-center gap-1 text-xs text-amber-700">
+            <CalendarClock className="h-3 w-3" />
+            {formatDate(lead.nextFollowUpAt)}
+          </p>
+        ) : null}
+      </button>
+      {onMove ? (
+        <div
+          className="mt-3"
+          onClick={(event) => event.stopPropagation()}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <Label className="sr-only" htmlFor={`move-lead-${lead.id}`}>
+            Move {lead.name} to stage
+          </Label>
+          <Select
+            value={lead.stage}
+            onValueChange={(stage) => onMove(lead.id, stage as CrmLeadStage)}
+          >
+            <SelectTrigger
+              id={`move-lead-${lead.id}`}
+              className="h-8 w-full text-xs"
+              data-testid={`select-move-crm-lead-${lead.id}`}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CRM_LEAD_STAGES.map((stage) => (
+                <SelectItem key={stage} value={stage}>
+                  {CRM_LEAD_STAGE_LABELS[stage]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       ) : null}
     </div>
   );
 }
 
-function DraggableLeadCard({ lead, onOpen }: { lead: CrmLead; onOpen: (id: string) => void }) {
+function DraggableLeadCard({
+  lead,
+  onOpen,
+  onMove,
+}: {
+  lead: CrmLead;
+  onOpen: (id: string) => void;
+  onMove: (leadId: string, stage: CrmLeadStage) => void;
+}) {
   const dragState = useDraggable({
     id: lead.id,
     data: { type: "lead", lead },
   });
 
-  return <LeadCard lead={lead} onOpen={onOpen} dragState={dragState} />;
+  return <LeadCard lead={lead} onOpen={onOpen} onMove={onMove} dragState={dragState} />;
 }
 
 function PipelineColumn({
@@ -152,11 +190,13 @@ function PipelineColumn({
   leads,
   isLoading,
   onOpen,
+  onMove,
 }: {
   stage: CrmLeadStage;
   leads: CrmLead[];
   isLoading: boolean;
   onOpen: (id: string) => void;
+  onMove: (leadId: string, stage: CrmLeadStage) => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({
     id: stage,
@@ -166,7 +206,7 @@ function PipelineColumn({
   return (
     <Card
       className={cn(
-        "flex min-h-0 flex-col transition-colors",
+        "flex min-h-0 snap-start flex-col transition-colors",
         isOver && "border-primary bg-primary/5",
       )}
     >
@@ -180,7 +220,7 @@ function PipelineColumn({
       </CardHeader>
       <CardContent ref={setNodeRef} className="min-h-40 flex-1 space-y-2 overflow-y-auto">
         {leads.map((lead) => (
-          <DraggableLeadCard key={lead.id} lead={lead} onOpen={onOpen} />
+          <DraggableLeadCard key={lead.id} lead={lead} onOpen={onOpen} onMove={onMove} />
         ))}
         {!isLoading && leads.length === 0 ? (
           <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
@@ -542,7 +582,7 @@ function CrmContent() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col gap-5 p-6">
+    <div className="flex min-h-dvh min-w-0 flex-col gap-5 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-heading font-bold" data-testid="text-crm-title">
@@ -559,7 +599,7 @@ function CrmContent() {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <div className="relative min-w-64 flex-1">
+        <div className="relative min-w-0 flex-1 basis-64">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="pl-9"
@@ -569,7 +609,7 @@ function CrmContent() {
           />
         </div>
         <Select value={stage} onValueChange={(value) => setStage(value as CrmLeadStage | "all")}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -589,7 +629,7 @@ function CrmContent() {
         onDragCancel={() => setActiveLead(null)}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid min-h-[520px] gap-4 xl:grid-cols-6">
+        <div className="grid min-h-[520px] snap-x snap-mandatory auto-cols-[minmax(280px,85vw)] grid-flow-col gap-4 overflow-x-auto pb-2 xl:grid-flow-row xl:grid-cols-6 xl:overflow-visible">
           {CRM_LEAD_STAGES.map((item) => (
             <PipelineColumn
               key={item}
@@ -597,6 +637,7 @@ function CrmContent() {
               leads={leadsByStage[item] ?? []}
               isLoading={isLoading}
               onOpen={setSelectedLeadId}
+              onMove={(leadId, nextStage) => moveLeadMutation.mutate({ leadId, nextStage })}
             />
           ))}
         </div>
@@ -605,8 +646,8 @@ function CrmContent() {
         </DragOverlay>
       </DndContext>
 
-      <div className="rounded-lg border">
-        <div className="grid grid-cols-[1fr_140px_140px_120px] gap-3 border-b px-4 py-3 text-xs font-medium text-muted-foreground">
+      <div className="overflow-x-auto rounded-lg border">
+        <div className="grid min-w-[640px] grid-cols-[1fr_140px_140px_120px] gap-3 border-b px-4 py-3 text-xs font-medium text-muted-foreground">
           <span>
             <UserRound className="mr-1 inline h-3 w-3" />
             Lead
@@ -626,7 +667,7 @@ function CrmContent() {
             key={lead.id}
             type="button"
             onClick={() => setSelectedLeadId(lead.id)}
-            className="grid w-full grid-cols-[1fr_140px_140px_120px] gap-3 px-4 py-3 text-left text-sm hover:bg-muted/40"
+            className="grid min-w-[640px] w-full grid-cols-[1fr_140px_140px_120px] gap-3 px-4 py-3 text-left text-sm hover:bg-muted/40"
           >
             <span className="min-w-0">
               <span className="block truncate font-medium">{lead.name}</span>

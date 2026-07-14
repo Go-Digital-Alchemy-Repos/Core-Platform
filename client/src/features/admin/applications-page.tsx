@@ -112,7 +112,7 @@ export default function AdminApplicationsPage() {
 
   return (
     <AdminSidebar>
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-heading font-bold" data-testid="text-page-title">

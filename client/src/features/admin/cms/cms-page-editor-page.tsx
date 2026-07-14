@@ -36,6 +36,7 @@ import { SeoPreview } from "@/components/shared/seo-preview";
 import { StructuredDataStatus } from "@/components/shared/structured-data-status";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { AdminSaveBar } from "@/components/shared/admin-save-bar";
+import { AdminMobileActionBar } from "@/components/shared/admin-mobile-action-bar";
 import { EditorLockBanner } from "@/components/shared/editor-lock-banner";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -653,7 +654,7 @@ export default function CmsPageEditorPage() {
   if (!isNew && pageLoading) {
     return (
       <AdminSidebar>
-        <div className="p-6 max-w-6xl mx-auto space-y-4">
+        <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-4">
           <Skeleton className="h-10 w-48" />
           <Skeleton className="h-64 w-full" />
         </div>
@@ -665,7 +666,7 @@ export default function CmsPageEditorPage() {
     <AdminSidebar>
       <div
         className={cn(
-          "space-y-4 p-6 mx-auto",
+          "admin-has-mobile-action-bar mx-auto space-y-4 p-4 sm:p-6",
           activeTab === "builder" ? "max-w-[1800px]" : "max-w-6xl",
         )}
       >
@@ -679,8 +680,8 @@ export default function CmsPageEditorPage() {
           />
         ) : null}
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
@@ -691,8 +692,11 @@ export default function CmsPageEditorPage() {
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div>
-              <h1 className="text-xl font-heading font-semibold" data-testid="text-editor-title">
+            <div className="min-w-0">
+              <h1
+                className="truncate text-xl font-heading font-semibold"
+                data-testid="text-editor-title"
+              >
                 {isNew ? "Create Page" : form.watch("title") || "Edit Page"}
               </h1>
               {!isNew && page && (
@@ -705,7 +709,7 @@ export default function CmsPageEditorPage() {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {!isNew && (
               <>
                 <Button
@@ -932,7 +936,7 @@ export default function CmsPageEditorPage() {
                   })
                 }
                 fallback={
-                  <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/80 p-6 text-left dark:border-amber-700 dark:bg-amber-950/20">
+                  <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50/80 p-4 sm:p-6 text-left dark:border-amber-700 dark:bg-amber-950/20">
                     <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
                       The visual page builder hit a rendering problem.
                     </h3>
@@ -1669,6 +1673,42 @@ export default function CmsPageEditorPage() {
           />
         </>
       )}
+      <AdminMobileActionBar>
+        {!isNew && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => openDraftPreview()}
+            disabled={previewLinkMutation.isPending}
+            aria-label="Preview page draft"
+          >
+            <ExternalLink className="h-4 w-4" />
+            <span className="sr-only xs:not-sr-only xs:ml-2">Preview</span>
+          </Button>
+        )}
+        {(isNew || (page?.status !== "published" && page?.status !== "scheduled")) && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onPublish}
+            disabled={saveAndPublishMutation.isPending || isPending || editorLock.isReadOnly}
+          >
+            <Globe className="mr-2 h-4 w-4" />
+            Publish
+          </Button>
+        )}
+        <Button
+          type="button"
+          size="sm"
+          onClick={onSave}
+          disabled={isPending || editorLock.isReadOnly}
+          data-testid="button-save-mobile"
+        >
+          Save
+        </Button>
+      </AdminMobileActionBar>
       {unsavedChangesGuard.dialog}
     </AdminSidebar>
   );

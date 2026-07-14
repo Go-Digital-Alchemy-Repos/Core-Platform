@@ -8,7 +8,7 @@ export default function AdminSpecializationsPage() {
 
   return (
     <AdminSidebar>
-      <div className="p-6 max-w-4xl">
+      <div className="p-4 sm:p-6 max-w-4xl">
         <h1
           className="text-2xl font-heading font-bold mb-1"
           data-testid="text-specializations-page-title"

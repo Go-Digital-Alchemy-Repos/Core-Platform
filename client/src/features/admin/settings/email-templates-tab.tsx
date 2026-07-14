@@ -804,7 +804,7 @@ export function EmailTemplatesTab() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/20 p-3">
-        <div className="relative min-w-[240px] flex-1">
+        <div className="relative min-w-0 flex-1 basis-60">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={searchQuery}
@@ -818,7 +818,10 @@ export function EmailTemplatesTab() {
           value={moduleFilter}
           onValueChange={(value) => setModuleFilter(value as EmailTemplateModule | "all")}
         >
-          <SelectTrigger className="w-[180px]" data-testid="select-template-module-filter">
+          <SelectTrigger
+            className="w-full sm:w-[180px]"
+            data-testid="select-template-module-filter"
+          >
             <SelectValue placeholder="Module" />
           </SelectTrigger>
           <SelectContent>
@@ -834,7 +837,10 @@ export function EmailTemplatesTab() {
           value={statusFilter}
           onValueChange={(value) => setStatusFilter(value as EmailTemplateStatusFilter)}
         >
-          <SelectTrigger className="w-[160px]" data-testid="select-template-status-filter">
+          <SelectTrigger
+            className="w-full sm:w-[160px]"
+            data-testid="select-template-status-filter"
+          >
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>

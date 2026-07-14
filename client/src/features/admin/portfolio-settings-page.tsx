@@ -70,7 +70,7 @@ export default function AdminPortfolioSettingsPage() {
 
   return (
     <AdminSidebar>
-      <main className="flex-1 space-y-6 p-6">
+      <main className="flex-1 space-y-6 p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-heading font-semibold">
