@@ -15,6 +15,7 @@ import {
 } from "./ecommerce-email.service";
 import { getEcommerceCustomerAccountSettings } from "./ecommerce-customer-account.service";
 import { assertEcommerceShippingDestinationAllowed } from "./ecommerce-store-settings.service";
+import { evaluateEcommerceFraud, recordEcommerceFraudEvent } from "./ecommerce-fraud.service";
 import { logger } from "../utils/logger";
 import { hashPassword } from "../middleware/auth";
 import type { User } from "@shared/schema";
@@ -325,7 +326,86 @@ export async function createEcommercePaymentIntent(
   }
   if (priced.totalAmount <= 0) throw httpError("Order total must be greater than zero", 400);
 
-  const stripe = await getEcommerceStripeClient();
+  const existingCustomer =
+    typeof storage.ecommerce.getCustomerByEmail === "function"
+      ? await storage.ecommerce.getCustomerByEmail(checkoutEmail)
+      : undefined;
+  const fraudEvaluation = await evaluateEcommerceFraud({
+    email: checkoutEmail,
+    amount: priced.totalAmount,
+    quantity: priced.lines.reduce((sum, line) => sum + line.quantity, 0),
+    ip: requestMeta.ip,
+    userAgent: data.metaTracking?.userAgent,
+    customerId: existingCustomer?.id ?? null,
+    customerCreatedAt: existingCustomer?.createdAt ?? null,
+    shippingAddress: data.shippingAddress,
+    billingAddress: data.billingSameAsShipping ? data.shippingAddress : data.billingAddress,
+    billingSameAsShipping: data.billingSameAsShipping,
+    lines: priced.lines,
+  });
+  const fraudRequestSnapshot = {
+    shippingAddress: [
+      data.shippingAddress.address,
+      data.shippingAddress.line2,
+      data.shippingAddress.city,
+      data.shippingAddress.state,
+      data.shippingAddress.zip,
+      data.shippingAddress.country,
+    ]
+      .map((part) =>
+        String(part ?? "")
+          .trim()
+          .toLowerCase(),
+      )
+      .filter(Boolean)
+      .join("|"),
+    billingSameAsShipping: data.billingSameAsShipping,
+    totalAmount: priced.totalAmount,
+    itemCount: priced.lines.reduce((sum, line) => sum + line.quantity, 0),
+  };
+  if (fraudEvaluation.decision === "block") {
+    await recordEcommerceFraudEvent({
+      eventType: "checkout_blocked",
+      customerId: existingCustomer?.id ?? null,
+      email: checkoutEmail,
+      ipAddress: requestMeta.ip,
+      userAgent: data.metaTracking?.userAgent,
+      amount: priced.totalAmount,
+      score: fraudEvaluation.score,
+      riskLevel: fraudEvaluation.riskLevel,
+      decision: fraudEvaluation.decision,
+      matchedRules: fraudEvaluation.matchedRules,
+      message: fraudEvaluation.message,
+      requestSnapshot: fraudRequestSnapshot,
+    });
+    throw httpError(fraudEvaluation.message, 403);
+  }
+  if (
+    fraudEvaluation.decision === "manual_review" &&
+    !fraudEvaluation.settings.allowManualReviewOrders
+  ) {
+    await recordEcommerceFraudEvent({
+      eventType: "checkout_review",
+      customerId: existingCustomer?.id ?? null,
+      email: checkoutEmail,
+      ipAddress: requestMeta.ip,
+      userAgent: data.metaTracking?.userAgent,
+      amount: priced.totalAmount,
+      score: fraudEvaluation.score,
+      riskLevel: fraudEvaluation.riskLevel,
+      decision: fraudEvaluation.decision,
+      matchedRules: fraudEvaluation.matchedRules,
+      message: "Checkout requires manual review and review orders are disabled.",
+      requestSnapshot: fraudRequestSnapshot,
+    });
+    throw httpError(
+      "This checkout needs review before payment. Please contact support for help with this order.",
+      409,
+    );
+  }
+  const stripe =
+    fraudEvaluation.decision === "manual_review" ? null : await getEcommerceStripeClient();
+
   if (accountNameParts && data.account?.password) {
     accountUser = await storage.users.createUser({
       email: checkoutEmail,
@@ -385,19 +465,59 @@ export async function createEcommercePaymentIntent(
       metaFbc: data.metaTracking?.fbc,
       metaEventSourceUrl: data.metaTracking?.eventSourceUrl,
       customerUserAgent: data.metaTracking?.userAgent,
+      fraudScore: fraudEvaluation.score,
+      fraudRiskLevel: fraudEvaluation.riskLevel,
+      fraudDecision: fraudEvaluation.decision,
+      fraudReviewStatus: fraudEvaluation.decision === "manual_review" ? "pending" : "not_required",
+      fraudSignals: fraudEvaluation.matchedRules,
     },
     pricedLinesToOrderItems(priced.lines),
   );
 
+  await recordEcommerceFraudEvent({
+    eventType:
+      fraudEvaluation.decision === "manual_review" ? "checkout_review" : "checkout_screened",
+    orderId: order.id,
+    customerId: customer.id,
+    email: checkoutEmail,
+    ipAddress: requestMeta.ip,
+    userAgent: data.metaTracking?.userAgent,
+    amount: priced.totalAmount,
+    score: fraudEvaluation.score,
+    riskLevel: fraudEvaluation.riskLevel,
+    decision: fraudEvaluation.decision,
+    matchedRules: fraudEvaluation.matchedRules,
+    message: fraudEvaluation.message,
+    requestSnapshot: fraudRequestSnapshot,
+  });
+
+  if (fraudEvaluation.decision === "manual_review") {
+    throw httpError(
+      "This order needs a quick review before payment. Please contact support or try again later.",
+      409,
+    );
+  }
+
   let intent;
   try {
+    if (!stripe) {
+      throw httpError(
+        "This order needs a quick review before payment. Please contact support or try again later.",
+        409,
+      );
+    }
     intent = await stripe.paymentIntents.create(
       {
         amount: order.totalAmount,
         currency: "usd",
         automatic_payment_methods: { enabled: true },
         receipt_email: customer.email,
-        metadata: { orderId: order.id },
+        metadata: {
+          orderId: order.id,
+          fraudRiskLevel: fraudEvaluation.riskLevel,
+          fraudScore: String(fraudEvaluation.score),
+          fraudDecision: fraudEvaluation.decision,
+        },
       },
       {
         idempotencyKey: `ecommerce_order_${order.id}_payment_intent`,
@@ -729,6 +849,9 @@ export async function assertEcommerceOrderCanShip(orderId: string) {
   if (!shippablePaymentStatuses.has(order.paymentStatus)) {
     throw httpError("Only paid orders can be shipped", 400);
   }
+  if (order.fraudReviewStatus === "pending" || order.fraudDecision === "manual_review") {
+    throw httpError("Review and approve the order risk before fulfillment", 400);
+  }
   if (order.status === "cancelled") {
     throw httpError("Cancelled orders cannot be shipped", 400);
   }
@@ -806,4 +929,67 @@ export async function markEcommerceOrderPaid(orderId: string, paymentIntentId: s
   const details = await storage.ecommerce.getOrderWithDetails(orderId);
   if (details && shouldSendPaidEffects) await sendEcommerceOrderConfirmation(details);
   return details;
+}
+
+export async function recordEcommerceStripeRiskOutcome(params: {
+  orderId: string;
+  paymentIntentId: string;
+  charge?: {
+    outcome?: {
+      type?: string | null;
+      reason?: string | null;
+      risk_level?: string | null;
+      risk_score?: number | null;
+    } | null;
+    payment_method_details?: {
+      card?: {
+        checks?: {
+          cvc_check?: string | null;
+          address_line1_check?: string | null;
+          address_postal_code_check?: string | null;
+        } | null;
+      } | null;
+    } | null;
+  } | null;
+}) {
+  const charge = params.charge;
+  if (!charge) return undefined;
+  const updated = await storage.ecommerce.updateOrder(params.orderId, {
+    stripePaymentIntentId: params.paymentIntentId,
+    stripeRiskLevel: charge.outcome?.risk_level ?? null,
+    stripeRiskScore: charge.outcome?.risk_score ?? null,
+    stripeOutcomeType: charge.outcome?.type ?? null,
+    stripeOutcomeReason: charge.outcome?.reason ?? null,
+    stripeCvcCheck: charge.payment_method_details?.card?.checks?.cvc_check ?? null,
+    stripeAddressLine1Check:
+      charge.payment_method_details?.card?.checks?.address_line1_check ?? null,
+    stripeAddressPostalCodeCheck:
+      charge.payment_method_details?.card?.checks?.address_postal_code_check ?? null,
+  });
+  if (updated) {
+    await recordEcommerceFraudEvent({
+      eventType: "stripe_risk_update",
+      orderId: params.orderId,
+      customerId: updated.customerId,
+      amount: updated.totalAmount,
+      score: updated.fraudScore,
+      riskLevel: updated.fraudRiskLevel as "low" | "medium" | "high",
+      decision: updated.fraudDecision as "allow" | "allow_with_alert" | "manual_review" | "block",
+      matchedRules: Array.isArray(updated.fraudSignals)
+        ? (updated.fraudSignals as Array<{ code: string; label: string; score: number }>)
+        : [],
+      message: "Stripe risk and card verification outcome recorded.",
+      requestSnapshot: {
+        stripeOutcomeType: charge.outcome?.type ?? null,
+        stripeOutcomeReason: charge.outcome?.reason ?? null,
+        stripeRiskLevel: charge.outcome?.risk_level ?? null,
+        stripeRiskScore: charge.outcome?.risk_score ?? null,
+        cvcCheck: charge.payment_method_details?.card?.checks?.cvc_check ?? null,
+        addressLine1Check: charge.payment_method_details?.card?.checks?.address_line1_check ?? null,
+        addressPostalCodeCheck:
+          charge.payment_method_details?.card?.checks?.address_postal_code_check ?? null,
+      },
+    });
+  }
+  return updated;
 }

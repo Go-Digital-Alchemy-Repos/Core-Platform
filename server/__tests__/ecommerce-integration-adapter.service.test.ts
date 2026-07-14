@@ -26,6 +26,15 @@ describe("ecommerce integration adapter registry", () => {
         "amazon_marketplace",
         "walmart_marketplace",
         "dhl_express",
+        "stripe",
+        "paypal",
+        "square",
+        "authorize_net",
+        "braintree",
+        "adyen",
+        "amazon_pay",
+        "klarna",
+        "afterpay",
       ]),
     );
   });
@@ -50,11 +59,42 @@ describe("ecommerce integration adapter registry", () => {
         (provider) => provider.provider,
       ),
     ).toEqual(expect.arrayContaining(["amazon_marketplace", "walmart_marketplace"]));
+    expect(
+      getEcommerceIntegrationAdaptersByCapability("payment_refund").map(
+        (provider) => provider.provider,
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        "stripe",
+        "paypal",
+        "square",
+        "authorize_net",
+        "braintree",
+        "adyen",
+        "amazon_pay",
+        "klarna",
+        "afterpay",
+      ]),
+    );
 
     const adapter = createEcommerceIntegrationAdapter("klaviyo");
     expect(adapter.capabilities).toEqual(expect.arrayContaining(["marketing_event_dispatch"]));
     expect(() => adapter.assertOperational("marketing_event_dispatch")).toThrow(
       "Klaviyo is configurable, but its operational adapter is not implemented yet",
+    );
+  });
+
+  it("marks Stripe refunds operational while keeping other gateway refunds adapter-gated", () => {
+    expect(getEcommerceIntegrationAdapterDefinition("stripe")).toMatchObject({
+      operational: true,
+      capabilities: expect.arrayContaining(["payment_refund"]),
+    });
+    expect(() => assertEcommerceIntegrationOperational("stripe", "payment_refund")).not.toThrow();
+    expect(() => assertEcommerceIntegrationOperational("paypal", "payment_refund")).toThrow(
+      "PayPal is configurable, but its operational adapter is not implemented yet",
+    );
+    expect(() => assertEcommerceIntegrationOperational("apple_pay", "payment_refund")).toThrow(
+      "Apple Pay does not support payment_refund",
     );
   });
 });

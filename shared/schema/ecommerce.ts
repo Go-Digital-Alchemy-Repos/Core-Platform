@@ -47,6 +47,28 @@ export const ECOMMERCE_PAYMENT_REQUEST_STATUSES = [
   "expired",
   "cancelled",
 ] as const;
+export const ECOMMERCE_FRAUD_RISK_LEVELS = ["low", "medium", "high"] as const;
+export const ECOMMERCE_FRAUD_DECISIONS = [
+  "allow",
+  "allow_with_alert",
+  "manual_review",
+  "block",
+] as const;
+export const ECOMMERCE_FRAUD_REVIEW_STATUSES = [
+  "not_required",
+  "pending",
+  "approved",
+  "rejected",
+] as const;
+export const ECOMMERCE_FRAUD_EVENT_TYPES = [
+  "checkout_screened",
+  "checkout_blocked",
+  "checkout_review",
+  "checkout_allowed",
+  "stripe_risk_update",
+  "admin_review",
+] as const;
+export const ECOMMERCE_FRAUD_BLOCK_TYPES = ["ip", "email", "address"] as const;
 export const ECOMMERCE_COUPON_TYPES = ["percentage", "fixed", "freeShipping"] as const;
 export const ECOMMERCE_COUPON_STATUSES = [
   "active",
@@ -511,6 +533,21 @@ export const ecommerceOrders = pgTable(
     metaFbc: text("meta_fbc"),
     metaEventSourceUrl: text("meta_event_source_url"),
     customerUserAgent: text("customer_user_agent"),
+    fraudScore: integer("fraud_score").notNull().default(0),
+    fraudRiskLevel: text("fraud_risk_level").notNull().default("low"),
+    fraudDecision: text("fraud_decision").notNull().default("allow"),
+    fraudReviewStatus: text("fraud_review_status").notNull().default("not_required"),
+    fraudSignals: jsonb("fraud_signals")
+      .$type<Array<Record<string, unknown>>>()
+      .default(sql`'[]'::jsonb`)
+      .notNull(),
+    stripeRiskLevel: text("stripe_risk_level"),
+    stripeRiskScore: integer("stripe_risk_score"),
+    stripeOutcomeType: text("stripe_outcome_type"),
+    stripeOutcomeReason: text("stripe_outcome_reason"),
+    stripeCvcCheck: text("stripe_cvc_check"),
+    stripeAddressLine1Check: text("stripe_address_line1_check"),
+    stripeAddressPostalCodeCheck: text("stripe_address_postal_code_check"),
     lookupToken: text("lookup_token")
       .notNull()
       .default(sql`encode(gen_random_bytes(18), 'hex')`),
@@ -524,6 +561,8 @@ export const ecommerceOrders = pgTable(
     index("idx_ecommerce_orders_created_at").on(table.createdAt),
     index("idx_ecommerce_orders_status_created").on(table.status, table.createdAt),
     index("idx_ecommerce_orders_payment_created").on(table.paymentStatus, table.createdAt),
+    index("idx_ecommerce_orders_fraud_review").on(table.fraudReviewStatus, table.createdAt),
+    index("idx_ecommerce_orders_fraud_level").on(table.fraudRiskLevel, table.createdAt),
     uniqueIndex("idx_ecommerce_orders_lookup_token").on(table.lookupToken),
     uniqueIndex("idx_ecommerce_orders_payment_intent").on(table.stripePaymentIntentId),
   ],
@@ -583,6 +622,66 @@ export const ecommerceOrderNotes = pgTable(
   (table) => [
     index("idx_ecommerce_order_notes_order").on(table.orderId),
     index("idx_ecommerce_order_notes_created").on(table.createdAt),
+  ],
+);
+
+export const ecommerceFraudEvents = pgTable(
+  "ecommerce_fraud_events",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    orderId: varchar("order_id").references(() => ecommerceOrders.id, { onDelete: "set null" }),
+    customerId: varchar("customer_id").references(() => ecommerceCustomers.id, {
+      onDelete: "set null",
+    }),
+    eventType: text("event_type").notNull(),
+    decision: text("decision").notNull(),
+    riskLevel: text("risk_level").notNull(),
+    score: integer("score").notNull().default(0),
+    email: text("email"),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    amount: integer("amount"),
+    currency: text("currency").notNull().default("usd"),
+    matchedRules: jsonb("matched_rules")
+      .$type<Array<Record<string, unknown>>>()
+      .default(sql`'[]'::jsonb`)
+      .notNull(),
+    requestSnapshot: jsonb("request_snapshot")
+      .$type<Record<string, unknown> | null>()
+      .default(sql`'{}'::jsonb`),
+    message: text("message"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_ecommerce_fraud_events_order").on(table.orderId),
+    index("idx_ecommerce_fraud_events_customer").on(table.customerId),
+    index("idx_ecommerce_fraud_events_created").on(table.createdAt),
+    index("idx_ecommerce_fraud_events_decision").on(table.decision, table.createdAt),
+    index("idx_ecommerce_fraud_events_ip").on(table.ipAddress, table.createdAt),
+    index("idx_ecommerce_fraud_events_email").on(table.email, table.createdAt),
+  ],
+);
+
+export const ecommerceFraudBlocks = pgTable(
+  "ecommerce_fraud_blocks",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    type: text("type").notNull(),
+    value: text("value").notNull(),
+    reason: text("reason").notNull(),
+    active: boolean("active").notNull().default(true),
+    expiresAt: timestamp("expires_at"),
+    createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_ecommerce_fraud_blocks_lookup").on(table.type, table.value, table.active),
+    index("idx_ecommerce_fraud_blocks_expires").on(table.expiresAt),
   ],
 );
 
@@ -996,6 +1095,18 @@ export const ecommerceOrdersRelations = relations(ecommerceOrders, ({ one, many 
   shipments: many(ecommerceShipments),
   fulfillments: many(ecommerceFulfillments),
   notes: many(ecommerceOrderNotes),
+  fraudEvents: many(ecommerceFraudEvents),
+}));
+
+export const ecommerceFraudEventsRelations = relations(ecommerceFraudEvents, ({ one }) => ({
+  order: one(ecommerceOrders, {
+    fields: [ecommerceFraudEvents.orderId],
+    references: [ecommerceOrders.id],
+  }),
+  customer: one(ecommerceCustomers, {
+    fields: [ecommerceFraudEvents.customerId],
+    references: [ecommerceCustomers.id],
+  }),
 }));
 
 export const ecommerceOrderNotesRelations = relations(ecommerceOrderNotes, ({ one }) => ({
@@ -1092,6 +1203,15 @@ export const insertEcommerceOrderNoteSchema = createInsertSchema(ecommerceOrderN
   id: true,
   createdAt: true,
 });
+export const insertEcommerceFraudEventSchema = createInsertSchema(ecommerceFraudEvents).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertEcommerceFraudBlockSchema = createInsertSchema(ecommerceFraudBlocks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 export const insertEcommercePaymentRequestSchema = createInsertSchema(
   ecommercePaymentRequests,
 ).omit({ id: true, paidAt: true, createdAt: true, updatedAt: true });
@@ -1174,6 +1294,10 @@ export type EcommerceOrderItem = typeof ecommerceOrderItems.$inferSelect;
 export type InsertEcommerceOrderItem = z.infer<typeof insertEcommerceOrderItemSchema>;
 export type EcommerceOrderNote = typeof ecommerceOrderNotes.$inferSelect;
 export type InsertEcommerceOrderNote = z.infer<typeof insertEcommerceOrderNoteSchema>;
+export type EcommerceFraudEvent = typeof ecommerceFraudEvents.$inferSelect;
+export type InsertEcommerceFraudEvent = z.infer<typeof insertEcommerceFraudEventSchema>;
+export type EcommerceFraudBlock = typeof ecommerceFraudBlocks.$inferSelect;
+export type InsertEcommerceFraudBlock = z.infer<typeof insertEcommerceFraudBlockSchema>;
 export type EcommercePaymentRequest = typeof ecommercePaymentRequests.$inferSelect;
 export type InsertEcommercePaymentRequest = z.infer<typeof insertEcommercePaymentRequestSchema>;
 export type EcommerceCoupon = typeof ecommerceCoupons.$inferSelect;

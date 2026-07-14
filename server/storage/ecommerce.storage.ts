@@ -11,6 +11,8 @@ import {
   ecommerceFulfillmentItems,
   ecommerceFulfillmentLocations,
   ecommerceFulfillments,
+  ecommerceFraudBlocks,
+  ecommerceFraudEvents,
   ecommerceOrderItems,
   ecommerceOrderNotes,
   ecommerceOrders,
@@ -34,6 +36,8 @@ import {
   type EcommerceFulfillment,
   type EcommerceFulfillmentItem,
   type EcommerceFulfillmentLocation,
+  type EcommerceFraudBlock,
+  type EcommerceFraudEvent,
   type EcommerceOrder,
   type EcommerceOrderItem,
   type EcommerceOrderNote,
@@ -53,6 +57,8 @@ import {
   type InsertEcommerceFulfillment,
   type InsertEcommerceFulfillmentItem,
   type InsertEcommerceFulfillmentLocation,
+  type InsertEcommerceFraudBlock,
+  type InsertEcommerceFraudEvent,
   type InsertEcommerceOrder,
   type InsertEcommerceOrderItem,
   type InsertEcommerceOrderNote,
@@ -1011,6 +1017,151 @@ export class EcommerceStorage {
   async createOrderNote(data: InsertEcommerceOrderNote): Promise<EcommerceOrderNote> {
     const [note] = await db.insert(ecommerceOrderNotes).values(data).returning();
     return note;
+  }
+
+  async createFraudEvent(data: InsertEcommerceFraudEvent): Promise<EcommerceFraudEvent> {
+    const [event] = await db
+      .insert(ecommerceFraudEvents)
+      .values(data as typeof ecommerceFraudEvents.$inferInsert)
+      .returning();
+    return event;
+  }
+
+  async getFraudEvents(
+    options: {
+      limit?: number;
+      decision?: string;
+      since?: Date;
+      search?: string;
+    } = {},
+  ): Promise<EcommerceFraudEvent[]> {
+    const clauses = [];
+    if (options.decision) clauses.push(eq(ecommerceFraudEvents.decision, options.decision));
+    if (options.since) clauses.push(gte(ecommerceFraudEvents.createdAt, options.since));
+    if (options.search?.trim()) {
+      const term = `%${options.search.trim()}%`;
+      clauses.push(
+        or(
+          ilike(ecommerceFraudEvents.email, term),
+          ilike(ecommerceFraudEvents.ipAddress, term),
+          ilike(ecommerceFraudEvents.message, term),
+        ),
+      );
+    }
+    const query = db
+      .select()
+      .from(ecommerceFraudEvents)
+      .orderBy(desc(ecommerceFraudEvents.createdAt))
+      .limit(options.limit ?? 100);
+    return clauses.length ? query.where(and(...clauses)) : query;
+  }
+
+  async getFraudEventSummary(since: Date): Promise<{
+    total: number;
+    blocked: number;
+    manualReview: number;
+    velocityBlocks: number;
+  }> {
+    const [summary] = await db
+      .select({
+        total: sql<number>`count(*)::int`,
+        blocked: sql<number>`count(*) filter (where ${ecommerceFraudEvents.decision} = 'block')::int`,
+        manualReview: sql<number>`count(*) filter (where ${ecommerceFraudEvents.decision} = 'manual_review')::int`,
+        velocityBlocks: sql<number>`count(*) filter (where ${ecommerceFraudEvents.decision} = 'block' and ${ecommerceFraudEvents.matchedRules}::text ilike '%velocity%')::int`,
+      })
+      .from(ecommerceFraudEvents)
+      .where(gte(ecommerceFraudEvents.createdAt, since));
+    return {
+      total: summary?.total ?? 0,
+      blocked: summary?.blocked ?? 0,
+      manualReview: summary?.manualReview ?? 0,
+      velocityBlocks: summary?.velocityBlocks ?? 0,
+    };
+  }
+
+  async countFraudEventsByIdentity(params: {
+    ip?: string | null;
+    email?: string | null;
+    since: Date;
+  }): Promise<{ ipAttempts: number; emailAttempts: number }> {
+    const [ipRow] = params.ip
+      ? await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(ecommerceFraudEvents)
+          .where(
+            and(
+              eq(ecommerceFraudEvents.ipAddress, params.ip),
+              gte(ecommerceFraudEvents.createdAt, params.since),
+            ),
+          )
+      : [{ count: 0 }];
+    const [emailRow] = params.email
+      ? await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(ecommerceFraudEvents)
+          .where(
+            and(
+              eq(ecommerceFraudEvents.email, params.email),
+              gte(ecommerceFraudEvents.createdAt, params.since),
+            ),
+          )
+      : [{ count: 0 }];
+    return { ipAttempts: ipRow?.count ?? 0, emailAttempts: emailRow?.count ?? 0 };
+  }
+
+  async findRecentDuplicateFraudEvent(params: {
+    email: string;
+    amount: number;
+    shippingAddress: string;
+    since: Date;
+  }): Promise<EcommerceFraudEvent | undefined> {
+    const [event] = await db
+      .select()
+      .from(ecommerceFraudEvents)
+      .where(
+        and(
+          eq(ecommerceFraudEvents.email, params.email),
+          eq(ecommerceFraudEvents.amount, params.amount),
+          gte(ecommerceFraudEvents.createdAt, params.since),
+          sql`${ecommerceFraudEvents.requestSnapshot}->>'shippingAddress' = ${params.shippingAddress}`,
+        ),
+      )
+      .orderBy(desc(ecommerceFraudEvents.createdAt))
+      .limit(1);
+    return event;
+  }
+
+  async getActiveFraudBlocks(now = new Date()): Promise<EcommerceFraudBlock[]> {
+    return db
+      .select()
+      .from(ecommerceFraudBlocks)
+      .where(
+        and(
+          eq(ecommerceFraudBlocks.active, true),
+          or(isNull(ecommerceFraudBlocks.expiresAt), gte(ecommerceFraudBlocks.expiresAt, now)),
+        ),
+      )
+      .orderBy(desc(ecommerceFraudBlocks.createdAt));
+  }
+
+  async createFraudBlock(data: InsertEcommerceFraudBlock): Promise<EcommerceFraudBlock> {
+    const [block] = await db
+      .insert(ecommerceFraudBlocks)
+      .values({
+        ...data,
+        value: data.value.trim().toLowerCase(),
+      } as typeof ecommerceFraudBlocks.$inferInsert)
+      .returning();
+    return block;
+  }
+
+  async deactivateFraudBlock(id: string): Promise<EcommerceFraudBlock | undefined> {
+    const [block] = await db
+      .update(ecommerceFraudBlocks)
+      .set({ active: false, updatedAt: new Date() })
+      .where(eq(ecommerceFraudBlocks.id, id))
+      .returning();
+    return block;
   }
 
   async updateOrder(

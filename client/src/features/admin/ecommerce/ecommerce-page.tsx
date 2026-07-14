@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   ClipboardList,
   Copy,
   DollarSign,
@@ -16,6 +17,8 @@ import {
   Plus,
   Save,
   Search,
+  ShieldAlert,
+  ShieldCheck,
   SlidersHorizontal,
   Settings,
   ShoppingBag,
@@ -23,6 +26,7 @@ import {
   TicketPercent,
   Truck,
   Undo2,
+  UserPlus,
 } from "lucide-react";
 import { AdminSidebar } from "@/features/admin/admin-sidebar";
 import { CmsImageUpload } from "@/features/admin/cms/components/cms-image-upload";
@@ -75,6 +79,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -89,7 +99,10 @@ import { CategoriesTab } from "@/features/admin/ecommerce/categories-tab";
 import { CouponsTab } from "@/features/admin/ecommerce/coupons-tab";
 import { RefundsTab } from "@/features/admin/ecommerce/refunds-tab";
 import { IntegrationsTab } from "@/features/admin/ecommerce/integrations-tab";
-import { SettingsTab } from "@/features/admin/ecommerce/settings-tab";
+import {
+  SettingsTab,
+  type EcommerceSettingsSection,
+} from "@/features/admin/ecommerce/settings-tab";
 import { Metric } from "@/features/admin/ecommerce/metric";
 import type { EcommerceStoreSettings } from "@shared/ecommerce-shipping-settings";
 import type {
@@ -131,6 +144,22 @@ function getOrderDisplayNumber(orderId: string) {
   return `#${orderId.split("-")[0]?.toUpperCase() || orderId.toUpperCase()}`;
 }
 
+function getOrderRiskBadge(order: Order) {
+  if (order.fraudReviewStatus === "pending") {
+    return { label: "Review risk", className: "bg-amber-50 text-amber-700 border-amber-200" };
+  }
+  if (order.fraudDecision === "block" || order.fraudReviewStatus === "rejected") {
+    return { label: "Blocked risk", className: "bg-rose-50 text-rose-700 border-rose-200" };
+  }
+  if (order.fraudRiskLevel === "high") {
+    return { label: "High risk", className: "bg-rose-50 text-rose-700 border-rose-200" };
+  }
+  if (order.fraudRiskLevel === "medium" || order.fraudDecision === "allow_with_alert") {
+    return { label: "Medium risk", className: "bg-amber-50 text-amber-700 border-amber-200" };
+  }
+  return null;
+}
+
 function OrderTableRow({
   order,
   selected,
@@ -145,6 +174,7 @@ function OrderTableRow({
   const orderStatus = getEcommerceOrderStatusBadge(order.status);
   const paymentStatus = getEcommercePaymentStatusBadge(order.paymentStatus);
   const displayOrderNumber = getOrderDisplayNumber(order.id);
+  const riskBadge = getOrderRiskBadge(order);
 
   return (
     <TableRow
@@ -192,6 +222,11 @@ function OrderTableRow({
           <Badge variant={paymentStatus.variant} className={paymentStatus.className}>
             {paymentStatus.label}
           </Badge>
+          {riskBadge ? (
+            <Badge variant="outline" className={riskBadge.className}>
+              {riskBadge.label}
+            </Badge>
+          ) : null}
         </div>
       </TableCell>
       <TableCell>{formatMoney(order.totalAmount)}</TableCell>
@@ -222,6 +257,34 @@ const nav: Array<{ view: View; label: string; icon: ElementType; iconColor: stri
   { view: "refunds", label: "Refunds", icon: Undo2, iconColor: "text-rose-600" },
   { view: "integrations", label: "Integrations", icon: Plug, iconColor: "text-blue-600" },
   { view: "settings", label: "Settings", icon: Settings, iconColor: "text-slate-500" },
+];
+
+const settingsNav: Array<{
+  section: EcommerceSettingsSection;
+  label: string;
+  icon: ElementType;
+  iconColor: string;
+}> = [
+  {
+    section: "store",
+    label: "Store origin and shipping markets",
+    icon: Truck,
+    iconColor: "text-sky-600",
+  },
+  {
+    section: "customer-accounts",
+    label: "Customer accounts",
+    icon: UserPlus,
+    iconColor: "text-blue-600",
+  },
+  {
+    section: "security",
+    label: "Security Center",
+    icon: ShieldCheck,
+    iconColor: "text-emerald-600",
+  },
+  { section: "stripe", label: "Stripe settings", icon: Settings, iconColor: "text-slate-500" },
+  { section: "tax", label: "Tax settings", icon: Percent, iconColor: "text-amber-600" },
 ];
 
 export function ProductsTab() {
@@ -2321,6 +2384,29 @@ export function OrdersTab() {
       }),
   });
 
+  const fraudReviewMutation = useMutation({
+    mutationFn: async (reviewStatus: "approved" | "rejected") => {
+      if (!selectedOrder) throw new Error("Select an order first.");
+      return apiRequest("POST", `/api/admin/ecommerce/orders/${selectedOrder.id}/fraud-review`, {
+        reviewStatus,
+        note:
+          reviewStatus === "approved"
+            ? "Order risk reviewed and approved for fulfillment."
+            : "Order risk reviewed and rejected.",
+      });
+    },
+    onSuccess: async (_response, reviewStatus) => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/ecommerce/orders"] });
+      toast({ title: reviewStatus === "approved" ? "Order risk approved" : "Order risk rejected" });
+    },
+    onError: (error) =>
+      toast({
+        title: "Fraud review could not be saved",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      }),
+  });
+
   return (
     <div className="space-y-6">
       <Card>
@@ -2677,6 +2763,102 @@ export function OrdersTab() {
                   </div>
 
                   <div className="grid content-start gap-5 lg:grid-cols-2 xl:grid-cols-1">
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          {selectedOrder.fraudReviewStatus === "pending" ||
+                          selectedOrder.fraudRiskLevel === "high" ? (
+                            <ShieldAlert className="h-4 w-4 text-amber-600" />
+                          ) : (
+                            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                          )}
+                          Order risk
+                        </CardTitle>
+                        <CardDescription>
+                          Rule-based checkout screening and Stripe verification signals.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3 text-sm">
+                        <div className="grid grid-cols-2 gap-3">
+                          <DetailLine
+                            label="Risk level"
+                            value={selectedOrder.fraudRiskLevel || "low"}
+                          />
+                          <DetailLine label="Score" value={String(selectedOrder.fraudScore ?? 0)} />
+                          <DetailLine
+                            label="Decision"
+                            value={(selectedOrder.fraudDecision || "allow").replace(/_/g, " ")}
+                          />
+                          <DetailLine
+                            label="Review"
+                            value={(selectedOrder.fraudReviewStatus || "not_required").replace(
+                              /_/g,
+                              " ",
+                            )}
+                          />
+                        </div>
+                        {(selectedOrder.fraudSignals ?? []).length ? (
+                          <div className="space-y-2">
+                            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                              Matched rules
+                            </div>
+                            {selectedOrder.fraudSignals?.map((signal) => (
+                              <div
+                                key={`${signal.code}-${signal.label}`}
+                                className="rounded-md bg-muted/40 p-2"
+                              >
+                                <div className="font-medium">{signal.label}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  Score {signal.score}
+                                  {signal.action ? ` · ${signal.action.replace(/_/g, " ")}` : ""}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground">
+                            No fraud rules matched this checkout.
+                          </p>
+                        )}
+                        <div className="grid gap-1 rounded-md bg-muted/30 p-3 text-xs">
+                          <div className="font-medium text-foreground">Stripe outcome</div>
+                          <div className="text-muted-foreground">
+                            Risk: {selectedOrder.stripeRiskLevel || "Not reported"}
+                            {selectedOrder.stripeRiskScore != null
+                              ? ` (${selectedOrder.stripeRiskScore})`
+                              : ""}
+                          </div>
+                          <div className="text-muted-foreground">
+                            CVC: {selectedOrder.stripeCvcCheck || "Not reported"}
+                          </div>
+                          <div className="text-muted-foreground">
+                            Postal: {selectedOrder.stripeAddressPostalCodeCheck || "Not reported"}
+                          </div>
+                        </div>
+                        {selectedOrder.fraudReviewStatus === "pending" ? (
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => fraudReviewMutation.mutate("approved")}
+                              disabled={fraudReviewMutation.isPending}
+                            >
+                              Approve fulfillment
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => fraudReviewMutation.mutate("rejected")}
+                              disabled={fraudReviewMutation.isPending}
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        ) : null}
+                      </CardContent>
+                    </Card>
+
                     <form
                       className="grid gap-4 rounded-lg border p-4"
                       onSubmit={(event) => {
@@ -3909,8 +4091,19 @@ export function ShippingTab() {
 
 export default function AdminEcommercePage() {
   const [location] = useLocation();
-  const view = (location.split("/").pop() || "products") as View;
-  const activeView: View = nav.some((item) => item.view === view) ? view : "products";
+  const pathParts = location.split("/").filter(Boolean);
+  const ecommerceIndex = pathParts.indexOf("ecommerce");
+  const view = (ecommerceIndex >= 0 ? pathParts[ecommerceIndex + 1] : pathParts.at(-1)) as
+    | View
+    | undefined;
+  const activeView: View = view && nav.some((item) => item.view === view) ? view : "products";
+  const requestedSettingsSection =
+    activeView === "settings" ? pathParts[ecommerceIndex + 2] : undefined;
+  const activeSettingsSection: EcommerceSettingsSection = settingsNav.some(
+    (item) => item.section === requestedSettingsSection,
+  )
+    ? (requestedSettingsSection as EcommerceSettingsSection)
+    : "store";
   return (
     <AdminSidebar>
       <div className="space-y-6 p-6">
@@ -3924,6 +4117,52 @@ export default function AdminEcommercePage() {
           <TabsList className="flex h-auto flex-wrap justify-start">
             {nav.map((item) => {
               const Icon = item.icon;
+              if (item.view === "settings") {
+                const activeSettings =
+                  settingsNav.find((candidate) => candidate.section === activeSettingsSection) ??
+                  settingsNav[0];
+                return (
+                  <DropdownMenu key={item.view}>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className={cn(
+                          "gap-2 rounded-sm px-3 py-1.5 text-sm font-medium",
+                          activeView === "settings"
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        <Icon className={cn("h-4 w-4", item.iconColor)} />
+                        <span>{item.label}</span>
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-72">
+                      {settingsNav.map((settingItem) => {
+                        const SettingIcon = settingItem.icon;
+                        return (
+                          <DropdownMenuItem key={settingItem.section} asChild>
+                            <Link
+                              href={`/admin/ecommerce/settings/${settingItem.section}`}
+                              className={cn(
+                                "flex cursor-pointer items-center gap-2",
+                                activeSettings.section === settingItem.section
+                                  ? "bg-accent font-medium"
+                                  : undefined,
+                              )}
+                            >
+                              <SettingIcon className={cn("h-4 w-4", settingItem.iconColor)} />
+                              <span>{settingItem.label}</span>
+                            </Link>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              }
               return (
                 <TabsTrigger key={item.view} value={item.view} asChild>
                   <Link href={`/admin/ecommerce/${item.view}`} className="gap-2">
@@ -3942,7 +4181,7 @@ export default function AdminEcommercePage() {
         {activeView === "shipping" ? <ShippingTab /> : null}
         {activeView === "refunds" ? <RefundsTab /> : null}
         {activeView === "integrations" ? <IntegrationsTab /> : null}
-        {activeView === "settings" ? <SettingsTab /> : null}
+        {activeView === "settings" ? <SettingsTab section={activeSettingsSection} /> : null}
       </div>
     </AdminSidebar>
   );

@@ -236,6 +236,18 @@ export interface Order {
   manualPaymentReference?: string | null;
   manualPaymentMarkedAt?: string | null;
   fulfillmentMode?: string | null;
+  fraudScore?: number;
+  fraudRiskLevel?: "low" | "medium" | "high";
+  fraudDecision?: "allow" | "allow_with_alert" | "manual_review" | "block";
+  fraudReviewStatus?: "not_required" | "pending" | "approved" | "rejected";
+  fraudSignals?: Array<{ code: string; label: string; score: number; action?: string }>;
+  stripeRiskLevel?: string | null;
+  stripeRiskScore?: number | null;
+  stripeOutcomeType?: string | null;
+  stripeOutcomeReason?: string | null;
+  stripeCvcCheck?: string | null;
+  stripeAddressLine1Check?: string | null;
+  stripeAddressPostalCodeCheck?: string | null;
 }
 
 export interface PaymentRequest {

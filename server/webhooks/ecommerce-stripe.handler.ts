@@ -8,6 +8,7 @@ import {
 import {
   markEcommerceOrderPaid,
   reconcileEcommercePaymentRequestSession,
+  recordEcommerceStripeRiskOutcome,
 } from "../services/ecommerce-order.service";
 import { recordStripeRefundWebhook } from "../services/ecommerce-refund.service";
 
@@ -55,6 +56,17 @@ export async function processEcommerceStripeWebhook(payload: Buffer, signature?:
         actual: intent.amount,
       });
       return;
+    }
+    const latestCharge =
+      typeof intent.latest_charge === "object" && intent.latest_charge
+        ? intent.latest_charge
+        : null;
+    if (latestCharge) {
+      await recordEcommerceStripeRiskOutcome({
+        orderId,
+        paymentIntentId: intent.id,
+        charge: latestCharge,
+      });
     }
     await markEcommerceOrderPaid(orderId, intent.id);
     const firstProcessing = await storage.ecommerce.markWebhookProcessed(

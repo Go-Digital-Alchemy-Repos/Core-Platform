@@ -9,7 +9,7 @@ Current as of July 14, 2026 after the handoff cleanup reconciliation.
 - Latest release gates passed before deployment:
   - `npm run check`
   - `npm run lint`
-  - `npm test` with 363 passing tests
+  - `npm test` with 368 passing tests
   - `npm run build`
   - `npm run budget`
 

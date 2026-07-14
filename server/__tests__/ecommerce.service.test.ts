@@ -1345,7 +1345,7 @@ describe("ecommerce services", () => {
     expect(mockStripePaymentIntentCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         amount: 5000,
-        metadata: { orderId: order.id },
+        metadata: expect.objectContaining({ orderId: order.id }),
       }),
       { idempotencyKey: `ecommerce_order_${order.id}_payment_intent` },
     );
@@ -1982,6 +1982,27 @@ describe("ecommerce services", () => {
         source: "manual",
       }),
     ).rejects.toThrow(/exceeds refundable balance/);
+    expect(mockCreateRefund).not.toHaveBeenCalled();
+  });
+
+  it("blocks non-operational gateway refunds before recording a local refund", async () => {
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    mockGetOrderWithDetails.mockResolvedValueOnce({
+      id: "order-paypal",
+      status: "paid",
+      paymentStatus: "paid",
+      totalAmount: 5000,
+      stripePaymentIntentId: null,
+      refunds: [],
+    });
+
+    await expect(
+      createEcommerceRefund({
+        orderId: "order-paypal",
+        amount: 1000,
+        source: "paypal",
+      }),
+    ).rejects.toThrow(/PayPal is configurable, but its operational adapter is not implemented yet/);
     expect(mockCreateRefund).not.toHaveBeenCalled();
   });
 

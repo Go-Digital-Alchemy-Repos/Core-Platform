@@ -25,6 +25,7 @@ import {
   type EcommerceStripeMode,
 } from "../../services/ecommerce-stripe.service";
 import { createEcommerceRefund } from "../../services/ecommerce-refund.service";
+import { ECOMMERCE_REFUND_PROVIDERS } from "../../services/ecommerce-payment-gateway-refund.service";
 import {
   adminOrderUpdateSchema,
   assertEcommerceFulfillmentRequest,
@@ -63,6 +64,15 @@ import {
   getEcommerceStoreSettings,
   saveEcommerceStoreSettings,
 } from "../../services/ecommerce-store-settings.service";
+import {
+  createEcommerceFraudBlock,
+  deleteEcommerceFraudBlock,
+  ecommerceFraudSettingsSchema,
+  getEcommerceFraudSettings,
+  getEcommerceSecurityOverview,
+  reviewEcommerceOrderFraud,
+  saveEcommerceFraudSettings,
+} from "../../services/ecommerce-fraud.service";
 import { ecommerceStoreSettingsSchema } from "@shared/ecommerce-shipping-settings";
 import { requireEcommerceEnabled } from "../../middleware/site-features";
 import { noStorePrivateResponse } from "../../middleware/security";
@@ -447,6 +457,22 @@ router.post(
 );
 
 router.post(
+  "/orders/:id/fraud-review",
+  asyncHandler(async (req, res) => {
+    const order = await reviewEcommerceOrderFraud(
+      paramString(req.params.id),
+      req.body,
+      req.user?.id,
+    );
+    if (!order) {
+      res.status(404).json({ message: "Order not found" });
+      return;
+    }
+    res.json(order);
+  }),
+);
+
+router.post(
   "/payment-requests",
   asyncHandler(async (req, res) => {
     res
@@ -470,7 +496,7 @@ router.post(
         reason: z.string().optional(),
         reasonCode: z.string().optional(),
         type: z.enum(["full", "partial"]).optional(),
-        source: z.enum(["stripe", "manual"]).optional(),
+        source: z.enum(["manual", ...ECOMMERCE_REFUND_PROVIDERS]).optional(),
       })
       .parse(req.body);
     res.status(201).json(await createEcommerceRefund({ ...data, processedBy: req.user?.id }));
@@ -944,6 +970,69 @@ router.put(
   "/settings/store",
   asyncHandler(async (req, res) => {
     res.json(await saveEcommerceStoreSettings(ecommerceStoreSettingsSchema.parse(req.body)));
+  }),
+);
+
+router.get(
+  "/security/settings",
+  asyncHandler(async (_req, res) => {
+    res.json(await getEcommerceFraudSettings());
+  }),
+);
+
+router.put(
+  "/security/settings",
+  asyncHandler(async (req, res) => {
+    res.json(await saveEcommerceFraudSettings(ecommerceFraudSettingsSchema.parse(req.body)));
+  }),
+);
+
+router.get(
+  "/security/overview",
+  asyncHandler(async (_req, res) => {
+    res.json(await getEcommerceSecurityOverview());
+  }),
+);
+
+router.get(
+  "/security/events",
+  asyncHandler(async (req, res) => {
+    res.json(
+      await storage.ecommerce.getFraudEvents({
+        limit: typeof req.query.limit === "string" ? Number(req.query.limit) || 100 : 100,
+        decision:
+          typeof req.query.decision === "string" && req.query.decision !== "all"
+            ? req.query.decision
+            : undefined,
+        search: typeof req.query.search === "string" ? req.query.search : undefined,
+      }),
+    );
+  }),
+);
+
+router.get(
+  "/security/blocks",
+  asyncHandler(async (_req, res) => {
+    res.json(await storage.ecommerce.getActiveFraudBlocks());
+  }),
+);
+
+router.post(
+  "/security/blocks",
+  asyncHandler(async (req, res) => {
+    res.status(201).json(await createEcommerceFraudBlock(req.body, req.user?.id));
+  }),
+);
+
+router.delete(
+  "/security/blocks/:id",
+  asyncHandler(async (req, res) => {
+    const block = await deleteEcommerceFraudBlock(paramString(req.params.id));
+    if (!block) {
+      res.status(404).json({ message: "Fraud block not found" });
+      return;
+    }
+    res.json(block);
   }),
 );
 
