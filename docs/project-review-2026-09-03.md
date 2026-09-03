@@ -1,6 +1,6 @@
 # Core Platform project review — September 3, 2026
 
-Follow-up: production was subsequently redirected to Railway Postgres and deployment `d3496ee7-2116-4ef8-8eb1-f3c72c2fbe99` passed database-aware readiness. The careers migration defect and destructive ecommerce bootstrap behavior described below were repaired as part of that cutover.
+Follow-up: production was subsequently redirected to Railway Postgres and deployment `d3496ee7-2116-4ef8-8eb1-f3c72c2fbe99` passed database-aware readiness. The careers migration defect and destructive ecommerce bootstrap behavior described below were repaired as part of that cutover. The remaining migration-journal detection and fresh-install gaps were then repaired and covered by a disposable PostgreSQL fresh-install/second-start check. Authentication tokens now bind to the current password hash, and required and optional authentication both reject suspended users. Deploying that authentication change intentionally invalidates legacy cookies that do not carry the password-derived session version.
 
 ## Assessment
 
@@ -8,7 +8,7 @@ Core Platform is a substantial React/Vite + Express + PostgreSQL/Drizzle applica
 
 The project remains in stabilization ahead of the theme/section architecture described in `core-project-plan.md`. It is not yet a tenant-isolated platform: the roadmap explicitly defers tenant context, tenant-scoped data, domains, and permissions. There is no reason from this review to accelerate a framework rewrite ahead of stabilization.
 
-Three reproduced problems should be resolved before the next release: session invalidation, startup overwriting edited commerce content, and incomplete database provisioning.
+The three reproduced release blockers below were repaired after this assessment. Their original evidence and recommendations are retained as the record of why the changes were required.
 
 ## Reviewed baseline
 

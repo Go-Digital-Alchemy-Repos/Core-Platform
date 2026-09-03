@@ -70,7 +70,9 @@ npm start
 Runs the compiled server. On startup:
 
 1. `enforceRequiredSecrets()` checks for required environment variables
-2. Database migrations run automatically via `server/migrate.ts`
+2. Database migrations run automatically via `server/migrate.ts`; Drizzle history is read from
+   `drizzle.__drizzle_migrations`, and the backward-compatible reconciliation path provisions SQL
+   migrations that predate complete journal coverage
 3. Express server starts on port 5000 in production unless `PORT` is set
 4. Scheduled publish service starts for CMS timed publishing
 

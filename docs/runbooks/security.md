@@ -46,6 +46,11 @@ The application uses **origin-based CSRF protection**, appropriate for a same-si
 
 Authentication uses JWT tokens stored in HTTP-only cookies:
 
+Each cookie carries a password-derived session version. Changing or resetting the account password
+invalidates previously issued cookies, and suspended users are rejected by both required and
+optional authentication. The first release from the legacy token format intentionally requires all
+users to sign in again.
+
 | Setting | Value | Notes |
 |---|---|---|
 | Cookie name | `corePlatform_token` | |

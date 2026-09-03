@@ -1,7 +1,26 @@
-import { describe, it, expect, vi } from "vitest";
-import { hashPassword, comparePassword, generateToken, requireRole } from "./auth";
+import { beforeEach, describe, it, expect, vi } from "vitest";
+import {
+  authenticateToken,
+  comparePassword,
+  generateToken,
+  hashPassword,
+  optionalAuth,
+  requireRole,
+} from "./auth";
 import type { Request, Response, NextFunction } from "express";
 import type { User } from "@shared/schema";
+
+const { mockGetUser } = vi.hoisted(() => ({
+  mockGetUser: vi.fn(),
+}));
+
+vi.mock("../storage/index", () => ({
+  storage: {
+    users: {
+      getUser: mockGetUser,
+    },
+  },
+}));
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
@@ -51,7 +70,69 @@ describe("generateToken", () => {
     expect(payload.userId).toBe("u42");
     expect(payload.email).toBe("a@b.com");
     expect(payload.role).toBe("admin");
+    expect(payload.sessionVersion).toEqual(expect.any(String));
     expect(payload.exp).toBeGreaterThan(Math.floor(Date.now() / 1000));
+  });
+});
+
+describe("session invalidation", () => {
+  beforeEach(() => {
+    mockGetUser.mockReset();
+  });
+
+  function mockReqRes(token: string) {
+    const req = { cookies: { corePlatform_token: token } } as unknown as Request;
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    } as unknown as Response;
+    const next = vi.fn() as NextFunction;
+    return { req, res, next };
+  }
+
+  it("accepts a token while the account and password are unchanged", async () => {
+    const user = makeUser({ password: "current-hash" });
+    mockGetUser.mockResolvedValue(user);
+    const { req, res, next } = mockReqRes(generateToken(user));
+
+    await authenticateToken(req, res, next);
+
+    expect(req.user).toEqual(user);
+    expect(next).toHaveBeenCalledOnce();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it("rejects an existing token after the password hash changes", async () => {
+    const originalUser = makeUser({ password: "original-hash" });
+    mockGetUser.mockResolvedValue(makeUser({ password: "replacement-hash" }));
+    const { req, res, next } = mockReqRes(generateToken(originalUser));
+
+    await authenticateToken(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("rejects an existing token after the account is suspended", async () => {
+    const user = makeUser({ password: "current-hash" });
+    mockGetUser.mockResolvedValue({ ...user, isSuspended: true });
+    const { req, res, next } = mockReqRes(generateToken(user));
+
+    await authenticateToken(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("does not attach a suspended identity during optional authentication", async () => {
+    const user = makeUser({ password: "current-hash" });
+    mockGetUser.mockResolvedValue({ ...user, isSuspended: true });
+    const { req, res, next } = mockReqRes(generateToken(user));
+
+    await optionalAuth(req, res, next);
+
+    expect(req.user).toBeUndefined();
+    expect(next).toHaveBeenCalledOnce();
   });
 });
 

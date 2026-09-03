@@ -10,7 +10,7 @@ async function getMigrationBootstrapState() {
     SELECT EXISTS (
       SELECT 1
       FROM information_schema.tables
-      WHERE table_schema = 'public'
+      WHERE table_schema = 'drizzle'
         AND table_name = '__drizzle_migrations'
     ) AS exists
   `);
@@ -504,6 +504,20 @@ async function ensureCareerDirectoryLocations(migrationsFolder: string) {
   }
 }
 
+async function reconcileSchema(migrationsFolder: string) {
+  await ensureEventSlugs();
+  await ensureCrmTables();
+  await ensureEcommerceTables(migrationsFolder);
+  await ensureEventFlexibilityTables(migrationsFolder);
+  await ensureMembershipTables(migrationsFolder);
+  await ensureEmailTemplateModules(migrationsFolder);
+  await ensurePortfolioTables(migrationsFolder);
+  await ensureDirectoryProfileMediaTable(migrationsFolder);
+  await ensureDirectoryProfileModes(migrationsFolder);
+  await ensureCmsGalleryTables(migrationsFolder);
+  await ensureCareerDirectoryLocations(migrationsFolder);
+}
+
 export async function runMigrations() {
   const migrationsFolder = path.resolve(
     process.env.NODE_ENV === "production" ? __dirname : process.cwd(),
@@ -512,17 +526,7 @@ export async function runMigrations() {
 
   const bootstrapState = await getMigrationBootstrapState();
   if (bootstrapState.publicTableCount > 0) {
-    await ensureEventSlugs();
-    await ensureCrmTables();
-    await ensureEcommerceTables(migrationsFolder);
-    await ensureEventFlexibilityTables(migrationsFolder);
-    await ensureMembershipTables(migrationsFolder);
-    await ensureEmailTemplateModules(migrationsFolder);
-    await ensurePortfolioTables(migrationsFolder);
-    await ensureDirectoryProfileMediaTable(migrationsFolder);
-    await ensureDirectoryProfileModes(migrationsFolder);
-    await ensureCmsGalleryTables(migrationsFolder);
-    await ensureCareerDirectoryLocations(migrationsFolder);
+    await reconcileSchema(migrationsFolder);
   }
 
   if (!bootstrapState.hasJournal && bootstrapState.publicTableCount > 0) {
@@ -535,14 +539,7 @@ export async function runMigrations() {
   logger.app.info("Running database migrations...");
   try {
     await migrate(db, { migrationsFolder });
-    await ensureEventSlugs();
-    await ensureCrmTables();
-    await ensureMembershipTables(migrationsFolder);
-    await ensureEmailTemplateModules(migrationsFolder);
-    await ensurePortfolioTables(migrationsFolder);
-    await ensureDirectoryProfileMediaTable(migrationsFolder);
-    await ensureDirectoryProfileModes(migrationsFolder);
-    await ensureCmsGalleryTables(migrationsFolder);
+    await reconcileSchema(migrationsFolder);
     logger.app.info("Database migrations completed successfully");
   } catch (err) {
     logger.app.error("Database migration failed", err);

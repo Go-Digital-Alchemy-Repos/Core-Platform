@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { createHmac, timingSafeEqual } from "crypto";
 import type { User } from "@shared/schema";
 import {
   AdminPermission,
@@ -17,6 +18,21 @@ export interface JwtPayload {
   userId: string;
   email: string;
   role: string;
+  sessionVersion: string;
+}
+
+function getSessionVersion(user: User): string {
+  return createHmac("sha256", JWT_SECRET).update(user.password).digest("base64url");
+}
+
+function hasCurrentSessionVersion(payload: JwtPayload, user: User): boolean {
+  if (typeof payload.sessionVersion !== "string") return false;
+
+  const tokenVersion = Buffer.from(payload.sessionVersion);
+  const currentVersion = Buffer.from(getSessionVersion(user));
+  return (
+    tokenVersion.length === currentVersion.length && timingSafeEqual(tokenVersion, currentVersion)
+  );
 }
 
 function normalizePermissions(user: User | undefined): AdminPermissionType[] {
@@ -72,6 +88,7 @@ export function generateToken(user: User): string {
     userId: user.id,
     email: user.email,
     role: user.role,
+    sessionVersion: getSessionVersion(user),
   };
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
 }
@@ -105,7 +122,7 @@ export const authenticateToken: RequestHandler = async (
     const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
     const { storage } = await import("../storage/index");
     const user = await storage.users.getUser(decoded.userId);
-    if (!user) {
+    if (!user || user.isSuspended || !hasCurrentSessionVersion(decoded, user)) {
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
@@ -130,7 +147,7 @@ export const optionalAuth: RequestHandler = async (
     const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
     const { storage } = await import("../storage/index");
     const user = await storage.users.getUser(decoded.userId);
-    if (user) {
+    if (user && !user.isSuspended && hasCurrentSessionVersion(decoded, user)) {
       req.user = user;
     }
   } catch {
