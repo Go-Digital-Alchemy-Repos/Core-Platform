@@ -1,6 +1,7 @@
 import { storage } from "../storage/index";
 import { sendEcommerceRefundEmail } from "./ecommerce-email.service";
 import {
+  assertPaymentGatewayRefundReady,
   createPaymentGatewayRefund,
   getRefundProviderDisplayName,
   isEcommerceRefundProvider,
@@ -100,36 +101,44 @@ export async function createEcommerceRefund(params: {
   const refundable = order.totalAmount - computeRefundedAmount(order.refunds);
   if (params.amount > refundable) throw new Error("Refund amount exceeds refundable balance");
 
-  let gatewayRefundId: string | undefined;
-  let status = "processed";
   const source = params.source ?? (order.stripePaymentIntentId ? "stripe" : "manual");
 
   if (source !== "manual") {
     if (!isEcommerceRefundProvider(source)) {
       throw new Error(`${getRefundProviderDisplayName(source)} does not support ecommerce refunds`);
     }
-    const gatewayRefund = await createPaymentGatewayRefund({
-      provider: source,
-      order,
-      amount: params.amount,
-      reasonCode: params.reasonCode,
-    });
-    gatewayRefundId = gatewayRefund.providerRefundId;
-    status = gatewayRefund.status;
+    assertPaymentGatewayRefundReady(source, order);
   }
 
-  const refund = await storage.ecommerce.createRefund({
+  let status: RefundStatus = source === "manual" ? "processed" : "pending";
+  let refund = await storage.ecommerce.reserveRefund({
     orderId: order.id,
     amount: params.amount,
     reason: params.reason,
     reasonCode: params.reasonCode,
     type: params.type ?? (params.amount === order.totalAmount ? "full" : "partial"),
     source,
-    stripeRefundId: source === "stripe" ? gatewayRefundId : undefined,
     status,
     processedBy: params.processedBy,
     processedAt: status === "processed" ? new Date() : undefined,
   });
+
+  if (source !== "manual") {
+    const gatewayRefund = await createPaymentGatewayRefund({
+      provider: source,
+      order,
+      amount: params.amount,
+      reasonCode: params.reasonCode,
+      idempotencyKey: refund.id,
+    });
+    status = gatewayRefund.status;
+    refund =
+      (await storage.ecommerce.updateRefund(refund.id, {
+        stripeRefundId: source === "stripe" ? gatewayRefund.providerRefundId : undefined,
+        status,
+        processedAt: status === "processed" ? new Date() : undefined,
+      })) ?? refund;
+  }
 
   const refreshed = await storage.ecommerce.getOrderWithDetails(order.id);
   if (refreshed) {
@@ -148,14 +157,18 @@ export async function createEcommerceRefund(params: {
 
 export async function recordStripeRefundWebhook(params: {
   stripeRefundId: string;
+  localRefundId?: string;
   orderId?: string;
   amount?: number | null;
   status?: string | null;
 }) {
   const status = mapStripeRefundStatus(params.status);
-  const existing = await storage.ecommerce.getRefundByStripeRefundId(params.stripeRefundId);
+  const existing =
+    (await storage.ecommerce.getRefundByStripeRefundId(params.stripeRefundId)) ??
+    (params.localRefundId ? await storage.ecommerce.getRefund(params.localRefundId) : undefined);
   if (existing) {
     const refund = await storage.ecommerce.updateRefund(existing.id, {
+      stripeRefundId: params.stripeRefundId,
       status,
       processedAt: status === "processed" ? new Date() : (existing.processedAt ?? undefined),
     });

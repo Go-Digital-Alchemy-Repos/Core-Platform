@@ -54,6 +54,14 @@ configuration remain explicitly deferred.
 
 ## Accepted Checkpoints
 
+### 2026-09-03 — Ecommerce refund serialization
+
+- **Core:** `codex/uncommitted-work-audit`; milestone commit recorded in Git history and pushed after validation.
+- **Implemented:** order-locked refundable-balance reservation; one pending provider refund per order; immediate local `refund_pending` visibility; Stripe idempotency derived from the durable local refund ID; and webhook recovery by local refund metadata after an ambiguous provider response.
+- **Validation:** focused refund, ecommerce service, and webhook tests; project type check, lint, formatting, full test suite, production build, client-site manifest validation, bundle budgets, and diff whitespace checks.
+- **Production impact:** none. No provider calls, live refunds, database mutation, or deployment.
+- **Risk carried forward:** pending-refund operator tooling and automatic reconciliation are not yet implemented; checkout request idempotency, durable email/jobs/replay, database-backed concurrency evidence, and Stripe sandbox evidence remain release blockers.
+
 ### 2026-09-03 — Ecommerce paid-order atomicity
 
 - **Core:** `codex/uncommitted-work-audit`; milestone commit recorded in Git history and pushed after validation.

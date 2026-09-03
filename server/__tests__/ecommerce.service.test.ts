@@ -26,6 +26,7 @@ const mockUpdatePaymentRequest = vi.fn();
 const mockMarkPaymentRequestPaidBySession = vi.fn();
 const mockGetFulfillmentsForOrder = vi.fn();
 const mockGetRefundByStripeRefundId = vi.fn();
+const mockGetRefund = vi.fn();
 const mockUpdateRefund = vi.fn();
 const mockCreateRefund = vi.fn();
 const mockGetProductCategories = vi.fn(async (_productId: string) => []);
@@ -43,6 +44,7 @@ const mockGetEcommerceStripeClient = vi.fn();
 const mockStripePaymentIntentCreate = vi.fn();
 const mockStripePaymentIntentCancel = vi.fn();
 const mockStripeCheckoutSessionCreate = vi.fn();
+const mockStripeRefundCreate = vi.fn();
 
 function seedManualOrderProduct() {
   mockProducts.push({
@@ -112,8 +114,10 @@ vi.mock("../storage/index", () => ({
       recordCouponRedemptionForOrder: mockRecordCouponRedemptionForOrder,
       deductInventoryForPaidOrder: mockDeductInventoryForPaidOrder,
       getRefundByStripeRefundId: mockGetRefundByStripeRefundId,
+      getRefund: mockGetRefund,
       updateRefund: mockUpdateRefund,
       createRefund: mockCreateRefund,
+      reserveRefund: mockCreateRefund,
     },
   },
 }));
@@ -150,6 +154,7 @@ describe("ecommerce services", () => {
     mockGetFulfillmentsForOrder.mockReset();
     mockGetFulfillmentsForOrder.mockResolvedValue([]);
     mockGetRefundByStripeRefundId.mockReset();
+    mockGetRefund.mockReset();
     mockUpdateRefund.mockReset();
     mockCreateRefund.mockReset();
     mockGetProductCategories.mockReset();
@@ -178,6 +183,7 @@ describe("ecommerce services", () => {
           create: mockStripeCheckoutSessionCreate,
         },
       },
+      refunds: { create: mockStripeRefundCreate },
     });
     mockStripePaymentIntentCreate.mockReset();
     mockStripePaymentIntentCreate.mockResolvedValue({
@@ -192,6 +198,7 @@ describe("ecommerce services", () => {
       url: "https://checkout.stripe.test/pay/cs_test",
       expires_at: 1_800_000_000,
     });
+    mockStripeRefundCreate.mockReset();
     mockCreatePaymentRequest.mockReset();
     mockCreatePaymentRequest.mockImplementation(async (data) => ({ id: "payreq-1", ...data }));
     mockUpdatePaymentRequest.mockReset();
@@ -2004,6 +2011,125 @@ describe("ecommerce services", () => {
       }),
     ).rejects.toThrow(/PayPal is configurable, but its operational adapter is not implemented yet/);
     expect(mockCreateRefund).not.toHaveBeenCalled();
+  });
+
+  it("reserves refundable balance before calling Stripe with a stable idempotency key", async () => {
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    const order = {
+      id: "order-stripe-refund",
+      status: "paid",
+      paymentStatus: "paid",
+      totalAmount: 5000,
+      stripePaymentIntentId: "pi_refund",
+      refunds: [],
+    };
+    const reserved = {
+      id: "refund-local-1",
+      orderId: order.id,
+      amount: 2000,
+      source: "stripe",
+      status: "pending",
+    };
+    mockGetOrderWithDetails.mockResolvedValueOnce(order).mockResolvedValueOnce({
+      ...order,
+      refunds: [{ ...reserved, status: "processed", stripeRefundId: "re_123" }],
+    });
+    mockCreateRefund.mockResolvedValue(reserved);
+    mockStripeRefundCreate.mockResolvedValue({ id: "re_123", status: "succeeded" });
+    mockUpdateRefund.mockResolvedValue({
+      ...reserved,
+      status: "processed",
+      stripeRefundId: "re_123",
+    });
+
+    await createEcommerceRefund({
+      orderId: order.id,
+      amount: 2000,
+      source: "stripe",
+    });
+
+    expect(mockCreateRefund).toHaveBeenCalledWith(
+      expect.objectContaining({ orderId: order.id, status: "pending", source: "stripe" }),
+    );
+    expect(mockStripeRefundCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payment_intent: "pi_refund",
+        amount: 2000,
+        metadata: expect.objectContaining({ localRefundId: "refund-local-1" }),
+      }),
+      { idempotencyKey: "ecommerce_refund_refund-local-1" },
+    );
+    expect(mockUpdateRefund).toHaveBeenCalledWith(
+      "refund-local-1",
+      expect.objectContaining({ status: "processed", stripeRefundId: "re_123" }),
+    );
+  });
+
+  it("keeps an ambiguous Stripe failure reserved for reconciliation", async () => {
+    const { createEcommerceRefund } = await import("../services/ecommerce-refund.service");
+    const order = {
+      id: "order-stripe-timeout",
+      status: "paid",
+      paymentStatus: "paid",
+      totalAmount: 5000,
+      stripePaymentIntentId: "pi_timeout",
+      refunds: [],
+    };
+    mockGetOrderWithDetails.mockResolvedValue(order);
+    mockCreateRefund.mockResolvedValue({
+      id: "refund-local-timeout",
+      orderId: order.id,
+      amount: 1000,
+      source: "stripe",
+      status: "pending",
+    });
+    mockStripeRefundCreate.mockRejectedValue(new Error("provider timeout"));
+
+    await expect(
+      createEcommerceRefund({ orderId: order.id, amount: 1000, source: "stripe" }),
+    ).rejects.toThrow("provider timeout");
+    expect(mockUpdateRefund).not.toHaveBeenCalled();
+  });
+
+  it("reconciles an ambiguous refund through its local Stripe metadata", async () => {
+    const { recordStripeRefundWebhook } = await import("../services/ecommerce-refund.service");
+    mockGetRefundByStripeRefundId.mockResolvedValue(undefined);
+    mockGetRefund.mockResolvedValue({
+      id: "refund-local-timeout",
+      orderId: "order-stripe-timeout",
+      amount: 1000,
+      status: "pending",
+      stripeRefundId: null,
+    });
+    mockUpdateRefund.mockResolvedValue({
+      id: "refund-local-timeout",
+      orderId: "order-stripe-timeout",
+      amount: 1000,
+      status: "processed",
+      stripeRefundId: "re_recovered",
+    });
+    mockGetOrderWithDetails.mockResolvedValue({
+      id: "order-stripe-timeout",
+      status: "paid",
+      paymentStatus: "refund_pending",
+      totalAmount: 5000,
+      refunds: [{ amount: 1000, status: "processed" }],
+    });
+
+    await recordStripeRefundWebhook({
+      stripeRefundId: "re_recovered",
+      localRefundId: "refund-local-timeout",
+      status: "succeeded",
+    });
+
+    expect(mockGetRefund).toHaveBeenCalledWith("refund-local-timeout");
+    expect(mockUpdateRefund).toHaveBeenCalledWith(
+      "refund-local-timeout",
+      expect.objectContaining({ stripeRefundId: "re_recovered", status: "processed" }),
+    );
+    expect(mockUpdateOrder).toHaveBeenCalledWith("order-stripe-timeout", {
+      paymentStatus: "partially_refunded",
+    });
   });
 
   it("does not double count a newly created refund returned by the refreshed order", async () => {

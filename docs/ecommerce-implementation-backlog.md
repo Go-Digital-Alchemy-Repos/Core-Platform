@@ -33,7 +33,7 @@ checks, and domain/origin checks pass for that client's isolated environment.
 - Make checkout creation idempotent for client retries.
 - Add inventory reservation/expiry or document and enforce a client-approved oversell policy.
 - Serialize inventory and coupon effects by order; add database-enforced side-effect keys and database-backed concurrency coverage.
-- Serialize refundable-balance changes and add provider idempotency.
+- [x] Serialize refundable-balance reservations and use the local refund ID as the provider idempotency key.
 - Define compensated order transitions for paid-but-unfulfilled and failed side effects.
 
 Launch gate: production-like tests prove duplicate, reordered, delayed, and concurrent requests cannot

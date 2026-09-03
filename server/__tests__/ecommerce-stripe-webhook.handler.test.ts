@@ -145,12 +145,13 @@ describe("processEcommerceStripeWebhook", () => {
         id: "re_123",
         amount: 2500,
         status: "succeeded",
-        metadata: { orderId: "order-1" },
+        metadata: { orderId: "order-1", localRefundId: "refund-local-1" },
       }),
     );
 
     expect(mocks.recordRefund).toHaveBeenCalledWith({
       stripeRefundId: "re_123",
+      localRefundId: "refund-local-1",
       orderId: "order-1",
       amount: 2500,
       status: "succeeded",

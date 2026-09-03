@@ -1435,6 +1435,67 @@ export class EcommerceStorage {
     return refund;
   }
 
+  async reserveRefund(data: InsertEcommerceRefund): Promise<EcommerceRefund> {
+    return db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${data.orderId} FOR UPDATE`);
+      const [order] = await tx
+        .select()
+        .from(ecommerceOrders)
+        .where(eq(ecommerceOrders.id, data.orderId));
+      if (!order) throw Object.assign(new Error("Order not found"), { statusCode: 404 });
+      if (order.status === "cancelled") {
+        throw Object.assign(new Error("Cancelled orders cannot be refunded from ecommerce"), {
+          statusCode: 400,
+        });
+      }
+      if (
+        !["paid", "partially_refunded", "refund_pending", "refund_failed"].includes(
+          order.paymentStatus,
+        )
+      ) {
+        throw Object.assign(
+          new Error("Order payment has not been captured and cannot be refunded"),
+          { statusCode: 400 },
+        );
+      }
+      const refunds = await tx
+        .select()
+        .from(ecommerceRefunds)
+        .where(eq(ecommerceRefunds.orderId, data.orderId));
+      if (refunds.some((refund) => refund.status === "pending")) {
+        throw Object.assign(
+          new Error("Resolve the pending refund before creating another refund"),
+          { statusCode: 409 },
+        );
+      }
+      const alreadyRefunded = refunds
+        .filter((refund) => refund.status === "processed")
+        .reduce((sum, refund) => sum + refund.amount, 0);
+      if (data.amount <= 0) {
+        throw Object.assign(new Error("Refund amount must be greater than zero"), {
+          statusCode: 400,
+        });
+      }
+      if (data.amount > order.totalAmount - alreadyRefunded) {
+        throw Object.assign(new Error("Refund amount exceeds refundable balance"), {
+          statusCode: 400,
+        });
+      }
+      const [refund] = await tx.insert(ecommerceRefunds).values(data).returning();
+      const paymentStatus =
+        data.status === "pending"
+          ? "refund_pending"
+          : alreadyRefunded + data.amount >= order.totalAmount
+            ? "refunded"
+            : "partially_refunded";
+      await tx
+        .update(ecommerceOrders)
+        .set({ paymentStatus, updatedAt: new Date() })
+        .where(eq(ecommerceOrders.id, order.id));
+      return refund;
+    });
+  }
+
   async updateRefund(
     id: string,
     data: Partial<InsertEcommerceRefund>,
@@ -1452,6 +1513,11 @@ export class EcommerceStorage {
       .select()
       .from(ecommerceRefunds)
       .where(eq(ecommerceRefunds.stripeRefundId, stripeRefundId));
+    return refund;
+  }
+
+  async getRefund(id: string): Promise<EcommerceRefund | undefined> {
+    const [refund] = await db.select().from(ecommerceRefunds).where(eq(ecommerceRefunds.id, id));
     return refund;
   }
 

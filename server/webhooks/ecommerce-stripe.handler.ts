@@ -67,6 +67,9 @@ async function reconcileEcommerceStripeEvent(event: Stripe.Event) {
     const refund = event.data.object as Stripe.Refund;
     await recordStripeRefundWebhook({
       stripeRefundId: refund.id,
+      ...(typeof refund.metadata?.localRefundId === "string"
+        ? { localRefundId: refund.metadata.localRefundId }
+        : {}),
       orderId: typeof refund.metadata?.orderId === "string" ? refund.metadata.orderId : undefined,
       amount: refund.amount,
       status: refund.status,

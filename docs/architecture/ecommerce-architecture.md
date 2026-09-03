@@ -96,6 +96,8 @@ Current webhook behavior:
 
 Paid-order reconciliation locks the order row and commits the paid status, coupon redemption, coupon usage counter, inventory decrements, and inventory adjustment records in one database transaction. Reprocessing the same order observes its existing redemption and inventory adjustments. The confirmation email is sent only after this transaction commits; durable email delivery and replay visibility remain an operations gate.
 
+Refund creation locks the order and reserves refundable balance in a local refund row before calling a payment provider. Only one pending refund is allowed per order, and its local ID becomes Stripe's idempotency key and webhook metadata. An ambiguous provider timeout leaves that reservation pending, blocks another refund, and can be reconciled by the signed Stripe webhook through the local ID. Operators must resolve a pending refund before submitting another one.
+
 In production, an ecommerce Stripe webhook secret is required before unsigned ecommerce webhooks can be accepted.
 
 ## Feature Gate

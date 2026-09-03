@@ -28,6 +28,7 @@ interface GatewayRefundParams {
   order: GatewayRefundOrder;
   amount: number;
   reasonCode?: string;
+  idempotencyKey: string;
 }
 
 export interface GatewayRefundResult {
@@ -43,37 +44,51 @@ export function getRefundProviderDisplayName(provider: string) {
   return getEcommerceIntegrationAdapterDefinition(provider)?.displayName ?? provider;
 }
 
+export function assertPaymentGatewayRefundReady(
+  provider: EcommerceRefundProvider,
+  order: GatewayRefundOrder,
+) {
+  assertEcommerceIntegrationOperational(provider, "payment_refund");
+  if (provider === "stripe" && !order.stripePaymentIntentId) {
+    throw new Error("Order does not have a Stripe payment intent");
+  }
+  if (provider !== "stripe") {
+    throw new Error(
+      `${getRefundProviderDisplayName(provider)} refund adapter is not implemented yet`,
+    );
+  }
+}
+
 export async function createPaymentGatewayRefund(
   params: GatewayRefundParams,
 ): Promise<GatewayRefundResult> {
-  assertEcommerceIntegrationOperational(params.provider, "payment_refund");
+  assertPaymentGatewayRefundReady(params.provider, params.order);
 
   if (params.provider === "stripe") {
-    if (!params.order.stripePaymentIntentId) {
-      throw new Error("Order does not have a Stripe payment intent");
-    }
     const stripe = await getEcommerceStripeClient();
-    const refund = await stripe.refunds.create({
-      payment_intent: params.order.stripePaymentIntentId,
-      amount: params.amount,
-      reason:
-        params.reasonCode === "fraudulent"
-          ? "fraudulent"
-          : params.reasonCode === "duplicate"
-            ? "duplicate"
-            : "requested_by_customer",
-      metadata: {
-        orderId: params.order.id,
-        provider: params.provider,
+    const refund = await stripe.refunds.create(
+      {
+        payment_intent: params.order.stripePaymentIntentId!,
+        amount: params.amount,
+        reason:
+          params.reasonCode === "fraudulent"
+            ? "fraudulent"
+            : params.reasonCode === "duplicate"
+              ? "duplicate"
+              : "requested_by_customer",
+        metadata: {
+          orderId: params.order.id,
+          provider: params.provider,
+          localRefundId: params.idempotencyKey,
+        },
       },
-    });
+      { idempotencyKey: `ecommerce_refund_${params.idempotencyKey}` },
+    );
     return {
       providerRefundId: refund.id,
       status: refund.status === "succeeded" ? "processed" : "pending",
     };
   }
 
-  throw new Error(
-    `${getRefundProviderDisplayName(params.provider)} refund adapter is not implemented yet`,
-  );
+  throw new Error(`${getRefundProviderDisplayName(params.provider)} refund adapter is unavailable`);
 }
