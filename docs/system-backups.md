@@ -15,6 +15,7 @@ This project now includes an application-level backup and restore system designe
 - PostgreSQL application data.
 - CMS data, blog data, users, settings, events, and related relational tables.
 - Backup metadata describing app version, Git commit SHA, Railway environment, and restore order.
+- Backup metadata identifying `CLIENT_STACK_ID` when configured.
 
 ## What it does not fully replace
 
@@ -45,7 +46,7 @@ The backup system supports two storage modes:
 - `BACKUP_R2_ACCESS_KEY_ID=...`
 - `BACKUP_R2_SECRET_ACCESS_KEY=...`
 - `BACKUP_R2_BUCKET_NAME=...`
-- `BACKUP_R2_PREFIX=corePlatform-wellness-production`
+- `BACKUP_R2_PREFIX=production/<client-stack-id>`
 
 ### Optional environment variables
 
@@ -86,6 +87,7 @@ npm run backup:restore -- --file "./backup.json.gz" --yes
 ## Important restore notes
 
 - Restore is destructive and replaces live database contents.
+- For isolated client stacks, verify the manifest `clientStackId` matches the target before approving a restore.
 - Use a duplicate Railway environment first whenever possible.
 - After restore, verify logins, CMS pages, menus, events, media references, and email settings.
 - If the failure also affects app code, use Railway deployment rollback in addition to database restore.

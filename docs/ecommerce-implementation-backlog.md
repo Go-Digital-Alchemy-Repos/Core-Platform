@@ -1,0 +1,93 @@
+# Ecommerce Production Implementation Backlog
+
+This supporting backlog converts the September 3, 2026 readiness audit into ecommerce-specific delivery
+phases under the canonical [Client Migration Master Plan](core-project-plan.md) and
+[ADR-005](adr/005-isolated-client-stacks.md). It does not declare the current module a general
+WooCommerce replacement or define a shared multi-tenant architecture.
+
+## Status Language
+
+- **Gate:** must pass before the stated launch.
+- **Pilot constraint:** capability may remain limited only when the client intake explicitly excludes it.
+- **Later:** client-dependent enhancement that does not block an otherwise compatible pilot.
+
+## Phase 0 — Single-Client Deployment Baseline
+
+Deliverables:
+
+- [x] Adopt one application/database/config/storage/provider/operations boundary per client.
+- [x] Add a secret-safe deployment configuration preflight.
+- [x] Add stack identity to newly created backup manifests.
+- [ ] Exercise a restore into a disposable duplicate environment and verify stack identity.
+- [ ] Add a checked, versioned infrastructure provisioning workflow when the first client's inputs exist.
+
+Launch gate: deployment preflight, migration, backup creation, restore drill, rollback drill, health
+checks, and domain/origin checks pass for that client's isolated environment.
+
+## Phase 1 — Money and Stock Correctness
+
+- Atomically claim Stripe webhook events before side effects.
+- Move payment side effects to durable, idempotent jobs with retry and dead-letter visibility.
+- Add payment-provider reconciliation and replay tooling.
+- Make checkout creation idempotent for client retries.
+- Add inventory reservation/expiry or document and enforce a client-approved oversell policy.
+- Enforce unique inventory and coupon side-effect keys and test concurrent delivery.
+- Serialize refundable-balance changes and add provider idempotency.
+- Define compensated order transitions for paid-but-unfulfilled and failed side effects.
+
+Launch gate: production-like tests prove duplicate, reordered, delayed, and concurrent requests cannot
+double-charge, double-refund, double-deduct, over-redeem, or silently strand paid orders.
+
+## Phase 2 — Migration and Cutover
+
+- Build an idempotent WooCommerce importer with dry-run and resumable execution.
+- Define source-to-target mappings for products, variants, media, customers, orders, coupons, taxes,
+  stock, and statuses.
+- Define which historical sensitive data will not be imported.
+- Generate legacy URL redirects and validate canonical, sitemap, structured-data, and product-feed output.
+- Reconcile source/target counts and monetary totals with explicit accepted exclusions.
+- Rehearse freeze, final delta, DNS/domain cutover, rollback, and customer-support response.
+
+Launch gate: two dry runs and one final rehearsal reconcile to signed acceptance thresholds, with a
+timed rollback that does not require destructive guesswork.
+
+## Phase 3 — Client Capability Acceptance
+
+For each client, classify and verify:
+
+- tax jurisdictions, nexus, product tax codes, exemptions, commits, and refund adjustments;
+- shipping zones, live/manual rates, address validation, labels, tracking, and partial fulfillment;
+- returns, exchanges, cancellation, restocking, and disputes;
+- guest/account/privacy/retention/consent requirements;
+- transactional email deliverability, retry, suppression, and support visibility;
+- catalog size, variants, bulk operations, media, feeds, and search performance;
+- fraud, shared rate-limit state, accessibility, responsive behavior, and security review.
+
+Launch gate: every required capability is operational and tested. A provider shown in configuration is
+not evidence that its adapter is implemented.
+
+## Phase 4 — Quality and Operations
+
+- Add CI gates for lint, types, unit/integration tests, migrations, build, and bundle budgets.
+- Add Stripe sandbox checkout/refund/webhook E2E and concurrency coverage.
+- Add WCAG 2.2 AA keyboard, screen-reader, contrast, zoom, and mobile checkout verification.
+- Add domain metrics and alerts for checkout, payment, webhook lag/failures, refunds, inventory, email,
+  backups, restores, and error budgets.
+- Add support timelines, payment reconciliation, webhook replay, finance/tax reports, and safe exports.
+
+Launch gate: named responders can detect, diagnose, reconcile, communicate, and recover from the defined
+failure scenarios within agreed service targets.
+
+## Phase 5 — Deferred Capabilities
+
+Implement only for clients that require them: gift cards/store credit, subscriptions and dunning,
+multi-currency, multi-location carrier automation, marketplace sync, advanced promotions, and shared
+cross-client analytics.
+
+## Better Farms Pilot Application
+
+Better Farms is the named first pilot. Discovery must map its actual WooCommerce catalog, transactions,
+shipping, tax, fulfillment, memberships, forms, and plugin behavior to this backlog. Any capability Better
+Farms requires becomes a pilot gate even if it could have been deferred for a simpler client. The durable
+WooCommerce adapter and mapping tables remain blocked until the master plan's manifest/import contracts
+are approved.

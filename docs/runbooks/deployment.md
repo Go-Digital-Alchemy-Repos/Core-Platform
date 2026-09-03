@@ -12,10 +12,13 @@
 
 ### Required for Production
 
-| Variable         | Description                                                              |
-| ---------------- | ------------------------------------------------------------------------ |
-| `SESSION_SECRET` | Strong random string for JWT signing. Must not be "dev-secret-change-me" |
-| `DATABASE_URL`   | PostgreSQL connection string                                             |
+| Variable          | Description                                                                |
+| ----------------- | -------------------------------------------------------------------------- |
+| `CLIENT_STACK_ID` | Stable lowercase kebab-case identity used by deployment checks and backups |
+| `SESSION_SECRET`  | Strong random string for JWT signing. Must not be "dev-secret-change-me"   |
+| `DATABASE_URL`    | PostgreSQL connection string                                               |
+| `APP_URL`         | Current canonical Core Platform service origin                             |
+| `TRUSTED_ORIGINS` | Exact comma-separated browser origins allowed to submit API requests       |
 
 ### Required for Features
 
@@ -29,8 +32,6 @@
 | `SMTP_USER`                   | Email    | SMTP username                                    |
 | `SMTP_PASS`                   | Email    | SMTP password                                    |
 | `SMTP_FROM`                   | Email    | Default sender address                           |
-| `APP_URL`                     | Security | Base URL of the application                      |
-| `TRUSTED_ORIGINS`             | Security | Comma-separated list of trusted origins          |
 | `SETUP_TOKEN`                 | Security | Optional token required for first admin setup    |
 | `CMS_PREVIEW_SECRET`          | CMS      | Optional signing secret for CMS preview links    |
 | `METRICS_ENABLED`             | Metrics  | Set to "true" to enable metrics endpoint         |
@@ -43,6 +44,11 @@
 | `BACKUP_R2_PREFIX`            | Backups  | Optional path prefix for stored backup snapshots |
 
 ## Build & Deploy
+
+For client deployments, follow the dedicated
+[single-client deployment runbook](client-stack-deployment.md) and the canonical
+[Client Migration Master Plan](../core-project-plan.md). Run the deployment preflight before building or
+releasing.
 
 ### Development
 

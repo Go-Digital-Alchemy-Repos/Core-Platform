@@ -2,12 +2,19 @@
 
 The ecommerce module is a feature-gated commerce layer built on the existing Express, Drizzle, Stripe, settings, email, and CMS systems.
 
+## Deployment Boundary
+
+Ecommerce is currently single-client. Under
+[ADR-005](../adr/005-isolated-client-stacks.md), every client receives a separate Core Platform
+application/database and separately built React site, with its own configuration, storage, providers,
+recovery, monitoring, and releases. This is repeatable deployment, not a shared multi-tenant system.
+
 ## Client Routes
 
 The storefront is route-level lazy loaded from `client/src/App.tsx`:
 
 - `/shop`
-- `/shop/:slug`
+- `/products/:slug`
 - `/cart`
 - `/checkout`
 - `/order/success`
@@ -19,28 +26,28 @@ Admin management lives under `/admin/ecommerce` and uses tabbed views for produc
 
 Public ecommerce routes are mounted at `/api/ecommerce` and are guarded by the ecommerce site feature middleware.
 
-| Endpoint | Purpose |
-|----------|---------|
-| `GET /api/ecommerce/products` | List public active/published products |
-| `GET /api/ecommerce/products/:slug` | Fetch a public product by slug |
-| `GET /api/ecommerce/categories` | List active public categories |
-| `GET /api/ecommerce/stripe/config` | Return ecommerce Stripe publishable key and mode |
-| `POST /api/ecommerce/cart/price` | Price a cart payload |
-| `POST /api/ecommerce/coupons/validate` | Validate a coupon for a subtotal |
-| `POST /api/ecommerce/checkout/payment-intent` | Create an order and Stripe payment intent |
-| `POST /api/ecommerce/orders/status` | Customer-facing order lookup |
+| Endpoint                                      | Purpose                                          |
+| --------------------------------------------- | ------------------------------------------------ |
+| `GET /api/ecommerce/products`                 | List public active/published products            |
+| `GET /api/ecommerce/products/:slug`           | Fetch a public product by slug                   |
+| `GET /api/ecommerce/categories`               | List active public categories                    |
+| `GET /api/ecommerce/stripe/config`            | Return ecommerce Stripe publishable key and mode |
+| `POST /api/ecommerce/cart/price`              | Price a cart payload                             |
+| `POST /api/ecommerce/coupons/validate`        | Validate a coupon for a subtotal                 |
+| `POST /api/ecommerce/checkout/payment-intent` | Create an order and Stripe payment intent        |
+| `POST /api/ecommerce/orders/status`           | Customer-facing order lookup                     |
 
 Admin ecommerce routes are mounted at `/api/admin/ecommerce` and require admin access. They are also guarded by the ecommerce site feature middleware.
 
-| Area | Capabilities |
-|------|--------------|
-| Products | List, create, update, delete |
-| Categories | List, create, update, delete |
-| Coupons | List, create, update, delete |
-| Orders | List, detail, update status/notes, create manual order |
-| Refunds | Create full or partial refunds |
-| Shipping | Manage zones, rates, and shipments |
-| Stripe settings | Read masked status, save settings, test connection |
+| Area            | Capabilities                                           |
+| --------------- | ------------------------------------------------------ |
+| Products        | List, create, update, delete                           |
+| Categories      | List, create, update, delete                           |
+| Coupons         | List, create, update, delete                           |
+| Orders          | List, detail, update status/notes, create manual order |
+| Refunds         | Create full or partial refunds                         |
+| Shipping        | Manage zones, rates, and shipments                     |
+| Stripe settings | Read masked status, save settings, test connection     |
 
 ## Data Model
 

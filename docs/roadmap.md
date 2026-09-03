@@ -4,15 +4,23 @@ Recommended improvements for the next development wave, ordered by impact and fe
 
 > **Infrastructure decision — September 3, 2026:** Production was moved from Neon back to Railway Postgres. References below to a planned Neon migration are superseded and require a new owner decision before implementation.
 
+> **Canonical product direction — September 3, 2026:** Follow the
+> [Client Migration Master Plan](core-project-plan.md). Core Platform uses repeatable single-client
+> deployments paired with separately built React sites. Multi-tenancy, Neon migration, and Next.js
+> migration are out of scope for the Better Farms pilot unless separately approved.
+
 ---
 
-## Architecture Sequencing Guardrail
+## Superseded Architecture Exploration
 
-This section captures the current working recommendation for the possible Next.js, Neon, and multi-tenancy migration. Treat it as a planning guardrail to revisit before implementation, especially as new product, deployment, billing, or tenant-isolation requirements are clarified.
+The repository previously explored Next.js, Neon, and multi-tenancy sequencing. Those ideas are retained
+as historical possibilities, not active phases. They must not displace the Better Farms manifest,
+site/Puck integration, design adapter, module theming, migration, correctness, and deployment work in the
+canonical plan.
 
-See `docs/core-project-plan.md` for the fuller strategic plan, including the theme/template system and future agent panel.
+See `docs/core-project-plan.md` for the approved sequencing and gates.
 
-### Recommended Order
+### Historical Order (Not Approved for Execution)
 
 1. Refine and stabilize existing features while the current Vite/React + Express architecture is still familiar.
 2. Move the existing Postgres/Drizzle setup to Neon before changing application framework.
@@ -21,16 +29,17 @@ See `docs/core-project-plan.md` for the fuller strategic plan, including the the
 5. Migrate to Next.js once tenant boundaries are explicit, starting with public SEO-heavy pages if a phased migration is needed.
 6. Add agent or automation features only after tenant isolation and core workflows are solid.
 
-### Rationale
+### Historical Rationale
 
 - Neon is the lowest-risk architectural step because the app already uses Postgres and Drizzle.
 - Next.js does not solve tenancy by itself; moving first could copy current single-tenant assumptions into a new framework.
 - Tenancy affects data schema, auth, domains, settings, media, Stripe, email, analytics, background jobs, and admin permissions.
 - Feature refinement should happen before the larger migration so the product target is clearer and less churn is carried into the rewrite.
 
-### Possible Exception
+### Reconsideration Rule
 
-A small Next.js prototype branch may be useful to prove host-based tenant routing, Neon connection behavior, and one representative public page. Avoid a full conversion until the tenancy model is designed.
+Any prototype or migration in these areas requires a separately approved objective, bounded branch, and
+evidence that the current Better Farms path cannot meet the requirement safely.
 
 ---
 
@@ -41,11 +50,13 @@ A small Next.js prototype branch may be useful to prove host-based tenant routin
 **Dependencies**: None
 
 ### Goals
+
 - Replace `ilike` text search with PostgreSQL full-text search (`tsvector` + GIN index)
 - Add trigram indexes (`pg_trgm`) for fuzzy name/city matching
 - Implement faceted search with count aggregates per filter (e.g., "CBT (12)", "EMDR (8)")
 
 ### Implementation Plan
+
 1. Add a `search_vector tsvector` column to `therapist_profiles`
 2. Create a trigger to auto-update the vector on INSERT/UPDATE
 3. Add a GIN index on the search vector
@@ -62,11 +73,13 @@ A small Next.js prototype branch may be useful to prove host-based tenant routin
 **Dependencies**: Phase 1 (complementary, not blocking)
 
 ### Goals
+
 - Rank therapist results by distance from the user's location
 - Display distance on therapist cards
 - Add "within X km" radius filter
 
 ### Implementation Plan
+
 1. Add latitude/longitude columns to `therapist_profiles` (geocoded from city/country)
 2. Use PostGIS or Haversine formula for distance calculation
 3. Add `ORDER BY distance` option to directory API
@@ -83,12 +96,14 @@ A small Next.js prototype branch may be useful to prove host-based tenant routin
 **Dependencies**: None
 
 ### Goals
+
 - Real-time message delivery via WebSockets
 - Message read receipts (delivered, read)
 - Typing indicators
 - Unread message count in navigation
 
 ### Implementation Plan
+
 1. Add WebSocket server (Socket.IO or `ws`) alongside Express
 2. Add `deliveredAt` and `readAt` columns to `direct_messages`
 3. Implement connection management with JWT authentication
@@ -106,11 +121,13 @@ A small Next.js prototype branch may be useful to prove host-based tenant routin
 **Dependencies**: None
 
 ### Goals
+
 - Dashboard visualizations for provider onboarding funnel
 - Subscription analytics (MRR, churn, upgrades)
 - Application pipeline metrics
 
 ### Implementation Plan
+
 1. Add time-series aggregation queries for applications (submitted, approved, rejected by week/month)
 2. Add subscription metrics endpoint (active subscribers, revenue, churn rate)
 3. Add onboarding funnel visualization (registered → applied → approved → subscribed → profile live)
@@ -127,12 +144,14 @@ A small Next.js prototype branch may be useful to prove host-based tenant routin
 **Dependencies**: None
 
 ### Goals
+
 - Reliable async processing for emails, notifications, background checks
 - Retry logic with exponential backoff
 - Dead-letter queue for failed jobs
 - Job monitoring dashboard
 
 ### Implementation Plan
+
 1. Adopt `pg-boss` as the default PostgreSQL-backed job queue
 2. Migrate email sending from synchronous to queued
 3. Move background check processing to the job queue
@@ -151,11 +170,13 @@ See `docs/architecture/security-ops-stabilization-roadmap.md` for rollout sequen
 **Dependencies**: Phase 5 (beneficial but not required)
 
 ### Goals
+
 - Real-time performance monitoring
 - Alert on elevated error rates or latency
 - Historical trend analysis
 
 ### Implementation Plan
+
 1. Extend the existing metrics collection (`server/utils/metrics.ts`) with percentile tracking
 2. Add a `/api/admin/system/metrics` endpoint with historical data
 3. Create an admin system health page showing request rates, error rates, and latency percentiles
@@ -167,11 +188,11 @@ See `docs/architecture/security-ops-stabilization-roadmap.md` for rollout sequen
 
 ## Timeline Summary
 
-| Phase | Name | Priority | Effort | Suggested Timeline |
-|-------|------|----------|--------|--------------------|
-| 1 | Full-Text Search | High | Medium | Weeks 1–2 |
-| 2 | Geo-Distance Ranking | High | Medium | Weeks 3–4 |
-| 3 | Real-Time Messaging | Medium | Large | Weeks 5–8 |
-| 4 | Admin Analytics | Medium | Medium | Weeks 9–10 |
-| 5 | Background Job Queue | Medium | Medium | Weeks 11–12 |
-| 6 | Dashboards & Alerting | Low | Medium | Weeks 13–14 |
+| Phase | Name                  | Priority | Effort | Suggested Timeline |
+| ----- | --------------------- | -------- | ------ | ------------------ |
+| 1     | Full-Text Search      | High     | Medium | Weeks 1–2          |
+| 2     | Geo-Distance Ranking  | High     | Medium | Weeks 3–4          |
+| 3     | Real-Time Messaging   | Medium   | Large  | Weeks 5–8          |
+| 4     | Admin Analytics       | Medium   | Medium | Weeks 9–10         |
+| 5     | Background Job Queue  | Medium   | Medium | Weeks 11–12        |
+| 6     | Dashboards & Alerting | Low      | Medium | Weeks 13–14        |

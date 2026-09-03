@@ -1,262 +1,357 @@
-# Core Platform Project Plan
+# Core Platform Client Migration Master Plan
+
+## Status and Authority
+
+This is the accepted planning baseline for Core Platform's near-term product direction as of September
+3, 2026. It supersedes earlier assumptions that treated multi-tenancy, Neon, or a framework rewrite as
+prerequisites for client migrations. Product implementation, client imports, deployment, and
+infrastructure changes still require the authorization gates below.
+
+Supporting documents may add operational detail but must not redefine this plan:
+
+- [ADR-005: Repeatable Single-Client Deployments](adr/005-isolated-client-stacks.md)
+- [Ecommerce Production Implementation Backlog](ecommerce-implementation-backlog.md)
+- [Single-Client Deployment Runbook](runbooks/client-stack-deployment.md)
+- [Universal Bolt-On App Contract](master-prompts/bolt-on-apps/00-universal-bolt-on-app-contract.md)
+
+Material changes to deployment, persistent data, public contracts, security, or release strategy require
+Project Orchestrator and Project Owner approval.
+
+## Product Direction
+
+Digital Alchemy will migrate WordPress clients incrementally using a repeatable single-client deployment:
+
+- one Core Platform dashboard and API;
+- one client and one dedicated PostgreSQL database;
+- one separately built static React website;
+- one client-specific configuration, secrets, storage, provider, backup, monitoring, and release boundary.
+
+The client's React site remains the public design authority. Core Platform imports or integrates that
+site into Puck so editors can manage approved content and compositions. Optional bolt-on modules—such as
+ecommerce, CRM, forms, memberships, directory, events, careers, and portfolio—are enabled only when the
+client needs them. Their public pages and components must inherit the site’s design tokens, primitives,
+layout rules, interaction patterns, and accessibility behavior.
+
+This is not a shared SaaS or multi-tenant deployment. Future multi-tenancy is out of scope. New contracts
+should still avoid unnecessary global assumptions and carry explicit instance/site identity where that
+improves portability, diagnostics, or migration safety.
+
+## Terminology and Architecture Decision
+
+| Term            | Canonical meaning                                                                                               |
+| --------------- | --------------------------------------------------------------------------------------------------------------- |
+| Client instance | One deployed Core Platform application serving exactly one client                                               |
+| Client database | PostgreSQL used only by that client instance                                                                    |
+| Client site     | Separately built static React public website connected to the instance                                          |
+| Site manifest   | Versioned, non-secret contract for build, routes, assets, tokens, components, integrations, and enabled modules |
+| Theme adapter   | Mapping from imported site tokens/primitives to Core Platform and bolt-on semantic roles                        |
+| Puck registry   | Approved editable components, schemas, defaults, constraints, and render mappings                               |
+| Bolt-on module  | Optional Core Platform business capability enabled through the module registry                                  |
+| Client stack    | Operational shorthand for the single-client boundary, not a tenant in a shared system                           |
+
+The public React site and Core Platform may live in separate repositories, but each release records
+compatible manifest and contract versions. Public rendering must not depend on arbitrary source code in
+the database or allow Puck content to execute untrusted code.
+
+## Current Baseline and First Pilot
+
+Better Farms is the first pilot. Its authoritative repository is
+[Go-Digital-Alchemy-Repos/Better-Farms](https://github.com/Go-Digital-Alchemy-Repos/Better-Farms).
+The Better Farms Foundation checkout was verified clean on `main` at commit `6dd6335` on September 3, 2026. `npm run check` and `npm run build` passed. Reconfirm the commit and build evidence at pilot kickoff
+rather than assuming that state remains unchanged.
+
+Two WooCommerce prototype branches exist from Core Platform commit `e2ba048`:
+
+- `codex/woocommerce-migration-toolkit` at `325188d` provides a catalog-focused categories/simple-products
+  planner, CLI, direct Core database adapter, collision checks, tests, and a runbook;
+- `codex/woocommerce-migration-toolkit-4bfb` at `ffd11a6` provides a broader
+  product/customer/order rehearsal engine with cursor, repository ports, rollback semantics, tests, and
+  a validation CLI, but only an in-memory adapter.
 
-This plan captures the current strategic direction for Core Platform based on planning conversations around feature refinement, reusable themes, Neon, multi-tenancy, Next.js, and a future built-in agent panel. Treat it as the working guide for sequencing decisions. Revisit it when product, tenant-isolation, hosting, billing, or client-workflow requirements change.
+Both passed their scoped tests and `npm run check` on September 3, 2026. They are competing prototypes,
+not one accepted toolkit, and must not be merged together or used for client data. Workstream A must
+approve one reconciled import contract before Workstream E implements mapping tables or a durable adapter.
 
-> **Infrastructure decision — September 3, 2026:** Production was moved from Neon back to Railway Postgres. The Neon phase and sequencing statements in this plan are superseded and require explicit reconsideration before implementation.
+## Program Principles
 
-## Guiding Product Direction
+- Preserve the imported site's visual identity; do not force a generic Core Platform theme.
+- Separate content, presentation, business data, integrations, and infrastructure.
+- Prefer versioned manifests/adapters over scattered client-specific conditionals.
+- Keep Puck registrations explicit, schema-validated, previewable, and backward compatible.
+- Keep bolt-on business logic independent of public-site styling.
+- Treat imports as resumable, idempotent, observable migrations with reconciliation and rollback.
+- Treat one client instance as the security, backup, monitoring, and release blast radius.
+- Require evidence at every gate; configuration is not proof that an integration works.
+- Avoid framework rewrites unless a verified pilot requirement cannot be met safely in the current stack.
 
-Core Platform should become a reusable multi-tenant website and operations platform where each tenant can launch from a polished design foundation, manage content and business workflows through the CMS/admin dashboard, and eventually use an integrated agent panel to safely design, operate, and improve their site.
+## Target Contracts
 
-The platform should avoid one-off site assumptions inherited from the original TCK Wellness build. Public pages, reusable sections, theme tokens, admin workflows, and future agent actions should be standardized enough to support many tenants without making live sites fragile.
+### Versioned Client Onboarding and Site Manifest
 
-## Sequencing Principles
+The machine-validated manifest contains no secrets and includes:
 
-- Stabilize the existing product before major architectural rewrites.
-- Build the theme and reusable section contract before full tenancy so tenants inherit a clean design foundation.
-- Move to Neon before Next.js because the app already uses Postgres and Drizzle.
-- Design tenancy before a full Next.js migration so single-tenant assumptions are not copied into a new framework.
-- Build the future agent panel on top of tenant-aware, permission-checked platform actions rather than giving the agent direct database freedom.
-- Treat Next.js as an eventual rendering and routing upgrade, not the mechanism that creates tenancy.
+- `schemaVersion`, immutable client instance ID, display name, source repository/commit, and owners;
+- build command, output directory, supported Node version, entry points, and asset base rules;
+- domain, route inventory, redirects, navigation, 404 behavior, and sitemap ownership;
+- API base contract, authentication, forms, and preview behavior;
+- token sources for color, typography, spacing, radius, shadow, breakpoints, motion, and z-index;
+- component inventory, semantic roles, variants, assets, accessibility notes, and Puck eligibility;
+- editable page/region ownership: code, Puck structure/content, fixed slots, or module-owned;
+- enabled modules and required page/template slots;
+- provider capabilities without credentials;
+- compatibility versions for platform, site adapter, Puck registry, and module-theme contract;
+- import metadata, accepted exclusions, RPO/RTO, and launch-gate status.
 
-## Recommended Roadmap
+It requires a JSON Schema or Zod schema, example fixture, upgrade policy, compatibility checker, and CLI
+that fails closed on unknown breaking versions. Secrets remain in Railway or approved provider stores.
 
-### Phase 1: Stabilize Existing Features
+### React Site Integration Contract
 
-Refine current CMS, admin, directory, ecommerce, events, membership, CRM, uploads, Stripe, email, settings, backups, and public-site workflows while the current Vite/React + Express architecture is familiar.
+The integration contract is repository-layout neutral and defines:
 
-Key outcomes:
+- deterministic production build and static asset output;
+- environment-neutral API client, preview authentication, cache/error/fallback behavior;
+- route collision/ownership rules for site, Puck, and module routes;
+- navigation/footer contracts and link normalization;
+- responsive assets, fonts, SVGs, CSP, and cache busting;
+- forms, validation, spam controls, consent, uploads, and success/error states;
+- SEO metadata, canonicals, structured data, robots, sitemap, redirects, and social previews;
+- loading, empty, offline, unauthorized, and disabled-module states;
+- fixture-based contract tests without production credentials.
 
-- Known product flows are reliable enough to become tenant-ready later.
-- Tests cover high-risk flows such as auth, CMS publishing, checkout/webhooks, uploads, settings, and admin permissions.
-- Legacy assumptions and TCK-specific copy/design decisions are identified.
-- Existing technical debt is categorized into must-fix, defer, or replace-later.
+The contract must explicitly separate the public-site origin from the dashboard/API origin. The current
+runtime uses `APP_URL` for origin checks and a mixture of public and administrative links, so a separate
+static site cannot launch until link ownership, CORS/cookies, preview authentication, CSP, webhook URLs,
+and email destinations are assigned to named origins.
 
-### Phase 2: Theme And Section Architecture
+### Design-System Extraction and Theme Adapter
 
-Build the design-template system as a cornerstone Core Platform feature before full tenancy.
+Extraction inventories source declarations and rendered evidence, producing normalized tokens and
+component-role mappings rather than a second design system:
 
-Key outcomes:
+- token provenance and semantic aliases;
+- typography/font loading and fallback;
+- container, grid, spacing, breakpoints, and responsive behavior;
+- buttons, links, fields, cards, dialogs, tables, alerts, and navigation roles;
+- focus, hover, active, disabled, error, success, loading, and reduced-motion states;
+- images, radius, shadow, icons, motion, contrast, and accessibility checks;
+- versioned adapter module, visual fixtures, and regression baselines.
 
-- A formal theme contract exists with versioned tokens, supported page templates, supported sections, typography, color, spacing, radius, shadows, component variants, header/footer variants, and responsive rules.
-- Reusable sections have stable schemas and can adapt across themes.
-- CMS content is separated from structure and presentation.
-- Themes cannot introduce arbitrary fragile markup or required content fields that would break existing sites.
-- Theme compatibility validation exists before publishing a theme change.
+Bolt-ons consume semantic roles such as `surface`, `action.primary`, `form.field`, and
+`commerce.productCard`; they must not hard-code Better Farms styling in shared business components.
 
-Initial reusable section standards should cover:
+### Puck Registration and Editable-Content Mapping
 
-- Hero
-- Split content
-- Feature grid
-- Testimonial band
-- CTA band
-- Directory preview
-- Event list
-- Blog/article list
-- Product grid
-- Form embed
-- FAQ
-- Stats
-- Team/profile grid
-- Logo strip
-- Rich content
-- Contact/location
-- Membership/pricing
+Each component has a stable key/version, field schema, defaults, validation, renderer, preview, migration,
+allowed nesting, accessibility constraints, and ownership. Every region is classified as code-owned,
+Puck structure/content, fixed structure with editable slots, module data with a themed template, or
+global site data.
 
-Initial page template standards should cover:
+Puck stores approved content/composition data—not arbitrary JSX, secrets, business records, or provider
+configuration. Publishing requires validation, preview, compatibility checks, and recoverable history.
 
-- Homepage
-- Standard content page
-- Landing page
-- Directory page
-- Event detail
-- Blog index
-- Blog post
-- Product listing
-- Product detail
-- Contact page
-- Membership page
+### Module Registry and Themed Bolt-On Contract
 
-Theme management should support:
+The module registry is the source of truth for module key, feature setting, routes, navigation,
+permissions, migrations, APIs, templates, health checks, and dependencies. Enable/disable operations are
+explicit and idempotent; disabling access does not delete data.
 
-- Preview without publishing
-- Current vs proposed comparison
-- Unsupported-section detection
-- Atomic publish
-- Rollback
-- Theme versioning
-- Future theme manifests, screenshots, seed pages, validation checks, and visual regression tests
+Every public bolt-on template declares semantic theme roles, content/data slots, responsive and
+accessibility behavior, SEO, all UI states, route/navigation contributions, and visual/contract fixtures.
+Business services and storage remain presentation-neutral.
 
-### Phase 3: Starter Themes
+## Milestones and Verification Gates
 
-Create a small set of strong starter themes rather than many thin designs.
+### Milestone 0 — Governance and Baseline
 
-Recommended first themes:
+Dependencies: none.
 
-- Professional Services: polished, trust-focused, operationally clear.
-- Wellness Directory: human-centered, softer, editorial, directory-friendly.
-- Commerce/Event Hybrid: conversion-focused for shops, events, memberships, and campaigns.
+Deliverables:
 
-Key outcomes:
+- approve this plan and ADR terminology;
+- record Core Platform, Better Farms, and Woo toolkit repository/branch SHAs and build evidence;
+- inventory audits and preserved deployment/backup drafts without merging unrelated work;
+- create a shared-contract decision log with owners/reviewers;
+- define pilot scope, exclusions, success measures, and stop/rollback conditions.
 
-- The same section and page contracts produce meaningfully different sites.
-- Theme switching does not break published content.
-- Tenant admins and super admins have a credible starting point for new sites.
+Acceptance criteria: repositories and branches are unambiguous; tasks have non-overlapping ownership;
+pilot inclusions/exclusions are signed off; unresolved decisions are assigned and block dependents.
 
-### Phase 4: Neon Migration
+### Milestone 1 — Manifest and Integration Contracts
 
-Move the existing Postgres/Drizzle setup to Neon before changing the application framework.
+Dependencies: Milestone 0.
 
-Key outcomes:
+Deliverables: manifest schema/example/validator/versioning; React integration and route/data ownership
+matrix; module registry; Puck descriptor/content schemas; Woo target ports and mapping/idempotency proposal.
 
-- Runtime and migration connection strings are clearly separated where needed.
-- Connection pooling strategy is documented for the chosen hosting model.
-- Drizzle migrations run intentionally, not casually during request handling.
-- Preview/staging database branching strategy is defined.
-- Backup, restore, and rollback procedures are validated.
+Acceptance criteria: schemas reject unknown breaking versions and secrets; Better Farms is expressible
+without platform conditionals; route/data ownership has no collision; fixtures pass in both repositories;
+durable Woo work remains blocked until contract approval.
 
-### Phase 5: Tenancy Model Design
+### Milestone 2 — Better Farms Design and Content Adapter
 
-Design the tenant model before implementing large-scale tenant changes or converting to Next.js.
+Dependencies: approved Milestone 1 contracts.
 
-Key decisions:
+Deliverables: route/page/component/asset/form/API/SEO inventory; token extraction report; theme adapter;
+visual fixtures; Puck registry; editable-content map; navigation/footer/asset/form/preview/API adapters.
 
-- Shared schema with `tenant_id`, schema-per-tenant, or database-per-tenant.
-- Domain model for tenant subdomains and custom domains.
-- Tenant-scoped users, roles, permissions, settings, feature flags, integrations, uploads, billing, analytics, and public site content.
-- Super-admin vs tenant-admin boundaries.
-- Tenant lifecycle: create, configure, preview, publish, suspend, archive, export.
+Acceptance criteria: representative desktop/mobile pages match approved baselines; WCAG 2.2 AA targets
+pass; static build needs no production secrets and rejects incompatible manifests; approved editing cannot
+break fixed layout/business data; last compatible adapter/registry can be restored.
 
-Likely core tables:
+### Milestone 3 — Repeatable Railway Deployment Foundation
 
-- `tenants`
-- `tenant_domains`
-- `tenant_members`
-- tenant-scoped settings tables
-- tenant-scoped feature flag tables
-- tenant-scoped theme assignment/version tables
+Dependencies: Milestone 1 identity/config contract; can parallel Milestone 2 after contract freeze.
 
-Existing global assumptions to revisit:
+Deliverables: reconciled secret-safe preflight; Railway app/Postgres blueprint; domain/origin, storage,
+provider, email, health, and monitoring configuration; backup provenance; release manifest; backup,
+restore-to-duplicate, rollback, and secret-rotation runbooks.
 
-- Globally unique user emails
-- Globally unique system settings keys
-- Global site features
-- Global SEO settings
-- Global uploads
-- Global Stripe/email/R2/analytics configuration
-- Auth tokens without tenant context
+Acceptance criteria: no secret leaks; fixture config passes and unsafe config fails; fresh deployment and
+migration are deterministic/idempotent; backup provenance identifies the client instance; disposable
+restore/rollback meets RPO/RTO. No real infrastructure is created without later authorization.
 
-### Phase 6: Tenant-Aware Backend And Admin UX
+### Milestone 4 — WooCommerce Adapter and Import Rehearsal
 
-Implement tenancy in the current architecture or in a focused migration branch before the full Next.js conversion.
+Dependencies: approved import contracts, target schema ownership, and Better Farms source inventory.
 
-Key outcomes:
+Deliverables: durable adapter decision and mapping migrations; adapter behind toolkit ports; dry-run,
+resumable/idempotent import, checkpoints, audit, and quarantine; approved entity mappings; redirects;
+count/status/stock/money reconciliation; freeze/delta/cutover/rollback rehearsal.
 
-- Every service/storage call receives tenant context where relevant.
-- Every tenant-owned table is scoped consistently.
-- Admin permissions are tenant-aware.
-- Settings, CMS content, themes, media, forms, products, events, CRM, memberships, and integrations are tenant-scoped.
-- Super admins can manage tenants without leaking tenant data.
-- Tenant admins can configure their site, select themes, preview changes, and manage modules.
+Acceptance criteria: two clean-target rehearsals agree; retries do not duplicate; every record is imported,
+excluded, or quarantined; differences are signed off; prohibited credentials/sensitive history are not
+imported; rollback restores pre-import state within the approved window.
 
-### Phase 7: Built-In Agent Panel Foundation
+### Milestone 5 — Ecommerce Transaction Hardening
 
-Build a Core Platform-native agent panel after tenant boundaries and safe action patterns exist.
+Dependencies: approved ecommerce contracts; may parallel Milestones 2/4 with separate file ownership.
 
-The agent should operate through typed, permission-checked platform actions rather than raw database access.
+Foundational blockers: atomic webhook claims; durable idempotent payment/refund/email jobs and
+reconciliation; idempotent checkout; inventory reservation or enforced oversell policy; unique
+inventory/coupon side-effect keys; serialized provider-idempotent refunds; compensated order transitions;
+operator exception queues; all pilot-required tax/shipping/fulfillment/return/dispute workflows.
 
-Core foundations:
+Acceptance criteria: duplicate/reordered/delayed/concurrent events cannot repeat money or stock effects;
+Stripe sandbox E2E covers success/failure/recovery/cancellation/refund/fulfillment; finance/support can
+reconcile without database edits; required capabilities are operational, not merely configurable.
 
-- Action registry with Zod schemas
-- Tenant-aware execution context
-- Role and permission checks
-- Human approval for high-consequence actions
-- Audit log of suggestions, drafts, approvals, and executions
-- Draft/preview workflow for public content and design changes
-- Prompt templates per module
-- Tenant brand/context memory
-- Tool permissions by role and plan
+### Milestone 6 — Integrated Better Farms Pilot
 
-Early use cases:
+Dependencies: Milestones 2–5 and approved infrastructure intake.
 
-- Draft homepage, landing page, event, blog, and product copy.
-- Suggest SEO improvements.
-- Generate page drafts from approved section types.
-- Explain theme compatibility issues.
-- Recommend section replacements within the active theme contract.
-- Summarize form leads, orders, directory activity, or event registrations.
-- Help tenant admins work within brand voice and compliance constraints.
+Deliverables: Better Farms integrated with Core Platform/Puck; required modules and themed templates;
+routes/navigation/forms/assets/APIs/SEO/redirects; rehearsed imported data; production-like staging;
+editor/operator/finance/support/accessibility/security/rollback acceptance.
 
-Client-configurable prompt engineering options may include:
+Verification gate: lint, types, tests, migrations, build, and budgets pass; production-like E2E covers
+public/Puck/forms/auth/modules/checkout/webhook/refund/restore/rollback; responsive visual and WCAG checks
+pass; security/privacy/secret/upload/origin/rate-limit reviews pass; import and crawler reconciliation pass;
+responders, dashboards, alerts, runbooks, and rollback authority are confirmed.
 
-- Brand voice
-- Target audience
-- Prohibited claims
-- Preferred terminology
-- SEO preferences
-- Approval rules
-- Default page structure
-- Module-specific instructions
-- Publishing restrictions
+### Milestone 7 — Launch and Hypercare
 
-### Phase 8: Next.js Migration
+Dependencies: Milestone 6 and explicit Project Owner release authorization.
 
-Migrate to Next.js after the theme contract and tenancy model are explicit.
+Deliverables: pre-cutover backup, freeze/final delta, Git-backed release, DNS cutover, smoke tests;
+monitoring for availability, latency, errors, jobs, webhooks, payments, refunds, email, inventory, backups,
+forms, and security; daily reconciliation; incident/rollback/communication paths; post-launch review.
 
-Recommended approach:
+Acceptance criteria: go/no-go evidence is recorded; no unresolved severity-1/2 issue; transactions/imports
+reconcile; rollback remains viable until acceptance; owner signs off or invokes predefined rollback.
 
-- Start with public, SEO-heavy pages.
-- Preserve or bridge existing API behavior while migrating gradually.
-- Move route/API handlers only where the benefit is clear.
-- Keep background jobs out of request lifecycle assumptions.
-- Preserve tenant-aware routing, metadata, caching boundaries, and preview behavior.
+### Milestone 8 — Reusable Client Onboarding Playbook
 
-Watch carefully:
+Dependencies: Better Farms post-launch review.
 
-- Stripe webhook raw-body handling
-- Auth/session behavior
-- Upload durability
-- Next.js caching and stale tenant data
-- Background jobs and scheduled services
-- Domain/subdomain routing
-- Route parity and redirects
+Deliverables: intake checklist, manifest generator, discovery scripts, extraction workflow, Puck guide,
+module matrix, import/cutover playbook, estimates, fixture site, and golden contract tests; classify all work
+as shared platform, adapter, or Better Farms-specific.
 
-### Phase 9: Expanded Agent And Automation Layer
+Acceptance criteria: another qualified React/Vite client can produce a valid manifest without changing
+business services; styling comes through an adapter; provisioning copies no secrets; shared contracts and
+fixtures contain no Better Farms assumptions.
 
-Once tenant isolation, themes, admin flows, and core actions are reliable, expand the agent panel into a broader client-facing automation layer.
+## Workstreams and Ownership Boundaries
 
-Possible later capabilities:
+Parallel work starts only after its shared contract is approved. Each stream owns one write surface.
 
-- Guided site onboarding
-- Theme selection assistant
-- Agent-assisted content migration
-- Agent-generated but validated section layouts
-- Analytics-driven site recommendations
-- Tenant-specific playbooks
-- Cross-module campaign creation
-- Agent-assisted support and admin training
+| Workstream                  | Primary write surface                                | Must not change independently             |
+| --------------------------- | ---------------------------------------------------- | ----------------------------------------- |
+| A. Contracts/governance     | Schemas, ADRs, contract tests, decisions             | Scope, DB schema, public APIs             |
+| B. Better Farms design      | Site inventory, adapter, fixtures, Puck registry     | Core business services/schema             |
+| C. Core Puck/site bridge    | Registry loader, preview/publish compatibility       | Client design/module logic                |
+| D. Modules/templates        | Registry and presentation-neutral template contracts | Theme tokens/import/infrastructure        |
+| E. Woo migration            | Toolkit adapter and approved mapping migrations      | Target contracts before approval          |
+| F. Ecommerce correctness    | Orders, payments, inventory, refunds, jobs, tests    | Puck/theme/client repository              |
+| G. Deployment/operations    | Preflight, releases, Railway/runbooks, recovery      | Real infrastructure without authorization |
+| H. Independent verification | E2E, accessibility, security, performance evidence   | Features except approved fixtures         |
 
-## Near-Term Next Steps
+Order: A → (B, C, G) → (D, E, F) → H/Milestone 6 → launch → playbook. B/C/G may overlap after manifest
+freeze. D/E/F require stable APIs and explicit file ownership. Authors of money, migration, or security
+changes are not their sole acceptance reviewers.
 
-1. Keep feature refinement moving while documenting rough edges.
-2. Audit CMS blocks, public pages, reusable sections, and TCK-specific assumptions.
-3. Draft the theme contract and section schema standards.
-4. Define the first three starter themes and their intended use cases.
-5. Add compatibility and preview requirements for theme switching.
-6. After the theme foundation is clear, resume Neon and tenancy planning with the theme model included.
+## Foundational Blockers and Later Enhancements
 
-## Decisions To Make Before Implementation
+Foundational blockers:
 
-- What is the minimum viable starter theme set?
-- Which current sections are deprecated versus upgraded?
-- What customization should tenant admins control directly?
-- What customization should only super admins or developers control?
-- Should tenant theme selection be module-aware, industry-aware, or both?
-- Which tenant isolation model best fits expected scale and compliance needs?
-- Which hosting target is preferred for the current app, Next.js, background jobs, and previews?
-- Which agent actions should be allowed, draft-only, approval-gated, or forbidden?
+- approved manifest, compatibility, route/data ownership, module, theme, and Puck contracts;
+- deterministic build/deploy, secret-safe configuration, migration, backup/restore, and rollback;
+- approved Woo adapter/mapping contract and reconciled rehearsal;
+- ecommerce money/stock/refund/webhook correctness for enabled capabilities;
+- production-like CI/E2E, accessibility, security, and operations;
+- explicit Better Farms intake, exclusions, owners, and release approval.
 
-## Current Recommendation
+Later enhancements:
 
-The next strategic move should be the theme and reusable section architecture. This is the foundation that makes Core Platform feel like a reusable platform rather than a cloned single-site CMS. Neon, tenancy, Next.js, and the agent panel should build on that foundation instead of forcing it to fit later.
+- shared multi-tenancy or cross-client administration/analytics;
+- Neon/Next.js migration without a pilot requirement;
+- arbitrary React-to-Puck conversion, a theme marketplace, or autonomous AI publishing;
+- modules Better Farms does not require, such as advanced subscriptions, gift cards, multi-currency,
+  marketplaces, complex carrier automation, and advanced promotions.
+
+## Risks and Controls
+
+| Risk                                      | Control                                                                               |
+| ----------------------------------------- | ------------------------------------------------------------------------------------- |
+| Imported site loses identity              | Source-derived tokens, adapter, visual fixtures, client approval                      |
+| Client forks accumulate                   | Versioned manifests/adapters; no client conditionals in business services             |
+| Puck breaks layout or runs unsafe content | Registered schemas, bounded regions, preview/history, no arbitrary JSX                |
+| Route/API conflicts                       | Ownership matrix and contract tests                                                   |
+| Woo data duplicates or disappears         | Idempotent checkpoints, quarantine, reconciliation, two rehearsals                    |
+| Payment/inventory races                   | Atomic claims, unique keys, durable jobs, concurrency/sandbox E2E                     |
+| Secrets cross deployments                 | Dedicated config, preflight, scoped credentials, restore provenance                   |
+| Code rollback conflicts with schema       | Additive migrations, compatibility window, separate data rollback                     |
+| Site/platform versions drift              | Release manifest and compatibility gate                                               |
+| Parallel streams diverge                  | Contract-first approval, bounded ownership, orchestrator integration                  |
+| Future portability is blocked             | Explicit instance/site identity and presentation-neutral modules, without tenancy now |
+
+## Explicit Out of Scope
+
+- shared runtime/database for multiple clients or tenant-aware auth/billing/administration;
+- provisioning Better Farms or real client infrastructure during planning;
+- durable Woo adapter/mappings before contract approval;
+- wholesale framework/database-provider/UI-library rewrite;
+- automatic execution of WordPress theme/plugin code;
+- launch without Project Owner authorization and recorded gate evidence.
+
+## Planning State and Next Authorization Points
+
+The single-client architecture and milestone ordering are accepted as the planning baseline. The reviewed
+deployment preflight and backup identity draft may be preserved in the repository as Milestone 3
+scaffolding, but it does not prove a deployable two-origin client stack. The first authorized execution
+wave should be limited to Milestone 0 evidence/intake and Milestone 1 contracts.
+
+Before public-site integration or a Woo adapter begins, the Project Owner must decide:
+
+1. the Better Farms pilot modules, data-history scope, exclusions, success measures, and rollback limits;
+2. the public-site and dashboard/API domain topology and authentication/link ownership;
+3. whether CMS/Puck publishing updates the public site at runtime, triggers a static rebuild, or uses a
+   reviewed hybrid;
+4. which parts of Woo prototypes `325188d` and `ffd11a6` form the accepted import contract;
+5. the client approvers, RPO/RTO, provider ownership, and launch authority.
+
+See [Orchestrator Client Migration Review](orchestrator-client-migration-review-2026-09-03.md) for bounded
+task ownership and acceptance criteria.
+
+This plan alone authorizes no product implementation, deployment, or infrastructure mutation.

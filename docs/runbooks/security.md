@@ -6,8 +6,8 @@
 |---|---|---|
 | `SESSION_SECRET` | Production | JWT signing secret. Must NOT be the dev default (`dev-secret-change-me`). Use a cryptographically random string ≥ 32 characters. |
 | `DATABASE_URL` | Production | PostgreSQL connection string. |
-| `APP_URL` | Recommended | Canonical URL of the application (e.g., `https://app.example.com`). Used for origin checking. Not enforced at startup but strongly recommended for production. |
-| `TRUSTED_ORIGINS` | Optional | Comma-separated list of additional trusted origins for the CSRF origin check (e.g., `https://admin.example.com,https://staging.example.com`). |
+| `APP_URL` | Client production preflight | Current canonical Core Platform service origin (e.g., `https://app.example.com`). Used for origin checking and generated links. |
+| `TRUSTED_ORIGINS` | Client production preflight | Comma-separated browser origins allowed by the CSRF origin check (e.g., `https://app.example.com,https://www.example.com`). |
 | `SETUP_TOKEN` | Optional | One-time token required to create the initial admin account via `/api/setup/admin`. |
 | `STRIPE_SECRET_KEY` | Production | Stripe API secret key for payment processing. |
 | `STRIPE_WEBHOOK_SECRET` | Production | Stripe webhook signing secret for verifying webhook payloads. |

@@ -28,6 +28,7 @@ interface BackupSequenceSnapshot {
 
 interface BackupManifest {
   schemaVersion: 1;
+  clientStackId?: string | null;
   createdAt: string;
   key: string;
   reason: BackupRunReason;
@@ -290,6 +291,7 @@ export async function runSystemBackup(reason: BackupRunReason = "manual") {
 
     const manifest: BackupManifest = {
       schemaVersion: 1,
+      clientStackId: process.env.CLIENT_STACK_ID?.trim() || null,
       createdAt: createdAt.toISOString(),
       key: buildSnapshotKey(createdAt, reason),
       reason,
