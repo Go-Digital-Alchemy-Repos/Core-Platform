@@ -100,4 +100,24 @@ describe("client site manifest", () => {
       );
     }
   });
+
+  it("rejects defaults that do not satisfy the declared editable fields", async () => {
+    const input = await fixture();
+    const puck = input.puck as {
+      editableComponents: Array<{ defaultContent: Record<string, unknown> }>;
+    };
+    puck.editableComponents[0].defaultContent.heading = "";
+    const result = validateClientSiteManifest(input);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: "puck.editableComponents.0.defaultContent",
+            code: "invalid_default_content",
+          }),
+        ]),
+      );
+    }
+  });
 });

@@ -1,0 +1,72 @@
+import { z } from "zod";
+import type { ClientSiteManifest } from "./client-site-manifest";
+
+export type ClientSiteEditableComponent = ClientSiteManifest["puck"]["editableComponents"][number];
+
+const sitePath = /^\/(?!\/)[^\s]*$/;
+
+function isCredentialFreeHttps(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
+function flattenLeaves(
+  value: unknown,
+  allowedPaths: Set<string>,
+  prefix = "",
+): Map<string, unknown> {
+  const leaves = new Map<string, unknown>();
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    if (prefix) leaves.set(prefix, value);
+    return leaves;
+  }
+  for (const [key, child] of Object.entries(value)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (child && typeof child === "object" && !Array.isArray(child)) {
+      if (![...allowedPaths].some((allowed) => allowed.startsWith(`${path}.`))) {
+        throw new Error(`Content field is not editable: ${path}`);
+      }
+      for (const [leafPath, leaf] of flattenLeaves(child, allowedPaths, path))
+        leaves.set(leafPath, leaf);
+    } else {
+      leaves.set(path, child);
+    }
+  }
+  return leaves;
+}
+
+export function validateClientSiteComponentContent(
+  component: ClientSiteEditableComponent,
+  input: unknown,
+): Record<string, unknown> {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw new Error("Content must be an object");
+  }
+  const allowed = new Set(component.fields.map((field) => field.path));
+  const leaves = flattenLeaves(input, allowed);
+  for (const path of leaves.keys()) {
+    if (!allowed.has(path)) throw new Error(`Content field is not editable: ${path}`);
+  }
+  for (const field of component.fields) {
+    const value = leaves.get(field.path);
+    if (value === undefined || value === null || (typeof value === "string" && !value.trim())) {
+      if (field.required) throw new Error(`${field.label} is required`);
+      continue;
+    }
+    if (typeof value !== "string") throw new Error(`${field.label} must be text`);
+    if (field.maxLength && value.trim().length > field.maxLength) {
+      throw new Error(`${field.label} must be ${field.maxLength} characters or fewer`);
+    }
+    if (field.type === "ctaTarget" && !(sitePath.test(value) || isCredentialFreeHttps(value))) {
+      throw new Error(`${field.label} must be an internal path or credential-free HTTPS URL`);
+    }
+    if (field.type === "image" && !(sitePath.test(value) || isCredentialFreeHttps(value))) {
+      throw new Error(`${field.label} must be an internal path or credential-free HTTPS URL`);
+    }
+  }
+  return z.record(z.unknown()).parse(input);
+}

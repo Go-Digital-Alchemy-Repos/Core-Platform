@@ -15,20 +15,12 @@ After its message listener is ready, the client sends a versioned readiness mess
 admin origin. Core verifies the iframe window, origin, and identifiers before sending content. This
 handshake avoids losing the first preview update during iframe startup.
 
-The bridge is preview-only. It does not persist content, publish, rebuild the site, or change public
-routing.
+The bridge remains preview-only. Persistence and publication use the separate runtime content API described
+in ADR 006, so iframe messages cannot publish or modify stored content.
 
-## Publish-Model Decision
+## Publish Model
 
-The Project Owner must choose one model before persistence and rollback are implemented:
-
-| Model          | Operational effect                                                                 |
-| -------------- | ---------------------------------------------------------------------------------- |
-| Runtime API    | Immediate revisions and direct rollback; public pages depend on Core API/cache.    |
-| Static rebuild | Public artifact is self-contained; publish waits for a successful rebuild/deploy.  |
-| Hybrid         | Runtime preview with static publication; adds synchronization and recovery states. |
-
-For the Better Farms pilot, runtime API publication is the recommended first choice because Core already
-owns CMS revisions and the approved topology provides same-origin `/api`. It avoids adding hosting-provider
-build credentials and webhook state during the pilot. This recommendation is not an approved publishing
-decision.
+The Better Farms pilot uses runtime API publication. Saving creates an immutable draft revision; publishing
+copies the current validated draft into a separate published snapshot. Restoring history creates a new draft
+revision and never rewrites an existing revision. Public reads return only the published snapshot through the
+same-origin `/api` proxy and support ETag revalidation.

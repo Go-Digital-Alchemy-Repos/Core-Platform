@@ -188,6 +188,12 @@ export {
 } from "./event-registrations";
 export { cmsPages, insertCmsPageSchema, type InsertCmsPage, type CmsPage } from "./cms-pages";
 export {
+  clientSiteContent,
+  clientSiteContentRevisions,
+  type ClientSiteContent,
+  type ClientSiteContentRevision,
+} from "./client-site-content";
+export {
   cmsPageRevisions,
   insertCmsPageRevisionSchema,
   type InsertCmsPageRevision,

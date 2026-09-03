@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { validateClientSiteComponentContent } from "./client-site-content-contract";
 
 export const CLIENT_SITE_MANIFEST_SCHEMA_VERSION = "1.0" as const;
 
@@ -66,9 +67,31 @@ const editableComponentSchema = z
     fieldSchemaRef: z.string().min(1),
     allowedRegions: z.array(identifier).min(1),
     editableFields: z.array(z.enum(["heading", "copy", "image", "imageAlt", "ctaTarget"])),
+    fields: z
+      .array(
+        z
+          .object({
+            path: z.string().regex(/^[a-z][A-Za-z0-9]*(?:\.[a-z][A-Za-z0-9]*)*$/),
+            label: z.string().min(1),
+            type: z.enum(["text", "textarea", "image", "imageAlt", "ctaTarget"]),
+            required: z.boolean(),
+            maxLength: z.number().int().positive().optional(),
+          })
+          .strict(),
+      )
+      .min(1),
+    defaultContent: z.record(z.unknown()),
     lockedBehaviors: z.array(z.string().min(1)).min(1),
   })
-  .strict();
+  .strict()
+  .superRefine((component, context) => {
+    addDuplicateIssues(
+      component.fields.map((field) => field.path),
+      ["fields"],
+      "field path",
+      context,
+    );
+  });
 
 const clientSiteManifestBaseSchema = z
   .object({
@@ -397,7 +420,23 @@ export function validateClientSiteManifest(input: unknown): ClientSiteManifestVa
         code: issue.code,
         message: issue.message,
       }));
-  const errors = [...embeddedSecretErrors, ...schemaErrors];
+  const contentErrors = parsed.success
+    ? parsed.data.puck.editableComponents.flatMap((component, index) => {
+        try {
+          validateClientSiteComponentContent(component, component.defaultContent);
+          return [];
+        } catch (error) {
+          return [
+            {
+              path: `puck.editableComponents.${index}.defaultContent`,
+              code: "invalid_default_content",
+              message: error instanceof Error ? error.message : "default content is invalid",
+            },
+          ];
+        }
+      })
+    : [];
+  const errors = [...embeddedSecretErrors, ...schemaErrors, ...contentErrors];
   return errors.length === 0 && parsed.success
     ? { success: true, data: parsed.data, errors: [] }
     : { success: false, errors };

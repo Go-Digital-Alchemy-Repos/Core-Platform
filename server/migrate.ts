@@ -504,6 +504,16 @@ async function ensureCareerDirectoryLocations(migrationsFolder: string) {
   }
 }
 
+async function ensureClientSiteContentTables(migrationsFolder: string) {
+  if (
+    !(await tableExists("client_site_content")) ||
+    !(await tableExists("client_site_content_revisions"))
+  ) {
+    logger.app.info("Applying client site content migration");
+    await runSqlMigrationFile(migrationsFolder, "0044_client_site_content.sql");
+  }
+}
+
 async function reconcileSchema(migrationsFolder: string) {
   await ensureEventSlugs();
   await ensureCrmTables();
@@ -516,6 +526,7 @@ async function reconcileSchema(migrationsFolder: string) {
   await ensureDirectoryProfileModes(migrationsFolder);
   await ensureCmsGalleryTables(migrationsFolder);
   await ensureCareerDirectoryLocations(migrationsFolder);
+  await ensureClientSiteContentTables(migrationsFolder);
 }
 
 export async function runMigrations() {

@@ -6,7 +6,7 @@
     "displayName": "Better Farms Foundation",
     "source": {
       "repository": "https://github.com/Go-Digital-Alchemy-Repos/Better-Farms.git",
-      "revision": "9289aac44bce7d4287163dfd50b3daf404c2e9d0"
+      "revision": "0f0ddde40ed91f2cfa2182eb3627b51c85ec0c9c"
     },
     "owners": [
       {
@@ -17,7 +17,9 @@
     ]
   },
   "compatibility": {
-    "corePlatform": { "minimum": "1.0.0" },
+    "corePlatform": {
+      "minimum": "1.0.0"
+    },
     "siteAdapter": "1.0.0",
     "themeAdapter": "1.0.0",
     "puckRegistry": "1.0.0"
@@ -52,7 +54,11 @@
       "path": "/how-it-works",
       "owner": "site",
       "componentRef": "client/src/pages/HowItWorks.tsx",
-      "navigation": { "label": "HOW IT WORKS", "location": "primary", "order": 2 },
+      "navigation": {
+        "label": "HOW IT WORKS",
+        "location": "primary",
+        "order": 2
+      },
       "editableRegions": [],
       "lockedBehaviors": ["routing", "navigation", "responsive-layout"]
     },
@@ -61,7 +67,11 @@
       "path": "/about",
       "owner": "site",
       "componentRef": "client/src/pages/AboutUs.tsx",
-      "navigation": { "label": "ABOUT US", "location": "primary", "order": 1 },
+      "navigation": {
+        "label": "ABOUT US",
+        "location": "primary",
+        "order": 1
+      },
       "editableRegions": [],
       "lockedBehaviors": ["routing", "navigation", "responsive-layout"]
     },
@@ -70,7 +80,11 @@
       "path": "/contact",
       "owner": "site",
       "componentRef": "client/src/pages/Contact.tsx",
-      "navigation": { "label": "CONTACT", "location": "primary", "order": 5 },
+      "navigation": {
+        "label": "CONTACT",
+        "location": "primary",
+        "order": 5
+      },
       "editableRegions": [],
       "lockedBehaviors": ["routing", "form-validation", "submission", "accessibility"]
     },
@@ -79,7 +93,11 @@
       "path": "/for-farmers",
       "owner": "site",
       "componentRef": "client/src/pages/ForFarmers.tsx",
-      "navigation": { "label": "FOR FARMERS", "location": "primary", "order": 4 },
+      "navigation": {
+        "label": "FOR FARMERS",
+        "location": "primary",
+        "order": 4
+      },
       "editableRegions": [],
       "lockedBehaviors": ["routing", "navigation", "responsive-layout"]
     },
@@ -103,7 +121,11 @@
       "path": "/get-involved",
       "owner": "site",
       "componentRef": "client/src/pages/GetInvolved.tsx",
-      "navigation": { "label": "GET INVOLVED", "location": "primary", "order": 3 },
+      "navigation": {
+        "label": "GET INVOLVED",
+        "location": "primary",
+        "order": 3
+      },
       "editableRegions": [],
       "lockedBehaviors": ["routing", "navigation", "responsive-layout"]
     }
@@ -157,7 +179,7 @@
     "registryId": "better-farms-puck",
     "version": "1.0.0",
     "contentSchemaVersion": "1.0.0",
-    "publishMode": "decision-required",
+    "publishMode": "runtime-api",
     "editableComponents": [
       {
         "key": "fund-a-farm-page",
@@ -172,7 +194,77 @@
           "submission",
           "accessibility",
           "responsive-layout"
-        ]
+        ],
+        "fields": [
+          {
+            "path": "heading",
+            "label": "Heading",
+            "type": "text",
+            "required": true,
+            "maxLength": 120
+          },
+          {
+            "path": "introductionLead",
+            "label": "Introduction lead",
+            "type": "textarea",
+            "required": true,
+            "maxLength": 240
+          },
+          {
+            "path": "introductionBody",
+            "label": "Introduction body",
+            "type": "textarea",
+            "required": true,
+            "maxLength": 400
+          },
+          {
+            "path": "cta.label",
+            "label": "CTA label",
+            "type": "text",
+            "required": true,
+            "maxLength": 80
+          },
+          {
+            "path": "cta.target",
+            "label": "CTA target",
+            "type": "ctaTarget",
+            "required": true
+          },
+          {
+            "path": "impactStatement",
+            "label": "Impact statement",
+            "type": "textarea",
+            "required": true,
+            "maxLength": 400
+          },
+          {
+            "path": "heroImage.src",
+            "label": "Hero image",
+            "type": "image",
+            "required": true
+          },
+          {
+            "path": "heroImage.alt",
+            "label": "Hero image alt text",
+            "type": "imageAlt",
+            "required": true,
+            "maxLength": 240
+          }
+        ],
+        "defaultContent": {
+          "heading": "Fund a Farm Today",
+          "introductionLead": "Your contribution can strengthen a farm for decades.",
+          "introductionBody": "Put your dollars to work and get proof of what you've built.",
+          "cta": {
+            "label": "Donate Now",
+            "target": "/contact"
+          },
+          "impactStatement": "501(c)(3) nonprofit organization | 100% of your funds go to farm-level work | ESG impact reporting included",
+          "heroImage": {
+            "src": "/sourcePhotos/fund-a-farm/field-sunset.webp",
+            "alt": "Farmers reviewing plans in a field at sunset"
+          }
+        }
       }
     ]
   },

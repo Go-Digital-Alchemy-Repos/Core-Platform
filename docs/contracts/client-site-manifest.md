@@ -6,8 +6,9 @@ single-client Core Platform deployment. The canonical Zod schema and structured 
 
 The manifest records client identity, immutable source revision, compatibility ranges, public and admin
 origins, same-origin `/api` routing, build/start commands, routes and navigation, assets, semantic theme
-metadata, editable Puck registrations, forms, integrations, modules, and references to secrets held by the
-deployment environment.
+metadata, exact editable field descriptors and defaults, Puck registrations, forms, integrations, modules,
+and references to secrets held by the deployment environment. Core generates editor controls and validates
+submitted content from those field descriptors; undeclared leaf fields are rejected.
 
 ## Compatibility
 
@@ -38,9 +39,8 @@ the schema version and client stack ID; failure output includes structured error
 messages.
 
 The [Better Farms example](../pilots/better-farms/client-site-manifest.example.json) is an adapter-facing
-fixture based on source revision `9289aac44bce7d4287163dfd50b3daf404c2e9d0`. It documents current site
-routes and assets while marking unresolved publishing and ecommerce behavior explicitly. It does not
-change the Better Farms repository or authorize deployment.
+fixture based on source revision `0f0ddde40ed91f2cfa2182eb3627b51c85ec0c9c`. It documents current site
+routes, assets, and the approved runtime API publishing mode. It does not authorize deployment.
 
 See the [Client Site Preview Bridge](client-site-preview.md) for the versioned cross-origin preview
-protocol and the publishing decision that remains open.
+protocol and [ADR 006](../adr/006-runtime-client-site-content.md) for publication behavior.

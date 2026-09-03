@@ -76,6 +76,9 @@ const AdminApplicationDetailPage = lazy(() => import("@/features/admin/applicati
 const CmsOverviewPage = lazy(() => import("@/features/admin/cms/cms-overview-page"));
 const CmsPagesPage = lazy(() => import("@/features/admin/cms/cms-pages-page"));
 const CmsPageEditorPage = lazy(() => import("@/features/admin/cms/cms-page-editor-page"));
+const ClientSiteContentEditorPage = lazy(
+  () => import("@/features/admin/cms/client-site-content-editor-page"),
+);
 const CmsGalleriesPage = lazy(() => import("@/features/admin/cms/cms-galleries-page"));
 const CmsGalleryEditorPage = lazy(() => import("@/features/admin/cms/cms-gallery-editor-page"));
 const CmsMediaPage = lazy(() => import("@/features/admin/cms/cms-media-page"));
@@ -696,6 +699,11 @@ function Router() {
         <Route path="/admin/applications">
           <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["directory"]}>
             {siteFeatures.directoryEnabled ? <AdminApplicationsPage /> : <NotFound />}
+          </ProtectedRoute>
+        </Route>
+        <Route path="/admin/cms/client-sites/better-farms/fund-a-farm">
+          <ProtectedRoute roles={["admin", "editor"]} adminPermissions={["content"]}>
+            {siteFeatures.cmsEnabled ? <ClientSiteContentEditorPage /> : <NotFound />}
           </ProtectedRoute>
         </Route>
         <Route path="/admin/cms">

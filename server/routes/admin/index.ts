@@ -25,6 +25,7 @@ import ecommerceRoutes from "./ecommerce.routes";
 import careersRoutes from "./careers.routes";
 import portfolioRoutes from "./portfolio.routes";
 import membershipRoutes from "./membership.routes";
+import clientSiteContentRoutes from "./client-site-content.routes";
 import {
   requireBlogEnabled,
   requireCareersEnabled,
@@ -58,6 +59,12 @@ router.use("/events", requireEventsEnabled, requireAdminPermission("content"), e
 router.use("/blog", requireBlogEnabled, requireAdminPermission("content"), blogRoutes);
 router.use("/", requireAdminPermission("content"), registrationRoutes);
 router.use("/cms", requireCmsEnabled, requireAdminPermission("content"), cmsRoutes);
+router.use(
+  "/client-site-content",
+  requireCmsEnabled,
+  requireAdminPermission("content"),
+  clientSiteContentRoutes,
+);
 router.use(
   "/cms",
   requireCmsEnabled,
