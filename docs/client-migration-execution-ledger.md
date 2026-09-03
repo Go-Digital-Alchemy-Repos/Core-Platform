@@ -54,6 +54,14 @@ configuration remain explicitly deferred.
 
 ## Accepted Checkpoints
 
+### 2026-09-03 — Ecommerce paid-order atomicity
+
+- **Core:** `codex/uncommitted-work-audit`; milestone commit recorded in Git history and pushed after validation.
+- **Implemented:** order-row serialization and one database transaction for Stripe paid-state transition, coupon redemption/counter mutation, guarded stock deduction, and inventory adjustment evidence. Admin re-save of paid state now retries the existing idempotent coupon and stock paths to recover partial legacy/manual work.
+- **Validation:** 61 focused ecommerce service and webhook tests; project type check, lint, formatting, full test suite, production build, client-site manifest validation, bundle budgets, and diff whitespace checks.
+- **Production impact:** none. No live payment, client data, database mutation, or deployment.
+- **Risk carried forward:** manual-order creation still reaches paid effects through recoverable separate calls; database-enforced effect keys, checkout request idempotency, serialized refundable balance, durable email/jobs/replay, and Stripe sandbox concurrency evidence remain release blockers.
+
 ### 2026-09-03 — Ecommerce webhook delivery hardening
 
 - **Core:** `codex/uncommitted-work-audit`; milestone commit recorded in Git history and pushed after validation.

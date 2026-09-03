@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "../db";
 import { requiresAtomicInventoryStockGuard } from "../services/ecommerce-inventory.service";
@@ -842,6 +842,7 @@ export class EcommerceStorage {
 
   async recordCouponRedemptionForOrder(orderId: string): Promise<void> {
     await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${orderId} FOR UPDATE`);
       const [order] = await tx
         .select()
         .from(ecommerceOrders)
@@ -1189,30 +1190,124 @@ export class EcommerceStorage {
     return order;
   }
 
-  async markOrderPaidIfUnpaid(
-    id: string,
+  async settlePaidOrder(
+    orderId: string,
     paymentIntentId: string,
-  ): Promise<EcommerceOrder | undefined> {
-    const [order] = await db
-      .update(ecommerceOrders)
-      .set({
-        status: "paid",
-        paymentStatus: "paid",
-        stripePaymentIntentId: paymentIntentId,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(ecommerceOrders.id, id),
-          or(
-            isNull(ecommerceOrders.stripePaymentIntentId),
-            eq(ecommerceOrders.stripePaymentIntentId, paymentIntentId),
-          ),
-          or(ne(ecommerceOrders.status, "paid"), ne(ecommerceOrders.paymentStatus, "paid")),
-        ),
-      )
-      .returning();
-    return order;
+  ): Promise<{ order: EcommerceOrder | undefined; transitioned: boolean }> {
+    return db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${orderId} FOR UPDATE`);
+      const [existing] = await tx
+        .select()
+        .from(ecommerceOrders)
+        .where(eq(ecommerceOrders.id, orderId));
+      if (!existing) return { order: undefined, transitioned: false };
+      if (existing.stripePaymentIntentId && existing.stripePaymentIntentId !== paymentIntentId) {
+        throw new Error("PaymentIntent does not match this order");
+      }
+
+      const transitioned = existing.status !== "paid" || existing.paymentStatus !== "paid";
+      let order = existing;
+      if (transitioned) {
+        const [updated] = await tx
+          .update(ecommerceOrders)
+          .set({
+            status: "paid",
+            paymentStatus: "paid",
+            stripePaymentIntentId: paymentIntentId,
+            updatedAt: new Date(),
+          })
+          .where(eq(ecommerceOrders.id, orderId))
+          .returning();
+        order = updated;
+      }
+
+      if (order.couponCode && order.discountAmount > 0) {
+        const [existingRedemption] = await tx
+          .select()
+          .from(ecommerceCouponRedemptions)
+          .where(eq(ecommerceCouponRedemptions.orderId, orderId))
+          .limit(1);
+        if (!existingRedemption) {
+          const [coupon] = await tx
+            .select()
+            .from(ecommerceCoupons)
+            .where(eq(ecommerceCoupons.code, order.couponCode));
+          if (coupon) {
+            const [customer] = await tx
+              .select()
+              .from(ecommerceCustomers)
+              .where(eq(ecommerceCustomers.id, order.customerId));
+            await tx
+              .update(ecommerceCoupons)
+              .set({ timesUsed: sql`${ecommerceCoupons.timesUsed} + 1`, updatedAt: new Date() })
+              .where(eq(ecommerceCoupons.id, coupon.id));
+            await tx.insert(ecommerceCouponRedemptions).values({
+              couponId: coupon.id,
+              orderId: order.id,
+              customerId: order.customerId,
+              couponCode: coupon.code,
+              customerEmail: customer?.email.trim().toLowerCase(),
+              discountAmount: order.discountAmount,
+            });
+          }
+        }
+      }
+
+      const items = await tx
+        .select()
+        .from(ecommerceOrderItems)
+        .where(eq(ecommerceOrderItems.orderId, orderId));
+      for (const item of items) {
+        if (!item.variantId) continue;
+        const [existingAdjustment] = await tx
+          .select()
+          .from(ecommerceInventoryAdjustments)
+          .where(
+            and(
+              eq(ecommerceInventoryAdjustments.orderId, orderId),
+              eq(ecommerceInventoryAdjustments.variantId, item.variantId),
+              eq(ecommerceInventoryAdjustments.reason, "order_paid"),
+            ),
+          )
+          .limit(1);
+        if (existingAdjustment) continue;
+
+        const [variant] = await tx
+          .select()
+          .from(ecommerceProductVariants)
+          .where(eq(ecommerceProductVariants.id, item.variantId))
+          .limit(1);
+        if (!variant?.trackInventory) continue;
+        const whereClause = requiresAtomicInventoryStockGuard(variant)
+          ? and(
+              eq(ecommerceProductVariants.id, variant.id),
+              gte(ecommerceProductVariants.inventoryQuantity, item.quantity),
+            )
+          : eq(ecommerceProductVariants.id, variant.id);
+        const [updatedVariant] = await tx
+          .update(ecommerceProductVariants)
+          .set({
+            inventoryQuantity: sql`${ecommerceProductVariants.inventoryQuantity} - ${item.quantity}`,
+            updatedAt: new Date(),
+          })
+          .where(whereClause)
+          .returning({ inventoryQuantity: ecommerceProductVariants.inventoryQuantity });
+        if (!updatedVariant) {
+          throw new Error(`Insufficient inventory for variant ${variant.id}`);
+        }
+        await tx.insert(ecommerceInventoryAdjustments).values({
+          productId: item.productId,
+          variantId: variant.id,
+          orderId,
+          delta: -item.quantity,
+          quantityAfter: updatedVariant.inventoryQuantity,
+          reason: "order_paid",
+          note: `Order ${orderId}`,
+        });
+      }
+
+      return { order, transitioned };
+    });
   }
 
   async createPaymentRequest(
@@ -1278,6 +1373,7 @@ export class EcommerceStorage {
 
   async deductInventoryForPaidOrder(orderId: string): Promise<void> {
     await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM ecommerce_orders WHERE id = ${orderId} FOR UPDATE`);
       const items = await tx
         .select()
         .from(ecommerceOrderItems)

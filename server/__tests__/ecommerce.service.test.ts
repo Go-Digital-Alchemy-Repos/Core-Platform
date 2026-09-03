@@ -15,7 +15,7 @@ const mockShippingZones: EcommerceShippingZone[] = [];
 const mockShippingRates: EcommerceShippingRate[] = [];
 const mockGetOrder = vi.fn();
 const mockUpdateOrder = vi.fn();
-const mockMarkOrderPaidIfUnpaid = vi.fn();
+const mockSettlePaidOrder = vi.fn();
 const mockGetOrderWithDetails = vi.fn();
 const mockGetCustomer = vi.fn();
 const mockFindOrCreateCustomer = vi.fn();
@@ -99,7 +99,7 @@ vi.mock("../storage/index", () => ({
       countCouponRedemptions: mockCountCouponRedemptions,
       getOrder: mockGetOrder,
       updateOrder: mockUpdateOrder,
-      markOrderPaidIfUnpaid: mockMarkOrderPaidIfUnpaid,
+      settlePaidOrder: mockSettlePaidOrder,
       getOrderWithDetails: mockGetOrderWithDetails,
       getCustomer: mockGetCustomer,
       findOrCreateCustomer: mockFindOrCreateCustomer,
@@ -141,7 +141,7 @@ describe("ecommerce services", () => {
     mockShippingRates.length = 0;
     mockGetOrder.mockReset();
     mockUpdateOrder.mockReset();
-    mockMarkOrderPaidIfUnpaid.mockReset();
+    mockSettlePaidOrder.mockReset();
     mockGetOrderWithDetails.mockReset();
     mockGetCustomer.mockReset();
     mockFindOrCreateCustomer.mockReset();
@@ -2058,7 +2058,9 @@ describe("ecommerce services", () => {
       paymentStatus: "paid",
     } as EcommerceOrder;
     mockGetOrder.mockResolvedValueOnce(pendingOrder).mockResolvedValueOnce(paidOrder);
-    mockMarkOrderPaidIfUnpaid.mockResolvedValueOnce(paidOrder);
+    mockSettlePaidOrder
+      .mockResolvedValueOnce({ order: paidOrder, transitioned: true })
+      .mockResolvedValueOnce({ order: paidOrder, transitioned: false });
     mockGetOrderWithDetails.mockResolvedValue({
       ...paidOrder,
       customer: null,
@@ -2070,10 +2072,10 @@ describe("ecommerce services", () => {
     await markEcommerceOrderPaid("order-1", "pi_123");
     await markEcommerceOrderPaid("order-1", "pi_123");
 
-    expect(mockMarkOrderPaidIfUnpaid).toHaveBeenCalledTimes(1);
+    expect(mockSettlePaidOrder).toHaveBeenCalledTimes(2);
     expect(mockUpdateOrder).not.toHaveBeenCalled();
-    expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledTimes(1);
-    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledTimes(2);
+    expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
     expect(mockSendEcommerceOrderConfirmation).toHaveBeenCalledTimes(1);
   });
 
@@ -2091,7 +2093,7 @@ describe("ecommerce services", () => {
       paymentStatus: "paid",
     } as EcommerceOrder;
     mockGetOrder.mockResolvedValue(pendingOrder);
-    mockMarkOrderPaidIfUnpaid.mockResolvedValue(undefined);
+    mockSettlePaidOrder.mockResolvedValue({ order: paidOrder, transitioned: false });
     mockGetOrderWithDetails.mockResolvedValue({
       ...paidOrder,
       customer: null,
@@ -2102,9 +2104,9 @@ describe("ecommerce services", () => {
 
     await markEcommerceOrderPaid("order-1", "pi_123");
 
-    expect(mockMarkOrderPaidIfUnpaid).toHaveBeenCalledWith("order-1", "pi_123");
+    expect(mockSettlePaidOrder).toHaveBeenCalledWith("order-1", "pi_123");
     expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
-    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledTimes(1);
+    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
     expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
   });
 
@@ -2116,16 +2118,12 @@ describe("ecommerce services", () => {
       paymentStatus: "unpaid",
       stripePaymentIntentId: null,
     } as EcommerceOrder;
-    const mismatchedOrder = {
-      ...pendingOrder,
-      stripePaymentIntentId: "pi_other",
-    } as EcommerceOrder;
-    mockGetOrder.mockResolvedValueOnce(pendingOrder).mockResolvedValueOnce(mismatchedOrder);
-    mockMarkOrderPaidIfUnpaid.mockResolvedValue(undefined);
+    mockGetOrder.mockResolvedValue(pendingOrder);
+    mockSettlePaidOrder.mockRejectedValue(new Error("PaymentIntent does not match this order"));
 
     await expect(markEcommerceOrderPaid("order-1", "pi_123")).rejects.toThrow(/PaymentIntent/);
 
-    expect(mockMarkOrderPaidIfUnpaid).toHaveBeenCalledWith("order-1", "pi_123");
+    expect(mockSettlePaidOrder).toHaveBeenCalledWith("order-1", "pi_123");
     expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
     expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
     expect(mockSendEcommerceOrderConfirmation).not.toHaveBeenCalled();
@@ -2166,7 +2164,7 @@ describe("ecommerce services", () => {
     expect(mockSendEcommerceOrderStatusEmail).toHaveBeenCalledTimes(1);
   });
 
-  it("does not refinalize inventory when an admin saves an already-paid order", async () => {
+  it("reconciles idempotent paid effects when an admin saves an already-paid order", async () => {
     const { updateAdminEcommerceOrder } = await import("../services/ecommerce-order.service");
     const paidOrder = {
       id: "order-admin-2",
@@ -2192,8 +2190,8 @@ describe("ecommerce services", () => {
       authorId: "admin-1",
       body: "Already handled",
     });
-    expect(mockRecordCouponRedemptionForOrder).not.toHaveBeenCalled();
-    expect(mockDeductInventoryForPaidOrder).not.toHaveBeenCalled();
+    expect(mockRecordCouponRedemptionForOrder).toHaveBeenCalledWith("order-admin-2");
+    expect(mockDeductInventoryForPaidOrder).toHaveBeenCalledWith("order-admin-2");
     expect(mockSendEcommerceOrderStatusEmail).not.toHaveBeenCalled();
   });
 

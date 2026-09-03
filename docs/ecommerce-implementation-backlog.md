@@ -27,11 +27,12 @@ checks, and domain/origin checks pass for that client's isolated environment.
 ## Phase 1 — Money and Stock Correctness
 
 - [x] Atomically claim Stripe webhook events before side effects, with retryable failure and stale-claim recovery state.
+- [x] Commit Stripe paid-order status, coupon redemption, and inventory deduction in one order-locked database transaction.
 - Move payment side effects to durable, idempotent jobs with retry and dead-letter visibility.
 - Add payment-provider reconciliation and replay tooling.
 - Make checkout creation idempotent for client retries.
 - Add inventory reservation/expiry or document and enforce a client-approved oversell policy.
-- Enforce unique inventory and coupon side-effect keys and test concurrent delivery.
+- Serialize inventory and coupon effects by order; add database-enforced side-effect keys and database-backed concurrency coverage.
 - Serialize refundable-balance changes and add provider idempotency.
 - Define compensated order transitions for paid-but-unfulfilled and failed side effects.
 

@@ -830,8 +830,7 @@ export async function updateAdminEcommerceOrder(
   }
 
   const changedStatus = Boolean(data.status && previous.status !== data.status);
-  const newlyPaid = data.status === "paid" && previous.paymentStatus !== "paid";
-  if (newlyPaid) {
+  if (data.status === "paid") {
     await storage.ecommerce.recordCouponRedemptionForOrder(order.id);
     await storage.ecommerce.deductInventoryForPaidOrder(order.id);
   }
@@ -912,22 +911,9 @@ export async function markEcommerceOrderPaid(orderId: string, paymentIntentId: s
   if (existing.stripePaymentIntentId && existing.stripePaymentIntentId !== paymentIntentId) {
     throw new Error("PaymentIntent does not match this order");
   }
-  const wasAlreadyPaid = existing.status === "paid" && existing.paymentStatus === "paid";
-  const transitioned = wasAlreadyPaid
-    ? undefined
-    : await storage.ecommerce.markOrderPaidIfUnpaid(orderId, paymentIntentId);
-  if (!wasAlreadyPaid && !transitioned) {
-    const current = await storage.ecommerce.getOrder(orderId);
-    if (current?.stripePaymentIntentId && current.stripePaymentIntentId !== paymentIntentId) {
-      throw new Error("PaymentIntent does not match this order");
-    }
-  }
-  const shouldSendPaidEffects = Boolean(transitioned);
-
-  if (shouldSendPaidEffects) await storage.ecommerce.recordCouponRedemptionForOrder(orderId);
-  await storage.ecommerce.deductInventoryForPaidOrder(orderId);
+  const settlement = await storage.ecommerce.settlePaidOrder(orderId, paymentIntentId);
   const details = await storage.ecommerce.getOrderWithDetails(orderId);
-  if (details && shouldSendPaidEffects) await sendEcommerceOrderConfirmation(details);
+  if (details && settlement.transitioned) await sendEcommerceOrderConfirmation(details);
   return details;
 }
 

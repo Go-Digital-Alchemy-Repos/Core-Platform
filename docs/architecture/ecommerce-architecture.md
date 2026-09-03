@@ -94,6 +94,8 @@ Current webhook behavior:
 - `refund.created` and `refund.updated` reconcile refund records and order payment status.
 - A successful handler marks the delivery `processed`; a thrown failure records bounded diagnostic text and returns an error so Stripe can retry.
 
+Paid-order reconciliation locks the order row and commits the paid status, coupon redemption, coupon usage counter, inventory decrements, and inventory adjustment records in one database transaction. Reprocessing the same order observes its existing redemption and inventory adjustments. The confirmation email is sent only after this transaction commits; durable email delivery and replay visibility remain an operations gate.
+
 In production, an ecommerce Stripe webhook secret is required before unsigned ecommerce webhooks can be accepted.
 
 ## Feature Gate
