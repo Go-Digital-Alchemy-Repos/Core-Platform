@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { clientSitePreviewMessageSchema } from "./client-site-preview";
+import {
+  clientSitePreviewMessageSchema,
+  clientSitePreviewReadySchema,
+} from "./client-site-preview";
 
 const validMessage = {
   type: "core-platform:client-site-preview",
@@ -24,5 +27,17 @@ describe("client site preview protocol", () => {
         script: "alert(1)",
       }).success,
     ).toBe(false);
+  });
+
+  it("validates the iframe readiness handshake", () => {
+    expect(
+      clientSitePreviewReadySchema.parse({
+        type: "core-platform:client-site-preview-ready",
+        protocolVersion: "1.0",
+        clientStackId: "better-farms-foundation",
+        routeId: "fund-a-farm",
+        componentKey: "fund-a-farm-page",
+      }),
+    ).toMatchObject({ type: "core-platform:client-site-preview-ready" });
   });
 });

@@ -11,6 +11,10 @@ The client site separately checks the sender against its configured admin origin
 client, route, and component identifiers, and validates the component content before rendering. Unknown
 protocol versions, components, fields, origins, and arbitrary JSX are rejected.
 
+After its message listener is ready, the client sends a versioned readiness message to the exact trusted
+admin origin. Core verifies the iframe window, origin, and identifiers before sending content. This
+handshake avoids losing the first preview update during iframe startup.
+
 The bridge is preview-only. It does not persist content, publish, rebuild the site, or change public
 routing.
 

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   clientSitePreviewMessageSchema,
+  clientSitePreviewReadySchema,
   type ClientSitePreviewMessage,
 } from "@shared/client-site-preview";
 
@@ -21,11 +22,27 @@ export function ClientSitePreviewFrame({
   const targetOrigin = useMemo(() => new URL(src).origin, [src]);
   const validatedMessage = useMemo(() => clientSitePreviewMessageSchema.parse(message), [message]);
 
-  const sendPreview = () => {
+  const sendPreview = useCallback(() => {
     frameRef.current?.contentWindow?.postMessage(validatedMessage, targetOrigin);
-  };
+  }, [targetOrigin, validatedMessage]);
 
-  useEffect(sendPreview, [targetOrigin, validatedMessage]);
+  useEffect(sendPreview, [sendPreview]);
+  useEffect(() => {
+    const receiveReady = (event: MessageEvent) => {
+      if (event.origin !== targetOrigin || event.source !== frameRef.current?.contentWindow) return;
+      const ready = clientSitePreviewReadySchema.safeParse(event.data);
+      if (
+        ready.success &&
+        ready.data.clientStackId === validatedMessage.clientStackId &&
+        ready.data.routeId === validatedMessage.routeId &&
+        ready.data.componentKey === validatedMessage.componentKey
+      ) {
+        sendPreview();
+      }
+    };
+    window.addEventListener("message", receiveReady);
+    return () => window.removeEventListener("message", receiveReady);
+  }, [sendPreview, targetOrigin, validatedMessage]);
 
   return (
     <iframe
