@@ -2,6 +2,8 @@
 
 Recommended improvements for the next development wave, ordered by impact and feasibility.
 
+> **Infrastructure decision — September 3, 2026:** Production was moved from Neon back to Railway Postgres. References below to a planned Neon migration are superseded and require a new owner decision before implementation.
+
 ---
 
 ## Architecture Sequencing Guardrail

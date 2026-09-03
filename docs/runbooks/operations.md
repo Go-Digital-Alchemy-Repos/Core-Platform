@@ -109,8 +109,8 @@ node server/index.js | jq '.'
 
 The `/api/health/ready` endpoint runs `SELECT 1` against the database. If it returns 503, check:
 1. `DATABASE_URL` environment variable is set correctly
-2. Network connectivity to the Neon database endpoint
-3. Database is not in a suspended state (Neon auto-suspends idle databases)
+2. Network connectivity to the Railway Postgres private hostname
+3. The Railway database service and its volume are healthy
 
 ### Stripe Webhook Debugging
 

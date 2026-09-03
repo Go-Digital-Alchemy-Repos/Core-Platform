@@ -129,12 +129,10 @@ export async function ensureSystemEcommerce() {
 
   for (const category of seededCategories) {
     const existingCategory = categoryBySlug.get(category.slug);
-    if (existingCategory) {
-      await storage.ecommerce.updateCategory(existingCategory.id, category);
-    } else {
-      const created = await storage.ecommerce.createCategory({ ...category, active: true });
-      categoryBySlug.set(created.slug, created);
-    }
+    if (existingCategory) continue;
+
+    const created = await storage.ecommerce.createCategory({ ...category, active: true });
+    categoryBySlug.set(created.slug, created);
   }
 
   const existingProducts = await storage.ecommerce.getProducts();
@@ -145,32 +143,7 @@ export async function ensureSystemEcommerce() {
       .map((slug) => categoryBySlug.get(slug)?.id)
       .filter((id): id is string => Boolean(id));
     const existingProduct = productBySku.get(product.sku);
-    if (existingProduct) {
-      await storage.ecommerce.updateProduct(
-        existingProduct.id,
-        {
-          name: product.name,
-          tagline: product.tagline,
-          description: product.description,
-          price: product.price,
-          salePrice: product.salePrice,
-          primaryImage: product.primaryImage,
-          features: product.features,
-          included: product.included,
-          sku: product.sku,
-          tags: product.tags,
-          urlSlug: product.urlSlug,
-          metaTitle: product.metaTitle,
-          metaDescription: product.metaDescription,
-          metaKeywords: "Core Platform, ecommerce, digital resources",
-          ogTitle: product.metaTitle,
-          ogDescription: product.metaDescription,
-          ogImage: product.primaryImage,
-        },
-        categoryIds,
-      );
-      continue;
-    }
+    if (existingProduct) continue;
     if (productSlugs.has(product.urlSlug)) continue;
     await storage.ecommerce.createProduct(
       {

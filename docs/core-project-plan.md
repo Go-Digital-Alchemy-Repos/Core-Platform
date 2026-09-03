@@ -2,6 +2,8 @@
 
 This plan captures the current strategic direction for Core Platform based on planning conversations around feature refinement, reusable themes, Neon, multi-tenancy, Next.js, and a future built-in agent panel. Treat it as the working guide for sequencing decisions. Revisit it when product, tenant-isolation, hosting, billing, or client-workflow requirements change.
 
+> **Infrastructure decision — September 3, 2026:** Production was moved from Neon back to Railway Postgres. The Neon phase and sequencing statements in this plan are superseded and require explicit reconsideration before implementation.
+
 ## Guiding Product Direction
 
 Core Platform should become a reusable multi-tenant website and operations platform where each tenant can launch from a polished design foundation, manage content and business workflows through the CMS/admin dashboard, and eventually use an integrated agent panel to safely design, operate, and improve their site.

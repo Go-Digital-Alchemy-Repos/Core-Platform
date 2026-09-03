@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Node.js (LTS recommended)
-- PostgreSQL database (Neon serverless recommended)
+- PostgreSQL database (production uses Railway Postgres)
 - Stripe account (optional, for payments/subscriptions)
 - SMTP email account (optional, for outbound email)
 - Cloudflare R2 bucket (optional, for system backups)

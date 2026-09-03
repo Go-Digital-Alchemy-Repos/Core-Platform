@@ -74,6 +74,6 @@ If a deployment causes issues:
 
 ### Performance Expectations
 
-- **Cold start**: The Neon serverless database may take 1–3 seconds to wake from idle. The readiness probe (`/api/health/ready`) will return 503 until the database is connected.
+- **Database readiness**: The readiness probe (`/api/health/ready`) returns 503 until Railway Postgres accepts queries.
 - **Directory queries**: With current indexing, directory queries should complete in <100ms for tables under 10k rows. Monitor via the metrics endpoint if enabled.
 - **Memory**: Typical RSS usage is 100–200 MB. The health endpoint reports memory usage for monitoring.

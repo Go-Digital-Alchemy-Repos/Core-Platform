@@ -1,5 +1,7 @@
 # Core Platform project review — September 3, 2026
 
+Follow-up: production was subsequently redirected to Railway Postgres and deployment `d3496ee7-2116-4ef8-8eb1-f3c72c2fbe99` passed database-aware readiness. The careers migration defect and destructive ecommerce bootstrap behavior described below were repaired as part of that cutover.
+
 ## Assessment
 
 Core Platform is a substantial React/Vite + Express + PostgreSQL/Drizzle application with CMS and visual editing, directory/provider workflows, events, memberships, CRM, ecommerce, careers, portfolio content, permissions, media, backups, and operational tooling. Its separation into routes, services, storage, and shared schemas is a useful foundation. There are 94 `pgTable` declarations and 77 passing test files in the reviewed checkout.

@@ -103,7 +103,7 @@ All authentication routes are designed to prevent email enumeration:
 ## Deployment Security Checklist
 
 - [ ] `SESSION_SECRET` is set to a unique, cryptographically random value (≥ 32 chars)
-- [ ] `DATABASE_URL` points to a production database with TLS enabled
+- [ ] `DATABASE_URL` points to the production database through TLS or the provider's private network
 - [ ] `APP_URL` is set to the canonical production URL
 - [ ] `TRUSTED_ORIGINS` includes any additional legitimate origins (staging, admin panels)
 - [ ] `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set for payment processing

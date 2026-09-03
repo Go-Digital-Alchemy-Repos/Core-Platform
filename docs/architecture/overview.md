@@ -9,8 +9,8 @@
 | State / Data     | TanStack Query v5                      | Global defaults: `staleTime: 5min`, `gcTime: 10min`                                            |
 | UI Framework     | shadcn/ui + Tailwind CSS               | Dark mode via class strategy, theme presets system                                             |
 | Backend          | Express 5 (TypeScript)                 | Runs on Node.js with HTTP server                                                               |
-| ORM              | Drizzle ORM                            | PostgreSQL driver via `@neondatabase/serverless`                                               |
-| Database         | PostgreSQL                             | Hosted on Neon (serverless), 45+ B-tree indexes                                                |
+| ORM              | Drizzle ORM                            | PostgreSQL driver via `pg` and `drizzle-orm/node-postgres`                                      |
+| Database         | PostgreSQL                             | Hosted on Railway, with application access over Railway private networking                      |
 | Auth             | JWT (HTTP-only cookies)                | `bcryptjs` for password hashing, 7-day token expiry                                            |
 | Payments         | Stripe                                 | Directory application fees, membership subscriptions, ecommerce checkout, and webhook handling |
 | File Storage     | Cloudflare R2                          | For media uploads, career resumes, images, recordings, and public asset delivery               |

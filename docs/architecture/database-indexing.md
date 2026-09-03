@@ -2,7 +2,7 @@
 
 ## Database Engine
 
-PostgreSQL hosted on Neon (serverless). Accessed via `@neondatabase/serverless` WebSocket driver with Drizzle ORM.
+PostgreSQL hosted on Railway. The application uses `pg` through `drizzle-orm/node-postgres` and connects over Railway private networking in production.
 
 ## Index Strategy
 

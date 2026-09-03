@@ -489,9 +489,17 @@ async function ensureCmsGalleryTables(migrationsFolder: string) {
 }
 
 async function ensureCareerDirectoryLocations(migrationsFolder: string) {
+  const hasCareerJobs = await tableExists("career_jobs");
+  const hasCareerApplications = await tableExists("career_applications");
+  const hasCareerApplicationNotes = await tableExists("career_application_notes");
   const hasCareerDirectoryProfile = await columnExists("career_jobs", "directory_profile_id");
-  if (!hasCareerDirectoryProfile) {
-    logger.app.info("Applying career directory location migration for linked store jobs");
+  if (
+    !hasCareerJobs ||
+    !hasCareerApplications ||
+    !hasCareerApplicationNotes ||
+    !hasCareerDirectoryProfile
+  ) {
+    logger.app.info("Reconciling career schema for legacy database");
     await runSqlMigrationFile(migrationsFolder, "0042_career_directory_locations.sql");
   }
 }
