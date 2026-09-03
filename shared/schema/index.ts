@@ -3,6 +3,7 @@ export {
   therapistProfiles,
   directoryProfileMedia,
   insertTherapistProfileSchema,
+  updateOwnTherapistProfileSchema,
   insertDirectoryProfileMediaSchema,
   type InsertTherapistProfile,
   type TherapistProfile,

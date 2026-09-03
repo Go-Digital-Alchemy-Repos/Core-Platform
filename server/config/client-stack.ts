@@ -50,7 +50,11 @@ export function validateClientStackEnvironment(
   const errors: string[] = [];
   const stackId = env.CLIENT_STACK_ID?.trim() || null;
 
-  requireVariables(env, ["CLIENT_STACK_ID", "DATABASE_URL", "SESSION_SECRET", "APP_URL"], errors);
+  requireVariables(
+    env,
+    ["CLIENT_STACK_ID", "DATABASE_URL", "SESSION_SECRET", "SETUP_TOKEN", "APP_URL"],
+    errors,
+  );
 
   if (stackId && !STACK_ID_PATTERN.test(stackId)) {
     errors.push("CLIENT_STACK_ID must be a lowercase kebab-case identifier");

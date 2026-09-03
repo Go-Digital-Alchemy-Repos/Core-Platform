@@ -6,6 +6,7 @@ function completeEnvironment(): NodeJS.ProcessEnv {
     CLIENT_STACK_ID: "pilot-acme",
     DATABASE_URL: "postgresql://app:secret@postgres.railway.internal:5432/railway",
     SESSION_SECRET: "a-unique-session-secret-that-is-long-enough",
+    SETUP_TOKEN: "a-unique-setup-token-that-is-long-enough",
     APP_URL: "https://shop.example.com",
     TRUSTED_ORIGINS: "https://shop.example.com",
     STRIPE_SECRET_KEY: "sk_test_placeholder",

@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { asyncHandler } from "../middleware/error-handler";
 import * as r2Service from "../services/r2.service";
+import { isPublicR2Key } from "../utils/public-storage-policy";
 
 const router = Router();
-
 function getKeyParam(value: unknown): string {
   if (Array.isArray(value)) {
     return value.join("/");
@@ -16,7 +16,7 @@ router.get(
   "/{*key}",
   asyncHandler(async (req, res) => {
     const key = getKeyParam(req.params.key);
-    if (!key || key.includes("..")) {
+    if (!isPublicR2Key(key)) {
       return res.status(404).send("Not found");
     }
 

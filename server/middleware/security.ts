@@ -12,6 +12,7 @@ export function enforceRequiredSecrets() {
   const required: Record<string, string | undefined> = {
     SESSION_SECRET: process.env.SESSION_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
+    SETUP_TOKEN: process.env.SETUP_TOKEN,
   };
 
   const missing = Object.entries(required)

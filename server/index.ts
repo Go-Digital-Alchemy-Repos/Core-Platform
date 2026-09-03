@@ -140,6 +140,7 @@ app.get("/api/health/metrics", (req, res) => {
 app.use("/api", apiLimiter);
 app.use(originCheck);
 
+app.use("/uploads/career-resumes", (_req, res) => res.status(404).send("Not found"));
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
 const REDACTED_KEYS = [
