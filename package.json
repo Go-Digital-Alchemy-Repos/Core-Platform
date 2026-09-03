@@ -15,6 +15,7 @@
     "deploy:check": "tsx server/scripts/validate-client-stack.ts",
     "manifest:validate": "tsx server/scripts/validate-client-site-manifest.ts",
     "migration:woocommerce:validate": "tsx server/scripts/validate-woocommerce-import.ts",
+    "migration:woocommerce:apply": "tsx server/scripts/apply-woocommerce-import.ts",
     "seed:careers": "tsx server/scripts/seed-careers.ts",
     "seed:events": "NODE_ENV=production tsx server/scripts/seed-events.ts",
     "seed:ecommerce-customer-orders": "tsx server/scripts/seed-ecommerce-customer-orders.ts",

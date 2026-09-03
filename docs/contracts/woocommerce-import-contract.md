@@ -246,6 +246,19 @@ npm run migration:woocommerce:validate -- /secure/path/woocommerce-envelope.json
 The command writes no database state. A ready report exits `0`; a blocked plan exits `2`. Report files are
 created with owner-only permissions and contain aggregate evidence and sanitized issue references only.
 
+After the offline report has been reviewed, an operator may apply a **synthetic or isolated rehearsal** only
+through the explicit durable command below. It rejects cutover mode and requires the exact planned fingerprint;
+it must never be pointed at a production target.
+
+```bash
+npm run migration:woocommerce:apply -- /secure/path/woocommerce-envelope.json \
+  --target-stack isolated-rehearsal \
+  --operator approved-operator-reference \
+  --mode rehearsal \
+  --confirm-fingerprint <sha256-from-dry-run> \
+  --apply
+```
+
 ## 10. Rollback and reconciliation
 
 Rollback deletes only records whose durable mapping was first created by the selected run and whose target

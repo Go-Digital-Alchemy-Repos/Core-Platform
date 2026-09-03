@@ -170,6 +170,14 @@ configuration remain explicitly deferred.
 - **Risk carried forward:** database-backed interrupted/resumed/concurrent batch evidence, approved protected
   rehearsal input, and restoration of pre-existing mapped records remain acceptance gates before any client use.
 
+### 2026-09-03 — WooCommerce rehearsal command guard
+
+- **Implemented:** an explicit durable-apply command that accepts only `rehearsal` mode, requires an exact
+  dry-run fingerprint and `--apply` acknowledgement, bounds batch size, and emits only sanitized aggregate
+  evidence. It dynamically loads the database adapter only after all local input guards pass.
+- **Safety boundary:** the command does not authorize cutover, production targets, client exports, migrations,
+  or deployments. Its usage is recorded in the accepted import contract.
+
 ## Active Sprint
 
 **Objective:** Implement the accepted WooCommerce import contract behind stable planner and repository ports,
