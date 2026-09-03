@@ -12,7 +12,7 @@ Statuses describe repository evidence and do not imply production release approv
 | 2. Better Farms adapter               | In progress | Better Farms branch `codex/site-shell-fund-a-farm` through `0f0ddde`; locked shell, theme adapter, bounded Fund a Farm registry/content, preview, runtime API fallback         | Complete site inventory and expand page, form, SEO, accessibility, responsive, and asset coverage incrementally                                                                           |
 | 3. Railway deployment foundation      | In progress | Client-stack preflight, stack identity, Railway/manual-domain runbook, backup provenance, runtime publishing rollback runbook                                                  | Implement the registrar-neutral onboarding wizard and read-only readiness verification; rehearse restore in a disposable environment before release                                       |
 | 4. WooCommerce adapter                | Planned     | Both prototype branches preserved and independently testable                                                                                                                   | Freeze import contract and mapping/run persistence before reconciling implementation; no client data import                                                                               |
-| 5. Ecommerce correctness              | Planned     | Existing ecommerce security and service test surfaces available                                                                                                                | Audit and close atomicity, idempotency, inventory, refund, reconciliation, and operator-support blockers                                                                                  |
+| 5. Transaction correctness            | In progress | Membership credentials preserve-on-blank policy, trusted Stripe return URLs, and token-owned webhook delivery lifecycle implemented                                            | Close membership effect atomicity and then audit and close ecommerce inventory, coupon, refund, reconciliation, and operator-support blockers                                             |
 | 6. Integrated pilot                   | Blocked     | Depends on Milestones 2–5 and approved infrastructure intake                                                                                                                   | Production-like integration and acceptance suite                                                                                                                                          |
 | 7. Launch and hypercare               | Blocked     | Production release requires all prior gates and current backup/rollback evidence                                                                                               | Explicit go/no-go evidence, approved domains/operators, and successful post-deploy verification                                                                                           |
 | 8. Reusable playbook                  | Planned     | Existing manifest, deployment, and integration documents provide the initial source material                                                                                   | Complete after pilot evidence identifies reusable versus Better Farms-specific work                                                                                                       |
@@ -54,6 +54,14 @@ configuration remain explicitly deferred.
 
 ## Accepted Checkpoints
 
+### 2026-09-03 — Membership payment delivery hardening
+
+- **Core:** `codex/uncommitted-work-audit`; milestone commit recorded in Git history and pushed after validation.
+- **Implemented:** preserve-on-blank membership Stripe credentials with explicit clear semantics; admin form hydration from masked status; trusted-origin checkout and portal return URLs; additive webhook delivery status, attempts, failure evidence, stale-claim recovery, and per-attempt ownership tokens.
+- **Validation:** focused credential, return-URL, webhook lifecycle, and migration tests; project type check, lint, production build, full test suite, client-site manifest validation, bundle budgets, and diff whitespace checks.
+- **Production impact:** none. The additive `0045_membership_webhook_delivery.sql` migration remains unapplied until an approved release.
+- **Risk carried forward:** subscription effects and audit writes are individually idempotent where supported but do not share one database transaction; ecommerce transaction correctness and live Stripe sandbox evidence remain release blockers.
+
 ### 2026-09-03 — Security boundary remediation
 
 - **Core:** `codex/uncommitted-work-audit`; milestone commit recorded in Git history and pushed after
@@ -85,14 +93,14 @@ configuration remain explicitly deferred.
 
 ## Active Sprint
 
-**Objective:** Freeze the remaining Milestone 1 onboarding/domain contracts and implement the first
-Milestone 3 admin onboarding slice: manifest intake, compatibility feedback, preview readiness, deterministic
-manual DNS instructions, and repeatable read-only verification.
+**Objective:** Close the highest-risk transaction correctness gaps in membership and ecommerce before expanding
+the Better Farms pilot surface. Membership credential and webhook delivery safety is the first checkpoint;
+ecommerce payment, inventory, coupon, and refund atomicity follows.
 
-**Write ownership:** the Project Orchestrator owns Core shared contracts, onboarding services/routes/UI, tests,
-and this ledger. Delegated agents are read-only investigators until explicit non-overlapping write ownership is
-assigned.
+**Write ownership:** the Project Orchestrator owns Core transaction services, storage, schema migrations, tests,
+operational documentation, and this ledger. Delegated agents are read-only investigators until explicit
+non-overlapping write ownership is assigned.
 
-**Acceptance gate:** no provider credentials; unsafe manifests fail closed; DNS plans are deterministic;
-verification is read-only and distinguishes pending propagation from invalid configuration; existing Core
-tests, lint, types, build, migration checks, and budgets remain green.
+**Acceptance gate:** no live provider credentials or client transactions; webhook claims are atomic and retryable;
+payment redirects use approved origins; database evolution is additive; existing Core tests, lint, types, build,
+migration checks, manifest validation, and budgets remain green.

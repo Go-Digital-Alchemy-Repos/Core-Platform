@@ -213,6 +213,9 @@ router.put(
         secretKey: z.string().optional(),
         webhookSecret: z.string().optional(),
         customerPortalEnabled: z.boolean().optional(),
+        clearPublishableKey: z.boolean().optional(),
+        clearSecretKey: z.boolean().optional(),
+        clearWebhookSecret: z.boolean().optional(),
       })
       .parse(req.body);
     res.json(await saveMembershipStripeSettings(payload));

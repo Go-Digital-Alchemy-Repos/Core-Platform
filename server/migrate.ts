@@ -444,6 +444,8 @@ async function ensureMembershipTables(migrationsFolder: string) {
     logger.app.info("Applying membership migration for database without membership tables");
     await runSqlMigrationFile(migrationsFolder, "0036_membership.sql");
   }
+  logger.app.info("Reconciling membership webhook delivery state");
+  await runSqlMigrationFile(migrationsFolder, "0045_membership_webhook_delivery.sql");
 }
 
 async function ensureEmailTemplateModules(migrationsFolder: string) {
