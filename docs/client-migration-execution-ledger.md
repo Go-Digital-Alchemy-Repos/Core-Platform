@@ -157,6 +157,19 @@ configuration remain explicitly deferred.
 - **Risk carried forward:** production origins and operators are not yet recorded; the runtime content tables
   remain unapplied until an approved release.
 
+### 2026-09-03 — WooCommerce durable catalog repository
+
+- **Implemented:** a versioned repository port and Drizzle adapter for Phase 1 catalog rehearsal. The adapter
+  creates lifecycle runs, supports durable batch replay, checks source ownership and target baselines, applies categories
+  before products, atomically writes target records, mappings, audits, and checkpoints, and preserves
+  post-import target edits for manual review during rollback.
+- **Validation:** 17 focused planner, lifecycle, and repository tests; TypeScript check; changed-file lint and
+  formatting; and diff whitespace checks passed. No database-backed integration run was performed because no
+  client or rehearsal export is authorized in this workspace.
+- **Production impact:** none. No migration execution, client-data import, deployment, or external service call.
+- **Risk carried forward:** database-backed interrupted/resumed/concurrent batch evidence, approved protected
+  rehearsal input, and restoration of pre-existing mapped records remain acceptance gates before any client use.
+
 ## Active Sprint
 
 **Objective:** Implement the accepted WooCommerce import contract behind stable planner and repository ports,
