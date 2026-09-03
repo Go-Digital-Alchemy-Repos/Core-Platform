@@ -54,6 +54,20 @@ configuration remain explicitly deferred.
 
 ## Accepted Checkpoints
 
+### 2026-09-03 — WooCommerce durable lifecycle foundation
+
+- **Core:** `codex/uncommitted-work-audit`; additive migration `0047_woocommerce_import_lifecycle.sql`
+  remains unapplied until an approved release.
+- **Implemented:** schema-backed import runs, source/target ownership mappings, audit entries, quarantine
+  records, active-run serialization, contract/mode/phase validation, explicit resumable state transitions,
+  safe hashed record references, sanitized failure codes, and completion reconciliation gates.
+- **Validation:** 423 tests in 90 files, type check, lint, production build, Better Farms manifest validation,
+  bundle budgets, formatting, migration reconciliation coverage, and diff whitespace checks passed.
+- **Safety boundary:** durable apply accepts phase 1 only. The migration does not import data, and customer,
+  order, delta, or production cutover requests fail closed.
+- **Next gate:** canonical catalog planner and target inspection behind the accepted port, followed by atomic
+  phase-one batch apply and database-backed concurrency/resume tests.
+
 ### 2026-09-03 — WooCommerce import contract freeze
 
 - **Contract:** `core.woocommerce-import` v1.0.0 accepted by the Project Orchestrator for implementation.

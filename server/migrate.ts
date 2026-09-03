@@ -517,6 +517,18 @@ async function ensureClientSiteContentTables(migrationsFolder: string) {
   }
 }
 
+async function ensureWooImportLifecycleTables(migrationsFolder: string) {
+  if (
+    !(await tableExists("woo_import_runs")) ||
+    !(await tableExists("woo_import_mappings")) ||
+    !(await tableExists("woo_import_audit_entries")) ||
+    !(await tableExists("woo_import_quarantine_records"))
+  ) {
+    logger.app.info("Applying WooCommerce import lifecycle migration");
+    await runSqlMigrationFile(migrationsFolder, "0047_woocommerce_import_lifecycle.sql");
+  }
+}
+
 async function reconcileSchema(migrationsFolder: string) {
   await ensureEventSlugs();
   await ensureCrmTables();
@@ -530,6 +542,7 @@ async function reconcileSchema(migrationsFolder: string) {
   await ensureCmsGalleryTables(migrationsFolder);
   await ensureCareerDirectoryLocations(migrationsFolder);
   await ensureClientSiteContentTables(migrationsFolder);
+  await ensureWooImportLifecycleTables(migrationsFolder);
 }
 
 export async function runMigrations() {
