@@ -54,6 +54,22 @@ configuration remain explicitly deferred.
 
 ## Accepted Checkpoints
 
+### 2026-09-03 — WooCommerce phase-one catalog planner
+
+- **Implemented:** strict `core.woocommerce-import` v1.0.0 envelope parsing; stable source fingerprints and
+  operation hashes; deterministic category, simple-product, default-variant, media, and relationship plans;
+  exact currency precision; conservative HTML transforms; parent-cycle, product-type, status, tax, URL,
+  money, slug, SKU, and disabled-data validation; and a read-only sanitized dry-run CLI.
+- **Target safety:** inspection uses durable mappings as ownership evidence, blocks unowned deterministic
+  target IDs and slug/SKU conflicts, detects missing or edited mapped targets, and identifies unchanged
+  same-source operations as idempotent matches.
+- **Validation:** 432 tests in 91 files, type check, lint, production build, a ready synthetic offline dry
+  run, Better Farms manifest validation, bundle budgets, formatting, and diff whitespace checks passed.
+- **Production impact:** none. The CLI is offline-only, no target adapter is wired, no client export is
+  present, and any undispositioned warning blocks apply.
+- **Next gate:** implement the durable phase-one target adapter so catalog rows, mappings, audit evidence,
+  and checkpoints share one transaction; then prove resume and concurrency against PostgreSQL.
+
 ### 2026-09-03 — WooCommerce durable lifecycle foundation
 
 - **Core:** `codex/uncommitted-work-audit`; additive migration `0047_woocommerce_import_lifecycle.sql`

@@ -236,6 +236,16 @@ not a substitute for refund records.
 9. **Final delta and cutover:** requires a separately approved production plan, source freeze, current
    backup, rollback owner/deadline, and all applicable client release gates.
 
+Validate a synthetic or protected envelope offline with:
+
+```bash
+npm run migration:woocommerce:validate -- /secure/path/woocommerce-envelope.json \
+  --report /secure/path/woocommerce-dry-run-report.json
+```
+
+The command writes no database state. A ready report exits `0`; a blocked plan exits `2`. Report files are
+created with owner-only permissions and contain aggregate evidence and sanitized issue references only.
+
 ## 10. Rollback and reconciliation
 
 Rollback deletes only records whose durable mapping was first created by the selected run and whose target
