@@ -41,6 +41,8 @@ double-charge, double-refund, double-deduct, over-redeem, or silently strand pai
 
 ## Phase 2 — Migration and Cutover
 
+- [x] Freeze the versioned WooCommerce source, planner, target-port, mapping/run/checkpoint/audit/quarantine,
+      authority, reconciliation, and rollback contract.
 - Build an idempotent WooCommerce importer with dry-run and resumable execution.
 - Define source-to-target mappings for products, variants, media, customers, orders, coupons, taxes,
   stock, and statuses.

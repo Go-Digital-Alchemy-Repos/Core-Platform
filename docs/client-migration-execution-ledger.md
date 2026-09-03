@@ -5,17 +5,17 @@ Statuses describe repository evidence and do not imply production release approv
 
 ## Current Program State
 
-| Milestone                             | Status      | Evidence                                                                                                                                                                       | Remaining gate                                                                                                                                                                            |
-| ------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0. Governance and baseline            | In progress | Core baseline `e2ba048`; Better Farms baseline `6dd6335`; Woo prototypes `325188d` and `ffd11a6`; orchestrator review recorded                                                 | Confirm final Better Farms modules, import history/exclusions, approvers, domain/operator details, success measures, RPO/RTO, and rollback triggers before the dependent production gates |
-| 1. Manifest and integration contracts | In progress | Core branch `codex/uncommitted-work-audit` through `887f2c0`; manifest v1.0, compatibility validation, exact-origin preview, runtime publication ADR, and Better Farms fixture | Freeze manual DNS, module registry, route/data ownership, and Woo target-port/mapping contracts                                                                                           |
-| 2. Better Farms adapter               | In progress | Better Farms branch `codex/site-shell-fund-a-farm` through `0f0ddde`; locked shell, theme adapter, bounded Fund a Farm registry/content, preview, runtime API fallback         | Complete site inventory and expand page, form, SEO, accessibility, responsive, and asset coverage incrementally                                                                           |
-| 3. Railway deployment foundation      | In progress | Client-stack preflight, stack identity, Railway/manual-domain runbook, backup provenance, runtime publishing rollback runbook                                                  | Implement the registrar-neutral onboarding wizard and read-only readiness verification; rehearse restore in a disposable environment before release                                       |
-| 4. WooCommerce adapter                | Planned     | Both prototype branches preserved and independently testable                                                                                                                   | Freeze import contract and mapping/run persistence before reconciling implementation; no client data import                                                                               |
-| 5. Transaction correctness            | In progress | Membership credentials preserve-on-blank policy, trusted Stripe return URLs, and token-owned webhook delivery lifecycle implemented                                            | Close membership effect atomicity and then audit and close ecommerce inventory, coupon, refund, reconciliation, and operator-support blockers                                             |
-| 6. Integrated pilot                   | Blocked     | Depends on Milestones 2–5 and approved infrastructure intake                                                                                                                   | Production-like integration and acceptance suite                                                                                                                                          |
-| 7. Launch and hypercare               | Blocked     | Production release requires all prior gates and current backup/rollback evidence                                                                                               | Explicit go/no-go evidence, approved domains/operators, and successful post-deploy verification                                                                                           |
-| 8. Reusable playbook                  | Planned     | Existing manifest, deployment, and integration documents provide the initial source material                                                                                   | Complete after pilot evidence identifies reusable versus Better Farms-specific work                                                                                                       |
+| Milestone                             | Status      | Evidence                                                                                                                                                                                 | Remaining gate                                                                                                                                                                            |
+| ------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0. Governance and baseline            | In progress | Core baseline `e2ba048`; Better Farms baseline `6dd6335`; Woo prototypes `325188d` and `ffd11a6`; orchestrator review recorded                                                           | Confirm final Better Farms modules, import history/exclusions, approvers, domain/operator details, success measures, RPO/RTO, and rollback triggers before the dependent production gates |
+| 1. Manifest and integration contracts | In progress | Manifest v1.0, compatibility validation, exact-origin preview, runtime publication ADR, Better Farms fixture, and WooCommerce import contract v1.0.0                                     | Freeze manual DNS, module registry, and remaining route/data ownership contracts                                                                                                          |
+| 2. Better Farms adapter               | In progress | Better Farms branch `codex/site-shell-fund-a-farm` through `0f0ddde`; locked shell, theme adapter, bounded Fund a Farm registry/content, preview, runtime API fallback                   | Complete site inventory and expand page, form, SEO, accessibility, responsive, and asset coverage incrementally                                                                           |
+| 3. Railway deployment foundation      | In progress | Client-stack preflight, stack identity, Railway/manual-domain runbook, backup provenance, runtime publishing rollback runbook                                                            | Implement the registrar-neutral onboarding wizard and read-only readiness verification; rehearse restore in a disposable environment before release                                       |
+| 4. WooCommerce adapter                | In progress | Both prototype branches remain preserved; `core.woocommerce-import` v1.0.0 reconciles their catalog, port, mapping, run, checkpoint, audit, quarantine, authority, and rollback behavior | Implement contract tests and additive durable lifecycle models behind the accepted port; customer/order apply remains disabled and no client data may be used                             |
+| 5. Transaction correctness            | In progress | Membership credentials preserve-on-blank policy, trusted Stripe return URLs, and token-owned webhook delivery lifecycle implemented                                                      | Close membership effect atomicity and then audit and close ecommerce inventory, coupon, refund, reconciliation, and operator-support blockers                                             |
+| 6. Integrated pilot                   | Blocked     | Depends on Milestones 2–5 and approved infrastructure intake                                                                                                                             | Production-like integration and acceptance suite                                                                                                                                          |
+| 7. Launch and hypercare               | Blocked     | Production release requires all prior gates and current backup/rollback evidence                                                                                                         | Explicit go/no-go evidence, approved domains/operators, and successful post-deploy verification                                                                                           |
+| 8. Reusable playbook                  | Planned     | Existing manifest, deployment, and integration documents provide the initial source material                                                                                             | Complete after pilot evidence identifies reusable versus Better Farms-specific work                                                                                                       |
 
 ## Orchestrator Decision Policy
 
@@ -53,6 +53,18 @@ legacy membership prices. Online dependency advisories and live ingress, bucket,
 configuration remain explicitly deferred.
 
 ## Accepted Checkpoints
+
+### 2026-09-03 — WooCommerce import contract freeze
+
+- **Contract:** `core.woocommerce-import` v1.0.0 accepted by the Project Orchestrator for implementation.
+- **Decision:** preserve both prototype branches; adopt the catalog parser and collision protections from
+  `325188d`, and the repository-port/run/checkpoint/rollback model from `ffd11a6`, behind one versioned
+  target contract.
+- **Safety boundary:** phase 1 permits only categories and simple physical catalog records in synthetic or
+  isolated rehearsal. Customer and historical order apply remain disabled until the Project Owner approves
+  privacy, identity, retention, finance, and side-effect isolation rules. No client export is authorized.
+- **Next gate:** contract tests, additive mapping/run/audit/quarantine persistence, durable atomic batches,
+  target-edit conflict behavior, and database-backed resume/concurrency evidence.
 
 ### 2026-09-03 — Ecommerce refund serialization
 
@@ -117,14 +129,14 @@ configuration remain explicitly deferred.
 
 ## Active Sprint
 
-**Objective:** Close the highest-risk transaction correctness gaps in membership and ecommerce before expanding
-the Better Farms pilot surface. Membership credential and webhook delivery safety is the first checkpoint;
-ecommerce payment, inventory, coupon, and refund atomicity follows.
+**Objective:** Implement the accepted WooCommerce import contract behind stable planner and repository ports,
+starting with contract tests and additive durable lifecycle persistence. Transaction hardening remains a release
+gate; the next payment checkpoint is a durable checkout-request model rather than a superficial client token.
 
-**Write ownership:** the Project Orchestrator owns Core transaction services, storage, schema migrations, tests,
-operational documentation, and this ledger. Delegated agents are read-only investigators until explicit
-non-overlapping write ownership is assigned.
+**Write ownership:** the Project Orchestrator owns the WooCommerce contract, import services, additive lifecycle
+migrations, tests, operational documentation, and this ledger. The two prototype branches remain read-only inputs.
 
-**Acceptance gate:** no live provider credentials or client transactions; webhook claims are atomic and retryable;
-payment redirects use approved origins; database evolution is additive; existing Core tests, lint, types, build,
-migration checks, manifest validation, and budgets remain green.
+**Acceptance gate:** no real client data; every record is applied, matched, excluded-approved, or quarantined;
+resume and replay are idempotent; target edits fail to manual review; lifecycle and checkpoint writes are atomic;
+database evolution is additive; existing Core tests, lint, types, build, migration checks, manifest validation,
+and budgets remain green.
