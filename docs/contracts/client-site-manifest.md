@@ -38,6 +38,6 @@ the schema version and client stack ID; failure output includes structured error
 messages.
 
 The [Better Farms example](../pilots/better-farms/client-site-manifest.example.json) is an adapter-facing
-fixture based on source revision `6dd63354437c1f65f99fa2ac54a0a0bca10931b6`. It documents current site
+fixture based on source revision `12fe886e1984c043b89394b91caa4c740acca1c1`. It documents current site
 routes and assets while marking unresolved publishing and ecommerce behavior explicitly. It does not
 change the Better Farms repository or authorize deployment.

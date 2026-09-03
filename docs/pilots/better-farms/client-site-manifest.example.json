@@ -5,8 +5,8 @@
     "stackId": "better-farms-foundation",
     "displayName": "Better Farms Foundation",
     "source": {
-      "repository": "https://github.com/Go-Digital-Alchemy-Repos/Better-Farms-Foundation.git",
-      "revision": "6dd63354437c1f65f99fa2ac54a0a0bca10931b6"
+      "repository": "https://github.com/Go-Digital-Alchemy-Repos/Better-Farms.git",
+      "revision": "12fe886e1984c043b89394b91caa4c740acca1c1"
     },
     "owners": [
       {
@@ -141,7 +141,7 @@
   "theme": {
     "adapterId": "better-farms-theme",
     "version": "1.0.0",
-    "tokenSource": "client/src/index.css",
+    "tokenSource": "client/src/site/better-farms-theme.ts",
     "semanticTokenGroups": [
       "color",
       "typography",
@@ -160,9 +160,9 @@
     "publishMode": "decision-required",
     "editableComponents": [
       {
-        "key": "fund-a-farm-hero",
+        "key": "fund-a-farm-page",
         "version": "1.0.0",
-        "rendererRef": "client/src/pages/FundAFarm.tsx#FundAFarmHero",
+        "rendererRef": "client/src/pages/FundAFarm.tsx#FundAFarmPage",
         "fieldSchemaRef": "contracts/puck/fund-a-farm-hero-v1",
         "allowedRegions": ["fund-a-farm-hero"],
         "editableFields": ["heading", "copy", "image", "imageAlt", "ctaTarget"],
