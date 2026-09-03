@@ -85,12 +85,14 @@ Storage is centralized in `server/storage/ecommerce.storage.ts`.
 
 ## Webhook Processing
 
-Ecommerce Stripe webhook events are processed separately from the existing subscription Stripe handler. Processed event IDs are stored in `ecommerce_processed_webhook_events` to make webhook handling idempotent.
+Ecommerce Stripe webhook events are processed separately from the existing subscription Stripe handler. Delivery state is stored in `ecommerce_processed_webhook_events`. An atomic claim prevents concurrent workers from starting the same event, failed attempts remain retryable, stale attempts can be reclaimed after five minutes, and per-attempt tokens keep expired workers from overwriting a newer attempt.
 
 Current webhook behavior:
 
-- `payment_intent.succeeded` validates the payment amount against the order total, then marks the order paid.
-- `charge.refunded` and `refund.updated` are logged for refund visibility.
+- `payment_intent.succeeded` validates the PaymentIntent identity and amount against the order, then reconciles paid-order effects.
+- `checkout.session.completed` reconciles payment requests.
+- `refund.created` and `refund.updated` reconcile refund records and order payment status.
+- A successful handler marks the delivery `processed`; a thrown failure records bounded diagnostic text and returns an error so Stripe can retry.
 
 In production, an ecommerce Stripe webhook secret is required before unsigned ecommerce webhooks can be accepted.
 

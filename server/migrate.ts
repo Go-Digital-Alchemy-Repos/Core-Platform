@@ -393,6 +393,7 @@ async function ensureEcommerceTables(migrationsFolder: string) {
   await runSqlMigrationFile(migrationsFolder, "0033_ecommerce_order_notes.sql");
   await runSqlMigrationFile(migrationsFolder, "0034_ecommerce_manual_orders_payment_requests.sql");
   await runSqlMigrationFile(migrationsFolder, "0043_ecommerce_security_center.sql");
+  await runSqlMigrationFile(migrationsFolder, "0046_ecommerce_webhook_delivery.sql");
   logger.app.info("Ecommerce schema reconciled successfully");
 }
 

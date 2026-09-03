@@ -54,6 +54,14 @@ configuration remain explicitly deferred.
 
 ## Accepted Checkpoints
 
+### 2026-09-03 — Ecommerce webhook delivery hardening
+
+- **Core:** `codex/uncommitted-work-audit`; milestone commit recorded in Git history and pushed after validation.
+- **Implemented:** atomic pre-effect claims for ecommerce Stripe events; retryable failure state; stale-claim recovery; per-attempt ownership tokens; and explicit completion only after payment-request, paid-order, or refund reconciliation returns successfully.
+- **Validation:** focused concurrent-delivery lifecycle and migration tests; project type check, lint, production build, full test suite, client-site manifest validation, bundle budgets, formatting, and diff whitespace checks.
+- **Production impact:** none. The additive `0046_ecommerce_webhook_delivery.sql` migration remains unapplied until an approved release.
+- **Risk carried forward:** paid-order state, coupon redemption, and inventory deduction still cross transaction boundaries; checkout idempotency, serialized refundable balance, durable jobs/replay, and Stripe sandbox evidence remain release blockers.
+
 ### 2026-09-03 — Membership payment delivery hardening
 
 - **Core:** `codex/uncommitted-work-audit`; milestone commit recorded in Git history and pushed after validation.

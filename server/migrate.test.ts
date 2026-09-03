@@ -52,6 +52,10 @@ describe("runMigrations", () => {
       expect.stringContaining("0045_membership_webhook_delivery.sql"),
       "utf8",
     );
+    expect(mockReadFile).toHaveBeenCalledWith(
+      expect.stringContaining("0046_ecommerce_webhook_delivery.sql"),
+      "utf8",
+    );
   });
 
   it("recognizes the default Drizzle journal schema on an existing database", async () => {

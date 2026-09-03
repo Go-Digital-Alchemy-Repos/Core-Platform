@@ -1,4 +1,5 @@
 import { and, desc, eq, gte, ilike, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 import { db } from "../db";
 import { requiresAtomicInventoryStockGuard } from "../services/ecommerce-inventory.service";
 import { isEcommerceOrderLookupAuthorized } from "../services/ecommerce-order-lookup.service";
@@ -1525,30 +1526,95 @@ export class EcommerceStorage {
     );
   }
 
-  async hasProcessedWebhook(provider: string, eventId: string): Promise<boolean> {
-    const [event] = await db
-      .select({ id: ecommerceProcessedWebhookEvents.id })
-      .from(ecommerceProcessedWebhookEvents)
+  async claimWebhookProcessing(
+    provider: string,
+    eventId: string,
+    eventType: string,
+  ): Promise<string | null> {
+    const processingToken = randomUUID();
+    const result = await db.execute(sql<{ processing_token: string }>`
+      INSERT INTO ecommerce_processed_webhook_events (
+        provider,
+        event_id,
+        event_type,
+        status,
+        attempt_count,
+        processing_token,
+        started_at,
+        completed_at,
+        last_error,
+        processed_at
+      )
+      VALUES (
+        ${provider}, ${eventId}, ${eventType}, 'processing', 1, ${processingToken}, now(), NULL, NULL, NULL
+      )
+      ON CONFLICT (provider, event_id) DO UPDATE
+      SET
+        event_type = EXCLUDED.event_type,
+        status = 'processing',
+        attempt_count = ecommerce_processed_webhook_events.attempt_count + 1,
+        processing_token = ${processingToken},
+        started_at = now(),
+        completed_at = NULL,
+        last_error = NULL,
+        processed_at = NULL
+      WHERE
+        ecommerce_processed_webhook_events.status = 'failed'
+        OR (
+          ecommerce_processed_webhook_events.status = 'processing'
+          AND ecommerce_processed_webhook_events.started_at < now() - interval '5 minutes'
+        )
+      RETURNING processing_token
+    `);
+    return (result.rows[0] as { processing_token?: string } | undefined)?.processing_token ?? null;
+  }
+
+  async completeWebhookProcessing(
+    provider: string,
+    eventId: string,
+    processingToken: string,
+  ): Promise<void> {
+    await db
+      .update(ecommerceProcessedWebhookEvents)
+      .set({
+        status: "processed",
+        processingToken: null,
+        completedAt: new Date(),
+        processedAt: new Date(),
+        lastError: null,
+      })
       .where(
         and(
           eq(ecommerceProcessedWebhookEvents.provider, provider),
           eq(ecommerceProcessedWebhookEvents.eventId, eventId),
+          eq(ecommerceProcessedWebhookEvents.status, "processing"),
+          eq(ecommerceProcessedWebhookEvents.processingToken, processingToken),
         ),
-      )
-      .limit(1);
-    return Boolean(event);
+      );
   }
 
-  async markWebhookProcessed(
+  async failWebhookProcessing(
     provider: string,
     eventId: string,
-    eventType: string,
-  ): Promise<boolean> {
-    const inserted = await db
-      .insert(ecommerceProcessedWebhookEvents)
-      .values({ provider, eventId, eventType })
-      .onConflictDoNothing()
-      .returning();
-    return inserted.length > 0;
+    processingToken: string,
+    lastError: string,
+  ): Promise<void> {
+    await db
+      .update(ecommerceProcessedWebhookEvents)
+      .set({
+        status: "failed",
+        processingToken: null,
+        completedAt: null,
+        processedAt: null,
+        lastError,
+      })
+      .where(
+        and(
+          eq(ecommerceProcessedWebhookEvents.provider, provider),
+          eq(ecommerceProcessedWebhookEvents.eventId, eventId),
+          eq(ecommerceProcessedWebhookEvents.status, "processing"),
+          eq(ecommerceProcessedWebhookEvents.processingToken, processingToken),
+        ),
+      );
   }
 }

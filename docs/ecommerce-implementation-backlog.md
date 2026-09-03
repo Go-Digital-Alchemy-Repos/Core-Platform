@@ -26,7 +26,7 @@ checks, and domain/origin checks pass for that client's isolated environment.
 
 ## Phase 1 — Money and Stock Correctness
 
-- Atomically claim Stripe webhook events before side effects.
+- [x] Atomically claim Stripe webhook events before side effects, with retryable failure and stale-claim recovery state.
 - Move payment side effects to durable, idempotent jobs with retry and dead-letter visibility.
 - Add payment-provider reconciliation and replay tooling.
 - Make checkout creation idempotent for client retries.
