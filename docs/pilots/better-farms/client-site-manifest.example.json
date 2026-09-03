@@ -1,0 +1,230 @@
+{
+  "schemaVersion": "1.0",
+  "status": "draft",
+  "client": {
+    "stackId": "better-farms-foundation",
+    "displayName": "Better Farms Foundation",
+    "source": {
+      "repository": "https://github.com/Go-Digital-Alchemy-Repos/Better-Farms-Foundation.git",
+      "revision": "6dd63354437c1f65f99fa2ac54a0a0bca10931b6"
+    },
+    "owners": [
+      {
+        "role": "technical",
+        "name": "Digital Alchemy",
+        "contactReference": "project-operations-record"
+      }
+    ]
+  },
+  "compatibility": {
+    "corePlatform": { "minimum": "1.0.0" },
+    "siteAdapter": "1.0.0",
+    "themeAdapter": "1.0.0",
+    "puckRegistry": "1.0.0"
+  },
+  "origins": {
+    "publicSite": "https://better-farms.example",
+    "admin": "https://admin.better-farms.example",
+    "publicApiPath": "/api",
+    "adminApiPath": "/api",
+    "routingMode": "same-origin-proxy"
+  },
+  "build": {
+    "packageManager": "npm",
+    "nodeVersion": "20",
+    "installCommand": "npm ci",
+    "buildCommand": "npm run build",
+    "startCommand": "npm start",
+    "outputDirectory": "dist/public",
+    "artifact": "static-site"
+  },
+  "routes": [
+    {
+      "id": "home",
+      "path": "/",
+      "owner": "site",
+      "componentRef": "client/src/pages/HomepageWhite.tsx",
+      "editableRegions": [],
+      "lockedBehaviors": ["routing", "navigation", "responsive-layout"]
+    },
+    {
+      "id": "how-it-works",
+      "path": "/how-it-works",
+      "owner": "site",
+      "componentRef": "client/src/pages/HowItWorks.tsx",
+      "navigation": { "label": "HOW IT WORKS", "location": "primary", "order": 2 },
+      "editableRegions": [],
+      "lockedBehaviors": ["routing", "navigation", "responsive-layout"]
+    },
+    {
+      "id": "about",
+      "path": "/about",
+      "owner": "site",
+      "componentRef": "client/src/pages/AboutUs.tsx",
+      "navigation": { "label": "ABOUT US", "location": "primary", "order": 1 },
+      "editableRegions": [],
+      "lockedBehaviors": ["routing", "navigation", "responsive-layout"]
+    },
+    {
+      "id": "contact",
+      "path": "/contact",
+      "owner": "site",
+      "componentRef": "client/src/pages/Contact.tsx",
+      "navigation": { "label": "CONTACT", "location": "primary", "order": 5 },
+      "editableRegions": [],
+      "lockedBehaviors": ["routing", "form-validation", "submission", "accessibility"]
+    },
+    {
+      "id": "for-farmers",
+      "path": "/for-farmers",
+      "owner": "site",
+      "componentRef": "client/src/pages/ForFarmers.tsx",
+      "navigation": { "label": "FOR FARMERS", "location": "primary", "order": 4 },
+      "editableRegions": [],
+      "lockedBehaviors": ["routing", "navigation", "responsive-layout"]
+    },
+    {
+      "id": "fund-a-farm",
+      "path": "/fund-a-farm",
+      "owner": "site",
+      "componentRef": "client/src/pages/FundAFarm.tsx",
+      "editableRegions": ["fund-a-farm-hero"],
+      "lockedBehaviors": [
+        "routing",
+        "donation-selection",
+        "form-validation",
+        "submission",
+        "accessibility",
+        "responsive-layout"
+      ]
+    },
+    {
+      "id": "get-involved",
+      "path": "/get-involved",
+      "owner": "site",
+      "componentRef": "client/src/pages/GetInvolved.tsx",
+      "navigation": { "label": "GET INVOLVED", "location": "primary", "order": 3 },
+      "editableRegions": [],
+      "lockedBehaviors": ["routing", "navigation", "responsive-layout"]
+    }
+  ],
+  "assets": [
+    {
+      "id": "brand-logo",
+      "kind": "image",
+      "path": "/sourcePhotos/brand/logo.svg",
+      "sourceRef": "client/public/sourcePhotos/brand/logo.svg",
+      "altPolicy": "required"
+    },
+    {
+      "id": "brand-footer-logo",
+      "kind": "image",
+      "path": "/sourcePhotos/brand/footer-logo.svg",
+      "sourceRef": "client/public/sourcePhotos/brand/footer-logo.svg",
+      "altPolicy": "required"
+    },
+    {
+      "id": "fund-a-farm-field-sunset",
+      "kind": "image",
+      "path": "/sourcePhotos/fund-a-farm/field-sunset.webp",
+      "sourceRef": "client/public/sourcePhotos/fund-a-farm/field-sunset.webp",
+      "altPolicy": "required"
+    },
+    {
+      "id": "arrow-icon",
+      "kind": "icon",
+      "path": "/figmaAssets/keyboard-arrow-right-2.svg",
+      "sourceRef": "client/public/figmaAssets/keyboard-arrow-right-2.svg",
+      "altPolicy": "decorative"
+    }
+  ],
+  "theme": {
+    "adapterId": "better-farms-theme",
+    "version": "1.0.0",
+    "tokenSource": "client/src/index.css",
+    "semanticTokenGroups": [
+      "color",
+      "typography",
+      "spacing",
+      "radius",
+      "shadow",
+      "breakpoint",
+      "motion",
+      "zIndex"
+    ]
+  },
+  "puck": {
+    "registryId": "better-farms-puck",
+    "version": "1.0.0",
+    "contentSchemaVersion": "1.0.0",
+    "publishMode": "decision-required",
+    "editableComponents": [
+      {
+        "key": "fund-a-farm-hero",
+        "version": "1.0.0",
+        "rendererRef": "client/src/pages/FundAFarm.tsx#FundAFarmHero",
+        "fieldSchemaRef": "contracts/puck/fund-a-farm-hero-v1",
+        "allowedRegions": ["fund-a-farm-hero"],
+        "editableFields": ["heading", "copy", "image", "imageAlt", "ctaTarget"],
+        "lockedBehaviors": [
+          "donation-selection",
+          "form-validation",
+          "submission",
+          "accessibility",
+          "responsive-layout"
+        ]
+      }
+    ]
+  },
+  "forms": [
+    {
+      "id": "contact-form",
+      "routeId": "contact",
+      "endpoint": "/api/contact",
+      "method": "POST",
+      "authentication": "public",
+      "handlerOwner": "platform",
+      "secretRefs": []
+    },
+    {
+      "id": "newsletter-signup",
+      "routeId": "home",
+      "endpoint": "/api/newsletter",
+      "method": "POST",
+      "authentication": "public",
+      "handlerOwner": "platform",
+      "secretRefs": []
+    }
+  ],
+  "apiIntegrations": [
+    {
+      "id": "public-platform-api",
+      "basePath": "/api",
+      "direction": "site-to-platform",
+      "authentication": "none",
+      "capabilities": ["contact-messages", "newsletter-signups", "cms-content"],
+      "secretRefs": []
+    }
+  ],
+  "modules": [
+    {
+      "id": "cms",
+      "enabled": true,
+      "required": true,
+      "routeIds": ["fund-a-farm"],
+      "themeRoles": ["site-shell", "fund-a-farm-hero"],
+      "configurationRefs": ["puck.registryId", "puck.publishMode"],
+      "secretRefs": []
+    },
+    {
+      "id": "ecommerce",
+      "enabled": false,
+      "required": false,
+      "routeIds": [],
+      "themeRoles": ["donation-cta"],
+      "configurationRefs": ["pilot-decision-required"],
+      "secretRefs": []
+    }
+  ],
+  "secretReferences": []
+}
